@@ -70,7 +70,7 @@ class stmt_builtin_foo final : public statement {
 
         // emit a one-line trimmed comment for the definition
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent, "foo {}", statement::trimmed_source(ident_));
 

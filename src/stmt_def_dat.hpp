@@ -168,7 +168,7 @@ class stmt_def_dat final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -185,7 +185,7 @@ class stmt_def_dat final : public statement {
     }
 
     auto compile_data(toc& tc) const -> void override {
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(name_tk_, 0, name_tk_.text());
         compile_data_rec(tc, get_type(), elroot_);
@@ -218,7 +218,7 @@ class stmt_def_dat final : public statement {
 
         // regular arrays
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
 
@@ -278,7 +278,7 @@ class stmt_def_dat final : public statement {
             nbytes += flds[i].size;
         }
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(elroot.tk, 0, "zero remaining fields");
         x.emit_zero_data(nbytes);
@@ -287,7 +287,7 @@ class stmt_def_dat final : public statement {
     static auto compile_data_builtin(toc& tc, const type& tp,
                                      const elem& elroot) -> void {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         if (not elroot.is_array) {
             x.comment(elroot.tk, 0, "{}", tp.name());
@@ -331,7 +331,7 @@ class stmt_def_dat final : public statement {
         const auto values{
             elroot.elems |
             std::views::transform(
-                [](const elem& element) -> x86::data_initializer {
+                [](const elem& element) -> machine::data_initializer {
                     return {
                         .value{element.value},
                         .unary_operations{element.uops.to_string()},

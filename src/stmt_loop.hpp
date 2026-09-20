@@ -23,7 +23,7 @@ class stmt_loop final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent, "label");
 

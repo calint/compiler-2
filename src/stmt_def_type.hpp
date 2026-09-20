@@ -83,7 +83,7 @@ class stmt_def_type final : public statement {
 
         const type& tp{tc.get_type_or_throw(tok(), name_tk_.text())};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent, "{} : {} B    fields:", name_tk_.text(),
                   tp.size());

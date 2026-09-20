@@ -155,7 +155,7 @@ class expr_bool_ops_list final : public statement {
                                const bool inverted, const operand& dst) const
         -> std::optional<bool> {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent,
                   statement::trimmed_source(*this, "?",

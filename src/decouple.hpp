@@ -61,7 +61,7 @@ struct operand {
     std::string allocation_register;
     std::string base_register;
     std::string index_register;
-    std::string immediate_expression;
+    std::string immediate;
     int32_t displacement{};
     uint8_t scale{1};
     size_t size{};
@@ -70,15 +70,15 @@ struct operand {
 
     operand() = default;
 
-    [[nodiscard]] static auto imm(std::string expression,
-                                  const type& value_type) -> operand {
+    [[nodiscard]] static auto imm(std::string value, const type& value_type)
+        -> operand {
 
-        if (expression.empty()) {
+        if (value.empty()) {
             throw std::invalid_argument("operand text must not be empty");
         }
         operand result;
         result.kind_ = operand_kind::immediate;
-        result.immediate_expression = std::move(expression);
+        result.immediate = std::move(value);
         result.type_ptr = &value_type;
 
         return result;

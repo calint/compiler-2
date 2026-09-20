@@ -277,7 +277,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.copy(tok(), indent, src_op, dst_op, nbytes);
 
@@ -303,7 +303,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
     const std::span<const type_field>& flds{dst_type.fields()};
 
-    x86& x{tc.machine()};
+    machine& x{tc.machine()};
 
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
         const type_field& tf{flds[counter]};
@@ -481,7 +481,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 auto unary_ops::compile(toc& tc, const size_t indnt,
                         const operand& dst_info) const -> void {
 
-    x86& x{tc.machine()};
+    machine& x{tc.machine()};
 
     for (const char op : ops_ | std::views::reverse) {
         x.unary(indnt, op, dst_info);

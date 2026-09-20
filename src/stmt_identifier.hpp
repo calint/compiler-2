@@ -151,7 +151,7 @@ class stmt_identifier : public statement {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -248,7 +248,7 @@ class stmt_identifier : public statement {
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         for (size_t i{elem_index_with_lea}; i < elems_size; ++i) {
             const ident_elem& curr_elem{elems[i]};
@@ -282,7 +282,7 @@ class stmt_identifier : public statement {
 
             // special case: last element with encodable size
             if (is_last) {
-                const bool is_encodable{x86::can_encode_index_scale(type_size)};
+                const bool is_encodable{x.can_encode_index_scale(type_size)};
 
                 if (is_encodable) {
                     const operand reg_idx{x.alloc_scratch_register(
@@ -309,7 +309,7 @@ class stmt_identifier : public statement {
                             true, true, base_info.operand.base_register);
                     }
 
-                    const int32_t offset{x86::is_variables_base(reg_offset)
+                    const int32_t offset{x.is_variables_base(reg_offset)
                                              ? base_info.stack_idx +
                                                    accum_offset
                                              : accum_offset};
@@ -328,7 +328,7 @@ class stmt_identifier : public statement {
                                              base_info.operand.base_register);
             }
 
-            if (x86::is_variables_base(reg_offset)) {
+            if (x.is_variables_base(reg_offset)) {
                 const operand offset_register{x.alloc_scratch_register(
                     src_loc_tk, indent, tc.get_type_default())};
 
@@ -397,7 +397,7 @@ class stmt_identifier : public statement {
 
         op.displacement += accum_offset;
 
-        if (x86::is_variables_base(reg_offset)) {
+        if (x.is_variables_base(reg_offset)) {
             // register is not optimally encoded for trailing elements of size
             // 1, 2, 4, or 8
             op.displacement += base_info.stack_idx;
@@ -413,7 +413,7 @@ class stmt_identifier : public statement {
                                   const size_t array_size, const bool allow_end,
                                   const operand& reg_size = {}) -> void {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.check_bounds(tk, indent, reg_to_check, array_size, allow_end,
                        reg_size,
@@ -441,7 +441,7 @@ class stmt_identifier : public statement {
                 return lea;
             }
 
-            x86& x{tc.machine()};
+            machine& x{tc.machine()};
 
             const operand index_reg{x.alloc_scratch_register(
                 src_loc_tk, indent, tc.get_type_default())};
@@ -454,12 +454,12 @@ class stmt_identifier : public statement {
                 x.address_of(src_loc_tk, indent, index_reg, lea);
             } else {
                 x.copy_value(src_loc_tk, indent, index_reg,
-                             x86::reg(lea.base_register));
+                             x.reg(lea.base_register));
             }
 
             return index_reg;
         }
 
-        return x86::reg(base_register);
+        return tc.machine().reg(base_register);
     }
 };

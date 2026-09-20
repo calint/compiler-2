@@ -4,9 +4,9 @@
 #include <format>
 
 #include "decouple.hpp"
+#include "machine.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
-#include "x86.hpp"
 
 class stmt_break final : public statement {
   public:
@@ -20,7 +20,7 @@ class stmt_break final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 

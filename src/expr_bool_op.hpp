@@ -105,7 +105,7 @@ class expr_bool_op final : public statement {
 
         const bool invert{inverted ? not is_not_ : is_not_};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent,
                   statement::trimmed_source(
@@ -205,7 +205,7 @@ class expr_bool_op final : public statement {
 
         const bool invert{inverted ? not is_not_ : is_not_};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent,
                   statement::trimmed_source(
@@ -393,7 +393,7 @@ class expr_bool_op final : public statement {
 
     auto resolve_cmp(toc& tc, const size_t indent, const expr_ops_list& lhs,
                      const expr_ops_list& rhs,
-                     const x86::comparison_action& action) const -> void {
+                     const machine::comparison_action& action) const -> void {
 
         std::vector<operand> allocated_registers;
 
@@ -403,7 +403,7 @@ class expr_bool_op final : public statement {
         const operand src{
             resolve_expr(tc, indent, rhs, false, allocated_registers)};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.compare_and_branch(tok(), indent, dst, src, action,
                              allocated_registers);
@@ -411,7 +411,7 @@ class expr_bool_op final : public statement {
 
     auto resolve_cmp_shorthand(toc& tc, const size_t indent,
                                const expr_ops_list& lhs,
-                               const x86::comparison_action& action) const
+                               const machine::comparison_action& action) const
         -> void {
 
         std::vector<operand> allocated_registers;
@@ -419,7 +419,7 @@ class expr_bool_op final : public statement {
         const operand dst{
             resolve_expr(tc, indent, lhs, true, allocated_registers)};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.compare_and_branch(tok(), indent, dst,
                              operand::imm("0", tc.get_type_default()), action,
@@ -446,7 +446,7 @@ class expr_bool_op final : public statement {
         }
 
         if (expr.is_expression()) {
-            x86& x{tc.machine()};
+            machine& x{tc.machine()};
 
             const operand reg{
                 x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
@@ -462,7 +462,7 @@ class expr_bool_op final : public statement {
         const ident_info expr_info{tc.make_ident_info(expr)};
         if (expr_info.is_const()) {
             if (is_lhs) {
-                x86& x{tc.machine()};
+                machine& x{tc.machine()};
 
                 const operand reg{x.alloc_scratch_register(
                     expr.tok(), indent, tc.get_type_default())};
@@ -487,7 +487,7 @@ class expr_bool_op final : public statement {
 
         // 'expr' is not an expression and has unary ops
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         const operand reg{x.alloc_scratch_register(expr.tok(), indent,
                                                    tc.get_type_default())};

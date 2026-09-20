@@ -19,13 +19,14 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "machine.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
 class token;
 class type;
 
-class x86 final {
+class machine_x86 final : public machine {
     static constexpr std::string_view data_qword{"dq"};
     static constexpr std::string_view data_dword{"dd"};
     static constexpr std::string_view data_word{"dw"};
@@ -70,13 +71,14 @@ class x86 final {
     std::reference_wrapper<std::ostream> os_;
 
   public:
-    explicit x86(std::ostream& os_ref, const std::string_view source)
+    explicit machine_x86(std::ostream& os_ref, const std::string_view source)
         : source_{source}, os_{os_ref} {}
 
     // note: the first argument is the default type
     auto set_builtin_types(const type& t_i64, const type& t_i32,
                            const type& t_i16, const type& t_i8,
-                           const type& t_bool, const type& t_void) -> void {
+                           const type& t_bool, const type& t_void)
+        -> void override {
 
         default_type_ = &t_i64;
         type_i64_ = &t_i64;
@@ -89,34 +91,28 @@ class x86 final {
 
     // redirects output to 'new_stream', returning the previously used stream
     // so the caller can restore it later
-    auto use_stream(std::ostream& new_stream) -> std::ostream& {
+    auto use_stream(std::ostream& new_stream) -> std::ostream& override {
         std::ostream& prev{os_.get()};
         os_ = new_stream;
 
         return prev;
     }
 
-    auto println() const -> void { std::println(os_.get()); }
+    auto println() const -> void override { std::println(os_.get()); }
 
     auto comment(const token& source_location, const size_t indent,
-                 const std::string_view text) -> void {
+                 const std::string_view text) -> void override {
 
         comment_start(source_location, indent);
         println("{}", text);
     }
 
-    template <typename... args_t>
-    auto comment(const token& source_location, const size_t indent,
-                 const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
-
-        comment_start(source_location, indent);
-        println(format, std::forward<args_t>(args)...);
-    }
+    using machine::comment;
 
     auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
                              const std::string_view without_scratch,
-                             const std::string_view with_scratch) -> void {
+                             const std::string_view with_scratch)
+        -> void override {
 
         const size_t without_count{count_instructions(without_scratch)};
         const size_t with_count{count_instructions(with_scratch)};
@@ -134,7 +130,8 @@ class x86 final {
 
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
                                               const size_t indnt,
-                                              const type& type_ref) -> operand {
+                                              const type& type_ref)
+        -> operand override {
 
         if (scratch_registers_.empty()) {
             throw compiler_exception{src_loc_tk,
@@ -163,10 +160,10 @@ class x86 final {
         return result;
     }
 
-    [[nodiscard]] auto alloc_named_register(const token& src_loc_tk,
-                                            const size_t indnt,
-                                            const std::string_view reg,
-                                            const type& type_ref) -> operand {
+    [[nodiscard]] auto
+    alloc_named_register(const token& src_loc_tk, const size_t indnt,
+                         const std::string_view reg, const type& type_ref)
+        -> operand override {
 
         reserve_named_register(src_loc_tk, indnt, reg);
         operand result{sized_register(reg, type_ref.size())};
@@ -177,7 +174,7 @@ class x86 final {
     }
 
     auto free_named_register(const token& src_loc_tk, const size_t indnt,
-                             const operand& reg) -> void {
+                             const operand& reg) -> void override {
 
         assert(reg.is_register() and not reg.allocation_register.empty());
 
@@ -185,7 +182,7 @@ class x86 final {
     }
 
     auto free_scratch_register(const token& src_loc_tk, const size_t indnt,
-                               const operand& reg) -> void {
+                               const operand& reg) -> void override {
 
         assert(reg.is_register() and not reg.allocation_register.empty());
 
@@ -202,7 +199,7 @@ class x86 final {
 
     // asserts register pools are balanced and prints usage stats; called
     // once at the end of the compile pass
-    auto finish() -> void {
+    auto finish() -> void override {
         println("\n; max scratch registers in use: {}",
                 usage_max_scratch_regs_);
 
@@ -215,7 +212,7 @@ class x86 final {
     }
 
     auto copy_value(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const operand& src) -> void {
+                    const operand& dst, const operand& src) -> void override {
 
         assert(dst.is_register() or dst.is_memory());
 
@@ -224,7 +221,7 @@ class x86 final {
 
     auto comment_variable(const token& src_loc_tk, const size_t indent,
                           const std::string_view text, const size_t bytes,
-                          const operand& address) -> void {
+                          const operand& address) -> void override {
 
         comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, bytes,
                 format_address(address));
@@ -232,7 +229,7 @@ class x86 final {
 
     auto comment_alias(const token& src_loc_tk, const size_t indent,
                        const std::string_view from, const std::string_view to,
-                       const operand& address) -> void {
+                       const operand& address) -> void override {
 
         if (address.is_empty()) {
             comment(src_loc_tk, indent, "alias {} -> {}", from, to);
@@ -242,19 +239,11 @@ class x86 final {
         }
     }
 
-    struct comparison_action {
-        std::string_view operation;
-        bool inverted{};
-        operand destination;
-        std::string_view target;
-        bool branch_on_true{};
-    };
-
     auto compare_and_branch(const token& src_loc_tk, const size_t indent,
                             const operand& lhs, const operand& rhs,
                             const comparison_action& action,
                             const std::span<const operand> consumed_temporaries)
-        -> void {
+        -> void override {
 
         cmp(src_loc_tk, indent, lhs, rhs);
 
@@ -273,17 +262,21 @@ class x86 final {
                           action.target);
     }
 
-    auto branch(const size_t indent, const std::string_view target) -> void {
+    auto branch(const size_t indent, const std::string_view target)
+        -> void override {
         jmp(indent, target);
     }
 
-    auto invoke_syscall(const size_t indent) -> void { syscall(indent); }
+    auto invoke_syscall(const size_t indent) -> void override {
+        syscall(indent);
+    }
 
     auto advance_array_iteration(const size_t indent, const operand& iterator,
                                  const operand& counter,
                                  const size_t element_size,
                                  const size_t array_size,
-                                 const std::string_view loop_label) -> void {
+                                 const std::string_view loop_label)
+        -> void override {
 
         add(indent, iterator, immediate(element_size));
         inc(indent, counter);
@@ -292,15 +285,16 @@ class x86 final {
     }
 
     auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
-              const operand& dst, const size_t bytes_count) -> void {
+              const operand& dst, const size_t bytes_count) -> void override {
 
         if (bytes_count > threshold_for_rep_movs) {
             reserve_named_register(src_loc_tk, indent, "rsi");
             reserve_named_register(src_loc_tk, indent, "rdi");
             reserve_named_register(src_loc_tk, indent, "rcx");
-            lea(indent, x86::reg("rsi"), src);
-            lea(indent, x86::reg("rdi"), dst);
-            mov(src_loc_tk, indent, x86::reg("rcx"), immediate(bytes_count));
+            lea(indent, machine_x86::reg("rsi"), src);
+            lea(indent, machine_x86::reg("rdi"), dst);
+            mov(src_loc_tk, indent, machine_x86::reg("rcx"),
+                immediate(bytes_count));
             rep_movs(indent, 'b');
             release_named_register(src_loc_tk, indent, "rcx");
             release_named_register(src_loc_tk, indent, "rdi");
@@ -318,52 +312,55 @@ class x86 final {
         operand src_operand{src};
         operand dst_operand{dst};
         for (size_t index{}; index < qword_movs; ++index) {
-            mov(src_loc_tk, indent, x86::reg("rax"),
+            mov(src_loc_tk, indent, machine_x86::reg("rax"),
                 sized_memory(src_operand, operand::size_qword));
 
             mov(src_loc_tk, indent,
                 sized_memory(dst_operand, operand::size_qword),
-                x86::reg("rax"));
+                machine_x86::reg("rax"));
 
             src_operand.displacement += operand::size_qword;
             dst_operand.displacement += operand::size_qword;
             rest -= operand::size_qword;
         }
         if ((rest / operand::size_dword) != 0) {
-            mov(src_loc_tk, indent, x86::reg("eax"),
+            mov(src_loc_tk, indent, machine_x86::reg("eax"),
                 sized_memory(src_operand, operand::size_dword));
 
             mov(src_loc_tk, indent,
                 sized_memory(dst_operand, operand::size_dword),
-                x86::reg("eax"));
+                machine_x86::reg("eax"));
 
             src_operand.displacement += operand::size_dword;
             dst_operand.displacement += operand::size_dword;
             rest -= operand::size_dword;
         }
         if ((rest / operand::size_word) != 0) {
-            mov(src_loc_tk, indent, x86::reg("ax"),
+            mov(src_loc_tk, indent, machine_x86::reg("ax"),
                 sized_memory(src_operand, operand::size_word));
 
             mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_word), x86::reg("ax"));
+                sized_memory(dst_operand, operand::size_word),
+                machine_x86::reg("ax"));
 
             src_operand.displacement += operand::size_word;
             dst_operand.displacement += operand::size_word;
             rest -= operand::size_word;
         }
         if (rest != 0) {
-            mov(src_loc_tk, indent, x86::reg("al"),
+            mov(src_loc_tk, indent, machine_x86::reg("al"),
                 sized_memory(src_operand, operand::size_byte));
 
             mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_byte), x86::reg("al"));
+                sized_memory(dst_operand, operand::size_byte),
+                machine_x86::reg("al"));
         }
         release_named_register(src_loc_tk, indent, "rax");
     }
 
     [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
-                                        const size_t indent) -> operand {
+                                        const size_t indent)
+        -> operand override {
 
         reserve_named_register(src_loc_tk, indent, "rsi");
         reserve_named_register(src_loc_tk, indent, "rdi");
@@ -372,26 +369,26 @@ class x86 final {
     }
 
     auto set_array_copy_source(const size_t indent, const operand& address)
-        -> void {
+        -> void override {
 
-        lea(indent, x86::reg("rsi"), address);
+        lea(indent, machine_x86::reg("rsi"), address);
     }
 
     auto set_array_copy_destination(const size_t indent, const operand& address)
-        -> void {
+        -> void override {
 
-        lea(indent, x86::reg("rdi"), address);
+        lea(indent, machine_x86::reg("rdi"), address);
     }
 
     auto end_array_copy(const token& src_loc_tk, const size_t indent,
-                        const size_t element_size) -> void {
+                        const size_t element_size) -> void override {
 
         if (element_size > 1) {
             if (std::has_single_bit(element_size)) {
-                op(src_loc_tk, indent, "shl", x86::reg("rcx"),
+                op(src_loc_tk, indent, "shl", machine_x86::reg("rcx"),
                    immediate(std::countr_zero(element_size)));
             } else {
-                op(src_loc_tk, indent, "imul", x86::reg("rcx"),
+                op(src_loc_tk, indent, "imul", machine_x86::reg("rcx"),
                    immediate(element_size));
             }
         }
@@ -403,7 +400,7 @@ class x86 final {
     }
 
     auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
-        -> operand {
+        -> operand override {
 
         reserve_named_register(src_loc_tk, indent, "rsi");
         reserve_named_register(src_loc_tk, indent, "rdi");
@@ -412,20 +409,20 @@ class x86 final {
     }
 
     auto set_memory_equal_left(const size_t indent, const operand& address)
-        -> void {
+        -> void override {
 
-        lea(indent, x86::reg("rsi"), address);
+        lea(indent, machine_x86::reg("rsi"), address);
     }
 
     auto set_memory_equal_right(const size_t indent, const operand& address)
-        -> void {
+        -> void override {
 
-        lea(indent, x86::reg("rdi"), address);
+        lea(indent, machine_x86::reg("rdi"), address);
     }
 
     auto end_memory_equal(const token& src_loc_tk, const size_t indent,
                           const size_t bytes_count, const operand& dst)
-        -> void {
+        -> void override {
 
         char rep_size{'b'};
         size_t count{bytes_count};
@@ -439,7 +436,7 @@ class x86 final {
             rep_size = 'w';
             count /= operand::size_word;
         }
-        mov(src_loc_tk, indent, x86::reg("rcx"), immediate(count));
+        mov(src_loc_tk, indent, machine_x86::reg("rcx"), immediate(count));
         repe_cmps(indent, rep_size);
         release_named_register(src_loc_tk, indent, "rcx");
         release_named_register(src_loc_tk, indent, "rdi");
@@ -449,14 +446,14 @@ class x86 final {
 
     auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
                           const size_t element_size, const operand& dst)
-        -> void {
+        -> void override {
 
         if (element_size > 1) {
             if (std::has_single_bit(element_size)) {
-                op(src_loc_tk, indent, "shl", x86::reg("rcx"),
+                op(src_loc_tk, indent, "shl", machine_x86::reg("rcx"),
                    immediate(std::countr_zero(element_size)));
             } else {
-                op(src_loc_tk, indent, "imul", x86::reg("rcx"),
+                op(src_loc_tk, indent, "imul", machine_x86::reg("rcx"),
                    immediate(element_size));
             }
         }
@@ -469,15 +466,16 @@ class x86 final {
     }
 
     auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,
-              const size_t bytes_count) -> void {
+              const size_t bytes_count) -> void override {
 
         if (bytes_count > threshold_for_rep_stos) {
             reserve_named_register(src_loc_tk, indent, "rax");
             reserve_named_register(src_loc_tk, indent, "rdi");
             reserve_named_register(src_loc_tk, indent, "rcx");
-            xor_op(indent, x86::reg("al"), x86::reg("al"));
-            lea(indent, x86::reg("rdi"), dst);
-            mov(src_loc_tk, indent, x86::reg("rcx"), immediate(bytes_count));
+            xor_op(indent, machine_x86::reg("al"), machine_x86::reg("al"));
+            lea(indent, machine_x86::reg("rdi"), dst);
+            mov(src_loc_tk, indent, machine_x86::reg("rcx"),
+                immediate(bytes_count));
             rep_stos(indent, 'b');
             release_named_register(src_loc_tk, indent, "rcx");
             release_named_register(src_loc_tk, indent, "rdi");
@@ -521,7 +519,7 @@ class x86 final {
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
                       const char operation, const operand& dst,
-                      const operand& src) -> void {
+                      const operand& src) -> void override {
 
         assert(operation == '+' or operation == '-');
 
@@ -530,7 +528,7 @@ class x86 final {
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
                  const char operation, const operand& dst, const operand& src)
-        -> void {
+        -> void override {
 
         switch (operation) {
         case '&':
@@ -553,13 +551,8 @@ class x86 final {
         }
     }
 
-    struct multiply_registers {
-        operand left;
-        operand right;
-    };
-
     [[nodiscard]] auto needs_widened_multiply(const operand& dst) const
-        -> bool {
+        -> bool override {
 
         return dst.size == operand::size_byte;
     }
@@ -567,7 +560,7 @@ class x86 final {
     [[nodiscard]] auto begin_widened_multiply(const token& src_loc_tk,
                                               const size_t indent,
                                               const operand& value)
-        -> multiply_registers {
+        -> multiply_registers override {
 
         const operand left{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
@@ -585,7 +578,8 @@ class x86 final {
 
     auto end_widened_multiply(const token& src_loc_tk, const size_t indent,
                               const operand& dst,
-                              const multiply_registers& registers) -> void {
+                              const multiply_registers& registers)
+        -> void override {
 
         imul(src_loc_tk, indent, registers.left, registers.right);
         mov(src_loc_tk, indent, dst, registers.left);
@@ -595,7 +589,7 @@ class x86 final {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  const bool reuse_source = false) -> void {
+                  const bool reuse_source = false) -> void override {
 
         if (product.is_register()) {
             imul(src_loc_tk, indent, product, factor);
@@ -622,7 +616,7 @@ class x86 final {
     }
 
     auto validate_shift_operand(const token& src_loc_tk,
-                                const operand& count) const -> void {
+                                const operand& count) const -> void override {
 
         if (count.is_register() and count.base_register == "rcx") {
             throw compiler_exception{
@@ -632,7 +626,7 @@ class x86 final {
     }
 
     auto begin_shift(const token& src_loc_tk, const size_t indent,
-                     const size_t size) -> operand {
+                     const size_t size) -> operand override {
 
         return sized_register(
             alloc_named_register(src_loc_tk, indent, "rcx", *default_type_),
@@ -641,14 +635,15 @@ class x86 final {
 
     auto load_shift_count(const token& src_loc_tk, const size_t indent,
                           const operand& count,
-                          const size_t size = operand::size_qword) -> void {
+                          const size_t size = operand::size_qword)
+        -> void override {
 
         mov(src_loc_tk, indent, sized_register("rcx", size), count);
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
                const char operation, const operand& dst, const operand& count)
-        -> void {
+        -> void override {
 
         assert(operation == '<' or operation == '>');
 
@@ -656,7 +651,7 @@ class x86 final {
     }
 
     auto end_shift(const token& src_loc_tk, const size_t indent,
-                   const char operation, const operand& dst) -> void {
+                   const char operation, const operand& dst) -> void override {
 
         shift(src_loc_tk, indent, operation, dst,
               sized_register("rcx", operand::size_byte));
@@ -664,7 +659,8 @@ class x86 final {
     }
 
     auto validate_division_operand(const token& src_loc_tk,
-                                   const operand& divisor) const -> void {
+                                   const operand& divisor) const
+        -> void override {
 
         if (divisor.is_register() and (divisor.base_register == "rdx" or
                                        divisor.base_register == "rax")) {
@@ -676,7 +672,7 @@ class x86 final {
 
     auto divide(const token& src_loc_tk, const size_t indent,
                 const char operation, const operand& dst,
-                const operand& divisor) -> void {
+                const operand& divisor) -> void override {
 
         assert(operation == '/' or operation == '%');
 
@@ -698,24 +694,26 @@ class x86 final {
         }
 
         mov(src_loc_tk, indent, dst,
-            x86::reg(operation == '/' ? "rax" : "rdx"));
+            machine_x86::reg(operation == '/' ? "rax" : "rdx"));
 
         release_named_register(src_loc_tk, indent, "rdx");
         release_named_register(src_loc_tk, indent, "rax");
     }
 
     auto store_boolean(const token& src_loc_tk, const size_t indent,
-                       const operand& dst, const bool value) -> void {
+                       const operand& dst, const bool value) -> void override {
 
         mov(src_loc_tk, indent, dst, immediate(value ? 1 : 0));
     }
 
-    auto label(const size_t indent, const std::string_view label) -> void {
+    auto label(const size_t indent, const std::string_view label)
+        -> void override {
         asm_line(indent, "{}:", label);
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const operand& address) -> void {
+                    const operand& dst, const operand& address)
+        -> void override {
 
         if (dst.is_register()) {
             lea(indent, dst, address);
@@ -732,7 +730,7 @@ class x86 final {
     }
 
     auto unary(const size_t indent, const char operation, const operand& dst)
-        -> void {
+        -> void override {
 
         switch (operation) {
         case '~':
@@ -750,14 +748,16 @@ class x86 final {
         }
     }
 
-    [[nodiscard]] auto can_encode_index_scale(const size_t size) const -> bool {
+    [[nodiscard]] auto can_encode_index_scale(const size_t size) const
+        -> bool override {
 
         return size == operand::size_byte or size == operand::size_word or
                size == operand::size_dword or size == operand::size_qword;
     }
 
     auto scale_index(const token& src_loc_tk, const size_t indent,
-                     const operand& index, const size_t element_size) -> void {
+                     const operand& index, const size_t element_size)
+        -> void override {
 
         if (element_size <= 1) {
             return;
@@ -771,20 +771,23 @@ class x86 final {
     }
 
     auto exit_process(const token& src_loc_tk, const size_t indent,
-                      const int exit_code) -> void {
+                      const int exit_code) -> void override {
 
-        mov(src_loc_tk, indent, x86::reg("rdi"), immediate(exit_code));
-        mov(src_loc_tk, indent, x86::reg("rax"), immediate(syscall_exit));
+        mov(src_loc_tk, indent, machine_x86::reg("rdi"), immediate(exit_code));
+        mov(src_loc_tk, indent, machine_x86::reg("rax"),
+            immediate(syscall_exit));
         syscall(indent);
     }
 
-    [[nodiscard]] auto is_variables_base(const operand& reg) const -> bool {
+    [[nodiscard]] auto is_variables_base(const operand& reg) const
+        -> bool override {
 
         return not reg.is_indexed() and reg.base_register == "rbp";
     }
 
     auto address_of_variable(const token& src_loc_tk, const size_t indent,
-                             const operand& dst, const int32_t offset) -> void {
+                             const operand& dst, const int32_t offset)
+        -> void override {
 
         const operand address{operand::mem("rbp", {}, 1, offset)};
         if (dst.is_register()) {
@@ -800,22 +803,22 @@ class x86 final {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    auto reserve_variables_base() -> void {
+    auto reserve_variables_base() -> void override {
         reserve_named_register(token{}, 0, "rbp");
     }
 
-    auto release_variables_base() -> void {
+    auto release_variables_base() -> void override {
         release_named_register(token{}, 0, "rbp");
     }
 
-    auto program_start() -> void {
+    auto program_start() -> void override {
         println(";\n; generated by baz\n;\n\ndefault rel\n");
         println("\nsection .text\nbits 64\nglobal _start\n_start:\nlea rbp, "
                 "[dat]\n\n;\n; "
                 "program\n;\n");
     }
 
-    auto program_end() -> void {
+    auto program_end() -> void override {
         println("    ; system call: exit 0");
         println("    mov rax, 60");
         println("    mov rdi, 0");
@@ -823,16 +826,10 @@ class x86 final {
         println();
     }
 
-    struct bounds_check_options {
-        bool upper{};
-        bool lower{};
-        bool with_line{};
-    };
-
     auto check_bounds(const token& src_loc_tk, const size_t indent,
                       const operand& reg_to_check, const size_t array_size,
                       const bool allow_end, const operand& reg_size,
-                      const bounds_check_options& options) -> void {
+                      const bounds_check_options& options) -> void override {
 
         if (not options.upper and not options.lower) {
             return;
@@ -854,7 +851,7 @@ class x86 final {
         if (options.lower) {
             test(indent, reg_to_check, reg_to_check);
             if (options.with_line) {
-                cmovs(indent, x86::reg("rbp"), reg_line_num);
+                cmovs(indent, machine_x86::reg("rbp"), reg_line_num);
             }
             jcc(indent, "s", "panic_bounds");
         }
@@ -873,7 +870,7 @@ class x86 final {
             }
             if (options.with_line) {
                 op(src_loc_tk, indent, std::format("cmov{}", comparison),
-                   x86::reg("rbp"), reg_line_num);
+                   machine_x86::reg("rbp"), reg_line_num);
             }
             jcc(indent, comparison, "panic_bounds");
         }
@@ -883,7 +880,7 @@ class x86 final {
         }
     }
 
-    auto emit_bounds_failure_handler(const bool with_line) -> void {
+    auto emit_bounds_failure_handler(const bool with_line) -> void override {
         if (not with_line) {
             println();
             println("panic_bounds:");
@@ -934,12 +931,12 @@ class x86 final {
         }
     }
 
-    auto begin_data(const size_t alignment) -> void {
+    auto begin_data(const size_t alignment) -> void override {
         println("\nsection .data\nalign {}\ndat:", alignment);
     }
 
     auto reserve_variables(const size_t alignment, const size_t bytes_count)
-        -> void {
+        -> void override {
 
         println("dat.end:\n\nsection .bss.vars nobits alloc write\nalign "
                 "{}\nvars:\nvars "
@@ -947,25 +944,24 @@ class x86 final {
                 alignment, bytes_count);
     }
 
-    struct data_initializer {
-        int64_t value{};
-        std::string_view unary_operations;
-    };
-
     auto emit_data(const size_t element_size, const data_initializer& value)
-        -> void {
+        -> void override {
 
         print("{} ", get_data_def(element_size));
         emit_data_value(value);
         println();
     }
 
-    template <std::ranges::input_range values_t>
-    auto emit_data_array(const size_t element_size, values_t&& values) -> void {
+    using machine::emit_data_array;
+
+    auto emit_data_array(const size_t element_size,
+                         const std::function_ref<bool(data_initializer&)> next)
+        -> void override {
 
         print("{} ", get_data_def(element_size));
         bool first{true};
-        for (const data_initializer value : std::forward<values_t>(values)) {
+        data_initializer value;
+        while (next(value)) {
             if (not first) {
                 print(", ");
             }
@@ -975,7 +971,7 @@ class x86 final {
         println();
     }
 
-    auto emit_string_data(const std::string_view value) -> void {
+    auto emit_string_data(const std::string_view value) -> void override {
         print("db `");
         size_t position{};
         while (position < value.size()) {
@@ -990,12 +986,13 @@ class x86 final {
         println("`");
     }
 
-    auto emit_zero_data(const size_t bytes_count) const -> void {
+    auto emit_zero_data(const size_t bytes_count) const -> void override {
         emit_repeated_data(operand::size_byte, bytes_count, {});
     }
 
     auto emit_repeated_data(const size_t element_size, const size_t count,
-                            const data_initializer& value) const -> void {
+                            const data_initializer& value) const
+        -> void override {
 
         std::println(os_.get(), "times {} {} {}{}", count,
                      get_data_def(element_size), value.unary_operations,
@@ -1004,7 +1001,7 @@ class x86 final {
 
     // returns 0 if operand is not a register
     [[nodiscard]] auto register_size(const std::string_view operand) const
-        -> size_t {
+        -> size_t override {
 
         if (operand == "rax" or operand == "rbx" or operand == "rcx" or
             operand == "rdx" or operand == "rbp" or operand == "rsi" or
@@ -1047,12 +1044,14 @@ class x86 final {
         return 0;
     }
 
-    [[nodiscard]] auto reg(const std::string_view name) const -> operand {
+    [[nodiscard]] auto reg(const std::string_view name) const
+        -> operand override {
         return operand::reg(name, register_size(name));
     }
 
     [[nodiscard]] auto sized_register(const std::string_view reg,
-                                      const size_t size) const -> operand {
+                                      const size_t size) const
+        -> operand override {
 
         operand result{operand::reg(sized_register_operand(reg, size), size)};
         result.type_ptr = &builtin_type_for_size(size);
@@ -1061,7 +1060,8 @@ class x86 final {
     }
 
     [[nodiscard]] auto sized_register(const operand& reg,
-                                      const size_t size) const -> operand {
+                                      const size_t size) const
+        -> operand override {
 
         assert(reg.is_register());
 

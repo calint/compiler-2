@@ -5,6 +5,7 @@
 #include <charconv>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <optional>
 #include <ostream>
 #include <print>
@@ -17,9 +18,9 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "lut.hpp"
+#include "machine.hpp"
 #include "statement.hpp"
 #include "type.hpp"
-#include "x86.hpp"
 
 class stmt_def_func;
 class stmt_def_field;
@@ -235,7 +236,7 @@ class toc final {
         const type* type_ptr;
     };
 
-    x86 x86_;
+    std::reference_wrapper<::machine> machine_;
     std::string_view source_;
     std::vector<frame> frames_;
     std::vector<const stmt_def_func*> func_defs_;
@@ -259,17 +260,19 @@ class toc final {
     static constexpr size_t stack_alignment{16};
 
   public:
-    toc(std::ostream& os, const std::string_view source,
+    toc(::machine& backend, const std::string_view source,
         const size_t vars_capacity, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
-        : x86_{os, source}, source_{source}, vars_capacity_{vars_capacity},
+        : machine_{backend}, source_{source}, vars_capacity_{vars_capacity},
           bounds_check_upper_{bounds_check_upper},
           bounds_check_with_line_{bounds_check_with_line},
           bounds_check_lower_{bounds_check_lower} {}
 
-    [[nodiscard]] auto machine() -> x86& { return x86_; }
+    [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
-    [[nodiscard]] auto machine() const -> const x86& { return x86_; }
+    [[nodiscard]] auto machine() const -> const ::machine& {
+        return machine_.get();
+    }
 
     auto add_alias(const alias_info& ai) -> void {
         frames_.back().add_alias(ai);
@@ -287,7 +290,7 @@ class toc final {
                             name, source_location_hr(c.declared_at_tk)));
         }
 
-        x86& x{machine()};
+        ::machine& x{machine()};
 
         x.comment(src_loc_tk, indent, "const {} = {}", name, value);
         frames_.back().add_const(name,
@@ -356,7 +359,7 @@ class toc final {
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  bool is_dat) -> void {
 
-        if (x86::register_size(var.name) != 0) {
+        if (machine_.get().register_size(var.name) != 0) {
             throw compiler_exception{
                 src_loc_tk,
                 std::format("cannot use register name '{}' as a variable name",
@@ -410,7 +413,7 @@ class toc final {
         const ident_info& name_info{
             make_ident_info_parsing(src_loc_tk, var.name)};
 
-        x86& x{machine()};
+        ::machine& x{machine()};
 
         std::string text{
             std::format("{}: {}", var.name, name_info.type_ref().name())};
@@ -1212,7 +1215,7 @@ class toc final {
         -> ident_info {
 
         // is it a register?
-        if (const size_t reg_size{x86::register_size(id.str())};
+        if (const size_t reg_size{machine_.get().register_size(id.str())};
             reg_size != 0) {
 
             operand reg{operand::reg(id.str(), reg_size)};

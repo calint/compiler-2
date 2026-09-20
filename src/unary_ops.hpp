@@ -13,7 +13,7 @@
 #include "tokenizer.hpp"
 
 class toc;
-class x86;
+class machine;
 struct operand;
 
 class unary_ops final {

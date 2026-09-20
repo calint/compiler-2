@@ -10,7 +10,6 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "null_stream.hpp"
 #include "statement.hpp"
 #include "stmt_def_const.hpp"
 #include "stmt_def_func.hpp"
@@ -31,17 +30,19 @@ class program final {
     type type_bool{"bool", operand::size_byte, true};
 
     std::vector<std::unique_ptr<statement>> statements_;
-    null_stream null_stream_;
     toc tc_; // table of contents
     size_t vars_size_{};
 
   public:
-    program(const std::string_view source, const size_t vars_size,
-            const bool bounds_check_upper, const bool bounds_check_lower,
-            const bool bounds_check_with_line)
-        : tc_{null_stream_,       source,
-              vars_size,          bounds_check_upper,
-              bounds_check_lower, bounds_check_with_line},
+    program(machine& backend, const std::string_view source,
+            const size_t vars_size, const bool bounds_check_upper,
+            const bool bounds_check_lower, const bool bounds_check_with_line)
+        : tc_{backend,
+              source,
+              vars_size,
+              bounds_check_upper,
+              bounds_check_lower,
+              bounds_check_with_line},
           vars_size_{vars_size} {
 
         // create a placeholder token to use with 'toc' functions
@@ -64,7 +65,7 @@ class program final {
         tc_.set_type_bool(type_bool);
         tc_.set_type_default(type_i64);
 
-        x86& x{tc_.machine()};
+        machine& x{tc_.machine()};
 
         // note: the first argument is the default type
         x.set_builtin_types(type_i64, type_i32, type_i16, type_i8, type_bool,
@@ -119,7 +120,7 @@ class program final {
     auto compile(toc& tc, const size_t indent) const -> void {
         tc.reset_usage();
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.program_start();
 
@@ -155,7 +156,7 @@ class program final {
     }
 
     auto build(std::ostream& os) -> void {
-        x86& x{tc_.machine()};
+        machine& x{tc_.machine()};
 
         std::ostream& previous{x.use_stream(os)};
         x.reserve_variables_base();

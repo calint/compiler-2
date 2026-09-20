@@ -37,7 +37,7 @@ class stmt_if_branch final : public statement {
 
         // the beginning of this branch
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.label(indent, if_bgn_lbl);
         // compile the boolean ops list

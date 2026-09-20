@@ -226,6 +226,23 @@ CLI_REPRODUCE_SOURCE() {
     echo ok
 }
 
+CLI_TARGETS() {
+    echo -n "cli target selection: "
+    $BIN t15.baz >gen.s 2>err
+    $BIN --target=x86_64 t15.baz >out 2>err
+    cmp -s gen.s out
+    $BIN --nopt t15.baz >gen.s 2>err
+    $BIN --target=x86_64 --nopt t15.baz >out 2>err
+    cmp -s gen.s out
+    local exit_code=0
+    $BIN --target=rv32i t15.baz >out 2>err || exit_code=$?
+    [[ $exit_code -eq 1 ]]
+    [[ ! -s out ]]
+    grep -Fxq "todo" err
+    grep -Fxq "panic: RV32I backend not implemented" err
+    echo ok
+}
+
 # Run all test cases
 source "$SCRIPT_DIR/run-tests-cases.sh"
 CLI --vars=65536 0 --help
@@ -238,6 +255,11 @@ CLI --vars=16junk 1 --help
 CLI --vars=18446744073709551616 1 --help
 CLI --stack=65536 1 --help
 CLI --no-reproduce 1 --help
+CLI --target=x86_64 0 --help
+CLI --target=rv32i 0 --help
+CLI --target= 1 --help
+CLI --target=unknown 1 --help
+CLI_TARGETS
 CLI_REPRODUCE_SOURCE
 python3 "$SCRIPT_DIR/test-arena.py"
 

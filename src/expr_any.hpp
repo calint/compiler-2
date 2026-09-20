@@ -127,7 +127,7 @@ class expr_any final : public statement {
 
         ident_info ii{dst_info};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         for (const auto [i, el] : std::views::enumerate(vars_)) {
             x.comment(tok(), indent, "[{}]", i);
@@ -284,7 +284,7 @@ class expr_any final : public statement {
                 e.compile(tc, indent, dst_info);
             },
             [&](const expr_bool_ops_list& e) -> void {
-                x86& x{tc.machine()};
+                machine& x{tc.machine()};
 
                 // if not expression assign to destination
                 if (not e.is_expression()) {

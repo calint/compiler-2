@@ -16,7 +16,7 @@
 
 class toc;
 class type;
-class x86;
+class machine;
 
 class statement {
     token token_;

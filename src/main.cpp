@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <print>
 #include <span>
 #include <sstream>
@@ -17,6 +18,10 @@
 #include "decouple.hpp"
 #include "decouple_impl.hpp" // IWYU pragma: keep
 #include "jump_optimizer.hpp"
+#include "machine.hpp"
+#include "machine_rv32i.hpp"
+#include "machine_x86.hpp"
+#include "null_stream.hpp"
 #include "panic_exception.hpp"
 #include "program.hpp"
 #include "tokenizer.hpp"
@@ -39,6 +44,7 @@ auto main(const int argc, const char* argv[]) -> int {
 
     // default values
     const char* src_file_name{"prog.baz"};
+    std::string_view target{"x86_64"};
     size_t vars_size{default_vars_size};
     bool checks_upper{};
     bool checks_show_line{};
@@ -55,6 +61,8 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("Usage: {} [OPTIONS] [filename]", prg);
             std::println("");
             std::println("Options:");
+            std::println(
+                "  --target=MACHINE    x86_64 (default) or rv32i (TODO)");
             std::println("  --vars=SIZE         Set variable storage size "
                          "(default: "
                          "0x10000/65536)");
@@ -94,6 +102,7 @@ auto main(const int argc, const char* argv[]) -> int {
             return 0;
         }
         constexpr std::string_view vars_option{"--vars="};
+        constexpr std::string_view target_option{"--target="};
         constexpr std::string_view checks_option{"--checks="};
         constexpr std::string_view nopt_option{"--nopt"};
         if (arg.starts_with(vars_option)) {
@@ -127,6 +136,18 @@ auto main(const int argc, const char* argv[]) -> int {
                 std::println(stderr,
                              "Could not parse variable storage size: \"{}\"",
                              arg.substr(vars_option.size()));
+
+                std::println(stderr, "Use --help for usage information");
+
+                return 1;
+            }
+        } else if (arg.starts_with(target_option)) {
+            target = arg.substr(target_option.size());
+            if (target != "x86_64" and target != "rv32i") {
+                std::println(stderr,
+                             "Invalid target: '{}'. Supported targets are: "
+                             "x86_64, rv32i.",
+                             target);
 
                 std::println(stderr, "Use --help for usage information");
 
@@ -177,8 +198,16 @@ auto main(const int argc, const char* argv[]) -> int {
     std::string src;
     try {
         src = read_file_to_string(src_file_name);
-        program prg{src, vars_size, checks_upper, checks_lower,
-                    checks_show_line};
+        null_stream initial_output;
+        std::unique_ptr<machine> backend;
+        if (target == "x86_64") {
+            backend = std::make_unique<machine_x86>(initial_output, src);
+        } else {
+            backend = std::make_unique<machine_rv32i>();
+        }
+
+        program prg{*backend,     src,          vars_size,
+                    checks_upper, checks_lower, checks_show_line};
 
         if (reproduce_source) {
             std::ofstream reproduced_source{"diff.baz"};
@@ -191,7 +220,7 @@ auto main(const int argc, const char* argv[]) -> int {
             }
         }
 
-        if (optimize_jumps) {
+        if (optimize_jumps and target == "x86_64") {
             // with jump optimizations
             std::stringstream ss1;
             std::stringstream ss2;

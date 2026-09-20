@@ -66,7 +66,7 @@ class stmt_builtin_equal final : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 

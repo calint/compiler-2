@@ -10,8 +10,8 @@
 
 #include "decouple.hpp"
 #include "expression.hpp"
+#include "machine.hpp"
 #include "toc.hpp"
-#include "x86.hpp"
 
 //
 // a flat list of elements and nested lists instead of a binary tree
@@ -277,7 +277,7 @@ class expr_ops_list final : public expression {
         // without scratch register
         std::stringstream ss1;
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         std::ostream& prev1{x.use_stream(ss1)};
         do_compile(tc, indent, dst_info);
@@ -459,7 +459,7 @@ class expr_ops_list final : public expression {
             op_str.push_back('>');
         }
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(src.tok(), indent,
                   statement::trimmed_source(src, dst.id, op_str));
@@ -525,7 +525,7 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         x.comment(src.tok(), indent, "{}",
                   src.is_expression() ? "= expression" : "");
@@ -547,7 +547,7 @@ class expr_ops_list final : public expression {
 
         const size_t dst_size{dst_info.operand.size};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -576,13 +576,13 @@ class expr_ops_list final : public expression {
 
         const ident_info src_info{tc.make_ident_info(src)};
 
-        if (x86::needs_widened_multiply(dst_info.operand)) {
+        if (x.needs_widened_multiply(dst_info.operand)) {
             std::vector<operand> lea_registers;
             const operand src_operand{
                 tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
             const unary_ops& uops{src.get_unary_ops()};
-            const x86::multiply_registers registers{
+            const machine::multiply_registers registers{
                 x.begin_widened_multiply(src.tok(), indent, dst_info.operand)};
 
             if (src_info.is_const()) {
@@ -700,7 +700,7 @@ class expr_ops_list final : public expression {
 
         const size_t dst_size{dst_info.operand.size};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -779,7 +779,7 @@ class expr_ops_list final : public expression {
 
         const size_t dst_size{dst_info.operand.size};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -843,7 +843,7 @@ class expr_ops_list final : public expression {
 
         const size_t dst_size{dst_info.operand.size};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -873,7 +873,7 @@ class expr_ops_list final : public expression {
             return;
         }
 
-        x86::validate_shift_operand(src.tok(), src_info.operand);
+        x.validate_shift_operand(src.tok(), src_info.operand);
 
         // 'src' is not a constant
 
@@ -912,7 +912,7 @@ class expr_ops_list final : public expression {
 
         const size_t dst_size{dst_info.operand.size};
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -945,7 +945,7 @@ class expr_ops_list final : public expression {
             return;
         }
 
-        x86::validate_division_operand(src.tok(), src_info.operand);
+        x.validate_division_operand(src.tok(), src_info.operand);
 
         // 'src' is not an expression and not a constant
 
@@ -977,7 +977,8 @@ class expr_ops_list final : public expression {
         free_registers(src, x, indent, lea_registers);
     }
 
-    static auto free_registers(const statement& st, x86& x, const size_t indent,
+    static auto free_registers(const statement& st, machine& x,
+                               const size_t indent,
                                const std::span<const operand> registers)
         -> void {
 

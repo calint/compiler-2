@@ -119,7 +119,7 @@ class stmt_if final : public statement {
         // if it wasn't a constant evaluation that was true, generate the else
         // code
 
-        x86& x{tc.machine()};
+        machine& x{tc.machine()};
 
         if (not branch_evaluated_to_true and not else_code_.is_empty()) {
             x.label(indent, label_else_branch);
