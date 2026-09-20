@@ -6,13 +6,54 @@ func exit(v:reg_rdi){
     syscall()
 }
 
+func probe(calls, expected_call, value : bool) : bool result {
+    calls = calls + 1
+    if calls != expected_call exit(90)
+    result = value
+}
+
 func main(){
     var a=1
     var b=2
     var c=3
     var d=4
     
-    if a==0 or (b==1 and c==3) or d==4 exit(0) # should be true
+    if not (a==0 or (b==1 and c==3) or d==4) exit(1)
 
-    exit(1)
+    var calls = 0
+    var flag : bool = true
+    var result : bool = flag or probe(calls, 1, false)
+    if not result exit(2)
+    if calls != 0 exit(3)
+
+    flag = false
+    result = flag or probe(calls, 1, true)
+    if not result exit(4)
+    if calls != 1 exit(5)
+
+    calls = 0
+    result = flag or probe(calls, 1, false)
+    if result exit(6)
+    if calls != 1 exit(7)
+
+    calls = 0
+    result = true or probe(calls, 1, false)
+    if not result exit(8)
+    if calls != 0 exit(9)
+
+    result = false or probe(calls, 1, true)
+    if not result exit(10)
+    if calls != 1 exit(11)
+
+    calls = 0
+    if (probe(calls, 1, false) and probe(calls, 2, true)) or probe(calls, 2, true) {
+        if calls != 2 exit(12)
+    } else exit(13)
+
+    calls = 0
+    result = not (probe(calls, 1, true) or probe(calls, 2, false))
+    if result exit(14)
+    if calls != 1 exit(15)
+
+    exit(0)
 }

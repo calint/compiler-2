@@ -11,15 +11,15 @@ func foozi(x : i8, y : i16) {
 }
 
 func main() {
-    if true assert(true)
+    if true assert(true) else assert(false)
     if not true assert(false)
     if false  assert(false)
-    if not false assert(true)
+    if not false assert(true) else assert(false)
     if false and false assert(false)
-    if true and true assert(true)
+    if true and true assert(true) else assert(false)
     if not (true) assert(false)
-    if not (false)  assert(true)
-    if not (true and false) assert(true)
+    if not (false)  assert(true) else assert(false)
+    if not (true and false) assert(true) else assert(false)
     if not (false or true)  assert(false)
 
     var values : i32[4]
