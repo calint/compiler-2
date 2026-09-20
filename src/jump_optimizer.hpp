@@ -20,27 +20,27 @@ struct jump_info {
 };
 
 [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
-    return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f' ||
+    return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or ch == '\f' or
            ch == '\v';
 }
 
 [[nodiscard]] static auto is_ascii_lower(const char ch) -> bool {
-    return ch >= 'a' && ch <= 'z';
+    return ch >= 'a' and ch <= 'z';
 }
 
 [[nodiscard]] static auto is_ascii_alpha(const char ch) -> bool {
-    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+    return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z');
 }
 
 [[nodiscard]] static auto is_ascii_alnum(const char ch) -> bool {
-    return is_ascii_alpha(ch) || (ch >= '0' && ch <= '9');
+    return is_ascii_alpha(ch) or (ch >= '0' and ch <= '9');
 }
 
 [[nodiscard]] static auto leading_ws(const std::string_view line)
     -> std::string_view {
 
     size_t first{};
-    while (first < line.size() && is_ascii_space(line[first])) {
+    while (first < line.size() and is_ascii_space(line[first])) {
         ++first;
     }
 
@@ -51,19 +51,20 @@ struct jump_info {
     -> std::optional<jump_info> {
 
     size_t i{leading_ws(line).size()};
-    if (i == line.size() || line[i] != 'j') {
+    if (i == line.size() or line[i] != 'j') {
         return std::nullopt;
     }
 
     const size_t mnemonic_start{i};
     ++i;
     size_t mnemonic_letters{};
-    while (i < line.size() && mnemonic_letters < 2 && is_ascii_lower(line[i])) {
+    while (i < line.size() and mnemonic_letters < 2 and
+           is_ascii_lower(line[i])) {
         ++i;
         ++mnemonic_letters;
     }
 
-    if (mnemonic_letters == 0 || i >= line.size() ||
+    if (mnemonic_letters == 0 or i >= line.size() or
         not is_ascii_space(line[i])) {
 
         return std::nullopt;
@@ -71,7 +72,7 @@ struct jump_info {
 
     const size_t mnemonic_end{i};
 
-    while (i < line.size() && is_ascii_space(line[i])) {
+    while (i < line.size() and is_ascii_space(line[i])) {
         ++i;
     }
     if (i >= line.size()) {
@@ -80,7 +81,7 @@ struct jump_info {
 
     const size_t label_start{i};
     size_t label_end{line.size()};
-    while (label_end > label_start && is_ascii_space(line[label_end - 1])) {
+    while (label_end > label_start and is_ascii_space(line[label_end - 1])) {
         --label_end;
     }
     if (label_start == label_end) {
@@ -102,16 +103,16 @@ struct jump_info {
     }
 
     const size_t label_start{i};
-    if (not is_ascii_alpha(line[i]) && line[i] != '_') {
+    if (not is_ascii_alpha(line[i]) and line[i] != '_') {
         return std::nullopt;
     }
 
     ++i;
-    while (i < line.size() && (is_ascii_alnum(line[i]) || line[i] == '_')) {
+    while (i < line.size() and (is_ascii_alnum(line[i]) or line[i] == '_')) {
         ++i;
     }
 
-    if (i == line.size() || line[i] != ':') {
+    if (i == line.size() or line[i] != ':') {
         return std::nullopt;
     }
 
@@ -141,7 +142,7 @@ struct jump_info {
     }
 
     size_t end{colon};
-    while (end > start && is_ascii_space(line[end - 1])) {
+    while (end > start and is_ascii_space(line[end - 1])) {
         --end;
     }
     if (end == start) {
@@ -226,7 +227,7 @@ auto pass1(std::istream& is, std::ostream& os) -> void {
                 parse_label_strict(line)}) {
 
             // target label reached: drop pending jumps, print label
-            if (pending_label && *pending_label == *lbl) {
+            if (pending_label and *pending_label == *lbl) {
                 opts_count += pending_jumps.size();
                 pending_jumps.clear();
                 pending_label.reset();
@@ -290,7 +291,7 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
         }
 
         const std::optional<jump_info> jmp_match{parse_jump(second_line)};
-        if (not jmp_match || jmp_match->mnemonic != "jmp") {
+        if (not jmp_match or jmp_match->mnemonic != "jmp") {
             print2(first_line, second_line);
             continue;
         }

@@ -25,8 +25,8 @@ class statement {
     const type* type_{};
 
     [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
-        return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' ||
-               ch == '\f' || ch == '\v';
+        return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or
+               ch == '\f' or ch == '\v';
     }
 
     [[nodiscard]] static auto collapse_whitespace(const std::string_view text)
