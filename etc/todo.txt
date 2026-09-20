@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] constant evaluation folding in expr_ops_list
 [ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] support variable string initializers
 [ ] read/write/exit builtin so that mov and register access can be removed
