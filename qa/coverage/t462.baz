@@ -1,0 +1,24 @@
+# signed byte multiplication: wide results expose missing sign extension
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+func main() {
+    var negative : i8 = -7
+    var positive : i8 = 3
+    var other_negative : i8 = -3
+
+    var wide : i64 = positive * negative
+    assert(1, wide == -21)
+    wide = negative * positive
+    assert(2, wide == -21)
+    wide = negative * other_negative
+    assert(3, wide == 21)
+
+    var narrow : i8 = negative * positive
+    assert(4, narrow == -21)
+    narrow = negative * other_negative
+    assert(5, narrow == 21)
+    narrow = negative * 3
+    assert(6, narrow == -21)
+}
