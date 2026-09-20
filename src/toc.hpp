@@ -799,7 +799,7 @@ class toc final {
         const x86& x{machine()};
 
         return make_ident_info_register(reg, reg,
-                                        x.get_allocated_register_type(reg));
+                                        x.allocated_register_type(reg));
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
@@ -1189,7 +1189,7 @@ class toc final {
                 const x86& x{machine()};
 
                 return make_ident_info_register(
-                    ident, id.str(), x.get_allocated_register_type(id.str()));
+                    ident, id.str(), x.allocated_register_type(id.str()));
             }
 
             return make_ident_info_register(

@@ -214,8 +214,7 @@ class x86 final {
     // returns the type a currently allocated register holds, falling back to
     // a builtin type inferred from the register's width if it isn't (or is
     // no longer) allocated
-    [[nodiscard]] auto
-    get_allocated_register_type(const std::string_view reg) const
+    [[nodiscard]] auto allocated_register_type(const std::string_view reg) const
         -> const type& {
 
         for (const allocated_register& allocated : allocated_registers_) {
@@ -224,7 +223,7 @@ class x86 final {
             }
         }
 
-        return get_builtin_type_for_size(operand::register_size(reg));
+        return builtin_type_for_size(operand::register_size(reg));
     }
 
     // asserts register pools are balanced and prints usage stats; called
@@ -1541,7 +1540,7 @@ class x86 final {
     }
 
     // returns the cached builtin type (i64/i32/i16/i8) matching 'size'
-    [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
+    [[nodiscard]] auto builtin_type_for_size(const size_t size) const
         -> const type& {
 
         switch (size) {
