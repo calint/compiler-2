@@ -33,13 +33,13 @@ auto main(const int argc, const char* argv[]) -> int {
     const std::span<const char*> args{argv, static_cast<size_t>(argc)};
 #pragma clang diagnostic pop
 
-    constexpr size_t default_stack_size{0x10000};
-    constexpr size_t stack_alignment{16};
+    constexpr size_t default_vars_size{0x10000};
+    constexpr size_t vars_alignment{16};
     // note: to avoid "magic number" lint
 
     // default values
     const char* src_file_name{"prog.baz"};
-    size_t stack_size{default_stack_size};
+    size_t vars_size{default_vars_size};
     bool checks_upper{};
     bool checks_show_line{};
     bool checks_lower{};
@@ -55,14 +55,15 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("Usage: {} [OPTIONS] [filename]", prg);
             std::println("");
             std::println("Options:");
-            std::println("  --stack=SIZE        Set stack size (default: "
+            std::println("  --vars=SIZE         Set variable storage size "
+                         "(default: "
                          "0x10000/65536)");
 
             std::println(
                 "                      Supports decimal and hex (0x prefix) ");
 
             std::println("                      Must be a multiple of {}",
-                         stack_alignment);
+                         vars_alignment);
 
             std::println("  --checks=TYPE       Enable runtime checks:");
             std::println(
@@ -86,42 +87,44 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("");
             std::println("Examples:");
             std::println("  {} myfile.baz", prg);
-            std::println("  {} --stack=131072 --checks=upper prog.baz", prg);
+            std::println("  {} --vars=131072 --checks=upper prog.baz", prg);
             std::println("  {} --checks=upper,lower,line prog.baz", prg);
             std::println("  {} --checks=upper prog.baz", prg);
             return 0;
         }
-        constexpr std::string_view stack_option{"--stack="};
+        constexpr std::string_view vars_option{"--vars="};
         constexpr std::string_view checks_option{"--checks="};
         constexpr std::string_view nopt_option{"--nopt"};
-        if (arg.starts_with(stack_option)) {
+        if (arg.starts_with(vars_option)) {
             try {
-                const std::string stack_text{arg.substr(stack_option.size())};
+                const std::string vars_text{arg.substr(vars_option.size())};
                 size_t chars_read{};
                 const uint64_t parsed_size{
-                    std::stoull(stack_text, &chars_read, 0)};
+                    std::stoull(vars_text, &chars_read, 0)};
 
-                if (stack_text.empty() or stack_text.starts_with('-') or
-                    chars_read != stack_text.size() or parsed_size == 0 or
+                if (vars_text.empty() or vars_text.starts_with('-') or
+                    chars_read != vars_text.size() or parsed_size == 0 or
                     not std::in_range<size_t>(parsed_size)) {
 
-                    throw std::invalid_argument{"invalid stack size"};
+                    throw std::invalid_argument{
+                        "invalid variable storage size"};
                 }
 
-                if (parsed_size % stack_alignment != 0) {
+                if (parsed_size % vars_alignment != 0) {
                     std::println(stderr,
-                                 "Invalid stack size: '{}' is not a multiple "
-                                 "of {}",
-                                 stack_text, stack_alignment);
+                                 "Invalid variable storage size: '{}' is not "
+                                 "a multiple of {}",
+                                 vars_text, vars_alignment);
 
                     std::println(stderr, "Use --help for usage information");
                     return 1;
                 }
 
-                stack_size = static_cast<size_t>(parsed_size);
+                vars_size = static_cast<size_t>(parsed_size);
             } catch (...) {
-                std::println(stderr, "Could not parse stack size: \"{}\"",
-                             arg.substr(stack_option.size()));
+                std::println(stderr,
+                             "Could not parse variable storage size: \"{}\"",
+                             arg.substr(vars_option.size()));
 
                 std::println(stderr, "Use --help for usage information");
                 return 1;
@@ -169,7 +172,7 @@ auto main(const int argc, const char* argv[]) -> int {
     std::string src;
     try {
         src = read_file_to_string(src_file_name);
-        program prg{src, stack_size, checks_upper, checks_lower,
+        program prg{src, vars_size, checks_upper, checks_lower,
                     checks_show_line};
 
         if (reproduce_source) {

@@ -44,7 +44,7 @@ if [[ "${1:-}" == --compile-workload ]]; then
     for ((repeat = 1; repeat <= PERF_REPEATS; ++repeat)); do
         for src in t*.baz; do
             status=0
-            ../../baz "$src" --stack=262144 --checks=upper,lower,line "$@" \
+            ../../baz "$src" --vars=262144 --checks=upper,lower,line "$@" \
                 >/dev/null 2>../perf/compile-last-error.txt || status=$?
             printf '[perf] sweep %s: %s exit=%s\n' "$repeat" "$src" "$status"
             if ((status >= 128)); then

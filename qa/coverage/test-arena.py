@@ -85,9 +85,9 @@ def elf_layout(path):
     return by_name, writable[0]
 
 
-def compile_source(directory, source, stack_size, options):
+def compile_source(directory, source, vars_size, options):
     # Reuse a temporary source filename. stdout is assembly; stderr is diagnostics.
-    # --stack is the existing CLI name for the reserved variable-storage size.
+    # --vars is the CLI option for the reserved variable-storage size.
     source_path = directory / "arena.baz"
     source_path.write_text(source)
     # Instrumented compiler builds leave profiles outside the temporary directory
@@ -97,7 +97,7 @@ def compile_source(directory, source, stack_size, options):
         "LLVM_PROFILE_FILE": str(ROOT / "qa/coverage/arena-%p.profraw"),
     }
     result = subprocess.run(
-        [str(ROOT / "baz"), str(source_path), f"--stack={stack_size}", *options],
+        [str(ROOT / "baz"), str(source_path), f"--vars={vars_size}", *options],
         cwd=directory, env=environment, text=True, capture_output=True,
     )
     return result
@@ -200,8 +200,8 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         for mode, options in modes.items():
             measurements = []
             # Compare 4 KiB and 1 MiB reservations: only memory size should grow.
-            for stack_size in (4096, 1048576):
-                result = compile_source(directory, source, stack_size, options)
+            for vars_size in (4096, 1048576):
+                result = compile_source(directory, source, vars_size, options)
                 assert result.returncode == 0, result.stderr
                 assembly = directory / "arena.s"
                 assembly.write_text(result.stdout)
@@ -219,7 +219,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                 # SHT_NOBITS (8) reserves memory without storing bytes in the file.
                 # SHF_WRITE | SHF_ALLOC (1 | 2) makes it writable allocated storage.
                 assert variables[1] == 8 and variables[2] & 3 == 3
-                assert variables[5] == stack_size
+                assert variables[5] == vars_size
                 assert variables[3] % 16 == 0
                 if data_size:
                     data = sections[".data"]
@@ -231,7 +231,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                     assert variables[3] == segment[3]
                 # The file backs only initialized data; memory must cover vars too.
                 assert segment[5] == data_size
-                assert segment[6] >= variables[3] - segment[3] + stack_size
+                assert segment[6] >= variables[3] - segment[3] + vars_size
                 # Startup uses rbp for the arena base, not the OS-provided rsp.
                 assert "default rel" in result.stdout
                 assert "lea rbp, [dat]" in result.stdout

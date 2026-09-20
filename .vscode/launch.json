@@ -9,7 +9,7 @@
             "args": [
                 "qa/coverage/t446.baz",
                 //"prog.baz",
-                "--stack=131072",
+                "--vars=131072",
                 //"--checks=upper,lower,line",
                 "--nopt"
             ],

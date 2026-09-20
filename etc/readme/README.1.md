@@ -34,16 +34,19 @@ x86_64 assembly on Linux.
   code run `./make.sh`
 * after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
   run `prog.baz`
-  * optional parameters: _stack size_, _bounds check_, with _line number
+  * optional parameters: _variable storage size_, _bounds check_, with _line number
     information_ and _jump optimizations_ in boolean expression e.g:
-    * `./run-baz.sh myprogram.baz --stack=262144`: stack size, no runtime checks
-    * `./run-baz.sh myprogram.baz --stack=262144 --checks=upper`: checks upper
+    * `./run-baz.sh myprogram.baz --vars=262144`: reserves 262144 bytes for
+      variables, no runtime checks
+    * `./run-baz.sh myprogram.baz --vars=262144 --checks=upper`: checks upper
       bounds without line number information and is often enough to ensure
       catching negative values (faster)
-    * `./run-baz.sh myprogram.baz --stack=262144 --checks=upper,line`: checks
+    * `./run-baz.sh myprogram.baz --vars=262144 --checks=upper,line`: checks
       upper bounds with line number information
-    * `./run-baz.sh myprogram.baz --stack=262144 --checks=upper,lower,line`: checks
+    * `./run-baz.sh myprogram.baz --vars=262144 --checks=upper,lower,line`: checks
       bounds with line number information
+    * option `--vars=SIZE` reserves variable storage in bytes (default: 65536,
+      decimal or `0x` hex, positive multiple of 16)
     * option `--nopt` disables post processing jump optimizations in boolean
       expression
     * option `--no-reproduce` skips writing and verifying `diff.baz`;

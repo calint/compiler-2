@@ -323,8 +323,8 @@ SRC=t344 && EXP=255 && RUN_ERR
 SRC=t345 && EXP=255 && RUN_ERR
 SRC=t346 && EXP=255 && RUN_ERR
 SRC=t347 && EXP=255 && RUN_ERR
-SRC=t348 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=lower,line"
-SRC=t349 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=upper,line"
+SRC=t348 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower,line"
+SRC=t349 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=upper,line"
 SRC=t350 && EXP=255 && RUN_ERR
 SRC=t351 && EXP=0 && RUN
 SRC=t352 && EXP=255 && RUN_ERR
@@ -332,8 +332,8 @@ SRC=t353 && EXP=255 && RUN_ERR
 # SRC=t354 && EXP=255 && RUN_ERR  # extreme index generates nasm number-overflow warning
 SRC=t355 && EXP=255 && RUN_ERR
 SRC=t356 && EXP=0 && RUN
-SRC=t357 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=lower"
-SRC=t358 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=upper"
+SRC=t357 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower"
+SRC=t358 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=upper"
 SRC=t359 && EXP=255 && RUN_ERR
 SRC=t360 && EXP=255 && RUN_ERR
 SRC=t361 && EXP=255 && RUN_ERR
@@ -342,7 +342,7 @@ SRC=t363 && EXP=255 && RUN_ERR
 SRC=t364 && EXP=255 && RUN_ERR
 SRC=t367 && EXP=255 && RUN_ERR
 SRC=t368 && EXP=0 && RUN
-SRC=t369 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=upper,lower"
+SRC=t369 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=upper,lower"
 SRC=t370 && EXP=255 && RUN_ERR
 SRC=t371 && EXP=255 && RUN_ERR
 SRC=t372 && EXP=0 && RUN

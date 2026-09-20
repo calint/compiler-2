@@ -16,7 +16,7 @@ if [ "$1" != "nobuild" ]; then
 fi
 
 BIN="../../baz"
-OPTS="--stack=262144 --checks=upper,lower,line"
+OPTS="--vars=262144 --checks=upper,lower,line"
 
 rm -f gen.s out err
 
@@ -197,7 +197,7 @@ COMPERR() {
 CLI() {
     echo -n "cli $1: "
     set +e
-    LLVM_PROFILE_FILE="cli-$1.profraw" $BIN "$1" >/dev/null 2>err
+    LLVM_PROFILE_FILE="cli-$1.profraw" $BIN "$1" "${@:3}" >/dev/null 2>err
     local exit_code=$?
     set -e
 
@@ -225,6 +225,15 @@ CLI_NO_REPRODUCE() {
 
 # Run all test cases
 source "$SCRIPT_DIR/run-tests-cases.sh"
+CLI --vars=65536 0 --help
+CLI --vars=0x10000 0 --help
+CLI --vars= 1 --help
+CLI --vars=0 1 --help
+CLI --vars=-16 1 --help
+CLI --vars=17 1 --help
+CLI --vars=16junk 1 --help
+CLI --vars=18446744073709551616 1 --help
+CLI --stack=65536 1 --help
 python3 "$SCRIPT_DIR/test-arena.py"
 
 # Cleanup
