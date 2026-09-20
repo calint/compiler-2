@@ -62,13 +62,13 @@ class expr_type_value final : public statement {
     auto compile_lea(toc& tc, const size_t indent, const token& src_loc_tk,
                      std::vector<operand>& allocated_registers,
                      const operand& reg_size,
-                     std::span<const operand> lea) const -> operand override;
+                     std::span<const operand> lea_path) const -> operand override;
 
   private:
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
     auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
-                        const ident_info& dst_info, operand& op) const -> void;
+                        const ident_info& dst_info, operand& dst_op) const -> void;
 
     // implemented in 'decouple_impl.hpp'
     static auto validate_array_assignment(const token& src_loc_tk,
