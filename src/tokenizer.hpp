@@ -65,6 +65,7 @@ class tokenizer final {
                 if (is_next_char('"')) {
                     const size_t end_ix{char_ix_};
                     const std::string_view ws_after{next_whitespace()};
+
                     return token{ws_before,
                                  bgn_ix,
                                  src_.substr(bgn_ix + 1, end_ix - bgn_ix - 2),
@@ -89,6 +90,7 @@ class tokenizer final {
         const std::string_view txt{next_token_str()};
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_whitespace()};
+
         return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
     }
 
@@ -96,6 +98,7 @@ class tokenizer final {
         const std::string_view ws_before{next_whitespace()};
         if (is_eos() or src_[char_ix_] != ch) {
             move_back(ws_before.size());
+
             return {};
         }
 
@@ -105,6 +108,7 @@ class tokenizer final {
         ++char_ix_;
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_whitespace()};
+
         return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
     }
 
@@ -135,6 +139,7 @@ class tokenizer final {
 
     [[nodiscard]] auto next_whitespace_token() -> token {
         const size_t at_line{at_line_};
+
         return {next_whitespace(), char_ix_, "", char_ix_, "", at_line, false};
     }
 
@@ -142,6 +147,7 @@ class tokenizer final {
         if (is_eos() or src_[char_ix_] != ch) {
             return false;
         }
+
         return next_char();
     }
 
@@ -171,6 +177,7 @@ class tokenizer final {
             ++at_line_;
         }
         pos_ = src_str_.substr(char_ix_);
+
         return src_.substr(bgn, len);
     }
 
@@ -184,6 +191,7 @@ class tokenizer final {
             ++at_line_;
         }
         pos_ = src_str_.substr(char_ix_);
+
         return ch;
     }
 
@@ -211,6 +219,7 @@ class tokenizer final {
         }
         pos_ = src_str_.substr(char_ix_);
         const size_t len{char_ix_ - bgn_ix};
+
         return src_.substr(bgn_ix, len);
     }
 
@@ -228,6 +237,7 @@ class tokenizer final {
             ++char_ix_;
         }
         const size_t len{char_ix_ - bgn_ix};
+
         return src_.substr(bgn_ix, len);
     }
 

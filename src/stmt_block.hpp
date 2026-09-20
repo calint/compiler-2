@@ -170,6 +170,7 @@ class stmt_block final : public statement {
                 break;
             }
         }
+
         return false;
     }
 

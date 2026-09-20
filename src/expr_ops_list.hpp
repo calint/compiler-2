@@ -110,6 +110,7 @@ class expr_ops_list final : public expression {
                 // yes, exit when ',' or ')' is found
                 if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
                     validate_arithmetic_operands(tc);
+
                     return;
                 }
             }
@@ -139,6 +140,7 @@ class expr_ops_list final : public expression {
             } else {
                 // no more operations, return
                 validate_arithmetic_operands(tc);
+
                 return;
             }
 
@@ -265,6 +267,7 @@ class expr_ops_list final : public expression {
         if (dst_info.is_register()) {
             // yes, compile with the result placed in it
             do_compile(tc, indent, dst_info);
+
             return;
         }
 
@@ -312,6 +315,7 @@ class expr_ops_list final : public expression {
             // then the unary ops are on the first element
             return exprs_[0]->get_unary_ops();
         }
+
         // in the multi-element list, unary ops for all are on the current list
         // element
         return uops_;
@@ -456,46 +460,57 @@ class expr_ops_list final : public expression {
 
         if (op == '=') {
             asm_op_mov(tc, indent, dst, src);
+
             return;
         }
         if (op == '+') {
             asm_op_add_sub(tc, indent, op, dst, src);
+
             return;
         }
         if (op == '-') {
             asm_op_add_sub(tc, indent, op, dst, src);
+
             return;
         }
         if (op == '*') {
             asm_op_mul(tc, indent, dst, src);
+
             return;
         }
         if (op == '/') {
             asm_op_div(tc, indent, op, dst, src);
+
             return;
         }
         if (op == '%') {
             asm_op_div(tc, indent, op, dst, src);
+
             return;
         }
         if (op == '&') {
             asm_op_bitwise(tc, indent, op, dst, src);
+
             return;
         }
         if (op == '|') {
             asm_op_bitwise(tc, indent, op, dst, src);
+
             return;
         }
         if (op == '^') {
             asm_op_bitwise(tc, indent, op, dst, src);
+
             return;
         }
         if (op == '<') {
             asm_op_shift(tc, indent, op, dst, src);
+
             return;
         }
         if (op == '>') {
             asm_op_shift(tc, indent, op, dst, src);
+
             return;
         }
     }
@@ -513,6 +528,7 @@ class expr_ops_list final : public expression {
         if (src.is_expression()) {
             // yes, compile with destination to 'dst'
             src.compile(tc, indent, dst_info);
+
             return;
         }
 
@@ -546,6 +562,7 @@ class expr_ops_list final : public expression {
             }
             x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
             x.free_scratch_register(src.tok(), indent, reg);
+
             return;
         }
 
@@ -578,6 +595,7 @@ class expr_ops_list final : public expression {
                                    registers);
 
             free_registers(src, x, indent, lea_registers);
+
             return;
         }
 
@@ -607,6 +625,7 @@ class expr_ops_list final : public expression {
                 x.multiply(src.tok(), indent, dst_info.operand, src_operand);
 
                 free_registers(src, x, indent, lea_registers);
+
                 return;
             }
 
@@ -621,6 +640,7 @@ class expr_ops_list final : public expression {
             x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
             x.free_scratch_register(src.tok(), indent, reg);
             free_registers(src, x, indent, lea_registers);
+
             return;
         }
 
@@ -649,6 +669,7 @@ class expr_ops_list final : public expression {
             x.multiply(src.tok(), indent, dst_info.operand, src_operand);
 
             free_registers(src, x, indent, lea_registers);
+
             return;
         }
 
@@ -688,6 +709,7 @@ class expr_ops_list final : public expression {
             x.add_subtract(src.tok(), indent, op, dst_info.operand, reg_sized);
 
             x.free_scratch_register(src.tok(), indent, reg);
+
             return;
         }
 
@@ -717,6 +739,7 @@ class expr_ops_list final : public expression {
                            src_operand);
 
             free_registers(src, x, indent, lea_registers);
+
             return;
         }
 
@@ -728,6 +751,7 @@ class expr_ops_list final : public expression {
                            dst_info.operand, src_operand);
 
             free_registers(src, x, indent, lea_registers);
+
             return;
         }
 
@@ -763,6 +787,7 @@ class expr_ops_list final : public expression {
 
             x.bitwise(src.tok(), indent, op, dst_info.operand, reg_sized);
             x.free_scratch_register(src.tok(), indent, reg);
+
             return;
         }
 
@@ -790,6 +815,7 @@ class expr_ops_list final : public expression {
             x.bitwise(src.tok(), indent, op, dst_info.operand, src_operand);
 
             free_registers(src, x, indent, lea_registers);
+
             return;
         }
 
@@ -823,6 +849,7 @@ class expr_ops_list final : public expression {
                         toc::make_ident_info_from_register(count_register));
 
             x.end_shift(src.tok(), indent, op, dst_info.operand);
+
             return;
         }
 
@@ -856,6 +883,7 @@ class expr_ops_list final : public expression {
             x.end_shift(src.tok(), indent, op, dst_info.operand);
 
             free_registers(src, x, indent, lea_registers);
+
             return;
         }
 
@@ -893,6 +921,7 @@ class expr_ops_list final : public expression {
 
             x.divide(src.tok(), indent, op, dst_info.operand, reg);
             x.free_scratch_register(src.tok(), indent, reg);
+
             return;
         }
 
@@ -906,6 +935,7 @@ class expr_ops_list final : public expression {
                                               src.get_unary_ops().to_string(),
                                               src_info.const_value),
                                   src_info.type_ref()));
+
             return;
         }
 
@@ -922,6 +952,7 @@ class expr_ops_list final : public expression {
             x.comment(src.tok(), indent, "div not const, no uops");
             x.divide(src.tok(), indent, op, dst_info.operand, src_operand);
             free_registers(src, x, indent, lea_registers);
+
             return;
         }
 

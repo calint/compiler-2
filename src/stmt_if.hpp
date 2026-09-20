@@ -28,6 +28,7 @@ class stmt_if final : public statement {
             if (not tkn.is_text("else")) {
                 // not 'else', push the token back in stream and exit
                 tz.put_back_token(tkn);
+
                 return;
             }
             // is 'else'
@@ -41,6 +42,7 @@ class stmt_if final : public statement {
                 else_if_tokens_.emplace_back(tkn);
                 // read the 'else' code
                 else_code_ = {tc, tz};
+
                 return;
             }
             // 'else if': continue reading if branches

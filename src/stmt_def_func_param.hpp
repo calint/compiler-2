@@ -23,6 +23,7 @@ class stmt_def_func_param final : public statement {
         if (type_delim_tk_.is_empty()) {
             // no type defined, set default
             set_type(tc.get_type_default());
+
             return;
         }
 
@@ -31,6 +32,7 @@ class stmt_def_func_param final : public statement {
         if (type_tk_.text().starts_with("reg_")) {
             // register parameter, set default type
             set_type(tc.get_type_default());
+
             return;
         }
 
@@ -69,6 +71,7 @@ class stmt_def_func_param final : public statement {
             return type_name.substr(4);
             // note: 4 is the length of "reg_"
         }
+
         return "";
     }
 

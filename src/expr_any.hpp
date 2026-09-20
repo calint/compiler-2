@@ -43,6 +43,7 @@ class expr_any final : public statement {
         // the basic case
         if (not is_array) {
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
+
             return;
         }
 
@@ -54,6 +55,7 @@ class expr_any final : public statement {
         if (open_brace_tk_.is_empty()) {
             vars_.emplace_back(expr_type_value{tc, tz, tp});
             is_identifier_ = true;
+
             return;
         }
 
@@ -117,6 +119,7 @@ class expr_any final : public statement {
         // the base case
         if (is_identifier_ or not is_array_) {
             compile_variant(tc, indent, dst_info, tok(), vars_[0]);
+
             return;
         }
 
@@ -189,6 +192,7 @@ class expr_any final : public statement {
                     expression.assert_var_not_used(var);
                 });
             }
+
             return;
         }
 

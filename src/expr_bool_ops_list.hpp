@@ -100,6 +100,7 @@ class expr_bool_ops_list final : public statement {
 
                 // success
                 tz.put_back_token(op_tk);
+
                 return;
             }
 
@@ -369,6 +370,7 @@ class expr_bool_ops_list final : public statement {
                 }
             }
         }
+
         return std::nullopt;
     }
 
@@ -410,6 +412,7 @@ class expr_bool_ops_list final : public statement {
         -> std::string {
 
         const std::string_view call_path{tc.get_call_path()};
+
         return std::format(
             "cmp_{}{}", tc.source_location_for_use_in_label(tok()),
             (call_path.empty() ? "" : std::format("_{}", call_path)));

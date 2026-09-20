@@ -82,6 +82,7 @@ class unary_ops final {
                 std::unreachable();
             }
         }
+
         return v;
     }
 };

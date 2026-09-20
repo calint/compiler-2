@@ -148,6 +148,7 @@ class stmt_def_dat final : public statement {
         if (elroot_.tk.is_string()) {
             equals_tk_.source_to(os);
             elroot_.tk.source_to(os);
+
             return;
         }
 
@@ -200,6 +201,7 @@ class stmt_def_dat final : public statement {
 
         if (not elroot.is_array) {
             compile_data_elem(tc, tp, elroot);
+
             return;
         }
 
@@ -210,6 +212,7 @@ class stmt_def_dat final : public statement {
 
         if (elroot.tk.is_string()) {
             compile_data_builtin(tc, tp, elroot);
+
             return;
         }
 
@@ -245,6 +248,7 @@ class stmt_def_dat final : public statement {
 
         if (tp.is_built_in()) {
             compile_data_builtin(tc, tp, elroot);
+
             return;
         }
 
@@ -289,6 +293,7 @@ class stmt_def_dat final : public statement {
             x.comment(elroot.tk, 0, "{}", tp.name());
             if (elroot.tk.text().empty()) {
                 x.emit_data(tp.size(), {});
+
                 return;
             }
 
@@ -316,6 +321,7 @@ class stmt_def_dat final : public statement {
                 x.comment(elroot.tk, 0, "zero remaining array");
                 x.emit_repeated_data(tp.size(), elroot.array_size - sz, {});
             }
+
             return;
         }
 
@@ -505,6 +511,7 @@ class stmt_def_dat final : public statement {
                     std::format("boolean field '{}' must be 'true' or 'false'",
                                 tp.name()));
             }
+
             return el;
         }
 
@@ -514,6 +521,7 @@ class stmt_def_dat final : public statement {
                 el.tk, std::format("'{}' must be a constant", el.tk.text()));
         }
         el.value = ii.const_value;
+
         return el;
     }
 
@@ -574,12 +582,14 @@ class stmt_def_dat final : public statement {
             if (tp.is_built_in()) {
                 elroot.uops.source_to(os);
                 elroot.tk.source_to(os);
+
                 return;
             }
 
             // user type
 
             print_source_type(os, tp, elroot);
+
             return;
         }
 
@@ -598,6 +608,7 @@ class stmt_def_dat final : public statement {
                 }
             }
             elroot.close_brace_tk_.source_to(os);
+
             return;
         }
 
@@ -625,6 +636,7 @@ class stmt_def_dat final : public statement {
                 }
             }
             elroot.close_brace_tk_.source_to(os);
+
             return;
         }
 
@@ -651,6 +663,7 @@ class stmt_def_dat final : public statement {
             if (not tf.is_array) {
                 elroot.uops.source_to(os);
                 elroot.tk.source_to(os);
+
                 return;
             }
 
@@ -660,6 +673,7 @@ class stmt_def_dat final : public statement {
 
             if (elroot.tk.is_string()) {
                 elroot.tk.source_to(os);
+
                 return;
             }
 
@@ -677,6 +691,7 @@ class stmt_def_dat final : public statement {
                 }
             }
             elroot.close_brace_tk_.source_to(os);
+
             return;
         }
 

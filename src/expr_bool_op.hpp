@@ -69,6 +69,7 @@ class expr_bool_op final : public statement {
             // e.g. if a ...
             is_shorthand_ = true;
             resolve_if_op_is_expression();
+
             return;
         }
 
@@ -132,6 +133,7 @@ class expr_bool_op final : public statement {
                         // expression and jump to label for true
                         x.branch(indent, jmp_to_if_true);
                     }
+
                     return const_eval;
                 }
             }
@@ -174,6 +176,7 @@ class expr_bool_op final : public statement {
                     // short-circuit and jump to true
                     x.branch(indent, jmp_to_if_true);
                 }
+
                 return const_eval;
             }
         }
@@ -228,6 +231,7 @@ class expr_bool_op final : public statement {
                         // expression and jump to label for false
                         x.branch(indent, jmp_to_if_false);
                     }
+
                     return const_eval;
                 }
             }
@@ -268,6 +272,7 @@ class expr_bool_op final : public statement {
                     // short circuit 'and' chain
                     x.branch(indent, jmp_to_if_false);
                 }
+
                 return const_eval;
             }
         }
@@ -299,6 +304,7 @@ class expr_bool_op final : public statement {
         -> std::string {
 
         const std::string_view call_path{tc.get_call_path()};
+
         return std::format("cmp_{}{}",
                            tc.source_location_for_use_in_label(tok()),
                            (call_path.empty() ? std::string{}
@@ -328,17 +334,20 @@ class expr_bool_op final : public statement {
         if (is_not_) {
             // yes, then it is an expression
             is_expression_ = true;
+
             return;
         }
 
         if (not is_shorthand_) {
             is_expression_ = true;
+
             return;
         }
 
         // shorthand expressions
         if (lhs_.is_expression()) {
             is_expression_ = true;
+
             return;
         }
 
@@ -349,6 +358,7 @@ class expr_bool_op final : public statement {
         if (id == "true" or id == "false") {
             // yes, not an expression
             is_expression_ = false;
+
             return;
         }
 
@@ -431,6 +441,7 @@ class expr_bool_op final : public statement {
 
             op.size = expr_info.type_ref().size();
             op.type_ptr = &expr_info.type_ref();
+
             return op;
         }
 
@@ -462,6 +473,7 @@ class expr_bool_op final : public statement {
 
                 return x.sized_register(reg, expr.get_type().size());
             }
+
             return operand::imm(std::format("{}{}",
                                             expr.get_unary_ops().to_string(),
                                             expr_info.const_value),
@@ -483,6 +495,7 @@ class expr_bool_op final : public statement {
         allocated_registers.emplace_back(reg);
         x.copy_value(expr.tok(), indent, reg, expr_info.operand);
         expr.get_unary_ops().compile(tc, indent, reg);
+
         return x.sized_register(reg, expr_info.type_ref().size());
     }
 };

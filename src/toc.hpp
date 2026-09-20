@@ -421,6 +421,7 @@ class toc final {
         if (not var.reg.is_empty()) {
             x.comment(src_loc_tk, indent, "{} ({})", text,
                       var.reg.base_register);
+
             return;
         }
         x.comment_variable(src_loc_tk, indent, text,
@@ -570,6 +571,7 @@ class toc final {
         -> std::string {
 
         const std::string_view call_path{get_call_path()};
+
         return std::format("{}_{}{}", name,
                            source_location_for_use_in_label(src_loc_tk),
                            (call_path.empty() ? std::string{}
@@ -722,6 +724,7 @@ class toc final {
                 break;
             }
         }
+
         return frames_.front().has_const(name);
     }
 
@@ -1028,6 +1031,7 @@ class toc final {
 
                     // add an empty
                     lea_path.emplace_back();
+
                     return make_ident_info_from_frame(f, src_loc_tk, ident, id,
                                                       std::move(lea_path));
                 }
@@ -1209,6 +1213,7 @@ class toc final {
 
             operand reg{operand::reg(id.str(), reg_size)};
             reg.type_ptr = &get_builtin_type_for_size(reg_size);
+
             return ident_info::make_register(ident, reg);
         }
 

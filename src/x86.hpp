@@ -90,6 +90,7 @@ class x86 final {
     auto use_stream(std::ostream& new_stream) -> std::ostream& {
         std::ostream& prev{os_.get()};
         os_ = new_stream;
+
         return prev;
     }
 
@@ -156,6 +157,7 @@ class x86 final {
         operand result{sized_register(allocated_name, type_ref.size())};
         result.allocation_register = allocated_name;
         result.type_ptr = &type_ref;
+
         return result;
     }
 
@@ -168,6 +170,7 @@ class x86 final {
         operand result{sized_register(reg, type_ref.size())};
         result.allocation_register = reg;
         result.type_ptr = &type_ref;
+
         return result;
     }
 
@@ -300,6 +303,7 @@ class x86 final {
             release_named_register(src_loc_tk, indent, "rcx");
             release_named_register(src_loc_tk, indent, "rdi");
             release_named_register(src_loc_tk, indent, "rsi");
+
             return;
         }
 
@@ -356,6 +360,7 @@ class x86 final {
 
         reserve_named_register(src_loc_tk, indent, "rsi");
         reserve_named_register(src_loc_tk, indent, "rdi");
+
         return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
     }
 
@@ -395,6 +400,7 @@ class x86 final {
 
         reserve_named_register(src_loc_tk, indent, "rsi");
         reserve_named_register(src_loc_tk, indent, "rdi");
+
         return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
     }
 
@@ -469,6 +475,7 @@ class x86 final {
             release_named_register(src_loc_tk, indent, "rcx");
             release_named_register(src_loc_tk, indent, "rdi");
             release_named_register(src_loc_tk, indent, "rax");
+
             return;
         }
 
@@ -520,14 +527,17 @@ class x86 final {
         case '&':
             op(src_loc_tk, indent, "and", format_operand(dst),
                format_operand(src));
+
             return;
         case '|':
             op(src_loc_tk, indent, "or", format_operand(dst),
                format_operand(src));
+
             return;
         case '^':
             op(src_loc_tk, indent, "xor", format_operand(dst),
                format_operand(src));
+
             return;
         default:
             std::unreachable();
@@ -557,6 +567,7 @@ class x86 final {
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
         mov(src_loc_tk, indent, format_operand(left), format_operand(dst));
+
         return {
             .left{left},
             .right{right},
@@ -581,12 +592,14 @@ class x86 final {
 
         if (dst.is_register()) {
             imul(src_loc_tk, indent, format_operand(dst), format_operand(src));
+
             return;
         }
 
         if (reuse_source) {
             imul(src_loc_tk, indent, format_operand(src), format_operand(dst));
             mov(src_loc_tk, indent, format_operand(dst), format_operand(src));
+
             return;
         }
 
@@ -703,6 +716,7 @@ class x86 final {
 
         if (dst.is_register()) {
             lea(indent, format_operand(dst), format_address(address));
+
             return;
         }
 
@@ -720,9 +734,11 @@ class x86 final {
         switch (operation) {
         case '~':
             not_op(indent, format_operand(dst));
+
             return;
         case '-':
             neg(indent, format_operand(dst));
+
             return;
         default:
             std::unreachable();
@@ -770,6 +786,7 @@ class x86 final {
 
         if (dst.is_register()) {
             lea(indent, format_operand(dst), std::format("rbp + {}", offset));
+
             return;
         }
         const operand reg{
@@ -991,6 +1008,7 @@ class x86 final {
 
         operand result{operand::reg(sized_register_operand(reg, size), size)};
         result.type_ptr = &builtin_type_for_size(size);
+
         return result;
     }
 
@@ -1008,6 +1026,7 @@ class x86 final {
         if (reg.type_ptr and reg.size == size) {
             result.type_ptr = reg.type_ptr;
         }
+
         return result;
     }
 
@@ -1070,6 +1089,7 @@ class x86 final {
         if (value.is_immediate()) {
             return value.immediate_expression;
         }
+
         return value.is_register() ? value.base_register
                                    : format_operand(value, value.size);
     }
@@ -1104,6 +1124,7 @@ class x86 final {
         if (size_specifier != 0) {
             s.append("]");
         }
+
         return s;
     }
     auto reserve_named_register(const token& src_loc_tk, const size_t indnt,
@@ -1327,6 +1348,7 @@ class x86 final {
             setcc(indent, "e",
                   sized_register_operand(format_operand(dst),
                                          operand::size_byte));
+
             return;
         }
         setcc(indent, "e", format_operand(dst, operand::size_byte));
@@ -1374,6 +1396,7 @@ class x86 final {
             }
             text.remove_prefix(newline + 1);
         }
+
         return count;
     }
 
@@ -1381,6 +1404,7 @@ class x86 final {
     is_nasm_comment_or_empty_line(const std::string_view line) -> bool {
 
         const size_t first{line.find_first_not_of(" \t\n\r\f\v")};
+
         return first == std::string_view::npos or line[first] == ';';
     }
 
@@ -1470,9 +1494,11 @@ class x86 final {
                 asm_line(indent, "mov {}, {}", reg_sized, src_op);
                 asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
                 free_scratch_register(src_loc_tk, indent, reg);
+
                 return;
             }
             asm_line(indent, "{} {}, {}", op, dst_op, src_op);
+
             return;
         }
 
@@ -1487,14 +1513,17 @@ class x86 final {
                 asm_line(indent, "movsx {}, {}", reg_sized, src_op);
                 asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
                 free_scratch_register(src_loc_tk, indent, reg);
+
                 return;
             }
             if (op == "mov") {
                 asm_line(indent, "movsx {}, {}", dst_op, src_op);
+
                 return;
             }
             if (op == "sal" or op == "sar") {
                 asm_line(indent, "{} {}, {}", op, dst_op, src_op);
+
                 return;
             }
             const operand reg_sx{
@@ -1503,6 +1532,7 @@ class x86 final {
             asm_line(indent, "movsx {}, {}", format_operand(reg_sx), src_op);
             asm_line(indent, "{} {}, {}", op, dst_op, format_operand(reg_sx));
             free_scratch_register(src_loc_tk, indent, reg_sx);
+
             return;
         }
 
@@ -1518,6 +1548,7 @@ class x86 final {
 
             asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
             free_scratch_register(src_loc_tk, indent, reg);
+
             return;
         }
 
@@ -1556,15 +1587,19 @@ class x86 final {
         switch (operand_size) {
         case operand::size_qword:
             asm_line(indent, "cqo");
+
             return;
         case operand::size_dword:
             asm_line(indent, "cdq");
+
             return;
         case operand::size_word:
             asm_line(indent, "cwde");
+
             return;
         case operand::size_byte:
             asm_line(indent, "cbw");
+
             return;
         default:
             std::unreachable();
@@ -1696,6 +1731,7 @@ class x86 final {
         if (const size_t size{operand::register_size(operand)}) {
             return size;
         }
+
         return default_type_->size();
     }
 

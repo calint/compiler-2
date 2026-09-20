@@ -80,6 +80,7 @@ struct operand {
         result.kind_ = operand_kind::immediate;
         result.immediate_expression = std::move(expression);
         result.type_ptr = &value_type;
+
         return result;
     }
 
@@ -93,6 +94,7 @@ struct operand {
         result.kind_ = operand_kind::reg;
         result.base_register = name;
         result.size = operand_size;
+
         return result;
     }
 
@@ -114,6 +116,7 @@ struct operand {
         result.index_register = index;
         result.scale = index_scale;
         result.displacement = offset;
+
         return result;
     }
 
@@ -180,6 +183,7 @@ struct operand {
 
             return size_byte;
         }
+
         return 0;
     }
 };

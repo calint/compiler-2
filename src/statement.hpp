@@ -110,6 +110,7 @@ class statement {
 
         std::stringstream ss;
         st.source_to(ss);
+
         return collapse_whitespace(ss.view());
     }
 
@@ -122,6 +123,7 @@ class statement {
         std::stringstream ss;
         std::print(ss, "{} {} ", dst, op);
         st.source_to(ss);
+
         return collapse_whitespace(ss.view());
     }
 

@@ -175,6 +175,7 @@ class stmt_identifier : public statement {
             x.copy_value(tok(), indent, dst_info.operand, src_info.operand);
 
             get_unary_ops().compile(tc, indent, dst_info.operand);
+
             return;
         }
 

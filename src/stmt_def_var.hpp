@@ -148,6 +148,7 @@ class stmt_def_var final : public statement {
 
         if (assign_var_) {
             assign_var_->compile(tc, indent, dst_info);
+
             return;
         }
 

@@ -90,6 +90,7 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("  {} --vars=131072 --checks=upper prog.baz", prg);
             std::println("  {} --checks=upper,lower,line prog.baz", prg);
             std::println("  {} --checks=upper prog.baz", prg);
+
             return 0;
         }
         constexpr std::string_view vars_option{"--vars="};
@@ -117,6 +118,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                  vars_text, vars_alignment);
 
                     std::println(stderr, "Use --help for usage information");
+
                     return 1;
                 }
 
@@ -127,6 +129,7 @@ auto main(const int argc, const char* argv[]) -> int {
                              arg.substr(vars_option.size()));
 
                 std::println(stderr, "Use --help for usage information");
+
                 return 1;
             }
         } else if (arg.starts_with(checks_option)) {
@@ -152,6 +155,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                  option);
 
                     std::println(stderr, "Use --help for usage information");
+
                     return 1;
                 }
             }
@@ -165,6 +169,7 @@ auto main(const int argc, const char* argv[]) -> int {
         } else {
             std::println(stderr, "Error: Unknown option: {}", arg);
             std::println(stderr, "Use --help for usage information");
+
             return 1;
         }
     }
@@ -202,6 +207,7 @@ auto main(const int argc, const char* argv[]) -> int {
             line_and_col_num_for_char_index(e.line, e.start_index, src)};
 
         std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, e.msg);
+
         return 1;
     } catch (const tokenizer_exception& e) {
         const auto [line, col]{
@@ -213,9 +219,11 @@ auto main(const int argc, const char* argv[]) -> int {
         return 1;
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
+
         return 1;
     } catch (...) {
         std::println(stderr, "\nunknown exception");
+
         return 1;
     }
 }
@@ -226,6 +234,7 @@ namespace {
     if (not fs.is_open()) {
         throw panic_exception(std::format("cannot open file '{}'", file_name));
     }
+
     return std::string{std::istreambuf_iterator<char>{fs},
                        std::istreambuf_iterator<char>{}};
 }

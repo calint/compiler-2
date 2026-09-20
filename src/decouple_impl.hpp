@@ -112,6 +112,7 @@
         // e.g.  foo(...)
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, t, tz);
     }
+
     // e.g. 0x80, rax, identifiers, constants
     return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
 }
@@ -205,12 +206,14 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 auto expr_type_value::source_to(std::ostream& os) const -> void {
     if (stmt_call_) {
         stmt_call_->source_to(os);
+
         return;
     }
 
     // identifier case: base statement already emitted token text
     if (is_make_copy()) {
         stmt_ident_->source_to(os);
+
         return;
     }
 
@@ -237,6 +240,7 @@ auto expr_type_value::compile(toc& tc, const size_t indent,
 
     if (stmt_call_) {
         stmt_call_->compile(tc, indent, dst_info);
+
         return;
     }
 
@@ -462,6 +466,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
     if (stmt_ident_) {
         return stmt_ident_->identifier();
     }
+
     return statement::identifier();
 }
 

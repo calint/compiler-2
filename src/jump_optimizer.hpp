@@ -43,6 +43,7 @@ struct jump_info {
     while (first < line.size() && is_ascii_space(line[first])) {
         ++first;
     }
+
     return line.substr(0, first);
 }
 
@@ -180,6 +181,7 @@ struct jump_info {
     if (jcc == "jle") {
         return "jg";
     }
+
     return std::nullopt;
 }
 
@@ -292,6 +294,7 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
         std::string second_line;
         if (not getline(is, second_line)) {
             std::println(os, "{}", first_line);
+
             return;
         }
 
@@ -306,6 +309,7 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
         std::string third_line;
         if (not getline(is, third_line)) {
             print2(first_line, second_line);
+
             return;
         }
 
