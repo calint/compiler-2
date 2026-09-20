@@ -62,7 +62,8 @@ class expr_type_value final : public statement {
     auto compile_lea(toc& tc, const size_t indent, const token& src_loc_tk,
                      std::vector<operand>& allocated_registers,
                      const operand& reg_size,
-                     std::span<const operand> lea_path) const -> operand override;
+                     const std::span<const operand> lea_path) const
+        -> operand override;
 
   private:
     // implemented in 'decouple_impl.hpp' due to circular reference:

@@ -22,7 +22,8 @@ class stmt_builtin_arrays_equal final : public expression {
     token close_paren_tk_;
 
   public:
-    stmt_builtin_arrays_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+    stmt_builtin_arrays_equal(toc& tc, unary_ops uops, const token tk,
+                              tokenizer& tz)
         : expression{tk, std::move(uops)},
           open_paren_tk_{tz.is_next_char_token('(')} {
 

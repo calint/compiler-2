@@ -10,7 +10,7 @@
 
 class stmt_break final : public statement {
   public:
-    stmt_break(const toc& tc, token tk) : statement{tk} {
+    stmt_break(const toc& tc, const token tk) : statement{tk} {
         set_type(tc.get_type_void());
     }
 

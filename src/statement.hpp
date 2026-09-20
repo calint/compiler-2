@@ -71,7 +71,7 @@ class statement {
     }
 
   public:
-    explicit statement(token tk, unary_ops uops = {})
+    explicit statement(const token tk, unary_ops uops = {})
         : token_{tk}, uops_{std::move(uops)} {}
 
     virtual ~statement() = default;

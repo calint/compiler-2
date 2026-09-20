@@ -6,7 +6,7 @@
 class null_stream final : public std::ostream {
     class null_buffer : public std::streambuf {
       protected:
-        auto overflow(int c) -> int override { return c; }
+        auto overflow(const int c) -> int override { return c; }
     } nb_{};
 
   public:

@@ -19,7 +19,7 @@ class stmt_def_type_field final : public statement {
     bool is_array_{};
 
   public:
-    stmt_def_type_field(const toc& tc, token tk, tokenizer& tz)
+    stmt_def_type_field(const toc& tc, const token tk, tokenizer& tz)
         : statement{tk} {
 
         set_type(tc.get_type_void());

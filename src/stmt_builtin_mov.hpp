@@ -8,7 +8,7 @@
 
 class stmt_builtin_mov final : public stmt_call {
   public:
-    stmt_builtin_mov(toc& tc, token tk, tokenizer& tz)
+    stmt_builtin_mov(toc& tc, const token tk, tokenizer& tz)
         : stmt_call{tc, {}, tk, tz.is_next_char_token('('), tz} {
 
         set_type(tc.get_type_void());

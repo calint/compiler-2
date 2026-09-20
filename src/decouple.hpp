@@ -293,7 +293,7 @@ struct ident_info {
         return *type_path.back();
     }
 
-    void push(std::string path_elem, const type* tp, ::operand lea) {
+    void push(std::string path_elem, const type* const tp, ::operand lea) {
         assert(validate_invariants());
 
         id += "." + path_elem;
@@ -335,10 +335,10 @@ struct ident_info {
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
-                                                  token tk)
+                                                  const token tk)
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto create_stmt_call(toc& tc, tokenizer& tz,
                                     const stmt_identifier& si,
-                                    token open_paren_tk)
+                                    const token open_paren_tk)
     -> std::unique_ptr<statement>;

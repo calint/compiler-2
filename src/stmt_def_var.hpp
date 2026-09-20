@@ -29,7 +29,7 @@ class stmt_def_var final : public statement {
     bool is_array_{};
 
   public:
-    stmt_def_var(toc& tc, token tk, tokenizer& tz)
+    stmt_def_var(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
           type_delim_tk_{tz.is_next_char_token(':')} {
 

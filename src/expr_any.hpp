@@ -224,7 +224,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto compile_lea(
-        toc& tc, size_t indent, const token& src_loc_tk,
+        toc& tc, const size_t indent, const token& src_loc_tk,
         std::vector<operand>& allocated_registers, const operand& reg_size,
         const std::span<const operand> lea_path) const -> operand override {
 

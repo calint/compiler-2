@@ -20,8 +20,9 @@ class stmt_assign_var final : public statement {
     size_t array_size_{};
 
   public:
-    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token equals_tk,
-                    const bool is_array, const size_t array_size)
+    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si,
+                    const token equals_tk, const bool is_array,
+                    const size_t array_size)
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           equals_tk_{equals_tk} {
 

@@ -13,7 +13,7 @@ class stmt_if final : public statement {
     stmt_block else_code_;
 
   public:
-    stmt_if(toc& tc, token tk, tokenizer& tz) : statement{tk} {
+    stmt_if(toc& tc, const token tk, tokenizer& tz) : statement{tk} {
         set_type(tc.get_type_void());
         // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3}, broken
         // down into branches 'a == b {x = 1}', 'c == d {y = 2}', ending with

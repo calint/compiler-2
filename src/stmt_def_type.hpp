@@ -16,7 +16,7 @@ class stmt_def_type final : public statement {
     type type_;
 
   public:
-    stmt_def_type(toc& tc, token tk, tokenizer& tz)
+    stmt_def_type(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 

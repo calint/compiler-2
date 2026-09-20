@@ -5,7 +5,7 @@
 
 class expression : public statement {
   public:
-    explicit expression(token tk, unary_ops uops = {})
+    explicit expression(const token tk, unary_ops uops = {})
         : statement{tk, std::move(uops)} {}
 
     expression() = default;

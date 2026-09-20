@@ -28,11 +28,12 @@
 #include "tokenizer.hpp"
 
 namespace {
-[[nodiscard]] auto read_file_to_string(const char* file_name) -> std::string;
+[[nodiscard]] auto read_file_to_string(const char* const file_name)
+    -> std::string;
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
-auto main(const int argc, const char* argv[]) -> int {
+auto main(const int argc, const char** const argv) -> int {
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
@@ -258,7 +259,8 @@ auto main(const int argc, const char* argv[]) -> int {
 }
 
 namespace {
-[[nodiscard]] auto read_file_to_string(const char* file_name) -> std::string {
+[[nodiscard]] auto read_file_to_string(const char* const file_name)
+    -> std::string {
     std::ifstream fs{file_name};
     if (not fs.is_open()) {
         throw panic_exception(std::format("cannot open file '{}'", file_name));

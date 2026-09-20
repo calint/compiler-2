@@ -68,7 +68,7 @@
 // called from 'stmt_block'
 [[nodiscard]] auto create_stmt_call(toc& tc, tokenizer& tz,
                                     const stmt_identifier& si,
-                                    token open_paren_tk)
+                                    const token open_paren_tk)
     -> std::unique_ptr<statement> {
 
     return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
@@ -251,7 +251,7 @@ auto expr_type_value::compile(toc& tc, const size_t indent,
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile_assign(toc& tc, size_t indent,
+auto expr_type_value::compile_assign(toc& tc, const size_t indent,
                                      const type& dst_type,
                                      const ident_info& dst_info,
                                      operand& dst_op) const -> void {
@@ -433,7 +433,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::compile_lea(
-    toc& tc, size_t indent, const token& src_loc_tk,
+    toc& tc, const size_t indent, const token& src_loc_tk,
     std::vector<operand>& allocated_registers, const operand& reg_size,
     const std::span<const operand> lea_path) const -> operand {
 

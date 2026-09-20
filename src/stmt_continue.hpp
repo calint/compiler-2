@@ -7,7 +7,7 @@
 
 class stmt_continue final : public statement {
   public:
-    stmt_continue(const toc& tc, token tk) : statement{tk} {
+    stmt_continue(const toc& tc, const token tk) : statement{tk} {
         set_type(tc.get_type_void());
     }
 

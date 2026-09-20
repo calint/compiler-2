@@ -47,7 +47,7 @@ class stmt_def_dat final : public statement {
     bool has_init_{};
 
   public:
-    stmt_def_dat(toc& tc, token tk, tokenizer& tz)
+    stmt_def_dat(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
           type_delim_tk_{tz.is_next_char_token(':')} {
 

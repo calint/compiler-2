@@ -39,7 +39,7 @@ class expr_ops_list final : public expression {
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
-                  const bool enclosed = false, token open_paren_tk = {},
+                  const bool enclosed = false, const token open_paren_tk = {},
                   const bool is_implied_subexpression = false,
                   unary_ops uops = {},
                   const uint8_t first_op_precedence = initial_precedence,
@@ -351,7 +351,7 @@ class expr_ops_list final : public expression {
     }
 
     [[nodiscard]] auto compile_lea(
-        toc& tc, size_t indent, const token& src_loc_tk,
+        toc& tc, const size_t indent, const token& src_loc_tk,
         std::vector<operand>& allocated_registers, const operand& reg_size,
         const std::span<const operand> lea_path) const -> operand override {
 

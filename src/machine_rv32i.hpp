@@ -406,8 +406,8 @@ class machine_rv32i final : public machine {
     }
 
     auto emit_data_array(
-        [[maybe_unused]] size_t element_size,
-        [[maybe_unused]] std::function_ref<bool(data_initializer&)> next)
+        [[maybe_unused]] const size_t element_size,
+        [[maybe_unused]] const std::function_ref<bool(data_initializer&)> next)
         -> void override {
         todo();
     }

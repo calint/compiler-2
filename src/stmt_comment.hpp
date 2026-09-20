@@ -9,7 +9,7 @@ class stmt_comment final : public statement {
     std::string_view line_;
 
   public:
-    stmt_comment(const toc& tc, unary_ops uops, token tk, tokenizer& tz)
+    stmt_comment(const toc& tc, unary_ops uops, const token tk, tokenizer& tz)
         : statement{tk}, uops_{std::move(uops)}, line_{tz.read_rest_of_line()} {
 
         set_type(tc.get_type_void());

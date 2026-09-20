@@ -22,7 +22,7 @@ class stmt_builtin_array_copy final : public statement {
     token close_paren_tk_;
 
   public:
-    stmt_builtin_array_copy(toc& tc, token tk, tokenizer& tz)
+    stmt_builtin_array_copy(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, open_paren_tk_{tz.is_next_char_token('(')} {
 
         if (open_paren_tk_.is_empty()) {

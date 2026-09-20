@@ -21,8 +21,8 @@ class stmt_call : public expression {
     token close_paren_tk_;
 
   public:
-    stmt_call(toc& tc, unary_ops uops, token tk, token open_paren_tk,
-              tokenizer& tz)
+    stmt_call(toc& tc, unary_ops uops, const token tk,
+              const token open_paren_tk, tokenizer& tz)
         : expression{tk, std::move(uops)}, open_paren_tk_{open_paren_tk} {
 
         set_type(

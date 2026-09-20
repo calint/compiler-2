@@ -118,7 +118,7 @@ class frame final {
     }
 
     auto add_var(const var_info& var, const size_t allocated_size,
-                 bool is_dat = false) -> void {
+                 const bool is_dat = false) -> void {
 
         allocated_stack_ += allocated_size;
 
@@ -309,7 +309,7 @@ class toc final {
                                        });
     }
 
-    auto add_dat(const statement* stmt) -> void {
+    auto add_dat(const statement* const stmt) -> void {
         if (frames_.size() != 1) {
             throw compiler_exception(stmt->tok(),
                                      "'dat' can only be added in global scope");
@@ -326,7 +326,7 @@ class toc final {
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
-                  const type& return_type, const stmt_def_func* func_def)
+                  const type& return_type, const stmt_def_func* const func_def)
         -> void {
 
         if (name == "foo") {
@@ -370,7 +370,7 @@ class toc final {
     }
 
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
-                 bool is_dat) -> void {
+                 const bool is_dat) -> void {
 
         if (machine_.get().register_size(var.name) != 0) {
             throw compiler_exception{

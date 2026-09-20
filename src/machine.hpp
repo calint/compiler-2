@@ -262,8 +262,8 @@ class machine {
         -> operand = 0;
 
     virtual auto
-    emit_data_array(size_t element_size,
-                    std::function_ref<bool(data_initializer&)> next)
+    emit_data_array(const size_t element_size,
+                    const std::function_ref<bool(data_initializer&)> next)
         -> void = 0;
 
     template <typename... args_t>

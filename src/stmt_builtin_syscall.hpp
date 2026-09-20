@@ -6,7 +6,7 @@
 
 class stmt_builtin_syscall final : public stmt_call {
   public:
-    stmt_builtin_syscall(toc& tc, token tk, tokenizer& tz)
+    stmt_builtin_syscall(toc& tc, const token tk, tokenizer& tz)
         : stmt_call{tc, {}, tk, tz.is_next_char_token('('), tz} {
 
         if (arguments_size() != 0) {
