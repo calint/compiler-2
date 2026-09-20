@@ -35,7 +35,7 @@ struct operand {
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
 
-    [[nodiscard]] static auto get_size_specifier(const size_t size)
+    [[nodiscard]] static auto size_specifier(const size_t size)
         -> std::string_view {
 
         switch (size) {

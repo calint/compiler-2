@@ -903,7 +903,7 @@ class x86 final {
 
         const size_t bracket{operand.find('[')};
         assert(bracket != std::string_view::npos);
-        return std::format("{} {}", operand::get_size_specifier(size),
+        return std::format("{} {}", operand::size_specifier(size),
                            operand.substr(bracket));
     }
 };
