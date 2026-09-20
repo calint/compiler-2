@@ -81,7 +81,7 @@ class expr_ops_list final : public expression {
         const statement& first_expr{*exprs_.front()};
 
         set_type(first_expr.is_identifier()
-                     ? tc.make_ident_info_parsing(first_expr).type_ref()
+                     ? tc.make_ident_info(first_expr).type_ref()
                      : first_expr.get_type());
 
         // start the loop of arithmetic operator and element
@@ -368,10 +368,9 @@ class expr_ops_list final : public expression {
         }
 
         for (const std::unique_ptr<statement>& expr : exprs_) {
-            const type& expr_type{
-                expr->is_identifier()
-                    ? tc.make_ident_info_parsing(*expr).type_ref()
-                    : expr->get_type()};
+            const type& expr_type{expr->is_identifier()
+                                      ? tc.make_ident_info(*expr).type_ref()
+                                      : expr->get_type()};
 
             if (expr_type.name() == tc.get_type_bool().name()) {
                 throw compiler_exception{
@@ -565,56 +564,13 @@ class expr_ops_list final : public expression {
 
         const ident_info src_info{tc.make_ident_info(src)};
 
-        if (dst_info.is_register()) {
-            // destination is a register
-            if (src_info.is_const()) {
-                x.comment(src.tok(), indent, "dst is reg, src is const");
-                x.multiply(
-                    src.tok(), indent, dst_info.operand,
-                    operand::imm(std::format("{}{}",
-                                             src.get_unary_ops().to_string(),
-                                             src_info.const_value),
-                                 src_info.type_ref()));
-
-                return;
-            }
-
-            std::vector<operand> lea_registers;
-            const operand src_operand{
-                tc.get_lea_operand(indent, src, src_info, lea_registers)};
-
-            const unary_ops& uops{src.get_unary_ops()};
-            if (uops.is_empty()) {
-                x.comment(src.tok(), indent,
-                          "dst is reg, src is not const, no uops");
-
-                x.multiply(src.tok(), indent, dst_info.operand, src_operand);
-
-                x.free_scratch_registers(src.tok(), indent, lea_registers);
-
-                return;
-            }
-
-            x.comment(src.tok(), indent, "dst is reg, src is not const, uops");
-            const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       dst_info.type_ref())};
-
-            x.copy_value(src.tok(), indent, reg, src_operand);
-            uops.compile(tc, indent, reg);
-            x.multiply(src.tok(), indent, dst_info.operand, reg, true);
-            x.free_scratch_register(src.tok(), indent, reg);
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
-
-            return;
-        }
+        const std::string_view dst_kind{dst_info.is_register() ? "reg"
+                                                               : "not reg"};
 
         if (src_info.is_const()) {
-            x.comment(src.tok(), indent, "dst is not reg, src is const");
+            x.comment(src.tok(), indent, "dst is {}, src is const", dst_kind);
             x.multiply(src.tok(), indent, dst_info.operand,
-                       operand::imm(std::format("{}{}",
-                                                src.get_unary_ops().to_string(),
-                                                src_info.const_value),
-                                    src_info.type_ref()));
+                       src.make_constant_operand(src_info));
 
             return;
         }
@@ -627,8 +583,8 @@ class expr_ops_list final : public expression {
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            x.comment(src.tok(), indent,
-                      "dst is not reg, src is not const, no uops");
+            x.comment(src.tok(), indent, "dst is {}, src is not const, no uops",
+                      dst_kind);
 
             x.multiply(src.tok(), indent, dst_info.operand, src_operand);
 
@@ -639,7 +595,9 @@ class expr_ops_list final : public expression {
 
         // source is not a constant and unary ops need to be applied
 
-        x.comment(src.tok(), indent, "dst is not reg, src is not const, uops");
+        x.comment(src.tok(), indent, "dst is {}, src is not const, uops",
+                  dst_kind);
+
         const operand reg{
             x.alloc_scratch_register(src.tok(), indent, dst_info.type_ref())};
 
@@ -674,12 +632,8 @@ class expr_ops_list final : public expression {
 
         const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
-            x.add_subtract(
-                src.tok(), indent, op, dst_info.operand,
-                operand::imm(std::format("{}{}",
-                                         src.get_unary_ops().to_string(),
-                                         src_info.const_value),
-                             src_info.type_ref()));
+            x.add_subtract(src.tok(), indent, op, dst_info.operand,
+                           src.make_constant_operand(src_info));
 
             return;
         }
@@ -748,10 +702,7 @@ class expr_ops_list final : public expression {
         const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             x.bitwise(src.tok(), indent, op, dst_info.operand,
-                      operand::imm(std::format("{}{}",
-                                               src.get_unary_ops().to_string(),
-                                               src_info.const_value),
-                                   src_info.type_ref()));
+                      src.make_constant_operand(src_info));
 
             return;
         }
@@ -810,10 +761,7 @@ class expr_ops_list final : public expression {
         if (src_info.is_const()) {
             x.comment(src.tok(), indent, "shf: const");
             x.shift(src.tok(), indent, op, dst_info.operand,
-                    operand::imm(std::format("{}{}",
-                                             src.get_unary_ops().to_string(),
-                                             src_info.const_value),
-                                 src_info.type_ref()));
+                    src.make_constant_operand(src_info));
 
             return;
         }
@@ -876,10 +824,7 @@ class expr_ops_list final : public expression {
         if (src_info.is_const()) {
             x.comment(src.tok(), indent, "div const");
             x.divide(src.tok(), indent, op, dst_info.operand,
-                     operand::imm(std::format("{}{}",
-                                              src.get_unary_ops().to_string(),
-                                              src_info.const_value),
-                                  src_info.type_ref()));
+                     src.make_constant_operand(src_info));
 
             return;
         }

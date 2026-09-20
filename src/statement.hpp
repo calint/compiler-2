@@ -147,6 +147,16 @@ class statement {
         return uops_;
     }
 
+    [[nodiscard]] auto make_constant_operand(const ident_info& info) const
+        -> operand {
+
+        assert(info.is_const());
+
+        return operand::imm(
+            std::format("{}{}", get_unary_ops().to_string(), info.const_value),
+            info.type_ref());
+    }
+
     [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }
 
     [[nodiscard]] virtual auto is_indexed() const -> bool { return false; }

@@ -29,7 +29,7 @@ class stmt_builtin_foo final : public statement {
         // add vars to toc without emitting output so that the code block can be
         // parsed
 
-        const ident_info ii{tc.make_ident_info_parsing(ident_)};
+        const ident_info ii{tc.make_ident_info(ident_)};
         tc.enter_foo("");
         const var_info var_e{
             .name{"e"},

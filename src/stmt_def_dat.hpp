@@ -515,7 +515,7 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
-        const ident_info ii{tc.make_ident_info_parsing(el.tk, el.tk.text())};
+        const ident_info ii{tc.make_ident_info(el.tk, el.tk.text())};
         if (not ii.is_const()) {
             throw compiler_exception(
                 el.tk, std::format("'{}' must be a constant", el.tk.text()));

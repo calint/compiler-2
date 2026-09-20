@@ -474,10 +474,7 @@ class expr_bool_op final : public statement {
                 return reg;
             }
 
-            return operand::imm(std::format("{}{}",
-                                            expr.get_unary_ops().to_string(),
-                                            expr_info.const_value),
-                                expr_info.type_ref());
+            return expr.make_constant_operand(expr_info);
         }
 
         // 'expr' not a constant, it is an identifier

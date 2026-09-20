@@ -150,7 +150,7 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             std::make_shared<stmt_identifier>(tc, unary_ops{}, tok(), tz);
 
         // check that an identifier type matches the expected type
-        const ident_info src_info{tc.make_ident_info_parsing(*stmt_ident_)};
+        const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
 
         if (tp.name() != src_info.type_ref().name()) {
             throw compiler_exception{
@@ -357,12 +357,8 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
             const ident_info src_info{tc.make_ident_info(src)};
             if (src_info.is_const()) {
                 // built-in, not expression, constant
-                x.copy_value(
-                    src.tok(), indent, dst_operand,
-                    operand::imm(std::format("{}{}",
-                                             src.get_unary_ops().to_string(),
-                                             src_info.const_value),
-                                 src_info.type_ref()));
+                x.copy_value(src.tok(), indent, dst_operand,
+                             src.make_constant_operand(src_info));
             } else {
                 // built-in, not expression, not constant
                 if (tf.is_array) {

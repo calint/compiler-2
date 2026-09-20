@@ -56,7 +56,7 @@ class stmt_identifier : public statement {
         while (true) {
             if (not tc.is_func(path_as_string_)) {
                 const ident_info curr_ident_info{
-                    tc.make_ident_info_parsing(tk, path_as_string_)};
+                    tc.make_ident_info(tk, path_as_string_)};
 
                 if (tz.peek_char() == '[' and not curr_ident_info.is_array) {
                     throw compiler_exception{
@@ -97,8 +97,7 @@ class stmt_identifier : public statement {
                 break;
             }
 
-            const ident_info ii{
-                tc.make_ident_info_parsing(tk_prv, path_as_string_)};
+            const ident_info ii{tc.make_ident_info(tk_prv, path_as_string_)};
 
             set_type(ii.type_ref());
 
@@ -158,11 +157,8 @@ class stmt_identifier : public statement {
         const ident_info src_info{tc.make_ident_info(*this)};
 
         if (src_info.is_const()) {
-            x.copy_value(
-                tok(), indent, dst_info.operand,
-                operand::imm(std::format("{}{}", get_unary_ops().to_string(),
-                                         src_info.const_value),
-                             src_info.type_ref()));
+            x.copy_value(tok(), indent, dst_info.operand,
+                         make_constant_operand(src_info));
 
             return;
         }

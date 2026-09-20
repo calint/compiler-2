@@ -3,11 +3,11 @@
 //           2025-10-08
 //           2026-09-08
 
-#include <algorithm>
 #include <format>
 #include <ranges>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -65,7 +65,7 @@ class stmt_call : public expression {
                  std::views::zip(std::views::iota(1), args_, func.params())) {
 
                 if (param.is_array()) {
-                    const ident_info arg_info{tc.make_ident_info_parsing(arg)};
+                    const ident_info arg_info{tc.make_ident_info(arg)};
                     if (not arg_info.is_array) {
                         throw compiler_exception{
                             arg.tok(),
@@ -156,9 +156,12 @@ class stmt_call : public expression {
         }
 
         // track allocated registers
-        std::vector<operand> allocated_named_registers;
-        std::vector<operand> allocated_scratch_registers;
-        std::vector<operand> allocated_registers_in_order;
+        struct allocated_register {
+            operand reg;
+            bool is_named{};
+        };
+
+        std::vector<allocated_register> allocated_registers;
 
         // process each argument
         for (size_t i{}; const expr_any& arg : args_) {
@@ -184,8 +187,10 @@ class stmt_call : public expression {
                 arg_reg = x.alloc_named_register(
                     arg.tok(), indent, register_name, param.get_type());
 
-                allocated_named_registers.emplace_back(arg_reg);
-                allocated_registers_in_order.emplace_back(arg_reg);
+                allocated_registers.push_back({
+                    .reg{arg_reg},
+                    .is_named{true},
+                });
             }
 
             // if the argument is an identifier containing indexing, then save
@@ -201,9 +206,11 @@ class stmt_call : public expression {
                 const operand lea{arg.compile_lea(
                     tc, indent, arg.tok(), regs_lea, {}, arg_info.lea_path)};
 
-                for (const operand& r : regs_lea) {
-                    allocated_scratch_registers.emplace_back(r);
-                    allocated_registers_in_order.emplace_back(r);
+                for (const operand& reg : regs_lea) {
+                    allocated_registers.push_back({
+                        .reg{reg},
+                        .is_named{},
+                    });
                 }
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
@@ -221,8 +228,10 @@ class stmt_call : public expression {
                     arg_reg = x.alloc_scratch_register(arg.tok(), indent,
                                                        param.get_type());
 
-                    allocated_scratch_registers.emplace_back(arg_reg);
-                    allocated_registers_in_order.emplace_back(arg_reg);
+                    allocated_registers.push_back({
+                        .reg{arg_reg},
+                        .is_named{},
+                    });
                 }
 
                 arg.compile(tc, indent,
@@ -255,8 +264,7 @@ class stmt_call : public expression {
 
                     aliases_to_add.emplace_back(
                         std::string{param.identifier()},
-                        std::format("{}{}", arg.get_unary_ops().to_string(),
-                                    arg_info.const_value),
+                        arg.make_constant_operand(arg_info).immediate,
                         operand{}, &param.get_type());
 
                 } else {
@@ -265,8 +273,10 @@ class stmt_call : public expression {
                     const operand scratch_reg{x.alloc_scratch_register(
                         arg.tok(), indent, param.get_type())};
 
-                    allocated_registers_in_order.emplace_back(scratch_reg);
-                    allocated_scratch_registers.emplace_back(scratch_reg);
+                    allocated_registers.push_back({
+                        .reg{scratch_reg},
+                        .is_named{},
+                    });
 
                     x.copy_value(param.tok(), indent, scratch_reg,
                                  arg_info.operand);
@@ -292,12 +302,8 @@ class stmt_call : public expression {
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
-                x.copy_value(
-                    param.tok(), indent, arg_reg,
-                    operand::imm(std::format("{}{}",
-                                             arg.get_unary_ops().to_string(),
-                                             arg_info.const_value),
-                                 arg_info.type_ref()));
+                x.copy_value(param.tok(), indent, arg_reg,
+                             arg.make_constant_operand(arg_info));
             } else {
                 x.copy_value(param.tok(), indent, arg_reg, arg_info.operand);
                 arg.get_unary_ops().compile(tc, indent + 1, arg_reg);
@@ -333,19 +339,13 @@ class stmt_call : public expression {
         func.code().compile(tc, indent, dst_info);
 
         // free allocated registers in reverse order
-        for (const operand& reg :
-             allocated_registers_in_order | std::views::reverse) {
+        for (const allocated_register& allocation :
+             allocated_registers | std::views::reverse) {
 
-            if (std::ranges::contains(allocated_scratch_registers,
-                                      reg.allocation_register,
-                                      &operand::allocation_register)) {
-                x.free_scratch_register(tok(), indent + 1, reg);
-            } else if (std::ranges::contains(allocated_named_registers,
-                                             reg.allocation_register,
-                                             &operand::allocation_register)) {
-                x.free_named_register(tok(), indent + 1, reg);
+            if (allocation.is_named) {
+                x.free_named_register(tok(), indent + 1, allocation.reg);
             } else {
-                std::unreachable();
+                x.free_scratch_register(tok(), indent + 1, allocation.reg);
             }
         }
 

@@ -405,8 +405,7 @@ class toc final {
         }
 
         // comment the resolved name
-        const ident_info& name_info{
-            make_ident_info_parsing(src_loc_tk, var.name)};
+        const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
 
         ::machine& x{machine()};
 
@@ -796,19 +795,6 @@ class toc final {
     [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
                                        const std::string_view ident) const
         -> ident_info {
-
-        return make_ident_info_or_throw(src_loc_tk, ident);
-    }
-
-    [[nodiscard]] auto make_ident_info_parsing(const statement& st) const
-        -> ident_info {
-
-        return make_ident_info_or_throw(st.tok(), st.identifier());
-    }
-
-    [[nodiscard]] auto
-    make_ident_info_parsing(const token& src_loc_tk,
-                            const std::string_view ident) const -> ident_info {
 
         return make_ident_info_or_throw(src_loc_tk, ident);
     }
