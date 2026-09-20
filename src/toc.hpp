@@ -19,7 +19,6 @@
 #include "lut.hpp"
 #include "statement.hpp"
 #include "type.hpp"
-#include "utils.hpp"
 #include "x86.hpp"
 
 class stmt_def_func;
@@ -682,7 +681,8 @@ class toc final {
             return false;
         }
 
-        std::string_view id_base{utils::get_before_dot(st.identifier())};
+        std::string_view id_base{st.identifier()};
+        id_base = id_base.substr(0, id_base.find('.'));
 
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.has_var(id_base)) {
@@ -696,7 +696,8 @@ class toc final {
                 if (not alias.lea.empty()) {
                     return true;
                 }
-                id_base = utils::get_before_dot(alias.to);
+                id_base = alias.to;
+                id_base = id_base.substr(0, id_base.find('.'));
             }
         }
 
@@ -780,7 +781,7 @@ class toc final {
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{utils::line_and_col_num_for_char_index(
+        const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}_{}", line, col);
@@ -790,7 +791,7 @@ class toc final {
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{utils::line_and_col_num_for_char_index(
+        const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);

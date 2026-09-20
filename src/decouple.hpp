@@ -20,6 +20,26 @@
 
 #include "token.hpp"
 
+[[nodiscard]] inline auto line_and_col_num_for_char_index(
+    const size_t at_line, size_t char_index_in_source,
+    const std::string_view src) -> std::pair<size_t, size_t> {
+
+    if (char_index_in_source >= src.size()) {
+        return {at_line, 0};
+    }
+
+    size_t at_col{};
+    while (src[char_index_in_source] != '\n') {
+        ++at_col;
+        if (char_index_in_source == 0) {
+            break;
+        }
+        --char_index_in_source;
+    }
+
+    return {at_line, at_col};
+}
+
 class toc;
 class tokenizer;
 class statement;

@@ -16,7 +16,6 @@
 #include "decouple.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "utils.hpp"
 
 class token;
 class type;
@@ -107,7 +106,7 @@ class x86 final {
     auto comment_start(const token& source_location, const size_t indent)
         -> void {
 
-        const auto [line, column]{utils::line_and_col_num_for_char_index(
+        const auto [line, column]{line_and_col_num_for_char_index(
             source_location.at_line(), source_location.start_index(), source_)};
 
         comment_indent(indent);
@@ -861,7 +860,7 @@ class x86 final {
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{utils::line_and_col_num_for_char_index(
+        const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);

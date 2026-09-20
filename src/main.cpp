@@ -14,12 +14,12 @@
 #include <utility>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "decouple_impl.hpp" // IWYU pragma: keep
 #include "jump_optimizer.hpp"
 #include "panic_exception.hpp"
 #include "program.hpp"
 #include "tokenizer.hpp"
-#include "utils.hpp"
 
 namespace {
 [[nodiscard]] auto read_file_to_string(const char* file_name) -> std::string;
@@ -199,13 +199,13 @@ auto main(const int argc, const char* argv[]) -> int {
 
     } catch (const compiler_exception& e) {
         const auto [line, col]{
-            utils::line_and_col_num_for_char_index(e.line, e.start_index, src)};
+            line_and_col_num_for_char_index(e.line, e.start_index, src)};
 
         std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, e.msg);
         return 1;
     } catch (const tokenizer_exception& e) {
         const auto [line, col]{
-            utils::line_and_col_num_for_char_index(e.line, e.start_index, src)};
+            line_and_col_num_for_char_index(e.line, e.start_index, src)};
 
         std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col,
                      e.what());
