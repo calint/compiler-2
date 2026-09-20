@@ -263,6 +263,10 @@ CLI_TARGETS
 CLI_REPRODUCE_SOURCE
 python3 "$SCRIPT_DIR/test-arena.py"
 
+"${CXX:-clang++}" -std=c++26 -O3 -Wno-braced-scalar-init \
+    "$SCRIPT_DIR/test-operands.cpp" -o gen
+./gen
+
 # Cleanup
 rm -f gen gen.o gen.s diff.baz out err
 

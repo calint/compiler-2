@@ -290,8 +290,7 @@ class machine_x86 final : public machine {
                          const std::string_view register_name,
                          const type& type_ref) -> operand override {
 
-        reserve_named_register(src_loc_tk, indent, register_name);
-        allocated_registers_.back().type_ptr = &type_ref;
+        reserve_named_register(src_loc_tk, indent, register_name, type_ref);
         operand result{reg(register_name, type_ref)};
         result.set_allocation_register(register_name);
 
@@ -411,9 +410,9 @@ class machine_x86 final : public machine {
               const operand& dst, const size_t size_bytes) -> void override {
 
         if (size_bytes > threshold_for_rep_movs_size_bytes) {
-            reserve_named_register(src_loc_tk, indent, "rsi");
-            reserve_named_register(src_loc_tk, indent, "rdi");
-            reserve_named_register(src_loc_tk, indent, "rcx");
+            reserve_named_register(src_loc_tk, indent, "rsi", *default_type_);
+            reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
+            reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
 
             lea(indent, machine_x86::reg("rsi", *type_i64_), src);
             lea(indent, machine_x86::reg("rdi", *type_i64_), dst);
@@ -430,7 +429,7 @@ class machine_x86 final : public machine {
         comment(src_loc_tk, indent, "size <= {} B, use mov",
                 threshold_for_rep_movs_size_bytes);
 
-        reserve_named_register(src_loc_tk, indent, "rax");
+        reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
         size_t remaining_size_bytes{size_bytes};
         operand src_operand{src};
         operand dst_operand{dst};
@@ -544,9 +543,9 @@ class machine_x86 final : public machine {
               const size_t size_bytes) -> void override {
 
         if (size_bytes > threshold_for_rep_stos_size_bytes) {
-            reserve_named_register(src_loc_tk, indent, "rax");
-            reserve_named_register(src_loc_tk, indent, "rdi");
-            reserve_named_register(src_loc_tk, indent, "rcx");
+            reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
+            reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
+            reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
             xor_op(indent, machine_x86::reg("al", *type_i8_),
                    machine_x86::reg("al", *type_i8_));
             lea(indent, machine_x86::reg("rdi", *type_i64_), dst);
@@ -683,7 +682,7 @@ class machine_x86 final : public machine {
         }
 
         validate_shift_operand(src_loc_tk, count);
-        reserve_named_register(src_loc_tk, indent, "rcx");
+        reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
         mov(src_loc_tk, indent,
             sized_register("rcx", dst.type_ref().size_bytes()), count);
         op(src_loc_tk, indent, operation == '<' ? "sal" : "sar", dst,
@@ -709,10 +708,10 @@ class machine_x86 final : public machine {
 
         assert(operation == '/' or operation == '%');
 
-        reserve_named_register(src_loc_tk, indent, "rax");
+        reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
         mov(src_loc_tk, indent, machine_x86::reg("rax", *type_i64_), dst);
 
-        reserve_named_register(src_loc_tk, indent, "rdx");
+        reserve_named_register(src_loc_tk, indent, "rdx", *default_type_);
         asm_line(indent, "cqo");
 
         if (divisor.is_immediate() or
@@ -838,7 +837,7 @@ class machine_x86 final : public machine {
     }
 
     auto reserve_variables_base() -> void override {
-        reserve_named_register(token{}, 0, "rbp");
+        reserve_named_register(token{}, 0, "rbp", *default_type_);
     }
 
     auto release_variables_base() -> void override {
@@ -1145,14 +1144,15 @@ class machine_x86 final : public machine {
     [[nodiscard]] static auto same_operand(const operand& lhs,
                                            const operand& rhs) -> bool {
 
-        if (lhs.get_kind() != rhs.get_kind()) {
-            return false;
-        }
         if (lhs.is_register()) {
-            return lhs.base_register() == rhs.base_register();
+            return rhs.is_register() and
+                   lhs.base_register() == rhs.base_register();
         }
         if (lhs.is_immediate()) {
-            return lhs.immediate() == rhs.immediate();
+            return rhs.is_immediate() and lhs.immediate() == rhs.immediate();
+        }
+        if (not lhs.is_memory() or not rhs.is_memory()) {
+            return lhs.is_empty() and rhs.is_empty();
         }
 
         const bool lhs_index_as_base{lhs.base_register().empty() and
@@ -1271,7 +1271,8 @@ class machine_x86 final : public machine {
         return s;
     }
     auto reserve_named_register(const token& src_loc_tk, const size_t indent,
-                                const std::string_view reg) -> void {
+                                const std::string_view reg,
+                                const type& type_ref) -> void {
 
         comment(src_loc_tk, indent, "allocate named register {}", reg);
 
@@ -1291,7 +1292,7 @@ class machine_x86 final : public machine {
         }
 
         allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
-                                          std::move(*reg_iter), default_type_);
+                                          std::move(*reg_iter), &type_ref);
 
         named_registers_.erase(reg_iter);
     }
@@ -1312,8 +1313,8 @@ class machine_x86 final : public machine {
     [[nodiscard]] auto alloc_bulk_registers(const token& src_loc_tk,
                                             const size_t indent) -> operand {
 
-        reserve_named_register(src_loc_tk, indent, "rsi");
-        reserve_named_register(src_loc_tk, indent, "rdi");
+        reserve_named_register(src_loc_tk, indent, "rsi", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
 
         return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
     }
@@ -1565,8 +1566,15 @@ class machine_x86 final : public machine {
             return;
         }
 
-        const size_t dst_size_bytes{operand_size_bytes(dst_op)};
-        const size_t src_size_bytes{operand_size_bytes(src_op)};
+        const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
+        const size_t src_size_bytes{src_op.type_ref().size_bytes()};
+
+        if (src_op.is_immediate()) {
+            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
+                     format_operand(src_op));
+
+            return;
+        }
 
         if (dst_op.is_memory() and src_op.is_memory()) {
             const operand reg{alloc_scratch_register(
@@ -1632,18 +1640,10 @@ class machine_x86 final : public machine {
 
             return;
         }
-        if (dst_op.is_register()) {
-            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     src_op.is_memory() ? format_operand(src_op, dst_size_bytes)
-                                        : format_operand(src_op));
-
-            return;
-        }
-
-        // memory destination, immediate source; dst_size < src_size
+        assert(dst_op.is_register() and src_op.is_memory());
 
         asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                 format_operand(src_op));
+                 format_operand(src_op, dst_size_bytes));
     }
 
     auto cmovs(const size_t indent, const operand& dst, const operand& src)
@@ -1765,17 +1765,6 @@ class machine_x86 final : public machine {
         for (size_t i{1}; i < indent; ++i) {
             print("    ");
         }
-    }
-
-    [[nodiscard]] auto operand_size_bytes(const operand& value) const
-        -> size_t {
-
-        if (not value.is_empty() and not value.is_immediate() and
-            value.type_ref().size_bytes() != 0) {
-            return value.type_ref().size_bytes();
-        }
-
-        return default_type_->size_bytes();
     }
 
     // human-readable "line:col" for a token, using the cached source text

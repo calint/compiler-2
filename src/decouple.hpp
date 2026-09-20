@@ -79,8 +79,6 @@ class operand {
                    address.scale_, address.displacement_, value_type);
     }
 
-    [[nodiscard]] auto get_kind() const -> kind { return kind_; }
-
     [[nodiscard]] auto allocation_register() const -> const std::string& {
         return allocation_register_;
     }
@@ -106,7 +104,11 @@ class operand {
         allocation_register_ = name;
     }
 
-    void increment_offset(const int32_t offset) { displacement_ += offset; }
+    void increment_offset(const int32_t offset) {
+        assert(is_memory());
+
+        displacement_ += offset;
+    }
 
     [[nodiscard]] auto type_ref() const -> const type& {
         assert(type_ptr_);
