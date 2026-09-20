@@ -51,7 +51,7 @@ struct alias_info {
 
         return {
             .from{std::string{name}},
-            .to{reg.base_register},
+            .to{reg.base_register()},
             .lea{},
             .type_ptr{&alias_type},
             .register_operand{reg},
@@ -437,7 +437,7 @@ class toc final {
         }
         if (not var.reg.is_empty()) {
             x.comment(src_loc_tk, indent, "{} ({})", text,
-                      var.reg.base_register);
+                      var.reg.base_register());
 
             return;
         }
@@ -818,7 +818,7 @@ class toc final {
     [[nodiscard]] static auto make_ident_info_from_register(const operand& reg)
         -> ident_info {
 
-        return ident_info::make_register(reg.base_register, reg);
+        return ident_info::make_register(reg.base_register(), reg);
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
@@ -849,28 +849,6 @@ class toc final {
 
     [[nodiscard]] auto get_stack_size_bytes() const -> size_t {
         return vars_size_bytes_;
-    }
-
-    [[nodiscard]] auto
-    get_builtin_type_for_size_bytes(const size_t size_bytes) const
-        -> const type& {
-
-        switch (size_bytes) {
-        case operand::size_qword:
-            return *types_.get_const_ref("i64").type_ptr;
-
-        case operand::size_dword:
-            return *types_.get_const_ref("i32").type_ptr;
-
-        case operand::size_word:
-            return *types_.get_const_ref("i16").type_ptr;
-
-        case operand::size_byte:
-            return *types_.get_const_ref("i8").type_ptr;
-
-        default:
-            std::unreachable();
-        }
     }
 
     [[nodiscard]] static auto
@@ -929,6 +907,20 @@ class toc final {
     }
 
   private:
+    [[nodiscard]] auto
+    builtin_type_for_size_bytes(const size_t size_bytes) const
+        -> const type& {
+
+        for (const char* const name : {"i64", "i32", "i16", "i8"}) {
+            const type& value_type{*types_.get_const_ref(name).type_ptr};
+            if (size_bytes == value_type.size_bytes()) {
+                return value_type;
+            }
+        }
+
+        std::unreachable();
+    }
+
     [[nodiscard]] auto is_in_main() const -> bool {
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
@@ -1153,7 +1145,7 @@ class toc final {
 
         ii.operand = operand::mem(lea, ii.type_ref());
         if (offset != 0) {
-            ii.operand.displacement += static_cast<int32_t>(offset);
+            ii.operand.increment_offset(static_cast<int32_t>(offset));
         }
 
         return ii;
@@ -1172,7 +1164,7 @@ class toc final {
             const type* type_ptr{
                 machine_.get().allocated_register_type(id.str())};
             if (not type_ptr) {
-                type_ptr = &get_builtin_type_for_size_bytes(reg_size_bytes);
+                type_ptr = &builtin_type_for_size_bytes(reg_size_bytes);
             }
 
             const operand reg{machine_.get().reg(id.str(), *type_ptr)};

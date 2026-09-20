@@ -131,8 +131,8 @@ class expr_any final : public statement {
         for (const auto [i, e] : std::views::enumerate(vars_)) {
             x.comment(tok(), indent, "[{}]", i);
             compile_variant(tc, indent, cur_dst_info, tok(), e);
-            cur_dst_info.operand.displacement +=
-                static_cast<int32_t>(cur_dst_info.type_ref().size_bytes());
+            cur_dst_info.operand.increment_offset(
+                static_cast<int32_t>(cur_dst_info.type_ref().size_bytes()));
         }
 
         const size_t remaining_count{(array_count_ - vars_.size())};

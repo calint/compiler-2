@@ -261,7 +261,7 @@ class stmt_call : public expression {
 
                     aliases_to_add.emplace_back(
                         std::string{param.identifier()},
-                        arg.make_constant_operand(arg_info).immediate,
+                        arg.make_constant_operand(arg_info).immediate(),
                         operand{}, &param.get_type());
 
                 } else {

@@ -45,28 +45,19 @@ class stmt_block;
 class type;
 class expr_any;
 
-struct operand {
-    enum class operand_kind : uint8_t { empty, reg, memory, immediate };
+class operand {
+    enum class kind : uint8_t { empty, reg, memory, immediate };
 
-  private:
-    operand_kind kind_{operand_kind::empty};
+    kind kind_{kind::empty};
     const type* type_ptr_{};
+    std::string allocation_register_;
+    std::string base_register_;
+    std::string index_register_;
+    std::string immediate_;
+    int32_t displacement_{};
+    uint8_t scale_{1};
 
   public:
-    static constexpr size_t size_qword{8};
-    static constexpr size_t size_dword{4};
-    static constexpr size_t size_word{2};
-    static constexpr size_t size_byte{1};
-
-    // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
-    std::string allocation_register;
-    std::string base_register;
-    std::string index_register;
-    std::string immediate;
-    int32_t displacement{};
-    uint8_t scale{1};
-    // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
-
     operand() = default;
 
     [[nodiscard]] static auto imm(std::string value, const type& value_type)
@@ -84,11 +75,38 @@ struct operand {
                                   const type& value_type) -> operand {
         assert(address.is_memory() or address.is_register());
 
-        return mem(address.base_register, address.index_register, address.scale,
-                   address.displacement, value_type);
+        return mem(address.base_register_, address.index_register_,
+                   address.scale_, address.displacement_, value_type);
     }
 
-    [[nodiscard]] auto kind() const -> operand_kind { return kind_; }
+    [[nodiscard]] auto get_kind() const -> kind { return kind_; }
+
+    [[nodiscard]] auto allocation_register() const -> const std::string& {
+        return allocation_register_;
+    }
+
+    [[nodiscard]] auto base_register() const -> const std::string& {
+        return base_register_;
+    }
+
+    [[nodiscard]] auto index_register() const -> const std::string& {
+        return index_register_;
+    }
+
+    [[nodiscard]] auto immediate() const -> const std::string& {
+        return immediate_;
+    }
+
+    [[nodiscard]] auto displacement() const -> int32_t { return displacement_; }
+
+    [[nodiscard]] auto scale() const -> uint8_t { return scale_; }
+
+    void set_allocation_register(const std::string_view name) {
+        assert(is_register());
+        allocation_register_ = name;
+    }
+
+    void increment_offset(const int32_t offset) { displacement_ += offset; }
 
     [[nodiscard]] auto type_ref() const -> const type& {
         assert(type_ptr_);
@@ -97,23 +115,21 @@ struct operand {
     }
 
     [[nodiscard]] auto is_register() const -> bool {
-        return kind_ == operand_kind::reg;
+        return kind_ == kind::reg;
     }
 
     [[nodiscard]] auto is_memory() const -> bool {
-        return kind_ == operand_kind::memory;
+        return kind_ == kind::memory;
     }
 
     [[nodiscard]] auto is_immediate() const -> bool {
-        return kind_ == operand_kind::immediate;
+        return kind_ == kind::immediate;
     }
 
-    [[nodiscard]] auto is_empty() const -> bool {
-        return kind_ == operand_kind::empty;
-    }
+    [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::empty; }
 
     [[nodiscard]] auto is_indexed() const -> bool {
-        return not index_register.empty() or displacement != 0;
+        return not index_register_.empty() or displacement_ != 0;
     }
 };
 
@@ -162,7 +178,7 @@ struct ident_info {
 
         return {
             .id{ident},
-            .elem_path{reg.base_register},
+            .elem_path{reg.base_register()},
             .type_path{&reg.type_ref()},
             .lea_path{::operand{}},
             .operand{reg},
@@ -236,8 +252,9 @@ struct ident_info {
 
         if (is_register()) {
             return elem_path.size() == 1 and operand.is_register() and
-                   not operand.base_register.empty() and
-                   operand.index_register.empty() and operand.displacement == 0;
+                   not operand.base_register().empty() and
+                   operand.index_register().empty() and
+                   operand.displacement() == 0;
         }
 
         return is_var();
@@ -298,7 +315,7 @@ struct ident_info {
         assert(stack_idx + n >= 0);
 
         stack_idx += n;
-        operand.displacement += n;
+        operand.increment_offset(n);
 
         assert(validate_invariants());
     }

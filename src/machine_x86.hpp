@@ -28,6 +28,11 @@ class token;
 class type;
 
 class machine_x86 final : public machine {
+    static constexpr size_t size_qword{8};
+    static constexpr size_t size_dword{4};
+    static constexpr size_t size_word{2};
+    static constexpr size_t size_byte{1};
+
     static constexpr size_t data_alignment_{16};
 
     static constexpr std::string_view data_qword{"dq"};
@@ -275,7 +280,7 @@ class machine_x86 final : public machine {
 
         const std::string& allocated_name{allocated_registers_.back().name};
         operand result{reg(allocated_name, type_ref)};
-        result.allocation_register = allocated_name;
+        result.set_allocation_register(allocated_name);
 
         return result;
     }
@@ -288,7 +293,7 @@ class machine_x86 final : public machine {
         reserve_named_register(src_loc_tk, indent, register_name);
         allocated_registers_.back().type_ptr = &type_ref;
         operand result{reg(register_name, type_ref)};
-        result.allocation_register = register_name;
+        result.set_allocation_register(register_name);
 
         return result;
     }
@@ -296,20 +301,20 @@ class machine_x86 final : public machine {
     auto free_named_register(const token& src_loc_tk, const size_t indent,
                              const operand& reg) -> void override {
 
-        assert(reg.is_register() and not reg.allocation_register.empty());
+        assert(reg.is_register() and not reg.allocation_register().empty());
 
-        release_named_register(src_loc_tk, indent, reg.allocation_register);
+        release_named_register(src_loc_tk, indent, reg.allocation_register());
     }
 
     auto free_scratch_register(const token& src_loc_tk, const size_t indent,
                                const operand& reg) -> void override {
 
-        assert(reg.is_register() and not reg.allocation_register.empty());
+        assert(reg.is_register() and not reg.allocation_register().empty());
 
         comment(src_loc_tk, indent, "free scratch register {}",
-                reg.allocation_register);
+                reg.allocation_register());
 
-        assert(allocated_registers_.back().name == reg.allocation_register);
+        assert(allocated_registers_.back().name == reg.allocation_register());
 
         scratch_registers_.emplace_back(
             std::move(allocated_registers_.back().name));
@@ -429,8 +434,8 @@ class machine_x86 final : public machine {
         size_t remaining_size_bytes{size_bytes};
         operand src_operand{src};
         operand dst_operand{dst};
-        for (size_t width_size_bytes{operand::size_qword};
-             width_size_bytes >= operand::size_byte; width_size_bytes /= 2) {
+        for (size_t width_size_bytes{size_qword}; width_size_bytes >= size_byte;
+             width_size_bytes /= 2) {
 
             while (remaining_size_bytes >= width_size_bytes) {
                 const operand reg{sized_register("rax", width_size_bytes)};
@@ -441,10 +446,10 @@ class machine_x86 final : public machine {
 
                 remaining_size_bytes -= width_size_bytes;
                 if (remaining_size_bytes != 0) {
-                    src_operand.displacement +=
-                        static_cast<int32_t>(width_size_bytes);
-                    dst_operand.displacement +=
-                        static_cast<int32_t>(width_size_bytes);
+                    src_operand.increment_offset(
+                        static_cast<int32_t>(width_size_bytes));
+                    dst_operand.increment_offset(
+                        static_cast<int32_t>(width_size_bytes));
                 }
             }
         }
@@ -505,15 +510,15 @@ class machine_x86 final : public machine {
 
         char size_suffix{'b'};
         size_t count{size_bytes};
-        if ((count % operand::size_qword) == 0) {
+        if ((count % size_qword) == 0) {
             size_suffix = 'q';
-            count /= operand::size_qword;
-        } else if ((count % operand::size_dword) == 0) {
+            count /= size_qword;
+        } else if ((count % size_dword) == 0) {
             size_suffix = 'd';
-            count /= operand::size_dword;
-        } else if ((count % operand::size_word) == 0) {
+            count /= size_dword;
+        } else if ((count % size_word) == 0) {
             size_suffix = 'w';
-            count /= operand::size_word;
+            count /= size_word;
         }
         mov(src_loc_tk, indent, machine_x86::reg("rcx", *type_i64_),
             immediate(count));
@@ -560,8 +565,8 @@ class machine_x86 final : public machine {
 
         size_t remaining_size_bytes{size_bytes};
         operand dst_operand{dst};
-        for (size_t width_size_bytes{operand::size_qword};
-             width_size_bytes >= operand::size_byte; width_size_bytes /= 2) {
+        for (size_t width_size_bytes{size_qword}; width_size_bytes >= size_byte;
+             width_size_bytes /= 2) {
 
             while (remaining_size_bytes >= width_size_bytes) {
                 mov(src_loc_tk, indent,
@@ -569,8 +574,8 @@ class machine_x86 final : public machine {
 
                 remaining_size_bytes -= width_size_bytes;
                 if (remaining_size_bytes != 0) {
-                    dst_operand.displacement +=
-                        static_cast<int32_t>(width_size_bytes);
+                    dst_operand.increment_offset(
+                        static_cast<int32_t>(width_size_bytes));
                 }
             }
         }
@@ -614,7 +619,7 @@ class machine_x86 final : public machine {
                   const operand& product, const operand& factor,
                   const bool reuse_source = false) -> void override {
 
-        if (product.type_ref().size_bytes() == operand::size_byte) {
+        if (product.type_ref().size_bytes() == size_byte) {
             const operand left{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
@@ -657,7 +662,7 @@ class machine_x86 final : public machine {
     auto validate_shift_operand(const token& src_loc_tk,
                                 const operand& count) const -> void override {
 
-        if (count.is_register() and count.base_register == "rcx") {
+        if (count.is_register() and count.base_register() == "rcx") {
             throw compiler_exception{
                 src_loc_tk, "cannot use 'rcx' as a shift operand; it is "
                             "reserved for the count"};
@@ -682,7 +687,7 @@ class machine_x86 final : public machine {
         mov(src_loc_tk, indent,
             sized_register("rcx", dst.type_ref().size_bytes()), count);
         op(src_loc_tk, indent, operation == '<' ? "sal" : "sar", dst,
-           sized_register("rcx", operand::size_byte));
+           sized_register("rcx", size_byte));
         release_named_register(src_loc_tk, indent, "rcx");
     }
 
@@ -690,8 +695,8 @@ class machine_x86 final : public machine {
                                    const operand& divisor) const
         -> void override {
 
-        if (divisor.is_register() and (divisor.base_register == "rdx" or
-                                       divisor.base_register == "rax")) {
+        if (divisor.is_register() and (divisor.base_register() == "rdx" or
+                                       divisor.base_register() == "rax")) {
             throw compiler_exception{
                 src_loc_tk, "cannot use 'rdx' or 'rax' for division; they are "
                             "reserved"};
@@ -711,7 +716,7 @@ class machine_x86 final : public machine {
         asm_line(indent, "cqo");
 
         if (divisor.is_immediate() or
-            divisor.type_ref().size_bytes() != operand::size_qword) {
+            divisor.type_ref().size_bytes() != size_qword) {
             const operand scratch_reg{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
@@ -780,10 +785,8 @@ class machine_x86 final : public machine {
     [[nodiscard]] auto can_encode_index_scale(const size_t size_bytes) const
         -> bool override {
 
-        return size_bytes == operand::size_byte or
-               size_bytes == operand::size_word or
-               size_bytes == operand::size_dword or
-               size_bytes == operand::size_qword;
+        return size_bytes == size_byte or size_bytes == size_word or
+               size_bytes == size_dword or size_bytes == size_qword;
     }
 
     auto scale_index(const token& src_loc_tk, const size_t indent,
@@ -813,7 +816,7 @@ class machine_x86 final : public machine {
     [[nodiscard]] auto is_variables_base(const operand& reg) const
         -> bool override {
 
-        return not reg.is_indexed() and reg.base_register == "rbp";
+        return not reg.is_indexed() and reg.base_register() == "rbp";
     }
 
     auto address_of_variable(const token& src_loc_tk, const size_t indent,
@@ -1022,8 +1025,8 @@ class machine_x86 final : public machine {
     }
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {
-        const size_t count{size_bytes / operand::size_byte};
-        emit_repeated_data(operand::size_byte, count, {});
+        const size_t count{size_bytes / size_byte};
+        emit_repeated_data(size_byte, count, {});
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
@@ -1040,21 +1043,21 @@ class machine_x86 final : public machine {
 
         for (const register_names& names : register_names_) {
             if (name == names.qword) {
-                return operand::size_qword;
+                return size_qword;
             }
             if (name == names.dword) {
-                return operand::size_dword;
+                return size_dword;
             }
             if (name == names.word) {
-                return operand::size_word;
+                return size_word;
             }
             if (name == names.byte) {
-                return operand::size_byte;
+                return size_byte;
             }
         }
         if (name == "ah" or name == "bh" or name == "ch" or name == "dh") {
 
-            return operand::size_byte;
+            return size_byte;
         }
 
         return 0;
@@ -1069,8 +1072,7 @@ class machine_x86 final : public machine {
             return nullptr;
         }
 
-        const std::string canonical_name{
-            sized_register_name(name, operand::size_qword)};
+        const std::string canonical_name{sized_register_name(name, size_qword)};
 
         for (const allocated_register& allocated : allocated_registers_) {
             if (canonical_name == allocated.name) {
@@ -1116,8 +1118,8 @@ class machine_x86 final : public machine {
             return reg;
         }
 
-        operand result{sized_register(reg.base_register, size_bytes)};
-        result.allocation_register = reg.allocation_register;
+        operand result{sized_register(reg.base_register(), size_bytes)};
+        result.set_allocation_register(reg.allocation_register());
 
         return result;
     }
@@ -1143,55 +1145,55 @@ class machine_x86 final : public machine {
     [[nodiscard]] static auto same_operand(const operand& lhs,
                                            const operand& rhs) -> bool {
 
-        if (lhs.kind() != rhs.kind()) {
+        if (lhs.get_kind() != rhs.get_kind()) {
             return false;
         }
         if (lhs.is_register()) {
-            return lhs.base_register == rhs.base_register;
+            return lhs.base_register() == rhs.base_register();
         }
         if (lhs.is_immediate()) {
-            return lhs.immediate == rhs.immediate;
+            return lhs.immediate() == rhs.immediate();
         }
 
-        const bool lhs_index_as_base{lhs.base_register.empty() and
-                                     lhs.scale <= 1};
+        const bool lhs_index_as_base{lhs.base_register().empty() and
+                                     lhs.scale() <= 1};
 
-        const bool rhs_index_as_base{rhs.base_register.empty() and
-                                     rhs.scale <= 1};
+        const bool rhs_index_as_base{rhs.base_register().empty() and
+                                     rhs.scale() <= 1};
 
-        const std::string_view lhs_base{lhs_index_as_base ? lhs.index_register
-                                                          : lhs.base_register};
+        const std::string_view lhs_base{
+            lhs_index_as_base ? lhs.index_register() : lhs.base_register()};
 
-        const std::string_view rhs_base{rhs_index_as_base ? rhs.index_register
-                                                          : rhs.base_register};
+        const std::string_view rhs_base{
+            rhs_index_as_base ? rhs.index_register() : rhs.base_register()};
 
         const std::string_view lhs_index{
-            lhs_index_as_base ? std::string_view{} : lhs.index_register};
+            lhs_index_as_base ? std::string_view{} : lhs.index_register()};
 
         const std::string_view rhs_index{
-            rhs_index_as_base ? std::string_view{} : rhs.index_register};
+            rhs_index_as_base ? std::string_view{} : rhs.index_register()};
 
         return lhs.type_ref().size_bytes() == rhs.type_ref().size_bytes() and
                lhs_base == rhs_base and lhs_index == rhs_index and
-               lhs.displacement == rhs.displacement and
-               (lhs_index.empty() or std::max(lhs.scale, uint8_t{1}) ==
-                                         std::max(rhs.scale, uint8_t{1}));
+               lhs.displacement() == rhs.displacement() and
+               (lhs_index.empty() or std::max(lhs.scale(), uint8_t{1}) ==
+                                         std::max(rhs.scale(), uint8_t{1}));
     }
 
     [[nodiscard]] static auto size_specifier(const size_t size_bytes)
         -> std::string_view {
 
         switch (size_bytes) {
-        case operand::size_qword:
+        case size_qword:
             return "qword";
 
-        case operand::size_dword:
+        case size_dword:
             return "dword";
 
-        case operand::size_word:
+        case size_word:
             return "word";
 
-        case operand::size_byte:
+        case size_byte:
             return "byte";
 
         default:
@@ -1207,32 +1209,33 @@ class machine_x86 final : public machine {
 
         std::string s;
 
-        if (not value.base_register.empty()) {
-            s += value.base_register;
+        if (not value.base_register().empty()) {
+            s += value.base_register();
         }
 
-        if (not value.index_register.empty()) {
+        if (not value.index_register().empty()) {
             if (not s.empty()) {
                 s += " + ";
             }
-            s += value.index_register;
-            if (value.scale > 1) {
-                s += " * " + std::format("{}", value.scale);
+            s += value.index_register();
+            if (value.scale() > 1) {
+                s += " * " + std::format("{}", value.scale());
             }
         }
 
         if (explicit_displacement) {
-            s += std::format(" + {}", value.displacement);
-        } else if (value.displacement != 0) {
+            s += std::format(" + {}", value.displacement());
+        } else if (value.displacement() != 0) {
             if (not s.empty()) {
-                if (value.displacement > 0) {
+                if (value.displacement() > 0) {
                     s += " + ";
                 } else {
                     s += " - ";
                 }
             }
-            s += std::format("{}", value.displacement < 0 ? -value.displacement
-                                                          : value.displacement);
+            s += std::format("{}", value.displacement() < 0
+                                       ? -value.displacement()
+                                       : value.displacement());
         }
 
         return s;
@@ -1241,11 +1244,11 @@ class machine_x86 final : public machine {
     [[nodiscard]] static auto format_operand(const operand& value)
         -> std::string {
         if (value.is_immediate()) {
-            return value.immediate;
+            return value.immediate();
         }
 
         return value.is_register()
-                   ? value.base_register
+                   ? value.base_register()
                    : format_operand(value, value.type_ref().size_bytes());
     }
 
@@ -1253,7 +1256,7 @@ class machine_x86 final : public machine {
                                              const size_t size_bytes)
         -> std::string {
         if (value.is_immediate()) {
-            return value.immediate;
+            return value.immediate();
         }
         std::string s;
         if (size_bytes != 0) {
@@ -1352,16 +1355,16 @@ class machine_x86 final : public machine {
                 continue;
             }
             switch (size_bytes) {
-            case operand::size_qword:
+            case size_qword:
                 return std::string{names.qword};
 
-            case operand::size_dword:
+            case size_dword:
                 return std::string{names.dword};
 
-            case operand::size_word:
+            case size_word:
                 return std::string{names.word};
 
-            case operand::size_byte:
+            case size_byte:
                 return std::string{names.byte};
 
             default:
@@ -1390,16 +1393,16 @@ class machine_x86 final : public machine {
             name.substr(digits_start, digits_end - digits_start)};
 
         switch (size_bytes) {
-        case operand::size_qword:
+        case size_qword:
             return std::format("r{}", register_number);
 
-        case operand::size_dword:
+        case size_dword:
             return std::format("r{}d", register_number);
 
-        case operand::size_word:
+        case size_word:
             return std::format("r{}w", register_number);
 
-        case operand::size_byte:
+        case size_byte:
             return std::format("r{}b", register_number);
 
         default:
@@ -1425,7 +1428,7 @@ class machine_x86 final : public machine {
 
         if (dst.is_memory()) {
             setcc(indent, asm_cc_for_op(comparison, inverted),
-                  sized_memory(dst, operand::size_byte));
+                  sized_memory(dst, size_byte));
 
             return;
         }
@@ -1434,11 +1437,11 @@ class machine_x86 final : public machine {
 
     auto store_equal_result(const size_t indent, const operand& dst) -> void {
         if (dst.is_register()) {
-            setcc(indent, "e", sized_register(dst, operand::size_byte));
+            setcc(indent, "e", sized_register(dst, size_byte));
 
             return;
         }
-        setcc(indent, "e", sized_memory(dst, operand::size_byte));
+        setcc(indent, "e", sized_memory(dst, size_byte));
     }
 
     template <typename... args_t>
@@ -1711,16 +1714,16 @@ class machine_x86 final : public machine {
         -> std::string_view {
 
         switch (size_bytes) {
-        case operand::size_qword:
+        case size_qword:
             return data_qword;
 
-        case operand::size_dword:
+        case size_dword:
             return data_dword;
 
-        case operand::size_word:
+        case size_word:
             return data_word;
 
-        case operand::size_byte:
+        case size_byte:
             return data_byte;
 
         default:
@@ -1794,16 +1797,16 @@ class machine_x86 final : public machine {
     builtin_type_for_size_bytes(const size_t size_bytes) const -> const type& {
 
         switch (size_bytes) {
-        case operand::size_qword:
+        case size_qword:
             return *type_i64_;
 
-        case operand::size_dword:
+        case size_dword:
             return *type_i32_;
 
-        case operand::size_word:
+        case size_word:
             return *type_i16_;
 
-        case operand::size_byte:
+        case size_byte:
             return *type_i8_;
 
         default:

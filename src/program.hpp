@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstdint>
 #include <memory>
 #include <ostream>
 #include <span>
@@ -21,11 +22,11 @@
 class program final {
     // built-in types
     type type_void{"void", 0, true};
-    type type_i64{"i64", operand::size_qword, true};
-    type type_i32{"i32", operand::size_dword, true};
-    type type_i16{"i16", operand::size_word, true};
-    type type_i8{"i8", operand::size_byte, true};
-    type type_bool{"bool", operand::size_byte, true};
+    type type_i64{"i64", sizeof(int64_t), true};
+    type type_i32{"i32", sizeof(int32_t), true};
+    type type_i16{"i16", sizeof(int16_t), true};
+    type type_i8{"i8", sizeof(int8_t), true};
+    type type_bool{"bool", type_i8.size_bytes(), true};
 
     std::vector<std::unique_ptr<statement>> statements_;
     toc tc_; // table of contents

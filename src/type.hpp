@@ -101,7 +101,7 @@ class type final {
 
         const operand op{operand::mem(var.reg.is_empty()
                                           ? variables_base_register
-                                          : var.reg.base_register,
+                                          : var.reg.base_register(),
                                       "", 1, stack_idx, *tp)};
 
         return ident_info::make_var(std::string{ident}, path,

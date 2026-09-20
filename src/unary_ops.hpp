@@ -14,7 +14,7 @@
 
 class toc;
 class machine;
-struct operand;
+class operand;
 
 class unary_ops final {
     token ws_pre_;          // whitespace before the ops

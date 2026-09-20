@@ -45,9 +45,9 @@ auto operand::imm(std::string value, const type& value_type) -> operand {
     }
 
     operand result;
-    result.kind_ = operand_kind::immediate;
+    result.kind_ = kind::immediate;
     result.type_ptr_ = &value_type;
-    result.immediate = std::move(value);
+    result.immediate_ = std::move(value);
 
     return result;
 }
@@ -61,9 +61,9 @@ auto operand::reg(const std::string_view name, const type& value_type)
     }
 
     operand result;
-    result.kind_ = operand_kind::reg;
+    result.kind_ = kind::reg;
     result.type_ptr_ = &value_type;
-    result.base_register = name;
+    result.base_register_ = name;
 
     return result;
 }
@@ -78,12 +78,12 @@ auto operand::mem(const std::string_view base, const std::string_view index,
     }
 
     operand result;
-    result.kind_ = operand_kind::memory;
+    result.kind_ = kind::memory;
     result.type_ptr_ = &value_type;
-    result.base_register = base;
-    result.index_register = index;
-    result.scale = index_scale;
-    result.displacement = offset;
+    result.base_register_ = base;
+    result.index_register_ = index;
+    result.scale_ = index_scale;
+    result.displacement_ = offset;
 
     return result;
 }
@@ -332,7 +332,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
 
         x.copy(tok(), indent, src_op, dst_op, size_bytes);
 
-        dst_op.displacement += static_cast<int32_t>(size_bytes);
+        dst_op.increment_offset(static_cast<int32_t>(size_bytes));
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
 
@@ -383,7 +383,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
 
             x.zero(tok(), indent, dst_op, field.size_bytes);
             const int32_t size_bytes{static_cast<int32_t>(field.size_bytes)};
-            dst_op.displacement += size_bytes;
+            dst_op.increment_offset(size_bytes);
             cur_dst_info.increment_offset(size_bytes);
             cur_dst_info.pop();
             continue;
@@ -428,7 +428,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
             }
         }
         const int32_t size_bytes{static_cast<int32_t>(field.size_bytes)};
-        dst_op.displacement += size_bytes;
+        dst_op.increment_offset(size_bytes);
         cur_dst_info.increment_offset(size_bytes);
         cur_dst_info.pop();
     }
@@ -447,7 +447,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
 
     x.comment(tok(), indent, "zero remaining fields: {} B", size_bytes);
     x.zero(tok(), indent, dst_op, size_bytes);
-    dst_op.displacement += static_cast<int32_t>(size_bytes);
+    dst_op.increment_offset(static_cast<int32_t>(size_bytes));
 }
 
 // declared in 'expr_type_value.hpp'

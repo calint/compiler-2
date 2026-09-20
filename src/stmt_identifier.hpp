@@ -270,7 +270,7 @@ class stmt_identifier : public statement {
                             reg_offset = init_reg_offset(
                                 tc, indent, src_loc_tk, lea,
                                 allocated_registers, true, true,
-                                base_info.operand.base_register);
+                                base_info.operand.base_register());
                         }
 
                         const int32_t offset{x.is_variables_base(reg_offset)
@@ -279,7 +279,7 @@ class stmt_identifier : public statement {
                                                  : accum_offset};
 
                         return operand::mem(
-                            reg_offset.base_register, reg_idx.base_register,
+                            reg_offset.base_register(), reg_idx.base_register(),
                             static_cast<uint8_t>(type_size_bytes), offset,
                             *value_type);
                     }
@@ -290,7 +290,7 @@ class stmt_identifier : public statement {
                 if (reg_offset.is_empty()) {
                     reg_offset = init_reg_offset(
                         tc, indent, src_loc_tk, lea, allocated_registers, false,
-                        true, base_info.operand.base_register);
+                        true, base_info.operand.base_register());
                 }
 
                 if (x.is_variables_base(reg_offset)) {
@@ -303,15 +303,15 @@ class stmt_identifier : public statement {
                                           base_info.stack_idx,
                                           base_info.type_ref());
                 } else if (not reg_offset.is_indexed() and
-                           reg_offset.base_register ==
-                               base_info.operand.base_register) {
+                           reg_offset.base_register() ==
+                               base_info.operand.base_register()) {
                     const operand offset_register{x.alloc_scratch_register(
                         src_loc_tk, indent, tc.get_type_default())};
 
                     allocated_registers.push_back(offset_register);
                     reg_offset = offset_register;
                     x.address_of(src_loc_tk, indent, reg_offset,
-                                 operand::mem(base_info.operand.base_register,
+                                 operand::mem(base_info.operand.base_register(),
                                               "", 1, 0, base_info.type_ref()));
                 }
 
@@ -347,19 +347,19 @@ class stmt_identifier : public statement {
         if (reg_offset.is_empty()) {
             reg_offset = init_reg_offset(tc, indent, src_loc_tk, lea,
                                          allocated_registers, true, false,
-                                         base_info.operand.base_register);
+                                         base_info.operand.base_register());
         }
 
-        operand op{operand::mem(reg_offset.base_register,
-                                reg_offset.index_register, reg_offset.scale,
-                                reg_offset.displacement, *value_type)};
+        operand op{operand::mem(reg_offset.base_register(),
+                                reg_offset.index_register(), reg_offset.scale(),
+                                reg_offset.displacement(), *value_type)};
 
-        op.displacement += accum_offset;
+        op.increment_offset(accum_offset);
 
         if (x.is_variables_base(reg_offset)) {
             // register is not optimally encoded for trailing elements of size
             // 1, 2, 4, or 8
-            op.displacement += base_info.stack_idx;
+            op.increment_offset(base_info.stack_idx);
         }
 
         return op;
@@ -430,7 +430,7 @@ class stmt_identifier : public statement {
                 x.address_of(src_loc_tk, indent, index_reg, lea);
             } else {
                 x.copy_value(src_loc_tk, indent, index_reg,
-                             x.reg(lea.base_register, tc.get_type_default()));
+                             x.reg(lea.base_register(), tc.get_type_default()));
             }
 
             return index_reg;
