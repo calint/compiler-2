@@ -7,9 +7,6 @@
 [ ] consider a var type that can be viewed from enclosing functions
 [ ] consider padding to natural bounds: dat, var and type fields
 [ ] consider replacing ident_info.use_operand bool with a destination-mode enum
-[x] don't allow a variable to have a register name
-    [x] same for return result
-    [x] and function argument names
 [ ] consider passing a null os x86 to the constructor also for consistency
 [ ] if toc knows of x86 then it might as well contain it and access through
     .x86()
@@ -175,6 +172,9 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] don't allow a variable to have a register name
+    [x] same for return result
+    [x] and function argument names
 [x] toc: max stack meter includes dat and padding
 [x] refactor so data segment is first then bss.stack and rsp + offset instead of
     -. big refactor. right now the program file is as big as the stack
