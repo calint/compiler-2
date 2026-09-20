@@ -44,8 +44,9 @@ class x86 final {
                                               "rsi", "rdi", "rbp"};
 
     size_t named_registers_initial_size_{named_registers_.size()};
-    std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
-                                                "r12", "r13", "r14", "r15"};
+    std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r12",
+                                                "r13", "r14", "r15"};
+    // note: r11 gets clobbered by syscall
 
     size_t scratch_registers_initial_size_{scratch_registers_.size()};
     std::vector<allocated_register> allocated_registers_;
