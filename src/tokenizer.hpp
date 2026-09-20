@@ -96,7 +96,7 @@ class tokenizer final {
 
     [[nodiscard]] auto is_next_char_token(const char ch) -> token {
         const std::string_view ws_before{next_whitespace()};
-        if (is_eos() or src_[char_ix_] != ch) {
+        if (not is_peek_char(ch)) {
             move_back(ws_before.size());
 
             return {};

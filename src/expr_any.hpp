@@ -59,14 +59,13 @@ class expr_any final : public statement {
             return;
         }
 
-        size_t counter{};
         while (true) {
             close_brace_tk_ = tz.is_next_char_token('}');
             if (not close_brace_tk_.is_empty()) {
                 break;
             }
 
-            if (counter++) {
+            if (not vars_.empty()) {
                 const token t{tz.is_next_char_token(',')};
                 if (t.is_empty()) {
                     throw compiler_exception(
@@ -80,7 +79,7 @@ class expr_any final : public statement {
         }
 
         if (array_size_ == 0) {
-            array_size_ = counter;
+            array_size_ = vars_.size();
         }
     }
 

@@ -53,9 +53,7 @@ class unary_ops final {
     }
 
     auto source_to_without_whitespace(std::ostream& os) const -> void {
-        for (const char op : ops_) {
-            std::print(os, "{}", op);
-        }
+        std::print(os, "{}", to_string());
     }
 
     // implemented in 'decouple_impl.hpp'
