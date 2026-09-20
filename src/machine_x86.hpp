@@ -424,52 +424,22 @@ class machine_x86 final : public machine {
 
         reserve_named_register(src_loc_tk, indent, "rax");
         size_t rest{bytes_count};
-        const size_t qword_movs{rest / operand::size_qword};
         operand src_operand{src};
         operand dst_operand{dst};
-        for (size_t index{}; index < qword_movs; ++index) {
-            mov(src_loc_tk, indent, machine_x86::reg("rax"),
-                sized_memory(src_operand, operand::size_qword));
+        for (size_t width{operand::size_qword}; width >= operand::size_byte;
+             width /= 2) {
 
-            mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_qword),
-                machine_x86::reg("rax"));
+            while (rest >= width) {
+                const operand reg{sized_register("rax", width)};
+                mov(src_loc_tk, indent, reg, sized_memory(src_operand, width));
+                mov(src_loc_tk, indent, sized_memory(dst_operand, width), reg);
 
-            src_operand.displacement += operand::size_qword;
-            dst_operand.displacement += operand::size_qword;
-            rest -= operand::size_qword;
-        }
-        if ((rest / operand::size_dword) != 0) {
-            mov(src_loc_tk, indent, machine_x86::reg("eax"),
-                sized_memory(src_operand, operand::size_dword));
-
-            mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_dword),
-                machine_x86::reg("eax"));
-
-            src_operand.displacement += operand::size_dword;
-            dst_operand.displacement += operand::size_dword;
-            rest -= operand::size_dword;
-        }
-        if ((rest / operand::size_word) != 0) {
-            mov(src_loc_tk, indent, machine_x86::reg("ax"),
-                sized_memory(src_operand, operand::size_word));
-
-            mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_word),
-                machine_x86::reg("ax"));
-
-            src_operand.displacement += operand::size_word;
-            dst_operand.displacement += operand::size_word;
-            rest -= operand::size_word;
-        }
-        if (rest != 0) {
-            mov(src_loc_tk, indent, machine_x86::reg("al"),
-                sized_memory(src_operand, operand::size_byte));
-
-            mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_byte),
-                machine_x86::reg("al"));
+                rest -= width;
+                if (rest != 0) {
+                    src_operand.displacement += static_cast<int32_t>(width);
+                    dst_operand.displacement += static_cast<int32_t>(width);
+                }
+            }
         }
         release_named_register(src_loc_tk, indent, "rax");
     }
@@ -578,32 +548,19 @@ class machine_x86 final : public machine {
                 threshold_for_rep_stos);
 
         size_t rest{bytes_count};
-        const size_t qword_movs{rest / operand::size_qword};
         operand dst_operand{dst};
-        for (size_t index{}; index < qword_movs; ++index) {
-            mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_qword), immediate(0));
+        for (size_t width{operand::size_qword}; width >= operand::size_byte;
+             width /= 2) {
 
-            dst_operand.displacement += operand::size_qword;
-            rest -= operand::size_qword;
-        }
-        if ((rest / operand::size_dword) != 0) {
-            mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_dword), immediate(0));
+            while (rest >= width) {
+                mov(src_loc_tk, indent, sized_memory(dst_operand, width),
+                    immediate(0));
 
-            dst_operand.displacement += operand::size_dword;
-            rest -= operand::size_dword;
-        }
-        if ((rest / operand::size_word) != 0) {
-            mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_word), immediate(0));
-
-            dst_operand.displacement += operand::size_word;
-            rest -= operand::size_word;
-        }
-        if (rest != 0) {
-            mov(src_loc_tk, indent,
-                sized_memory(dst_operand, operand::size_byte), immediate(0));
+                rest -= width;
+                if (rest != 0) {
+                    dst_operand.displacement += static_cast<int32_t>(width);
+                }
+            }
         }
     }
 
@@ -1614,27 +1571,22 @@ class machine_x86 final : public machine {
             return;
         }
 
-        const bool dst_is_reg{dst_op.is_register()};
-        const bool src_is_reg{src_op.is_register()};
-        if (dst_is_reg and src_is_reg) {
+        if (src_op.is_register()) {
             asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
                      format_operand(sized_register(src_op, dst_size)));
 
             return;
         }
-        if (dst_is_reg) {
+        if (dst_op.is_register()) {
             asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
                      src_op.is_memory() ? format_operand(src_op, dst_size)
                                         : format_operand(src_op));
 
             return;
         }
-        if (src_is_reg) {
-            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     format_operand(sized_register(src_op, dst_size)));
 
-            return;
-        }
+        // memory destination, immediate source; dst_size < src_size
+
         asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
                  format_operand(src_op));
     }

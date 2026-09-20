@@ -249,113 +249,87 @@ class stmt_identifier : public statement {
                                       curr_info.array_size, true);
                 }
 
-                // accumulate field offsets
-                if (i + 1 < elems_size) {
-                    const ident_elem& next_elem{elems[i + 1]};
-                    accum_offset +=
-                        static_cast<int32_t>(toc::get_field_offset_in_type(
-                            curr_info.type_ref(), next_elem.name_tk.text()));
+            } else {
+                // array access with indexing
 
-                    path.push_back('.');
-                    path += next_elem.name_tk.text();
+                // special case: last element with encodable size
+                if (is_last) {
+                    const bool is_encodable{
+                        x.can_encode_index_scale(type_size)};
+
+                    if (is_encodable) {
+                        const operand reg_idx{x.alloc_scratch_register(
+                            src_loc_tk, indent, tc.get_type_default())};
+
+                        allocated_registers.push_back(reg_idx);
+
+                        compile_array_index(
+                            tc, indent, *curr_elem.array_index_expr, reg_idx,
+                            curr_info.array_size, reg_size);
+
+                        if (reg_offset.is_empty()) {
+                            reg_offset = init_reg_offset(
+                                tc, indent, src_loc_tk, lea,
+                                allocated_registers, true, true,
+                                base_info.operand.base_register);
+                        }
+
+                        const int32_t offset{x.is_variables_base(reg_offset)
+                                                 ? base_info.stack_idx +
+                                                       accum_offset
+                                                 : accum_offset};
+
+                        return operand::mem(
+                            reg_offset.base_register, reg_idx.base_register,
+                            static_cast<uint8_t>(type_size), offset);
+                    }
                 }
-                continue;
-            }
 
-            // array access with indexing
+                // convert the variable base to a dedicated register
 
-            // special case: last element with encodable size
-            if (is_last) {
-                const bool is_encodable{x.can_encode_index_scale(type_size)};
+                if (reg_offset.is_empty()) {
+                    reg_offset = init_reg_offset(
+                        tc, indent, src_loc_tk, lea, allocated_registers, false,
+                        true, base_info.operand.base_register);
+                }
 
-                if (is_encodable) {
-                    const operand reg_idx{x.alloc_scratch_register(
+                if (x.is_variables_base(reg_offset)) {
+                    const operand offset_register{x.alloc_scratch_register(
                         src_loc_tk, indent, tc.get_type_default())};
 
-                    allocated_registers.push_back(reg_idx);
+                    allocated_registers.push_back(offset_register);
+                    reg_offset = offset_register;
+                    x.address_of_variable(src_loc_tk, indent, reg_offset,
+                                          base_info.stack_idx);
+                } else if (not reg_offset.is_indexed() and
+                           reg_offset.base_register ==
+                               base_info.operand.base_register) {
+                    const operand offset_register{x.alloc_scratch_register(
+                        src_loc_tk, indent, tc.get_type_default())};
 
-                    x.comment(curr_elem.array_index_expr->tok(), indent,
-                              "set array index");
-
-                    curr_elem.array_index_expr->compile(
-                        tc, indent,
-                        toc::make_ident_info_from_register(reg_idx));
-
-                    const token& tk{curr_elem.array_index_expr->tok()};
-                    const bool use_reg_size{not reg_size.is_empty()};
-                    emit_bounds_check(tc, indent, tk, reg_idx,
-                                      curr_info.array_size, use_reg_size,
-                                      use_reg_size ? reg_size : operand{});
-
-                    if (reg_offset.is_empty()) {
-                        reg_offset = init_reg_offset(
-                            tc, indent, src_loc_tk, lea, allocated_registers,
-                            true, true, base_info.operand.base_register);
-                    }
-
-                    const int32_t offset{x.is_variables_base(reg_offset)
-                                             ? base_info.stack_idx +
-                                                   accum_offset
-                                             : accum_offset};
-
-                    return operand::mem(
-                        reg_offset.base_register, reg_idx.base_register,
-                        static_cast<uint8_t>(type_size), offset);
+                    allocated_registers.push_back(offset_register);
+                    reg_offset = offset_register;
+                    x.address_of(src_loc_tk, indent, reg_offset,
+                                 operand::mem(base_info.operand.base_register,
+                                              "", 1, 0));
                 }
-            }
 
-            // convert the variable base to a dedicated register
-
-            if (reg_offset.is_empty()) {
-                reg_offset = init_reg_offset(tc, indent, src_loc_tk, lea,
-                                             allocated_registers, false, true,
-                                             base_info.operand.base_register);
-            }
-
-            if (x.is_variables_base(reg_offset)) {
-                const operand offset_register{x.alloc_scratch_register(
+                // calculate array index
+                const operand reg_idx{x.alloc_scratch_register(
                     src_loc_tk, indent, tc.get_type_default())};
 
-                allocated_registers.push_back(offset_register);
-                reg_offset = offset_register;
-                x.address_of_variable(src_loc_tk, indent, reg_offset,
-                                      base_info.stack_idx);
-            } else if (not reg_offset.is_indexed() and
-                       reg_offset.base_register ==
-                           base_info.operand.base_register) {
-                const operand offset_register{x.alloc_scratch_register(
-                    src_loc_tk, indent, tc.get_type_default())};
+                compile_array_index(tc, indent, *curr_elem.array_index_expr,
+                                    reg_idx, curr_info.array_size,
+                                    is_last ? reg_size : operand{});
 
-                allocated_registers.push_back(offset_register);
-                reg_offset = offset_register;
-                x.address_of(
-                    src_loc_tk, indent, reg_offset,
-                    operand::mem(base_info.operand.base_register, "", 1, 0));
+                // scale the index
+                x.scale_index(curr_elem.array_index_expr->tok(), indent,
+                              reg_idx, type_size);
+
+                // add index offset to base register
+                x.add_subtract(src_loc_tk, indent, '+', reg_offset, reg_idx);
+                x.free_scratch_register(src_loc_tk, indent, reg_idx);
             }
-
-            // calculate array index
-            const operand reg_idx{x.alloc_scratch_register(
-                src_loc_tk, indent, tc.get_type_default())};
-
-            x.comment(curr_elem.array_index_expr->tok(), indent,
-                      "set array index");
-
-            curr_elem.array_index_expr->compile(
-                tc, indent, toc::make_ident_info_from_register(reg_idx));
-
-            // bounds check
-            const token& tk{curr_elem.array_index_expr->tok()};
-            const bool use_reg_size{is_last and not reg_size.is_empty()};
-            emit_bounds_check(tc, indent, tk, reg_idx, curr_info.array_size,
-                              use_reg_size,
-                              use_reg_size ? reg_size : operand{});
-
-            // scale the index
-            x.scale_index(tk, indent, reg_idx, type_size);
-
-            // add index offset to base register
-            x.add_subtract(src_loc_tk, indent, '+', reg_offset, reg_idx);
-            x.free_scratch_register(src_loc_tk, indent, reg_idx);
 
             // accumulate field offsets
             if (i + 1 < elems_size) {
@@ -391,6 +365,22 @@ class stmt_identifier : public statement {
     }
 
   private:
+    static auto compile_array_index(toc& tc, const size_t indent,
+                                    const expr_any& index_expr,
+                                    const operand& reg_idx,
+                                    const size_t array_size,
+                                    const operand& reg_size) -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(index_expr.tok(), indent, "set array index");
+        index_expr.compile(tc, indent,
+                           toc::make_ident_info_from_register(reg_idx));
+
+        emit_bounds_check(tc, indent, index_expr.tok(), reg_idx, array_size,
+                          not reg_size.is_empty(), reg_size);
+    }
+
     // helper function to emit bounds-checking code
     static auto emit_bounds_check(toc& tc, const size_t indent, const token& tk,
                                   const operand& reg_to_check,

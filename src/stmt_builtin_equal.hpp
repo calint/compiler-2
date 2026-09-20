@@ -107,9 +107,9 @@ class stmt_builtin_equal final : public expression {
 
         x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
 
-        const operand lhs_operand{stmt_identifier::compile_effective_address(
-            tc, indent, lhs_.first_token(), lhs_.elems(),
-            allocated_scratch_registers, {}, lhs_info.lea_path)};
+        const operand lhs_operand{lhs_.compile_lea(
+            tc, indent, lhs_.first_token(), allocated_scratch_registers, {},
+            lhs_info.lea_path)};
 
         x.set_memory_equal_left(indent, lhs_operand);
 
@@ -119,9 +119,9 @@ class stmt_builtin_equal final : public expression {
 
         allocated_scratch_registers.clear();
 
-        const operand rhs_operand{stmt_identifier::compile_effective_address(
-            tc, indent, rhs_.first_token(), rhs_.elems(),
-            allocated_scratch_registers, {}, rhs_info.lea_path)};
+        const operand rhs_operand{rhs_.compile_lea(
+            tc, indent, rhs_.first_token(), allocated_scratch_registers, {},
+            rhs_info.lea_path)};
 
         x.set_memory_equal_right(indent, rhs_operand);
 

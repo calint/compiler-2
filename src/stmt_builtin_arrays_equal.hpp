@@ -111,9 +111,9 @@ class stmt_builtin_arrays_equal final : public expression {
 
         x.comment(from_.tok(), indent, statement::trimmed_source(from_));
 
-        const operand from_operand{stmt_identifier::compile_effective_address(
-            tc, indent, from_.first_token(), from_.elems(),
-            allocated_scratch_registers, count_register, from_info.lea_path)};
+        const operand from_operand{from_.compile_lea(
+            tc, indent, from_.first_token(), allocated_scratch_registers,
+            count_register, from_info.lea_path)};
 
         x.set_memory_equal_left(indent, from_operand);
 
@@ -123,9 +123,9 @@ class stmt_builtin_arrays_equal final : public expression {
 
         allocated_scratch_registers.clear();
 
-        const operand to_operand{stmt_identifier::compile_effective_address(
-            tc, indent, to_.first_token(), to_.elems(),
-            allocated_scratch_registers, count_register, to_info.lea_path)};
+        const operand to_operand{to_.compile_lea(
+            tc, indent, to_.first_token(), allocated_scratch_registers,
+            count_register, to_info.lea_path)};
 
         x.set_memory_equal_right(indent, to_operand);
 
