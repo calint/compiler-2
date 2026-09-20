@@ -204,9 +204,9 @@ class stmt_call : public expression {
                 const operand lea{arg.compile_lea(
                     tc, indent, arg.tok(), regs_lea, {}, arg_info.lea_path)};
 
-                for (const operand& reg : regs_lea) {
+                for (const operand& r : regs_lea) {
                     allocated_registers.push_back({
-                        .reg{reg},
+                        .reg{r},
                         .is_named{},
                     });
                 }

@@ -64,13 +64,13 @@ class stmt_if final : public statement {
         // output the remaining 'else if' branches
         const auto else_if_branches{branches_ | std::views::drop(1)};
         const auto token_pairs{else_if_tokens_ | std::views::chunk(2)};
-        for (const auto [else_if_branch, tokens] :
+        for (const auto [b, t] :
              std::views::zip(else_if_branches, token_pairs)) {
 
             // 'else if' tokens as read from source
-            tokens[0].source_to(os);
-            tokens[1].source_to(os);
-            else_if_branch.source_to(os);
+            t[0].source_to(os);
+            t[1].source_to(os);
+            b.source_to(os);
         }
         // the 'else' code
         if (not else_code_.is_empty()) {
@@ -94,16 +94,16 @@ class stmt_if final : public statement {
         const std::string label_else_branch{stmt_if::create_label_else_branch(
             else_code_, call_path, src_loc, label_after_if)};
 
-        const size_t n{branches_.size()};
+        const size_t branch_count{branches_.size()};
 
         bool branch_evaluated_to_true{};
-        for (size_t i{}; i < n; ++i) {
-            const stmt_if_branch& if_branch{branches_[i]};
+        for (size_t branch_index{}; branch_index < branch_count; ++branch_index) {
+            const stmt_if_branch& if_branch{branches_[branch_index]};
             std::string jmp_if_false{label_else_branch};
             std::string jmp_if_done{label_after_if};
-            if (i < n - 1) {
+            if (branch_index < branch_count - 1) {
                 // if branch is false jump to next if
-                jmp_if_false = branches_[i + 1].if_bgn_label(tc);
+                jmp_if_false = branches_[branch_index + 1].if_bgn_label(tc);
             } else if (else_code_.is_empty()) {
                 // if the last branch and no 'else', then no need to jump to
                 // 'after_if' after the code of the branch has been executed.

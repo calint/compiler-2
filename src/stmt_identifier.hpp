@@ -206,8 +206,8 @@ class stmt_identifier : public statement {
         //   e.g:'world.locations.links' while elems is 'loc.link'
         std::vector<operand> leas;
         leas.reserve(elems.size());
-        for (const operand& address : lea_path.last(elems.size())) {
-            leas.push_back(address);
+        for (const operand& a : lea_path.last(elems.size())) {
+            leas.push_back(a);
         }
 
         // find the first element from the top that has a 'lea' and get
@@ -232,11 +232,11 @@ class stmt_identifier : public statement {
 
         machine& x{tc.machine()};
 
-        for (size_t i{elem_index_with_lea}; i < elems_size; ++i) {
-            const ident_elem& curr_elem{elems[i]};
+        for (size_t elem_index{elem_index_with_lea}; elem_index < elems_size; ++elem_index) {
+            const ident_elem& curr_elem{elems[elem_index]};
             const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ref().size()};
-            const bool is_last{i == elems_size - 1};
+            const bool is_last{elem_index == elems_size - 1};
 
             // handle array access without indexing
             if (not curr_elem.array_index_expr) {
@@ -330,8 +330,8 @@ class stmt_identifier : public statement {
             }
 
             // accumulate field offsets
-            if (i + 1 < elems_size) {
-                const ident_elem& next_elem{elems[i + 1]};
+            if (elem_index + 1 < elems_size) {
+                const ident_elem& next_elem{elems[elem_index + 1]};
                 accum_offset +=
                     static_cast<int32_t>(toc::get_field_offset_in_type(
                         curr_info.type_ref(), next_elem.name_tk.text()));

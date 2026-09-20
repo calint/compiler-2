@@ -124,15 +124,15 @@ class expr_any final : public statement {
 
         // assign array elements
 
-        ident_info ii{dst_info};
+        ident_info current_dst_info{dst_info};
 
         machine& x{tc.machine()};
 
-        for (const auto [i, el] : std::views::enumerate(vars_)) {
+        for (const auto [i, e] : std::views::enumerate(vars_)) {
             x.comment(tok(), indent, "[{}]", i);
-            compile_variant(tc, indent, ii, tok(), el);
-            ii.operand.displacement +=
-                static_cast<int32_t>(ii.type_ref().size());
+            compile_variant(tc, indent, current_dst_info, tok(), e);
+            current_dst_info.operand.displacement +=
+                static_cast<int32_t>(current_dst_info.type_ref().size());
         }
 
         const size_t diff{(array_size_ - vars_.size())};
@@ -140,12 +140,12 @@ class expr_any final : public statement {
             return;
         }
 
-        const size_t nbytes{diff * ii.type_ref().size()};
+        const size_t nbytes{diff * current_dst_info.type_ref().size()};
 
         x.comment(tok(), indent, "zero remaining elements: {} * {} B = {} B",
-                  diff, ii.type_ref().size(), nbytes);
+              diff, current_dst_info.type_ref().size(), nbytes);
 
-        x.zero(tok(), indent, ii.operand, nbytes);
+        x.zero(tok(), indent, current_dst_info.operand, nbytes);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -186,8 +186,8 @@ class expr_any final : public statement {
         -> void override {
 
         if (is_array_) {
-            for (const expr_variant& el : vars_) {
-                el.visit([&var](const auto& expression) -> void {
+            for (const expr_variant& e : vars_) {
+                e.visit([&var](const auto& expression) -> void {
                     expression.assert_var_not_used(var);
                 });
             }

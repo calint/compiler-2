@@ -222,9 +222,9 @@ class stmt_def_dat final : public statement {
 
         x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
 
-        for (const auto [index, el] : std::views::enumerate(elroot.elems)) {
-            x.comment(el.tk, 0, "[{}]", index);
-            compile_data_elem(tc, tp, el);
+        for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
+            x.comment(e.tk, 0, "[{}]", i);
+            compile_data_elem(tc, tp, e);
         }
 
         // zero out the remaining array elements
@@ -253,11 +253,11 @@ class stmt_def_dat final : public statement {
         // user-defined type
 
         const std::span<const type_field> flds{tp.fields()};
-        for (const auto [el, tf] : std::views::zip(elroot.elems, flds)) {
-            if (tf.type().is_builtin()) {
-                compile_data_builtin(tc, tf.type(), el);
+        for (const auto [e, f] : std::views::zip(elroot.elems, flds)) {
+            if (f.type().is_builtin()) {
+                compile_data_builtin(tc, f.type(), e);
             } else {
-                compile_data_rec(tc, tf.type(), el);
+                compile_data_rec(tc, f.type(), e);
             }
         }
 

@@ -991,14 +991,14 @@ class machine_x86 final : public machine {
 
     auto emit_string_data(const std::string_view value) -> void override {
         print("db `");
-        for (const auto [index, part] :
+        for (const auto [i, p] :
              std::views::enumerate(value | std::views::split('`'))) {
 
-            if (index != 0) {
+            if (i != 0) {
                 print("\\`");
             }
 
-            print("{}", std::string_view{part});
+            print("{}", std::string_view{p});
         }
         println("`");
     }
@@ -1415,9 +1415,9 @@ class machine_x86 final : public machine {
         -> size_t {
 
         size_t count{};
-        for (const auto part : text | std::views::split('\n')) {
-            const std::string_view line{part};
-            if (not is_nasm_comment_or_empty_line(line)) {
+        for (const auto p : text | std::views::split('\n')) {
+            const std::string_view s{p};
+            if (not is_nasm_comment_or_empty_line(s)) {
                 ++count;
             }
         }
@@ -1485,7 +1485,7 @@ class machine_x86 final : public machine {
                   const std::format_string<args_t...> format, args_t&&... args)
         -> void {
 
-        for (size_t index{}; index < indent; ++index) {
+        for (size_t i{}; i < indent; ++i) {
             print("    ");
         }
         println(format, std::forward<args_t>(args)...);
@@ -1701,7 +1701,7 @@ class machine_x86 final : public machine {
         if (indent != 0) {
             print("   ");
         }
-        for (size_t index{1}; index < indent; ++index) {
+        for (size_t i{1}; i < indent; ++i) {
             print("    ");
         }
     }

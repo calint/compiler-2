@@ -55,9 +55,9 @@ class type final {
                              const std::string_view name) const
         -> const type_field& {
 
-        for (const type_field& fld : fields_) {
-            if (fld.name == name) {
-                return fld;
+        for (const type_field& f : fields_) {
+            if (f.name == name) {
+                return f;
             }
         }
 
@@ -139,7 +139,7 @@ class type final {
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
-    auto set_name(const std::string_view nm) -> void { name_ = nm; }
+    auto set_name(const std::string_view name) -> void { name_ = name; }
 
     [[nodiscard]] auto is_builtin() const -> bool { return is_builtin_; }
 
@@ -151,8 +151,8 @@ class type final {
         -> size_t {
 
         size_t bytes{};
-        for (const type_field& field : fields_ | std::views::drop(first)) {
-            bytes += field.size;
+        for (const type_field& f : fields_ | std::views::drop(first)) {
+            bytes += f.size;
         }
 
         return bytes;

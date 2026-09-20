@@ -86,8 +86,8 @@ class machine {
                                 const std::span<const operand> registers)
         -> void {
 
-        for (const operand& reg : registers | std::views::reverse) {
-            free_scratch_register(src_loc_tk, indent, reg);
+        for (const operand& r : registers | std::views::reverse) {
+            free_scratch_register(src_loc_tk, indent, r);
         }
     }
 

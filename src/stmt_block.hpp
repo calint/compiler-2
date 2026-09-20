@@ -162,11 +162,11 @@ class stmt_block final : public statement {
     [[nodiscard]] auto is_var_set(const std::string_view var) const
         -> bool override {
 
-        for (const std::unique_ptr<statement>& st : stms_) {
-            if (st->is_var_set(var)) {
+        for (const std::unique_ptr<statement>& s : stms_) {
+            if (s->is_var_set(var)) {
                 return true;
             }
-            if (st->is_code_after_this_unreachable()) {
+            if (s->is_code_after_this_unreachable()) {
                 break;
             }
         }
@@ -175,9 +175,9 @@ class stmt_block final : public statement {
     }
 
     auto assert_no_ub_for_var(const std::string_view var) const -> void {
-        for (const std::unique_ptr<statement>& st : stms_) {
-            st->assert_var_not_used(var);
-            if (st->is_var_set(var)) {
+        for (const std::unique_ptr<statement>& s : stms_) {
+            s->assert_var_not_used(var);
+            if (s->is_var_set(var)) {
                 return;
             }
         }

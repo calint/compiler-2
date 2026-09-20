@@ -31,9 +31,9 @@ template <class T> class lut final {
     [[nodiscard]] auto get_const_ref(const std::string_view key) const
         -> const T& {
 
-        for (const elem& entry : elems_) {
-            if (entry.key == key) {
-                return entry.data;
+        for (const elem& e : elems_) {
+            if (e.key == key) {
+                return e.data;
             }
         }
         throw panic_exception(std::format("element not found: {}", key));

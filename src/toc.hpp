@@ -969,34 +969,34 @@ class toc final {
         lea_path.insert(lea_path.end(), id.path().size() - 1, operand{});
         // note: -1 to exclude the first element
 
-        for (const frame& f : frames_ | std::views::reverse) {
+        for (const frame& current_frame : frames_ | std::views::reverse) {
 
             // does this frame contain the variable?
-            if (f.has_var(id.base())) {
-                return make_ident_info_from_frame(f, src_loc_tk, ident, id,
+            if (current_frame.has_var(id.base())) {
+                return make_ident_info_from_frame(current_frame, src_loc_tk, ident, id,
                                                   std::move(lea_path));
             }
 
-            if (f.is_func()) {
+            if (current_frame.is_func()) {
 
                 // root frame of the function
                 // from here on aliases are followed to the actual variable
                 // referred to
 
-                if (not f.has_alias(id.base())) {
+                if (not current_frame.has_alias(id.base())) {
                     // is not an alias
 
                     // add an empty
                     lea_path.emplace_back();
 
-                    return make_ident_info_from_frame(f, src_loc_tk, ident, id,
+                    return make_ident_info_from_frame(current_frame, src_loc_tk, ident, id,
                                                       std::move(lea_path));
                 }
 
                 // this is an alias, continue resolving until it is a variable,
                 // register or constant
 
-                const alias_info& alias{f.get_alias(id.base())};
+                const alias_info& alias{current_frame.get_alias(id.base())};
 
                 if (alias.register_operand.is_register() and
                     id.path().size() == 1) {

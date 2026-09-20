@@ -108,8 +108,8 @@ class program final {
     }
 
     auto source_to(std::ostream& os) const -> void {
-        for (const std::unique_ptr<statement>& st : statements_) {
-            st->source_to(os);
+        for (const std::unique_ptr<statement>& s : statements_) {
+            s->source_to(os);
         }
     }
 
@@ -122,8 +122,8 @@ class program final {
 
         tc.enter_block();
 
-        for (const std::unique_ptr<statement>& st : statements_) {
-            st->compile(tc, indent, ident_info::make_empty());
+        for (const std::unique_ptr<statement>& s : statements_) {
+            s->compile(tc, indent, ident_info::make_empty());
         }
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
 
@@ -145,8 +145,8 @@ class program final {
         const size_t alignment{x.data_alignment()};
         x.begin_data(alignment);
 
-        for (const statement* stmt : tc.get_data()) {
-            stmt->compile_data(tc);
+        for (const statement* s : tc.get_data()) {
+            s->compile_data(tc);
         }
 
         x.reserve_variables(alignment, vars_size_);

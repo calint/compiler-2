@@ -243,15 +243,15 @@ class expr_ops_list final : public expression {
         }
         expression::source_to(os); // whitespace
         exprs_[0]->source_to(os);
-        for (const auto [op, expr] :
+        for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
 
-            std::print(os, "{}", op);
-            if (op == '<' or op == '>') {
+            std::print(os, "{}", o);
+            if (o == '<' or o == '>') {
                 // handle case << and >>
-                std::print(os, "{}", op);
+                std::print(os, "{}", o);
             }
-            expr->source_to(os);
+            e->source_to(os);
         }
 
         if (enclosed_) {
@@ -392,11 +392,11 @@ class expr_ops_list final : public expression {
         }
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
-        for (const auto [op, expr] :
+        for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
 
-            const statement& st{*expr};
-            asm_op(tc, indent, op, dst_info, st);
+            const statement& s{*e};
+            asm_op(tc, indent, o, dst_info, s);
         }
 
         // apply unary expressions on destination

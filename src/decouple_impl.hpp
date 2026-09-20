@@ -301,47 +301,47 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
 
     machine& x{tc.machine()};
 
-    for (const auto [ea, tf] : std::views::zip(exprs_, flds)) {
-        x.comment(ea->tok(), indent, "copy field '{}'", tf.name);
+    for (const auto [expr, field] : std::views::zip(exprs_, flds)) {
+        x.comment(expr->tok(), indent, "copy field '{}'", field.name);
 
-        cur_dst_info.push(tf.name, tf.type_ptr, {});
+        cur_dst_info.push(field.name, field.type_ptr, {});
 
-        if (not tf.type().is_builtin()) {
+        if (not field.type().is_builtin()) {
             // the field has a user-defined type, so the expression is 'expr_type_value'
-            const expr_type_value& e{ea->as_expr_type_value()};
-            e.compile_assign(tc, indent, tf.type(), cur_dst_info, dst_op);
+            const expr_type_value& type_value{expr->as_expr_type_value()};
+            type_value.compile_assign(tc, indent, field.type(), cur_dst_info, dst_op);
             // note: dst_op was mutated in the recursive call
-            cur_dst_info.increment_offset(static_cast<int32_t>(tf.size));
+            cur_dst_info.increment_offset(static_cast<int32_t>(field.size));
             cur_dst_info.pop();
             continue;
         }
 
         // built-in
 
-        const expr_any& src{*ea};
+        const expr_any& src{*expr};
 
         if (src.is_array() and src.is_empty()) {
             // special case when empty array
             // e.g.:
             //   type msgpoint {  msg : i8[128], pt : point }
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
-            x.comment(ea->tok(), indent, "zero empty field: {} * {} B = {} B",
-                      tf.array_size, tf.type().size(), tf.size);
+            x.comment(expr->tok(), indent, "zero empty field: {} * {} B = {} B",
+                      field.array_size, field.type().size(), field.size);
 
-            x.zero(tok(), indent, dst_op, tf.size);
-            const int32_t sz{static_cast<int32_t>(tf.size)};
+            x.zero(tok(), indent, dst_op, field.size);
+            const int32_t sz{static_cast<int32_t>(field.size)};
             dst_op.displacement += sz;
             cur_dst_info.increment_offset(sz);
             cur_dst_info.pop();
             continue;
         }
 
-        if (tf.is_array and src.is_array_identifier()) {
-            validate_array_assignment(src.tok(), tf, tc.make_ident_info(src));
+        if (field.is_array and src.is_array_identifier()) {
+            validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
         }
 
         operand dst_operand{dst_op};
-        dst_operand.size = tf.type().size();
+        dst_operand.size = field.type().size();
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
@@ -356,16 +356,16 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
                              src.make_constant_operand(src_info));
             } else {
                 // built-in, not expression, not constant
-                if (tf.is_array) {
+                if (field.is_array) {
                     // built-in, not expression, not constant, array
 
                     // note: never reached because when 'src' is an array,
                     //       'expr_any::is_expression()' returns true and takes
                     //       the expression path above
 
-                    validate_array_assignment(src.tok(), tf, src_info);
+                    validate_array_assignment(src.tok(), field, src_info);
                     x.copy(src.tok(), indent, src_info.operand, dst_op,
-                           tf.size);
+                           field.size);
                 } else {
                     // built-in, not expression, not constant, not array
                     x.copy_value(src.tok(), indent, dst_operand,
@@ -375,7 +375,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
                 }
             }
         }
-        const int32_t sz{static_cast<int32_t>(tf.size)};
+        const int32_t sz{static_cast<int32_t>(field.size)};
         dst_op.displacement += sz;
         cur_dst_info.increment_offset(sz);
         cur_dst_info.pop();
@@ -464,8 +464,8 @@ auto unary_ops::compile(toc& tc, const size_t indent,
 
     machine& x{tc.machine()};
 
-    for (const char op : ops_ | std::views::reverse) {
-        x.unary(indent, op, dst_info);
+    for (const char o : ops_ | std::views::reverse) {
+        x.unary(indent, o, dst_info);
     }
 }
 
