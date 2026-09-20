@@ -23,7 +23,7 @@ class stmt_builtin_foo final : public statement {
 
         ident_ = {tc, unary_ops{}, tz.next_token(), tz};
         if (not ident_.is_array()) {
-            throw compiler_exception(ident_.tok(), "expected an array");
+            throw compiler_exception{ident_.tok(), "expected an array"};
         }
 
         // add vars to toc without emitting output so that the code block can be

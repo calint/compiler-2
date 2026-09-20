@@ -21,20 +21,20 @@ class stmt_def_const final : public statement {
         : statement{tk}, name_tk_{tz.next_token()} {
 
         if (name_tk_.is_empty()) {
-            throw compiler_exception(name_tk_, "expected name of constant");
+            throw compiler_exception{name_tk_, "expected name of constant"};
         }
 
         equals_tk_ = tz.is_next_char_token('=');
         if (equals_tk_.is_empty()) {
-            throw compiler_exception(name_tk_,
+            throw compiler_exception{name_tk_,
                                      "expected '=' followed by a constant "
-                                     "value");
+                                     "value"};
         }
 
         const_ = {tc, tz, 0};
 
         if (not const_.has_value()) {
-            throw compiler_exception(const_.tok(), "expected constant value");
+            throw compiler_exception{const_.tok(), "expected constant value"};
         }
 
         set_type(tc.get_type_void());

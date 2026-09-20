@@ -83,8 +83,8 @@ class stmt_def_func final : public statement {
             const token& ret_tk{returns_->ident_tk};
 
             if (ret_tk.text().empty()) {
-                throw compiler_exception(ret_tk,
-                                         "expected return reference name");
+                throw compiler_exception{ret_tk,
+                                         "expected return reference name"};
             }
 
             const var_info var{

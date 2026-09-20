@@ -93,9 +93,9 @@ class stmt_builtin_equal final : public expression {
             rhs_info.is_array and not rhs_.is_indexed()) {
 
             if (lhs_info.array_count != rhs_info.array_count) {
-                throw compiler_exception(lhs_.tok(),
+                throw compiler_exception{lhs_.tok(),
                                          "cannot compare arrays of different "
-                                         "sizes");
+                                         "sizes"};
             }
 
             size_bytes *= lhs_info.array_count;

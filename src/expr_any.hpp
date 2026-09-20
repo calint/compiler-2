@@ -68,10 +68,10 @@ class expr_any final : public statement {
             if (not vars_.empty()) {
                 const token t{tz.is_next_char_token(',')};
                 if (t.is_empty()) {
-                    throw compiler_exception(
+                    throw compiler_exception{
                         tz, std::format("expected ',' followed by initializer "
                                         "for type '{}'",
-                                        tp.name()));
+                                        tp.name())};
                 }
                 var_delims_tk_.emplace_back(t);
             }

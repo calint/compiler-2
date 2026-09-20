@@ -263,7 +263,7 @@ namespace {
     -> std::string {
     std::ifstream fs{file_name};
     if (not fs.is_open()) {
-        throw panic_exception(std::format("cannot open file '{}'", file_name));
+        throw panic_exception{std::format("cannot open file '{}'", file_name)};
     }
 
     return std::string{std::istreambuf_iterator<char>{fs},

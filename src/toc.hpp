@@ -295,10 +295,10 @@ class toc final {
         if (has_const_in_current_block(name)) {
             const const_info& c{frames_.back().get_const(name)};
 
-            throw compiler_exception(
+            throw compiler_exception{
                 src_loc_tk,
                 std::format("constant '{}' already defined in this block at {}",
-                            name, source_location_hr(c.src_loc_tk)));
+                            name, source_location_hr(c.src_loc_tk))};
         }
 
         ::machine& x{machine()};
@@ -312,12 +312,12 @@ class toc final {
 
     auto add_dat(const statement* const stmt) -> void {
         if (frames_.size() != 1) {
-            throw compiler_exception(stmt->tok(),
-                                     "'dat' can only be added in global scope");
+            throw compiler_exception{stmt->tok(),
+                                     "'dat' can only be added in global scope"};
         }
         if (frames_.front().has_non_dat_var_been_added()) {
-            throw compiler_exception(
-                stmt->tok(), "'dat' can only be added before any 'var'");
+            throw compiler_exception{
+                stmt->tok(), "'dat' can only be added before any 'var'"};
         }
         data_.emplace_back(stmt);
         total_dat_size_bytes_ += stmt->dat_size_bytes();
@@ -331,9 +331,9 @@ class toc final {
         -> void {
 
         if (name == "foo") {
-            throw compiler_exception(src_loc_tk,
+            throw compiler_exception{src_loc_tk,
                                      "cannot name function 'foo' because it is "
-                                     "a builtin iterator function");
+                                     "a builtin iterator function"};
         }
 
         if (funcs_.has(name)) {

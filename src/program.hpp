@@ -173,9 +173,9 @@ class program final {
                 continue;
             }
             if (not f->code().is_var_set(ret_info->ident_tk.text())) {
-                throw compiler_exception(
+                throw compiler_exception{
                     f->tok(),
-                    "function may return without setting its return value");
+                    "function may return without setting its return value"};
             }
             f->code().assert_no_ub_for_var(ret_info->ident_tk.text());
         }

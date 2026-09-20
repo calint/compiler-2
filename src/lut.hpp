@@ -36,6 +36,6 @@ template <class T> class lut final {
                 return e.data;
             }
         }
-        throw panic_exception(std::format("element not found: {}", key));
+        throw panic_exception{std::format("element not found: {}", key)};
     }
 };

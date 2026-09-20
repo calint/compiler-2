@@ -74,7 +74,7 @@ struct operand {
         -> operand {
 
         if (value.empty()) {
-            throw std::invalid_argument("operand text must not be empty");
+            throw std::invalid_argument{"operand text must not be empty"};
         }
         operand result;
         result.kind_ = operand_kind::immediate;
@@ -88,7 +88,7 @@ struct operand {
                                   const size_t operand_size_bytes) -> operand {
 
         if (name.empty()) {
-            throw std::invalid_argument("operand text must not be empty");
+            throw std::invalid_argument{"operand text must not be empty"};
         }
         operand result;
         result.kind_ = operand_kind::reg;
@@ -104,7 +104,7 @@ struct operand {
                                   const int32_t offset) -> operand {
 
         if (base.empty() and index.empty() and offset == 0) {
-            throw std::invalid_argument("operand address must not be empty");
+            throw std::invalid_argument{"operand address must not be empty"};
         }
         operand result;
         result.kind_ = operand_kind::memory;

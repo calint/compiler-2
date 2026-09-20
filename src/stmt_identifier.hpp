@@ -48,7 +48,7 @@ class stmt_identifier : public statement {
         : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
 
         if (tk.is_empty()) {
-            throw compiler_exception(tz, "expected an identifier");
+            throw compiler_exception{tz, "expected an identifier"};
         }
 
         token tk_prv{tk};

@@ -56,7 +56,7 @@ class stmt_block final : public statement {
             }
 
             // is it a subblock?
-            if (const token t = tz.is_next_char_token('{'); not t.is_empty()) {
+            if (const token t{tz.is_next_char_token('{')}; not t.is_empty()) {
                 tz.put_back_token(t);
                 stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
                 continue;

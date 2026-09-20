@@ -88,8 +88,8 @@ class stmt_call : public expression {
             close_paren_tk_ = tz.is_next_char_token(')');
             if (not close_paren_tk_.is_empty()) {
                 if (expect_arg) {
-                    throw compiler_exception(close_paren_tk_,
-                                             "expected argument after ','");
+                    throw compiler_exception{close_paren_tk_,
+                                             "expected argument after ','"};
                 }
                 break;
             }

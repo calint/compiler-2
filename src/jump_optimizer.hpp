@@ -89,8 +89,8 @@ struct jump_info {
     }
 
     return jump_info{
-        .mnemonic = line.substr(mnemonic_start, mnemonic_end - mnemonic_start),
-        .label = line.substr(label_start, label_end - label_start),
+        .mnemonic{line.substr(mnemonic_start, mnemonic_end - mnemonic_start)},
+        .label{line.substr(label_start, label_end - label_start)},
     };
 }
 
@@ -203,13 +203,13 @@ auto pass1(std::istream& is, std::ostream& os) -> void {
     std::vector<std::string> pending_jumps;
     std::optional<std::string> pending_label;
 
-    auto flush_pending = [&]() -> void {
+    auto flush_pending{[&]() -> void {
         for (const std::string& buffered_line : pending_jumps) {
             std::println(os, "{}", buffered_line);
         }
         pending_jumps.clear();
         pending_label.reset();
-    };
+    }};
 
     std::string line;
     while (getline(is, line)) {
@@ -259,18 +259,18 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
 
     size_t optimizations{};
 
-    auto print2 = [&](const std::string_view a,
-                      const std::string_view b) -> void {
-        std::println(os, "{}", a);
-        std::println(os, "{}", b);
-    };
+    auto print2{
+        [&](const std::string_view a, const std::string_view b) -> void {
+            std::println(os, "{}", a);
+            std::println(os, "{}", b);
+        }};
 
-    auto print3 = [&](const std::string_view a, const std::string_view b,
-                      const std::string_view c) -> void {
+    auto print3{[&](const std::string_view a, const std::string_view b,
+                    const std::string_view c) -> void {
         std::println(os, "{}", a);
         std::println(os, "{}", b);
         std::println(os, "{}", c);
-    };
+    }};
 
     std::string first_line;
     while (getline(is, first_line)) {

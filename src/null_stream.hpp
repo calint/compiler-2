@@ -10,5 +10,5 @@ class null_stream final : public std::ostream {
     } nb_{};
 
   public:
-    null_stream() : std::ostream(&nb_) {}
+    null_stream() : std::ostream{&nb_} {}
 };

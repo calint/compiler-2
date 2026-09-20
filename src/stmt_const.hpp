@@ -27,8 +27,8 @@ class stmt_const final : public statement {
         set_type(tc.get_type_default());
 
         if (literal_tk_.has_whitespace_before()) {
-            throw compiler_exception(
-                tok(), "expected a constant value or a constant identifier");
+            throw compiler_exception{
+                tok(), "expected a constant value or a constant identifier"};
         }
 
         if (literal_tk_.text().empty()) {
@@ -51,9 +51,9 @@ class stmt_const final : public statement {
 
             value_ = *num;
         } else {
-            throw compiler_exception(
+            throw compiler_exception{
                 literal_tk_,
-                std::format("cannot parse constant '{}'", num_str));
+                std::format("cannot parse constant '{}'", num_str)};
         }
     }
 
