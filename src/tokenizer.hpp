@@ -144,7 +144,7 @@ class tokenizer final {
     }
 
     [[nodiscard]] auto is_next_char(const char ch) -> bool {
-        if (is_eos() or src_[char_ix_] != ch) {
+        if (not is_peek_char(ch)) {
             return false;
         }
 

@@ -873,12 +873,10 @@ class toc final {
     get_field_offset_in_type(const type& tp, const std::string_view field_name)
         -> size_t {
 
-        size_t accum{};
         for (const type_field& f : tp.fields()) {
             if (f.name == field_name) {
-                return accum;
+                return f.offset;
             }
-            accum += f.size;
         }
 
         std::unreachable();
@@ -892,82 +890,35 @@ class toc final {
                                              const std::string_view str)
         -> std::optional<int64_t> {
 
-        // is it hex?
+        constexpr int base_decimal{10};
+        constexpr int base_hex{16};
+        constexpr int base_binary{2};
+
+        int base{base_decimal};
+        std::string_view digits{str};
         if (str.starts_with("0x") or str.starts_with("0X")) {
-            constexpr size_t base_hex{16};
-
-            std::string_view sv{str};
-            sv.remove_prefix(2); // skip "0x" or "0X"
-
-            int64_t value{};
-            const std::from_chars_result result{std::from_chars(
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                sv.data(), sv.data() + sv.size(), value, base_hex)};
-
-            if (result.ec == std::errc::result_out_of_range) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("constant '{}' is out of range", str)};
-            }
-
-            if (result.ec == std::errc{} and
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                result.ptr == sv.data() + sv.size()) {
-
-                return value;
-            }
+            base = base_hex;
+            digits.remove_prefix(2);
+        } else if (str.starts_with("0b") or str.starts_with("0B")) {
+            base = base_binary;
+            digits.remove_prefix(2);
         }
 
-        // is it binary?
-        if (str.starts_with("0b") or str.starts_with("0B")) {
-            constexpr size_t base_binary{2};
+        int64_t value{};
+        const std::from_chars_result result{std::from_chars(
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            digits.data(), digits.data() + digits.size(), value, base)};
 
-            std::string_view sv{str};
-            sv.remove_prefix(2); // skip "0b" or "0B"
-
-            int64_t value{};
-            const std::from_chars_result result{std::from_chars(
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                sv.data(), sv.data() + sv.size(), value, base_binary)};
-
-            if (result.ec == std::errc::result_out_of_range) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("constant '{}' is out of range", str)};
-            }
-
-            if (result.ec == std::errc{} and
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                result.ptr == sv.data() + sv.size()) {
-
-                return value;
-            }
+        if (result.ec == std::errc::result_out_of_range) {
+            throw compiler_exception{
+                src_loc_tk, std::format("constant '{}' is out of range", str)};
         }
 
-        // try decimal digit
-        {
-            const std::string_view sv{str};
-            // note: using 'std::string_view' for 'clang-tidy' to not
-            // trigger the warning
-            // 'cppcoreguidelines-pro-bounds-pointer-arithmetic'
+        if (result.ec == std::errc{} and
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            result.ptr == digits.data() + digits.size()) {
 
-            int64_t value{};
-            const std::from_chars_result result{
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                std::from_chars(sv.data(), sv.data() + sv.size(), value)};
-
-            if (result.ec == std::errc::result_out_of_range) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("constant '{}' is out of range", str)};
-            }
-
-            if (result.ec == std::errc{} and
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                result.ptr == sv.data() + sv.size()) {
-
-                return value;
-            }
+            return value;
         }
 
         return std::nullopt;
