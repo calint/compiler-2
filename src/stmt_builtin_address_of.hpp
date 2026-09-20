@@ -78,9 +78,9 @@ class stmt_builtin_address_of final : public expression {
 
         std::vector<operand> allocated_registers;
 
-        const operand oper{stmt_identifier::compile_effective_address(
-            tc, indent, stmt_ident_.first_token(), stmt_ident_.elems(),
-            allocated_registers, {}, src_info.lea_path)};
+        const operand oper{stmt_ident_.compile_lea(
+            tc, indent, stmt_ident_.first_token(), allocated_registers, {},
+            src_info.lea_path)};
 
         x.address_of(tok(), indent, dst_info.operand, oper);
 

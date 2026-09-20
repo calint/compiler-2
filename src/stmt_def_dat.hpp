@@ -579,8 +579,7 @@ class stmt_def_dat final : public statement {
 
         if (not elroot.is_array) {
             if (tp.is_built_in()) {
-                elroot.uops.source_to(os);
-                elroot.tk.source_to(os);
+                elroot.source_to(os);
 
                 return;
             }
@@ -595,18 +594,7 @@ class stmt_def_dat final : public statement {
         // array
 
         if (tp.is_built_in()) {
-            elroot.open_brace_tk_.source_to(os);
-            if (not elroot.elems.empty()) {
-                elroot.elems.front().source_to(os);
-                for (const auto [d, e] :
-                     std::views::zip(elroot.elems_delim_tk_,
-                                     elroot.elems | std::views::drop(1))) {
-
-                    d.source_to(os);
-                    e.source_to(os);
-                }
-            }
-            elroot.close_brace_tk_.source_to(os);
+            print_source_builtin_array(os, elroot);
 
             return;
         }
@@ -614,6 +602,23 @@ class stmt_def_dat final : public statement {
         // user type array
 
         print_source_type(os, tp, elroot);
+    }
+
+    static auto print_source_builtin_array(std::ostream& os, const elem& elroot)
+        -> void {
+
+        elroot.open_brace_tk_.source_to(os);
+        if (not elroot.elems.empty()) {
+            elroot.elems.front().source_to(os);
+            for (const auto [d, e] :
+                 std::views::zip(elroot.elems_delim_tk_,
+                                 elroot.elems | std::views::drop(1))) {
+
+                d.source_to(os);
+                e.source_to(os);
+            }
+        }
+        elroot.close_brace_tk_.source_to(os);
     }
 
     static auto print_source_type(std::ostream& os, const type& tp,
@@ -660,8 +665,7 @@ class stmt_def_dat final : public statement {
 
         if (tf.type().is_built_in()) {
             if (not tf.is_array) {
-                elroot.uops.source_to(os);
-                elroot.tk.source_to(os);
+                elroot.source_to(os);
 
                 return;
             }
@@ -678,18 +682,7 @@ class stmt_def_dat final : public statement {
 
             // normal case
 
-            elroot.open_brace_tk_.source_to(os);
-            if (not elroot.elems.empty()) {
-                elroot.elems.front().source_to(os);
-                for (const auto [d, e] :
-                     std::views::zip(elroot.elems_delim_tk_,
-                                     elroot.elems | std::views::drop(1))) {
-
-                    d.source_to(os);
-                    e.source_to(os);
-                }
-            }
-            elroot.close_brace_tk_.source_to(os);
+            print_source_builtin_array(os, elroot);
 
             return;
         }

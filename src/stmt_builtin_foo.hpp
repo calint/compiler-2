@@ -112,9 +112,8 @@ class stmt_builtin_foo final : public statement {
         if (ii.has_lea() or ident_.is_indexed()) {
             std::vector<operand> allocated_registers;
 
-            const operand op{stmt_identifier::compile_effective_address(
-                tc, indent, tok(), ident_.elems(), allocated_registers, {},
-                ii.lea_path)};
+            const operand op{ident_.compile_lea(
+                tc, indent, tok(), allocated_registers, {}, ii.lea_path)};
 
             x.address_of(tok(), indent, reg_iter, op);
 
