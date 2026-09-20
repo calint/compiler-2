@@ -79,6 +79,15 @@ class stmt_builtin_array_copy final : public statement {
         const ident_info from_info{tc.make_ident_info(from_)};
         const ident_info to_info{tc.make_ident_info(to_)};
 
+        if (from_info.type_ref().name() != to_info.type_ref().name()) {
+            throw compiler_exception{
+                tok(),
+                std::format("source type '{}' does not match destination "
+                            "type '{}'",
+                            from_info.type_ref().name(),
+                            to_info.type_ref().name())};
+        }
+
         const operand count_register{x.begin_array_copy(tok(), indent)};
 
         std::vector<operand> allocated_scratch_registers;
@@ -109,15 +118,6 @@ class stmt_builtin_array_copy final : public statement {
         x.set_array_copy_destination(indent, to_operand);
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
-
-        if (from_info.type_ref().name() != to_info.type_ref().name()) {
-            throw compiler_exception{
-                tok(),
-                std::format("source type '{}' does not match destination "
-                            "type '{}'",
-                            from_info.type_ref().name(),
-                            to_info.type_ref().name())};
-        }
 
         x.end_array_copy(tok(), indent, from_info.type_ref().size());
     }

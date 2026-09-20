@@ -165,10 +165,19 @@ class stmt_call : public expression {
             const stmt_def_func_param& param{func.param(i)};
             ++i;
 
+            const bool is_reference{not arg.is_expression() and
+                                    (arg.is_indexed() or tc.has_lea(arg))};
+
+            if (is_reference and not arg.get_unary_ops().is_empty()) {
+                throw compiler_exception{
+                    arg.tok(), "unary operations are not allowed here"};
+            }
+
             // allocate named register if parameter requires it
 
             const std::string_view register_name{
                 param.get_register_name_or_empty()};
+
             operand arg_reg;
 
             if (not register_name.empty()) {
@@ -183,8 +192,7 @@ class stmt_call : public expression {
             // the 'lea' address to access the argument
             // examples: [rbp + r14 * 4 + 205] or [r15 + r14] or simply [r15]
 
-            if (not arg.is_expression() and
-                (arg.is_indexed() or tc.has_lea(arg))) {
+            if (is_reference) {
 
                 const ident_info arg_info{tc.make_ident_info(arg)};
 
@@ -196,13 +204,6 @@ class stmt_call : public expression {
                 for (const operand& r : regs_lea) {
                     allocated_scratch_registers.emplace_back(r);
                     allocated_registers_in_order.emplace_back(r);
-                }
-
-                if (not arg.get_unary_ops().is_empty()) {
-                    throw compiler_exception(
-                        arg.tok(),
-                        "unary operations are not allowed on references to "
-                        "types");
                 }
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},

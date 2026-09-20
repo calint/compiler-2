@@ -82,15 +82,6 @@ class stmt_builtin_arrays_equal final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const operand count_register{x.begin_memory_equal(tok(), indent)};
-
-        std::vector<operand> allocated_scratch_registers;
-
-        x.comment(count_.tok(), indent, statement::trimmed_source(count_));
-
-        count_.compile(tc, indent,
-                       toc::make_ident_info_from_register(count_register));
-
         const ident_info from_info{tc.make_ident_info(from_)};
         const ident_info to_info{tc.make_ident_info(to_)};
 
@@ -108,6 +99,15 @@ class stmt_builtin_arrays_equal final : public expression {
                 std::format("destination type must be '{}', not '{}'",
                             get_type().name(), dst_info.type_ref().name())};
         }
+
+        const operand count_register{x.begin_memory_equal(tok(), indent)};
+
+        std::vector<operand> allocated_scratch_registers;
+
+        x.comment(count_.tok(), indent, statement::trimmed_source(count_));
+
+        count_.compile(tc, indent,
+                       toc::make_ident_info_from_register(count_register));
 
         x.comment(from_.tok(), indent, statement::trimmed_source(from_));
 

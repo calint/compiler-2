@@ -69,10 +69,6 @@ class stmt_builtin_equal final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        x.begin_memory_equal(tok(), indent);
-
-        std::vector<operand> allocated_scratch_registers;
-
         const ident_info lhs_info{tc.make_ident_info(lhs_)};
         if (lhs_info.is_const()) {
             throw compiler_exception{lhs_.tok(), "constant not supported"};
@@ -81,28 +77,6 @@ class stmt_builtin_equal final : public expression {
         if (rhs_info.is_const()) {
             throw compiler_exception{rhs_.tok(), "constant not supported"};
         }
-
-        x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
-
-        const operand lhs_operand{stmt_identifier::compile_effective_address(
-            tc, indent, lhs_.first_token(), lhs_.elems(),
-            allocated_scratch_registers, {}, lhs_info.lea_path)};
-
-        x.set_memory_equal_left(indent, lhs_operand);
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
-
-        x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
-
-        allocated_scratch_registers.clear();
-
-        const operand rhs_operand{stmt_identifier::compile_effective_address(
-            tc, indent, rhs_.first_token(), rhs_.elems(),
-            allocated_scratch_registers, {}, rhs_info.lea_path)};
-
-        x.set_memory_equal_right(indent, rhs_operand);
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
         if (lhs_info.type_ref().name() != rhs_info.type_ref().name()) {
             throw compiler_exception{
@@ -126,6 +100,32 @@ class stmt_builtin_equal final : public expression {
 
             bytes_count *= lhs_info.array_size;
         }
+
+        x.begin_memory_equal(tok(), indent);
+
+        std::vector<operand> allocated_scratch_registers;
+
+        x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
+
+        const operand lhs_operand{stmt_identifier::compile_effective_address(
+            tc, indent, lhs_.first_token(), lhs_.elems(),
+            allocated_scratch_registers, {}, lhs_info.lea_path)};
+
+        x.set_memory_equal_left(indent, lhs_operand);
+
+        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
+
+        x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
+
+        allocated_scratch_registers.clear();
+
+        const operand rhs_operand{stmt_identifier::compile_effective_address(
+            tc, indent, rhs_.first_token(), rhs_.elems(),
+            allocated_scratch_registers, {}, rhs_info.lea_path)};
+
+        x.set_memory_equal_right(indent, rhs_operand);
+
+        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
         x.end_memory_equal(tok(), indent, bytes_count, dst_info.operand);
     }
