@@ -253,11 +253,6 @@ class toc final {
     static constexpr size_t stack_alignment{16};
 
   public:
-    static constexpr size_t size_qword{8};
-    static constexpr size_t size_dword{4};
-    static constexpr size_t size_word{2};
-    static constexpr size_t size_byte{1};
-
     toc(const std::string_view source, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
         : source_{source}, bounds_check_upper_{bounds_check_upper},
@@ -807,13 +802,13 @@ class toc final {
         -> const type& {
 
         switch (size) {
-        case size_qword:
+        case operand::size_qword:
             return *types_.get_const_ref("i64").type_ptr;
-        case size_dword:
+        case operand::size_dword:
             return *types_.get_const_ref("i32").type_ptr;
-        case size_word:
+        case operand::size_word:
             return *types_.get_const_ref("i16").type_ptr;
-        case size_byte:
+        case operand::size_byte:
             return *types_.get_const_ref("i8").type_ptr;
         default:
             std::unreachable();
@@ -1153,7 +1148,7 @@ class toc final {
         }
 
         // is it a register?
-        if (const size_t reg_size{utils::register_size(id.str())};
+        if (const size_t reg_size{operand::register_size(id.str())};
             reg_size != 0) {
 
             const type& tpe{x ? x->get_allocated_register_type(id.str())

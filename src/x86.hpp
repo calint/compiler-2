@@ -22,11 +22,6 @@ class token;
 class type;
 
 class x86 final {
-    static constexpr size_t size_qword{8};
-    static constexpr size_t size_dword{4};
-    static constexpr size_t size_word{2};
-    static constexpr size_t size_byte{1};
-
     static constexpr std::string_view data_qword{"dq"};
     static constexpr std::string_view data_dword{"dd"};
     static constexpr std::string_view data_word{"dw"};
@@ -258,7 +253,7 @@ class x86 final {
             }
         }
 
-        return get_builtin_type_for_size(utils::register_size(reg));
+        return get_builtin_type_for_size(operand::register_size(reg));
     }
 
     // asserts register pools are balanced and prints usage stats; called
@@ -511,16 +506,16 @@ class x86 final {
 
     auto div_reg_ext(const size_t indent, const size_t operand_size) -> void {
         switch (operand_size) {
-        case size_qword:
+        case operand::size_qword:
             asm_line(indent, "cqo");
             return;
-        case size_dword:
+        case operand::size_dword:
             asm_line(indent, "cdq");
             return;
-        case size_word:
+        case operand::size_word:
             asm_line(indent, "cwde");
             return;
-        case size_byte:
+        case operand::size_byte:
             asm_line(indent, "cbw");
             return;
         default:
@@ -596,16 +591,16 @@ class x86 final {
 
     auto dat_begin(const size_t size) -> void {
         switch (size) {
-        case size_qword:
+        case operand::size_qword:
             print("dq ");
             return;
-        case size_dword:
+        case operand::size_dword:
             print("dd ");
             return;
-        case size_word:
+        case operand::size_word:
             print("dw ");
             return;
-        case size_byte:
+        case operand::size_byte:
             print("db ");
             return;
         default:
@@ -661,13 +656,13 @@ class x86 final {
         // map canonical 64-bit register names to size-specific aliases
         if (operand == "rax") {
             switch (size) {
-            case size_qword:
+            case operand::size_qword:
                 return "rax";
-            case size_dword:
+            case operand::size_dword:
                 return "eax";
-            case size_word:
+            case operand::size_word:
                 return "ax";
-            case size_byte:
+            case operand::size_byte:
                 return "al";
             default:
                 std::unreachable();
@@ -675,13 +670,13 @@ class x86 final {
         }
         if (operand == "rbx") {
             switch (size) {
-            case size_qword:
+            case operand::size_qword:
                 return "rbx";
-            case size_dword:
+            case operand::size_dword:
                 return "ebx";
-            case size_word:
+            case operand::size_word:
                 return "bx";
-            case size_byte:
+            case operand::size_byte:
                 return "bl";
             default:
                 std::unreachable();
@@ -689,13 +684,13 @@ class x86 final {
         }
         if (operand == "rcx") {
             switch (size) {
-            case size_qword:
+            case operand::size_qword:
                 return "rcx";
-            case size_dword:
+            case operand::size_dword:
                 return "ecx";
-            case size_word:
+            case operand::size_word:
                 return "cx";
-            case size_byte:
+            case operand::size_byte:
                 return "cl";
             default:
                 std::unreachable();
@@ -703,13 +698,13 @@ class x86 final {
         }
         if (operand == "rdx") {
             switch (size) {
-            case size_qword:
+            case operand::size_qword:
                 return "rdx";
-            case size_dword:
+            case operand::size_dword:
                 return "edx";
-            case size_word:
+            case operand::size_word:
                 return "dx";
-            case size_byte:
+            case operand::size_byte:
                 return "dl";
             default:
                 std::unreachable();
@@ -717,13 +712,13 @@ class x86 final {
         }
         if (operand == "rbp") {
             switch (size) {
-            case size_qword:
+            case operand::size_qword:
                 return "rbp";
-            case size_dword:
+            case operand::size_dword:
                 return "ebp";
-            case size_word:
+            case operand::size_word:
                 return "bp";
-            case size_byte:
+            case operand::size_byte:
                 return "bpl";
             default:
                 std::unreachable();
@@ -731,13 +726,13 @@ class x86 final {
         }
         if (operand == "rsi") {
             switch (size) {
-            case size_qword:
+            case operand::size_qword:
                 return "rsi";
-            case size_dword:
+            case operand::size_dword:
                 return "esi";
-            case size_word:
+            case operand::size_word:
                 return "si";
-            case size_byte:
+            case operand::size_byte:
                 return "sil";
             default:
                 std::unreachable();
@@ -745,13 +740,13 @@ class x86 final {
         }
         if (operand == "rdi") {
             switch (size) {
-            case size_qword:
+            case operand::size_qword:
                 return "rdi";
-            case size_dword:
+            case operand::size_dword:
                 return "edi";
-            case size_word:
+            case operand::size_word:
                 return "di";
-            case size_byte:
+            case operand::size_byte:
                 return "dil";
             default:
                 std::unreachable();
@@ -759,13 +754,13 @@ class x86 final {
         }
         if (operand == "rsp") {
             switch (size) {
-            case size_qword:
+            case operand::size_qword:
                 return "rsp";
-            case size_dword:
+            case operand::size_dword:
                 return "esp";
-            case size_word:
+            case operand::size_word:
                 return "sp";
-            case size_byte:
+            case operand::size_byte:
                 return "spl";
             default:
                 std::unreachable();
@@ -793,13 +788,13 @@ class x86 final {
             operand.substr(digits_start, digits_end - digits_start)};
 
         switch (size) {
-        case size_qword:
+        case operand::size_qword:
             return std::format("r{}", rnbr);
-        case size_dword:
+        case operand::size_dword:
             return std::format("r{}d", rnbr);
-        case size_word:
+        case operand::size_word:
             return std::format("r{}w", rnbr);
-        case size_byte:
+        case operand::size_byte:
             return std::format("r{}b", rnbr);
         default:
             std::unreachable();
@@ -816,13 +811,13 @@ class x86 final {
         -> std::string_view {
 
         switch (size) {
-        case size_qword:
+        case operand::size_qword:
             return data_qword;
-        case size_dword:
+        case operand::size_dword:
             return data_dword;
-        case size_word:
+        case operand::size_word:
             return data_word;
-        case size_byte:
+        case operand::size_byte:
             return data_byte;
         default:
             std::unreachable();
@@ -845,18 +840,18 @@ class x86 final {
         -> size_t {
 
         if (operand.starts_with("qword")) {
-            return size_qword;
+            return operand::size_qword;
         }
         if (operand.starts_with("dword")) {
-            return size_dword;
+            return operand::size_dword;
         }
         if (operand.starts_with("word")) {
-            return size_word;
+            return operand::size_word;
         }
         if (operand.starts_with("byte")) {
-            return size_byte;
+            return operand::size_byte;
         }
-        if (const size_t size{utils::register_size(operand)}) {
+        if (const size_t size{operand::register_size(operand)}) {
             return size;
         }
         return default_type_->size();
@@ -877,13 +872,13 @@ class x86 final {
         -> const type& {
 
         switch (size) {
-        case size_qword:
+        case operand::size_qword:
             return *type_i64_;
-        case size_dword:
+        case operand::size_dword:
             return *type_i32_;
-        case size_word:
+        case operand::size_word:
             return *type_i16_;
-        case size_byte:
+        case operand::size_byte:
             return *type_i8_;
         default:
             std::unreachable();
@@ -899,7 +894,7 @@ class x86 final {
     [[nodiscard]] static auto
     is_register_operand(const std::string_view operand) -> bool {
 
-        return utils::register_size(operand) != 0;
+        return operand::register_size(operand) != 0;
     }
 
     [[nodiscard]] static auto
@@ -908,7 +903,7 @@ class x86 final {
 
         const size_t bracket{operand.find('[')};
         assert(bracket != std::string_view::npos);
-        return std::format("{} {}", utils::get_size_specifier(size),
+        return std::format("{} {}", operand::get_size_specifier(size),
                            operand.substr(bracket));
     }
 };

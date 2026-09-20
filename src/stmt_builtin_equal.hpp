@@ -143,15 +143,15 @@ class stmt_builtin_equal final : public expression {
             rcx *= lhs_info.array_size;
         }
 
-        if ((rcx % toc::size_qword) == 0) {
+        if ((rcx % operand::size_qword) == 0) {
             rep_size = 'q';
-            rcx /= toc::size_qword;
-        } else if ((rcx % toc::size_dword) == 0) {
+            rcx /= operand::size_qword;
+        } else if ((rcx % operand::size_dword) == 0) {
             rep_size = 'd';
-            rcx /= toc::size_dword;
-        } else if ((rcx % toc::size_word) == 0) {
+            rcx /= operand::size_dword;
+        } else if ((rcx % operand::size_word) == 0) {
             rep_size = 'w';
-            rcx /= toc::size_word;
+            rcx /= operand::size_word;
         }
         x.mov(tok(), indent, "rcx", std::to_string(rcx));
 

@@ -104,7 +104,7 @@ class stmt_builtin_foo final : public statement {
         const ident_info var_i_info{tc.make_ident_info(x, tok(), "i")};
 
         const std::string& var_i_addr_op{
-            var_i_info.operand.str(toc::size_qword)};
+            var_i_info.operand.str(operand::size_qword)};
 
         // add a constant for array size
         tc.add_const(x, ident_.tok(), indent, "n",

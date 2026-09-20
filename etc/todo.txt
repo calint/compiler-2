@@ -1,13 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] read/write builtin so that mov and register acess can be removed
-[x] toc: max stack meter includes dat and padding
-[x] refactor so data segment is first then bss.stack and rsp + offset instead of
-    -. big refactor. right now the program file is as big as the stack
-    specification + data. right now might as well have 1 data segment
-[x] cleanup: stmt_assign_var::compile formalize dst_info.is_indexed 
-    => renamed to 'use_operand'
+[ ] read/write/exit builtin so that mov and register access can be removed
 [ ] consider allowing function definitions in functions
 [ ] consider a var type that can be viewed from enclosing functions
 [ ] consider padding to natural bounds: dat, var and type fields
@@ -180,6 +174,12 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] toc: max stack meter includes dat and padding
+[x] refactor so data segment is first then bss.stack and rsp + offset instead of
+    -. big refactor. right now the program file is as big as the stack
+    specification + data. right now might as well have 1 data segment
+[x] cleanup: stmt_assign_var::compile formalize dst_info.is_indexed 
+    => renamed to 'use_operand'
 [x] refactor to split "god" object toc in a compile time part (x86) and a
     parsing and compile part (toc)
     => better but still doesn't feel right

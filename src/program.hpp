@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "statement.hpp"
 #include "stmt_def_const.hpp"
 #include "stmt_def_func.hpp"
@@ -22,11 +23,11 @@ class program final {
 
     // built-in types
     type type_void{"void", 0, true};
-    type type_i64{"i64", toc::size_qword, true};
-    type type_i32{"i32", toc::size_dword, true};
-    type type_i16{"i16", toc::size_word, true};
-    type type_i8{"i8", toc::size_byte, true};
-    type type_bool{"bool", toc::size_byte, true};
+    type type_i64{"i64", operand::size_qword, true};
+    type type_i32{"i32", operand::size_dword, true};
+    type type_i16{"i16", operand::size_word, true};
+    type type_i8{"i8", operand::size_byte, true};
+    type type_bool{"bool", operand::size_byte, true};
 
     std::vector<std::unique_ptr<statement>> statements_;
     toc tc_; // table of contents

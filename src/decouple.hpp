@@ -8,16 +8,17 @@
 #include <array>
 #include <cassert>
 #include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include "token.hpp"
-#include "utils.hpp"
 
 class toc;
 class tokenizer;
@@ -33,6 +34,67 @@ struct operand {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
+
+    [[nodiscard]] static auto get_size_specifier(const size_t size)
+        -> std::string_view {
+
+        switch (size) {
+        case size_qword:
+            return "qword";
+        case size_dword:
+            return "dword";
+        case size_word:
+            return "word";
+        case size_byte:
+            return "byte";
+        default:
+            std::unreachable();
+        }
+    }
+
+    // returns 0 if operand is not a register
+    [[nodiscard]] static auto register_size(const std::string_view operand)
+        -> size_t {
+
+        if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
+            operand == "rdx" || operand == "rbp" || operand == "rsi" ||
+            operand == "rdi" || operand == "rsp" || operand == "r8" ||
+            operand == "r9" || operand == "r10" || operand == "r11" ||
+            operand == "r12" || operand == "r13" || operand == "r14" ||
+            operand == "r15") {
+
+            return size_qword;
+        }
+        if (operand == "eax" || operand == "ebx" || operand == "ecx" ||
+            operand == "edx" || operand == "ebp" || operand == "esi" ||
+            operand == "edi" || operand == "esp" || operand == "r8d" ||
+            operand == "r9d" || operand == "r10d" || operand == "r11d" ||
+            operand == "r12d" || operand == "r13d" || operand == "r14d" ||
+            operand == "r15d") {
+
+            return size_dword;
+        }
+        if (operand == "ax" || operand == "bx" || operand == "cx" ||
+            operand == "dx" || operand == "bp" || operand == "si" ||
+            operand == "di" || operand == "sp" || operand == "r8w" ||
+            operand == "r9w" || operand == "r10w" || operand == "r11w" ||
+            operand == "r12w" || operand == "r13w" || operand == "r14w" ||
+            operand == "r15w") {
+
+            return size_word;
+        }
+        if (operand == "al" || operand == "ah" || operand == "bl" ||
+            operand == "bh" || operand == "cl" || operand == "ch" ||
+            operand == "dl" || operand == "dh" || operand == "spl" ||
+            operand == "bpl" || operand == "sil" || operand == "dil" ||
+            operand == "r8b" || operand == "r9b" || operand == "r10b" ||
+            operand == "r11b" || operand == "r12b" || operand == "r13b" ||
+            operand == "r14b" || operand == "r15b") {
+
+            return size_byte;
+        }
+        return 0;
+    }
 
     std::string base_register;
     std::string index_register;
@@ -54,7 +116,7 @@ struct operand {
 
         if (operand_is_base_register) {
             base_register = operand_sv;
-            size = utils::register_size(operand_sv);
+            size = operand::register_size(operand_sv);
             return;
         }
 
@@ -95,8 +157,10 @@ struct operand {
         skip_space();
 
         constexpr std::array<std::pair<std::string_view, size_t>, 4> sizes{
-            {std::pair{"byte", size_byte}, std::pair{"word", size_word},
-             std::pair{"dword", size_dword}, std::pair{"qword", size_qword}}};
+            {std::pair{"byte", operand::size_byte},
+             std::pair{"word", operand::size_word},
+             std::pair{"dword", operand::size_dword},
+             std::pair{"qword", operand::size_qword}}};
 
         for (const auto [name, operand_size] : sizes) {
             if (operand_sv.substr(pos).starts_with(name)) {
@@ -250,16 +314,16 @@ struct operand {
         std::string s;
         if (size_specifier != 0) {
             switch (size_specifier) {
-            case size_byte:
+            case operand::size_byte:
                 s.append("byte");
                 break;
-            case size_word:
+            case operand::size_word:
                 s.append("word");
                 break;
-            case size_dword:
+            case operand::size_dword:
                 s.append("dword");
                 break;
-            case size_qword:
+            case operand::size_qword:
                 s.append("qword");
                 break;
             default:
