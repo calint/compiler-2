@@ -1,7 +1,6 @@
 #pragma once
 
 #include <format>
-#include <optional>
 #include <ostream>
 #include <ranges>
 #include <string>
@@ -85,17 +84,15 @@ class stmt_builtin_arrays_equal final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        // allocate the register for rep movs
-        x.alloc_named_register(tok(), indent, "rsi", tc.get_type_default());
-        x.alloc_named_register(tok(), indent, "rdi", tc.get_type_default());
-        x.alloc_named_register(tok(), indent, "rcx", tc.get_type_default());
+        const std::string_view count_register{
+            x.begin_memory_equal(tok(), indent)};
 
         std::vector<std::string> allocated_scratch_registers;
 
-        // size to 'rcx'
         x.comment(count_.tok(), indent, statement::trimmed_source(count_));
 
-        count_.compile(tc, indent, tc.make_ident_info_from_register("rcx"));
+        count_.compile(tc, indent,
+                       tc.make_ident_info_from_register(count_register));
 
         const ident_info from_info{tc.make_ident_info(from_)};
         const ident_info to_info{tc.make_ident_info(to_)};
@@ -115,14 +112,13 @@ class stmt_builtin_arrays_equal final : public expression {
                             get_type().name(), dst_info.type_ref().name())};
         }
 
-        // from operand to rsi
         x.comment(from_.tok(), indent, statement::trimmed_source(from_));
 
         const operand from_operand{stmt_identifier::compile_effective_address(
             tc, indent, from_.first_token(), from_.elems(),
-            allocated_scratch_registers, "rcx", from_info.lea_path)};
+            allocated_scratch_registers, count_register, from_info.lea_path)};
 
-        x.lea(indent, "rsi", from_operand.address_str());
+        x.set_memory_equal_left(indent, from_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -130,16 +126,15 @@ class stmt_builtin_arrays_equal final : public expression {
             x.free_scratch_register(tok(), indent, reg);
         }
 
-        // to operand to 'rdi'
         x.comment(to_.tok(), indent, statement::trimmed_source(to_));
 
         allocated_scratch_registers.clear();
 
         const operand to_operand{stmt_identifier::compile_effective_address(
             tc, indent, to_.first_token(), to_.elems(),
-            allocated_scratch_registers, "rcx", to_info.lea_path)};
+            allocated_scratch_registers, count_register, to_info.lea_path)};
 
-        x.lea(indent, "rdi", to_operand.address_str());
+        x.set_memory_equal_right(indent, to_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -147,35 +142,9 @@ class stmt_builtin_arrays_equal final : public expression {
             x.free_scratch_register(tok(), indent, reg);
         }
 
-        const size_t type_size{from_info.type_ref().size()};
-
-        if (type_size > 1) {
-            // check whether it is possible to shift left instead of
-            // multiplication
-            if (std::optional<int> shl{
-                    stmt_identifier::get_shift_amount(type_size)};
-                shl) {
-
-                x.op(tok(), indent, "shl", "rcx", std::format("{}", *shl));
-            } else {
-                x.op(tok(), indent, "imul", "rcx",
-                     std::format("{}", type_size));
-            }
-        }
-
-        // copy
-        x.repe_cmps(indent, 'b');
-
-        x.free_named_register(tok(), indent, "rcx");
-        x.free_named_register(tok(), indent, "rdi");
-        x.free_named_register(tok(), indent, "rsi");
-
-        // set true if equal
-
         if (dst_info.is_register()) {
-            x.setcc(indent, "e",
-                    x86::get_sized_register_operand(dst_info.operand.str(),
-                                                    operand::size_byte));
+            x.end_arrays_equal(tok(), indent, from_info.type_ref().size(),
+                               dst_info.operand);
 
             return;
         }

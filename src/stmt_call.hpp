@@ -267,8 +267,8 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
 
-                    x.mov(param.tok(), indent, scratch_reg,
-                          arg_info.operand.str());
+                    x.copy_value(param.tok(), indent, scratch_reg,
+                                 arg_info.operand.str());
 
                     // apply unary ops
                     arg.get_unary_ops().compile(tc, indent, scratch_reg);
@@ -289,11 +289,13 @@ class stmt_call : public expression {
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
-                x.mov(param.tok(), indent, arg_reg,
-                      std::format("{}{}", arg.get_unary_ops().to_string(),
-                                  arg_info.const_value));
+                x.copy_value(param.tok(), indent, arg_reg,
+                             std::format("{}{}",
+                                         arg.get_unary_ops().to_string(),
+                                         arg_info.const_value));
             } else {
-                x.mov(param.tok(), indent, arg_reg, arg_info.operand.str());
+                x.copy_value(param.tok(), indent, arg_reg,
+                             arg_info.operand.str());
                 arg.get_unary_ops().compile(tc, indent + 1, arg_reg);
             }
         }
@@ -319,12 +321,11 @@ class stmt_call : public expression {
 
         // add aliases
         for (const alias_info& e : aliases_to_add) {
-            x.comment_start(tok(), indent + 1);
-            x.print("alias {} -> {}", e.from, e.to);
+            std::string text{std::format("alias {} -> {}", e.from, e.to)};
             if (not e.lea.empty()) {
-                x.print(" (lea: {})", e.lea);
+                text += std::format(" (lea: {})", e.lea);
             }
-            x.println();
+            x.comment(tok(), indent + 1, text);
             tc.add_alias(e);
         }
 

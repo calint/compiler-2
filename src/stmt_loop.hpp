@@ -31,7 +31,7 @@ class stmt_loop final : public statement {
         x.label(indent, lbl);
         tc.enter_loop(lbl);
         code_.compile(tc, indent, dst_info);
-        x.jmp(indent, lbl);
+        x.branch(indent, lbl);
         x.label(indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);
     }

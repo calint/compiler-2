@@ -59,7 +59,7 @@ class stmt_if_branch final : public statement {
         // if the jump label is not provided, then there is no 'else' and this
         // is the last 'if' so just continue execution
         if (not jmp_to_after_code_label.empty()) {
-            x.jmp(indent, jmp_to_after_code_label);
+            x.branch(indent, jmp_to_after_code_label);
         }
         return std::nullopt;
     }

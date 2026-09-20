@@ -26,14 +26,12 @@ class stmt_return final : public statement {
 
         if (ret_lbl.empty()) {
             // note: return from 'main' is exiting
-            x.mov(tok(), indent, "rdi", "0");
-            x.mov(tok(), indent, "rax", "60");
-            x.syscall(indent);
+            x.exit_process(tok(), indent, 0);
             return;
         }
 
         // jump to return labels
-        x.jmp(indent, ret_lbl);
+        x.branch(indent, ret_lbl);
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

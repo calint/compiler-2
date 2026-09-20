@@ -34,12 +34,6 @@ class stmt_def_dat final : public statement {
             uops.source_to(os);
             tk.source_to(os);
         }
-
-        auto compile(toc& tc) const -> void {
-            x86& x{tc.machine()};
-
-            x.dat_value(std::format("{}{}", uops.to_string(), value));
-        }
     };
 
     token name_tk_;
@@ -243,7 +237,7 @@ class stmt_def_dat final : public statement {
         x.comment(elroot.tk, 0, "pad {} '{}' of size {}", diff, tp.name(),
                   tp.size());
 
-        x.times(diff * tp.size(), "db", "0");
+        x.emit_zero_data(diff * tp.size());
     }
 
     static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)
@@ -283,31 +277,27 @@ class stmt_def_dat final : public statement {
         x86& x{tc.machine()};
 
         x.comment(elroot.tk, 0, "zero remaining fields");
-        x.times(nbytes, "db", "0");
+        x.emit_zero_data(nbytes);
     }
 
     static auto compile_data_builtin(toc& tc, const type& tp,
                                      const elem& elroot) -> void {
-
-        // NASM data directive for this element size
-        const std::string_view dd{x86::get_data_def(tp.size())};
 
         x86& x{tc.machine()};
 
         if (not elroot.is_array) {
             x.comment(elroot.tk, 0, "{}", tp.name());
             if (elroot.tk.text().empty()) {
-                x.dat_begin(tp.size());
-                x.dat_value("0");
-                x.dat_end();
+                x.emit_data(tp.size(), {});
                 return;
             }
 
-            x.dat_begin(tp.size());
-            x.dat_value(
-                std::format("{}{}", elroot.uops.to_string(), elroot.value));
+            x.emit_data(tp.size(),
+                        {
+                            .value{elroot.value},
+                            .unary_operations{elroot.uops.to_string()},
+                        });
 
-            x.dat_end();
             return;
         }
 
@@ -319,14 +309,12 @@ class stmt_def_dat final : public statement {
         // note: only i8[] can be initialized with string token
 
         if (elroot.tk.is_string()) {
-            x.str_begin();
-            x.str_value(elroot.tk.text());
-            x.str_end();
+            x.emit_string_data(elroot.tk.text());
             const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {
                 x.comment(elroot.tk, 0, "zero remaining array");
-                x.times(elroot.array_size - sz, dd, "0");
+                x.emit_repeated_data(tp.size(), elroot.array_size - sz, {});
             }
             return;
         }
@@ -334,19 +322,22 @@ class stmt_def_dat final : public statement {
         // normal case
 
         // initializer
-        x.dat_begin(tp.size());
-        if (not elroot.elems.empty()) {
-            elroot.elems.front().compile(tc);
-            for (const elem& e : elroot.elems | std::views::drop(1)) {
-                x.dat_separator();
-                e.compile(tc);
-            }
-        }
-        x.dat_end();
+        const auto values{
+            elroot.elems |
+            std::views::transform(
+                [](const elem& element) -> x86::data_initializer {
+                    return {
+                        .value{element.value},
+                        .unary_operations{element.uops.to_string()},
+                    };
+                })};
+
+        x.emit_data_array(tp.size(), values);
 
         // pad remaining array with 0
         if (elroot.array_size != elroot.elems.size()) {
-            x.times(elroot.array_size - elroot.elems.size(), dd, "0");
+            x.emit_repeated_data(tp.size(),
+                                 elroot.array_size - elroot.elems.size(), {});
         }
     }
 

@@ -26,6 +26,6 @@ class stmt_builtin_syscall final : public stmt_call {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        x.syscall(indent);
+        x.invoke_syscall(indent);
     }
 };

@@ -307,7 +307,7 @@ struct operand {
             }
             s += index_register;
             if (scale > 1) {
-                s += " * " + std::to_string(scale);
+                s += " * " + std::format("{}", scale);
             }
         }
 
@@ -319,8 +319,8 @@ struct operand {
                     s += " - ";
                 }
             }
-            s +=
-                std::to_string(displacement < 0 ? -displacement : displacement);
+            s += std::format("{}",
+                             displacement < 0 ? -displacement : displacement);
         }
 
         return s;

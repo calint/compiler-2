@@ -356,9 +356,10 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
             const ident_info src_info{tc.make_ident_info(src)};
             if (src_info.is_const()) {
                 // built-in, not expression, constant
-                x.mov(src.tok(), indent, dst_accessor,
-                      std::format("{}{}", src.get_unary_ops().to_string(),
-                                  src_info.const_value));
+                x.copy_value(src.tok(), indent, dst_accessor,
+                             std::format("{}{}",
+                                         src.get_unary_ops().to_string(),
+                                         src_info.const_value));
             } else {
                 // built-in, not expression, not constant
                 if (tf.is_array) {
@@ -373,8 +374,8 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
                            dst_op.address_str(), tf.size);
                 } else {
                     // built-in, not expression, not constant, not array
-                    x.mov(src.tok(), indent, dst_accessor,
-                          src_info.operand.str());
+                    x.copy_value(src.tok(), indent, dst_accessor,
+                                 src_info.operand.str());
 
                     src.get_unary_ops().compile(tc, indent, dst_accessor);
                 }
@@ -472,19 +473,10 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 auto unary_ops::compile(toc& tc, const size_t indnt,
                         const std::string_view dst_info) const -> void {
 
-    for (const char op : ops_ | std::views::reverse) {
-        x86& x{tc.machine()};
+    x86& x{tc.machine()};
 
-        switch (op) {
-        case '~':
-            x.not_op(indnt, dst_info);
-            break;
-        case '-':
-            x.neg(indnt, dst_info);
-            break;
-        default:
-            std::unreachable();
-        }
+    for (const char op : ops_ | std::views::reverse) {
+        x.unary(indnt, op, dst_info);
     }
 }
 

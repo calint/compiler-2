@@ -72,7 +72,8 @@ class stmt_builtin_array_size_of final : public expression {
 
         // variable, register or field
         const std::string dst_op{dst_info.operand.str()};
-        x.mov(tok(), indent, dst_op, std::format("{}", src_info.array_size));
+        x.copy_value(tok(), indent, dst_op,
+                     std::format("{}", src_info.array_size));
 
         get_unary_ops().compile(tc, indent, dst_op);
     }

@@ -25,12 +25,12 @@ class stmt_continue final : public statement {
         const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};
 
         if (tc.is_in_loop_block()) {
-            x.jmp(indent, loop_label);
+            x.branch(indent, loop_label);
             return;
         }
 
         // is in foo block
-        x.jmp(indent, std::string{loop_label} + "_continue");
+        x.branch(indent, std::string{loop_label} + "_continue");
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

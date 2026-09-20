@@ -407,16 +407,17 @@ class toc final {
 
         x86& x{machine()};
 
-        x.comment_start(src_loc_tk, indent);
-        x.print("{}: {}", var.name, name_info.type_ref().name());
+        std::string text{
+            std::format("{}: {}", var.name, name_info.type_ref().name())};
+
         if (var.array_size) {
-            x.print("[{}]", var.array_size);
+            text += std::format("[{}]", var.array_size);
         }
         if (not var.reg.empty()) {
-            x.println(" ({})", var.reg);
+            x.comment(src_loc_tk, indent, "{} ({})", text, var.reg);
             return;
         }
-        x.println(" ({} B @ [{}])",
+        x.comment(src_loc_tk, indent, "{} ({} B @ [{}])", text,
                   name_info.type_ref().size() *
                       (name_info.is_array ? name_info.array_size : 1),
                   name_info.operand.address_str());

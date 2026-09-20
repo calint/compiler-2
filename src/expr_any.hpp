@@ -290,8 +290,8 @@ class expr_any final : public statement {
                     if (not src_info.is_const()) {
                         std::unreachable();
                     }
-                    x.mov(tk, indent, dst_info.operand.str(),
-                          std::format("{}", src_info.const_value));
+                    x.copy_value(tk, indent, dst_info.operand.str(),
+                                 std::format("{}", src_info.const_value));
 
                     return;
                 }
@@ -313,9 +313,7 @@ class expr_any final : public statement {
                     std::format("bool_end_{}", postfix)};
 
                 // compile and possibly evaluate constant expression
-                const std::string dst{dst_info.is_var()
-                                          ? dst_info.operand.str(1)
-                                          : dst_info.operand.str()};
+                const std::string dst{dst_info.operand.str()};
 
                 const std::optional<bool> const_eval{
                     e.compile(tc, indent, jmp_to_end, jmp_to_end, false, dst)};
@@ -325,8 +323,7 @@ class expr_any final : public statement {
 
                 // did the evaluation result in a constant?
                 if (const_eval) {
-                    x.mov(tk, indent, dst_info.operand.str(),
-                          *const_eval ? "1" : "0");
+                    x.store_boolean(tk, indent, dst_info.operand, *const_eval);
                 }
             }});
     }

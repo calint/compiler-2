@@ -71,10 +71,7 @@ class stmt_builtin_equal final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        // allocate the register for rep movs
-        x.alloc_named_register(tok(), indent, "rsi", tc.get_type_default());
-        x.alloc_named_register(tok(), indent, "rdi", tc.get_type_default());
-        x.alloc_named_register(tok(), indent, "rcx", tc.get_type_default());
+        x.begin_memory_equal(tok(), indent);
 
         std::vector<std::string> allocated_scratch_registers;
 
@@ -87,14 +84,13 @@ class stmt_builtin_equal final : public expression {
             throw compiler_exception{rhs_.tok(), "constant not supported"};
         }
 
-        // from operand to rsi
         x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
 
         const operand lhs_operand{stmt_identifier::compile_effective_address(
             tc, indent, lhs_.first_token(), lhs_.elems(),
             allocated_scratch_registers, "", lhs_info.lea_path)};
 
-        x.lea(indent, "rsi", lhs_operand.address_str());
+        x.set_memory_equal_left(indent, lhs_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -102,7 +98,6 @@ class stmt_builtin_equal final : public expression {
             x.free_scratch_register(tok(), indent, reg);
         }
 
-        // to operand to 'rdi'
         x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
 
         allocated_scratch_registers.clear();
@@ -111,7 +106,7 @@ class stmt_builtin_equal final : public expression {
             tc, indent, rhs_.first_token(), rhs_.elems(),
             allocated_scratch_registers, "", rhs_info.lea_path)};
 
-        x.lea(indent, "rdi", rhs_operand.address_str());
+        x.set_memory_equal_right(indent, rhs_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -127,10 +122,7 @@ class stmt_builtin_equal final : public expression {
                                    rhs_info.type_ref().name())};
         }
 
-        const size_t type_size{lhs_info.type_ref().size()};
-
-        char rep_size{'b'};
-        size_t rcx{type_size};
+        size_t bytes_count{lhs_info.type_ref().size()};
 
         // check comparing 2 arrays of the same size without indexing
         if (lhs_info.is_array and not lhs_.is_indexed() and
@@ -142,38 +134,9 @@ class stmt_builtin_equal final : public expression {
                                          "sizes");
             }
 
-            rcx *= lhs_info.array_size;
+            bytes_count *= lhs_info.array_size;
         }
 
-        if ((rcx % operand::size_qword) == 0) {
-            rep_size = 'q';
-            rcx /= operand::size_qword;
-        } else if ((rcx % operand::size_dword) == 0) {
-            rep_size = 'd';
-            rcx /= operand::size_dword;
-        } else if ((rcx % operand::size_word) == 0) {
-            rep_size = 'w';
-            rcx /= operand::size_word;
-        }
-        x.mov(tok(), indent, "rcx", std::to_string(rcx));
-
-        // copy
-        x.repe_cmps(indent, rep_size);
-
-        x.free_named_register(tok(), indent, "rcx");
-        x.free_named_register(tok(), indent, "rdi");
-        x.free_named_register(tok(), indent, "rsi");
-
-        // set true if equal
-
-        if (dst_info.is_register()) {
-            x.setcc(indent, "e",
-                    x86::get_sized_register_operand(dst_info.operand.str(),
-                                                    operand::size_byte));
-
-            return;
-        }
-
-        x.setcc(indent, "e", dst_info.operand.str(operand::size_byte));
+        x.end_memory_equal(tok(), indent, bytes_count, dst_info.operand);
     }
 };
