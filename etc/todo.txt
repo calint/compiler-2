@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] removing r11 from scratch register due to syscall clobbering it maybe should
+    push syscall pop
 [ ] constant evaluation folding in expr_ops_list
 [ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] support variable string initializers
