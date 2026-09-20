@@ -672,12 +672,8 @@ class toc final {
             return src_info.operand;
         }
 
-        operand op{src.compile_lea(*this, indent, src.tok(), lea_registers, {},
-                                   src_info.lea_path)};
-
-        op.size_bytes = src_info.operand.size_bytes;
-
-        return op;
+        return src.compile_lea(*this, indent, src.tok(), lea_registers, {},
+                               src_info.lea_path);
     }
 
     [[nodiscard]] auto get_looping_label_or_throw(const token& src_loc_tk) const
@@ -1155,12 +1151,10 @@ class toc final {
         const size_t offset{ii.type_path[lea_index]->field_offset(
             src_loc_tk, elem_path_from_lea)};
 
-        ii.operand = lea;
+        ii.operand = operand::mem(lea, ii.type_ref());
         if (offset != 0) {
             ii.operand.displacement += static_cast<int32_t>(offset);
         }
-        ii.operand.size_bytes = ii.type_ref().size_bytes();
-        ii.operand.type_ptr = &ii.type_ref();
 
         return ii;
     }
@@ -1175,8 +1169,13 @@ class toc final {
                 machine_.get().register_size_bytes(id.str())};
             reg_size_bytes != 0) {
 
-            operand reg{operand::reg(id.str(), reg_size_bytes)};
-            reg.type_ptr = &get_builtin_type_for_size_bytes(reg_size_bytes);
+            const type* type_ptr{
+                machine_.get().allocated_register_type(id.str())};
+            if (not type_ptr) {
+                type_ptr = &get_builtin_type_for_size_bytes(reg_size_bytes);
+            }
+
+            const operand reg{machine_.get().reg(id.str(), *type_ptr)};
 
             return ident_info::make_register(ident, reg);
         }

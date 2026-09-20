@@ -71,8 +71,8 @@ class machine {
 
     [[nodiscard]] virtual auto
     alloc_named_register(const token& src_loc_tk, const size_t indent,
-                         const std::string_view reg, const type& type_ref)
-        -> operand = 0;
+                         const std::string_view register_name,
+                         const type& type_ref) -> operand = 0;
 
     virtual auto free_named_register(const token& src_loc_tk,
                                      const size_t indent, const operand& reg)
@@ -217,7 +217,8 @@ class machine {
 
     virtual auto address_of_variable(const token& src_loc_tk,
                                      const size_t indent, const operand& dst,
-                                     const int32_t offset) -> void = 0;
+                                     const int32_t offset,
+                                     const type& value_type) -> void = 0;
 
     virtual auto reserve_variables_base() -> void = 0;
 
@@ -257,8 +258,12 @@ class machine {
     [[nodiscard]] virtual auto
     register_size_bytes(const std::string_view name) const -> size_t = 0;
 
-    [[nodiscard]] virtual auto reg(const std::string_view name) const
-        -> operand = 0;
+    [[nodiscard]] virtual auto
+    allocated_register_type(const std::string_view name) const
+        -> const type* = 0;
+
+    [[nodiscard]] virtual auto reg(const std::string_view name,
+                                   const type& value_type) const -> operand = 0;
 
     virtual auto
     emit_data_array(const size_t element_size_bytes,

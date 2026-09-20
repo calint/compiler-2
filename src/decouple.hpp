@@ -9,7 +9,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -49,7 +48,9 @@ class expr_any;
 struct operand {
     enum class operand_kind : uint8_t { empty, reg, memory, immediate };
 
+  private:
     operand_kind kind_{operand_kind::empty};
+    const type* type_ptr_{};
 
   public:
     static constexpr size_t size_qword{8};
@@ -64,59 +65,36 @@ struct operand {
     std::string immediate;
     int32_t displacement{};
     uint8_t scale{1};
-    size_t size_bytes{};
-    const type* type_ptr{};
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
     operand() = default;
 
     [[nodiscard]] static auto imm(std::string value, const type& value_type)
-        -> operand {
-
-        if (value.empty()) {
-            throw std::invalid_argument{"operand text must not be empty"};
-        }
-        operand result;
-        result.kind_ = operand_kind::immediate;
-        result.immediate = std::move(value);
-        result.type_ptr = &value_type;
-
-        return result;
-    }
+        -> operand;
 
     [[nodiscard]] static auto reg(const std::string_view name,
-                                  const size_t operand_size_bytes) -> operand {
+                                  const type& value_type) -> operand;
 
-        if (name.empty()) {
-            throw std::invalid_argument{"operand text must not be empty"};
-        }
-        operand result;
-        result.kind_ = operand_kind::reg;
-        result.base_register = name;
-        result.size_bytes = operand_size_bytes;
+    [[nodiscard]] static auto
+    mem(const std::string_view base, const std::string_view index,
+        const uint8_t index_scale, const int32_t offset, const type& value_type)
+        -> operand;
 
-        return result;
-    }
+    [[nodiscard]] static auto mem(const operand& address,
+                                  const type& value_type) -> operand {
+        assert(address.is_memory() or address.is_register());
 
-    [[nodiscard]] static auto mem(const std::string_view base,
-                                  const std::string_view index,
-                                  const uint8_t index_scale,
-                                  const int32_t offset) -> operand {
-
-        if (base.empty() and index.empty() and offset == 0) {
-            throw std::invalid_argument{"operand address must not be empty"};
-        }
-        operand result;
-        result.kind_ = operand_kind::memory;
-        result.base_register = base;
-        result.index_register = index;
-        result.scale = index_scale;
-        result.displacement = offset;
-
-        return result;
+        return mem(address.base_register, address.index_register, address.scale,
+                   address.displacement, value_type);
     }
 
     [[nodiscard]] auto kind() const -> operand_kind { return kind_; }
+
+    [[nodiscard]] auto type_ref() const -> const type& {
+        assert(type_ptr_);
+
+        return *type_ptr_;
+    }
 
     [[nodiscard]] auto is_register() const -> bool {
         return kind_ == operand_kind::reg;
@@ -180,12 +158,12 @@ struct ident_info {
         -> ident_info {
 
         assert(not ident.empty());
-        assert(reg.is_register() and reg.type_ptr);
+        assert(reg.is_register());
 
         return {
             .id{ident},
             .elem_path{reg.base_register},
-            .type_path{reg.type_ptr},
+            .type_path{&reg.type_ref()},
             .lea_path{::operand{}},
             .operand{reg},
             .ident_type{ident_type::REGISTER},

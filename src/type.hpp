@@ -99,19 +99,10 @@ class type final {
             var.reg.is_empty() ? var.stack_idx + static_cast<int32_t>(offset)
                                : static_cast<int32_t>(offset)};
 
-        // find the first built-in type to have a valid operand size for the
-        // address
-
-        const type* tp_first_field{tp};
-        while (not tp_first_field->is_builtin()) {
-            tp_first_field = tp_first_field->fields_[0].type_ptr;
-        }
-
-        operand op{operand::mem(var.reg.is_empty() ? variables_base_register
-                                                   : var.reg.base_register,
-                                "", 1, stack_idx)};
-        op.size_bytes = tp_first_field->size_bytes();
-        op.type_ptr = tp_first_field;
+        const operand op{operand::mem(var.reg.is_empty()
+                                          ? variables_base_register
+                                          : var.reg.base_register,
+                                      "", 1, stack_idx, *tp)};
 
         return ident_info::make_var(std::string{ident}, path,
                                     std::move(type_path), op, stack_idx,

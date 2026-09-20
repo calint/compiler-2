@@ -8,6 +8,7 @@
 #include <ostream>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -36,6 +37,56 @@
 
 // definitions are intentionally not 'inline': single translation unit build
 // NOLINTBEGIN(misc-definitions-in-headers)
+
+// declared in 'decouple.hpp'
+auto operand::imm(std::string value, const type& value_type) -> operand {
+    if (value.empty()) {
+        throw std::invalid_argument{"operand text must not be empty"};
+    }
+
+    operand result;
+    result.kind_ = operand_kind::immediate;
+    result.type_ptr_ = &value_type;
+    result.immediate = std::move(value);
+
+    return result;
+}
+
+// declared in 'decouple.hpp'
+auto operand::reg(const std::string_view name, const type& value_type)
+    -> operand {
+
+    if (name.empty()) {
+        throw std::invalid_argument{"operand text must not be empty"};
+    }
+
+    operand result;
+    result.kind_ = operand_kind::reg;
+    result.type_ptr_ = &value_type;
+    result.base_register = name;
+
+    return result;
+}
+
+// declared in 'decouple.hpp'
+auto operand::mem(const std::string_view base, const std::string_view index,
+                  const uint8_t index_scale, const int32_t offset,
+                  const type& value_type) -> operand {
+
+    if (base.empty() and index.empty() and offset == 0) {
+        throw std::invalid_argument{"operand address must not be empty"};
+    }
+
+    operand result;
+    result.kind_ = operand_kind::memory;
+    result.type_ptr_ = &value_type;
+    result.base_register = base;
+    result.index_register = index;
+    result.scale = index_scale;
+    result.displacement = offset;
+
+    return result;
+}
 
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop',
@@ -342,8 +393,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
             validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
         }
 
-        operand dst_operand{dst_op};
-        dst_operand.size_bytes = field.type().size_bytes();
+        const operand dst_operand{operand::mem(dst_op, field.type())};
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression

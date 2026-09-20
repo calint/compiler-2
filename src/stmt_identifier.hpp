@@ -170,8 +170,6 @@ class stmt_identifier : public statement {
         if (is_indexed() or src_info.has_lea()) {
             op = compile_lea(tc, indent, tok(), allocated_registers, {},
                              src_info.lea_path);
-
-            op.size_bytes = src_info.type_ref().size_bytes();
         }
 
         x.copy_value(tok(), indent, dst_info.operand, op);
@@ -225,6 +223,7 @@ class stmt_identifier : public statement {
         // start at an element with 'lea' or 0 when no 'lea' found
         std::string path{elems[elem_index_with_lea].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
+        const type* value_type{&base_info.type_ref()};
 
         operand reg_offset;
         int32_t accum_offset{};
@@ -238,6 +237,7 @@ class stmt_identifier : public statement {
             const ident_info cur_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size_bytes{cur_info.type_ref().size_bytes()};
             const bool is_last{elem_index == elem_count - 1};
+            value_type = &cur_info.type_ref();
 
             // handle array access without indexing
             if (not cur_elem.array_index_expr) {
@@ -280,7 +280,8 @@ class stmt_identifier : public statement {
 
                         return operand::mem(
                             reg_offset.base_register, reg_idx.base_register,
-                            static_cast<uint8_t>(type_size_bytes), offset);
+                            static_cast<uint8_t>(type_size_bytes), offset,
+                            *value_type);
                     }
                 }
 
@@ -299,7 +300,8 @@ class stmt_identifier : public statement {
                     allocated_registers.push_back(offset_register);
                     reg_offset = offset_register;
                     x.address_of_variable(src_loc_tk, indent, reg_offset,
-                                          base_info.stack_idx);
+                                          base_info.stack_idx,
+                                          base_info.type_ref());
                 } else if (not reg_offset.is_indexed() and
                            reg_offset.base_register ==
                                base_info.operand.base_register) {
@@ -310,7 +312,7 @@ class stmt_identifier : public statement {
                     reg_offset = offset_register;
                     x.address_of(src_loc_tk, indent, reg_offset,
                                  operand::mem(base_info.operand.base_register,
-                                              "", 1, 0));
+                                              "", 1, 0, base_info.type_ref()));
                 }
 
                 // calculate array index
@@ -350,7 +352,7 @@ class stmt_identifier : public statement {
 
         operand op{operand::mem(reg_offset.base_register,
                                 reg_offset.index_register, reg_offset.scale,
-                                reg_offset.displacement)};
+                                reg_offset.displacement, *value_type)};
 
         op.displacement += accum_offset;
 
@@ -428,12 +430,12 @@ class stmt_identifier : public statement {
                 x.address_of(src_loc_tk, indent, index_reg, lea);
             } else {
                 x.copy_value(src_loc_tk, indent, index_reg,
-                             x.reg(lea.base_register));
+                             x.reg(lea.base_register, tc.get_type_default()));
             }
 
             return index_reg;
         }
 
-        return tc.machine().reg(base_register);
+        return tc.machine().reg(base_register, tc.get_type_default());
     }
 };

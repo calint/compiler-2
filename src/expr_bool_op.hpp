@@ -450,14 +450,8 @@ class expr_bool_op final : public statement {
             (expr.is_indexed() or tc.has_lea(expr))) {
 
             const ident_info expr_info{tc.make_ident_info(expr)};
-            operand op{expr.compile_lea(tc, indent, expr.tok(),
-                                        allocated_registers, {},
-                                        expr_info.lea_path)};
-
-            op.size_bytes = expr_info.type_ref().size_bytes();
-            op.type_ptr = &expr_info.type_ref();
-
-            return op;
+            return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
+                                    {}, expr_info.lea_path);
         }
 
         if (expr.is_expression()) {

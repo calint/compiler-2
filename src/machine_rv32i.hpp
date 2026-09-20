@@ -62,7 +62,7 @@ class machine_rv32i final : public machine {
     [[nodiscard]] auto
     alloc_named_register([[maybe_unused]] const token& src_loc_tk,
                          [[maybe_unused]] const size_t indent,
-                         [[maybe_unused]] const std::string_view reg,
+                         [[maybe_unused]] const std::string_view register_name,
                          [[maybe_unused]] const type& type_ref)
         -> operand override {
         todo();
@@ -329,7 +329,8 @@ class machine_rv32i final : public machine {
     auto address_of_variable([[maybe_unused]] const token& src_loc_tk,
                              [[maybe_unused]] const size_t indent,
                              [[maybe_unused]] const operand& dst,
-                             [[maybe_unused]] const int32_t offset)
+                             [[maybe_unused]] const int32_t offset,
+                             [[maybe_unused]] const type& value_type)
         -> void override {
         todo();
     }
@@ -400,7 +401,14 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    [[nodiscard]] auto reg([[maybe_unused]] const std::string_view name) const
+    [[nodiscard]] auto
+    allocated_register_type([[maybe_unused]] const std::string_view name) const
+        -> const type* override {
+        todo();
+    }
+
+    [[nodiscard]] auto reg([[maybe_unused]] const std::string_view name,
+                           [[maybe_unused]] const type& value_type) const
         -> operand override {
         todo();
     }
