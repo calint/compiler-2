@@ -65,21 +65,21 @@ class machine {
         -> void = 0;
 
     [[nodiscard]] virtual auto alloc_scratch_register(const token& src_loc_tk,
-                                                      const size_t indnt,
+                                                      const size_t indent,
                                                       const type& type_ref)
         -> operand = 0;
 
     [[nodiscard]] virtual auto
-    alloc_named_register(const token& src_loc_tk, const size_t indnt,
+    alloc_named_register(const token& src_loc_tk, const size_t indent,
                          const std::string_view reg, const type& type_ref)
         -> operand = 0;
 
     virtual auto free_named_register(const token& src_loc_tk,
-                                     const size_t indnt, const operand& reg)
+                                     const size_t indent, const operand& reg)
         -> void = 0;
 
     virtual auto free_scratch_register(const token& src_loc_tk,
-                                       const size_t indnt, const operand& reg)
+                                       const size_t indent, const operand& reg)
         -> void = 0;
 
     auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
@@ -109,7 +109,7 @@ class machine {
     virtual auto compare_and_branch(
         const token& src_loc_tk, const size_t indent, const operand& lhs,
         const operand& rhs, const comparison_action& action,
-        const std::span<const operand> consumed_temporaries) -> void = 0;
+        const std::span<const operand> scratch_registers_to_free) -> void = 0;
 
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;

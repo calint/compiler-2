@@ -115,7 +115,7 @@ class machine_rv32i final : public machine {
         [[maybe_unused]] const operand& lhs,
         [[maybe_unused]] const operand& rhs,
         [[maybe_unused]] const comparison_action& action,
-        [[maybe_unused]] const std::span<const operand> consumed_temporaries)
+        [[maybe_unused]] const std::span<const operand> scratch_registers_to_free)
         -> void override {
         todo();
     }

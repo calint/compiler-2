@@ -361,17 +361,18 @@ class machine_x86 final : public machine {
     auto compare_and_branch(const token& src_loc_tk, const size_t indent,
                             const operand& lhs, const operand& rhs,
                             const comparison_action& action,
-                            const std::span<const operand> consumed_temporaries)
+                            const std::span<const operand> scratch_registers_to_free)
         -> void override {
 
         cmp(src_loc_tk, indent, lhs, rhs);
 
-        free_scratch_registers(src_loc_tk, indent, consumed_temporaries);
+        free_scratch_registers(src_loc_tk, indent, scratch_registers_to_free);
 
         if (not action.destination.is_empty()) {
             store_comparison(indent, action.operation, action.inverted,
                              action.destination);
         }
+        
         branch_comparison(indent, action.operation,
                           action.branch_on_true ? action.inverted
                                                 : not action.inverted,
