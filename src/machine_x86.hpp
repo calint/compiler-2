@@ -76,6 +76,12 @@ class machine_x86 final : public machine {
     explicit machine_x86(std::ostream& os_ref, const std::string_view source)
         : source_{source}, os_{os_ref} {}
 
+    [[nodiscard]] auto default_type() const -> const type& override {
+        assert(default_type_);
+
+        return *default_type_;
+    }
+
     auto set_builtin_types(const type& t_i64, const type& t_i32,
                            const type& t_i16, const type& t_i8,
                            const type& t_bool, const type& t_void)
@@ -635,8 +641,7 @@ class machine_x86 final : public machine {
     }
 
     auto load_shift_count(const token& src_loc_tk, const size_t indent,
-                          const operand& count,
-                          const size_t size = operand::size_qword)
+                          const operand& count, const size_t size)
         -> void override {
 
         mov(src_loc_tk, indent, sized_register("rcx", size), count);

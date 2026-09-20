@@ -61,11 +61,9 @@ class program final {
         // set defaults
         tc_.set_type_void(type_void);
         tc_.set_type_bool(type_bool);
-        tc_.set_type_default(type_i64);
 
         machine& x{tc_.machine()};
 
-        // note: the first argument is the default type
         x.set_builtin_types(type_i64, type_i32, type_i16, type_i8, type_bool,
                             type_void);
 

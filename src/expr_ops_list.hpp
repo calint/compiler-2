@@ -900,7 +900,8 @@ class expr_ops_list final : public expression {
         const operand count_register{
             x.begin_shift(src.tok(), indent, dst_size)};
 
-        x.load_shift_count(src.tok(), indent, src_operand);
+        x.load_shift_count(src.tok(), indent, src_operand,
+                           tc.get_type_default().size());
         uops.compile(tc, indent, count_register);
         x.end_shift(src.tok(), indent, op, dst_info.operand);
         free_registers(src, x, indent, lea_registers);

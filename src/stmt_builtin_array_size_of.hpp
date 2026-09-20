@@ -55,7 +55,9 @@ class stmt_builtin_array_size_of final : public expression {
         }
 
         if (dst_info.type_ref().name() != tc.get_type_default().name()) {
-            throw compiler_exception{tok(), "destination must be an 'i64'"};
+            throw compiler_exception{tok(),
+                                     std::format("destination must be an '{}'",
+                                                 tc.get_type_default().name())};
         }
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};

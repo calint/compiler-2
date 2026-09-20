@@ -244,7 +244,6 @@ class toc final {
     lut<func_info> funcs_;
     lut<type_info> types_;
     const type* type_void_{};
-    const type* type_default_{};
     const type* type_bool_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_vars_size_{};
@@ -696,7 +695,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_type_default() const -> const type& {
-        return *type_default_;
+        return machine_.get().default_type();
     }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
@@ -821,8 +820,6 @@ class toc final {
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
-
-    auto set_type_default(const type& tpe) -> void { type_default_ = &tpe; }
 
     auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
 

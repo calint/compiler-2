@@ -16,6 +16,8 @@ class machine_rv32i final : public machine {
     using machine::comment;
     using machine::emit_data_array;
 
+    [[nodiscard]] auto default_type() const -> const type& override { todo(); }
+
     auto set_builtin_types([[maybe_unused]] const type& t_i64,
                            [[maybe_unused]] const type& t_i32,
                            [[maybe_unused]] const type& t_i16,
@@ -273,12 +275,10 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto
-    load_shift_count([[maybe_unused]] const token& src_loc_tk,
-                     [[maybe_unused]] const size_t indent,
-                     [[maybe_unused]] const operand& count,
-                     [[maybe_unused]] const size_t size = operand::size_qword)
-        -> void override {
+    auto load_shift_count([[maybe_unused]] const token& src_loc_tk,
+                          [[maybe_unused]] const size_t indent,
+                          [[maybe_unused]] const operand& count,
+                          [[maybe_unused]] const size_t size) -> void override {
         todo();
     }
 

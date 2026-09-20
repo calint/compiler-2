@@ -49,6 +49,8 @@ class machine {
         std::string_view unary_operations;
     };
 
+    [[nodiscard]] virtual auto default_type() const -> const type& = 0;
+
     virtual auto set_builtin_types(const type& t_i64, const type& t_i32,
                                    const type& t_i16, const type& t_i8,
                                    const type& t_bool, const type& t_void)
@@ -185,8 +187,7 @@ class machine {
                              const size_t size) -> operand = 0;
 
     virtual auto load_shift_count(const token& src_loc_tk, const size_t indent,
-                                  const operand& count,
-                                  const size_t size = operand::size_qword)
+                                  const operand& count, const size_t size)
         -> void = 0;
 
     virtual auto shift(const token& src_loc_tk, const size_t indent,
