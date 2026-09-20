@@ -76,7 +76,6 @@ class machine_x86 final : public machine {
     explicit machine_x86(std::ostream& os_ref, const std::string_view source)
         : source_{source}, os_{os_ref} {}
 
-    // note: the first argument is the default type
     auto set_builtin_types(const type& t_i64, const type& t_i32,
                            const type& t_i16, const type& t_i8,
                            const type& t_bool, const type& t_void)
