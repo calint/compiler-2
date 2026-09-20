@@ -11,4 +11,42 @@ func main() {
     var y : i8 = 2
     var z : i8 = x / y
     assert(z == 50)
+
+    x = -7
+    y = 3
+    assert(-x == 7)
+    assert(~x == 6)
+    assert(7 == -x)
+    z = x / y
+    assert(z == -2)
+    z = x % y
+    assert(z == -1)
+    z = x / (y + 0)
+    assert(z == -2)
+    z = x % (y + 0)
+    assert(z == -1)
+    z = x / 3
+    assert(z == -2)
+    z = x % 3
+    assert(z == -1)
+
+    x = 7
+    y = -3
+    z = x / y
+    assert(z == -2)
+    z = x % y
+    assert(z == 1)
+
+    x = -128
+    z = x / -1
+    assert(z == -128)
+    z = x % -1
+    assert(z == 0)
+
+    var wide : i64 = 259
+    x = 7
+    z = x / wide
+    assert(z == 0)
+    z = x % wide
+    assert(z == 7)
 }

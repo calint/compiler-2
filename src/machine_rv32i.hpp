@@ -448,19 +448,6 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    [[nodiscard]] auto
-    sized_register([[maybe_unused]] const std::string_view reg,
-                   [[maybe_unused]] const size_t size) const
-        -> operand override {
-        todo();
-    }
-
-    [[nodiscard]] auto sized_register([[maybe_unused]] const operand& reg,
-                                      [[maybe_unused]] const size_t size) const
-        -> operand override {
-        todo();
-    }
-
     auto emit_data_array(
         [[maybe_unused]] size_t element_size,
         [[maybe_unused]] std::function_ref<bool(data_initializer&)> next)

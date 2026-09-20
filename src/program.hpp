@@ -160,7 +160,7 @@ class program final {
         compile(tc_, 0);
         x.release_variables_base();
         x.finish();
-        tc_.finish(os);
+        tc_.finish();
         x.use_stream(previous);
     }
 

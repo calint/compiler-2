@@ -224,15 +224,12 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
 
-                const operand reg_sized{
-                    x.sized_register(arg_reg, param.get_type().size())};
-
                 arg.compile(tc, indent,
-                            toc::make_ident_info_from_register(reg_sized));
+                            toc::make_ident_info_from_register(arg_reg));
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            reg_sized.base_register, operand{},
-                                            &param.get_type(), reg_sized);
+                                            arg_reg.base_register, operand{},
+                                            &param.get_type(), arg_reg);
 
                 continue;
             }

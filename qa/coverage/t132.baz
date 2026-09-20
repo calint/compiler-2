@@ -19,4 +19,42 @@ func main() {
     arr[3] = 2
     var c : i32 = fiz(arr[ix], arr[3])
     assert(c == 2)
+
+    arr[ix] = -7
+    arr[3] = 3
+    c = arr[ix] / arr[3]
+    assert(c == -2)
+    c = arr[ix] % arr[3]
+    assert(c == -1)
+    c = arr[ix] / (arr[3] + 0)
+    assert(c == -2)
+    c = arr[ix] % (arr[3] + 0)
+    assert(c == -1)
+    c = arr[ix] / 3
+    assert(c == -2)
+    c = arr[ix] % 3
+    assert(c == -1)
+
+    arr[ix] = 7
+    arr[3] = -3
+    c = arr[ix] / arr[3]
+    assert(c == -2)
+    c = arr[ix] % arr[3]
+    assert(c == 1)
+
+    arr[ix] = -2147483648
+    c = arr[ix] / -1
+    assert(c == -2147483648)
+    c = arr[ix] % -1
+    assert(c == 0)
+
+    var narrow : i8 = -3
+    c = 1000
+    c = c / narrow
+    assert(c == -333)
+    c = 1000
+    c = c % narrow
+    assert(c == 1)
+    assert(-c == -1)
+    assert(~c == -2)
 }

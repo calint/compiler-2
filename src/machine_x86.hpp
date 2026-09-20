@@ -110,7 +110,12 @@ class machine_x86 final : public machine {
     auto comment(const token& source_location, const size_t indent,
                  const std::string_view text) -> void override {
 
-        comment_start(source_location, indent);
+        if (source_location.is_empty()) {
+            comment_indent(indent);
+            print(" ");
+        } else {
+            comment_start(source_location, indent);
+        }
         println("{}", text);
     }
 
@@ -611,14 +616,12 @@ class machine_x86 final : public machine {
             return;
         }
 
-        const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+        const operand reg{alloc_scratch_register(
+            src_loc_tk, indent, builtin_type_for_size(product.size))};
 
-        const operand reg_sized{sized_register(reg, product.size)};
-
-        mov(src_loc_tk, indent, reg_sized, product);
-        imul(src_loc_tk, indent, reg_sized, factor);
-        mov(src_loc_tk, indent, product, reg_sized);
+        mov(src_loc_tk, indent, reg, product);
+        imul(src_loc_tk, indent, reg, factor);
+        mov(src_loc_tk, indent, product, reg);
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
@@ -635,9 +638,8 @@ class machine_x86 final : public machine {
     auto begin_shift(const token& src_loc_tk, const size_t indent,
                      const size_t size) -> operand override {
 
-        return sized_register(
-            alloc_named_register(src_loc_tk, indent, "rcx", *default_type_),
-            size);
+        return alloc_named_register(src_loc_tk, indent, "rcx",
+                                    builtin_type_for_size(size));
     }
 
     auto load_shift_count(const token& src_loc_tk, const size_t indent,
@@ -683,12 +685,12 @@ class machine_x86 final : public machine {
         assert(operation == '/' or operation == '%');
 
         reserve_named_register(src_loc_tk, indent, "rax");
-        mov(src_loc_tk, indent, sized_register("rax", dst.size), dst);
+        mov(src_loc_tk, indent, machine_x86::reg("rax"), dst);
 
         reserve_named_register(src_loc_tk, indent, "rdx");
-        div_reg_ext(indent, dst.size);
+        asm_line(indent, "cqo");
 
-        if (divisor.is_immediate()) {
+        if (divisor.is_immediate() or divisor.size != operand::size_qword) {
             const operand scratch_reg{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
@@ -1065,9 +1067,10 @@ class machine_x86 final : public machine {
         return operand::reg(name, register_size(name));
     }
 
+  private:
     [[nodiscard]] auto sized_register(const std::string_view reg,
                                       const size_t size) const
-        -> operand override {
+        -> operand {
 
         operand result{operand::reg(sized_register_operand(reg, size), size)};
         result.type_ptr = &builtin_type_for_size(size);
@@ -1077,7 +1080,7 @@ class machine_x86 final : public machine {
 
     [[nodiscard]] auto sized_register(const operand& reg,
                                       const size_t size) const
-        -> operand override {
+        -> operand {
 
         assert(reg.is_register());
 
@@ -1094,7 +1097,6 @@ class machine_x86 final : public machine {
         return result;
     }
 
-  private:
     template <std::integral value_t>
     [[nodiscard]] auto immediate(const value_t value) const -> operand {
         return operand::imm(std::format("{}", value), *default_type_);
@@ -1627,16 +1629,14 @@ class machine_x86 final : public machine {
 
         if (dst_size == src_size) {
             if (dst_op.is_memory() and src_op.is_memory()) {
-                const operand reg{
-                    alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+                const operand reg{alloc_scratch_register(
+                    src_loc_tk, indent, builtin_type_for_size(dst_size))};
 
-                const operand reg_sized{sized_register(reg, dst_size)};
-
-                asm_line(indent, "mov {}, {}", format_operand(reg_sized),
+                asm_line(indent, "mov {}, {}", format_operand(reg),
                          format_operand(src_op));
 
                 asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                         format_operand(reg_sized));
+                         format_operand(reg));
 
                 free_scratch_register(src_loc_tk, indent, reg);
 
@@ -1650,16 +1650,14 @@ class machine_x86 final : public machine {
 
         if (dst_size > src_size) {
             if (dst_op.is_memory() and src_op.is_memory()) {
-                const operand reg{
-                    alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+                const operand reg{alloc_scratch_register(
+                    src_loc_tk, indent, builtin_type_for_size(dst_size))};
 
-                const operand reg_sized{sized_register(reg, dst_size)};
-
-                asm_line(indent, "movsx {}, {}", format_operand(reg_sized),
+                asm_line(indent, "movsx {}, {}", format_operand(reg),
                          format_operand(src_op));
 
                 asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                         format_operand(reg_sized));
+                         format_operand(reg));
 
                 free_scratch_register(src_loc_tk, indent, reg);
 
@@ -1692,16 +1690,14 @@ class machine_x86 final : public machine {
         }
 
         if (dst_op.is_memory() and src_op.is_memory()) {
-            const operand reg{
-                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            const operand reg{alloc_scratch_register(
+                src_loc_tk, indent, builtin_type_for_size(dst_size))};
 
-            const operand reg_sized{sized_register(reg, dst_size)};
-
-            asm_line(indent, "mov {}, {}", format_operand(reg_sized),
+            asm_line(indent, "mov {}, {}", format_operand(reg),
                      format_operand(src_op, dst_size));
 
             asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     format_operand(reg_sized));
+                     format_operand(reg));
 
             free_scratch_register(src_loc_tk, indent, reg);
 
@@ -1738,33 +1734,6 @@ class machine_x86 final : public machine {
 
         asm_line(indent, "cmovs {}, {}", format_operand(dst),
                  format_operand(src));
-    }
-
-    auto div_reg_ext(const size_t indent, const size_t operand_size) -> void {
-        switch (operand_size) {
-        case operand::size_qword:
-            asm_line(indent, "cqo");
-
-            return;
-
-        case operand::size_dword:
-            asm_line(indent, "cdq");
-
-            return;
-
-        case operand::size_word:
-            asm_line(indent, "cwde");
-
-            return;
-
-        case operand::size_byte:
-            asm_line(indent, "cbw");
-
-            return;
-
-        default:
-            std::unreachable();
-        }
     }
 
     auto idiv(const size_t indent, const operand& value) -> void {

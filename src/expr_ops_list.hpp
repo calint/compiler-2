@@ -286,16 +286,13 @@ class expr_ops_list final : public expression {
         std::stringstream ss2;
         std::ostream& prev2{x.use_stream(ss2)};
         const operand reg{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
+            x.alloc_scratch_register(tok(), indent, dst_info.type_ref())};
 
-        const operand reg_sized{x.sized_register(reg, dst_info.operand.size)};
-
-        // note: sized register to propagate operation to destination size
         const ident_info dst_reg_info{
-            toc::make_ident_info_from_register(reg_sized)};
+            toc::make_ident_info_from_register(reg)};
 
         do_compile(tc, indent, dst_reg_info);
-        x.copy_value(tok(), indent, dst_info.operand, reg_sized);
+        x.copy_value(tok(), indent, dst_info.operand, reg);
         x.free_scratch_register(tok(), indent, reg);
         x.use_stream(prev2);
 
@@ -544,28 +541,23 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.operand.size};
-
         machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             // yes, compile it to a scratch register
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       tc.get_type_default())};
-
-            // make register sized to destination
-            const operand reg_sized{x.sized_register(reg, dst_size)};
+                                                       dst_info.type_ref())};
 
             src.compile(tc, indent,
-                        toc::make_ident_info_from_register(reg_sized));
+                        toc::make_ident_info_from_register(reg));
 
             if (dst_info.is_register() and not dst_info.operand.is_memory()) {
                 x.comment(src.tok(), indent, "imul: expr reg");
             } else {
                 x.comment(src.tok(), indent, "imul: expr not reg");
             }
-            x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
+            x.multiply(src.tok(), indent, dst_info.operand, reg, true);
             x.free_scratch_register(src.tok(), indent, reg);
 
             return;
@@ -636,13 +628,11 @@ class expr_ops_list final : public expression {
 
             x.comment(src.tok(), indent, "dst is reg, src is not const, uops");
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       tc.get_type_default())};
+                                                       dst_info.type_ref())};
 
-            const operand reg_sized{x.sized_register(reg, dst_size)};
-
-            x.copy_value(src.tok(), indent, reg_sized, src_operand);
-            uops.compile(tc, indent, reg_sized);
-            x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
+            x.copy_value(src.tok(), indent, reg, src_operand);
+            uops.compile(tc, indent, reg);
+            x.multiply(src.tok(), indent, dst_info.operand, reg, true);
             x.free_scratch_register(src.tok(), indent, reg);
             free_registers(src, x, indent, lea_registers);
 
@@ -682,13 +672,11 @@ class expr_ops_list final : public expression {
 
         x.comment(src.tok(), indent, "dst is not reg, src is not const, uops");
         const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
+            x.alloc_scratch_register(src.tok(), indent, dst_info.type_ref())};
 
-        const operand reg_sized{x.sized_register(reg, dst_size)};
-
-        x.copy_value(src.tok(), indent, reg_sized, src_operand);
-        uops.compile(tc, indent, reg_sized);
-        x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
+        x.copy_value(src.tok(), indent, reg, src_operand);
+        uops.compile(tc, indent, reg);
+        x.multiply(src.tok(), indent, dst_info.operand, reg, true);
         x.free_scratch_register(src.tok(), indent, reg);
         free_registers(src, x, indent, lea_registers);
     }
@@ -697,21 +685,17 @@ class expr_ops_list final : public expression {
                                const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.operand.size};
-
         machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       tc.get_type_default())};
-
-            const operand reg_sized{x.sized_register(reg, dst_size)};
+                                                       dst_info.type_ref())};
 
             src.compile(tc, indent,
-                        toc::make_ident_info_from_register(reg_sized));
+                        toc::make_ident_info_from_register(reg));
 
-            x.add_subtract(src.tok(), indent, op, dst_info.operand, reg_sized);
+            x.add_subtract(src.tok(), indent, op, dst_info.operand, reg);
 
             x.free_scratch_register(src.tok(), indent, reg);
 
@@ -776,21 +760,17 @@ class expr_ops_list final : public expression {
                                const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.operand.size};
-
         machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       tc.get_type_default())};
-
-            const operand reg_sized{x.sized_register(reg, dst_size)};
+                                                       dst_info.type_ref())};
 
             src.compile(tc, indent,
-                        toc::make_ident_info_from_register(reg_sized));
+                        toc::make_ident_info_from_register(reg));
 
-            x.bitwise(src.tok(), indent, op, dst_info.operand, reg_sized);
+            x.bitwise(src.tok(), indent, op, dst_info.operand, reg);
             x.free_scratch_register(src.tok(), indent, reg);
 
             return;
@@ -910,20 +890,16 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.operand.size};
-
         machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             x.comment(src.tok(), indent, "div expression");
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       tc.get_type_default())};
-
-            const operand reg_sized{x.sized_register(reg, dst_size)};
+                                                       dst_info.type_ref())};
 
             src.compile(tc, indent,
-                        toc::make_ident_info_from_register(reg_sized));
+                        toc::make_ident_info_from_register(reg));
 
             x.divide(src.tok(), indent, op, dst_info.operand, reg);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -966,13 +942,11 @@ class expr_ops_list final : public expression {
 
         x.comment(src.tok(), indent, "div not const, uops");
         const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
+            x.alloc_scratch_register(src.tok(), indent, dst_info.type_ref())};
 
-        const operand reg_sized{x.sized_register(reg, dst_size)};
-
-        x.copy_value(src.tok(), indent, reg_sized, src_operand);
-        uops.compile(tc, indent, reg_sized);
-        x.divide(src.tok(), indent, op, dst_info.operand, reg_sized);
+        x.copy_value(src.tok(), indent, reg, src_operand);
+        uops.compile(tc, indent, reg);
+        x.divide(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
         free_registers(src, x, indent, lea_registers);
     }

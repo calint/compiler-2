@@ -7,8 +7,6 @@
 #include <format>
 #include <functional>
 #include <optional>
-#include <ostream>
-#include <print>
 #include <ranges>
 #include <span>
 #include <string>
@@ -539,15 +537,17 @@ class toc final {
         usage_max_vars_size_ = 0;
     }
 
-    auto finish(std::ostream& os) -> void {
-        std::println(os, ";            max frames in use: {}",
-                     usage_max_frame_count_);
+    auto finish() -> void {
+        ::machine& x{machine_.get()};
 
-        std::println(os, ";              dat var padding: {} B",
-                     vars_entry_gap_);
+        x.comment(token{}, 0, "           max frames in use: {}",
+                  usage_max_frame_count_);
 
-        std::println(os, ";                max vars size: {} B",
-                     usage_max_vars_size_);
+        x.comment(token{}, 0, "             dat var padding: {} B",
+                  vars_entry_gap_);
+
+        x.comment(token{}, 0, "               max vars size: {} B",
+                  usage_max_vars_size_);
 
         assert(frames_.empty());
         assert(vars_size_ == 0);

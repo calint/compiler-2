@@ -281,14 +281,6 @@ class machine {
     [[nodiscard]] virtual auto reg(const std::string_view name) const
         -> operand = 0;
 
-    [[nodiscard]] virtual auto sized_register(const std::string_view reg,
-                                              const size_t size) const
-        -> operand = 0;
-
-    [[nodiscard]] virtual auto sized_register(const operand& reg,
-                                              const size_t size) const
-        -> operand = 0;
-
     virtual auto
     emit_data_array(size_t element_size,
                     std::function_ref<bool(data_initializer&)> next)
