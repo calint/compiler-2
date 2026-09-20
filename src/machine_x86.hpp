@@ -990,15 +990,14 @@ class machine_x86 final : public machine {
 
     auto emit_string_data(const std::string_view value) -> void override {
         print("db `");
-        size_t position{};
-        while (position < value.size()) {
-            const size_t next{value.find('`', position)};
-            if (next == std::string_view::npos) {
-                print("{}", value.substr(position));
-                break;
+        for (const auto [index, part] :
+             std::views::enumerate(value | std::views::split('`'))) {
+
+            if (index != 0) {
+                print("\\`");
             }
-            print("{}\\`", value.substr(position, next - position));
-            position = next + 1;
+
+            print("{}", std::string_view{part});
         }
         println("`");
     }
