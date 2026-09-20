@@ -1144,10 +1144,6 @@ class toc final {
         const x86* x, const std::string_view ident, const ident_path& id) const
         -> ident_info {
 
-        if (x86::is_arena_register(id.str())) {
-            return ident_info::make_empty();
-        }
-
         // is it a register?
         if (const size_t reg_size{operand::register_size(id.str())};
             reg_size != 0) {

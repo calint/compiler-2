@@ -1,5 +1,14 @@
-# rbp is reserved for the variable arena, not a writable source register
+# direct rbp access can save and restore the variable arena base
 
 func main() {
+    mov(rbx, rbp)
     mov(rbp, 0)
+    mov(rax, rbp)
+    rbp = rbx
+    var observed = rax
+    if observed != 0 {
+        mov(rax, 60)
+        mov(rdi, 1)
+        syscall()
+    }
 }

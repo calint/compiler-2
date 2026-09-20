@@ -206,7 +206,9 @@ class program final {
         x86 x{os, tc_.source()};
         x.set_type_default(type_i64);
         x.set_builtin_types(type_i64, type_i32, type_i16, type_i8, type_bool);
+        x.alloc_named_register(token{}, 0, "rbp", type_i64);
         compile(tc_, x, 0);
+        x.free_named_register(token{}, 0, "rbp");
         x.finish();
         tc_.finish(os);
     }

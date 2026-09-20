@@ -1,7 +1,7 @@
-# register parameters must not allocate the variable arena base
+# rbp is already allocated at program startup
 
-func reserved(value : reg_rbp) {}
+func consume(value : reg_rbp) {}
 
 func main() {
-    reserved(1)
+    consume(1)
 }

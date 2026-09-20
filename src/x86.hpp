@@ -40,8 +40,8 @@ class x86 final {
         "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
 
     size_t all_registers_initial_size_{all_registers_.size()};
-    std::vector<std::string> named_registers_{"rax", "rbx", "rcx",
-                                              "rdx", "rsi", "rdi"};
+    std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
+                                              "rsi", "rdi", "rbp"};
 
     size_t named_registers_initial_size_{named_registers_.size()};
     std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
@@ -154,13 +154,6 @@ class x86 final {
     auto alloc_named_register(const token& src_loc_tk, const size_t indnt,
                               const std::string_view reg, const type& type_ref)
         -> void {
-
-        if (is_arena_register(reg)) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("register '{}' is reserved for the variable arena",
-                            reg)};
-        }
 
         comment(src_loc_tk, indnt, "allocate named register {}", reg);
 
@@ -800,12 +793,6 @@ class x86 final {
         }
     }
 
-    [[nodiscard]] static auto is_arena_register(const std::string_view reg)
-        -> bool {
-
-        return reg == "rbp" or reg == "ebp" or reg == "bp" or reg == "bpl";
-    }
-
     [[nodiscard]] static auto get_data_def(const size_t size)
         -> std::string_view {
 
@@ -859,6 +846,10 @@ class x86 final {
     // human-readable "line:col" for a token, using the cached source text
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
+
+        if (src_loc_tk.at_line() == 0) {
+            return "0:0";
+        }
 
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};

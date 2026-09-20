@@ -2,7 +2,7 @@
 # Run from any directory with: python3 qa/coverage/test-arena.py
 # Requires an already-built baz compiler, nasm, and ld.
 # Tests three things: reported variable usage, actual ELF/runtime layout,
-# and rejection of source code that tries to use the reserved arena register.
+# and direct access to the arena register without changing allocation policy.
 import os
 import struct
 import subprocess
@@ -244,14 +244,37 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             assert measurements[1][2] - measurements[0][2] == 1048576 - 4096
             print(f"arena {name} {mode}: ok", flush=True)
 
-    # 3. All widths of rbp are reserved. Reject direct writes, direct reads,
-    # and allocation through a register parameter when the function is called.
-    for register in ("rbp", "ebp", "bp", "bpl"):
-        for source in (
-            f"func main() {{ mov({register}, 0) }}\n",
-            f"func main() {{ var value = {register} }}\n",
-            f"func reserved(value : reg_{register}) {{}}\nfunc main() {{ reserved(1) }}\n",
-        ):
-            result = compile_source(directory, source, 4096, ["--no-reproduce"])
-            assert result.returncode == 1, (register, result.returncode, result.stderr)
-        print(f"arena reserved {register}: ok", flush=True)
+    for register, value_type in (("rbp", "i64"), ("ebp", "i32"), ("bp", "i16"), ("bpl", "i8")):
+        source = COMMON + f"""func main() {{
+    var original : {value_type} = {register}
+    mov(rbx, rbp)
+    mov({register}, 42)
+    mov(rax, {register})
+    mov(rbp, rbx)
+    var moved = rax
+    assert(1, moved == 42)
+    {register} = 43
+    mov(rax, {register})
+    rbp = rbx
+    var assigned = rax
+    assert(2, assigned == 43)
+    assert(3, {register} == original)
+}}
+"""
+        for mode, options in modes.items():
+            result = compile_source(directory, source, 4096, options)
+            assert result.returncode == 0, (register, mode, result.stderr)
+            assembly = directory / "arena.s"
+            assembly.write_text(result.stdout)
+            subprocess.run(["nasm", "-f", "elf64", "arena.s"], cwd=directory, check=True)
+            subprocess.run(
+                ["ld", "-s", "-T", str(ROOT / "baz.ld"), "-o", "arena", "arena.o"],
+                cwd=directory, check=True,
+            )
+            run = subprocess.run([str(directory / "arena")], capture_output=True)
+            assert run.returncode == 0, (register, mode, run.returncode, run.stderr)
+        source = f"func consume(value : reg_{register}) {{}}\nfunc main() {{ consume(1) }}\n"
+        result = compile_source(directory, source, 4096, [])
+        assert result.returncode == 1, (register, result.returncode, result.stderr)
+        assert f"cannot allocate register {register}" in result.stderr, result.stderr
+        print(f"arena access {register}: ok", flush=True)
