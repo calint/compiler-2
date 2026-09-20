@@ -1022,8 +1022,8 @@ class machine_x86 final : public machine {
                             const data_initializer& value) const
         -> void override {
 
-        std::println(os_.get(), "times {} {} {}{}", count,
-                     get_data_def(element_size_bytes), value.uops, value.value);
+        println("times {} {} {}{}", count, get_data_def(element_size_bytes),
+                value.uops, value.value);
     }
 
     // returns 0 if name is not a register
@@ -1366,7 +1366,7 @@ class machine_x86 final : public machine {
     }
 
     auto emit_data_value(const data_initializer& value) const -> void {
-        std::print(os_.get(), "{}{}", value.uops, value.value);
+        print("{}{}", value.uops, value.value);
     }
 
     auto branch_comparison(const size_t indent,
@@ -1400,15 +1400,15 @@ class machine_x86 final : public machine {
     }
 
     template <typename... args_t>
-    auto print(const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
+    auto print(const std::format_string<args_t...> format,
+               args_t&&... args) const -> void {
 
         std::print(os_.get(), format, std::forward<args_t>(args)...);
     }
 
     template <typename... args_t>
-    auto println(const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
+    auto println(const std::format_string<args_t...> format,
+                 args_t&&... args) const -> void {
 
         std::println(os_.get(), format, std::forward<args_t>(args)...);
     }
@@ -1423,7 +1423,7 @@ class machine_x86 final : public machine {
     }
 
     auto emit_buffer(const std::string_view text) const -> void {
-        std::print(os_.get(), "{}", text);
+        print("{}", text);
     }
 
     [[nodiscard]] static auto count_instructions(const std::string_view text)
