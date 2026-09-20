@@ -256,7 +256,7 @@ class machine {
         -> void = 0;
 
     [[nodiscard]] virtual auto
-    register_size(const std::string_view operand) const -> size_t = 0;
+    register_size(const std::string_view name) const -> size_t = 0;
 
     [[nodiscard]] virtual auto reg(const std::string_view name) const
         -> operand = 0;

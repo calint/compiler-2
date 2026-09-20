@@ -395,7 +395,7 @@ class machine_rv32i final : public machine {
     }
 
     [[nodiscard]] auto
-    register_size([[maybe_unused]] const std::string_view operand) const
+    register_size([[maybe_unused]] const std::string_view name) const
         -> size_t override {
         todo();
     }

@@ -1015,26 +1015,25 @@ class machine_x86 final : public machine {
                      get_data_def(element_size), value.uops, value.value);
     }
 
-    // returns 0 if operand is not a register
-    [[nodiscard]] auto register_size(const std::string_view operand) const
+    // returns 0 if name is not a register
+    [[nodiscard]] auto register_size(const std::string_view name) const
         -> size_t override {
 
         for (const register_names& names : register_names_) {
-            if (operand == names.qword) {
+            if (name == names.qword) {
                 return operand::size_qword;
             }
-            if (operand == names.dword) {
+            if (name == names.dword) {
                 return operand::size_dword;
             }
-            if (operand == names.word) {
+            if (name == names.word) {
                 return operand::size_word;
             }
-            if (operand == names.byte) {
+            if (name == names.byte) {
                 return operand::size_byte;
             }
         }
-        if (operand == "ah" or operand == "bh" or operand == "ch" or
-            operand == "dh") {
+        if (name == "ah" or name == "bh" or name == "ch" or name == "dh") {
 
             return operand::size_byte;
         }
@@ -1051,7 +1050,7 @@ class machine_x86 final : public machine {
     [[nodiscard]] auto sized_register(const std::string_view reg,
                                       const size_t size) const -> operand {
 
-        operand result{operand::reg(sized_register_operand(reg, size), size)};
+        operand result{operand::reg(sized_register_name(reg, size), size)};
         result.type_ptr = &builtin_type_for_size(size);
 
         return result;
@@ -1287,12 +1286,12 @@ class machine_x86 final : public machine {
     }
 
     [[nodiscard]] static auto
-    sized_register_operand(const std::string_view operand, const size_t size)
+    sized_register_name(const std::string_view name, const size_t size)
         -> std::string {
 
         // map canonical 64-bit register names to size-specific aliases
         for (const register_names& names : register_names_) {
-            if (operand != names.qword) {
+            if (name != names.qword) {
                 continue;
             }
             switch (size) {
@@ -1314,14 +1313,14 @@ class machine_x86 final : public machine {
         }
 
         // numbered registers are accepted as rN/rNd/rNw/rNb
-        if (operand.size() < 2 || operand[0] != 'r') {
+        if (name.size() < 2 || name[0] != 'r') {
             std::unreachable();
         }
 
         const size_t digits_start{1};
         size_t digits_end{digits_start};
-        while (digits_end < operand.size() && operand[digits_end] >= '0' &&
-               operand[digits_end] <= '9') {
+         while (digits_end < name.size() && name[digits_end] >= '0' &&
+             name[digits_end] <= '9') {
 
             ++digits_end;
         }
@@ -1331,7 +1330,7 @@ class machine_x86 final : public machine {
         }
 
         const std::string_view rnbr{
-            operand.substr(digits_start, digits_end - digits_start)};
+            name.substr(digits_start, digits_end - digits_start)};
 
         switch (size) {
         case operand::size_qword:

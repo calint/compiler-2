@@ -294,7 +294,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
     cur_dst_info.operand = dst_op;
     cur_dst_info.use_operand = true;
 
-    // note: keeping a current 'dst_info' accurate by adjusting 'cur_dest_info'
+    // note: keeping a current 'dst_info' accurate by adjusting 'cur_dst_info'
     // is not necessary but it looks nicer
 
     const std::span<const type_field> flds{dst_type.fields()};
