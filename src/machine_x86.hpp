@@ -10,7 +10,6 @@
 #include <functional>
 #include <ostream>
 #include <print>
-#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -259,10 +258,7 @@ class machine_x86 final : public machine {
 
         cmp(src_loc_tk, indent, lhs, rhs);
 
-        for (const operand& reg : consumed_temporaries | std::views::reverse) {
-
-            free_scratch_register(src_loc_tk, indent, reg);
-        }
+        free_scratch_registers(src_loc_tk, indent, consumed_temporaries);
 
         if (not action.destination.is_empty()) {
             store_comparison(indent, action.operation, action.inverted,
@@ -563,45 +559,26 @@ class machine_x86 final : public machine {
         }
     }
 
-    [[nodiscard]] auto needs_widened_multiply(const operand& dst) const
-        -> bool override {
-
-        return dst.size == operand::size_byte;
-    }
-
-    [[nodiscard]] auto begin_widened_multiply(const token& src_loc_tk,
-                                              const size_t indent,
-                                              const operand& value)
-        -> multiply_registers override {
-
-        const operand left{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
-
-        const operand right{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
-
-        mov(src_loc_tk, indent, left, value);
-
-        return {
-            .left{left},
-            .right{right},
-        };
-    }
-
-    auto end_widened_multiply(const token& src_loc_tk, const size_t indent,
-                              const operand& dst,
-                              const multiply_registers& registers)
-        -> void override {
-
-        imul(src_loc_tk, indent, registers.left, registers.right);
-        mov(src_loc_tk, indent, dst, registers.left);
-        free_scratch_register(src_loc_tk, indent, registers.right);
-        free_scratch_register(src_loc_tk, indent, registers.left);
-    }
-
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
                   const bool reuse_source = false) -> void override {
+
+        if (product.size == operand::size_byte) {
+            const operand left{
+                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
+            const operand right{
+                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
+            mov(src_loc_tk, indent, left, product);
+            mov(src_loc_tk, indent, right, factor);
+            imul(src_loc_tk, indent, left, right);
+            mov(src_loc_tk, indent, product, left);
+            free_scratch_register(src_loc_tk, indent, right);
+            free_scratch_register(src_loc_tk, indent, left);
+
+            return;
+        }
 
         if (product.is_register()) {
             imul(src_loc_tk, indent, product, factor);
@@ -635,34 +612,24 @@ class machine_x86 final : public machine {
         }
     }
 
-    auto begin_shift(const token& src_loc_tk, const size_t indent,
-                     const size_t size) -> operand override {
-
-        return alloc_named_register(src_loc_tk, indent, "rcx",
-                                    builtin_type_for_size(size));
-    }
-
-    auto load_shift_count(const token& src_loc_tk, const size_t indent,
-                          const operand& count, const size_t size)
-        -> void override {
-
-        mov(src_loc_tk, indent, sized_register("rcx", size), count);
-    }
-
     auto shift(const token& src_loc_tk, const size_t indent,
                const char operation, const operand& dst, const operand& count)
         -> void override {
 
         assert(operation == '<' or operation == '>');
 
-        op(src_loc_tk, indent, operation == '<' ? "sal" : "sar", dst, count);
-    }
+        if (count.is_immediate()) {
+            op(src_loc_tk, indent, operation == '<' ? "sal" : "sar", dst,
+               count);
 
-    auto end_shift(const token& src_loc_tk, const size_t indent,
-                   const char operation, const operand& dst) -> void override {
+            return;
+        }
 
-        shift(src_loc_tk, indent, operation, dst,
-              sized_register("rcx", operand::size_byte));
+        validate_shift_operand(src_loc_tk, count);
+        reserve_named_register(src_loc_tk, indent, "rcx");
+        mov(src_loc_tk, indent, sized_register("rcx", dst.size), count);
+        op(src_loc_tk, indent, operation == '<' ? "sal" : "sar", dst,
+           sized_register("rcx", operand::size_byte));
         release_named_register(src_loc_tk, indent, "rcx");
     }
 
@@ -1069,8 +1036,7 @@ class machine_x86 final : public machine {
 
   private:
     [[nodiscard]] auto sized_register(const std::string_view reg,
-                                      const size_t size) const
-        -> operand {
+                                      const size_t size) const -> operand {
 
         operand result{operand::reg(sized_register_operand(reg, size), size)};
         result.type_ptr = &builtin_type_for_size(size);
@@ -1079,8 +1045,7 @@ class machine_x86 final : public machine {
     }
 
     [[nodiscard]] auto sized_register(const operand& reg,
-                                      const size_t size) const
-        -> operand {
+                                      const size_t size) const -> operand {
 
         assert(reg.is_register());
 

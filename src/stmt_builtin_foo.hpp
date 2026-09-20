@@ -118,11 +118,7 @@ class stmt_builtin_foo final : public statement {
 
             x.address_of(tok(), indent, reg_iter, op);
 
-            for (const operand& reg :
-                 allocated_registers | std::views::reverse) {
-
-                x.free_scratch_register(tok(), indent, reg);
-            }
+            x.free_scratch_registers(tok(), indent, allocated_registers);
         } else {
             x.address_of(tok(), indent, reg_iter, ii.operand);
         }

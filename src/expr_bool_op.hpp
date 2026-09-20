@@ -464,8 +464,8 @@ class expr_bool_op final : public statement {
             if (is_lhs) {
                 machine& x{tc.machine()};
 
-                const operand reg{x.alloc_scratch_register(
-                    expr.tok(), indent, expr.get_type())};
+                const operand reg{x.alloc_scratch_register(expr.tok(), indent,
+                                                           expr.get_type())};
 
                 allocated_registers.emplace_back(reg);
                 expr.compile(tc, indent + 1,
@@ -489,8 +489,8 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        const operand reg{x.alloc_scratch_register(expr.tok(), indent,
-                                                   expr_info.type_ref())};
+        const operand reg{
+            x.alloc_scratch_register(expr.tok(), indent, expr_info.type_ref())};
 
         allocated_registers.emplace_back(reg);
         x.copy_value(expr.tok(), indent, reg, expr_info.operand);

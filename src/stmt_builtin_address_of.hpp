@@ -2,7 +2,6 @@
 
 #include <format>
 #include <ostream>
-#include <ranges>
 #include <string>
 #include <vector>
 
@@ -85,9 +84,6 @@ class stmt_builtin_address_of final : public expression {
 
         x.address_of(tok(), indent, dst_info.operand, oper);
 
-        for (const operand& reg : allocated_registers | std::views::reverse) {
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
+        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 };

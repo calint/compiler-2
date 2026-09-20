@@ -288,8 +288,7 @@ class expr_ops_list final : public expression {
         const operand reg{
             x.alloc_scratch_register(tok(), indent, dst_info.type_ref())};
 
-        const ident_info dst_reg_info{
-            toc::make_ident_info_from_register(reg)};
+        const ident_info dst_reg_info{toc::make_ident_info_from_register(reg)};
 
         do_compile(tc, indent, dst_reg_info);
         x.copy_value(tok(), indent, dst_info.operand, reg);
@@ -549,8 +548,7 @@ class expr_ops_list final : public expression {
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
                                                        dst_info.type_ref())};
 
-            src.compile(tc, indent,
-                        toc::make_ident_info_from_register(reg));
+            src.compile(tc, indent, toc::make_ident_info_from_register(reg));
 
             if (dst_info.is_register() and not dst_info.operand.is_memory()) {
                 x.comment(src.tok(), indent, "imul: expr reg");
@@ -566,35 +564,6 @@ class expr_ops_list final : public expression {
         // not an expression, either a register or memory location, or constant
 
         const ident_info src_info{tc.make_ident_info(src)};
-
-        if (x.needs_widened_multiply(dst_info.operand)) {
-            std::vector<operand> lea_registers;
-            const operand src_operand{
-                tc.get_lea_operand(indent, src, src_info, lea_registers)};
-
-            const unary_ops& uops{src.get_unary_ops()};
-            const machine::multiply_registers registers{
-                x.begin_widened_multiply(src.tok(), indent, dst_info.operand)};
-
-            if (src_info.is_const()) {
-                x.comment(src.tok(), indent, "imul: byte const");
-                x.copy_value(src.tok(), indent, registers.right,
-                             operand::imm(std::format("{}{}", uops.to_string(),
-                                                      src_info.const_value),
-                                          src_info.type_ref()));
-            } else {
-                x.comment(src.tok(), indent, "imul: byte not const");
-                x.copy_value(src.tok(), indent, registers.right, src_operand);
-                uops.compile(tc, indent, registers.right);
-            }
-
-            x.end_widened_multiply(src.tok(), indent, dst_info.operand,
-                                   registers);
-
-            free_registers(src, x, indent, lea_registers);
-
-            return;
-        }
 
         if (dst_info.is_register()) {
             // destination is a register
@@ -621,7 +590,7 @@ class expr_ops_list final : public expression {
 
                 x.multiply(src.tok(), indent, dst_info.operand, src_operand);
 
-                free_registers(src, x, indent, lea_registers);
+                x.free_scratch_registers(src.tok(), indent, lea_registers);
 
                 return;
             }
@@ -634,7 +603,7 @@ class expr_ops_list final : public expression {
             uops.compile(tc, indent, reg);
             x.multiply(src.tok(), indent, dst_info.operand, reg, true);
             x.free_scratch_register(src.tok(), indent, reg);
-            free_registers(src, x, indent, lea_registers);
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
 
             return;
         }
@@ -663,7 +632,7 @@ class expr_ops_list final : public expression {
 
             x.multiply(src.tok(), indent, dst_info.operand, src_operand);
 
-            free_registers(src, x, indent, lea_registers);
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
 
             return;
         }
@@ -678,7 +647,7 @@ class expr_ops_list final : public expression {
         uops.compile(tc, indent, reg);
         x.multiply(src.tok(), indent, dst_info.operand, reg, true);
         x.free_scratch_register(src.tok(), indent, reg);
-        free_registers(src, x, indent, lea_registers);
+        x.free_scratch_registers(src.tok(), indent, lea_registers);
     }
 
     static auto asm_op_add_sub(toc& tc, const size_t indent, const char op,
@@ -692,8 +661,7 @@ class expr_ops_list final : public expression {
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
                                                        dst_info.type_ref())};
 
-            src.compile(tc, indent,
-                        toc::make_ident_info_from_register(reg));
+            src.compile(tc, indent, toc::make_ident_info_from_register(reg));
 
             x.add_subtract(src.tok(), indent, op, dst_info.operand, reg);
 
@@ -727,7 +695,7 @@ class expr_ops_list final : public expression {
             x.add_subtract(src.tok(), indent, op, dst_info.operand,
                            src_operand);
 
-            free_registers(src, x, indent, lea_registers);
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
 
             return;
         }
@@ -739,7 +707,7 @@ class expr_ops_list final : public expression {
             x.add_subtract(src.tok(), indent, op == '+' ? '-' : '+',
                            dst_info.operand, src_operand);
 
-            free_registers(src, x, indent, lea_registers);
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
 
             return;
         }
@@ -753,7 +721,7 @@ class expr_ops_list final : public expression {
         uops.compile(tc, indent, reg);
         x.add_subtract(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
-        free_registers(src, x, indent, lea_registers);
+        x.free_scratch_registers(src.tok(), indent, lea_registers);
     }
 
     static auto asm_op_bitwise(toc& tc, const size_t indent, const char op,
@@ -767,8 +735,7 @@ class expr_ops_list final : public expression {
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
                                                        dst_info.type_ref())};
 
-            src.compile(tc, indent,
-                        toc::make_ident_info_from_register(reg));
+            src.compile(tc, indent, toc::make_ident_info_from_register(reg));
 
             x.bitwise(src.tok(), indent, op, dst_info.operand, reg);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -799,7 +766,7 @@ class expr_ops_list final : public expression {
         if (uops.is_empty()) {
             x.bitwise(src.tok(), indent, op, dst_info.operand, src_operand);
 
-            free_registers(src, x, indent, lea_registers);
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
 
             return;
         }
@@ -813,27 +780,26 @@ class expr_ops_list final : public expression {
         uops.compile(tc, indent, reg);
         x.bitwise(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
-        free_registers(src, x, indent, lea_registers);
+        x.free_scratch_registers(src.tok(), indent, lea_registers);
     }
 
     static auto asm_op_shift(toc& tc, const size_t indent, const char op,
                              const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.operand.size};
-
         machine& x{tc.machine()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             x.comment(src.tok(), indent, "shf: expr");
-            const operand count_register{
-                x.begin_shift(src.tok(), indent, dst_size)};
+            const operand count_register{x.alloc_scratch_register(
+                src.tok(), indent, dst_info.type_ref())};
 
             src.compile(tc, indent,
                         toc::make_ident_info_from_register(count_register));
 
-            x.end_shift(src.tok(), indent, op, dst_info.operand);
+            x.shift(src.tok(), indent, op, dst_info.operand, count_register);
+            x.free_scratch_register(src.tok(), indent, count_register);
 
             return;
         }
@@ -863,11 +829,9 @@ class expr_ops_list final : public expression {
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
             x.comment(src.tok(), indent, "shf: not const, no uops");
-            x.begin_shift(src.tok(), indent, dst_size);
-            x.load_shift_count(src.tok(), indent, src_operand, dst_size);
-            x.end_shift(src.tok(), indent, op, dst_info.operand);
+            x.shift(src.tok(), indent, op, dst_info.operand, src_operand);
 
-            free_registers(src, x, indent, lea_registers);
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
 
             return;
         }
@@ -877,13 +841,13 @@ class expr_ops_list final : public expression {
         x.comment(src.tok(), indent, "shf: not const, uops");
 
         const operand count_register{
-            x.begin_shift(src.tok(), indent, dst_size)};
+            x.alloc_scratch_register(src.tok(), indent, dst_info.type_ref())};
 
-        x.load_shift_count(src.tok(), indent, src_operand,
-                           tc.get_type_default().size());
+        x.copy_value(src.tok(), indent, count_register, src_operand);
         uops.compile(tc, indent, count_register);
-        x.end_shift(src.tok(), indent, op, dst_info.operand);
-        free_registers(src, x, indent, lea_registers);
+        x.shift(src.tok(), indent, op, dst_info.operand, count_register);
+        x.free_scratch_register(src.tok(), indent, count_register);
+        x.free_scratch_registers(src.tok(), indent, lea_registers);
     }
 
     static auto asm_op_div(toc& tc, const size_t indent, const char op,
@@ -898,8 +862,7 @@ class expr_ops_list final : public expression {
             const operand reg{x.alloc_scratch_register(src.tok(), indent,
                                                        dst_info.type_ref())};
 
-            src.compile(tc, indent,
-                        toc::make_ident_info_from_register(reg));
+            src.compile(tc, indent, toc::make_ident_info_from_register(reg));
 
             x.divide(src.tok(), indent, op, dst_info.operand, reg);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -933,7 +896,7 @@ class expr_ops_list final : public expression {
         if (uops.is_empty()) {
             x.comment(src.tok(), indent, "div not const, no uops");
             x.divide(src.tok(), indent, op, dst_info.operand, src_operand);
-            free_registers(src, x, indent, lea_registers);
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
 
             return;
         }
@@ -948,16 +911,6 @@ class expr_ops_list final : public expression {
         uops.compile(tc, indent, reg);
         x.divide(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
-        free_registers(src, x, indent, lea_registers);
-    }
-
-    static auto free_registers(const statement& st, machine& x,
-                               const size_t indent,
-                               const std::span<const operand> registers)
-        -> void {
-
-        for (const operand& reg : registers | std::views::reverse) {
-            x.free_scratch_register(st.tok(), indent, reg);
-        }
+        x.free_scratch_registers(src.tok(), indent, lea_registers);
     }
 };

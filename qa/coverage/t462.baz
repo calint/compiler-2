@@ -21,4 +21,19 @@ func main() {
     assert(5, narrow == 21)
     narrow = negative * 3
     assert(6, narrow == -21)
+    narrow = negative * (positive + 0)
+    assert(7, narrow == -21)
+    narrow = negative * -positive
+    assert(8, narrow == 21)
+    narrow = negative * ~positive
+    assert(9, narrow == 28)
+    narrow = negative * (other_negative + 0)
+    assert(10, narrow == 21)
+
+    positive = 100
+    negative = 3
+    narrow = positive * negative
+    assert(11, narrow == 44)
+    narrow = positive * (negative + 0)
+    assert(12, narrow == 44)
 }

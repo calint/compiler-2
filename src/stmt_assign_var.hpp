@@ -2,7 +2,6 @@
 // reviewed: 2025-09-28
 
 #include <format>
-#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -85,9 +84,7 @@ class stmt_assign_var final : public statement {
             tc.get_lea_operand(indent, stmt_ident_, dst_info, lea_registers);
 
         expr_.compile(tc, indent, dst_info);
-        for (const operand& reg : lea_registers | std::views::reverse) {
-            x.free_scratch_register(tok(), indent, reg);
-        }
+        x.free_scratch_registers(tok(), indent, lea_registers);
     }
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }

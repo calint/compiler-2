@@ -231,29 +231,6 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    [[nodiscard]] auto
-    needs_widened_multiply([[maybe_unused]] const operand& dst) const
-        -> bool override {
-        todo();
-    }
-
-    [[nodiscard]] auto
-    begin_widened_multiply([[maybe_unused]] const token& src_loc_tk,
-                           [[maybe_unused]] const size_t indent,
-                           [[maybe_unused]] const operand& value)
-        -> multiply_registers override {
-        todo();
-    }
-
-    auto
-    end_widened_multiply([[maybe_unused]] const token& src_loc_tk,
-                         [[maybe_unused]] const size_t indent,
-                         [[maybe_unused]] const operand& dst,
-                         [[maybe_unused]] const multiply_registers& registers)
-        -> void override {
-        todo();
-    }
-
     auto multiply([[maybe_unused]] const token& src_loc_tk,
                   [[maybe_unused]] const size_t indent,
                   [[maybe_unused]] const operand& product,
@@ -269,31 +246,11 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto begin_shift([[maybe_unused]] const token& src_loc_tk,
-                     [[maybe_unused]] const size_t indent,
-                     [[maybe_unused]] const size_t size) -> operand override {
-        todo();
-    }
-
-    auto load_shift_count([[maybe_unused]] const token& src_loc_tk,
-                          [[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const operand& count,
-                          [[maybe_unused]] const size_t size) -> void override {
-        todo();
-    }
-
     auto shift([[maybe_unused]] const token& src_loc_tk,
                [[maybe_unused]] const size_t indent,
                [[maybe_unused]] const char operation,
                [[maybe_unused]] const operand& dst,
                [[maybe_unused]] const operand& count) -> void override {
-        todo();
-    }
-
-    auto end_shift([[maybe_unused]] const token& src_loc_tk,
-                   [[maybe_unused]] const size_t indent,
-                   [[maybe_unused]] const char operation,
-                   [[maybe_unused]] const operand& dst) -> void override {
         todo();
     }
 

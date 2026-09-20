@@ -192,10 +192,7 @@ class stmt_identifier : public statement {
 
         get_unary_ops().compile(tc, indent, dst_info.operand);
 
-        for (const operand& reg : allocated_registers | std::views::reverse) {
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
+        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
     [[nodiscard]] auto compile_lea(

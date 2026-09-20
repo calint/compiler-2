@@ -2,7 +2,6 @@
 
 #include <format>
 #include <ostream>
-#include <ranges>
 #include <string>
 #include <vector>
 
@@ -97,11 +96,7 @@ class stmt_builtin_array_copy final : public statement {
 
         x.set_array_copy_source(indent, from_operand);
 
-        for (const operand& reg :
-             allocated_scratch_registers | std::views::reverse) {
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
+        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
         x.comment(to_.tok(), indent, statement::trimmed_source(to_));
 
@@ -113,11 +108,7 @@ class stmt_builtin_array_copy final : public statement {
 
         x.set_array_copy_destination(indent, to_operand);
 
-        for (const operand& reg :
-             allocated_scratch_registers | std::views::reverse) {
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
+        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
         if (from_info.type_ref().name() != to_info.type_ref().name()) {
             throw compiler_exception{

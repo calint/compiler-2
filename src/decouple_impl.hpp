@@ -283,10 +283,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
         dst_op.displacement += static_cast<int32_t>(nbytes);
 
-        for (const operand& reg : allocated_registers | std::views::reverse) {
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
+        x.free_scratch_registers(tok(), indent, allocated_registers);
 
         return;
     }

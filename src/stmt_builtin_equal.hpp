@@ -2,7 +2,6 @@
 
 #include <format>
 #include <ostream>
-#include <ranges>
 #include <string>
 #include <vector>
 
@@ -91,11 +90,7 @@ class stmt_builtin_equal final : public expression {
 
         x.set_memory_equal_left(indent, lhs_operand);
 
-        for (const operand& reg :
-             allocated_scratch_registers | std::views::reverse) {
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
+        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
         x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
 
@@ -107,11 +102,7 @@ class stmt_builtin_equal final : public expression {
 
         x.set_memory_equal_right(indent, rhs_operand);
 
-        for (const operand& reg :
-             allocated_scratch_registers | std::views::reverse) {
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
+        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
         if (lhs_info.type_ref().name() != rhs_info.type_ref().name()) {
             throw compiler_exception{

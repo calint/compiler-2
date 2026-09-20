@@ -33,11 +33,6 @@ class machine {
         bool branch_on_true{};
     };
 
-    struct multiply_registers {
-        operand left;
-        operand right;
-    };
-
     struct bounds_check_options {
         bool upper{};
         bool lower{};
@@ -86,6 +81,15 @@ class machine {
     virtual auto free_scratch_register(const token& src_loc_tk,
                                        const size_t indnt, const operand& reg)
         -> void = 0;
+
+    auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
+                                const std::span<const operand> registers)
+        -> void {
+
+        for (const operand& reg : registers | std::views::reverse) {
+            free_scratch_register(src_loc_tk, indent, reg);
+        }
+    }
 
     virtual auto finish() -> void = 0;
 
@@ -163,19 +167,6 @@ class machine {
                          const char operation, const operand& dst,
                          const operand& src) -> void = 0;
 
-    [[nodiscard]] virtual auto needs_widened_multiply(const operand& dst) const
-        -> bool = 0;
-
-    [[nodiscard]] virtual auto begin_widened_multiply(const token& src_loc_tk,
-                                                      const size_t indent,
-                                                      const operand& value)
-        -> multiply_registers = 0;
-
-    virtual auto end_widened_multiply(const token& src_loc_tk,
-                                      const size_t indent, const operand& dst,
-                                      const multiply_registers& registers)
-        -> void = 0;
-
     virtual auto multiply(const token& src_loc_tk, const size_t indent,
                           const operand& product, const operand& factor,
                           const bool reuse_source = false) -> void = 0;
@@ -183,20 +174,9 @@ class machine {
     virtual auto validate_shift_operand(const token& src_loc_tk,
                                         const operand& count) const -> void = 0;
 
-    virtual auto begin_shift(const token& src_loc_tk, const size_t indent,
-                             const size_t size) -> operand = 0;
-
-    virtual auto load_shift_count(const token& src_loc_tk, const size_t indent,
-                                  const operand& count, const size_t size)
-        -> void = 0;
-
     virtual auto shift(const token& src_loc_tk, const size_t indent,
                        const char operation, const operand& dst,
                        const operand& count) -> void = 0;
-
-    virtual auto end_shift(const token& src_loc_tk, const size_t indent,
-                           const char operation, const operand& dst)
-        -> void = 0;
 
     virtual auto validate_division_operand(const token& src_loc_tk,
                                            const operand& divisor) const
