@@ -8,20 +8,20 @@ export PERF_PAGER=cat
 
 usage() {
     cat <<'HELP'
-Usage: ./perf.sh [nobuild|build|report] [full|compile-only] [--no-reproduce]
+Usage: ./perf.sh [nobuild|build|report] [full|compile-only] [--reproduce-source]
   nobuild         Record the existing compiler (default).
   build           Build with -O3 and debug symbols, then record.
   report          Regenerate all reports from the existing recording.
   full            Run the test suite with live output (default).
   compile-only    Compile every t*.baz; do not assemble/link/execute.
-  --no-reproduce  Skip source round-trip verification (compile-only only).
+    --reproduce-source  Enable source reproduction and verification (compile-only only).
 
 Environment: PERF_FREQ=400, PERF_REPEATS=1 (compile-only sweeps).
 
 Examples:
   ./perf.sh build
   PERF_REPEATS=5 ./perf.sh build compile-only
-  PERF_REPEATS=5 ./perf.sh nobuild compile-only --no-reproduce
+    PERF_REPEATS=5 ./perf.sh nobuild compile-only --reproduce-source
   ./perf.sh report compile-only
 
 Outputs are written alongside this script; compile-only uses a suffix.
@@ -76,11 +76,11 @@ fi
 if [[ "$SCOPE" != full && "$SCOPE" != compile-only ]]; then
     invalid_usage 'Scope must be full or compile-only.'
 fi
-if [[ $# == 3 && "$REPRODUCE_OPTION" != --no-reproduce ]]; then
-    invalid_usage 'The only third argument is --no-reproduce.'
+if [[ $# == 3 && "$REPRODUCE_OPTION" != --reproduce-source ]]; then
+    invalid_usage 'The only third argument is --reproduce-source.'
 fi
-if [[ "$REPRODUCE_OPTION" == --no-reproduce && "$SCOPE" != compile-only ]]; then
-    invalid_usage '--no-reproduce requires compile-only.'
+if [[ "$REPRODUCE_OPTION" == --reproduce-source && "$SCOPE" != compile-only ]]; then
+    invalid_usage '--reproduce-source requires compile-only.'
 fi
 if [[ ! "$PERF_FREQ" =~ ^[1-9][0-9]*$ ]]; then
     invalid_usage 'PERF_FREQ must be a positive integer.'
@@ -95,8 +95,8 @@ SUFFIX=""
 if [[ "$SCOPE" == compile-only ]]; then
     SUFFIX="-compile-only"
 fi
-if [[ "$REPRODUCE_OPTION" == --no-reproduce ]]; then
-    SUFFIX+="-no-reproduce"
+if [[ "$REPRODUCE_OPTION" == --reproduce-source ]]; then
+    SUFFIX+="-reproduce-source"
 fi
 DATA_FILE="all${SUFFIX}.data"
 
@@ -112,8 +112,8 @@ if [[ "$MODE" != report ]]; then
     if [[ "$SCOPE" == compile-only ]]; then
         printf '%s\n' '[perf] Nonzero compiler exits can be intentional error fixtures; this is not a correctness test.'
         workload=(./perf.sh --compile-workload)
-        if [[ "$REPRODUCE_OPTION" == --no-reproduce ]]; then
-            workload+=(--no-reproduce)
+        if [[ "$REPRODUCE_OPTION" == --reproduce-source ]]; then
+            workload+=(--reproduce-source)
         fi
     else
         workload=(../coverage/run-tests.sh nobuild)

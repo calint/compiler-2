@@ -97,7 +97,7 @@ def compile_source(directory, source, vars_size, options):
         "LLVM_PROFILE_FILE": str(ROOT / "qa/coverage/arena-%p.profraw"),
     }
     result = subprocess.run(
-        [str(ROOT / "baz"), str(source_path), f"--vars={vars_size}", *options],
+        [str(ROOT / "baz"), str(source_path), f"--vars={vars_size}", "--reproduce-source", *options],
         cwd=directory, env=environment, text=True, capture_output=True,
     )
     return result
@@ -126,11 +126,11 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     assert(11, first[1] == 9)
 """, 16),
     }
-    # Exercise bounds checks, skipped source round-trip verification, and
+    # Exercise bounds checks, no runtime checks, and
     # disabled assembly optimization. All must agree on storage requirements.
     modes = {
         "checked": ["--checks=upper,lower,line"],
-        "production": ["--no-reproduce"],
+        "production": [],
         "unoptimized": ["--checks=upper,lower,line", "--nopt"],
     }
     # 1. Check only the 'max vars size' statistic printed by toc::finish().

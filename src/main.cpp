@@ -44,7 +44,7 @@ auto main(const int argc, const char* argv[]) -> int {
     bool checks_show_line{};
     bool checks_lower{};
     bool optimize_jumps{true};
-    bool reproduce_source{true};
+    bool reproduce_source{false};
 
     // parse arguments
     for (size_t i{1}; i < args.size(); ++i) {
@@ -75,8 +75,8 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("                         line - report line number");
             std::println("             upper,lower,line - all");
             std::println("  --nopt              No jump optimizations");
-            std::println("  --no-reproduce      Skip source reproduction and "
-                         "round-trip verification");
+            std::println("  --reproduce-source  Write reproduced source to "
+                         "diff.baz and check it matches the input");
 
             std::println("  --help, -h          Show this help message");
             std::println("");
@@ -157,8 +157,8 @@ auto main(const int argc, const char* argv[]) -> int {
             }
         } else if (arg == nopt_option) {
             optimize_jumps = false;
-        } else if (arg == "--no-reproduce") {
-            reproduce_source = false;
+        } else if (arg == "--reproduce-source") {
+            reproduce_source = true;
         } else if (not arg.starts_with("--")) {
             // assume it's the filename
             src_file_name = args[i];

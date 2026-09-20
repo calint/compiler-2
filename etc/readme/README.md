@@ -49,8 +49,8 @@ x86_64 assembly on Linux.
       decimal or `0x` hex, positive multiple of 16)
     * option `--nopt` disables post processing jump optimizations in boolean
       expression
-    * option `--no-reproduce` skips writing reproduced source to `diff.baz`
-      and checking that it matches the input
+    * option `--reproduce-source` writes reproduced source to `diff.baz`
+      and checks that it matches the input
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
 * todo list of planned fixes and features in `etc/todo.txt`

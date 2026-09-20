@@ -16,7 +16,7 @@ if [ "$1" != "nobuild" ]; then
 fi
 
 BIN="../../baz"
-OPTS="--vars=262144 --checks=upper,lower,line"
+OPTS="--vars=262144 --checks=upper,lower,line --reproduce-source"
 
 rm -f gen.s out err
 
@@ -42,7 +42,7 @@ compile_and_build() {
 }
 
 compile_and_build_no_checks() {
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>err >gen.s
+    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -53,7 +53,7 @@ compile_and_build_no_checks() {
 
 compile_and_build_with_opts() {
     local opts="$1"
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $opts 2>err >gen.s
+    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $opts --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -209,17 +209,20 @@ CLI() {
     fi
 }
 
-CLI_NO_REPRODUCE() {
-    echo -n "cli --no-reproduce: "
-    LLVM_PROFILE_FILE="cli-reproduce.profraw" $BIN t15.baz $OPTS >gen.s 2>err
-    cmp -s diff.baz t15.baz
+CLI_REPRODUCE_SOURCE() {
+    echo -n "cli --reproduce-source: "
     rm -f diff.baz
-    LLVM_PROFILE_FILE="cli-no-reproduce.profraw" $BIN t15.baz $OPTS --no-reproduce >out 2>err
-    cmp -s gen.s out
+    LLVM_PROFILE_FILE="cli-default.profraw" $BIN t15.baz >gen.s 2>err
     [[ ! -e diff.baz ]]
     cp t1.baz diff.baz
-    LLVM_PROFILE_FILE="cli-no-reproduce-nopt.profraw" $BIN --no-reproduce t15.baz --nopt >out 2>err
+    LLVM_PROFILE_FILE="cli-default-nopt.profraw" $BIN t15.baz --nopt >out 2>err
     cmp -s diff.baz t1.baz
+    LLVM_PROFILE_FILE="cli-reproduce.profraw" $BIN t15.baz --reproduce-source >out 2>err
+    cmp -s diff.baz t15.baz
+    cmp -s gen.s out
+    rm -f diff.baz
+    LLVM_PROFILE_FILE="cli-reproduce-nopt.profraw" $BIN --reproduce-source t15.baz --nopt >out 2>err
+    cmp -s diff.baz t15.baz
     echo ok
 }
 
@@ -234,6 +237,8 @@ CLI --vars=17 1 --help
 CLI --vars=16junk 1 --help
 CLI --vars=18446744073709551616 1 --help
 CLI --stack=65536 1 --help
+CLI --no-reproduce 1 --help
+CLI_REPRODUCE_SOURCE
 python3 "$SCRIPT_DIR/test-arena.py"
 
 # Cleanup
