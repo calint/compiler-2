@@ -1011,8 +1011,7 @@ class machine_x86 final : public machine {
         -> void override {
 
         std::println(os_.get(), "times {} {} {}{}", count,
-                     get_data_def(element_size), value.unary_operations,
-                     value.value);
+                     get_data_def(element_size), value.uops, value.value);
     }
 
     // returns 0 if operand is not a register
@@ -1352,7 +1351,7 @@ class machine_x86 final : public machine {
     }
 
     auto emit_data_value(const data_initializer& value) const -> void {
-        std::print(os_.get(), "{}{}", value.unary_operations, value.value);
+        std::print(os_.get(), "{}{}", value.uops, value.value);
     }
 
     auto branch_comparison(const size_t indent,

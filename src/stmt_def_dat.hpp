@@ -297,11 +297,10 @@ class stmt_def_dat final : public statement {
                 return;
             }
 
-            x.emit_data(tp.size(),
-                        {
-                            .value{elroot.value},
-                            .unary_operations{elroot.uops.to_string()},
-                        });
+            x.emit_data(tp.size(), {
+                                       .value{elroot.value},
+                                       .uops{elroot.uops.to_string()},
+                                   });
 
             return;
         }
@@ -334,7 +333,7 @@ class stmt_def_dat final : public statement {
                 [](const elem& element) -> machine::data_initializer {
                     return {
                         .value{element.value},
-                        .unary_operations{element.uops.to_string()},
+                        .uops{element.uops.to_string()},
                     };
                 })};
 

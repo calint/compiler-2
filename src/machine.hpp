@@ -41,7 +41,7 @@ class machine {
 
     struct data_initializer {
         int64_t value{};
-        std::string_view unary_operations;
+        std::string_view uops; // unary operations
     };
 
     [[nodiscard]] virtual auto default_type() const -> const type& = 0;
