@@ -60,6 +60,7 @@ class x86 final {
     const type* type_i32_{};
     const type* type_i16_{};
     const type* type_i8_{};
+    const type* type_void_{};
 
     std::reference_wrapper<std::ostream> os_;
 
@@ -67,17 +68,18 @@ class x86 final {
     explicit x86(std::ostream& os_ref, const std::string_view source)
         : source_{source}, os_{os_ref} {}
 
-    auto set_type_default(const type& tpe) -> void { default_type_ = &tpe; }
-
+    // note: the first argument is the default type
     auto set_builtin_types(const type& t_i64, const type& t_i32,
                            const type& t_i16, const type& t_i8,
-                           const type& t_bool) -> void {
+                           const type& t_bool, const type& t_void) -> void {
 
+        default_type_ = &t_i64;
         type_i64_ = &t_i64;
         type_i32_ = &t_i32;
         type_i16_ = &t_i16;
         type_i8_ = &t_i8;
         type_bool_ = &t_bool;
+        type_void_ = &t_void;
     }
 
     // redirects output to 'new_stream', returning the previously used stream

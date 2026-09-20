@@ -119,8 +119,10 @@ class stmt_call : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
-                 const ident_info& dst_info) const -> void override {
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+        -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -181,12 +183,12 @@ class stmt_call : public expression {
             if (not arg.is_expression() and
                 (arg.is_indexed() or tc.has_lea(arg))) {
 
-                const ident_info arg_info{tc.make_ident_info(x, arg)};
+                const ident_info arg_info{tc.make_ident_info(arg)};
 
                 std::vector<std::string> regs_lea;
 
                 const operand lea{arg.compile_lea(
-                    tc, x, indent, arg.tok(), regs_lea, "", arg_info.lea_path)};
+                    tc, indent, arg.tok(), regs_lea, "", arg_info.lea_path)};
 
                 for (const std::string& r : regs_lea) {
                     allocated_scratch_registers.emplace_back(r);
@@ -223,8 +225,8 @@ class stmt_call : public expression {
                 const std::string& reg_sized{x86::get_sized_register_operand(
                     arg_reg, param.get_type().size())};
 
-                arg.compile(tc, x, indent,
-                            toc::make_ident_info_from_register(x, reg_sized));
+                arg.compile(tc, indent,
+                            tc.make_ident_info_from_register(reg_sized));
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             reg_sized, "", &param.get_type());
@@ -245,7 +247,7 @@ class stmt_call : public expression {
             // handle non-expression with unary ops but no register
 
             if (arg_reg.empty()) {
-                const ident_info& arg_info{tc.make_ident_info(x, arg)};
+                const ident_info& arg_info{tc.make_ident_info(arg)};
 
                 if (arg_info.is_const()) {
                     // identifier is constant
@@ -269,7 +271,7 @@ class stmt_call : public expression {
                           arg_info.operand.str());
 
                     // apply unary ops
-                    arg.get_unary_ops().compile(tc, x, indent, scratch_reg);
+                    arg.get_unary_ops().compile(tc, indent, scratch_reg);
 
                     aliases_to_add.emplace_back(std::string{param.identifier()},
                                                 scratch_reg, "",
@@ -284,7 +286,7 @@ class stmt_call : public expression {
             aliases_to_add.emplace_back(std::string{param.identifier()},
                                         arg_reg, "", &param.get_type());
 
-            const ident_info& arg_info{tc.make_ident_info(x, arg)};
+            const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
                 x.mov(param.tok(), indent, arg_reg,
@@ -292,7 +294,7 @@ class stmt_call : public expression {
                                   arg_info.const_value));
             } else {
                 x.mov(param.tok(), indent, arg_reg, arg_info.operand.str());
-                arg.get_unary_ops().compile(tc, x, indent + 1, arg_reg);
+                arg.get_unary_ops().compile(tc, indent + 1, arg_reg);
             }
         }
 
@@ -327,7 +329,7 @@ class stmt_call : public expression {
         }
 
         // compile in-lined code
-        func.code().compile(tc, x, indent, dst_info);
+        func.code().compile(tc, indent, dst_info);
 
         // free allocated registers in reverse order
         for (const std::string& reg :
@@ -354,9 +356,9 @@ class stmt_call : public expression {
             }
             const func_return_info& return_info{*func.returns()};
             const ident_info& ret_info{
-                tc.make_ident_info(x, tok(), return_info.ident_tk.text())};
+                tc.make_ident_info(tok(), return_info.ident_tk.text())};
 
-            get_unary_ops().compile(tc, x, indent, ret_info.operand.str());
+            get_unary_ops().compile(tc, indent, ret_info.operand.str());
         }
 
         tc.exit_func(func.name());

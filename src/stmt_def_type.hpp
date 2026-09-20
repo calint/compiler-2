@@ -76,12 +76,13 @@ class stmt_def_type final : public statement {
         close_brace_tk_.source_to(os);
     }
 
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
-                 [[maybe_unused]] const size_t indent,
+    auto compile(toc& tc, [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         const type& tp{tc.get_type_or_throw(tok(), name_tk_.text())};
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, "{} : {} B    fields:", name_tk_.text(),
                   tp.size());

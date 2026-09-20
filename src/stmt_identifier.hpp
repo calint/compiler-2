@@ -149,12 +149,14 @@ class stmt_identifier : public statement {
         }
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
-                 const ident_info& dst_info) const -> void override {
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+        -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info src_info{tc.make_ident_info(x, *this)};
+        const ident_info src_info{tc.make_ident_info(*this)};
 
         if (src_info.is_const()) {
             x.mov(tok(), indent, dst_info.operand.str(),
@@ -172,7 +174,7 @@ class stmt_identifier : public statement {
             x.mov(tok(), indent, dst_info.operand.str(),
                   src_info.operand.str());
 
-            get_unary_ops().compile(tc, x, indent, dst_info.operand.str());
+            get_unary_ops().compile(tc, indent, dst_info.operand.str());
             return;
         }
 
@@ -181,13 +183,13 @@ class stmt_identifier : public statement {
         std::vector<std::string> allocated_registers;
 
         const operand op{stmt_identifier::compile_effective_address(
-            tc, x, indent, tok(), elems(), allocated_registers, "",
+            tc, indent, tok(), elems(), allocated_registers, "",
             src_info.lea_path)};
 
         x.mov(tok(), indent, dst_info.operand.str(),
               op.str(src_info.type_ref().size()));
 
-        get_unary_ops().compile(tc, x, indent, dst_info.operand.str());
+        get_unary_ops().compile(tc, indent, dst_info.operand.str());
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
@@ -197,13 +199,13 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto
-    compile_lea(toc& tc, x86& x, const size_t indent, const token& src_loc_tk,
+    compile_lea(toc& tc, const size_t indent, const token& src_loc_tk,
                 std::vector<std::string>& allocated_registers,
                 const std::string& reg_size,
                 const std::span<const std::string> lea_path) const
         -> operand override {
 
-        return compile_effective_address(tc, x, indent, src_loc_tk, elems_,
+        return compile_effective_address(tc, indent, src_loc_tk, elems_,
                                          allocated_registers, reg_size,
                                          lea_path);
     }
@@ -213,7 +215,7 @@ class stmt_identifier : public statement {
     [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
 
     [[nodiscard]] static auto compile_effective_address(
-        toc& tc, x86& x, const size_t indent, const token& src_loc_tk,
+        toc& tc, const size_t indent, const token& src_loc_tk,
         const std::span<const ident_elem> elems,
         std::vector<std::string>& allocated_registers,
         const std::string_view reg_size,
@@ -243,15 +245,17 @@ class stmt_identifier : public statement {
 
         // start at an element with 'lea' or 0 when no 'lea' found
         std::string path{elems[elem_index_with_lea].name_tk.text()};
-        const ident_info base_info{tc.make_ident_info(x, src_loc_tk, path)};
+        const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
         std::string reg_offset;
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
+        x86& x{tc.machine()};
+
         for (size_t i{elem_index_with_lea}; i < elems_size; ++i) {
             const ident_elem& curr_elem{elems[i]};
-            const ident_info curr_info{tc.make_ident_info(x, src_loc_tk, path)};
+            const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ref().size()};
             const bool is_last{i == elems_size - 1};
 
@@ -259,7 +263,7 @@ class stmt_identifier : public statement {
             if (not curr_elem.array_index_expr) {
                 // bounds check for the last element without indexing
                 if (is_last and not reg_size.empty() and curr_info.is_array) {
-                    emit_bounds_check(tc, x, indent, src_loc_tk, reg_size,
+                    emit_bounds_check(tc, indent, src_loc_tk, reg_size,
                                       curr_info.array_size, "g");
                 }
 
@@ -293,19 +297,18 @@ class stmt_identifier : public statement {
                               "set array index");
 
                     curr_elem.array_index_expr->compile(
-                        tc, x, indent,
-                        toc::make_ident_info_from_register(x, reg_idx));
+                        tc, indent, tc.make_ident_info_from_register(reg_idx));
 
                     const token& tk{curr_elem.array_index_expr->tok()};
                     const bool use_reg_size{not reg_size.empty()};
-                    emit_bounds_check(tc, x, indent, tk, reg_idx,
+                    emit_bounds_check(tc, indent, tk, reg_idx,
                                       curr_info.array_size,
                                       use_reg_size ? "g" : "ge",
                                       use_reg_size ? reg_size : "");
 
                     if (reg_offset.empty()) {
                         reg_offset = init_reg_offset(
-                            tc, x, indent, src_loc_tk, lea, allocated_registers,
+                            tc, indent, src_loc_tk, lea, allocated_registers,
                             true, true, base_info.operand.base_register);
                     }
 
@@ -327,7 +330,7 @@ class stmt_identifier : public statement {
             // convert 'rbp' to dedicated register
 
             if (reg_offset.empty()) {
-                reg_offset = init_reg_offset(tc, x, indent, src_loc_tk, lea,
+                reg_offset = init_reg_offset(tc, indent, src_loc_tk, lea,
                                              allocated_registers, false, true,
                                              base_info.operand.base_register);
             }
@@ -356,12 +359,12 @@ class stmt_identifier : public statement {
                       "set array index");
 
             curr_elem.array_index_expr->compile(
-                tc, x, indent, toc::make_ident_info_from_register(x, reg_idx));
+                tc, indent, tc.make_ident_info_from_register(reg_idx));
 
             // bounds check
             const token& tk{curr_elem.array_index_expr->tok()};
             const bool use_reg_size{is_last and not reg_size.empty()};
-            emit_bounds_check(tc, x, indent, tk, reg_idx, curr_info.array_size,
+            emit_bounds_check(tc, indent, tk, reg_idx, curr_info.array_size,
                               use_reg_size ? "g" : "ge",
                               use_reg_size ? reg_size : "");
 
@@ -391,7 +394,7 @@ class stmt_identifier : public statement {
         }
 
         if (reg_offset.empty()) {
-            reg_offset = init_reg_offset(tc, x, indent, src_loc_tk, lea,
+            reg_offset = init_reg_offset(tc, indent, src_loc_tk, lea,
                                          allocated_registers, true, false,
                                          base_info.operand.base_register);
         }
@@ -422,8 +425,7 @@ class stmt_identifier : public statement {
 
   private:
     // helper function to emit bounds-checking code
-    static auto emit_bounds_check(toc& tc, x86& x, const size_t indent,
-                                  const token& tk,
+    static auto emit_bounds_check(toc& tc, const size_t indent, const token& tk,
                                   const std::string_view reg_to_check,
                                   const size_t array_size,
                                   const std::string_view comparison,
@@ -433,6 +435,8 @@ class stmt_identifier : public statement {
         if (not tc.is_bounds_check_upper() and not tc.is_bounds_check_lower()) {
             return;
         }
+
+        x86& x{tc.machine()};
 
         x.comment(tk, indent, "bounds check");
 
@@ -483,8 +487,8 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] static auto
-    init_reg_offset(toc& tc, x86& x, const size_t indent,
-                    const token& src_loc_tk, const std::string& lea,
+    init_reg_offset(toc& tc, const size_t indent, const token& src_loc_tk,
+                    const std::string& lea,
                     std::vector<std::string>& allocated_registers,
                     const bool no_changes_to_reg_offset_after_this,
                     const bool will_be_indirect_indexed,
@@ -499,6 +503,8 @@ class stmt_identifier : public statement {
 
                 return lea;
             }
+
+            x86& x{tc.machine()};
 
             const std::string index_reg{x.alloc_scratch_register(
                 src_loc_tk, indent, tc.get_type_default())};

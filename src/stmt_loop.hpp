@@ -19,16 +19,18 @@ class stmt_loop final : public statement {
 
     stmt_loop() = default;
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, "label");
 
         const std::string lbl{tc.create_unique_label(tok(), "loop")};
         x.label(indent, lbl);
         tc.enter_loop(lbl);
-        code_.compile(tc, x, indent, dst_info);
+        code_.compile(tc, indent, dst_info);
         x.jmp(indent, lbl);
         x.label(indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);

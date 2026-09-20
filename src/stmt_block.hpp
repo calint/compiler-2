@@ -148,13 +148,13 @@ class stmt_block final : public statement {
         }
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         tc.enter_block();
         for (const std::unique_ptr<statement>& s : stms_) {
-            s->compile(tc, x, indent + 1, dst_info);
+            s->compile(tc, indent + 1, dst_info);
         }
         tc.exit_block();
     }

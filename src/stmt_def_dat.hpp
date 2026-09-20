@@ -10,7 +10,6 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "null_stream.hpp"
 #include "statement.hpp"
 #include "stmt_const.hpp"
 #include "toc.hpp"
@@ -36,7 +35,9 @@ class stmt_def_dat final : public statement {
             tk.source_to(os);
         }
 
-        auto compile(x86& x) const -> void {
+        auto compile(toc& tc) const -> void {
+            x86& x{tc.machine()};
+
             x.dat_value(std::format("{}{}", uops.to_string(), value));
         }
     };
@@ -105,9 +106,6 @@ class stmt_def_dat final : public statement {
         // add var to toc without emitting output so the further parsing has the
         // variable declared
 
-        null_stream null_strm;
-        x86 x{null_strm, tc.source()};
-
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&tp},
@@ -117,7 +115,7 @@ class stmt_def_dat final : public statement {
             .reg{},
         };
 
-        tc.add_var(x, name_tk_, 0, var, true);
+        tc.add_var(name_tk_, 0, var, true);
 
         if (has_init_) {
             elroot_ = parse_elem(tc, tz, type_tk_, tp, is_array, array_size);
@@ -171,9 +169,11 @@ class stmt_def_dat final : public statement {
         print_source_elem(os, tp, elroot_);
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -186,12 +186,14 @@ class stmt_def_dat final : public statement {
             .reg{},
         };
 
-        tc.add_var(x, name_tk_, indent, var, true);
+        tc.add_var(name_tk_, indent, var, true);
     }
 
-    auto compile_data(const toc& tc, x86& x) const -> void override {
+    auto compile_data(toc& tc) const -> void override {
+        x86& x{tc.machine()};
+
         x.comment(name_tk_, 0, name_tk_.text());
-        compile_data_rec(tc, x, get_type(), elroot_);
+        compile_data_rec(tc, get_type(), elroot_);
     }
 
     [[nodiscard]] auto dat_size_bytes() const -> size_t override {
@@ -199,11 +201,11 @@ class stmt_def_dat final : public statement {
     }
 
   private:
-    static auto compile_data_rec(const toc& tc, x86& x, const type& tp,
-                                 const elem& elroot) -> void {
+    static auto compile_data_rec(toc& tc, const type& tp, const elem& elroot)
+        -> void {
 
         if (not elroot.is_array) {
-            compile_data_elem(tc, x, tp, elroot);
+            compile_data_elem(tc, tp, elroot);
             return;
         }
 
@@ -213,18 +215,20 @@ class stmt_def_dat final : public statement {
         // note: only i8[] can be initialized with string token
 
         if (elroot.tk.is_string()) {
-            compile_data_builtin(x, tp, elroot);
+            compile_data_builtin(tc, tp, elroot);
             return;
         }
 
         // regular arrays
+
+        x86& x{tc.machine()};
 
         x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
 
         size_t counter{};
         for (const elem& el : elroot.elems) {
             x.comment(el.tk, 0, "[{}]", counter);
-            compile_data_elem(tc, x, tp, el);
+            compile_data_elem(tc, tp, el);
             ++counter;
         }
 
@@ -242,11 +246,11 @@ class stmt_def_dat final : public statement {
         x.times(diff * tp.size(), "db", "0");
     }
 
-    static auto compile_data_elem(const toc& tc, x86& x, const type& tp,
-                                  const elem& elroot) -> void {
+    static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)
+        -> void {
 
         if (tp.is_built_in()) {
-            compile_data_builtin(x, tp, elroot);
+            compile_data_builtin(tc, tp, elroot);
             return;
         }
 
@@ -257,9 +261,9 @@ class stmt_def_dat final : public statement {
         for (const elem& el : elroot.elems) {
             const type_field& tf{flds[counter]};
             if (tf.type().is_built_in()) {
-                compile_data_builtin(x, tf.type(), el);
+                compile_data_builtin(tc, tf.type(), el);
             } else {
-                compile_data_rec(tc, x, tf.type(), el);
+                compile_data_rec(tc, tf.type(), el);
             }
             ++counter;
         }
@@ -275,15 +279,21 @@ class stmt_def_dat final : public statement {
         for (size_t i{counter}; i < n; ++i) {
             nbytes += flds[i].size;
         }
+
+        x86& x{tc.machine()};
+
         x.comment(elroot.tk, 0, "zero remaining fields");
         x.times(nbytes, "db", "0");
     }
 
-    static auto compile_data_builtin(x86& x, const type& tp, const elem& elroot)
-        -> void {
+    static auto compile_data_builtin(toc& tc, const type& tp,
+                                     const elem& elroot) -> void {
 
         // NASM data directive for this element size
         const std::string_view dd{x86::get_data_def(tp.size())};
+
+        x86& x{tc.machine()};
+
         if (not elroot.is_array) {
             x.comment(elroot.tk, 0, "{}", tp.name());
             if (elroot.tk.text().empty()) {
@@ -326,10 +336,10 @@ class stmt_def_dat final : public statement {
         // initializer
         x.dat_begin(tp.size());
         if (not elroot.elems.empty()) {
-            elroot.elems.front().compile(x);
+            elroot.elems.front().compile(tc);
             for (const elem& e : elroot.elems | std::views::drop(1)) {
                 x.dat_separator();
-                e.compile(x);
+                e.compile(tc);
             }
         }
         x.dat_end();

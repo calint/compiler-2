@@ -232,29 +232,29 @@ auto expr_type_value::source_to(std::ostream& os) const -> void {
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile(toc& tc, x86& x, const size_t indent,
+auto expr_type_value::compile(toc& tc, const size_t indent,
                               const ident_info& dst_info) const -> void {
 
     if (stmt_call_) {
-        stmt_call_->compile(tc, x, indent, dst_info);
+        stmt_call_->compile(tc, indent, dst_info);
         return;
     }
 
     const type& tp{dst_info.type_ref()};
     operand op{dst_info.operand};
-    compile_assign(tc, x, indent, tp, dst_info, op);
+    compile_assign(tc, indent, tp, dst_info, op);
 }
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
+auto expr_type_value::compile_assign(toc& tc, size_t indent,
                                      const type& dst_type,
                                      const ident_info& dst_info,
                                      operand& dst_op) const -> void {
 
     // is it e.g. pt1 = pt2, or pt1 = f()?
     if (is_identifier()) {
-        const ident_info src_info{tc.make_ident_info(x, *this)};
+        const ident_info src_info{tc.make_ident_info(*this)};
 
         // 'expr_type_value' validates the source type before entering here
         assert(dst_type.name() == src_info.type_ref().name());
@@ -262,7 +262,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         std::vector<std::string> allocated_registers;
         operand src_op;
         if (is_indexed() or src_info.has_lea()) {
-            src_op = compile_lea(tc, x, indent, tok(), allocated_registers, "",
+            src_op = compile_lea(tc, indent, tok(), allocated_registers, "",
                                  src_info.lea_path);
         } else {
             src_op = src_info.operand;
@@ -271,6 +271,8 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         const size_t nbytes{src_info.is_array
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
+
+        x86& x{tc.machine()};
 
         x.copy(tok(), indent, src_op.address_str(), dst_op.address_str(),
                nbytes);
@@ -297,6 +299,9 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
     // is not necessary but it looks nicer
 
     const std::span<const type_field>& flds{dst_type.fields()};
+
+    x86& x{tc.machine()};
+
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
         const type_field& tf{flds[counter]};
 
@@ -307,7 +312,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         if (not tf.type().is_built_in()) {
             // a not-builtin statement thus is 'expr_type_value'
             const expr_type_value& e{ea->as_expr_type_value()};
-            e.compile_assign(tc, x, indent, tf.type(), cur_dst_info, dst_op);
+            e.compile_assign(tc, indent, tf.type(), cur_dst_info, dst_op);
             // note: dst_op was mutated in the recursive call
             cur_dst_info.increment_offset(static_cast<int32_t>(tf.size));
             cur_dst_info.pop();
@@ -337,8 +342,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         }
 
         if (tf.is_array and src.is_array_identifier()) {
-            validate_array_assignment(src.tok(), tf,
-                                      tc.make_ident_info(x, src));
+            validate_array_assignment(src.tok(), tf, tc.make_ident_info(src));
         }
 
         const std::string dst_accessor{dst_op.str(tf.type().size())};
@@ -346,10 +350,10 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
             cur_dst_info.operand = operand{dst_accessor, false};
-            src.compile(tc, x, indent, cur_dst_info);
+            src.compile(tc, indent, cur_dst_info);
         } else {
             // built-in, not expression
-            const ident_info src_info{tc.make_ident_info(x, src)};
+            const ident_info src_info{tc.make_ident_info(src)};
             if (src_info.is_const()) {
                 // built-in, not expression, constant
                 x.mov(src.tok(), indent, dst_accessor,
@@ -372,7 +376,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                     x.mov(src.tok(), indent, dst_accessor,
                           src_info.operand.str());
 
-                    src.get_unary_ops().compile(tc, x, indent, dst_accessor);
+                    src.get_unary_ops().compile(tc, indent, dst_accessor);
                 }
             }
         }
@@ -440,12 +444,12 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::compile_lea(
-    toc& tc, x86& x, size_t indent, const token& src_loc_tk,
+    toc& tc, size_t indent, const token& src_loc_tk,
     std::vector<std::string>& allocated_registers, const std::string& reg_size,
     const std::span<const std::string> lea_path) const -> operand {
 
-    return stmt_ident_->compile_lea(tc, x, indent, src_loc_tk,
-                                    allocated_registers, reg_size, lea_path);
+    return stmt_ident_->compile_lea(tc, indent, src_loc_tk, allocated_registers,
+                                    reg_size, lea_path);
 }
 
 // declared in 'expr_type_value.hpp'
@@ -465,10 +469,12 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-auto unary_ops::compile([[maybe_unused]] toc& tc, x86& x, const size_t indnt,
+auto unary_ops::compile(toc& tc, const size_t indnt,
                         const std::string_view dst_info) const -> void {
 
     for (const char op : ops_ | std::views::reverse) {
+        x86& x{tc.machine()};
+
         switch (op) {
         case '~':
             x.not_op(indnt, dst_info);

@@ -5,7 +5,6 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "null_stream.hpp"
 #include "statement.hpp"
 #include "stmt_const.hpp"
 #include "toc.hpp"
@@ -40,11 +39,7 @@ class stmt_def_const final : public statement {
 
         set_type(tc.get_type_void());
 
-        // add const to toc without emitting output by using a null stream
-        null_stream null_strm;
-        x86 x{null_strm, tc.source()};
-
-        tc.add_const(x, name_tk_, 0, name_tk_.text(), const_.value());
+        tc.add_const(name_tk_, 0, name_tk_.text(), const_.value());
     }
 
     stmt_def_const() = default;
@@ -56,11 +51,10 @@ class stmt_def_const final : public statement {
         const_.source_to(os);
     }
 
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
-                 [[maybe_unused]] const size_t indent,
+    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        tc.add_const(x, name_tk_, indent, name_tk_.text(), const_.value());
+        tc.add_const(name_tk_, indent, name_tk_.text(), const_.value());
     }
 };

@@ -16,9 +16,11 @@ class stmt_break final : public statement {
 
     stmt_break() = default;
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 

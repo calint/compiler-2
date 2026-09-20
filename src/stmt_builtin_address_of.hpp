@@ -52,8 +52,10 @@ class stmt_builtin_address_of final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
-                 const ident_info& dst_info) const -> void override {
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+        -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -66,7 +68,7 @@ class stmt_builtin_address_of final : public expression {
             throw compiler_exception{tok(), "destination must be an 'i64'"};
         }
 
-        const ident_info src_info{tc.make_ident_info(x, stmt_ident_)};
+        const ident_info src_info{tc.make_ident_info(stmt_ident_)};
 
         if (not src_info.is_var()) {
             throw compiler_exception{stmt_ident_.first_token(),
@@ -76,7 +78,7 @@ class stmt_builtin_address_of final : public expression {
         std::vector<std::string> allocated_registers;
 
         const operand oper{stmt_identifier::compile_effective_address(
-            tc, x, indent, stmt_ident_.first_token(), stmt_ident_.elems(),
+            tc, indent, stmt_ident_.first_token(), stmt_ident_.elems(),
             allocated_registers, "", src_info.lea_path)};
 
         if (dst_info.is_register()) {

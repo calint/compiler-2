@@ -97,13 +97,15 @@ class expr_bool_op final : public statement {
 
     // returns an optional bool, and if defined the expression evaluated to
     // the value of the optional
-    [[nodiscard]] auto compile_or(toc& tc, x86& x, const size_t indent,
+    [[nodiscard]] auto compile_or(toc& tc, const size_t indent,
                                   const std::string_view jmp_to_if_true,
                                   const bool inverted,
                                   const std::string_view dst) const
         -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent,
                   statement::trimmed_source(
@@ -115,7 +117,7 @@ class expr_bool_op final : public statement {
             if (not lhs_.is_expression()) {
                 // yes, the left-hand-side is not an expression, either a
                 // constant or an identifier
-                const ident_info& lhs_info{tc.make_ident_info(x, lhs_)};
+                const ident_info& lhs_info{tc.make_ident_info(lhs_)};
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
                                         lhs_info.const_value) != 0};
@@ -136,7 +138,7 @@ class expr_bool_op final : public statement {
             }
 
             // 'lhs' is an expression
-            resolve_cmp_shorthand(tc, x, indent, lhs_);
+            resolve_cmp_shorthand(tc, indent, lhs_);
             // note: compares with 0
 
             if (not dst.empty()) {
@@ -151,8 +153,8 @@ class expr_bool_op final : public statement {
 
         // check case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(x, lhs_)};
-            const ident_info& rhs_info{tc.make_ident_info(x, rhs_)};
+            const ident_info& lhs_info{tc.make_ident_info(lhs_)};
+            const ident_info& rhs_info{tc.make_ident_info(rhs_)};
             if (lhs_info.is_const() and rhs_info.is_const()) {
                 bool const_eval{
                     eval_constant(lhs_.get_unary_ops().evaluate_constant(
@@ -180,7 +182,7 @@ class expr_bool_op final : public statement {
         // note: if lhs is constant, then a scratch register is used, however,
         //       the if statement compile time evaluates constant expressions
         //       before reaching this
-        resolve_cmp(tc, x, indent, lhs_, rhs_);
+        resolve_cmp(tc, indent, lhs_, rhs_);
 
         if (not dst.empty()) {
             x.setcc(indent, asm_cc_for_op(op_, invert), dst);
@@ -190,13 +192,15 @@ class expr_bool_op final : public statement {
         return std::nullopt;
     }
 
-    [[nodiscard]] auto compile_and(toc& tc, x86& x, const size_t indent,
+    [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
                                    const std::string_view jmp_to_if_false,
                                    const bool inverted,
                                    const std::string_view dst) const
         -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent,
                   statement::trimmed_source(
@@ -206,7 +210,7 @@ class expr_bool_op final : public statement {
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {
-                const ident_info& lhs_info{tc.make_ident_info(x, lhs_)};
+                const ident_info& lhs_info{tc.make_ident_info(lhs_)};
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
                                         lhs_info.const_value) != 0};
@@ -227,7 +231,7 @@ class expr_bool_op final : public statement {
             }
 
             // left-hand-side is expression
-            resolve_cmp_shorthand(tc, x, indent, lhs_);
+            resolve_cmp_shorthand(tc, indent, lhs_);
             // note: compares with 0
 
             if (not dst.empty()) {
@@ -242,8 +246,8 @@ class expr_bool_op final : public statement {
         // not shorthand expression
         // check the case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(x, lhs_)};
-            const ident_info& rhs_info{tc.make_ident_info(x, rhs_)};
+            const ident_info& lhs_info{tc.make_ident_info(lhs_)};
+            const ident_info& rhs_info{tc.make_ident_info(rhs_)};
             if (lhs_info.is_const() and rhs_info.is_const()) {
                 bool const_eval{
                     eval_constant(lhs_.get_unary_ops().evaluate_constant(
@@ -269,7 +273,7 @@ class expr_bool_op final : public statement {
         // don't allow left-hand-side to be constant because generated
         // assembler does not compile
         // if (not lhs_.is_expression()) {
-        //     const ident_info& lhs_info{tc.make_ident_info(x, lhs_, false)};
+        //     const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
         //     if (lhs_info.is_const()) {
         //         throw compiler_exception(
         //             lhs_.tok(),
@@ -277,7 +281,7 @@ class expr_bool_op final : public statement {
         //     }
         // }
 
-        resolve_cmp(tc, x, indent, lhs_, rhs_);
+        resolve_cmp(tc, indent, lhs_, rhs_);
         if (not dst.empty()) {
             x.setcc(indent, asm_cc_for_op(op_, invert), dst);
         }
@@ -397,17 +401,18 @@ class expr_bool_op final : public statement {
         std::unreachable();
     }
 
-    auto resolve_cmp(toc& tc, x86& x, const size_t indent,
-                     const expr_ops_list& lhs, const expr_ops_list& rhs) const
-        -> void {
+    auto resolve_cmp(toc& tc, const size_t indent, const expr_ops_list& lhs,
+                     const expr_ops_list& rhs) const -> void {
 
         std::vector<std::string> allocated_registers;
 
         const std::string dst{
-            resolve_expr(tc, x, indent, lhs, true, allocated_registers)};
+            resolve_expr(tc, indent, lhs, true, allocated_registers)};
 
         const std::string src{
-            resolve_expr(tc, x, indent, rhs, false, allocated_registers)};
+            resolve_expr(tc, indent, rhs, false, allocated_registers)};
+
+        x86& x{tc.machine()};
 
         x.cmp(tok(), indent, dst, src);
 
@@ -419,13 +424,15 @@ class expr_bool_op final : public statement {
         }
     }
 
-    auto resolve_cmp_shorthand(toc& tc, x86& x, const size_t indent,
+    auto resolve_cmp_shorthand(toc& tc, const size_t indent,
                                const expr_ops_list& lhs) const -> void {
 
         std::vector<std::string> allocated_registers;
 
         const std::string dst{
-            resolve_expr(tc, x, indent, lhs, true, allocated_registers)};
+            resolve_expr(tc, indent, lhs, true, allocated_registers)};
+
+        x86& x{tc.machine()};
 
         x.cmp(tok(), indent, dst, "0");
 
@@ -437,15 +444,15 @@ class expr_bool_op final : public statement {
     }
 
     [[nodiscard]] static auto
-    resolve_expr(toc& tc, x86& x, const size_t indent,
-                 const expr_ops_list& expr, const bool is_lhs,
+    resolve_expr(toc& tc, const size_t indent, const expr_ops_list& expr,
+                 const bool is_lhs,
                  std::vector<std::string>& allocated_registers) -> std::string {
 
         if (not expr.is_expression() and
             (expr.is_indexed() or tc.has_lea(expr))) {
 
-            const ident_info expr_info{tc.make_ident_info(x, expr)};
-            const operand op{expr.compile_lea(tc, x, indent, expr.tok(),
+            const ident_info expr_info{tc.make_ident_info(expr)};
+            const operand op{expr.compile_lea(tc, indent, expr.tok(),
                                               allocated_registers, "",
                                               expr_info.lea_path)};
 
@@ -453,26 +460,29 @@ class expr_bool_op final : public statement {
         }
 
         if (expr.is_expression()) {
+            x86& x{tc.machine()};
+
             const std::string reg{
                 x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
 
             allocated_registers.emplace_back(reg);
-            expr.compile(tc, x, indent + 1,
-                         toc::make_ident_info_from_register(x, reg));
+            expr.compile(tc, indent + 1, tc.make_ident_info_from_register(reg));
 
             return x86::get_sized_register_operand(reg, expr.get_type().size());
         }
 
         // 'expr' is not an expression
-        const ident_info expr_info{tc.make_ident_info(x, expr)};
+        const ident_info expr_info{tc.make_ident_info(expr)};
         if (expr_info.is_const()) {
             if (is_lhs) {
+                x86& x{tc.machine()};
+
                 const std::string reg{x.alloc_scratch_register(
                     expr.tok(), indent, tc.get_type_default())};
 
                 allocated_registers.emplace_back(reg);
-                expr.compile(tc, x, indent + 1,
-                             toc::make_ident_info_from_register(x, reg));
+                expr.compile(tc, indent + 1,
+                             tc.make_ident_info_from_register(reg));
 
                 return x86::get_sized_register_operand(reg,
                                                        expr.get_type().size());
@@ -487,12 +497,15 @@ class expr_bool_op final : public statement {
         }
 
         // 'expr' is not an expression and has unary ops
+
+        x86& x{tc.machine()};
+
         const std::string reg{x.alloc_scratch_register(expr.tok(), indent,
                                                        tc.get_type_default())};
 
         allocated_registers.emplace_back(reg);
         x.mov(expr.tok(), indent, reg, expr_info.operand.str());
-        expr.get_unary_ops().compile(tc, x, indent, reg);
+        expr.get_unary_ops().compile(tc, indent, reg);
         return x86::get_sized_register_operand(reg,
                                                expr_info.type_ref().size());
     }

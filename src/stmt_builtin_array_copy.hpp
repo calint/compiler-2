@@ -71,14 +71,16 @@ class stmt_builtin_array_copy final : public statement {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
+        x86& x{tc.machine()};
+
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info from_info{tc.make_ident_info(x, from_)};
-        const ident_info to_info{tc.make_ident_info(x, to_)};
+        const ident_info from_info{tc.make_ident_info(from_)};
+        const ident_info to_info{tc.make_ident_info(to_)};
 
         // allocate the register for rep movs
         x.alloc_named_register(tok(), indent, "rsi", tc.get_type_default());
@@ -90,14 +92,13 @@ class stmt_builtin_array_copy final : public statement {
         // size to 'rcx'
         x.comment(count_.tok(), indent, statement::trimmed_source(count_));
 
-        count_.compile(tc, x, indent,
-                       toc::make_ident_info_from_register(x, "rcx"));
+        count_.compile(tc, indent, tc.make_ident_info_from_register("rcx"));
 
         // from operand to rsi
         x.comment(from_.tok(), indent, statement::trimmed_source(from_));
 
         const operand from_operand{stmt_identifier::compile_effective_address(
-            tc, x, indent, from_.first_token(), from_.elems(),
+            tc, indent, from_.first_token(), from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
 
         x.lea(indent, "rsi", from_operand.address_str());
@@ -114,7 +115,7 @@ class stmt_builtin_array_copy final : public statement {
         allocated_scratch_registers.clear();
 
         const operand to_operand{stmt_identifier::compile_effective_address(
-            tc, x, indent, to_.first_token(), to_.elems(),
+            tc, indent, to_.first_token(), to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
         x.lea(indent, "rdi", to_operand.address_str());

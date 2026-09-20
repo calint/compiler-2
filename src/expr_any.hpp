@@ -104,11 +104,11 @@ class expr_any final : public statement {
         close_brace_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
-                 const ident_info& dst_info) const -> void override {
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+        -> void override {
 
         if (is_array_identifier()) {
-            const ident_info src_info{tc.make_ident_info(x, *this)};
+            const ident_info src_info{tc.make_ident_info(*this)};
             if (not src_info.is_array) {
                 throw compiler_exception{tok(), "source must be an array"};
             }
@@ -116,7 +116,7 @@ class expr_any final : public statement {
 
         // the base case
         if (is_identifier_ or not is_array_) {
-            compile_variant(tc, x, indent, dst_info, tok(), vars_[0]);
+            compile_variant(tc, indent, dst_info, tok(), vars_[0]);
             return;
         }
 
@@ -124,9 +124,11 @@ class expr_any final : public statement {
 
         ident_info ii{dst_info};
 
+        x86& x{tc.machine()};
+
         for (const auto [i, el] : std::views::enumerate(vars_)) {
             x.comment(tok(), indent, "[{}]", i);
-            compile_variant(tc, x, indent, ii, tok(), el);
+            compile_variant(tc, indent, ii, tok(), el);
             ii.operand.displacement +=
                 static_cast<int32_t>(ii.type_ref().size());
         }
@@ -219,14 +221,14 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto
-    compile_lea(toc& tc, x86& x, size_t indent, const token& src_loc_tk,
+    compile_lea(toc& tc, size_t indent, const token& src_loc_tk,
                 std::vector<std::string>& allocated_registers,
                 const std::string& reg_size,
                 const std::span<const std::string> lea_path) const
         -> operand override {
 
         return vars_[0].visit([&](const auto& expression) -> operand {
-            return expression.compile_lea(tc, x, indent, src_loc_tk,
+            return expression.compile_lea(tc, indent, src_loc_tk,
                                           allocated_registers, reg_size,
                                           lea_path);
         });
@@ -268,21 +270,23 @@ class expr_any final : public statement {
         return expr_ops_list{tc, tz, in_args};
     }
 
-    static auto compile_variant(toc& tc, x86& x, const size_t indent,
+    static auto compile_variant(toc& tc, const size_t indent,
                                 const ident_info& dst_info, const token tk,
                                 const expr_variant& exp) -> void {
 
         exp.visit(overloaded{
             [&](const expr_ops_list& e) -> void {
-                e.compile(tc, x, indent, dst_info);
+                e.compile(tc, indent, dst_info);
             },
             [&](const expr_type_value& e) -> void {
-                e.compile(tc, x, indent, dst_info);
+                e.compile(tc, indent, dst_info);
             },
             [&](const expr_bool_ops_list& e) -> void {
+                x86& x{tc.machine()};
+
                 // if not expression assign to destination
                 if (not e.is_expression()) {
-                    const ident_info& src_info{tc.make_ident_info(x, e)};
+                    const ident_info& src_info{tc.make_ident_info(e)};
                     if (not src_info.is_const()) {
                         std::unreachable();
                     }
@@ -313,8 +317,8 @@ class expr_any final : public statement {
                                           ? dst_info.operand.str(1)
                                           : dst_info.operand.str()};
 
-                const std::optional<bool> const_eval{e.compile(
-                    tc, x, indent, jmp_to_end, jmp_to_end, false, dst)};
+                const std::optional<bool> const_eval{
+                    e.compile(tc, indent, jmp_to_end, jmp_to_end, false, dst)};
 
                 // not constant evaluation
                 x.label(indent, jmp_to_end);

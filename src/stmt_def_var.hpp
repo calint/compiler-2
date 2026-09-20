@@ -10,7 +10,6 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "null_stream.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_const.hpp"
 #include "stmt_identifier.hpp"
@@ -75,9 +74,6 @@ class stmt_def_var final : public statement {
         // add var to toc without emitting output so the further parsing has the
         // variable declared
 
-        null_stream null_strm;
-        x86 x{null_strm, tc.source()};
-
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&tp},
@@ -87,7 +83,7 @@ class stmt_def_var final : public statement {
             .reg{},
         };
 
-        tc.add_var(x, name_tk_, 0, var, false);
+        tc.add_var(name_tk_, 0, var, false);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
@@ -128,9 +124,11 @@ class stmt_def_var final : public statement {
         }
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -143,13 +141,13 @@ class stmt_def_var final : public statement {
             .reg{},
         };
 
-        tc.add_var(x, name_tk_, indent, var, false);
+        tc.add_var(name_tk_, indent, var, false);
 
         const ident_info& dst_info{
-            tc.make_ident_info(x, name_tk_, name_tk_.text())};
+            tc.make_ident_info(name_tk_, name_tk_.text())};
 
         if (assign_var_) {
-            assign_var_->compile(tc, x, indent, dst_info);
+            assign_var_->compile(tc, indent, dst_info);
             return;
         }
 

@@ -78,9 +78,6 @@ class stmt_def_func final : public statement {
         // add vars to toc without emitting output so that the function body can
         // be parsed
 
-        null_stream null_strm;
-        x86 x{null_strm, tc.source()};
-
         if (returns_) {
             // declare variable for the return
             const token& ret_tk{returns_->ident_tk};
@@ -97,7 +94,7 @@ class stmt_def_func final : public statement {
                 .reg{},
             };
 
-            tc.add_var(x, ret_tk, 0, var, false);
+            tc.add_var(ret_tk, 0, var, false);
         }
 
         for (const stmt_def_func_param& prm : params_) {
@@ -112,7 +109,7 @@ class stmt_def_func final : public statement {
                 .reg{},
             };
 
-            tc.add_var(x, prm.tok(), 0, var, false);
+            tc.add_var(prm.tok(), 0, var, false);
         }
 
         code_ = {tc, tz};
@@ -158,8 +155,7 @@ class stmt_def_func final : public statement {
         x.comment(name_tk_, indent, "{}", statement::trimmed_source(ss.str()));
     }
 
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
-                 [[maybe_unused]] const size_t indent,
+    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {}
 

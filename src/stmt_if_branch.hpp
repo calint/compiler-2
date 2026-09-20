@@ -26,7 +26,7 @@ class stmt_if_branch final : public statement {
     }
 
     [[nodiscard]] auto
-    compile_branch(toc& tc, x86& x, const size_t indent,
+    compile_branch(toc& tc, const size_t indent,
                    const std::string_view jmp_to_if_false_label,
                    const std::string_view jmp_to_after_code_label) const
         -> std::optional<bool> {
@@ -36,11 +36,13 @@ class stmt_if_branch final : public statement {
             std::format("{}_code", if_bgn_lbl)};
 
         // the beginning of this branch
+
+        x86& x{tc.machine()};
+
         x.label(indent, if_bgn_lbl);
         // compile the boolean ops list
-        const std::optional<bool> const_eval{
-            bol_.compile(tc, x, indent, jmp_to_if_false_label,
-                         jmp_to_if_true_lbl, false, "")};
+        const std::optional<bool> const_eval{bol_.compile(
+            tc, indent, jmp_to_if_false_label, jmp_to_if_true_lbl, false, "")};
 
         if (const_eval == false) {
             return false;
@@ -48,7 +50,7 @@ class stmt_if_branch final : public statement {
         // the label where to jump if evaluation of the condition is true
         x.label(indent, jmp_to_if_true_lbl);
         // the code of the branch
-        code_.compile(tc, x, indent, ident_info::make_empty());
+        code_.compile(tc, indent, ident_info::make_empty());
         if (const_eval == true) {
             return true;
         }

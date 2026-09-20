@@ -16,9 +16,11 @@ class stmt_builtin_mov final : public stmt_call {
 
     stmt_builtin_mov() = default;
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -27,10 +29,10 @@ class stmt_builtin_mov final : public stmt_call {
         }
 
         // the assembler command might not need to resolve expressions
-        const ident_info dst_info{tc.make_ident_info(x, argument(0))};
+        const ident_info dst_info{tc.make_ident_info(argument(0))};
 
         const statement& src_arg{argument(1)};
-        src_arg.compile(tc, x, indent + 1, dst_info);
+        src_arg.compile(tc, indent + 1, dst_info);
     }
 
     auto assert_var_not_used(const std::string_view var) const

@@ -64,8 +64,10 @@ class stmt_builtin_equal final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
-                 const ident_info& dst_info) const -> void override {
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+        -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -76,11 +78,11 @@ class stmt_builtin_equal final : public expression {
 
         std::vector<std::string> allocated_scratch_registers;
 
-        const ident_info lhs_info{tc.make_ident_info(x, lhs_)};
+        const ident_info lhs_info{tc.make_ident_info(lhs_)};
         if (lhs_info.is_const()) {
             throw compiler_exception{lhs_.tok(), "constant not supported"};
         }
-        const ident_info rhs_info{tc.make_ident_info(x, rhs_)};
+        const ident_info rhs_info{tc.make_ident_info(rhs_)};
         if (rhs_info.is_const()) {
             throw compiler_exception{rhs_.tok(), "constant not supported"};
         }
@@ -89,7 +91,7 @@ class stmt_builtin_equal final : public expression {
         x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
 
         const operand lhs_operand{stmt_identifier::compile_effective_address(
-            tc, x, indent, lhs_.first_token(), lhs_.elems(),
+            tc, indent, lhs_.first_token(), lhs_.elems(),
             allocated_scratch_registers, "", lhs_info.lea_path)};
 
         x.lea(indent, "rsi", lhs_operand.address_str());
@@ -106,7 +108,7 @@ class stmt_builtin_equal final : public expression {
         allocated_scratch_registers.clear();
 
         const operand rhs_operand{stmt_identifier::compile_effective_address(
-            tc, x, indent, rhs_.first_token(), rhs_.elems(),
+            tc, indent, rhs_.first_token(), rhs_.elems(),
             allocated_scratch_registers, "", rhs_info.lea_path)};
 
         x.lea(indent, "rdi", rhs_operand.address_str());

@@ -59,7 +59,7 @@ class unary_ops final {
 
     // implemented in 'decouple_impl.hpp'
     // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-    auto compile(toc& tc, x86& x, const size_t indnt,
+    auto compile(toc& tc, const size_t indnt,
                  const std::string_view dst_info) const -> void;
 
     [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }

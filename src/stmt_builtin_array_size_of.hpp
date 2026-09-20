@@ -43,8 +43,10 @@ class stmt_builtin_array_size_of final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
-                 const ident_info& dst_info) const -> void override {
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+        -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
@@ -56,7 +58,7 @@ class stmt_builtin_array_size_of final : public expression {
             throw compiler_exception{tok(), "destination must be an 'i64'"};
         }
 
-        const ident_info src_info{tc.make_ident_info(x, stmt_ident_)};
+        const ident_info src_info{tc.make_ident_info(stmt_ident_)};
 
         if (not src_info.is_var()) {
             throw compiler_exception{stmt_ident_.first_token(),
@@ -72,6 +74,6 @@ class stmt_builtin_array_size_of final : public expression {
         const std::string dst_op{dst_info.operand.str()};
         x.mov(tok(), indent, dst_op, std::format("{}", src_info.array_size));
 
-        get_unary_ops().compile(tc, x, indent, dst_op);
+        get_unary_ops().compile(tc, indent, dst_op);
     }
 };

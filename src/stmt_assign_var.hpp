@@ -51,14 +51,16 @@ class stmt_assign_var final : public statement {
         expr_.source_to(os);
     }
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
+
+        x86& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         // get information about the destination of the compilation
-        ident_info dst_info{tc.make_ident_info(x, stmt_ident_)};
+        ident_info dst_info{tc.make_ident_info(stmt_ident_)};
 
         if (dst_info.is_const()) {
             throw compiler_exception{
@@ -67,7 +69,7 @@ class stmt_assign_var final : public statement {
         }
 
         if (expr_.is_array_identifier()) {
-            if (const ident_info src_info{tc.make_ident_info(x, expr_)};
+            if (const ident_info src_info{tc.make_ident_info(expr_)};
 
                 src_info.is_array and dst_info.is_array and
                 src_info.array_size != dst_info.array_size) {
@@ -80,9 +82,9 @@ class stmt_assign_var final : public statement {
         std::vector<std::string> lea_registers;
         dst_info.use_operand = array_size_ > 0 or stmt_ident_.is_indexed();
         dst_info.operand =
-            tc.get_lea_operand(x, indent, stmt_ident_, dst_info, lea_registers);
+            tc.get_lea_operand(indent, stmt_ident_, dst_info, lea_registers);
 
-        expr_.compile(tc, x, indent, dst_info);
+        expr_.compile(tc, indent, dst_info);
         for (const std::string& reg : lea_registers | std::views::reverse) {
             x.free_scratch_register(tok(), indent, reg);
         }
