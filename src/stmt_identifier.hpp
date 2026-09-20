@@ -168,9 +168,8 @@ class stmt_identifier : public statement {
         operand op{src_info.operand};
 
         if (is_indexed() or src_info.has_lea()) {
-            op = stmt_identifier::compile_effective_address(
-                tc, indent, tok(), elems(), allocated_registers, {},
-                src_info.lea_path);
+            op = compile_lea(tc, indent, tok(), allocated_registers, {},
+                             src_info.lea_path);
 
             op.size = src_info.type_ref().size();
         }

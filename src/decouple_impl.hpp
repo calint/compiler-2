@@ -297,7 +297,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
     // note: keeping a current 'dst_info' accurate by adjusting 'cur_dest_info'
     // is not necessary but it looks nicer
 
-    const std::span<const type_field>& flds{dst_type.fields()};
+    const std::span<const type_field> flds{dst_type.fields()};
 
     machine& x{tc.machine()};
 
@@ -383,9 +383,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
     // zero out the remaining fields
 
-    const size_t diff{dst_type.fields().size() - exprs_.size()};
-
-    if (diff == 0) {
+    if (exprs_.size() == flds.size()) {
         // all fields have been assigned
         return;
     }

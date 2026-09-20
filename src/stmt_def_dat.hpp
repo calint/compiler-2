@@ -252,7 +252,7 @@ class stmt_def_dat final : public statement {
 
         // user type
 
-        const std::span<const type_field>& flds{tp.fields()};
+        const std::span<const type_field> flds{tp.fields()};
         for (const auto [el, tf] : std::views::zip(elroot.elems, flds)) {
             if (tf.type().is_built_in()) {
                 compile_data_builtin(tc, tf.type(), el);
@@ -263,9 +263,7 @@ class stmt_def_dat final : public statement {
 
         // zero out remaining fields, if any
 
-        const size_t n{flds.size()};
-        const size_t diff{n - elroot.elems.size()};
-        if (diff == 0) {
+        if (elroot.elems.size() == flds.size()) {
             return;
         }
         const size_t nbytes{tp.remaining_fields_size(elroot.elems.size())};

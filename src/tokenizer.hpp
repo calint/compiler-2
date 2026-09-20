@@ -165,12 +165,8 @@ class tokenizer final {
 
     [[nodiscard]] auto read_rest_of_line() -> std::string_view {
         const size_t bgn{char_ix_};
-        while (not is_eos()) {
-            if (src_[char_ix_] == '\n') {
-                break;
-            }
-            ++char_ix_;
-        }
+        const size_t newline{src_.find('\n', char_ix_)};
+        char_ix_ = newline == std::string_view::npos ? src_.size() : newline;
         const size_t len{char_ix_ - bgn};
         if (not is_eos()) {
             ++char_ix_; // skip the '\n'
@@ -229,13 +225,9 @@ class tokenizer final {
         }
 
         const size_t bgn_ix{char_ix_};
-        while (not is_eos()) {
-            const char ch{src_[char_ix_]};
-            if (delimiters_.contains(ch)) {
-                break;
-            }
-            ++char_ix_;
-        }
+        const size_t delimiter{src_.find_first_of(delimiters_, char_ix_)};
+        char_ix_ =
+            delimiter == std::string_view::npos ? src_.size() : delimiter;
         const size_t len{char_ix_ - bgn_ix};
 
         return src_.substr(bgn_ix, len);
