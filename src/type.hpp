@@ -90,8 +90,8 @@ class type final {
         }
 
         const int32_t stack_idx{
-            var.reg.empty() ? var.stack_idx + static_cast<int32_t>(offset)
-                            : static_cast<int32_t>(offset)};
+            var.reg.is_empty() ? var.stack_idx + static_cast<int32_t>(offset)
+                               : static_cast<int32_t>(offset)};
 
         // find the first built-in type to have a valid operand size for the
         // address
@@ -101,10 +101,11 @@ class type final {
             tp_first_field = tp_first_field->fields_[0].type_ptr;
         }
 
-        operand op;
+        operand op{
+            operand::mem(var.reg.is_empty() ? "rbp" : var.reg.base_register, "",
+                         1, stack_idx)};
         op.size = tp_first_field->size();
-        op.base_register = var.reg.empty() ? "rbp" : var.reg;
-        op.displacement = stack_idx;
+        op.type_ptr = tp_first_field;
 
         return ident_info::make_var(std::string{ident}, path,
                                     std::move(type_path), op, stack_idx,

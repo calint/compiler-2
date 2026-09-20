@@ -60,10 +60,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    48           2262            823           8324
+C/C++ Header                    48           2238            818           8327
 C++                              1             33              7            192
 -------------------------------------------------------------------------------
-SUM:                            49           2295            830           8516
+SUM:                            49           2271            825           8519
 -------------------------------------------------------------------------------
 ```
 
@@ -2303,7 +2303,7 @@ main:
 ;   [160:12] ? arrays_equal(arr, arr1, 4)
     cmp_160_12:
 ;   [160:12] allocate scratch register -> r14
-;       [160:12] r14 = arrays_equal(arr, arr1, 4)
+;       [160:12] r14b = arrays_equal(arr, arr1, 4)
 ;       [160:12] = expression
 ;       [160:12] arrays_equal(arr, arr1, 4)
 ;       [160:12] allocate named register rsi
@@ -2405,7 +2405,7 @@ main:
 ;   [164:12] ? not arrays_equal(arr, arr1, 4)
     cmp_164_12:
 ;   [164:16] allocate scratch register -> r14
-;       [164:16] r14 = arrays_equal(arr, arr1, 4)
+;       [164:16] r14b = arrays_equal(arr, arr1, 4)
 ;       [164:16] = expression
 ;       [164:16] arrays_equal(arr, arr1, 4)
 ;       [164:16] allocate named register rsi
@@ -2950,7 +2950,7 @@ main:
 ;   [190:12] ? equal(p, q)
     cmp_190_12:
 ;   [190:12] allocate scratch register -> r14
-;       [190:12] r14 = equal(p, q)
+;       [190:12] r14b = equal(p, q)
 ;       [190:12] = expression
 ;       [190:12] equal(p, q)
 ;       [190:12] allocate named register rsi
@@ -3012,7 +3012,7 @@ main:
 ;   [195:12] ? not equal(p, q)
     cmp_195_12:
 ;   [195:16] allocate scratch register -> r14
-;       [195:16] r14 = equal(p, q)
+;       [195:16] r14b = equal(p, q)
 ;       [195:16] = expression
 ;       [195:16] equal(p, q)
 ;       [195:16] allocate named register rsi
@@ -4299,7 +4299,7 @@ main:
 ;   [259:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
     cmp_259_12:
 ;   [259:12] allocate scratch register -> r14
-;       [259:12] r14 = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;       [259:12] r14b = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [259:12] = expression
 ;       [259:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [259:12] allocate named register rsi

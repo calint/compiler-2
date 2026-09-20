@@ -71,10 +71,10 @@ class stmt_builtin_array_size_of final : public expression {
         }
 
         // variable, register or field
-        const std::string dst_op{dst_info.operand.str()};
-        x.copy_value(tok(), indent, dst_info.operand,
-                     std::format("{}", src_info.array_size));
+        x.copy_value(
+            tok(), indent, dst_info.operand,
+            operand::imm(std::format("{}", src_info.array_size), get_type()));
 
-        get_unary_ops().compile(tc, indent, dst_op);
+        get_unary_ops().compile(tc, indent, dst_info.operand);
     }
 };

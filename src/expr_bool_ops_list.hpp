@@ -151,8 +151,7 @@ class expr_bool_ops_list final : public statement {
     [[nodiscard]] auto compile(toc& tc, const size_t indent,
                                const std::string_view jmp_to_if_false,
                                const std::string_view jmp_to_if_true,
-                               const bool inverted,
-                               const std::string_view dst) const
+                               const bool inverted, const operand& dst) const
         -> std::optional<bool> {
 
         x86& x{tc.machine()};

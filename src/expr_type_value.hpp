@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <span>
-#include <string>
 #include <string_view>
 #include <vector>
 
@@ -61,10 +60,9 @@ class expr_type_value final : public statement {
 
     // implemented in 'decouple_impl.hpp' due to circular reference
     auto compile_lea(toc& tc, const size_t indent, const token& src_loc_tk,
-                     std::vector<std::string>& allocated_registers,
-                     const std::string& reg_size,
-                     std::span<const std::string> lea) const
-        -> operand override;
+                     std::vector<operand>& allocated_registers,
+                     const operand& reg_size,
+                     std::span<const operand> lea) const -> operand override;
 
   private:
     // implemented in 'decouple_impl.hpp' due to circular reference:

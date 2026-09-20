@@ -4,7 +4,6 @@
 #include <ostream>
 #include <ranges>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -73,7 +72,7 @@ class stmt_builtin_equal final : public expression {
 
         x.begin_memory_equal(tok(), indent);
 
-        std::vector<std::string> allocated_scratch_registers;
+        std::vector<operand> allocated_scratch_registers;
 
         const ident_info lhs_info{tc.make_ident_info(lhs_)};
         if (lhs_info.is_const()) {
@@ -88,11 +87,11 @@ class stmt_builtin_equal final : public expression {
 
         const operand lhs_operand{stmt_identifier::compile_effective_address(
             tc, indent, lhs_.first_token(), lhs_.elems(),
-            allocated_scratch_registers, "", lhs_info.lea_path)};
+            allocated_scratch_registers, {}, lhs_info.lea_path)};
 
-        x.set_memory_equal_left(indent, lhs_operand.address_str());
+        x.set_memory_equal_left(indent, lhs_operand);
 
-        for (const std::string& reg :
+        for (const operand& reg :
              allocated_scratch_registers | std::views::reverse) {
 
             x.free_scratch_register(tok(), indent, reg);
@@ -104,11 +103,11 @@ class stmt_builtin_equal final : public expression {
 
         const operand rhs_operand{stmt_identifier::compile_effective_address(
             tc, indent, rhs_.first_token(), rhs_.elems(),
-            allocated_scratch_registers, "", rhs_info.lea_path)};
+            allocated_scratch_registers, {}, rhs_info.lea_path)};
 
-        x.set_memory_equal_right(indent, rhs_operand.address_str());
+        x.set_memory_equal_right(indent, rhs_operand);
 
-        for (const std::string& reg :
+        for (const operand& reg :
              allocated_scratch_registers | std::views::reverse) {
 
             x.free_scratch_register(tok(), indent, reg);

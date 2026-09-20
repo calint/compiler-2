@@ -283,18 +283,17 @@ class expr_ops_list final : public expression {
         // with scratch register
         std::stringstream ss2;
         std::ostream& prev2{x.use_stream(ss2)};
-        const std::string reg{
+        const operand reg{
             x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
 
-        const std::string reg_sized{
-            x86::sized_register_operand(reg, dst_info.operand.size)};
+        const operand reg_sized{x.sized_register(reg, dst_info.operand.size)};
 
         // note: sized register to propagate operation to destination size
         const ident_info dst_reg_info{
-            tc.make_ident_info_from_register(reg_sized)};
+            toc::make_ident_info_from_register(reg_sized)};
 
         do_compile(tc, indent, dst_reg_info);
-        x.copy_value(tok(), indent, dst_info.operand, operand{reg_sized, true});
+        x.copy_value(tok(), indent, dst_info.operand, reg_sized);
         x.free_scratch_register(tok(), indent, reg);
         x.use_stream(prev2);
 
@@ -352,12 +351,10 @@ class expr_ops_list final : public expression {
         return exprs_.size() == 1 and exprs_[0]->is_identifier();
     }
 
-    [[nodiscard]] auto
-    compile_lea(toc& tc, size_t indent, const token& src_loc_tk,
-                std::vector<std::string>& allocated_registers,
-                const std::string& reg_size,
-                const std::span<const std::string> lea_path) const
-        -> operand override {
+    [[nodiscard]] auto compile_lea(
+        toc& tc, size_t indent, const token& src_loc_tk,
+        std::vector<operand>& allocated_registers, const operand& reg_size,
+        const std::span<const operand> lea_path) const -> operand override {
 
         assert(exprs_.size() == 1);
 
@@ -405,7 +402,7 @@ class expr_ops_list final : public expression {
         }
 
         // apply unary expressions on destination
-        uops_.compile(tc, indent, dst_info.operand.str());
+        uops_.compile(tc, indent, dst_info.operand);
     }
 
     static constexpr char precedence_additive{1};
@@ -533,17 +530,16 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             // yes, compile it to a scratch register
-            const std::string reg{x.alloc_scratch_register(
-                src.tok(), indent, tc.get_type_default())};
+            const operand reg{x.alloc_scratch_register(src.tok(), indent,
+                                                       tc.get_type_default())};
 
             // make register sized to destination
-            const std::string reg_sized{
-                x86::sized_register_operand(reg, dst_size)};
+            const operand reg_sized{x.sized_register(reg, dst_size)};
 
             src.compile(tc, indent,
-                        tc.make_ident_info_from_register(reg_sized));
+                        toc::make_ident_info_from_register(reg_sized));
 
-            if (dst_info.is_register() and not dst_info.operand.is_memory) {
+            if (dst_info.is_register() and not dst_info.operand.is_memory()) {
                 x.comment(src.tok(), indent, "imul: expr reg");
             } else {
                 x.comment(src.tok(), indent, "imul: expr not reg");
@@ -558,7 +554,7 @@ class expr_ops_list final : public expression {
         const ident_info src_info{tc.make_ident_info(src)};
 
         if (x86::needs_widened_multiply(dst_info.operand)) {
-            std::vector<std::string> lea_registers;
+            std::vector<operand> lea_registers;
             const operand src_operand{
                 tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
@@ -568,13 +564,13 @@ class expr_ops_list final : public expression {
 
             if (src_info.is_const()) {
                 x.comment(src.tok(), indent, "imul: byte const");
-                x.copy_value(src.tok(), indent, operand{registers.right, true},
-                             std::format("{}{}", uops.to_string(),
-                                         src_info.const_value));
+                x.copy_value(src.tok(), indent, registers.right,
+                             operand::imm(std::format("{}{}", uops.to_string(),
+                                                      src_info.const_value),
+                                          src_info.type_ref()));
             } else {
                 x.comment(src.tok(), indent, "imul: byte not const");
-                x.copy_value(src.tok(), indent, operand{registers.right, true},
-                             src_operand);
+                x.copy_value(src.tok(), indent, registers.right, src_operand);
                 uops.compile(tc, indent, registers.right);
             }
 
@@ -589,14 +585,17 @@ class expr_ops_list final : public expression {
             // destination is a register
             if (src_info.is_const()) {
                 x.comment(src.tok(), indent, "dst is reg, src is const");
-                x.multiply(src.tok(), indent, dst_info.operand,
-                           std::format("{}{}", src.get_unary_ops().to_string(),
-                                       src_info.const_value));
+                x.multiply(
+                    src.tok(), indent, dst_info.operand,
+                    operand::imm(std::format("{}{}",
+                                             src.get_unary_ops().to_string(),
+                                             src_info.const_value),
+                                 src_info.type_ref()));
 
                 return;
             }
 
-            std::vector<std::string> lea_registers;
+            std::vector<operand> lea_registers;
             const operand src_operand{
                 tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
@@ -605,22 +604,19 @@ class expr_ops_list final : public expression {
                 x.comment(src.tok(), indent,
                           "dst is reg, src is not const, no uops");
 
-                x.multiply(src.tok(), indent, dst_info.operand,
-                           src_operand.str());
+                x.multiply(src.tok(), indent, dst_info.operand, src_operand);
 
                 free_registers(src, x, indent, lea_registers);
                 return;
             }
 
             x.comment(src.tok(), indent, "dst is reg, src is not const, uops");
-            const std::string reg{x.alloc_scratch_register(
-                src.tok(), indent, tc.get_type_default())};
+            const operand reg{x.alloc_scratch_register(src.tok(), indent,
+                                                       tc.get_type_default())};
 
-            const std::string reg_sized{
-                x86::sized_register_operand(reg, dst_size)};
+            const operand reg_sized{x.sized_register(reg, dst_size)};
 
-            x.copy_value(src.tok(), indent, operand{reg_sized, true},
-                         src_operand);
+            x.copy_value(src.tok(), indent, reg_sized, src_operand);
             uops.compile(tc, indent, reg_sized);
             x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -631,15 +627,17 @@ class expr_ops_list final : public expression {
         if (src_info.is_const()) {
             x.comment(src.tok(), indent, "dst is not reg, src is const");
             x.multiply(src.tok(), indent, dst_info.operand,
-                       std::format("{}{}", src.get_unary_ops().to_string(),
-                                   src_info.const_value));
+                       operand::imm(std::format("{}{}",
+                                                src.get_unary_ops().to_string(),
+                                                src_info.const_value),
+                                    src_info.type_ref()));
 
             return;
         }
 
         // source is not a constant
 
-        std::vector<std::string> lea_registers;
+        std::vector<operand> lea_registers;
         const operand src_operand{
             tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
@@ -648,7 +646,7 @@ class expr_ops_list final : public expression {
             x.comment(src.tok(), indent,
                       "dst is not reg, src is not const, no uops");
 
-            x.multiply(src.tok(), indent, dst_info.operand, src_operand.str());
+            x.multiply(src.tok(), indent, dst_info.operand, src_operand);
 
             free_registers(src, x, indent, lea_registers);
             return;
@@ -657,12 +655,12 @@ class expr_ops_list final : public expression {
         // source is not a constant and unary ops need to be applied
 
         x.comment(src.tok(), indent, "dst is not reg, src is not const, uops");
-        const std::string reg{
+        const operand reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
 
-        const std::string reg_sized{x86::sized_register_operand(reg, dst_size)};
+        const operand reg_sized{x.sized_register(reg, dst_size)};
 
-        x.copy_value(src.tok(), indent, operand{reg_sized, true}, src_operand);
+        x.copy_value(src.tok(), indent, reg_sized, src_operand);
         uops.compile(tc, indent, reg_sized);
         x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
         x.free_scratch_register(src.tok(), indent, reg);
@@ -679,17 +677,15 @@ class expr_ops_list final : public expression {
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            const std::string reg{x.alloc_scratch_register(
-                src.tok(), indent, tc.get_type_default())};
+            const operand reg{x.alloc_scratch_register(src.tok(), indent,
+                                                       tc.get_type_default())};
 
-            const std::string reg_sized{
-                x86::sized_register_operand(reg, dst_size)};
+            const operand reg_sized{x.sized_register(reg, dst_size)};
 
             src.compile(tc, indent,
-                        tc.make_ident_info_from_register(reg_sized));
+                        toc::make_ident_info_from_register(reg_sized));
 
-            x.add_subtract(src.tok(), indent, op, dst_info.operand.str(),
-                           reg_sized);
+            x.add_subtract(src.tok(), indent, op, dst_info.operand, reg_sized);
 
             x.free_scratch_register(src.tok(), indent, reg);
             return;
@@ -699,23 +695,26 @@ class expr_ops_list final : public expression {
 
         const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
-            x.add_subtract(src.tok(), indent, op, dst_info.operand.str(),
-                           std::format("{}{}", src.get_unary_ops().to_string(),
-                                       src_info.const_value));
+            x.add_subtract(
+                src.tok(), indent, op, dst_info.operand,
+                operand::imm(std::format("{}{}",
+                                         src.get_unary_ops().to_string(),
+                                         src_info.const_value),
+                             src_info.type_ref()));
 
             return;
         }
 
         // 'src' is not a constant
 
-        std::vector<std::string> lea_registers;
+        std::vector<operand> lea_registers;
         const operand src_operand{
             tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            x.add_subtract(src.tok(), indent, op, dst_info.operand.str(),
-                           src_operand.str());
+            x.add_subtract(src.tok(), indent, op, dst_info.operand,
+                           src_operand);
 
             free_registers(src, x, indent, lea_registers);
             return;
@@ -726,7 +725,7 @@ class expr_ops_list final : public expression {
         if (uops.is_only_negated()) {
             // has unary ops
             x.add_subtract(src.tok(), indent, op == '+' ? '-' : '+',
-                           dst_info.operand.str(), src_operand.str());
+                           dst_info.operand, src_operand);
 
             free_registers(src, x, indent, lea_registers);
             return;
@@ -734,12 +733,12 @@ class expr_ops_list final : public expression {
 
         // multiple unary ops
 
-        const std::string reg{
+        const operand reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
 
-        x.copy_value(src.tok(), indent, operand{reg, true}, src_operand);
+        x.copy_value(src.tok(), indent, reg, src_operand);
         uops.compile(tc, indent, reg);
-        x.add_subtract(src.tok(), indent, op, dst_info.operand.str(), reg);
+        x.add_subtract(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
         free_registers(src, x, indent, lea_registers);
     }
@@ -754,16 +753,15 @@ class expr_ops_list final : public expression {
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            const std::string reg{x.alloc_scratch_register(
-                src.tok(), indent, tc.get_type_default())};
+            const operand reg{x.alloc_scratch_register(src.tok(), indent,
+                                                       tc.get_type_default())};
 
-            const std::string reg_sized{
-                x86::sized_register_operand(reg, dst_size)};
+            const operand reg_sized{x.sized_register(reg, dst_size)};
 
             src.compile(tc, indent,
-                        tc.make_ident_info_from_register(reg_sized));
+                        toc::make_ident_info_from_register(reg_sized));
 
-            x.bitwise(src.tok(), indent, op, dst_info.operand.str(), reg_sized);
+            x.bitwise(src.tok(), indent, op, dst_info.operand, reg_sized);
             x.free_scratch_register(src.tok(), indent, reg);
             return;
         }
@@ -772,23 +770,24 @@ class expr_ops_list final : public expression {
 
         const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
-            x.bitwise(src.tok(), indent, op, dst_info.operand.str(),
-                      std::format("{}{}", src.get_unary_ops().to_string(),
-                                  src_info.const_value));
+            x.bitwise(src.tok(), indent, op, dst_info.operand,
+                      operand::imm(std::format("{}{}",
+                                               src.get_unary_ops().to_string(),
+                                               src_info.const_value),
+                                   src_info.type_ref()));
 
             return;
         }
 
         // 'src' is not an expression and not a constant, an identifier
 
-        std::vector<std::string> lea_registers;
+        std::vector<operand> lea_registers;
         const operand src_operand{
             tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            x.bitwise(src.tok(), indent, op, dst_info.operand.str(),
-                      src_operand.str());
+            x.bitwise(src.tok(), indent, op, dst_info.operand, src_operand);
 
             free_registers(src, x, indent, lea_registers);
             return;
@@ -796,12 +795,12 @@ class expr_ops_list final : public expression {
 
         // 'src' is not an expression and not a constant and has unary ops
 
-        const std::string reg{
+        const operand reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
 
-        x.copy_value(src.tok(), indent, operand{reg, true}, src_operand);
+        x.copy_value(src.tok(), indent, reg, src_operand);
         uops.compile(tc, indent, reg);
-        x.bitwise(src.tok(), indent, op, dst_info.operand.str(), reg);
+        x.bitwise(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
         free_registers(src, x, indent, lea_registers);
     }
@@ -817,13 +816,13 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             x.comment(src.tok(), indent, "shf: expr");
-            const std::string count_register{
+            const operand count_register{
                 x.begin_shift(src.tok(), indent, dst_size)};
 
             src.compile(tc, indent,
-                        tc.make_ident_info_from_register(count_register));
+                        toc::make_ident_info_from_register(count_register));
 
-            x.end_shift(src.tok(), indent, op, dst_info.operand.str());
+            x.end_shift(src.tok(), indent, op, dst_info.operand);
             return;
         }
 
@@ -832,18 +831,20 @@ class expr_ops_list final : public expression {
         const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             x.comment(src.tok(), indent, "shf: const");
-            x.shift(src.tok(), indent, op, dst_info.operand.str(),
-                    std::format("{}{}", src.get_unary_ops().to_string(),
-                                src_info.const_value));
+            x.shift(src.tok(), indent, op, dst_info.operand,
+                    operand::imm(std::format("{}{}",
+                                             src.get_unary_ops().to_string(),
+                                             src_info.const_value),
+                                 src_info.type_ref()));
 
             return;
         }
 
-        x86::validate_shift_operand(src.tok(), src_info.operand.str());
+        x86::validate_shift_operand(src.tok(), src_info.operand);
 
         // 'src' is not a constant
 
-        std::vector<std::string> lea_registers;
+        std::vector<operand> lea_registers;
         const operand src_operand{
             tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
@@ -851,8 +852,8 @@ class expr_ops_list final : public expression {
         if (uops.is_empty()) {
             x.comment(src.tok(), indent, "shf: not const, no uops");
             x.begin_shift(src.tok(), indent, dst_size);
-            x.load_shift_count(src.tok(), indent, src_operand.str(), dst_size);
-            x.end_shift(src.tok(), indent, op, dst_info.operand.str());
+            x.load_shift_count(src.tok(), indent, src_operand, dst_size);
+            x.end_shift(src.tok(), indent, op, dst_info.operand);
 
             free_registers(src, x, indent, lea_registers);
             return;
@@ -862,12 +863,12 @@ class expr_ops_list final : public expression {
 
         x.comment(src.tok(), indent, "shf: not const, uops");
 
-        const std::string count_register{
+        const operand count_register{
             x.begin_shift(src.tok(), indent, dst_size)};
 
-        x.load_shift_count(src.tok(), indent, src_operand.str());
+        x.load_shift_count(src.tok(), indent, src_operand);
         uops.compile(tc, indent, count_register);
-        x.end_shift(src.tok(), indent, op, dst_info.operand.str());
+        x.end_shift(src.tok(), indent, op, dst_info.operand);
         free_registers(src, x, indent, lea_registers);
     }
 
@@ -882,14 +883,13 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             x.comment(src.tok(), indent, "div expression");
-            const std::string reg{x.alloc_scratch_register(
-                src.tok(), indent, tc.get_type_default())};
+            const operand reg{x.alloc_scratch_register(src.tok(), indent,
+                                                       tc.get_type_default())};
 
-            const std::string reg_sized{
-                x86::sized_register_operand(reg, dst_size)};
+            const operand reg_sized{x.sized_register(reg, dst_size)};
 
             src.compile(tc, indent,
-                        tc.make_ident_info_from_register(reg_sized));
+                        toc::make_ident_info_from_register(reg_sized));
 
             x.divide(src.tok(), indent, op, dst_info.operand, reg);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -902,25 +902,25 @@ class expr_ops_list final : public expression {
         if (src_info.is_const()) {
             x.comment(src.tok(), indent, "div const");
             x.divide(src.tok(), indent, op, dst_info.operand,
-                     std::format("{}{}", src.get_unary_ops().to_string(),
-                                 src_info.const_value),
-                     true);
+                     operand::imm(std::format("{}{}",
+                                              src.get_unary_ops().to_string(),
+                                              src_info.const_value),
+                                  src_info.type_ref()));
             return;
         }
 
-        x86::validate_division_operand(src.tok(), src_info.operand.str());
+        x86::validate_division_operand(src.tok(), src_info.operand);
 
         // 'src' is not an expression and not a constant
 
-        std::vector<std::string> lea_registers;
+        std::vector<operand> lea_registers;
         const operand src_operand{
             tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
             x.comment(src.tok(), indent, "div not const, no uops");
-            x.divide(src.tok(), indent, op, dst_info.operand,
-                     src_operand.str());
+            x.divide(src.tok(), indent, op, dst_info.operand, src_operand);
             free_registers(src, x, indent, lea_registers);
             return;
         }
@@ -928,12 +928,12 @@ class expr_ops_list final : public expression {
         // 'src' is not an expression and not a constant and has unary ops
 
         x.comment(src.tok(), indent, "div not const, uops");
-        const std::string reg{
+        const operand reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
 
-        const std::string reg_sized{x86::sized_register_operand(reg, dst_size)};
+        const operand reg_sized{x.sized_register(reg, dst_size)};
 
-        x.copy_value(src.tok(), indent, operand{reg_sized, true}, src_operand);
+        x.copy_value(src.tok(), indent, reg_sized, src_operand);
         uops.compile(tc, indent, reg_sized);
         x.divide(src.tok(), indent, op, dst_info.operand, reg_sized);
         x.free_scratch_register(src.tok(), indent, reg);
@@ -941,10 +941,10 @@ class expr_ops_list final : public expression {
     }
 
     static auto free_registers(const statement& st, x86& x, const size_t indent,
-                               const std::span<const std::string> registers)
+                               const std::span<const operand> registers)
         -> void {
 
-        for (const std::string& reg : registers | std::views::reverse) {
+        for (const operand& reg : registers | std::views::reverse) {
             x.free_scratch_register(st.tok(), indent, reg);
         }
     }

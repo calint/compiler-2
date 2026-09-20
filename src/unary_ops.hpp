@@ -14,6 +14,7 @@
 
 class toc;
 class x86;
+struct operand;
 
 class unary_ops final {
     token ws_pre_;          // whitespace before the ops
@@ -59,8 +60,8 @@ class unary_ops final {
 
     // implemented in 'decouple_impl.hpp'
     // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-    auto compile(toc& tc, const size_t indnt,
-                 const std::string_view dst_info) const -> void;
+    auto compile(toc& tc, const size_t indnt, const operand& dst_info) const
+        -> void;
 
     [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
 

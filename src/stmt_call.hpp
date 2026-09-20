@@ -145,19 +145,20 @@ class stmt_call : public expression {
         }
 
         if (ret) {
-            std::string dst_lea{dst_info.use_operand or dst_info.has_lea()
-                                    ? dst_info.operand.address_str()
-                                    : ""};
+            operand dst_lea{dst_info.use_operand or dst_info.has_lea()
+                                ? dst_info.operand
+                                : operand{}};
 
-            aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
-                                        dst_info.id, std::move(dst_lea),
-                                        ret->type_ptr);
+            aliases_to_add.emplace_back(
+                std::string{ret->ident_tk.text()}, dst_info.id,
+                std::move(dst_lea), ret->type_ptr,
+                dst_info.is_register() ? dst_info.operand : operand{});
         }
 
         // track allocated registers
-        std::vector<std::string> allocated_named_registers;
-        std::vector<std::string> allocated_scratch_registers;
-        std::vector<std::string> allocated_registers_in_order;
+        std::vector<operand> allocated_named_registers;
+        std::vector<operand> allocated_scratch_registers;
+        std::vector<operand> allocated_registers_in_order;
 
         // process each argument
         for (size_t i{}; const expr_any& arg : args_) {
@@ -166,11 +167,13 @@ class stmt_call : public expression {
 
             // allocate named register if parameter requires it
 
-            std::string arg_reg{param.get_register_name_or_empty()};
+            const std::string_view register_name{
+                param.get_register_name_or_empty()};
+            operand arg_reg;
 
-            if (not arg_reg.empty()) {
-                x.alloc_named_register(arg.tok(), indent, arg_reg,
-                                       param.get_type());
+            if (not register_name.empty()) {
+                arg_reg = x.alloc_named_register(
+                    arg.tok(), indent, register_name, param.get_type());
 
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
@@ -185,12 +188,12 @@ class stmt_call : public expression {
 
                 const ident_info arg_info{tc.make_ident_info(arg)};
 
-                std::vector<std::string> regs_lea;
+                std::vector<operand> regs_lea;
 
                 const operand lea{arg.compile_lea(
-                    tc, indent, arg.tok(), regs_lea, "", arg_info.lea_path)};
+                    tc, indent, arg.tok(), regs_lea, {}, arg_info.lea_path)};
 
-                for (const std::string& r : regs_lea) {
+                for (const operand& r : regs_lea) {
                     allocated_scratch_registers.emplace_back(r);
                     allocated_registers_in_order.emplace_back(r);
                 }
@@ -203,8 +206,7 @@ class stmt_call : public expression {
                 }
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            std::string{arg.identifier()},
-                                            lea.address_str(),
+                                            std::string{arg.identifier()}, lea,
                                             &param.get_type());
 
                 continue;
@@ -213,7 +215,7 @@ class stmt_call : public expression {
             // handle expression arguments
 
             if (arg.is_expression()) {
-                if (arg_reg.empty()) {
+                if (arg_reg.is_empty()) {
                     // no particular register requested
                     arg_reg = x.alloc_scratch_register(arg.tok(), indent,
                                                        param.get_type());
@@ -222,31 +224,32 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
 
-                const std::string& reg_sized{x86::sized_register_operand(
-                    arg_reg, param.get_type().size())};
+                const operand reg_sized{
+                    x.sized_register(arg_reg, param.get_type().size())};
 
                 arg.compile(tc, indent,
-                            tc.make_ident_info_from_register(reg_sized));
+                            toc::make_ident_info_from_register(reg_sized));
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            reg_sized, "", &param.get_type());
+                                            reg_sized.base_register, operand{},
+                                            &param.get_type(), reg_sized);
 
                 continue;
             }
 
             // handle non-expression without the register and without unary
             // ops
-            if (arg_reg.empty() and arg.get_unary_ops().is_empty()) {
+            if (arg_reg.is_empty() and arg.get_unary_ops().is_empty()) {
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            std::string{arg.identifier()}, "",
-                                            &param.get_type());
+                                            std::string{arg.identifier()},
+                                            operand{}, &param.get_type());
 
                 continue;
             }
 
             // handle non-expression with unary ops but no register
 
-            if (arg_reg.empty()) {
+            if (arg_reg.is_empty()) {
                 const ident_info& arg_info{tc.make_ident_info(arg)};
 
                 if (arg_info.is_const()) {
@@ -256,26 +259,27 @@ class stmt_call : public expression {
                         std::string{param.identifier()},
                         std::format("{}{}", arg.get_unary_ops().to_string(),
                                     arg_info.const_value),
-                        "", &param.get_type());
+                        operand{}, &param.get_type());
 
                 } else {
                     // identifier with unary ops
 
-                    const std::string scratch_reg{x.alloc_scratch_register(
+                    const operand scratch_reg{x.alloc_scratch_register(
                         arg.tok(), indent, param.get_type())};
 
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
 
-                    x.copy_value(param.tok(), indent,
-                                 operand{scratch_reg, true}, arg_info.operand);
+                    x.copy_value(param.tok(), indent, scratch_reg,
+                                 arg_info.operand);
 
                     // apply unary ops
                     arg.get_unary_ops().compile(tc, indent, scratch_reg);
 
                     aliases_to_add.emplace_back(std::string{param.identifier()},
-                                                scratch_reg, "",
-                                                &param.get_type());
+                                                scratch_reg.base_register,
+                                                operand{}, &param.get_type(),
+                                                scratch_reg);
                 }
 
                 continue;
@@ -284,18 +288,20 @@ class stmt_call : public expression {
             // handle non-expression with register
 
             aliases_to_add.emplace_back(std::string{param.identifier()},
-                                        arg_reg, "", &param.get_type());
+                                        arg_reg.base_register, operand{},
+                                        &param.get_type(), arg_reg);
 
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
-                x.copy_value(param.tok(), indent, operand{arg_reg, true},
-                             std::format("{}{}",
-                                         arg.get_unary_ops().to_string(),
-                                         arg_info.const_value));
+                x.copy_value(
+                    param.tok(), indent, arg_reg,
+                    operand::imm(std::format("{}{}",
+                                             arg.get_unary_ops().to_string(),
+                                             arg_info.const_value),
+                                 arg_info.type_ref()));
             } else {
-                x.copy_value(param.tok(), indent, operand{arg_reg, true},
-                             arg_info.operand);
+                x.copy_value(param.tok(), indent, arg_reg, arg_info.operand);
                 arg.get_unary_ops().compile(tc, indent + 1, arg_reg);
             }
         }
@@ -321,11 +327,7 @@ class stmt_call : public expression {
 
         // add aliases
         for (const alias_info& e : aliases_to_add) {
-            std::string text{std::format("alias {} -> {}", e.from, e.to)};
-            if (not e.lea.empty()) {
-                text += std::format(" (lea: {})", e.lea);
-            }
-            x.comment(tok(), indent + 1, text);
+            x.comment_alias(tok(), indent + 1, e.from, e.to, e.lea);
             tc.add_alias(e);
         }
 
@@ -333,12 +335,16 @@ class stmt_call : public expression {
         func.code().compile(tc, indent, dst_info);
 
         // free allocated registers in reverse order
-        for (const std::string& reg :
+        for (const operand& reg :
              allocated_registers_in_order | std::views::reverse) {
 
-            if (std::ranges::contains(allocated_scratch_registers, reg)) {
+            if (std::ranges::contains(allocated_scratch_registers,
+                                      reg.allocation_register,
+                                      &operand::allocation_register)) {
                 x.free_scratch_register(tok(), indent + 1, reg);
-            } else if (std::ranges::contains(allocated_named_registers, reg)) {
+            } else if (std::ranges::contains(allocated_named_registers,
+                                             reg.allocation_register,
+                                             &operand::allocation_register)) {
                 x.free_named_register(tok(), indent + 1, reg);
             } else {
                 std::unreachable();
@@ -359,7 +365,7 @@ class stmt_call : public expression {
             const ident_info& ret_info{
                 tc.make_ident_info(tok(), return_info.ident_tk.text())};
 
-            get_unary_ops().compile(tc, indent, ret_info.operand.str());
+            get_unary_ops().compile(tc, indent, ret_info.operand);
         }
 
         tc.exit_func(func.name());

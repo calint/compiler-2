@@ -259,10 +259,10 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
         // 'expr_type_value' validates the source type before entering here
         assert(dst_type.name() == src_info.type_ref().name());
 
-        std::vector<std::string> allocated_registers;
+        std::vector<operand> allocated_registers;
         operand src_op;
         if (is_indexed() or src_info.has_lea()) {
-            src_op = compile_lea(tc, indent, tok(), allocated_registers, "",
+            src_op = compile_lea(tc, indent, tok(), allocated_registers, {},
                                  src_info.lea_path);
         } else {
             src_op = src_info.operand;
@@ -274,13 +274,11 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
         x86& x{tc.machine()};
 
-        x.copy(tok(), indent, src_op.address_str(), dst_op.address_str(),
-               nbytes);
+        x.copy(tok(), indent, src_op, dst_op, nbytes);
 
         dst_op.displacement += static_cast<int32_t>(nbytes);
 
-        for (const std::string& reg :
-             allocated_registers | std::views::reverse) {
+        for (const operand& reg : allocated_registers | std::views::reverse) {
 
             x.free_scratch_register(tok(), indent, reg);
         }
@@ -307,7 +305,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
         x.comment(ea->tok(), indent, "copy field '{}'", tf.name);
 
-        cur_dst_info.push(tf.name, tf.type_ptr, "");
+        cur_dst_info.push(tf.name, tf.type_ptr, {});
 
         if (not tf.type().is_built_in()) {
             // a not-builtin statement thus is 'expr_type_value'
@@ -332,7 +330,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
             x.comment(ea->tok(), indent, "zero empty field: {} * {} B = {} B",
                       tf.array_size, tf.type().size(), tf.size);
 
-            x.zero(tok(), indent, dst_op.address_str(), tf.size);
+            x.zero(tok(), indent, dst_op, tf.size);
             const int32_t sz{static_cast<int32_t>(tf.size)};
             dst_op.displacement += sz;
             cur_dst_info.increment_offset(sz);
@@ -347,21 +345,22 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
         operand dst_operand{dst_op};
         dst_operand.size = tf.type().size();
-        const std::string dst_accessor{dst_operand.str()};
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
-            cur_dst_info.operand = operand{dst_accessor, false};
+            cur_dst_info.operand = dst_operand;
             src.compile(tc, indent, cur_dst_info);
         } else {
             // built-in, not expression
             const ident_info src_info{tc.make_ident_info(src)};
             if (src_info.is_const()) {
                 // built-in, not expression, constant
-                x.copy_value(src.tok(), indent, dst_operand,
-                             std::format("{}{}",
-                                         src.get_unary_ops().to_string(),
-                                         src_info.const_value));
+                x.copy_value(
+                    src.tok(), indent, dst_operand,
+                    operand::imm(std::format("{}{}",
+                                             src.get_unary_ops().to_string(),
+                                             src_info.const_value),
+                                 src_info.type_ref()));
             } else {
                 // built-in, not expression, not constant
                 if (tf.is_array) {
@@ -372,14 +371,14 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
                     //       the expression path above
 
                     validate_array_assignment(src.tok(), tf, src_info);
-                    x.copy(src.tok(), indent, src_info.operand.address_str(),
-                           dst_op.address_str(), tf.size);
+                    x.copy(src.tok(), indent, src_info.operand, dst_op,
+                           tf.size);
                 } else {
                     // built-in, not expression, not constant, not array
                     x.copy_value(src.tok(), indent, dst_operand,
                                  src_info.operand);
 
-                    src.get_unary_ops().compile(tc, indent, dst_accessor);
+                    src.get_unary_ops().compile(tc, indent, dst_operand);
                 }
             }
         }
@@ -408,7 +407,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
     }
 
     x.comment(tok(), indent, "zero remaining fields: {} B", nbytes);
-    x.zero(tok(), indent, dst_op.address_str(), nbytes);
+    x.zero(tok(), indent, dst_op, nbytes);
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }
 
@@ -448,8 +447,8 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::compile_lea(
     toc& tc, size_t indent, const token& src_loc_tk,
-    std::vector<std::string>& allocated_registers, const std::string& reg_size,
-    const std::span<const std::string> lea_path) const -> operand {
+    std::vector<operand>& allocated_registers, const operand& reg_size,
+    const std::span<const operand> lea_path) const -> operand {
 
     return stmt_ident_->compile_lea(tc, indent, src_loc_tk, allocated_registers,
                                     reg_size, lea_path);
@@ -473,7 +472,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
 auto unary_ops::compile(toc& tc, const size_t indnt,
-                        const std::string_view dst_info) const -> void {
+                        const operand& dst_info) const -> void {
 
     x86& x{tc.machine()};
 

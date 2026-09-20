@@ -40,8 +40,9 @@ struct func_return_info {
 struct alias_info {
     std::string from;
     std::string to;
-    std::string lea;
+    operand lea;
     const type* type_ptr{};
+    operand register_operand;
 };
 
 struct const_info {
@@ -413,14 +414,15 @@ class toc final {
         if (var.array_size) {
             text += std::format("[{}]", var.array_size);
         }
-        if (not var.reg.empty()) {
-            x.comment(src_loc_tk, indent, "{} ({})", text, var.reg);
+        if (not var.reg.is_empty()) {
+            x.comment(src_loc_tk, indent, "{} ({})", text,
+                      var.reg.base_register);
             return;
         }
-        x.comment(src_loc_tk, indent, "{} ({} B @ [{}])", text,
-                  name_info.type_ref().size() *
-                      (name_info.is_array ? name_info.array_size : 1),
-                  name_info.operand.address_str());
+        x.comment_variable(src_loc_tk, indent, text,
+                           name_info.type_ref().size() *
+                               (name_info.is_array ? name_info.array_size : 1),
+                           name_info.operand);
     }
 
     [[nodiscard]] auto create_unique_label(const token& tk,
@@ -620,14 +622,14 @@ class toc final {
     [[nodiscard]] auto get_lea_operand(const size_t indent,
                                        const statement& src,
                                        const ident_info& src_info,
-                                       std::vector<std::string>& lea_registers)
+                                       std::vector<operand>& lea_registers)
         -> operand {
 
         if (not src.is_indexed() and not src_info.has_lea()) {
             return src_info.operand;
         }
 
-        operand op{src.compile_lea(*this, indent, src.tok(), lea_registers, "",
+        operand op{src.compile_lea(*this, indent, src.tok(), lea_registers, {},
                                    src_info.lea_path)};
 
         op.size = src_info.operand.size;
@@ -724,8 +726,11 @@ class toc final {
                     return false;
                 }
                 const alias_info& alias{frm.get_alias(id_base)};
-                if (not alias.lea.empty()) {
+                if (not alias.lea.is_empty()) {
                     return true;
+                }
+                if (alias.register_operand.is_register()) {
+                    return false;
                 }
                 id_base = alias.to;
                 id_base = id_base.substr(0, id_base.find('.'));
@@ -760,46 +765,33 @@ class toc final {
     [[nodiscard]] auto make_ident_info(const statement& st) const
         -> ident_info {
 
-        return make_ident_info_or_throw(true, st.tok(), st.identifier());
+        return make_ident_info_or_throw(st.tok(), st.identifier());
     }
 
     [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
                                        const std::string_view ident) const
         -> ident_info {
 
-        return make_ident_info_or_throw(true, src_loc_tk, ident);
+        return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
     [[nodiscard]] auto make_ident_info_parsing(const statement& st) const
         -> ident_info {
 
-        return make_ident_info_or_throw(false, st.tok(), st.identifier());
+        return make_ident_info_or_throw(st.tok(), st.identifier());
     }
 
     [[nodiscard]] auto
     make_ident_info_parsing(const token& src_loc_tk,
                             const std::string_view ident) const -> ident_info {
 
-        return make_ident_info_or_throw(false, src_loc_tk, ident);
+        return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
-    [[nodiscard]] static auto
-    make_ident_info_register(const std::string_view ident,
-                             const std::string_view reg, const type& tpe)
+    [[nodiscard]] static auto make_ident_info_from_register(const operand& reg)
         -> ident_info {
 
-        // unary ops are applied by callers where relevant
-        return ident_info::make_register(ident, reg, tpe);
-    }
-
-    [[nodiscard]] auto
-    make_ident_info_from_register(const std::string_view reg) const
-        -> ident_info {
-
-        const x86& x{machine()};
-
-        return make_ident_info_register(reg, reg,
-                                        x.allocated_register_type(reg));
+        return ident_info::make_register(reg.base_register, reg);
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
@@ -966,8 +958,7 @@ class toc final {
 
     // reviewed: 2026-09-09
     [[nodiscard]] auto
-    make_ident_info_or_empty(const bool use_allocated_register_type,
-                             const token& src_loc_tk,
+    make_ident_info_or_empty(const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
 
         assert(not ident.empty());
@@ -977,7 +968,7 @@ class toc final {
         // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
         // traverse the frames and resolve to a variable, register or constant
 
-        std::vector<std::string> lea_path;
+        std::vector<operand> lea_path;
         // note: 'lea' is a register operand pointing to the data of the
         //       identifier combined which combined assembler instruction 'lea'
         //       to loads the effective address of that data
@@ -991,15 +982,14 @@ class toc final {
         //   note: 'lea_path' will be reversed when complete so that
         //          'ident_path' elements have corresponding lea
 
-        lea_path.insert(lea_path.end(), id.path().size() - 1, "");
+        lea_path.insert(lea_path.end(), id.path().size() - 1, operand{});
         // note: -1 to exclude the first element
 
         for (const frame& f : frames_ | std::views::reverse) {
 
             // does this frame contain the variable?
             if (f.has_var(id.base())) {
-                return make_ident_info_from_frame(use_allocated_register_type,
-                                                  f, src_loc_tk, ident, id,
+                return make_ident_info_from_frame(f, src_loc_tk, ident, id,
                                                   std::move(lea_path));
             }
 
@@ -1013,16 +1003,21 @@ class toc final {
                     // is not an alias
 
                     // add an empty
-                    lea_path.emplace_back("");
-                    return make_ident_info_from_frame(
-                        use_allocated_register_type, f, src_loc_tk, ident, id,
-                        std::move(lea_path));
+                    lea_path.emplace_back();
+                    return make_ident_info_from_frame(f, src_loc_tk, ident, id,
+                                                      std::move(lea_path));
                 }
 
                 // this is an alias, continue resolving until it is a variable,
                 // register or constant
 
                 const alias_info& alias{f.get_alias(id.base())};
+
+                if (alias.register_operand.is_register() and
+                    id.path().size() == 1) {
+                    return ident_info::make_register(ident,
+                                                     alias.register_operand);
+                }
 
                 lea_path.emplace_back(alias.lea);
 
@@ -1058,8 +1053,8 @@ class toc final {
             }
         }
 
-        if (const ident_info reg_info{make_ident_info_register_or_empty(
-                use_allocated_register_type, ident, id)};
+        if (const ident_info reg_info{
+                make_ident_info_register_or_empty(ident, id)};
             not reg_info.is_empty()) {
 
             return reg_info;
@@ -1069,9 +1064,8 @@ class toc final {
     }
 
     [[nodiscard]] auto make_ident_info_from_frame(
-        const bool use_allocated_register_type, const frame& frm,
-        const token& src_loc_tk, const std::string_view ident,
-        const ident_path& id, std::vector<std::string> lea_path) const
+        const frame& frm, const token& src_loc_tk, const std::string_view ident,
+        const ident_path& id, std::vector<operand> lea_path) const
         -> ident_info {
 
         // try function scope
@@ -1089,8 +1083,8 @@ class toc final {
         }
 
         // try register
-        if (const ident_info reg_info{make_ident_info_register_or_empty(
-                use_allocated_register_type, ident, id)};
+        if (const ident_info reg_info{
+                make_ident_info_register_or_empty(ident, id)};
             not reg_info.is_empty()) {
 
             return reg_info;
@@ -1100,10 +1094,11 @@ class toc final {
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);
     }
 
-    [[nodiscard]] static auto make_ident_info_from_var_info(
-        const token& src_loc_tk, const std::string_view ident,
-        const ident_path& id, const var_info& var,
-        std::vector<std::string> lea_path) -> ident_info {
+    [[nodiscard]] static auto
+    make_ident_info_from_var_info(const token& src_loc_tk,
+                                  const std::string_view ident,
+                                  const ident_path& id, const var_info& var,
+                                  std::vector<operand> lea_path) -> ident_info {
 
         ident_info ii{
             var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
@@ -1127,16 +1122,16 @@ class toc final {
         // find the first element from the top that has a 'lea' and get
         // accessor relative to that
 
-        std::string lea;
+        operand lea;
         size_t lea_index{ii.elem_path.size()};
         while (lea_index--) {
-            if (not ii.lea_path[lea_index].empty()) {
+            if (not ii.lea_path[lea_index].is_empty()) {
                 lea = ii.lea_path[lea_index];
                 break;
             }
         }
 
-        if (lea.empty()) {
+        if (lea.is_empty()) {
             return ii;
         }
 
@@ -1168,32 +1163,28 @@ class toc final {
         const size_t offset{ii.type_path[lea_index]->field_offset(
             src_loc_tk, elem_path_from_lea)};
 
-        ii.operand = {lea, false};
+        ii.operand = lea;
         if (offset != 0) {
             ii.operand.displacement += static_cast<int32_t>(offset);
         }
         ii.operand.size = ii.type_ref().size();
+        ii.operand.type_ptr = &ii.type_ref();
 
         return ii;
     }
 
-    [[nodiscard]] auto make_ident_info_register_or_empty(
-        const bool use_allocated_register_type, const std::string_view ident,
-        const ident_path& id) const -> ident_info {
+    [[nodiscard]] auto
+    make_ident_info_register_or_empty(const std::string_view ident,
+                                      const ident_path& id) const
+        -> ident_info {
 
         // is it a register?
         if (const size_t reg_size{operand::register_size(id.str())};
             reg_size != 0) {
 
-            if (use_allocated_register_type) {
-                const x86& x{machine()};
-
-                return make_ident_info_register(
-                    ident, id.str(), x.allocated_register_type(id.str()));
-            }
-
-            return make_ident_info_register(
-                ident, id.str(), get_builtin_type_for_size(reg_size));
+            operand reg{operand::reg(id.str(), reg_size)};
+            reg.type_ptr = &get_builtin_type_for_size(reg_size);
+            return ident_info::make_register(ident, reg);
         }
 
         // not resolved, return empty info
@@ -1237,12 +1228,10 @@ class toc final {
 
     // helper: call make_ident_info_or_empty and throw if unresolved
     [[nodiscard]] auto
-    make_ident_info_or_throw(const bool use_allocated_register_type,
-                             const token& src_loc_tk,
+    make_ident_info_or_throw(const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
 
-        const ident_info id_info{make_ident_info_or_empty(
-            use_allocated_register_type, src_loc_tk, ident)};
+        const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
 
         if (not id_info.is_empty()) {
             return id_info;

@@ -152,12 +152,12 @@ class statement {
 
     [[nodiscard]] virtual auto dat_size_bytes() const -> size_t { return 0; }
 
-    [[nodiscard]] virtual auto compile_lea(
-        [[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
-        [[maybe_unused]] const token& src_loc_tk,
-        [[maybe_unused]] std::vector<std::string>& allocated_registers,
-        [[maybe_unused]] const std::string& reg_size,
-        [[maybe_unused]] const std::span<const std::string> lea_path) const
+    [[nodiscard]] virtual auto
+    compile_lea([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
+                [[maybe_unused]] const token& src_loc_tk,
+                [[maybe_unused]] std::vector<operand>& allocated_registers,
+                [[maybe_unused]] const operand& reg_size,
+                [[maybe_unused]] const std::span<const operand> lea_path) const
         -> operand {
 
         std::unreachable();

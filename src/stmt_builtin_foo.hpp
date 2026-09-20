@@ -77,8 +77,8 @@ class stmt_builtin_foo final : public statement {
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);
 
-        const std::string reg_iter{x.alloc_scratch_register(
-            ident_.tok(), indent, tc.get_type_default())};
+        const operand reg_iter{x.alloc_scratch_register(ident_.tok(), indent,
+                                                        tc.get_type_default())};
 
         const ident_info ii{tc.make_ident_info(ident_)};
 
@@ -104,7 +104,6 @@ class stmt_builtin_foo final : public statement {
 
         operand var_i_operand{var_i_info.operand};
         var_i_operand.size = operand::size_qword;
-        const std::string var_i_addr_op{var_i_operand.str()};
 
         // add a constant for array size
         tc.add_const(ident_.tok(), indent, "n",
@@ -114,29 +113,30 @@ class stmt_builtin_foo final : public statement {
 
         // load address of referenced array into 'reg_iter'
         if (ii.has_lea() or ident_.is_indexed()) {
-            std::vector<std::string> allocated_registers;
+            std::vector<operand> allocated_registers;
 
             const operand op{stmt_identifier::compile_effective_address(
-                tc, indent, tok(), ident_.elems(), allocated_registers, "",
+                tc, indent, tok(), ident_.elems(), allocated_registers, {},
                 ii.lea_path)};
 
-            x.address_of(tok(), indent, reg_iter, op.address_str());
+            x.address_of(tok(), indent, reg_iter, op);
 
-            for (const std::string& reg :
+            for (const operand& reg :
                  allocated_registers | std::views::reverse) {
 
                 x.free_scratch_register(tok(), indent, reg);
             }
         } else {
-            x.address_of(tok(), indent, reg_iter, ii.operand.address_str());
+            x.address_of(tok(), indent, reg_iter, ii.operand);
         }
 
         x.comment(ident_.tok(), indent, "initiate counter {}", var_i.name);
-        x.copy_value(tok(), indent, var_i_operand, "0");
+        x.copy_value(tok(), indent, var_i_operand,
+                     operand::imm("0", tc.get_type_default()));
         x.label(indent, loop_label);
         code_.compile(tc, indent, ident_info::make_empty());
         x.label(indent + 1, loop_label + "_continue");
-        x.advance_array_iteration(indent + 2, reg_iter, var_i_addr_op,
+        x.advance_array_iteration(indent + 2, reg_iter, var_i_operand,
                                   ii.type_ref().size(), ii.array_size,
                                   loop_label);
 

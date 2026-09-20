@@ -79,13 +79,13 @@ class stmt_assign_var final : public statement {
             }
         }
 
-        std::vector<std::string> lea_registers;
+        std::vector<operand> lea_registers;
         dst_info.use_operand = array_size_ > 0 or stmt_ident_.is_indexed();
         dst_info.operand =
             tc.get_lea_operand(indent, stmt_ident_, dst_info, lea_registers);
 
         expr_.compile(tc, indent, dst_info);
-        for (const std::string& reg : lea_registers | std::views::reverse) {
+        for (const operand& reg : lea_registers | std::views::reverse) {
             x.free_scratch_register(tok(), indent, reg);
         }
     }

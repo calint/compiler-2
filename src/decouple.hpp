@@ -5,12 +5,9 @@
 // implemented in 'decouple_impl.hpp'
 
 #include <algorithm>
-#include <array>
 #include <cassert>
-#include <cctype>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -50,27 +47,16 @@ class type;
 class expr_any;
 
 struct operand {
+    enum class operand_kind : uint8_t { empty, reg, memory, immediate };
+
+  private:
+    operand_kind kind_{operand_kind::empty};
+
+  public:
     static constexpr size_t size_qword{8};
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
-
-    [[nodiscard]] static auto size_specifier(const size_t size)
-        -> std::string_view {
-
-        switch (size) {
-        case size_qword:
-            return "qword";
-        case size_dword:
-            return "dword";
-        case size_word:
-            return "word";
-        case size_byte:
-            return "byte";
-        default:
-            std::unreachable();
-        }
-    }
 
     // returns 0 if operand is not a register
     [[nodiscard]] static auto register_size(const std::string_view operand)
@@ -116,246 +102,86 @@ struct operand {
         return 0;
     }
 
+    // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
+    std::string allocation_register;
     std::string base_register;
     std::string index_register;
+    std::string immediate_expression;
     int32_t displacement{};
     uint8_t scale{1};
     size_t size{};
-    bool is_base_register{};
-    bool is_memory{};
+    const type* type_ptr{};
+    // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
     operand() = default;
 
-    operand(const std::string_view operand_sv,
-            const bool operand_is_base_register)
-        : is_base_register{operand_is_base_register} {
+    [[nodiscard]] static auto imm(std::string expression,
+                                  const type& value_type) -> operand {
 
-        if (operand_sv.empty()) {
-            return;
+        if (expression.empty()) {
+            throw std::invalid_argument("operand text must not be empty");
         }
+        operand result;
+        result.kind_ = operand_kind::immediate;
+        result.immediate_expression = std::move(expression);
+        result.type_ptr = &value_type;
+        return result;
+    }
 
-        if (operand_is_base_register) {
-            base_register = operand_sv;
-            size = operand::register_size(operand_sv);
-            return;
+    [[nodiscard]] auto kind() const -> operand_kind { return kind_; }
+
+    [[nodiscard]] auto is_register() const -> bool {
+        return kind_ == operand_kind::reg;
+    }
+
+    [[nodiscard]] auto is_memory() const -> bool {
+        return kind_ == operand_kind::memory;
+    }
+
+    [[nodiscard]] auto is_immediate() const -> bool {
+        return kind_ == operand_kind::immediate;
+    }
+
+    [[nodiscard]] static auto reg(const std::string_view name,
+                                  const size_t operand_size) -> operand {
+
+        if (name.empty()) {
+            throw std::invalid_argument("operand text must not be empty");
         }
+        operand result;
+        result.kind_ = operand_kind::reg;
+        result.base_register = name;
+        result.size = operand_size;
+        return result;
+    }
 
-        size_t pos{};
+    [[nodiscard]] static auto reg(const std::string_view name) -> operand {
+        return reg(name, register_size(name));
+    }
 
-        const auto skip_space = [&] -> void {
-            while (pos < operand_sv.size() and
-                   std::isspace(static_cast<unsigned char>(operand_sv[pos]))) {
+    [[nodiscard]] static auto mem(const std::string_view base,
+                                  const std::string_view index,
+                                  const uint8_t index_scale,
+                                  const int32_t offset) -> operand {
 
-                ++pos;
-            }
-        };
-
-        const auto parse_identifier = [&](std::string& destination) -> bool {
-            if (pos == operand_sv.size() or operand_sv[pos] < 'a' or
-                operand_sv[pos] > 'z') {
-
-                return false;
-            }
-
-            const size_t begin{pos++};
-            while (pos < operand_sv.size() and
-                   ((operand_sv[pos] >= 'a' and operand_sv[pos] <= 'z') or
-                    (operand_sv[pos] >= '0' and operand_sv[pos] <= '9'))) {
-
-                ++pos;
-            }
-
-            destination = operand_sv.substr(begin, pos - begin);
-            return true;
-        };
-
-        const auto invalid_operand = [&] [[noreturn]] -> void {
-            throw std::invalid_argument(
-                std::format("invalid NASM operand format: {}", operand_sv));
-        };
-
-        skip_space();
-
-        constexpr std::array<std::pair<std::string_view, size_t>, 4> sizes{
-            {std::pair{"byte", operand::size_byte},
-             std::pair{"word", operand::size_word},
-             std::pair{"dword", operand::size_dword},
-             std::pair{"qword", operand::size_qword}}};
-
-        for (const auto [name, operand_size] : sizes) {
-            if (operand_sv.substr(pos).starts_with(name)) {
-                const size_t end{pos + name.size()};
-                if (end == operand_sv.size() or
-                    std::isspace(static_cast<unsigned char>(operand_sv[end])) or
-                    operand_sv[end] == '[') {
-
-                    size = operand_size;
-                    is_memory = true;
-                    pos = end;
-                    break;
-                }
-            }
+        if (base.empty() and index.empty() and offset == 0) {
+            throw std::invalid_argument("operand address must not be empty");
         }
-
-        skip_space();
-
-        const bool bracketed{pos < operand_sv.size() and
-                             operand_sv[pos] == '['};
-
-        if (bracketed) {
-            ++pos;
-            skip_space();
-        }
-
-        parse_identifier(base_register);
-
-        skip_space();
-
-        if (pos < operand_sv.size() and operand_sv[pos] == '+') {
-            const size_t plus{pos};
-            ++pos;
-
-            skip_space();
-
-            if (not parse_identifier(index_register)) {
-                pos = plus;
-            } else {
-                skip_space();
-
-                if (pos < operand_sv.size() and operand_sv[pos] == '*') {
-                    ++pos;
-                    skip_space();
-                    if (pos == operand_sv.size() or
-                        not std::string_view{"1248"}.contains(
-                            operand_sv[pos])) {
-
-                        invalid_operand();
-                    }
-
-                    scale = static_cast<uint8_t>(operand_sv[pos] - '0');
-                    ++pos;
-                }
-            }
-        }
-
-        skip_space();
-
-        if (pos < operand_sv.size() and
-            (operand_sv[pos] == '+' or operand_sv[pos] == '-')) {
-
-            const bool negative{operand_sv[pos++] == '-'};
-
-            skip_space();
-
-            const size_t begin{pos};
-            while (pos < operand_sv.size() and operand_sv[pos] >= '0' and
-                   operand_sv[pos] <= '9') {
-
-                ++pos;
-            }
-
-            if (begin == pos) {
-                invalid_operand();
-            }
-
-            int64_t magnitude{};
-            for (size_t ix{begin}; ix < pos; ++ix) {
-                const int64_t digit{operand_sv[ix] - '0'};
-                constexpr int64_t decimal_radix{10};
-                magnitude = (magnitude * decimal_radix) + digit;
-            }
-
-            displacement =
-                static_cast<int32_t>(negative ? -magnitude : magnitude);
-        }
-
-        skip_space();
-
-        if (bracketed) {
-            if (pos == operand_sv.size() or operand_sv[pos] != ']') {
-                invalid_operand();
-            }
-            ++pos;
-
-            skip_space();
-        }
-
-        if (pos != operand_sv.size()) {
-            invalid_operand();
-        }
+        operand result;
+        result.kind_ = operand_kind::memory;
+        result.base_register = base;
+        result.index_register = index;
+        result.scale = index_scale;
+        result.displacement = offset;
+        return result;
     }
 
     [[nodiscard]] auto is_empty() const -> bool {
-        return base_register.empty() and index_register.empty() and
-               displacement == 0;
+        return kind_ == operand_kind::empty;
     }
 
     [[nodiscard]] auto is_indexed() const -> bool {
         return not index_register.empty() or displacement != 0;
-    }
-
-    [[nodiscard]] auto address_str() const -> std::string {
-        std::string s;
-
-        if (not base_register.empty()) {
-            s += base_register;
-        }
-
-        if (not index_register.empty()) {
-            if (not s.empty()) {
-                s += " + ";
-            }
-            s += index_register;
-            if (scale > 1) {
-                s += " * " + std::format("{}", scale);
-            }
-        }
-
-        if (displacement != 0) {
-            if (not s.empty()) {
-                if (displacement > 0) {
-                    s += " + ";
-                } else {
-                    s += " - ";
-                }
-            }
-            s += std::format("{}",
-                             displacement < 0 ? -displacement : displacement);
-        }
-
-        return s;
-    }
-
-    [[nodiscard]] auto str() const -> std::string {
-        return is_base_register ? base_register : str(size);
-    }
-
-    [[nodiscard]] auto str(const size_t size_specifier) const -> std::string {
-        std::string s;
-        if (size_specifier != 0) {
-            switch (size_specifier) {
-            case operand::size_byte:
-                s.append("byte");
-                break;
-            case operand::size_word:
-                s.append("word");
-                break;
-            case operand::size_dword:
-                s.append("dword");
-                break;
-            case operand::size_qword:
-                s.append("qword");
-                break;
-            default:
-                std::unreachable();
-            }
-            s.append(" [");
-        }
-        s.append(address_str());
-        if (size_specifier != 0) {
-            s.append("]");
-        }
-        return s;
     }
 };
 
@@ -366,7 +192,7 @@ struct var_info {
     int32_t stack_idx{};  // location relative to register rbp
     bool is_array{};
     size_t array_size{};
-    std::string reg;
+    operand reg;
 };
 
 struct ident_info {
@@ -375,7 +201,7 @@ struct ident_info {
     std::string id;
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
-    std::vector<std::string> lea_path;
+    std::vector<::operand> lea_path;
     operand operand; // nasm valid source
     int32_t stack_idx{};
     int64_t const_value{};
@@ -396,17 +222,17 @@ struct ident_info {
     }
 
     [[nodiscard]] static auto make_register(const std::string_view ident,
-                                            const std::string_view reg,
-                                            const type& tp) -> ident_info {
+                                            const ::operand& reg)
+        -> ident_info {
 
         assert(not ident.empty());
-        assert(not reg.empty());
+        assert(reg.is_register() and reg.type_ptr);
         return {
             .id{ident},
-            .elem_path{std::string{reg}},
-            .type_path{&tp},
-            .lea_path{""}, // note: a single empty string element in vector
-            .operand{reg, true},
+            .elem_path{reg.base_register},
+            .type_path{reg.type_ptr},
+            .lea_path{::operand{}},
+            .operand{reg},
             .ident_type{ident_type::REGISTER},
         };
     }
@@ -423,7 +249,7 @@ struct ident_info {
             .id{ident},
             .elem_path{std::string{elem}},
             .type_path{&tp},
-            .lea_path{""}, // note: a single empty string element in vector
+            .lea_path{::operand{}},
             .operand{},
             .const_value{value},
             .ident_type{ident_type::CONST},
@@ -446,7 +272,7 @@ struct ident_info {
             .id{std::move(ident)},
             .elem_path{std::move(elem_path)},
             .type_path{std::move(type_path)},
-            .lea_path{lea_size, ""},
+            .lea_path{lea_size, ::operand{}},
             .operand{op},
             .stack_idx{stack_idx},
             .array_size{array_size},
@@ -476,7 +302,7 @@ struct ident_info {
         }
 
         if (is_register()) {
-            return elem_path.size() == 1 and operand.is_base_register and
+            return elem_path.size() == 1 and operand.is_register() and
                    not operand.base_register.empty() and
                    operand.index_register.empty() and operand.displacement == 0;
         }
@@ -501,9 +327,9 @@ struct ident_info {
     }
 
     [[nodiscard]] auto has_lea() const -> bool {
-        return std::ranges::any_of(
-            lea_path,
-            [](const std::string& lea) -> bool { return not lea.empty(); });
+        return std::ranges::any_of(lea_path, [](const ::operand& lea) -> bool {
+            return not lea.is_empty();
+        });
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {
@@ -511,7 +337,7 @@ struct ident_info {
         return *type_path.back();
     }
 
-    void push(std::string path_elem, const type* tp, std::string lea) {
+    void push(std::string path_elem, const type* tp, ::operand lea) {
         assert(validate_invariants());
         id += "." + path_elem;
         elem_path.emplace_back(std::move(path_elem));

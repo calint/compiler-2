@@ -143,7 +143,7 @@ class expr_any final : public statement {
         x.comment(tok(), indent, "zero remaining elements: {} * {} B = {} B",
                   diff, ii.type_ref().size(), nbytes);
 
-        x.zero(tok(), indent, ii.operand.address_str(), nbytes);
+        x.zero(tok(), indent, ii.operand, nbytes);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -220,12 +220,10 @@ class expr_any final : public statement {
         });
     }
 
-    [[nodiscard]] auto
-    compile_lea(toc& tc, size_t indent, const token& src_loc_tk,
-                std::vector<std::string>& allocated_registers,
-                const std::string& reg_size,
-                const std::span<const std::string> lea_path) const
-        -> operand override {
+    [[nodiscard]] auto compile_lea(
+        toc& tc, size_t indent, const token& src_loc_tk,
+        std::vector<operand>& allocated_registers, const operand& reg_size,
+        const std::span<const operand> lea_path) const -> operand override {
 
         return vars_[0].visit([&](const auto& expression) -> operand {
             return expression.compile_lea(tc, indent, src_loc_tk,
@@ -290,8 +288,10 @@ class expr_any final : public statement {
                     if (not src_info.is_const()) {
                         std::unreachable();
                     }
-                    x.copy_value(tk, indent, dst_info.operand,
-                                 std::format("{}", src_info.const_value));
+                    x.copy_value(
+                        tk, indent, dst_info.operand,
+                        operand::imm(std::format("{}", src_info.const_value),
+                                     src_info.type_ref()));
 
                     return;
                 }
@@ -313,7 +313,7 @@ class expr_any final : public statement {
                     std::format("bool_end_{}", postfix)};
 
                 // compile and possibly evaluate constant expression
-                const std::string dst{dst_info.operand.str()};
+                const operand& dst{dst_info.operand};
 
                 const std::optional<bool> const_eval{
                     e.compile(tc, indent, jmp_to_end, jmp_to_end, false, dst)};

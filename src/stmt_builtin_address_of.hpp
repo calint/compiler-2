@@ -3,7 +3,6 @@
 #include <ostream>
 #include <ranges>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -75,16 +74,15 @@ class stmt_builtin_address_of final : public expression {
                                      "argument must be a variable"};
         }
 
-        std::vector<std::string> allocated_registers;
+        std::vector<operand> allocated_registers;
 
         const operand oper{stmt_identifier::compile_effective_address(
             tc, indent, stmt_ident_.first_token(), stmt_ident_.elems(),
-            allocated_registers, "", src_info.lea_path)};
+            allocated_registers, {}, src_info.lea_path)};
 
-        x.address_of(tok(), indent, dst_info.operand.str(), oper.address_str());
+        x.address_of(tok(), indent, dst_info.operand, oper);
 
-        for (const std::string& reg :
-             allocated_registers | std::views::reverse) {
+        for (const operand& reg : allocated_registers | std::views::reverse) {
 
             x.free_scratch_register(tok(), indent, reg);
         }

@@ -99,8 +99,7 @@ class expr_bool_op final : public statement {
     // the value of the optional
     [[nodiscard]] auto compile_or(toc& tc, const size_t indent,
                                   const std::string_view jmp_to_if_true,
-                                  const bool inverted,
-                                  const std::string_view dst) const
+                                  const bool inverted, const operand& dst) const
         -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
@@ -198,7 +197,7 @@ class expr_bool_op final : public statement {
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
                                    const std::string_view jmp_to_if_false,
                                    const bool inverted,
-                                   const std::string_view dst) const
+                                   const operand& dst) const
         -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
@@ -385,12 +384,12 @@ class expr_bool_op final : public statement {
                      const expr_ops_list& rhs,
                      const x86::comparison_action& action) const -> void {
 
-        std::vector<std::string> allocated_registers;
+        std::vector<operand> allocated_registers;
 
-        const std::string dst{
+        const operand dst{
             resolve_expr(tc, indent, lhs, true, allocated_registers)};
 
-        const std::string src{
+        const operand src{
             resolve_expr(tc, indent, rhs, false, allocated_registers)};
 
         x86& x{tc.machine()};
@@ -404,43 +403,47 @@ class expr_bool_op final : public statement {
                                const x86::comparison_action& action) const
         -> void {
 
-        std::vector<std::string> allocated_registers;
+        std::vector<operand> allocated_registers;
 
-        const std::string dst{
+        const operand dst{
             resolve_expr(tc, indent, lhs, true, allocated_registers)};
 
         x86& x{tc.machine()};
 
-        x.compare_and_branch(tok(), indent, dst, "0", action,
+        x.compare_and_branch(tok(), indent, dst,
+                             operand::imm("0", tc.get_type_default()), action,
                              allocated_registers);
     }
 
     [[nodiscard]] static auto
     resolve_expr(toc& tc, const size_t indent, const expr_ops_list& expr,
-                 const bool is_lhs,
-                 std::vector<std::string>& allocated_registers) -> std::string {
+                 const bool is_lhs, std::vector<operand>& allocated_registers)
+        -> operand {
 
         if (not expr.is_expression() and
             (expr.is_indexed() or tc.has_lea(expr))) {
 
             const ident_info expr_info{tc.make_ident_info(expr)};
-            const operand op{expr.compile_lea(tc, indent, expr.tok(),
-                                              allocated_registers, "",
-                                              expr_info.lea_path)};
+            operand op{expr.compile_lea(tc, indent, expr.tok(),
+                                        allocated_registers, {},
+                                        expr_info.lea_path)};
 
-            return op.str(expr_info.type_ref().size());
+            op.size = expr_info.type_ref().size();
+            op.type_ptr = &expr_info.type_ref();
+            return op;
         }
 
         if (expr.is_expression()) {
             x86& x{tc.machine()};
 
-            const std::string reg{
+            const operand reg{
                 x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
 
             allocated_registers.emplace_back(reg);
-            expr.compile(tc, indent + 1, tc.make_ident_info_from_register(reg));
+            expr.compile(tc, indent + 1,
+                         toc::make_ident_info_from_register(reg));
 
-            return x86::sized_register_operand(reg, expr.get_type().size());
+            return x.sized_register(reg, expr.get_type().size());
         }
 
         // 'expr' is not an expression
@@ -449,34 +452,36 @@ class expr_bool_op final : public statement {
             if (is_lhs) {
                 x86& x{tc.machine()};
 
-                const std::string reg{x.alloc_scratch_register(
+                const operand reg{x.alloc_scratch_register(
                     expr.tok(), indent, tc.get_type_default())};
 
                 allocated_registers.emplace_back(reg);
                 expr.compile(tc, indent + 1,
-                             tc.make_ident_info_from_register(reg));
+                             toc::make_ident_info_from_register(reg));
 
-                return x86::sized_register_operand(reg, expr.get_type().size());
+                return x.sized_register(reg, expr.get_type().size());
             }
-            return std::format("{}{}", expr.get_unary_ops().to_string(),
-                               expr_info.const_value);
+            return operand::imm(std::format("{}{}",
+                                            expr.get_unary_ops().to_string(),
+                                            expr_info.const_value),
+                                expr_info.type_ref());
         }
 
         // 'expr' not a constant, it is an identifier
         if (expr.get_unary_ops().is_empty()) {
-            return expr_info.operand.str();
+            return expr_info.operand;
         }
 
         // 'expr' is not an expression and has unary ops
 
         x86& x{tc.machine()};
 
-        const std::string reg{x.alloc_scratch_register(expr.tok(), indent,
-                                                       tc.get_type_default())};
+        const operand reg{x.alloc_scratch_register(expr.tok(), indent,
+                                                   tc.get_type_default())};
 
         allocated_registers.emplace_back(reg);
-        x.copy_value(expr.tok(), indent, operand{reg, true}, expr_info.operand);
+        x.copy_value(expr.tok(), indent, reg, expr_info.operand);
         expr.get_unary_ops().compile(tc, indent, reg);
-        return x86::sized_register_operand(reg, expr_info.type_ref().size());
+        return x.sized_register(reg, expr_info.type_ref().size());
     }
 };

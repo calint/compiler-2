@@ -4,7 +4,6 @@
 #include <ostream>
 #include <ranges>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -81,15 +80,14 @@ class stmt_builtin_array_copy final : public statement {
         const ident_info from_info{tc.make_ident_info(from_)};
         const ident_info to_info{tc.make_ident_info(to_)};
 
-        const std::string_view count_register{
-            x.begin_array_copy(tok(), indent)};
+        const operand count_register{x.begin_array_copy(tok(), indent)};
 
-        std::vector<std::string> allocated_scratch_registers;
+        std::vector<operand> allocated_scratch_registers;
 
         x.comment(count_.tok(), indent, statement::trimmed_source(count_));
 
         count_.compile(tc, indent,
-                       tc.make_ident_info_from_register(count_register));
+                       toc::make_ident_info_from_register(count_register));
 
         x.comment(from_.tok(), indent, statement::trimmed_source(from_));
 
@@ -97,9 +95,9 @@ class stmt_builtin_array_copy final : public statement {
             tc, indent, from_.first_token(), from_.elems(),
             allocated_scratch_registers, count_register, from_info.lea_path)};
 
-        x.set_array_copy_source(indent, from_operand.address_str());
+        x.set_array_copy_source(indent, from_operand);
 
-        for (const std::string& reg :
+        for (const operand& reg :
              allocated_scratch_registers | std::views::reverse) {
 
             x.free_scratch_register(tok(), indent, reg);
@@ -113,9 +111,9 @@ class stmt_builtin_array_copy final : public statement {
             tc, indent, to_.first_token(), to_.elems(),
             allocated_scratch_registers, count_register, to_info.lea_path)};
 
-        x.set_array_copy_destination(indent, to_operand.address_str());
+        x.set_array_copy_destination(indent, to_operand);
 
-        for (const std::string& reg :
+        for (const operand& reg :
              allocated_scratch_registers | std::views::reverse) {
 
             x.free_scratch_register(tok(), indent, reg);

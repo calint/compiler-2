@@ -36,7 +36,6 @@ class x86 final {
     struct allocated_register {
         std::string source_location;
         std::string name;
-        const type* type_ptr;
     };
 
     std::vector<std::string> all_registers_{
@@ -130,38 +129,9 @@ class x86 final {
         }
     }
 
-    auto alloc_named_register(const token& src_loc_tk, const size_t indnt,
-                              const std::string_view reg, const type& type_ref)
-        -> void {
-
-        comment(src_loc_tk, indnt, "allocate named register {}", reg);
-
-        auto reg_iter{std::ranges::find(named_registers_, reg)};
-        if (reg_iter == named_registers_.end()) {
-            // not found
-            std::string loc;
-            for (const allocated_register& allocated : allocated_registers_) {
-                if (allocated.name == reg) {
-                    loc = allocated.source_location;
-                    break;
-                }
-            }
-            throw compiler_exception{
-                src_loc_tk, std::format("cannot allocate register {} because "
-                                        "it was allocated at {}",
-                                        reg, loc)};
-        }
-
-        allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
-                                          std::move(*reg_iter), &type_ref);
-
-        named_registers_.erase(reg_iter);
-    }
-
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
                                               const size_t indnt,
-                                              const type& type_ref)
-        -> std::string {
+                                              const type& type_ref) -> operand {
 
         if (scratch_registers_.empty()) {
             throw compiler_exception{src_loc_tk,
@@ -180,50 +150,47 @@ class x86 final {
         usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
         allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
-                                          std::move(reg), &type_ref);
+                                          std::move(reg));
 
-        return allocated_registers_.back().name;
+        const std::string& allocated_name{allocated_registers_.back().name};
+        operand result{sized_register(allocated_name, type_ref.size())};
+        result.allocation_register = allocated_name;
+        result.type_ptr = &type_ref;
+        return result;
+    }
+
+    [[nodiscard]] auto alloc_named_register(const token& src_loc_tk,
+                                            const size_t indnt,
+                                            const std::string_view reg,
+                                            const type& type_ref) -> operand {
+
+        reserve_named_register(src_loc_tk, indnt, reg);
+        operand result{sized_register(reg, type_ref.size())};
+        result.allocation_register = reg;
+        result.type_ptr = &type_ref;
+        return result;
     }
 
     auto free_named_register(const token& src_loc_tk, const size_t indnt,
-                             const std::string_view reg) -> void {
+                             const operand& reg) -> void {
 
-        comment(src_loc_tk, indnt, "free named register {}", reg);
-
-        assert(allocated_registers_.back().name == reg);
-
-        named_registers_.emplace_back(
-            std::move(allocated_registers_.back().name));
-
-        allocated_registers_.pop_back();
+        assert(reg.is_register() and not reg.allocation_register.empty());
+        release_named_register(src_loc_tk, indnt, reg.allocation_register);
     }
 
     auto free_scratch_register(const token& src_loc_tk, const size_t indnt,
-                               const std::string_view reg) -> void {
+                               const operand& reg) -> void {
 
-        comment(src_loc_tk, indnt, "free scratch register {}", reg);
+        assert(reg.is_register() and not reg.allocation_register.empty());
+        comment(src_loc_tk, indnt, "free scratch register {}",
+                reg.allocation_register);
 
-        assert(allocated_registers_.back().name == reg);
+        assert(allocated_registers_.back().name == reg.allocation_register);
 
         scratch_registers_.emplace_back(
             std::move(allocated_registers_.back().name));
 
         allocated_registers_.pop_back();
-    }
-
-    // returns the type a currently allocated register holds, falling back to
-    // a builtin type inferred from the register's width if it isn't (or is
-    // no longer) allocated
-    [[nodiscard]] auto allocated_register_type(const std::string_view reg) const
-        -> const type& {
-
-        for (const allocated_register& allocated : allocated_registers_) {
-            if (reg == allocated.name) {
-                return *allocated.type_ptr;
-            }
-        }
-
-        return builtin_type_for_size(operand::register_size(reg));
     }
 
     // asserts register pools are balanced and prints usage stats; called
@@ -240,42 +207,54 @@ class x86 final {
     }
 
     auto copy_value(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const std::string_view constant)
-        -> void {
-
-        mov(src_loc_tk, indent, dst.str(), constant);
-    }
-
-    auto copy_value(const token& src_loc_tk, const size_t indent,
                     const operand& dst, const operand& src) -> void {
 
-        mov(src_loc_tk, indent, dst.str(), src.str());
+        assert(dst.is_register() or dst.is_memory());
+        mov(src_loc_tk, indent, format_operand(dst), format_operand(src));
+    }
+
+    auto comment_variable(const token& src_loc_tk, const size_t indent,
+                          const std::string_view text, const size_t bytes,
+                          const operand& address) -> void {
+
+        comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, bytes,
+                format_address(address));
+    }
+
+    auto comment_alias(const token& src_loc_tk, const size_t indent,
+                       const std::string_view from, const std::string_view to,
+                       const operand& address) -> void {
+
+        if (address.is_empty()) {
+            comment(src_loc_tk, indent, "alias {} -> {}", from, to);
+        } else {
+            comment(src_loc_tk, indent, "alias {} -> {} (lea: {})", from, to,
+                    format_address(address));
+        }
     }
 
     struct comparison_action {
         std::string_view operation;
         bool inverted{};
-        std::string_view destination;
+        operand destination;
         std::string_view target;
         bool branch_on_true{};
     };
 
-    auto
-    compare_and_branch(const token& src_loc_tk, const size_t indent,
-                       const std::string_view lhs, const std::string_view rhs,
-                       const comparison_action& action,
-                       const std::span<const std::string> consumed_temporaries)
+    auto compare_and_branch(const token& src_loc_tk, const size_t indent,
+                            const operand& lhs, const operand& rhs,
+                            const comparison_action& action,
+                            const std::span<const operand> consumed_temporaries)
         -> void {
 
-        cmp(src_loc_tk, indent, lhs, rhs);
+        cmp(src_loc_tk, indent, format_operand(lhs), format_operand(rhs));
 
-        for (const std::string& reg :
-             consumed_temporaries | std::views::reverse) {
+        for (const operand& reg : consumed_temporaries | std::views::reverse) {
 
             free_scratch_register(src_loc_tk, indent, reg);
         }
 
-        if (not action.destination.empty()) {
+        if (not action.destination.is_empty()) {
             store_comparison(indent, action.operation, action.inverted,
                              action.destination);
         }
@@ -291,51 +270,49 @@ class x86 final {
 
     auto invoke_syscall(const size_t indent) -> void { syscall(indent); }
 
-    auto advance_array_iteration(const size_t indent,
-                                 const std::string_view iterator,
-                                 const std::string_view counter,
+    auto advance_array_iteration(const size_t indent, const operand& iterator,
+                                 const operand& counter,
                                  const size_t element_size,
                                  const size_t array_size,
                                  const std::string_view loop_label) -> void {
 
-        add(indent, iterator, std::format("{}", element_size));
-        inc(indent, counter);
-        cmp(indent, counter, std::format("{}", array_size));
+        add(indent, format_operand(iterator), std::format("{}", element_size));
+        inc(indent, format_operand(counter));
+        cmp(indent, format_operand(counter), std::format("{}", array_size));
         jne(indent, loop_label);
     }
 
-    auto copy(const token& src_loc_tk, const size_t indent,
-              const std::string_view src, const std::string_view dst,
-              const size_t bytes_count) -> void {
+    auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
+              const operand& dst, const size_t bytes_count) -> void {
 
         if (bytes_count > threshold_for_rep_movs) {
-            alloc_named_register(src_loc_tk, indent, "rsi", *default_type_);
-            alloc_named_register(src_loc_tk, indent, "rdi", *default_type_);
-            alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
-            lea(indent, "rsi", src);
-            lea(indent, "rdi", dst);
+            reserve_named_register(src_loc_tk, indent, "rsi");
+            reserve_named_register(src_loc_tk, indent, "rdi");
+            reserve_named_register(src_loc_tk, indent, "rcx");
+            lea(indent, "rsi", format_address(src));
+            lea(indent, "rdi", format_address(dst));
             mov(src_loc_tk, indent, "rcx", std::format("{}", bytes_count));
             rep_movs(indent, 'b');
-            free_named_register(src_loc_tk, indent, "rcx");
-            free_named_register(src_loc_tk, indent, "rdi");
-            free_named_register(src_loc_tk, indent, "rsi");
+            release_named_register(src_loc_tk, indent, "rcx");
+            release_named_register(src_loc_tk, indent, "rdi");
+            release_named_register(src_loc_tk, indent, "rsi");
             return;
         }
 
         comment(src_loc_tk, indent, "size <= {} B, use mov",
                 threshold_for_rep_movs);
 
-        alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rax");
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
-        operand src_operand{src, false};
-        operand dst_operand{dst, false};
+        operand src_operand{src};
+        operand dst_operand{dst};
         for (size_t index{}; index < qword_movs; ++index) {
             mov(src_loc_tk, indent, "rax",
-                src_operand.str(operand::size_qword));
+                format_operand(src_operand, operand::size_qword));
 
-            mov(src_loc_tk, indent, dst_operand.str(operand::size_qword),
-                "rax");
+            mov(src_loc_tk, indent,
+                format_operand(dst_operand, operand::size_qword), "rax");
 
             src_operand.displacement += operand::size_qword;
             dst_operand.displacement += operand::size_qword;
@@ -343,49 +320,51 @@ class x86 final {
         }
         if ((rest / operand::size_dword) != 0) {
             mov(src_loc_tk, indent, "eax",
-                src_operand.str(operand::size_dword));
+                format_operand(src_operand, operand::size_dword));
 
-            mov(src_loc_tk, indent, dst_operand.str(operand::size_dword),
-                "eax");
+            mov(src_loc_tk, indent,
+                format_operand(dst_operand, operand::size_dword), "eax");
 
             src_operand.displacement += operand::size_dword;
             dst_operand.displacement += operand::size_dword;
             rest -= operand::size_dword;
         }
         if ((rest / operand::size_word) != 0) {
-            mov(src_loc_tk, indent, "ax", src_operand.str(operand::size_word));
-            mov(src_loc_tk, indent, dst_operand.str(operand::size_word), "ax");
+            mov(src_loc_tk, indent, "ax",
+                format_operand(src_operand, operand::size_word));
+            mov(src_loc_tk, indent,
+                format_operand(dst_operand, operand::size_word), "ax");
             src_operand.displacement += operand::size_word;
             dst_operand.displacement += operand::size_word;
             rest -= operand::size_word;
         }
         if (rest != 0) {
-            mov(src_loc_tk, indent, "al", src_operand.str(operand::size_byte));
-            mov(src_loc_tk, indent, dst_operand.str(operand::size_byte), "al");
+            mov(src_loc_tk, indent, "al",
+                format_operand(src_operand, operand::size_byte));
+            mov(src_loc_tk, indent,
+                format_operand(dst_operand, operand::size_byte), "al");
         }
-        free_named_register(src_loc_tk, indent, "rax");
+        release_named_register(src_loc_tk, indent, "rax");
     }
 
     [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
-                                        const size_t indent)
-        -> std::string_view {
+                                        const size_t indent) -> operand {
 
-        alloc_named_register(src_loc_tk, indent, "rsi", *default_type_);
-        alloc_named_register(src_loc_tk, indent, "rdi", *default_type_);
-        alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
-        return "rcx";
+        reserve_named_register(src_loc_tk, indent, "rsi");
+        reserve_named_register(src_loc_tk, indent, "rdi");
+        return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
     }
 
-    auto set_array_copy_source(const size_t indent,
-                               const std::string_view address) -> void {
+    auto set_array_copy_source(const size_t indent, const operand& address)
+        -> void {
 
-        lea(indent, "rsi", address);
+        lea(indent, "rsi", format_address(address));
     }
 
-    auto set_array_copy_destination(const size_t indent,
-                                    const std::string_view address) -> void {
+    auto set_array_copy_destination(const size_t indent, const operand& address)
+        -> void {
 
-        lea(indent, "rdi", address);
+        lea(indent, "rdi", format_address(address));
     }
 
     auto end_array_copy(const token& src_loc_tk, const size_t indent,
@@ -402,30 +381,29 @@ class x86 final {
         }
 
         rep_movs(indent, 'b');
-        free_named_register(src_loc_tk, indent, "rcx");
-        free_named_register(src_loc_tk, indent, "rdi");
-        free_named_register(src_loc_tk, indent, "rsi");
+        release_named_register(src_loc_tk, indent, "rcx");
+        release_named_register(src_loc_tk, indent, "rdi");
+        release_named_register(src_loc_tk, indent, "rsi");
     }
 
     auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
-        -> std::string_view {
+        -> operand {
 
-        alloc_named_register(src_loc_tk, indent, "rsi", *default_type_);
-        alloc_named_register(src_loc_tk, indent, "rdi", *default_type_);
-        alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
-        return "rcx";
+        reserve_named_register(src_loc_tk, indent, "rsi");
+        reserve_named_register(src_loc_tk, indent, "rdi");
+        return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
     }
 
-    auto set_memory_equal_left(const size_t indent,
-                               const std::string_view address) -> void {
+    auto set_memory_equal_left(const size_t indent, const operand& address)
+        -> void {
 
-        lea(indent, "rsi", address);
+        lea(indent, "rsi", format_address(address));
     }
 
-    auto set_memory_equal_right(const size_t indent,
-                                const std::string_view address) -> void {
+    auto set_memory_equal_right(const size_t indent, const operand& address)
+        -> void {
 
-        lea(indent, "rdi", address);
+        lea(indent, "rdi", format_address(address));
     }
 
     auto end_memory_equal(const token& src_loc_tk, const size_t indent,
@@ -446,9 +424,9 @@ class x86 final {
         }
         mov(src_loc_tk, indent, "rcx", std::format("{}", count));
         repe_cmps(indent, rep_size);
-        free_named_register(src_loc_tk, indent, "rcx");
-        free_named_register(src_loc_tk, indent, "rdi");
-        free_named_register(src_loc_tk, indent, "rsi");
+        release_named_register(src_loc_tk, indent, "rcx");
+        release_named_register(src_loc_tk, indent, "rdi");
+        release_named_register(src_loc_tk, indent, "rsi");
         store_equal_result(indent, dst);
     }
 
@@ -467,26 +445,26 @@ class x86 final {
         }
 
         repe_cmps(indent, 'b');
-        free_named_register(src_loc_tk, indent, "rcx");
-        free_named_register(src_loc_tk, indent, "rdi");
-        free_named_register(src_loc_tk, indent, "rsi");
+        release_named_register(src_loc_tk, indent, "rcx");
+        release_named_register(src_loc_tk, indent, "rdi");
+        release_named_register(src_loc_tk, indent, "rsi");
         store_equal_result(indent, dst);
     }
 
-    auto zero(const token& src_loc_tk, const size_t indent,
-              const std::string_view dst, const size_t bytes_count) -> void {
+    auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,
+              const size_t bytes_count) -> void {
 
         if (bytes_count > threshold_for_rep_stos) {
-            alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
-            alloc_named_register(src_loc_tk, indent, "rdi", *default_type_);
-            alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
+            reserve_named_register(src_loc_tk, indent, "rax");
+            reserve_named_register(src_loc_tk, indent, "rdi");
+            reserve_named_register(src_loc_tk, indent, "rcx");
             xor_op(indent, "al", "al");
-            lea(indent, "rdi", dst);
+            lea(indent, "rdi", format_address(dst));
             mov(src_loc_tk, indent, "rcx", std::format("{}", bytes_count));
             rep_stos(indent, 'b');
-            free_named_register(src_loc_tk, indent, "rcx");
-            free_named_register(src_loc_tk, indent, "rdi");
-            free_named_register(src_loc_tk, indent, "rax");
+            release_named_register(src_loc_tk, indent, "rcx");
+            release_named_register(src_loc_tk, indent, "rdi");
+            release_named_register(src_loc_tk, indent, "rax");
             return;
         }
 
@@ -495,48 +473,56 @@ class x86 final {
 
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
-        operand dst_operand{dst, false};
+        operand dst_operand{dst};
         for (size_t index{}; index < qword_movs; ++index) {
-            mov(src_loc_tk, indent, dst_operand.str(operand::size_qword), "0");
+            mov(src_loc_tk, indent,
+                format_operand(dst_operand, operand::size_qword), "0");
             dst_operand.displacement += operand::size_qword;
             rest -= operand::size_qword;
         }
         if ((rest / operand::size_dword) != 0) {
-            mov(src_loc_tk, indent, dst_operand.str(operand::size_dword), "0");
+            mov(src_loc_tk, indent,
+                format_operand(dst_operand, operand::size_dword), "0");
             dst_operand.displacement += operand::size_dword;
             rest -= operand::size_dword;
         }
         if ((rest / operand::size_word) != 0) {
-            mov(src_loc_tk, indent, dst_operand.str(operand::size_word), "0");
+            mov(src_loc_tk, indent,
+                format_operand(dst_operand, operand::size_word), "0");
             dst_operand.displacement += operand::size_word;
             rest -= operand::size_word;
         }
         if (rest != 0) {
-            mov(src_loc_tk, indent, dst_operand.str(operand::size_byte), "0");
+            mov(src_loc_tk, indent,
+                format_operand(dst_operand, operand::size_byte), "0");
         }
     }
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
-                      const char operation, const std::string_view dst,
-                      const std::string_view src) -> void {
+                      const char operation, const operand& dst,
+                      const operand& src) -> void {
 
         assert(operation == '+' or operation == '-');
-        op(src_loc_tk, indent, operation == '+' ? "add" : "sub", dst, src);
+        op(src_loc_tk, indent, operation == '+' ? "add" : "sub",
+           format_operand(dst), format_operand(src));
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
-                 const char operation, const std::string_view dst,
-                 const std::string_view src) -> void {
+                 const char operation, const operand& dst, const operand& src)
+        -> void {
 
         switch (operation) {
         case '&':
-            op(src_loc_tk, indent, "and", dst, src);
+            op(src_loc_tk, indent, "and", format_operand(dst),
+               format_operand(src));
             return;
         case '|':
-            op(src_loc_tk, indent, "or", dst, src);
+            op(src_loc_tk, indent, "or", format_operand(dst),
+               format_operand(src));
             return;
         case '^':
-            op(src_loc_tk, indent, "xor", dst, src);
+            op(src_loc_tk, indent, "xor", format_operand(dst),
+               format_operand(src));
             return;
         default:
             std::unreachable();
@@ -544,8 +530,8 @@ class x86 final {
     }
 
     struct multiply_registers {
-        std::string left;
-        std::string right;
+        operand left;
+        operand right;
     };
 
     [[nodiscard]] static auto needs_widened_multiply(const operand& dst)
@@ -559,13 +545,13 @@ class x86 final {
                                               const operand& dst)
         -> multiply_registers {
 
-        const std::string left{
+        const operand left{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-        const std::string right{
+        const operand right{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-        mov(src_loc_tk, indent, left, dst.str());
+        mov(src_loc_tk, indent, format_operand(left), format_operand(dst));
         return {
             .left{left},
             .right{right},
@@ -576,42 +562,45 @@ class x86 final {
                               const operand& dst,
                               const multiply_registers& registers) -> void {
 
-        imul(src_loc_tk, indent, registers.left, registers.right);
-        mov(src_loc_tk, indent, dst.str(), registers.left);
+        imul(src_loc_tk, indent, format_operand(registers.left),
+             format_operand(registers.right));
+        mov(src_loc_tk, indent, format_operand(dst),
+            format_operand(registers.left));
         free_scratch_register(src_loc_tk, indent, registers.right);
         free_scratch_register(src_loc_tk, indent, registers.left);
     }
 
     auto multiply(const token& src_loc_tk, const size_t indent,
-                  const operand& dst, const std::string_view src,
+                  const operand& dst, const operand& src,
                   const bool reuse_source = false) -> void {
 
-        if (is_register_operand(dst.str())) {
-            imul(src_loc_tk, indent, dst.str(), src);
+        if (dst.is_register()) {
+            imul(src_loc_tk, indent, format_operand(dst), format_operand(src));
             return;
         }
 
         if (reuse_source) {
-            imul(src_loc_tk, indent, src, dst.str());
-            mov(src_loc_tk, indent, dst.str(), src);
+            imul(src_loc_tk, indent, format_operand(src), format_operand(dst));
+            mov(src_loc_tk, indent, format_operand(dst), format_operand(src));
             return;
         }
 
-        const std::string reg{
+        const operand reg{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-        const std::string reg_sized{sized_register_operand(reg, dst.size)};
+        const operand reg_sized{sized_register(reg, dst.size)};
 
-        mov(src_loc_tk, indent, reg_sized, dst.str());
-        imul(src_loc_tk, indent, reg_sized, src);
-        mov(src_loc_tk, indent, dst.str(), reg_sized);
+        mov(src_loc_tk, indent, format_operand(reg_sized), format_operand(dst));
+        imul(src_loc_tk, indent, format_operand(reg_sized),
+             format_operand(src));
+        mov(src_loc_tk, indent, format_operand(dst), format_operand(reg_sized));
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
     static auto validate_shift_operand(const token& src_loc_tk,
-                                       const std::string_view count) -> void {
+                                       const operand& count) -> void {
 
-        if (count == "rcx") {
+        if (count.is_register() and count.base_register == "rcx") {
             throw compiler_exception{
                 src_loc_tk, "cannot use 'rcx' as a shift operand; it is "
                             "reserved for the count"};
@@ -619,39 +608,43 @@ class x86 final {
     }
 
     auto begin_shift(const token& src_loc_tk, const size_t indent,
-                     const size_t size) -> std::string {
+                     const size_t size) -> operand {
 
-        alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
-        return sized_register_operand("rcx", size);
+        return sized_register(
+            alloc_named_register(src_loc_tk, indent, "rcx", *default_type_),
+            size);
     }
 
     auto load_shift_count(const token& src_loc_tk, const size_t indent,
-                          const std::string_view count,
+                          const operand& count,
                           const size_t size = operand::size_qword) -> void {
 
-        mov(src_loc_tk, indent, sized_register_operand("rcx", size), count);
+        mov(src_loc_tk, indent, sized_register_operand("rcx", size),
+            format_operand(count));
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
-               const char operation, const std::string_view dst,
-               const std::string_view count) -> void {
+               const char operation, const operand& dst, const operand& count)
+        -> void {
 
         assert(operation == '<' or operation == '>');
-        op(src_loc_tk, indent, operation == '<' ? "sal" : "sar", dst, count);
+        op(src_loc_tk, indent, operation == '<' ? "sal" : "sar",
+           format_operand(dst), format_operand(count));
     }
 
     auto end_shift(const token& src_loc_tk, const size_t indent,
-                   const char operation, const std::string_view dst) -> void {
+                   const char operation, const operand& dst) -> void {
 
-        shift(src_loc_tk, indent, operation, dst, "cl");
-        free_named_register(src_loc_tk, indent, "rcx");
+        shift(src_loc_tk, indent, operation, dst,
+              sized_register("rcx", operand::size_byte));
+        release_named_register(src_loc_tk, indent, "rcx");
     }
 
     static auto validate_division_operand(const token& src_loc_tk,
-                                          const std::string_view divisor)
-        -> void {
+                                          const operand& divisor) -> void {
 
-        if (divisor == "rdx" or divisor == "rax") {
+        if (divisor.is_register() and (divisor.base_register == "rdx" or
+                                       divisor.base_register == "rax")) {
             throw compiler_exception{
                 src_loc_tk, "cannot use 'rdx' or 'rax' for division; they are "
                             "reserved"};
@@ -660,37 +653,38 @@ class x86 final {
 
     auto divide(const token& src_loc_tk, const size_t indent,
                 const char operation, const operand& dst,
-                const std::string_view divisor,
-                const bool divisor_is_constant = false) -> void {
+                const operand& divisor) -> void {
 
         assert(operation == '/' or operation == '%');
-        alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rax");
         mov(src_loc_tk, indent, sized_register_operand("rax", dst.size),
-            dst.str());
+            format_operand(dst));
 
-        alloc_named_register(src_loc_tk, indent, "rdx", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rdx");
         div_reg_ext(indent, dst.size);
 
-        if (divisor_is_constant) {
-            const std::string scratch_reg{
+        if (divisor.is_immediate()) {
+            const operand scratch_reg{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-            mov(src_loc_tk, indent, scratch_reg, divisor);
-            idiv(indent, scratch_reg);
+            mov(src_loc_tk, indent, format_operand(scratch_reg),
+                format_operand(divisor));
+            idiv(indent, format_operand(scratch_reg));
             free_scratch_register(src_loc_tk, indent, scratch_reg);
         } else {
-            idiv(indent, divisor);
+            idiv(indent, format_operand(divisor));
         }
 
-        mov(src_loc_tk, indent, dst.str(), operation == '/' ? "rax" : "rdx");
-        free_named_register(src_loc_tk, indent, "rdx");
-        free_named_register(src_loc_tk, indent, "rax");
+        mov(src_loc_tk, indent, format_operand(dst),
+            operation == '/' ? "rax" : "rdx");
+        release_named_register(src_loc_tk, indent, "rdx");
+        release_named_register(src_loc_tk, indent, "rax");
     }
 
     auto store_boolean(const token& src_loc_tk, const size_t indent,
                        const operand& dst, const bool value) -> void {
 
-        mov(src_loc_tk, indent, dst.str(), value ? "1" : "0");
+        mov(src_loc_tk, indent, format_operand(dst), value ? "1" : "0");
     }
 
     auto label(const size_t indent, const std::string_view label) -> void {
@@ -698,31 +692,30 @@ class x86 final {
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
-                    const std::string_view dst, const std::string_view address)
-        -> void {
+                    const operand& dst, const operand& address) -> void {
 
-        if (is_register_operand(dst)) {
-            lea(indent, dst, address);
+        if (dst.is_register()) {
+            lea(indent, format_operand(dst), format_address(address));
             return;
         }
 
-        const std::string reg{
+        const operand reg{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-        lea(indent, reg, address);
-        mov(src_loc_tk, indent, dst, reg);
+        lea(indent, format_operand(reg), format_address(address));
+        mov(src_loc_tk, indent, format_operand(dst), format_operand(reg));
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    auto unary(const size_t indent, const char operation,
-               const std::string_view dst) -> void {
+    auto unary(const size_t indent, const char operation, const operand& dst)
+        -> void {
 
         switch (operation) {
         case '~':
-            not_op(indent, dst);
+            not_op(indent, format_operand(dst));
             return;
         case '-':
-            neg(indent, dst);
+            neg(indent, format_operand(dst));
             return;
         default:
             std::unreachable();
@@ -737,19 +730,19 @@ class x86 final {
     }
 
     auto scale_index(const token& src_loc_tk, const size_t indent,
-                     const std::string_view index, const size_t element_size)
-        -> void {
+                     const operand& index, const size_t element_size) -> void {
 
         if (element_size <= 1) {
             return;
         }
         if (std::has_single_bit(element_size)) {
-            shl(indent, index,
+            shl(indent, format_operand(index),
                 std::format("{}", std::countr_zero(element_size)));
 
             return;
         }
-        imul(src_loc_tk, indent, index, std::format("{}", element_size));
+        imul(src_loc_tk, indent, format_operand(index),
+             std::format("{}", element_size));
     }
 
     auto exit_process(const token& src_loc_tk, const size_t indent,
@@ -760,25 +753,31 @@ class x86 final {
         syscall(indent);
     }
 
-    [[nodiscard]] static auto is_variables_base(const std::string_view reg)
-        -> bool {
+    [[nodiscard]] static auto is_variables_base(const operand& reg) -> bool {
 
-        return reg == "rbp";
+        return not reg.is_indexed() and reg.base_register == "rbp";
     }
 
     auto address_of_variable(const token& src_loc_tk, const size_t indent,
-                             const std::string_view dst, const int32_t offset)
-        -> void {
+                             const operand& dst, const int32_t offset) -> void {
 
-        address_of(src_loc_tk, indent, dst, std::format("rbp + {}", offset));
+        if (dst.is_register()) {
+            lea(indent, format_operand(dst), std::format("rbp + {}", offset));
+            return;
+        }
+        const operand reg{
+            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+        lea(indent, format_operand(reg), std::format("rbp + {}", offset));
+        mov(src_loc_tk, indent, format_operand(dst), format_operand(reg));
+        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     auto reserve_variables_base() -> void {
-        alloc_named_register(token{}, 0, "rbp", *type_i64_);
+        reserve_named_register(token{}, 0, "rbp");
     }
 
     auto release_variables_base() -> void {
-        free_named_register(token{}, 0, "rbp");
+        release_named_register(token{}, 0, "rbp");
     }
 
     auto program_start() -> void {
@@ -803,9 +802,8 @@ class x86 final {
     };
 
     auto check_bounds(const token& src_loc_tk, const size_t indent,
-                      const std::string_view reg_to_check,
-                      const size_t array_size, const bool allow_end,
-                      const std::string_view reg_size,
+                      const operand& reg_to_check, const size_t array_size,
+                      const bool allow_end, const operand& reg_size,
                       const bounds_check_options& options) -> void {
 
         if (not options.upper and not options.lower) {
@@ -815,39 +813,44 @@ class x86 final {
         const std::string_view comparison{allow_end ? "g" : "ge"};
         comment(src_loc_tk, indent, "bounds check");
 
-        std::string reg_line_num;
+        operand reg_line_num;
         if (options.with_line) {
             reg_line_num =
                 alloc_scratch_register(src_loc_tk, indent, *default_type_);
 
             comment(src_loc_tk, indent, "line number");
-            mov(src_loc_tk, indent, reg_line_num,
+            mov(src_loc_tk, indent, format_operand(reg_line_num),
                 std::format("{}", src_loc_tk.at_line()));
         }
 
         if (options.lower) {
-            test(indent, reg_to_check, reg_to_check);
+            test(indent, format_operand(reg_to_check),
+                 format_operand(reg_to_check));
             if (options.with_line) {
-                cmovs(indent, "rbp", reg_line_num);
+                cmovs(indent, "rbp", format_operand(reg_line_num));
             }
             jcc(indent, "s", "panic_bounds");
         }
 
         if (options.upper) {
-            if (not reg_size.empty()) {
-                const std::string reg_top_idx{
+            if (not reg_size.is_empty()) {
+                const operand reg_top_idx{
                     alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-                mov(src_loc_tk, indent, reg_top_idx, reg_size);
-                add(indent, reg_top_idx, reg_to_check);
-                cmp(indent, reg_top_idx, std::format("{}", array_size));
+                mov(src_loc_tk, indent, format_operand(reg_top_idx),
+                    format_operand(reg_size));
+                add(indent, format_operand(reg_top_idx),
+                    format_operand(reg_to_check));
+                cmp(indent, format_operand(reg_top_idx),
+                    std::format("{}", array_size));
                 free_scratch_register(src_loc_tk, indent, reg_top_idx);
             } else {
-                cmp(indent, reg_to_check, std::format("{}", array_size));
+                cmp(indent, format_operand(reg_to_check),
+                    std::format("{}", array_size));
             }
             if (options.with_line) {
                 op(src_loc_tk, indent, std::format("cmov{}", comparison), "rbp",
-                   reg_line_num);
+                   format_operand(reg_line_num));
             }
             jcc(indent, comparison, "panic_bounds");
         }
@@ -974,6 +977,162 @@ class x86 final {
         std::println(os_.get(), "times {} {} {}{}", count,
                      get_data_def(element_size), value.unary_operations,
                      value.value);
+    }
+
+    [[nodiscard]] auto sized_register(const std::string_view reg,
+                                      const size_t size) const -> operand {
+
+        operand result{operand::reg(sized_register_operand(reg, size), size)};
+        result.type_ptr = &builtin_type_for_size(size);
+        return result;
+    }
+
+    [[nodiscard]] auto sized_register(const operand& reg,
+                                      const size_t size) const -> operand {
+
+        assert(reg.is_register());
+        operand result{sized_register(reg.allocation_register.empty()
+                                          ? reg.base_register
+                                          : reg.allocation_register,
+                                      size)};
+
+        result.allocation_register = reg.allocation_register;
+        if (reg.type_ptr and reg.size == size) {
+            result.type_ptr = reg.type_ptr;
+        }
+        return result;
+    }
+
+  private:
+    [[nodiscard]] static auto size_specifier(const size_t size)
+        -> std::string_view {
+
+        switch (size) {
+        case operand::size_qword:
+            return "qword";
+        case operand::size_dword:
+            return "dword";
+        case operand::size_word:
+            return "word";
+        case operand::size_byte:
+            return "byte";
+        default:
+            std::unreachable();
+        }
+    }
+
+    [[nodiscard]] static auto format_address(const operand& value)
+        -> std::string {
+        assert(not value.is_immediate());
+        std::string s;
+
+        if (not value.base_register.empty()) {
+            s += value.base_register;
+        }
+
+        if (not value.index_register.empty()) {
+            if (not s.empty()) {
+                s += " + ";
+            }
+            s += value.index_register;
+            if (value.scale > 1) {
+                s += " * " + std::format("{}", value.scale);
+            }
+        }
+
+        if (value.displacement != 0) {
+            if (not s.empty()) {
+                if (value.displacement > 0) {
+                    s += " + ";
+                } else {
+                    s += " - ";
+                }
+            }
+            s += std::format("{}", value.displacement < 0 ? -value.displacement
+                                                          : value.displacement);
+        }
+
+        return s;
+    }
+
+    [[nodiscard]] static auto format_operand(const operand& value)
+        -> std::string {
+        if (value.is_immediate()) {
+            return value.immediate_expression;
+        }
+        return value.is_register() ? value.base_register
+                                   : format_operand(value, value.size);
+    }
+
+    [[nodiscard]] static auto format_operand(const operand& value,
+                                             const size_t size_specifier)
+        -> std::string {
+        if (value.is_immediate()) {
+            return value.immediate_expression;
+        }
+        std::string s;
+        if (size_specifier != 0) {
+            switch (size_specifier) {
+            case operand::size_byte:
+                s.append("byte");
+                break;
+            case operand::size_word:
+                s.append("word");
+                break;
+            case operand::size_dword:
+                s.append("dword");
+                break;
+            case operand::size_qword:
+                s.append("qword");
+                break;
+            default:
+                std::unreachable();
+            }
+            s.append(" [");
+        }
+        s.append(format_address(value));
+        if (size_specifier != 0) {
+            s.append("]");
+        }
+        return s;
+    }
+    auto reserve_named_register(const token& src_loc_tk, const size_t indnt,
+                                const std::string_view reg) -> void {
+
+        comment(src_loc_tk, indnt, "allocate named register {}", reg);
+
+        auto reg_iter{std::ranges::find(named_registers_, reg)};
+        if (reg_iter == named_registers_.end()) {
+            std::string loc;
+            for (const allocated_register& allocated : allocated_registers_) {
+                if (allocated.name == reg) {
+                    loc = allocated.source_location;
+                    break;
+                }
+            }
+            throw compiler_exception{
+                src_loc_tk, std::format("cannot allocate register {} because "
+                                        "it was allocated at {}",
+                                        reg, loc)};
+        }
+
+        allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
+                                          std::move(*reg_iter));
+
+        named_registers_.erase(reg_iter);
+    }
+
+    auto release_named_register(const token& src_loc_tk, const size_t indnt,
+                                const std::string_view reg) -> void {
+
+        comment(src_loc_tk, indnt, "free named register {}", reg);
+
+        assert(allocated_registers_.back().name == reg);
+
+        named_registers_.emplace_back(
+            std::move(allocated_registers_.back().name));
+
+        allocated_registers_.pop_back();
     }
 
     [[nodiscard]] static auto
@@ -1128,7 +1287,6 @@ class x86 final {
         }
     }
 
-  private:
     auto emit_data_value(const data_initializer& value) const -> void {
         std::print(os_.get(), "{}{}", value.unary_operations, value.value);
     }
@@ -1143,25 +1301,25 @@ class x86 final {
 
     auto store_comparison(const size_t indent,
                           const std::string_view comparison,
-                          const bool inverted, const std::string_view dst)
-        -> void {
+                          const bool inverted, const operand& dst) -> void {
 
-        if (is_memory_operand(dst)) {
+        if (dst.is_memory()) {
             setcc(indent, asm_cc_for_op(comparison, inverted),
-                  sized_memory_operand(dst, operand::size_byte));
+                  format_operand(dst, operand::size_byte));
 
             return;
         }
-        setcc(indent, asm_cc_for_op(comparison, inverted), dst);
+        setcc(indent, asm_cc_for_op(comparison, inverted), format_operand(dst));
     }
 
     auto store_equal_result(const size_t indent, const operand& dst) -> void {
-        if (is_register_operand(dst.str())) {
+        if (dst.is_register()) {
             setcc(indent, "e",
-                  sized_register_operand(dst.str(), operand::size_byte));
+                  sized_register_operand(format_operand(dst),
+                                         operand::size_byte));
             return;
         }
-        setcc(indent, "e", dst.str(operand::size_byte));
+        setcc(indent, "e", format_operand(dst, operand::size_byte));
     }
 
     template <typename... args_t>
@@ -1293,11 +1451,11 @@ class x86 final {
 
         if (dst_size == src_size) {
             if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-                const std::string reg{
+                const operand reg{
                     alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
                 const std::string reg_sized{
-                    sized_register_operand(reg, dst_size)};
+                    format_operand(sized_register(reg, dst_size))};
 
                 asm_line(indent, "mov {}, {}", reg_sized, src_op);
                 asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
@@ -1310,11 +1468,11 @@ class x86 final {
 
         if (dst_size > src_size) {
             if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-                const std::string reg{
+                const operand reg{
                     alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
                 const std::string reg_sized{
-                    sized_register_operand(reg, dst_size)};
+                    format_operand(sized_register(reg, dst_size))};
 
                 asm_line(indent, "movsx {}, {}", reg_sized, src_op);
                 asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
@@ -1329,20 +1487,21 @@ class x86 final {
                 asm_line(indent, "{} {}, {}", op, dst_op, src_op);
                 return;
             }
-            const std::string reg_sx{
+            const operand reg_sx{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-            asm_line(indent, "movsx {}, {}", reg_sx, src_op);
-            asm_line(indent, "{} {}, {}", op, dst_op, reg_sx);
+            asm_line(indent, "movsx {}, {}", format_operand(reg_sx), src_op);
+            asm_line(indent, "{} {}, {}", op, dst_op, format_operand(reg_sx));
             free_scratch_register(src_loc_tk, indent, reg_sx);
             return;
         }
 
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-            const std::string reg{
+            const operand reg{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-            const std::string reg_sized{sized_register_operand(reg, dst_size)};
+            const std::string reg_sized{
+                format_operand(sized_register(reg, dst_size))};
 
             asm_line(indent, "mov {}, {}", reg_sized,
                      sized_memory_operand(src_op, dst_size));
@@ -1580,7 +1739,7 @@ class x86 final {
 
         const size_t bracket{operand.find('[')};
         assert(bracket != std::string_view::npos);
-        return std::format("{} {}", operand::size_specifier(size),
+        return std::format("{} {}", size_specifier(size),
                            operand.substr(bracket));
     }
 };
