@@ -27,6 +27,8 @@ class token;
 class type;
 
 class machine_x86 final : public machine {
+    static constexpr size_t data_alignment_{16};
+
     static constexpr std::string_view data_qword{"dq"};
     static constexpr std::string_view data_dword{"dd"};
     static constexpr std::string_view data_word{"dw"};
@@ -779,6 +781,12 @@ class machine_x86 final : public machine {
         syscall(indent);
     }
 
+    [[nodiscard]] auto variables_base_register() const
+        -> std::string_view override {
+
+        return "rbp";
+    }
+
     [[nodiscard]] auto is_variables_base(const operand& reg) const
         -> bool override {
 
@@ -929,6 +937,10 @@ class machine_x86 final : public machine {
             println("section .bss");
             println("    num_buffer: resb 21");
         }
+    }
+
+    [[nodiscard]] auto data_alignment() const -> size_t override {
+        return data_alignment_;
     }
 
     auto begin_data(const size_t alignment) -> void override {

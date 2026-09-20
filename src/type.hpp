@@ -64,9 +64,11 @@ class type final {
             tk, std::format("field '{}' not found in type '{}'", name, name_)};
     }
 
-    [[nodiscard]] auto accessor(const token& tk, const std::string_view ident,
-                                const std::vector<std::string>& path,
-                                const var_info& var) const -> ident_info {
+    [[nodiscard]] auto
+    accessor(const token& tk, const std::string_view ident,
+             const std::vector<std::string>& path, const var_info& var,
+             const std::string_view variables_base_register) const
+        -> ident_info {
 
         std::vector<const type*> type_path;
 
@@ -101,9 +103,9 @@ class type final {
             tp_first_field = tp_first_field->fields_[0].type_ptr;
         }
 
-        operand op{
-            operand::mem(var.reg.is_empty() ? "rbp" : var.reg.base_register, "",
-                         1, stack_idx)};
+        operand op{operand::mem(var.reg.is_empty() ? variables_base_register
+                                                   : var.reg.base_register,
+                                "", 1, stack_idx)};
         op.size = tp_first_field->size();
         op.type_ptr = tp_first_field;
 

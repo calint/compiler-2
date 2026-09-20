@@ -257,8 +257,6 @@ class toc final {
     bool bounds_check_with_line_{};
     bool bounds_check_lower_{};
 
-    static constexpr size_t stack_alignment{16};
-
   public:
     toc(::machine& backend, const std::string_view source,
         const size_t vars_capacity, const bool bounds_check_upper,
@@ -308,9 +306,9 @@ class toc final {
         }
         data_.emplace_back(stmt);
         total_dat_size_ += stmt->dat_size_bytes();
+        const size_t alignment{machine_.get().data_alignment()};
         vars_entry_gap_ =
-            (stack_alignment - (total_dat_size_ % stack_alignment)) %
-            stack_alignment;
+            (alignment - (total_dat_size_ % alignment)) % alignment;
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
@@ -1130,14 +1128,14 @@ class toc final {
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);
     }
 
-    [[nodiscard]] static auto
-    make_ident_info_from_var_info(const token& src_loc_tk,
-                                  const std::string_view ident,
-                                  const ident_path& id, const var_info& var,
-                                  std::vector<operand> lea_path) -> ident_info {
+    [[nodiscard]] auto make_ident_info_from_var_info(
+        const token& src_loc_tk, const std::string_view ident,
+        const ident_path& id, const var_info& var,
+        std::vector<operand> lea_path) const -> ident_info {
 
         ident_info ii{
-            var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
+            var.type_ptr->accessor(src_loc_tk, ident, id.path(), var,
+                                   machine_.get().variables_base_register())};
 
         lea_path.resize(id.path().size());
         // note: pad with empty for the remaining elements in the id path

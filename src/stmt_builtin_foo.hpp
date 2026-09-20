@@ -102,9 +102,6 @@ class stmt_builtin_foo final : public statement {
 
         const ident_info var_i_info{tc.make_ident_info(tok(), "i")};
 
-        operand var_i_operand{var_i_info.operand};
-        var_i_operand.size = operand::size_qword;
-
         // add a constant for array size
         tc.add_const(ident_.tok(), indent, "n",
                      static_cast<int64_t>(ii.array_size));
@@ -131,12 +128,12 @@ class stmt_builtin_foo final : public statement {
         }
 
         x.comment(ident_.tok(), indent, "initiate counter {}", var_i.name);
-        x.copy_value(tok(), indent, var_i_operand,
+        x.copy_value(tok(), indent, var_i_info.operand,
                      operand::imm("0", tc.get_type_default()));
         x.label(indent, loop_label);
         code_.compile(tc, indent, ident_info::make_empty());
         x.label(indent + 1, loop_label + "_continue");
-        x.advance_array_iteration(indent + 2, reg_iter, var_i_operand,
+        x.advance_array_iteration(indent + 2, reg_iter, var_i_info.operand,
                                   ii.type_ref().size(), ii.array_size,
                                   loop_label);
 

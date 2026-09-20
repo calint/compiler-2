@@ -229,6 +229,9 @@ class machine {
     virtual auto exit_process(const token& src_loc_tk, const size_t indent,
                               const int exit_code) -> void = 0;
 
+    [[nodiscard]] virtual auto variables_base_register() const
+        -> std::string_view = 0;
+
     [[nodiscard]] virtual auto is_variables_base(const operand& reg) const
         -> bool = 0;
 
@@ -251,6 +254,8 @@ class machine {
                               const bounds_check_options& options) -> void = 0;
 
     virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
+
+    [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
 
     virtual auto begin_data(const size_t alignment) -> void = 0;
 

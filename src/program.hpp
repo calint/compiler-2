@@ -19,8 +19,6 @@
 #include "unary_ops.hpp"
 
 class program final {
-    static constexpr size_t stack_and_data_alignment_{16};
-
     // built-in types
     type type_void{"void", 0, true};
     type type_i64{"i64", operand::size_qword, true};
@@ -146,13 +144,14 @@ class program final {
         }
 
         // data section
-        x.begin_data(stack_and_data_alignment_);
+        const size_t alignment{x.data_alignment()};
+        x.begin_data(alignment);
 
         for (const statement* stmt : tc.get_data()) {
             stmt->compile_data(tc);
         }
 
-        x.reserve_variables(stack_and_data_alignment_, vars_size_);
+        x.reserve_variables(alignment, vars_size_);
     }
 
     auto build(std::ostream& os) -> void {

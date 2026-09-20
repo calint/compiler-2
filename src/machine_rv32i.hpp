@@ -357,6 +357,12 @@ class machine_rv32i final : public machine {
         todo();
     }
 
+    [[nodiscard]] auto variables_base_register() const
+        -> std::string_view override {
+
+        todo();
+    }
+
     [[nodiscard]] auto
     is_variables_base([[maybe_unused]] const operand& reg) const
         -> bool override {
@@ -394,6 +400,8 @@ class machine_rv32i final : public machine {
         -> void override {
         todo();
     }
+
+    [[nodiscard]] auto data_alignment() const -> size_t override { todo(); }
 
     auto begin_data([[maybe_unused]] const size_t alignment) -> void override {
         todo();
