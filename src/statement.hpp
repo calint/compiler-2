@@ -80,7 +80,7 @@ class statement {
     statement(const statement&) = default;
     statement(statement&&) = default;
     auto operator=(statement&&) -> statement& = default;
-    auto operator=(statement const&) -> statement& = default;
+    auto operator=(const statement&) -> statement& = default;
 
     virtual auto compile([[maybe_unused]] toc& tc,
                          [[maybe_unused]] const size_t indent,

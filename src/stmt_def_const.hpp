@@ -51,7 +51,7 @@ class stmt_def_const final : public statement {
         const_.source_to(os);
     }
 
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
+    auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 

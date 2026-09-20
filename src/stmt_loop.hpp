@@ -19,8 +19,7 @@ class stmt_loop final : public statement {
 
     stmt_loop() = default;
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -41,8 +40,7 @@ class stmt_loop final : public statement {
         code_.source_to(os);
     }
 
-    [[nodiscard]] auto
-    is_var_set([[maybe_unused]] const std::string_view var) const
+    [[nodiscard]] auto is_var_set(const std::string_view var) const
         -> bool override {
 
         return code_.is_var_set(var);

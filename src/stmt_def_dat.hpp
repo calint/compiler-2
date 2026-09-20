@@ -339,9 +339,10 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    static auto parse_elem(const toc& tc, tokenizer& tz, const token src_loc_tk,
-                           const type& tp, const bool is_array,
-                           const size_t array_count) -> elem {
+    [[nodiscard]] static auto parse_elem(const toc& tc, tokenizer& tz,
+                                         const token src_loc_tk, const type& tp,
+                                         const bool is_array,
+                                         const size_t array_count) -> elem {
 
         if (not is_array) {
             if (tp.is_builtin()) {
@@ -486,8 +487,8 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
-    static auto parse_builtin(const toc& tc, tokenizer& tz, const type& tp)
-        -> elem {
+    [[nodiscard]] static auto parse_builtin(const toc& tc, tokenizer& tz,
+                                            const type& tp) -> elem {
 
         elem el{};
         el.uops = unary_ops{tz};
@@ -517,8 +518,8 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
-    static auto parse_type(const toc& tc, tokenizer& tz, const type& tp)
-        -> elem {
+    [[nodiscard]] static auto parse_type(const toc& tc, tokenizer& tz,
+                                         const type& tp) -> elem {
 
         elem el{};
         el.tk = tz.cur_position_token();

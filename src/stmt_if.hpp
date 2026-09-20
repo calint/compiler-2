@@ -79,8 +79,7 @@ class stmt_if final : public statement {
         }
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
         // make unique labels considering inlined functions

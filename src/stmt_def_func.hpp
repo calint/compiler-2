@@ -152,7 +152,7 @@ class stmt_def_func final : public statement {
     auto source_def_comment_to(machine& x, const size_t indent) const -> void {
         std::stringstream ss;
         source_def_to(ss, true);
-        x.comment(name_tk_, indent, "{}", statement::trimmed_source(ss.str()));
+        x.comment(name_tk_, indent, "{}", statement::trimmed_source(ss.view()));
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,

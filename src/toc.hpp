@@ -576,7 +576,7 @@ class toc final {
 
     [[nodiscard]] auto get_call_path() const -> std::string_view {
 
-        for (const auto& frm : frames_ | std::views::reverse) {
+        for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
                 return frm.call_path();
             }
@@ -640,7 +640,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_func_return_label() const -> std::string_view {
-        for (const auto& frm : frames_ | std::views::reverse) {
+        for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
                 return frm.func_ret_label();
             }
