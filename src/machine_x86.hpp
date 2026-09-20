@@ -1058,12 +1058,12 @@ class machine_x86 final : public machine {
     }
 
   private:
-    [[nodiscard]] auto sized_register(const std::string_view reg,
+    [[nodiscard]] auto sized_register(const std::string_view name,
                                       const size_t size_bytes) const
         -> operand {
 
         operand result{
-            operand::reg(sized_register_name(reg, size_bytes), size_bytes)};
+            operand::reg(sized_register_name(name, size_bytes), size_bytes)};
         result.type_ptr = &builtin_type_for_size_bytes(size_bytes);
 
         return result;
@@ -1328,14 +1328,14 @@ class machine_x86 final : public machine {
         }
 
         // numbered registers are accepted as rN/rNd/rNw/rNb
-        if (name.size() < 2 || name[0] != 'r') {
+        if (name.size() < 2 or name[0] != 'r') {
             std::unreachable();
         }
 
         const size_t digits_start{1};
         size_t digits_end{digits_start};
-         while (digits_end < name.size() && name[digits_end] >= '0' &&
-             name[digits_end] <= '9') {
+        while (digits_end < name.size() and name[digits_end] >= '0' and
+               name[digits_end] <= '9') {
 
             ++digits_end;
         }
@@ -1344,21 +1344,21 @@ class machine_x86 final : public machine {
             std::unreachable();
         }
 
-        const std::string_view rnbr{
+        const std::string_view register_number{
             name.substr(digits_start, digits_end - digits_start)};
 
         switch (size_bytes) {
         case operand::size_qword:
-            return std::format("r{}", rnbr);
+            return std::format("r{}", register_number);
 
         case operand::size_dword:
-            return std::format("r{}d", rnbr);
+            return std::format("r{}d", register_number);
 
         case operand::size_word:
-            return std::format("r{}w", rnbr);
+            return std::format("r{}w", register_number);
 
         case operand::size_byte:
-            return std::format("r{}b", rnbr);
+            return std::format("r{}b", register_number);
 
         default:
             std::unreachable();
