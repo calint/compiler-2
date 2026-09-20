@@ -307,6 +307,7 @@ class expr_bool_op final : public statement {
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(not is_expression_);
+
         return lhs_.identifier();
     }
 

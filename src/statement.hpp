@@ -131,6 +131,7 @@ class statement {
 
     [[nodiscard]] auto get_type() const -> const type& {
         assert(type_ != nullptr);
+
         return *type_;
     }
 

@@ -175,6 +175,7 @@ class x86 final {
                              const operand& reg) -> void {
 
         assert(reg.is_register() and not reg.allocation_register.empty());
+
         release_named_register(src_loc_tk, indnt, reg.allocation_register);
     }
 
@@ -182,6 +183,7 @@ class x86 final {
                                const operand& reg) -> void {
 
         assert(reg.is_register() and not reg.allocation_register.empty());
+
         comment(src_loc_tk, indnt, "free scratch register {}",
                 reg.allocation_register);
 
@@ -203,6 +205,7 @@ class x86 final {
         assert(allocated_registers_.empty());
         assert(named_registers_.size() == named_registers_initial_size_);
         assert(scratch_registers_.size() == scratch_registers_initial_size_);
+
         usage_max_scratch_regs_ = 0;
     }
 
@@ -210,6 +213,7 @@ class x86 final {
                     const operand& dst, const operand& src) -> void {
 
         assert(dst.is_register() or dst.is_memory());
+
         mov(src_loc_tk, indent, format_operand(dst), format_operand(src));
     }
 
@@ -503,6 +507,7 @@ class x86 final {
                       const operand& src) -> void {
 
         assert(operation == '+' or operation == '-');
+
         op(src_loc_tk, indent, operation == '+' ? "add" : "sub",
            format_operand(dst), format_operand(src));
     }
@@ -628,6 +633,7 @@ class x86 final {
         -> void {
 
         assert(operation == '<' or operation == '>');
+
         op(src_loc_tk, indent, operation == '<' ? "sal" : "sar",
            format_operand(dst), format_operand(count));
     }
@@ -656,6 +662,7 @@ class x86 final {
                 const operand& divisor) -> void {
 
         assert(operation == '/' or operation == '%');
+
         reserve_named_register(src_loc_tk, indent, "rax");
         mov(src_loc_tk, indent, sized_register_operand("rax", dst.size),
             format_operand(dst));
@@ -991,6 +998,7 @@ class x86 final {
                                       const size_t size) const -> operand {
 
         assert(reg.is_register());
+
         operand result{sized_register(reg.allocation_register.empty()
                                           ? reg.base_register
                                           : reg.allocation_register,
@@ -1023,7 +1031,9 @@ class x86 final {
 
     [[nodiscard]] static auto format_address(const operand& value)
         -> std::string {
+
         assert(not value.is_immediate());
+
         std::string s;
 
         if (not value.base_register.empty()) {
@@ -1738,7 +1748,9 @@ class x86 final {
         -> std::string {
 
         const size_t bracket{operand.find('[')};
+
         assert(bracket != std::string_view::npos);
+
         return std::format("{} {}", size_specifier(size),
                            operand.substr(bracket));
     }

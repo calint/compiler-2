@@ -121,6 +121,7 @@ class frame final {
 
     auto set_padding_between_dats_and_vars(const size_t nbytes) -> void {
         assert(stack_padding_ == 0);
+
         stack_padding_ = nbytes;
     }
 
@@ -203,12 +204,15 @@ class ident_path final {
   public:
     explicit ident_path(std::string id) : id_{std::move(id)} {
         assert(not id_.empty());
+
         refresh_path();
+
         assert(not path_.empty());
     }
 
     [[nodiscard]] auto base() const -> std::string_view {
         assert(not path_.empty());
+
         return path_[0];
     }
 
@@ -468,44 +472,60 @@ class toc final {
 
     auto exit_foo(const std::string_view name) -> void {
         const frame& frm{frames_.back()};
+
         assert(frm.is_foo() and frm.is_name(name));
+
         vars_size_ -= frm.allocated_stack_size();
         frames_.pop_back();
         if (frames_.empty()) {
+
             assert(vars_size_ == 0);
+
             vars_entry_gap_applied_ = false;
         }
     }
 
     auto exit_block() -> void {
         const frame& frm{frames_.back()};
+
         assert(frm.is_block());
+
         vars_size_ -= frm.allocated_stack_size();
         frames_.pop_back();
         if (frames_.empty()) {
+
             assert(vars_size_ == 0);
+
             vars_entry_gap_applied_ = false;
         }
     }
 
     auto exit_func(const std::string_view name) -> void {
         const frame& frm{frames_.back()};
+
         assert(frm.is_func() and frm.is_name(name));
+
         vars_size_ -= frm.allocated_stack_size();
         frames_.pop_back();
         if (frames_.empty()) {
+
             assert(vars_size_ == 0);
+
             vars_entry_gap_applied_ = false;
         }
     }
 
     auto exit_loop(const std::string_view name) -> void {
         const frame& frm{frames_.back()};
+
         assert(frm.is_loop() and frm.is_name(name));
+
         vars_size_ -= frm.allocated_stack_size();
         frames_.pop_back();
         if (frames_.empty()) {
+
             assert(vars_size_ == 0);
+
             vars_entry_gap_applied_ = false;
         }
     }
@@ -513,6 +533,7 @@ class toc final {
     auto reset_usage() -> void {
         assert(frames_.empty());
         assert(vars_size_ == 0);
+
         usage_max_frame_count_ = 0;
         usage_max_vars_size_ = 0;
     }
@@ -529,6 +550,7 @@ class toc final {
 
         assert(frames_.empty());
         assert(vars_size_ == 0);
+
         usage_max_frame_count_ = 0;
     }
 
@@ -962,7 +984,9 @@ class toc final {
                              const std::string_view ident) const -> ident_info {
 
         assert(not ident.empty());
+
         ident_path id{std::string{ident}};
+
         assert(not id.path().empty());
 
         // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
@@ -1049,6 +1073,7 @@ class toc final {
                 }
 
                 id = new_id;
+
                 assert(not id.path().empty());
             }
         }

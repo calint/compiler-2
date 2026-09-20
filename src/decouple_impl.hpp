@@ -257,6 +257,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
         const ident_info src_info{tc.make_ident_info(*this)};
 
         // 'expr_type_value' validates the source type before entering here
+
         assert(dst_type.name() == src_info.type_ref().name());
 
         std::vector<operand> allocated_registers;
@@ -423,6 +424,7 @@ auto expr_type_value::validate_array_assignment(const token& tok,
     }
 
     // 'expr_any' validates the source element type before entering here
+
     assert(fld.type().name() == src_info.type_ref().name());
 
     if (fld.array_size != src_info.array_size) {

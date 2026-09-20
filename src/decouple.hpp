@@ -226,6 +226,7 @@ struct ident_info {
 
         assert(not ident.empty());
         assert(reg.is_register() and reg.type_ptr);
+
         return {
             .id{ident},
             .elem_path{reg.base_register},
@@ -333,32 +334,39 @@ struct ident_info {
 
     [[nodiscard]] auto type_ref() const -> const type& {
         assert(validate_invariants());
+
         return *type_path.back();
     }
 
     void push(std::string path_elem, const type* tp, ::operand lea) {
         assert(validate_invariants());
+
         id += "." + path_elem;
         elem_path.emplace_back(std::move(path_elem));
         type_path.emplace_back(tp);
         lea_path.emplace_back(std::move(lea));
+
         assert(validate_invariants());
     }
 
     void pop() {
         assert(validate_invariants());
+
         id.resize(id.rfind('.'));
         elem_path.pop_back();
         type_path.pop_back();
         lea_path.pop_back();
+
         assert(validate_invariants());
     }
 
     void increment_offset(const int32_t n) {
         assert(validate_invariants());
         assert(stack_idx + n >= 0);
+
         stack_idx += n;
         operand.displacement += n;
+
         assert(validate_invariants());
     }
 };

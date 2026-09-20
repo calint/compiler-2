@@ -129,6 +129,7 @@ class tokenizer final {
 
     auto put_back_char(const char ch) -> void {
         assert(char_ix_ > 0 and src_[char_ix_ - 1] == ch);
+
         move_back(1);
     }
 
@@ -175,6 +176,7 @@ class tokenizer final {
 
     [[nodiscard]] auto next_char() -> char {
         assert(not is_eos());
+
         // note: just for easier debugging
         const char ch{src_[char_ix_]};
         ++char_ix_;
