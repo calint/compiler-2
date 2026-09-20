@@ -164,9 +164,7 @@ class stmt_call : public expression {
         std::vector<allocated_register> allocated_registers;
 
         // process each argument
-        for (size_t i{}; const expr_any& arg : args_) {
-            const stmt_def_func_param& param{func.param(i)};
-            ++i;
+        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
 
             const bool is_reference{not arg.is_expression() and
                                     (arg.is_indexed() or tc.has_lea(arg))};

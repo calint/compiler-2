@@ -222,16 +222,14 @@ class stmt_def_dat final : public statement {
 
         x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
 
-        size_t counter{};
-        for (const elem& el : elroot.elems) {
-            x.comment(el.tk, 0, "[{}]", counter);
+        for (const auto [index, el] : std::views::enumerate(elroot.elems)) {
+            x.comment(el.tk, 0, "[{}]", index);
             compile_data_elem(tc, tp, el);
-            ++counter;
         }
 
         // zero out remaining array
 
-        const size_t diff{elroot.array_size - counter};
+        const size_t diff{elroot.array_size - elroot.elems.size()};
 
         if (diff == 0) {
             return;
@@ -255,25 +253,22 @@ class stmt_def_dat final : public statement {
         // user type
 
         const std::span<const type_field>& flds{tp.fields()};
-        size_t counter{};
-        for (const elem& el : elroot.elems) {
-            const type_field& tf{flds[counter]};
+        for (const auto [el, tf] : std::views::zip(elroot.elems, flds)) {
             if (tf.type().is_built_in()) {
                 compile_data_builtin(tc, tf.type(), el);
             } else {
                 compile_data_rec(tc, tf.type(), el);
             }
-            ++counter;
         }
 
         // zero out remaining fields, if any
 
         const size_t n{flds.size()};
-        const size_t diff{n - counter};
+        const size_t diff{n - elroot.elems.size()};
         if (diff == 0) {
             return;
         }
-        const size_t nbytes{tp.remaining_fields_size(counter)};
+        const size_t nbytes{tp.remaining_fields_size(elroot.elems.size())};
 
         machine& x{tc.machine()};
 
