@@ -112,36 +112,81 @@ class stmt_call : public expression {
             throw compiler_exception{tok(),
                                      "function returns but value is discarded"};
         }
+
         if (not func.returns() and not dst_info.is_empty()) {
             throw compiler_exception{tok(), "function does not return a value"};
         }
-        if (not get_unary_ops().is_empty()) {
-            throw compiler_exception{
-                tok(), "non-inline calls do not support unary operations"};
-        }
-        if (func.returns() and
-            (not dst_info.operand.is_memory() or dst_info.is_array or
-             &dst_info.type_ref() != &func.get_type())) {
 
-            throw compiler_exception{
-                tok(), "non-inline result requires matching memory storage"};
+        if (not get_unary_ops().is_empty()) {
+            throw compiler_exception{tok(), "unary operation not allowed here"};
         }
+
+        if (func.returns()) {
+            if (not dst_info.operand.is_memory()) {
+                throw compiler_exception{
+                    tok(), "result required to be a memory location"};
+            }
+
+            if (dst_info.is_array) {
+                throw compiler_exception{tok(), "array not allowed here"};
+            }
+
+            if (&dst_info.type_ref() != &func.get_type()) {
+                throw compiler_exception{
+                    tok(),
+                    std::format(
+                        "type missmatch, function is '{}', destination is '{}'",
+                        func.get_type().name(), dst_info.type_ref().name())};
+            }
+        }
+
         for (const auto [arg, param] : std::views::zip(args_, func.params())) {
-            if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
+            if (arg.is_expression()) {
+                throw compiler_exception{arg.tok(),
+                                         "expresion not allowed here"};
+            }
+
+            if (not arg.get_unary_ops().is_empty()) {
+                throw compiler_exception{arg.tok(),
+                                         "unary operations not allowed here"};
+            }
+
+            const ident_info info{tc.make_ident_info(arg)};
+            if (not info.is_var()) {
+                throw compiler_exception{arg.tok(),
+                                         "argument must be a variable"};
+            }
+
+            if (not info.operand.is_memory()) {
+                throw compiler_exception{arg.tok(),
+                                         "argument requires memory storage"};
+            }
+
+            if (info.is_array and not arg.is_array_element()) {
+                throw compiler_exception{arg.tok(),
+                                         "array argument not supported here"};
+            }
+
+            if (param.is_array()) {
+                throw compiler_exception{arg.tok(),
+                                         "array parameter not supported here"};
+            }
+
+            if (not param.get_register_name_or_empty().empty()) {
                 throw compiler_exception{
                     arg.tok(),
-                    "non-inline arguments do not support unary operations"};
+                    std::format("register-bound parameter '{}' not supported "
+                                "here (register '{}')",
+                                param.name(),
+                                param.get_register_name_or_empty())};
             }
-            const ident_info info{tc.make_ident_info(arg)};
-            if (not info.is_var() or not info.operand.is_memory() or
-                (info.is_array and not arg.is_array_element()) or
-                param.is_array() or
-                not param.get_register_name_or_empty().empty() or
-                &info.type_ref() != &param.get_type()) {
 
-                throw compiler_exception{arg.tok(),
-                                         "non-inline arguments require "
-                                         "matching non-array memory types"};
+            if (&info.type_ref() != &param.get_type()) {
+                throw compiler_exception{
+                    arg.tok(),
+                    std::format("parameter '{}': required '{}', got '{}'",
+                                param.name(), param.get_type().name(),
+                                info.type_ref().name())};
             }
         }
 
@@ -149,13 +194,17 @@ class stmt_call : public expression {
 
         std::vector<operand> address_registers;
         std::vector<operand> addresses;
+
         if (func.returns()) {
             operand result_address{dst_info.operand};
+
             if (dst_info.is_pointer and not dst_info.use_operand) {
+
                 const operand pointer{x.alloc_scratch_register(
                     tok(), indent, tc.get_type_default())};
 
                 address_registers.push_back(pointer);
+
                 x.copy_value(
                     tok(), indent, pointer,
                     operand::mem(result_address, tc.get_type_default()));
@@ -163,26 +212,47 @@ class stmt_call : public expression {
                 result_address = operand::mem(pointer.base_register(), {}, 1, 0,
                                               dst_info.type_ref());
             }
+
             addresses.push_back(result_address);
         }
+
         for (const expr_any& arg : args_) {
             const ident_info info{tc.make_ident_info(arg)};
+
             addresses.push_back(
                 tc.get_lea_operand(indent, arg, info, address_registers));
         }
 
         const operand frame_address{tc.next_frame_address()};
+
         x.check_frame_capacity(
             tok(), indent, frame_address,
             operand::imm(func.frame_size_label(), tc.get_type_default()),
             "baz_frame_overflow", tc.is_frame_check());
 
         operand slot{frame_address};
+        size_t address_index{};
         for (const operand& address : addresses) {
+            if (func.returns() and address_index == 0) {
+                x.comment(tok(), indent, "result address in callee frame");
+            } else {
+                const size_t argument_index{address_index -
+                                            (func.returns() ? 1UZ : 0UZ)};
+
+                x.comment(tok(), indent,
+                          "address of argument '{}' to parameter '{}'",
+                          statement::trimmed_source(args_[argument_index]),
+                          func.params()[argument_index].name());
+            }
+
             x.address_of(tok(), indent, slot, address);
+
             slot.increment_offset(
                 static_cast<int32_t>(tc.get_type_default().size_bytes()));
+
+            ++address_index;
         }
+
         x.free_scratch_registers(tok(), indent, address_registers);
         x.call_function(indent, func.body_label(), frame_address);
     }

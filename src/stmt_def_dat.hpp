@@ -107,7 +107,7 @@ class stmt_def_dat final : public statement {
             .is_array{is_array},
             .array_count{array_count},
             .reg{},
-            .storage_base_register{},
+            .base_register{},
         };
 
         tc.add_var(name_tk_, 0, var, true);
@@ -180,7 +180,7 @@ class stmt_def_dat final : public statement {
             .is_array{elroot_.is_array},
             .array_count{elroot_.array_count},
             .reg{},
-            .storage_base_register{},
+            .base_register{},
         };
 
         tc.add_var(name_tk_, indent, var, true);

@@ -144,7 +144,7 @@ struct var_info {
     bool is_pointer{};
     size_t array_count{};
     operand reg;
-    std::string_view storage_base_register;
+    std::string_view base_register;
 };
 
 struct ident_info {

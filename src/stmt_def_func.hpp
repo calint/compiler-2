@@ -99,7 +99,7 @@ class stmt_def_func final : public statement {
                 .type_ptr{&get_type()},
                 .src_loc_tk{ret_tk},
                 .reg{},
-                .storage_base_register{},
+                .base_register{},
             };
 
             tc.add_var(ret_tk, 0, var, false);
@@ -115,7 +115,7 @@ class stmt_def_func final : public statement {
                 .src_loc_tk{param.tok()},
                 .is_array{param.is_array()},
                 .reg{},
-                .storage_base_register{},
+                .base_register{},
             };
 
             tc.add_var(param.tok(), 0, var, false);
@@ -204,7 +204,7 @@ class stmt_def_func final : public statement {
                            .src_loc_tk{returns_->ident_tk},
                            .is_pointer{true},
                            .reg{},
-                           .storage_base_register{},
+                           .base_register{},
                        },
                        false);
         }
@@ -216,7 +216,7 @@ class stmt_def_func final : public statement {
                            .src_loc_tk{param.tok()},
                            .is_pointer{true},
                            .reg{},
-                           .storage_base_register{},
+                           .base_register{},
                        },
                        false);
         }

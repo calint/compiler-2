@@ -463,6 +463,23 @@ auto main() -> int {
     }
     backend.release_variables_base();
 
+    output.str("");
+    backend.program_start();
+    std::string expected_macros{"%macro PUSH_REGS 0\n"};
+    for (const std::string_view name :
+         {"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "r8", "r9", "r10",
+          "r11", "r12", "r13", "r14", "r15"}) {
+        expected_macros += std::format("    push {}\n", name);
+    }
+    expected_macros += "%endmacro\n\n%macro POP_REGS 0\n";
+    for (const std::string_view name :
+         {"r15", "r14", "r13", "r12", "r11", "r10", "r9", "r8", "rbp", "rdi",
+          "rsi", "rdx", "rcx", "rbx", "rax"}) {
+        expected_macros += std::format("    pop {}\n", name);
+    }
+    expected_macros += "%endmacro\n";
+    assert(output.str().find(expected_macros) != std::string::npos);
+
     const operand first{backend.alloc_scratch_register(token{}, 0, i64)};
     for (const std::string_view base : {"rbp", "r12"}) {
         output.str("");
@@ -471,13 +488,8 @@ auto main() -> int {
         std::istringstream instructions{output.str()};
         std::string instruction;
         std::string argument;
-        for (const std::string_view expected :
-             {"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "r8", "r9",
-              "r10", "r11", "r12", "r13", "r14", "r15"}) {
-            instructions >> instruction >> argument;
-            assert(instruction == "push");
-            assert(argument == expected);
-        }
+        instructions >> instruction;
+        assert(instruction == "PUSH_REGS");
         instructions >> instruction >> argument;
         assert(instruction == "lea");
         assert(argument == "r12,");
@@ -486,13 +498,8 @@ auto main() -> int {
         instructions >> instruction >> argument;
         assert(instruction == "call");
         assert(argument == "callee");
-        for (const std::string_view expected :
-             {"r15", "r14", "r13", "r12", "r11", "r10", "r9", "r8", "rbp",
-              "rdi", "rsi", "rdx", "rcx", "rbx", "rax"}) {
-            instructions >> instruction >> argument;
-            assert(instruction == "pop");
-            assert(argument == expected);
-        }
+        instructions >> instruction;
+        assert(instruction == "POP_REGS");
         instructions >> instruction;
         assert(instruction == "ret");
         assert(not(instructions >> instruction));

@@ -71,8 +71,7 @@ class type final {
     [[nodiscard]] auto
     accessor(const token& src_loc_tk, const std::string_view ident,
              const std::vector<std::string>& path, const var_info& var,
-             const std::string_view variables_base_register) const
-        -> ident_info {
+             const std::string_view base_register) const -> ident_info {
 
         std::vector<const type*> type_path;
 
@@ -99,9 +98,8 @@ class type final {
             var.reg.is_empty() ? var.stack_idx + static_cast<int32_t>(offset)
                                : static_cast<int32_t>(offset)};
 
-        const std::string_view storage_base{var.storage_base_register.empty()
-                                                ? variables_base_register
-                                                : var.storage_base_register};
+        const std::string_view storage_base{
+            var.base_register.empty() ? base_register : var.base_register};
 
         const operand op{operand::mem(
             var.reg.is_empty() ? storage_base : var.reg.base_register(), "", 1,

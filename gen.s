@@ -5,6 +5,41 @@
 
 default rel
 
+%macro PUSH_REGS 0
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push rbp
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+%endmacro
+
+%macro POP_REGS 0
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rbp
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+%endmacro
 
 section .text
 bits 64
@@ -2886,42 +2921,15 @@ main:
 ;       [313:29] counter + 1
         add qword [rbp + 1032], 1
 ;       [314:9] print_num(counter)
+;       [314:9] address of argument 'counter' to parameter 'num'
 ;       [314:9] allocate scratch register -> r15
         lea r15, [rbp + 1032]
         mov qword [rbp + 1168], r15
 ;       [314:9] free scratch register r15
-        push rax
-        push rbx
-        push rcx
-        push rdx
-        push rsi
-        push rdi
-        push rbp
-        push r8
-        push r9
-        push r10
-        push r11
-        push r12
-        push r13
-        push r14
-        push r15
+        PUSH_REGS
         lea r12, [rbp + 1168]
         call print_num
-        pop r15
-        pop r14
-        pop r13
-        pop r12
-        pop r11
-        pop r10
-        pop r9
-        pop r8
-        pop rbp
-        pop rdi
-        pop rsi
-        pop rdx
-        pop rcx
-        pop rbx
-        pop rax
+        POP_REGS
 ;       [315:9] print(colon)
 ;       [52:6] print(str : i8[])
         print_315_9:

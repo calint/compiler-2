@@ -36,7 +36,7 @@ class stmt_builtin_foo final : public statement {
             .type_ptr{&ii.type_ref()},
             .src_loc_tk{},
             .reg{},
-            .storage_base_register{},
+            .base_register{},
         };
 
         tc.add_var(token{}, 0, var_e, false);
@@ -46,7 +46,7 @@ class stmt_builtin_foo final : public statement {
             .type_ptr{&tc.get_type_default()},
             .src_loc_tk{},
             .reg{},
-            .storage_base_register{},
+            .base_register{},
         };
 
         tc.add_var(token{}, 0, var_i, false);
@@ -89,7 +89,7 @@ class stmt_builtin_foo final : public statement {
             .type_ptr{&ii.type_ref()},
             .src_loc_tk{tok()},
             .reg{reg_iter},
-            .storage_base_register{},
+            .base_register{},
         };
 
         tc.add_var(ident_.tok(), indent, var_e, false);
@@ -99,7 +99,7 @@ class stmt_builtin_foo final : public statement {
             .type_ptr{&tc.get_type_default()},
             .src_loc_tk{tok()},
             .reg{},
-            .storage_base_register{},
+            .base_register{},
         };
 
         tc.add_var(ident_.tok(), indent, var_i, false);
