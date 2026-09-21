@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] consider that what registers might be allocated in a noinline functions can
+    be listed thus the call can push/pop just the registers the function uses
 [x] consider function calls that pass arguments and return through the stack
     return values are then no longer references
     => limited support: no unary on return or arguments, 
