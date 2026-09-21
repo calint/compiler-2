@@ -1,0 +1,4 @@
+# non-inline void call cannot supply a value
+
+func noinline target() {}
+func main() { var result = target() }

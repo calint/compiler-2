@@ -438,3 +438,17 @@ SRC=t466 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
 SRC=t466 && EXP=255 && OPTS="--vars=64 --checks=frame --reproduce-source" RUN
 SRC=t467 && EXP=0 && RUN
 SRC=t467 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
+SRC=t468 && COMPERR
+SRC=t469 && COMPERR
+SRC=t470 && COMPERR
+SRC=t471 && COMPERR
+SRC=t472 && COMPERR
+SRC=t473 && COMPERR
+SRC=t474 && COMPERR
+SRC=t475 && COMPERR
+SRC=t476 && COMPERR
+SRC=t477 && COMPERR
+SRC=t478 && COMPERR
+SRC=t479 && COMPERR
+SRC=t480 && COMPERR
+SRC=t481 && COMPERR

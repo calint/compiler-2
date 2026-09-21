@@ -159,11 +159,6 @@ class stmt_call : public expression {
                                          "argument must be a variable"};
             }
 
-            if (not info.operand.is_memory()) {
-                throw compiler_exception{arg.tok(),
-                                         "argument must be stored in memory"};
-            }
-
             if (info.is_array and not arg.is_array_element()) {
                 throw compiler_exception{arg.tok(),
                                          "whole-array arguments are unsupported"};

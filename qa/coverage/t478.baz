@@ -1,0 +1,4 @@
+# non-inline argument cannot be a whole array
+
+func noinline target(parameter: i64[]) {}
+func main() { var items: i64[2] target(items) }

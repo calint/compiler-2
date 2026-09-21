@@ -1,0 +1,4 @@
+# non-inline parameter cannot be register-bound
+
+func noinline target(parameter: reg_rax) {}
+func main() { var value = 1 target(value) }

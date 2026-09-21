@@ -1,0 +1,4 @@
+# non-inline argument cannot have unary operators
+
+func noinline target(parameter) {}
+func main() { var value = 1 target(-value) }

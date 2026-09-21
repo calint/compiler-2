@@ -1,0 +1,4 @@
+# non-inline argument must have the declared parameter type
+
+func noinline target(parameter) {}
+func main() { var value: i32 = 1 target(value) }

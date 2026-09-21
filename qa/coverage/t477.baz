@@ -1,0 +1,4 @@
+# non-inline argument cannot be a raw register
+
+func noinline target(parameter) {}
+func main() { target(rax) }

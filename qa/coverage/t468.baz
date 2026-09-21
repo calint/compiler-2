@@ -1,0 +1,4 @@
+# non-inline return value cannot be discarded
+
+func noinline target(): i64 result { result = 1 }
+func main() { target() }
