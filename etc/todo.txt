@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] consider function calls that pass arguments and return through the stack
+    return values are then no longer references
 [ ] removing r11 from scratch register due to syscall clobbering it maybe should
     push syscall pop
 [ ] constant evaluation folding in expr_ops_list
@@ -26,8 +28,6 @@
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
-[ ] consider function calls that pass arguments and return through the stack
-    return values are then no longer references
 [ ] a way to specify a range in the array: foo arr(bgn_index, len, i_start)
 [ ] foo arr1, arr2, ... {
       # injected variable 'e1', 'e2', 'e...': current array elements
