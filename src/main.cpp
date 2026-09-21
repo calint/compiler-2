@@ -51,6 +51,7 @@ auto main(const int argc, const char** const argv) -> int {
     bool checks_upper{};
     bool checks_show_line{};
     bool checks_lower{};
+    bool checks_frame{};
     bool optimize_jumps{true};
     bool reproduce_source{};
 
@@ -83,7 +84,9 @@ auto main(const int argc, const char** const argv) -> int {
                 "                        lower - check lower array bounds");
 
             std::println("                         line - report line number");
-            std::println("             upper,lower,line - all");
+            std::println("                        frame - check function frame "
+                         "capacity");
+            std::println("       upper,lower,line,frame - all");
             std::println("  --nopt              No jump optimizations");
             std::println("  --reproduce-source  Write reproduced source to "
                          "diff.baz and check it matches the input");
@@ -161,6 +164,7 @@ auto main(const int argc, const char** const argv) -> int {
             checks_upper = false;
             checks_lower = false;
             checks_show_line = false;
+            checks_frame = false;
 
             for (const auto part : checks | std::views::split(',')) {
                 const std::string_view option{part};
@@ -170,10 +174,12 @@ auto main(const int argc, const char** const argv) -> int {
                     checks_lower = true;
                 } else if (option == "line") {
                     checks_show_line = true;
+                } else if (option == "frame") {
+                    checks_frame = true;
                 } else if (not option.empty()) {
                     std::println(std::cerr,
                                  "Invalid --checks option: '{}'. Supported "
-                                 "options are: upper, lower, line.",
+                                 "options are: upper, lower, line, frame.",
                                  option);
 
                     std::println(stderr, "Use --help for usage information");
@@ -208,7 +214,8 @@ auto main(const int argc, const char** const argv) -> int {
         }
 
         program prg{*backend,     src,          vars_size_bytes,
-                    checks_upper, checks_lower, checks_show_line};
+                    checks_upper, checks_lower, checks_show_line,
+                    checks_frame};
 
         if (reproduce_source) {
             std::ofstream reproduced_source{"diff.baz"};

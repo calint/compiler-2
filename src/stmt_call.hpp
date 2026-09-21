@@ -104,13 +104,102 @@ class stmt_call : public expression {
 
     stmt_call() = default;
 
+    [[nodiscard]] auto requires_memory_destination(const toc& tc) const
+        -> bool override {
+        return not tc.get_func_or_throw(tok(), statement::identifier())
+                       .is_inlined();
+    }
+
+    auto compile_noninline(toc& tc, const size_t indent,
+                           const ident_info& dst_info,
+                           const stmt_def_func& func) const -> void {
+
+        if (func.returns() and dst_info.is_empty()) {
+            throw compiler_exception{tok(),
+                                     "function returns but value is discarded"};
+        }
+        if (not func.returns() and not dst_info.is_empty()) {
+            throw compiler_exception{tok(), "function does not return a value"};
+        }
+        if (not get_unary_ops().is_empty()) {
+            throw compiler_exception{
+                tok(), "non-inline calls do not support unary operations"};
+        }
+        if (func.returns() and
+            (not dst_info.operand.is_memory() or dst_info.is_array or
+             &dst_info.type_ref() != &func.get_type())) {
+
+            throw compiler_exception{
+                tok(), "non-inline result requires matching memory storage"};
+        }
+        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
+            if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
+                throw compiler_exception{
+                    arg.tok(),
+                    "non-inline arguments do not support unary operations"};
+            }
+            const ident_info info{tc.make_ident_info(arg)};
+            if (not info.is_var() or not info.operand.is_memory() or
+                (info.is_array and not arg.is_array_element()) or
+                param.is_array() or
+                not param.get_register_name_or_empty().empty() or
+                &info.type_ref() != &param.get_type()) {
+
+                throw compiler_exception{arg.tok(),
+                                         "non-inline arguments require "
+                                         "matching non-array memory types"};
+            }
+        }
+
+        machine& x{tc.machine()};
+
+        std::vector<operand> address_registers;
+        std::vector<operand> addresses;
+        if (func.returns()) {
+            operand result_address{dst_info.operand};
+            if (dst_info.is_pointer and not dst_info.use_operand) {
+                const operand pointer{x.alloc_scratch_register(
+                    tok(), indent, tc.get_type_default())};
+
+                address_registers.push_back(pointer);
+                x.copy_value(
+                    tok(), indent, pointer,
+                    operand::mem(result_address, tc.get_type_default()));
+
+                result_address = operand::mem(pointer.base_register(), {}, 1, 0,
+                                              dst_info.type_ref());
+            }
+            addresses.push_back(result_address);
+        }
+        for (const expr_any& arg : args_) {
+            const ident_info info{tc.make_ident_info(arg)};
+            addresses.push_back(
+                tc.get_lea_operand(indent, arg, info, address_registers));
+        }
+
+        const operand frame_address{tc.next_frame_address()};
+        x.check_frame_capacity(
+            tok(), indent, frame_address,
+            operand::imm(func.frame_size_label(), tc.get_type_default()),
+            "baz_frame_overflow", tc.is_frame_check());
+
+        operand slot{frame_address};
+        for (const operand& address : addresses) {
+            x.address_of(tok(), indent, slot, address);
+            slot.increment_offset(
+                static_cast<int32_t>(tc.get_type_default().size_bytes()));
+        }
+        x.free_scratch_registers(tok(), indent, address_registers);
+        x.call_function(indent, func.body_label(), frame_address);
+    }
+
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
         open_paren_tk_.source_to(os);
         if (not args_.empty()) {
             args_.front().source_to(os);
-            for (const auto [d, e] : std::views::zip(
-                     arg_delims_tk_, args_ | std::views::drop(1))) {
+            for (const auto [d, e] :
+                 std::views::zip(arg_delims_tk_, args_ | std::views::drop(1))) {
 
                 d.source_to(os);
                 e.source_to(os);
@@ -128,6 +217,12 @@ class stmt_call : public expression {
 
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};
+
+        if (not func.is_inlined()) {
+            compile_noninline(tc, indent, dst_info, func);
+
+            return;
+        }
 
         // buffer the aliases of arguments and function return
         std::vector<alias_info> aliases_to_add;

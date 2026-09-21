@@ -1,0 +1,56 @@
+# non-inline print_num: repeated calls, local arrays and inline syscall helpers
+
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)
+    mov(rdi, 1)
+    mov(rsi, ptr)
+    mov(rdx, len)
+    syscall()
+}
+
+func noinline print_num(num : i64) {
+    var buf : i8[20]
+    var n : i64 = num
+    var negative : bool = n < 0
+    if negative n = -n
+
+    var i = 20
+    loop {
+        i = i - 1
+        var ascii = 48 + (n % 10)
+        buf[i] = ascii
+        n = n / 10
+        if n == 0 break
+    }
+    if negative {
+        i = i - 1
+        buf[i] = 45
+    }
+
+    var count = 20 - i
+    var pos = 0
+    loop {
+        buf[pos] = buf[i]
+        pos = pos + 1
+        i = i + 1
+        if i == 20 break
+    }
+    print(count, address_of(buf))
+}
+
+func main() {
+    var newline : i8[1]
+    newline[0] = 10
+    var first : i64 = 123
+    var second : i64 = -2147483648
+    var third : i64 = 0
+
+    print_num(first)
+    print(1, address_of(newline))
+    print_num(second)
+    print(1, address_of(newline))
+    print_num(third)
+    print(1, address_of(newline))
+    print_num(first)
+    print(1, address_of(newline))
+}

@@ -138,11 +138,13 @@ class operand {
 struct var_info {
     std::string name;
     const type* type_ptr{};
-    token src_loc_tk;     // token for position in the source
-    int32_t stack_idx{};  // location relative to register rbp
+    token src_loc_tk; // token for position in the source
+    int32_t stack_idx{};
     bool is_array{};
+    bool is_pointer{};
     size_t array_count{};
     operand reg;
+    std::string_view storage_base_register;
 };
 
 struct ident_info {
@@ -157,6 +159,7 @@ struct ident_info {
     int64_t const_value{};
     size_t array_count{};
     bool is_array{};
+    bool is_pointer{};
     bool use_operand{};
     ident_type ident_type{};
 
@@ -211,7 +214,7 @@ struct ident_info {
     make_var(std::string ident, std::vector<std::string> elem_path,
              std::vector<const type*> type_path, const ::operand& op,
              const int32_t stack_idx, const size_t array_count,
-             const bool is_array) -> ident_info {
+             const bool is_array, const bool is_pointer = {}) -> ident_info {
 
         assert(not ident.empty());
         assert(not elem_path.empty());
@@ -228,6 +231,7 @@ struct ident_info {
             .stack_idx{stack_idx},
             .array_count{array_count},
             .is_array{is_array},
+            .is_pointer{is_pointer},
             .ident_type{ident_type::VAR},
         };
     }

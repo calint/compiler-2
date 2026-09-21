@@ -170,6 +170,8 @@ class machine_x86 final : public machine {
     // note: r11 gets clobbered by syscall
 
     size_t scratch_registers_initial_count_{scratch_registers_.size()};
+    bool frame_base_reserved_{};
+    size_t frame_base_pool_index_{};
     std::vector<allocated_register> allocated_registers_;
     size_t usage_max_scratch_regs_{};
 
@@ -329,6 +331,7 @@ class machine_x86 final : public machine {
         assert(allocated_registers_.empty());
         assert(named_registers_.size() == named_registers_initial_count_);
         assert(scratch_registers_.size() == scratch_registers_initial_count_);
+        assert(not frame_base_reserved_);
 
         usage_max_scratch_regs_ = 0;
     }
@@ -796,12 +799,14 @@ class machine_x86 final : public machine {
     }
 
     auto exit_process(const token& src_loc_tk, const size_t indent,
-                      const int exit_code) -> void override {
+                      const int32_t exit_code) -> void override {
 
         mov(src_loc_tk, indent, machine_x86::reg("rdi", *type_i64_),
             immediate(exit_code));
+
         mov(src_loc_tk, indent, machine_x86::reg("rax", *type_i64_),
             immediate(syscall_exit));
+
         syscall(indent);
     }
 
@@ -841,6 +846,115 @@ class machine_x86 final : public machine {
 
     auto release_variables_base() -> void override {
         release_named_register(token{}, 0, "rbp");
+    }
+
+    [[nodiscard]] auto frame_base_register() const
+        -> std::string_view override {
+        return "r12";
+    }
+
+    auto reserve_frame_base() -> void override {
+        assert(not frame_base_reserved_);
+        assert(scratch_registers_.size() == scratch_registers_initial_count_);
+
+        const auto position{
+            std::ranges::find(scratch_registers_, frame_base_register())};
+
+        assert(position != scratch_registers_.end());
+        frame_base_pool_index_ =
+            static_cast<size_t>(position - scratch_registers_.begin());
+
+        scratch_registers_.erase(position);
+        allocated_registers_.emplace_back(
+            "", std::string{frame_base_register()}, default_type_);
+
+        frame_base_reserved_ = true;
+    }
+
+    auto release_frame_base() -> void override {
+        assert(frame_base_reserved_);
+        assert(scratch_registers_.size() + 1 ==
+               scratch_registers_initial_count_);
+
+        assert(not allocated_registers_.empty());
+        assert(allocated_registers_.back().name == frame_base_register());
+
+        scratch_registers_.insert(
+            scratch_registers_.begin() +
+                static_cast<std::vector<std::string>::difference_type>(
+                    frame_base_pool_index_),
+            std::move(allocated_registers_.back().name));
+
+        allocated_registers_.pop_back();
+        frame_base_reserved_ = false;
+    }
+
+    auto call_function(const size_t indent, const std::string_view label,
+                       const operand& frame_address) -> void override {
+        assert(frame_address.is_memory());
+        assert(frame_address.index_register().empty());
+        assert(frame_address.base_register() != "rsp");
+
+        const std::array<std::string_view, 15> saved_registers{
+            "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "r8",
+            "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
+
+        for (const std::string_view name : saved_registers) {
+            asm_line(indent, "push {}", name);
+        }
+        lea(indent, reg(frame_base_register(), *default_type_), frame_address,
+            true);
+
+        asm_line(indent, "call {}", label);
+        for (const std::string_view name :
+             saved_registers | std::views::reverse) {
+            asm_line(indent, "pop {}", name);
+        }
+    }
+
+    auto return_function(const size_t indent) -> void override {
+        asm_line(indent, "ret");
+    }
+
+    auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
+                              const operand& frame_address,
+                              const operand& frame_size_bytes,
+                              const std::string_view failure_label,
+                              const bool enabled = {}) -> void override {
+
+        if (not enabled) {
+            return;
+        }
+
+        assert(frame_address.is_memory());
+        assert(frame_size_bytes.is_immediate());
+
+        const operand start{
+            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
+        const operand remaining{
+            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
+        lea(indent, start, frame_address, true);
+        lea(indent, remaining, operand::mem("vars", {}, 1, 0, *default_type_));
+        cmp(indent, start, remaining);
+        jcc(indent, "b", failure_label);
+        lea(indent, remaining,
+            operand::mem("vars.end", {}, 1, 0, *default_type_));
+
+        cmp(indent, start, remaining);
+        jcc(indent, "a", failure_label);
+        op(src_loc_tk, indent, "sub", remaining, start);
+        mov(src_loc_tk, indent, start, frame_size_bytes);
+        cmp(indent, start, remaining);
+        jcc(indent, "a", failure_label);
+        free_scratch_register(src_loc_tk, indent, remaining);
+        free_scratch_register(src_loc_tk, indent, start);
+    }
+
+    auto define_constant(const std::string_view name, const size_t value)
+        -> void override {
+        println("{} equ {}", name, value);
     }
 
     auto program_start() -> void override {
@@ -977,7 +1091,7 @@ class machine_x86 final : public machine {
 
         println("dat.end:\n\nsection .bss.vars nobits alloc write\nalign "
                 "{}\nvars:\nvars "
-                "resb {}",
+                "resb {}\nvars.end:",
                 alignment, size_bytes);
     }
 

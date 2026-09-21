@@ -55,6 +55,8 @@ class expr_type_value final : public statement {
     // implemented in 'decouple_impl.hpp' due to circular reference
     [[nodiscard]] auto is_indexed() const -> bool override;
 
+    [[nodiscard]] auto is_array_element() const -> bool override;
+
     // implemented in 'decouple_impl.hpp' due to circular reference
     [[nodiscard]] auto identifier() const -> std::string_view override;
 
@@ -68,7 +70,8 @@ class expr_type_value final : public statement {
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
     auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
-                        const ident_info& dst_info, operand& dst_op) const -> void;
+                        const ident_info& dst_info, operand& dst_op) const
+        -> void;
 
     // implemented in 'decouple_impl.hpp'
     static auto validate_array_assignment(const token& src_loc_tk,

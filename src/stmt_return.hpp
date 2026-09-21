@@ -21,6 +21,12 @@ class stmt_return final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
+        if (not tc.is_inlined_func()) {
+            x.return_function(indent);
+
+            return;
+        }
+
         // get the jump target to exit function
         const std::string_view ret_lbl{tc.get_func_return_label()};
 

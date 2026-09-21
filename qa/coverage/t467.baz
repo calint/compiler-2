@@ -1,0 +1,68 @@
+# non-inline user types: nested fields, reference mutation, copies and returns
+
+type point { x: i16, y: i32 }
+type record { prefix: i8, pt: point, suffix: i64 }
+
+func exit(value: reg_rdi) { mov(rax, 60) mov(rdi, value) syscall() }
+func assert(code, condition: bool) if not condition exit(code)
+func bump(value: point) { value.y = value.y + 3 }
+
+func noinline shift(value: point): point result {
+    result = { value.x, value.y }
+    value.x = value.x + 2
+    result.y = result.y + 4
+}
+
+func relay(value: point): point result { result = shift(value) }
+
+func noinline change(value: record): record result {
+    var saved: record = value
+    value.pt.x = value.pt.x + 1
+    bump(value.pt)
+    result = saved
+    result.pt.y = value.pt.y
+}
+
+func noinline forward(value: record): record result {
+    result = change(value)
+}
+
+func noinline nested(value: record): point result {
+    result = relay(value.pt)
+}
+
+func main() {
+    var value: record = { 7, { -2, 20 }, 999 }
+    var result: record = { }
+    result = forward(value)
+    assert(1, value.prefix == 7)
+    assert(2, value.pt.x == -1)
+    assert(3, value.pt.y == 23)
+    assert(4, value.suffix == 999)
+    assert(5, result.prefix == 7)
+    assert(6, result.pt.x == -2)
+    assert(7, result.pt.y == 23)
+    assert(8, result.suffix == 999)
+    result.pt = relay(value.pt)
+    assert(9, value.pt.x == 1)
+    assert(10, value.pt.y == 23)
+    assert(11, result.pt.x == -1)
+    assert(12, result.pt.y == 27)
+    assert(13, result.prefix == 7)
+    assert(14, result.suffix == 999)
+    result.pt = nested(value)
+    assert(15, value.pt.x == 3)
+    assert(16, result.pt.x == 1)
+    assert(17, result.pt.y == 27)
+    assert(18, result.prefix == 7)
+    assert(19, result.suffix == 999)
+
+    var points: point[3] = { { 100, 200 }, { -5, 30 }, { 70, 80 } }
+    points[2] = shift(points[1])
+    assert(20, points[0].x == 100)
+    assert(21, points[0].y == 200)
+    assert(22, points[1].x == -3)
+    assert(23, points[1].y == 30)
+    assert(24, points[2].x == -5)
+    assert(25, points[2].y == 34)
+}

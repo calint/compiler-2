@@ -307,7 +307,8 @@ class machine_rv32i final : public machine {
 
     auto exit_process([[maybe_unused]] const token& src_loc_tk,
                       [[maybe_unused]] const size_t indent,
-                      [[maybe_unused]] const int exit_code) -> void override {
+                      [[maybe_unused]] const int32_t exit_code)
+        -> void override {
         todo();
     }
 
@@ -335,6 +336,43 @@ class machine_rv32i final : public machine {
     auto reserve_variables_base() -> void override { todo(); }
 
     auto release_variables_base() -> void override { todo(); }
+
+    [[nodiscard]] auto frame_base_register() const
+        -> std::string_view override {
+        todo();
+    }
+
+    auto reserve_frame_base() -> void override { todo(); }
+
+    auto release_frame_base() -> void override { todo(); }
+
+    auto call_function([[maybe_unused]] const size_t indent,
+                       [[maybe_unused]] const std::string_view label,
+                       [[maybe_unused]] const operand& frame_address)
+        -> void override {
+        todo();
+    }
+
+    auto return_function([[maybe_unused]] const size_t indent)
+        -> void override {
+        todo();
+    }
+
+    auto
+    check_frame_capacity([[maybe_unused]] const token& src_loc_tk,
+                         [[maybe_unused]] const size_t indent,
+                         [[maybe_unused]] const operand& frame_address,
+                         [[maybe_unused]] const operand& frame_size_bytes,
+                         [[maybe_unused]] const std::string_view failure_label,
+                         [[maybe_unused]] const bool enabled = {})
+        -> void override {
+        todo();
+    }
+
+    auto define_constant([[maybe_unused]] const std::string_view name,
+                         [[maybe_unused]] const size_t value) -> void override {
+        todo();
+    }
 
     auto program_start() -> void override { todo(); }
 

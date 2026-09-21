@@ -262,6 +262,13 @@ class expr_ops_list final : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
+        if (exprs_.size() == 1 and
+            exprs_.front()->requires_memory_destination(tc)) {
+            do_compile(tc, indent, dst_info);
+
+            return;
+        }
+
         // is destination a register?
         if (dst_info.is_register()) {
             // yes, compile with the result placed in it
@@ -296,6 +303,10 @@ class expr_ops_list final : public expression {
         x.use_stream(prev2);
 
         x.emit_most_efficient(tok(), indent, ss1.view(), ss2.view());
+    }
+
+    [[nodiscard]] auto is_array_element() const -> bool override {
+        return exprs_.size() == 1 and exprs_.front()->is_array_element();
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {

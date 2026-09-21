@@ -15,6 +15,7 @@
 #include "stmt_def_func_param.hpp"
 
 class stmt_def_func final : public statement {
+    token noinline_tk_;
     token name_tk_;
     token open_paren_tk_;
     std::vector<stmt_def_func_param> params_;
@@ -28,6 +29,12 @@ class stmt_def_func final : public statement {
     stmt_def_func(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
           open_paren_tk_{tz.is_next_char_token('(')} {
+
+        if (name_tk_.is_text("noinline") and open_paren_tk_.is_empty()) {
+            noinline_tk_ = name_tk_;
+            name_tk_ = tz.next_token();
+            open_paren_tk_ = tz.is_next_char_token('(');
+        }
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{name_tk_,
@@ -73,7 +80,7 @@ class stmt_def_func final : public statement {
                     statement::get_type(), this);
 
         // establish the function scope before parsing its body
-        tc.enter_func(name(), returns_);
+        tc.enter_func(name(), returns_, {}, {}, is_inlined());
 
         // register variables without emitting output so that the function body
         // can be parsed
@@ -92,6 +99,7 @@ class stmt_def_func final : public statement {
                 .type_ptr{&get_type()},
                 .src_loc_tk{ret_tk},
                 .reg{},
+                .storage_base_register{},
             };
 
             tc.add_var(ret_tk, 0, var, false);
@@ -107,6 +115,7 @@ class stmt_def_func final : public statement {
                 .src_loc_tk{param.tok()},
                 .is_array{param.is_array()},
                 .reg{},
+                .storage_base_register{},
             };
 
             tc.add_var(param.tok(), 0, var, false);
@@ -129,6 +138,7 @@ class stmt_def_func final : public statement {
             statement::source_to(os);
         }
 
+        noinline_tk_.source_to(os);
         name_tk_.source_to(os);
         open_paren_tk_.source_to(os);
         if (not params_.empty()) {
@@ -158,6 +168,70 @@ class stmt_def_func final : public statement {
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {}
+
+    [[nodiscard]] auto body_label() const -> std::string {
+        return std::string{name()};
+    }
+
+    [[nodiscard]] auto frame_size_label() const -> std::string {
+        return std::format("{}.size", body_label());
+    }
+
+    [[nodiscard]] auto compile_body(toc& tc, const size_t indent) const
+        -> size_t {
+
+        assert(not is_inlined());
+
+        for (const stmt_def_func_param& param : params_) {
+            if (param.is_array() or
+                not param.get_register_name_or_empty().empty()) {
+
+                throw compiler_exception{
+                    param.tok(),
+                    "non-inline functions require non-array memory parameters"};
+            }
+        }
+
+        machine& x{tc.machine()};
+
+        x.reserve_frame_base();
+        tc.enter_func(name(), returns_, {}, {}, false, x.frame_base_register());
+        if (returns_) {
+            tc.add_var(returns_->ident_tk, indent + 1,
+                       {
+                           .name{returns_->ident_tk.text()},
+                           .type_ptr{&get_type()},
+                           .src_loc_tk{returns_->ident_tk},
+                           .is_pointer{true},
+                           .reg{},
+                           .storage_base_register{},
+                       },
+                       false);
+        }
+        for (const stmt_def_func_param& param : params_) {
+            tc.add_var(param.tok(), indent + 1,
+                       {
+                           .name{param.name()},
+                           .type_ptr{&param.get_type()},
+                           .src_loc_tk{param.tok()},
+                           .is_pointer{true},
+                           .reg{},
+                           .storage_base_register{},
+                       },
+                       false);
+        }
+        code_.compile(tc, indent, ident_info::make_empty());
+        x.return_function(indent + 1);
+        const size_t frame_size_bytes{tc.peak_frame_size_bytes()};
+        tc.exit_func(name());
+        x.release_frame_base();
+
+        return frame_size_bytes;
+    }
+
+    [[nodiscard]] auto is_inlined() const -> bool {
+        return noinline_tk_.is_empty();
+    }
 
     [[nodiscard]] auto returns() const
         -> const std::optional<func_return_info>& {

@@ -1,0 +1,31 @@
+# non-inline recursion: factorial results and caller-local preservation
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+func noinline factorial(value : i64) : i64 result {
+    result = 1
+    if value <= 1 return
+
+    var saved : i64 = value
+    var next : i64 = value - 1
+    var partial : i64 = 0
+    partial = factorial(next)
+    if saved != value or next != value - 1 {
+        result = -1
+        return
+    }
+    result = saved * partial
+}
+
+func main() {
+    var value : i64 = 5
+    var result : i64 = 0
+    result = factorial(value)
+    assert(3, result == 120)
+    assert(4, value == 5)
+
+    value = 1
+    result = factorial(value)
+    assert(5, result == 1)
+}

@@ -65,6 +65,9 @@ CLI --vars=16junk 1 --help
 CLI --vars=18446744073709551616 1 --help
 CLI --stack=65536 1 --help
 CLI --no-reproduce 1 --help
+CLI --checks=frame 0 t15.baz
+CLI --checks=upper,lower,line,frame 0 t15.baz
+CLI --checks=unknown 1 --help
 CLI --target=x86_64 0 --help
 CLI --target=rv32i 0 --help
 CLI --target= 1 --help

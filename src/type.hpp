@@ -99,14 +99,17 @@ class type final {
             var.reg.is_empty() ? var.stack_idx + static_cast<int32_t>(offset)
                                : static_cast<int32_t>(offset)};
 
-        const operand op{operand::mem(var.reg.is_empty()
-                                          ? variables_base_register
-                                          : var.reg.base_register(),
-                                      "", 1, stack_idx, *tp)};
+        const std::string_view storage_base{var.storage_base_register.empty()
+                                                ? variables_base_register
+                                                : var.storage_base_register};
+
+        const operand op{operand::mem(
+            var.reg.is_empty() ? storage_base : var.reg.base_register(), "", 1,
+            stack_idx, *tp)};
 
         return ident_info::make_var(std::string{ident}, path,
                                     std::move(type_path), op, stack_idx,
-                                    array_count, is_array);
+                                    array_count, is_array, var.is_pointer);
     }
 
     [[nodiscard]] auto

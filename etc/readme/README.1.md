@@ -23,6 +23,7 @@ x86_64 assembly on Linux.
 * optional bounds checking at runtime
   * optional line number
 * inlined functions
+* limited support for non-inline functions
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`
 * built-in functions: `array_copy`, `array_size_of`, `arrays_equal`,

@@ -1,0 +1,36 @@
+# non-inline return destinations: nested calls, pointer forwarding and early returns
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+func noinline magnitude(value : i64) : i64 result {
+    result = value
+    if value < 0 {
+        result = -value
+        return
+    }
+    value = value + 1
+}
+
+func noinline forward(value : i64) : i64 result {
+    var sentinel : i64 = 9876
+    result = magnitude(value)
+    if sentinel != 9876 result = -1
+}
+
+func main() {
+    var negative : i64 = -42
+    var positive : i64 = 17
+    var result : i64 = 0
+    var sentinel : i64 = 1234
+
+    result = forward(negative)
+    assert(2, result == 42)
+    assert(3, negative == -42)
+    assert(4, sentinel == 1234)
+
+    result = forward(positive)
+    assert(5, result == 17)
+    assert(6, positive == 18)
+    assert(7, sentinel == 1234)
+}

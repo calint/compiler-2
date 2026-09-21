@@ -286,6 +286,10 @@ auto expr_type_value::source_to(std::ostream& os) const -> void {
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
+auto expr_type_value::is_array_element() const -> bool {
+    return stmt_ident_ and stmt_ident_->is_array_element();
+}
+
 auto expr_type_value::compile(toc& tc, const size_t indent,
                               const ident_info& dst_info) const -> void {
 
@@ -316,13 +320,8 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
         assert(dst_type.name() == src_info.type_ref().name());
 
         std::vector<operand> allocated_registers;
-        operand src_op;
-        if (is_indexed() or src_info.has_lea()) {
-            src_op = compile_lea(tc, indent, tok(), allocated_registers, {},
-                                 src_info.lea_path);
-        } else {
-            src_op = src_info.operand;
-        }
+        const operand src_op{
+            tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
 
         const size_t size_bytes{src_info.is_array ? src_info.array_count *
                                                         dst_type.size_bytes()
@@ -358,9 +357,11 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
         cur_dst_info.push(field.name, field.type_ptr, {});
 
         if (not field.type().is_builtin()) {
-            // the field has a user-defined type, so the expression is 'expr_type_value'
+            // the field has a user-defined type, so the expression is
+            // 'expr_type_value'
             const expr_type_value& type_value{expr->as_expr_type_value()};
-            type_value.compile_assign(tc, indent, field.type(), cur_dst_info, dst_op);
+            type_value.compile_assign(tc, indent, field.type(), cur_dst_info,
+                                      dst_op);
             // note: dst_op was mutated in the recursive call
             cur_dst_info.increment_offset(
                 static_cast<int32_t>(field.size_bytes));
@@ -390,7 +391,8 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
         }
 
         if (field.is_array and src.is_array_identifier()) {
-            validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
+            validate_array_assignment(src.tok(), field,
+                                      tc.make_ident_info(src));
         }
 
         const operand dst_operand{operand::mem(dst_op, field.type())};

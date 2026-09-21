@@ -1,0 +1,38 @@
+# non-inline reference arguments: narrow writes, shared storage, globals and inline forwarding
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+var calls : i64 = 0
+
+func bump(value : i16) {
+    value = value + 1
+}
+
+func noinline update(value : i16, other : i16) {
+    var local : i16 = value
+    bump(value)
+    other = other + local
+    calls = calls + 1
+}
+
+func main() {
+    var before : i16 = 1234
+    var value : i16 = -7
+    var after : i16 = 2345
+    var other : i16 = 20
+
+    update(value, other)
+    assert(1, value == -6)
+    assert(2, other == 13)
+    assert(3, calls == 1)
+    assert(4, before == 1234)
+    assert(5, after == 2345)
+
+    update(value, value)
+    assert(6, value == -11)
+    assert(7, other == 13)
+    assert(8, calls == 2)
+    assert(9, before == 1234)
+    assert(10, after == 2345)
+}

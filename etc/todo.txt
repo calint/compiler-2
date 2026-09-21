@@ -1,8 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] consider function calls that pass arguments and return through the stack
+[x] consider function calls that pass arguments and return through the stack
     return values are then no longer references
+    => limited support: no unary on return or arguments, 
+                        no array return or arguments
 [ ] removing r11 from scratch register due to syscall clobbering it maybe should
     push syscall pop
 [ ] constant evaluation folding in expr_ops_list

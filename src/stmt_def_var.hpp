@@ -81,6 +81,7 @@ class stmt_def_var final : public statement {
             .is_array{is_array_},
             .array_count{array_count_},
             .reg{},
+            .storage_base_register{},
         };
 
         tc.add_var(name_tk_, 0, var, false);
@@ -139,6 +140,7 @@ class stmt_def_var final : public statement {
             .is_array{is_array_},
             .array_count{array_count_},
             .reg{},
+            .storage_base_register{},
         };
 
         tc.add_var(name_tk_, indent, var, false);

@@ -165,12 +165,8 @@ class stmt_identifier : public statement {
 
         std::vector<operand> allocated_registers;
 
-        operand op{src_info.operand};
-
-        if (is_indexed() or src_info.has_lea()) {
-            op = compile_lea(tc, indent, tok(), allocated_registers, {},
-                             src_info.lea_path);
-        }
+        const operand op{
+            tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
 
         x.copy_value(tok(), indent, dst_info.operand, op);
 
@@ -190,6 +186,10 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    [[nodiscard]] auto is_array_element() const -> bool override {
+        return not elems_.empty() and elems_.back().array_index_expr != nullptr;
+    }
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
@@ -226,10 +226,21 @@ class stmt_identifier : public statement {
         const type* value_type{&base_info.type_ref()};
 
         operand reg_offset;
+        bool storage_offset_pending{lea.is_empty() and
+                                    not base_info.is_pointer};
         int32_t accum_offset{};
         const size_t elem_count{elems.size()};
 
         machine& x{tc.machine()};
+
+        if (lea.is_empty() and base_info.is_pointer) {
+            const type& pointer_type{tc.get_type_default()};
+            reg_offset =
+                x.alloc_scratch_register(src_loc_tk, indent, pointer_type);
+            allocated_registers.push_back(reg_offset);
+            x.copy_value(src_loc_tk, indent, reg_offset,
+                         operand::mem(base_info.operand, pointer_type));
+        }
 
         for (size_t elem_index{elem_index_with_lea}; elem_index < elem_count;
              ++elem_index) {
@@ -273,7 +284,7 @@ class stmt_identifier : public statement {
                                 base_info.operand.base_register());
                         }
 
-                        const int32_t offset{x.is_variables_base(reg_offset)
+                        const int32_t offset{storage_offset_pending
                                                  ? base_info.stack_idx +
                                                        accum_offset
                                                  : accum_offset};
@@ -293,15 +304,15 @@ class stmt_identifier : public statement {
                         true, base_info.operand.base_register());
                 }
 
-                if (x.is_variables_base(reg_offset)) {
+                if (storage_offset_pending) {
                     const operand offset_register{x.alloc_scratch_register(
                         src_loc_tk, indent, tc.get_type_default())};
 
                     allocated_registers.push_back(offset_register);
                     reg_offset = offset_register;
-                    x.address_of_variable(src_loc_tk, indent, reg_offset,
-                                          base_info.stack_idx,
-                                          base_info.type_ref());
+                    x.address_of(src_loc_tk, indent, reg_offset,
+                                 base_info.operand);
+                    storage_offset_pending = false;
                 } else if (not reg_offset.is_indexed() and
                            reg_offset.base_register() ==
                                base_info.operand.base_register()) {
@@ -356,7 +367,7 @@ class stmt_identifier : public statement {
 
         op.increment_offset(accum_offset);
 
-        if (x.is_variables_base(reg_offset)) {
+        if (storage_offset_pending) {
             // register is not optimally encoded for trailing elements of size
             // 1, 2, 4, or 8
             op.increment_offset(base_info.stack_idx);

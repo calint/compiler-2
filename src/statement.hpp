@@ -90,6 +90,15 @@ class statement {
         std::unreachable();
     }
 
+    [[nodiscard]] virtual auto
+    requires_memory_destination([[maybe_unused]] const toc& tc) const -> bool {
+        return false;
+    }
+
+    [[nodiscard]] virtual auto is_array_element() const -> bool {
+        return false;
+    }
+
     virtual auto source_to(std::ostream& os) const -> void {
         uops_.source_to(os);
         token_.source_to(os);

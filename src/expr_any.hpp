@@ -93,8 +93,8 @@ class expr_any final : public statement {
                 expression.source_to(os);
             });
 
-            for (const auto [d, e] : std::views::zip(
-                     var_delims_tk_, vars_ | std::views::drop(1))) {
+            for (const auto [d, e] :
+                 std::views::zip(var_delims_tk_, vars_ | std::views::drop(1))) {
 
                 d.source_to(os);
                 e.visit([&os](const auto& expression) -> void {
@@ -148,6 +148,16 @@ class expr_any final : public statement {
                   size_bytes);
 
         x.zero(tok(), indent, cur_dst_info.operand, size_bytes);
+    }
+
+    [[nodiscard]] auto is_array_element() const -> bool override {
+        if (is_array_ or vars_.size() != 1) {
+            return false;
+        }
+
+        return vars_[0].visit([](const auto& expression) -> bool {
+            return expression.is_array_element();
+        });
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }

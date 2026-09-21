@@ -35,13 +35,15 @@ class program final {
   public:
     program(machine& backend, const std::string_view source,
             const size_t vars_size_bytes, const bool bounds_check_upper,
-            const bool bounds_check_lower, const bool bounds_check_with_line)
+            const bool bounds_check_lower, const bool bounds_check_with_line,
+            const bool frame_check = {})
         : tc_{backend,
               source,
               vars_size_bytes,
               bounds_check_upper,
               bounds_check_lower,
-              bounds_check_with_line},
+              bounds_check_with_line,
+              frame_check},
           vars_size_bytes_{vars_size_bytes} {
 
         // create a placeholder token to use with 'toc' functions
@@ -128,6 +130,11 @@ class program final {
         }
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
 
+        if (not func_main.is_inlined()) {
+            throw compiler_exception{func_main.tok(),
+                                     "main cannot be declared noinline"};
+        }
+
         x.comment({}, 0, "");
 
         x.label(0, "main");
@@ -135,9 +142,21 @@ class program final {
         func_main.code().compile(tc, indent, ident_info::make_empty());
         tc.exit_func("main");
 
-        tc.exit_block();
-
         x.program_end();
+        for (const stmt_def_func* function : tc.get_func_defs()) {
+            if (function->is_inlined()) {
+                continue;
+            }
+            x.label(indent, function->body_label());
+            const size_t frame_size_bytes{function->compile_body(tc, indent)};
+            x.define_constant(function->frame_size_label(), frame_size_bytes);
+        }
+        tc.exit_block();
+        if (tc.is_frame_check()) {
+            constexpr int32_t vars_overrun_by_frame_variable = 255;
+            x.label(indent, "baz_frame_overflow");
+            x.exit_process(token{}, indent, vars_overrun_by_frame_variable);
+        }
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
             x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
         }

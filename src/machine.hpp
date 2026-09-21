@@ -205,7 +205,7 @@ class machine {
                              const size_t element_size_bytes) -> void = 0;
 
     virtual auto exit_process(const token& src_loc_tk, const size_t indent,
-                              const int exit_code) -> void = 0;
+                              const int32_t exit_code) -> void = 0;
 
     [[nodiscard]] virtual auto variables_base_register() const
         -> std::string_view = 0;
@@ -221,6 +221,29 @@ class machine {
     virtual auto reserve_variables_base() -> void = 0;
 
     virtual auto release_variables_base() -> void = 0;
+
+    [[nodiscard]] virtual auto frame_base_register() const
+        -> std::string_view = 0;
+
+    virtual auto reserve_frame_base() -> void = 0;
+
+    virtual auto release_frame_base() -> void = 0;
+
+    virtual auto call_function(const size_t indent,
+                               const std::string_view label,
+                               const operand& frame_address) -> void = 0;
+
+    virtual auto return_function(const size_t indent) -> void = 0;
+
+    virtual auto define_constant(const std::string_view name,
+                                 const size_t value) -> void = 0;
+
+    virtual auto check_frame_capacity(const token& src_loc_tk,
+                                      const size_t indent,
+                                      const operand& frame_address,
+                                      const operand& frame_size_bytes,
+                                      const std::string_view failure_label,
+                                      const bool enabled = {}) -> void = 0;
 
     virtual auto program_start() -> void = 0;
 

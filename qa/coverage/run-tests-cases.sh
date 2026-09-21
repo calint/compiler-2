@@ -430,3 +430,11 @@ SRC=t459 && COMPERR
 SRC=t460 && COMPERR
 SRC=t461 && COMPERR
 SRC=t462 && EXP=0 && RUN
+SRC=t463 && EXP=0 && RUN
+SRC=t464 && EXP=0 && RUN
+SRC=t465 && DIFF
+SRC=t466 && EXP=0 && RUN
+SRC=t466 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
+SRC=t466 && EXP=255 && OPTS="--vars=64 --checks=frame --reproduce-source" RUN
+SRC=t467 && EXP=0 && RUN
+SRC=t467 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN

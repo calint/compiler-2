@@ -100,14 +100,37 @@ class frame final {
 
   private:
     frame_type type_{frame_type::FUNC}; // frame type
+    bool is_inlined_{true};
+    std::string_view storage_base_register_;
+    size_t peak_storage_size_bytes_{};
 
   public:
     frame(const std::string_view name, const frame_type frm_type,
           const std::optional<func_return_info>& func_ret_info = {},
-          std::string call_path = "", std::string func_ret_label = "") noexcept
+          std::string call_path = "", std::string func_ret_label = "",
+          const bool is_inlined = true,
+          const std::string_view storage_base_register = {}) noexcept
         : name_{name}, call_path_{std::move(call_path)},
           func_ret_label_{std::move(func_ret_label)}, func_ret_{func_ret_info},
-          type_{frm_type} {}
+          type_{frm_type}, is_inlined_{is_inlined},
+          storage_base_register_{storage_base_register} {}
+
+    [[nodiscard]] auto storage_base_register() const -> std::string_view {
+        return storage_base_register_;
+    }
+
+    auto record_storage_size_bytes(const size_t size_bytes) -> void {
+        assert(not storage_base_register_.empty());
+
+        peak_storage_size_bytes_ =
+            std::max(peak_storage_size_bytes_, size_bytes);
+    }
+
+    [[nodiscard]] auto peak_storage_size_bytes() const -> size_t {
+        assert(not storage_base_register_.empty());
+
+        return peak_storage_size_bytes_;
+    }
 
     auto add_alias(const alias_info& ai) -> void {
         aliases_.put(std::string{ai.from}, ai);
@@ -189,6 +212,12 @@ class frame final {
         return type_ == frame_type::FUNC;
     }
 
+    [[nodiscard]] auto is_inlined_func() const -> bool {
+        assert(is_func());
+
+        return is_inlined_;
+    }
+
     [[nodiscard]] auto is_loop() const -> bool {
         return type_ == frame_type::LOOP;
     }
@@ -268,16 +297,18 @@ class toc final {
     bool bounds_check_upper_{};
     bool bounds_check_with_line_{};
     bool bounds_check_lower_{};
+    bool frame_check_{};
 
   public:
     toc(::machine& backend, const std::string_view source,
         const size_t vars_capacity_bytes, const bool bounds_check_upper,
-        const bool bounds_check_lower, const bool bounds_check_with_line)
+        const bool bounds_check_lower, const bool bounds_check_with_line,
+        const bool frame_check = {})
         : machine_{backend}, source_{source},
           vars_capacity_bytes_{vars_capacity_bytes},
           bounds_check_upper_{bounds_check_upper},
           bounds_check_with_line_{bounds_check_with_line},
-          bounds_check_lower_{bounds_check_lower} {}
+          bounds_check_lower_{bounds_check_lower}, frame_check_{frame_check} {}
 
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
@@ -391,8 +422,10 @@ class toc final {
                             source_location_hr(decl_var.src_loc_tk))};
         }
 
-        const size_t var_size_bytes{var.type_ptr->size_bytes() *
-                                    (var.is_array ? var.array_count : 1)};
+        const size_t var_size_bytes{
+            var.is_pointer ? get_type_default().size_bytes()
+                           : var.type_ptr->size_bytes() *
+                                 (var.is_array ? var.array_count : 1)};
 
         if (not is_dat and not vars_entry_gap_applied_) {
             frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
@@ -413,6 +446,21 @@ class toc final {
         }
 
         var.stack_idx = static_cast<int32_t>(vars_size_bytes_);
+
+        if (not is_dat) {
+            size_t local_size_bytes{};
+            for (frame& frm : frames_ | std::views::reverse) {
+                local_size_bytes += frm.allocated_stack_size_bytes();
+                if (not frm.storage_base_register().empty()) {
+                    var.storage_base_register = frm.storage_base_register();
+                    var.stack_idx = static_cast<int32_t>(local_size_bytes);
+                    frm.record_storage_size_bytes(local_size_bytes +
+                                                  var_size_bytes);
+
+                    break;
+                }
+            }
+        }
 
         frames_.back().add_var(var, var_size_bytes, is_dat);
         vars_size_bytes_ += var_size_bytes;
@@ -469,13 +517,56 @@ class toc final {
     auto enter_func(const std::string_view name,
                     const std::optional<func_return_info>& returns,
                     const std::string_view call_path = {},
-                    const std::string_view return_jmp_label = {}) -> void {
+                    const std::string_view return_jmp_label = {},
+                    const bool is_inlined = true,
+                    const std::string_view storage_base_register = {}) -> void {
 
-        frames_.emplace_back(name, frame::frame_type::FUNC, returns,
-                             std::string{call_path},
-                             std::string{return_jmp_label});
+        assert(storage_base_register.empty() or not is_inlined);
+
+        frames_.emplace_back(
+            name, frame::frame_type::FUNC, returns, std::string{call_path},
+            std::string{return_jmp_label}, is_inlined, storage_base_register);
 
         refresh_usage();
+    }
+
+    [[nodiscard]] auto is_inlined_func() const -> bool {
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_func()) {
+                return frm.is_inlined_func();
+            }
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (not frm.storage_base_register().empty()) {
+                return frm.peak_storage_size_bytes();
+            }
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto next_frame_address() const -> operand {
+        size_t local_size_bytes{};
+        for (const frame& frm : frames_ | std::views::reverse) {
+            local_size_bytes += frm.allocated_stack_size_bytes();
+            if (not frm.storage_base_register().empty()) {
+                return operand::mem(frm.storage_base_register(), {}, 1,
+                                    static_cast<int32_t>(local_size_bytes),
+                                    get_type_default());
+            }
+        }
+
+        const size_t root_size_bytes{
+            vars_size_bytes_ + (vars_entry_gap_applied_ ? 0 : vars_entry_gap_)};
+
+        return operand::mem(machine_.get().variables_base_register(), {}, 1,
+                            static_cast<int32_t>(root_size_bytes),
+                            get_type_default());
     }
 
     auto enter_loop(const std::string_view name) -> void {
@@ -668,7 +759,8 @@ class toc final {
                                        std::vector<operand>& lea_registers)
         -> operand {
 
-        if (not src.is_indexed() and not src_info.has_lea()) {
+        if (not src.is_indexed() and not src_info.has_lea() and
+            not src_info.is_pointer) {
             return src_info.operand;
         }
 
@@ -759,7 +851,7 @@ class toc final {
 
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.has_var(id_base)) {
-                return false;
+                return frm.get_var_const_ref(id_base).is_pointer;
             }
             if (frm.is_func()) {
                 if (not frm.has_alias(id_base)) {
@@ -791,6 +883,8 @@ class toc final {
     [[nodiscard]] auto is_bounds_check_lower() const -> bool {
         return bounds_check_lower_;
     }
+
+    [[nodiscard]] auto is_frame_check() const -> bool { return frame_check_; }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name);
@@ -908,8 +1002,7 @@ class toc final {
 
   private:
     [[nodiscard]] auto
-    builtin_type_for_size_bytes(const size_t size_bytes) const
-        -> const type& {
+    builtin_type_for_size_bytes(const size_t size_bytes) const -> const type& {
 
         for (const char* const name : {"i64", "i32", "i16", "i8"}) {
             const type& value_type{*types_.get_const_ref(name).type_ptr};
