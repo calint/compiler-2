@@ -137,7 +137,6 @@ class stmt_def_func final : public statement {
         if (not summary) {
             statement::source_to(os);
         }
-
         noinline_tk_.source_to(os);
         name_tk_.source_to(os);
         open_paren_tk_.source_to(os);

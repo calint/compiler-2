@@ -141,23 +141,29 @@ class program final {
         tc.enter_func("main", {});
         func_main.code().compile(tc, indent, ident_info::make_empty());
         tc.exit_func("main");
-
         x.program_end();
-        for (const stmt_def_func* function : tc.get_func_defs()) {
-            if (function->is_inlined()) {
+
+        for (const stmt_def_func* f : tc.get_func_defs()) {
+            if (f->is_inlined()) {
                 continue;
             }
-            x.label(indent, function->body_label());
-            const size_t frame_size_bytes{function->compile_body(tc, indent)};
-            x.define_constant(function->frame_size_label(), frame_size_bytes);
+            x.comment({}, 0, "");
+            f->source_def_comment_to(x, 0);
+            x.label(indent, f->body_label());
+            const size_t frame_size_bytes{f->compile_body(tc, indent)};
+            x.define_constant(f->frame_size_label(), frame_size_bytes);
         }
         tc.exit_block();
+
         if (tc.is_frame_check()) {
-            constexpr int32_t vars_overrun_by_frame_variable = 255;
+            constexpr int32_t vars_overrun_by_frame_variables = 255;
+            x.comment({}, 0, "");
             x.label(indent, "baz_frame_overflow");
-            x.exit_process(token{}, indent, vars_overrun_by_frame_variable);
+            x.exit_process(token{}, indent, vars_overrun_by_frame_variables);
         }
+
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
+            x.comment({}, 0, "");
             x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
         }
 

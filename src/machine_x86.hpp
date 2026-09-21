@@ -223,7 +223,7 @@ class machine_x86 final : public machine {
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void override {
 
-        if (src_loc_tk.is_empty()) {
+        if (src_loc_tk.at_line() == 0) {
             comment_indent(indent);
             print(" ");
         } else {
