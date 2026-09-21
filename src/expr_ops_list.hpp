@@ -262,29 +262,21 @@ class expr_ops_list final : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
-        if (exprs_.size() == 1 and
-            exprs_.front()->requires_memory_destination(tc)) {
+        // is destination a register or a single expression?
+        if (dst_info.is_register() or exprs_.size() == 1) {
+            // yes, compile without trying with and without scratch register
             do_compile(tc, indent, dst_info);
 
             return;
         }
 
-        // is destination a register?
-        if (dst_info.is_register()) {
-            // yes, compile with the result placed in it
-            do_compile(tc, indent, dst_info);
-
-            return;
-        }
+        machine& x{tc.machine()};
 
         // compile with and without the scratch register to find the best
         // compilation
 
         // without scratch register
         std::stringstream ss1;
-
-        machine& x{tc.machine()};
-
         std::ostream& prev1{x.use_stream(ss1)};
         do_compile(tc, indent, dst_info);
         x.use_stream(prev1);
@@ -292,6 +284,7 @@ class expr_ops_list final : public expression {
         // with scratch register
         std::stringstream ss2;
         std::ostream& prev2{x.use_stream(ss2)};
+
         const operand reg{
             x.alloc_scratch_register(tok(), indent, dst_info.type_ref())};
 

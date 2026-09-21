@@ -104,12 +104,6 @@ class stmt_call : public expression {
 
     stmt_call() = default;
 
-    [[nodiscard]] auto requires_memory_destination(const toc& tc) const
-        -> bool override {
-        return not tc.get_func_or_throw(tok(), statement::identifier())
-                       .is_inlined();
-    }
-
     auto compile_noninline(toc& tc, const size_t indent,
                            const ident_info& dst_info,
                            const stmt_def_func& func) const -> void {
