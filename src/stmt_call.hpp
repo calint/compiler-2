@@ -46,7 +46,7 @@ class stmt_call : public expression {
                     const token t{tz.is_next_char_token(',')};
                     if (t.is_empty()) {
                         throw compiler_exception{
-                            tz, std::format("expected argument {} named '{}'",
+                            tz, std::format("expected argument {} ('{}')",
                                             i + 1, param.name())};
 
                         // note: +1 because 'i' starts at 0
@@ -69,7 +69,7 @@ class stmt_call : public expression {
                     if (not arg_info.is_array) {
                         throw compiler_exception{
                             arg.tok(),
-                            std::format("parameter {} expected an array",
+                            std::format("parameter {} requires an array",
                                         arg_number)};
                     }
                 }
@@ -110,7 +110,7 @@ class stmt_call : public expression {
 
         if (func.returns() and dst_info.is_empty()) {
             throw compiler_exception{tok(),
-                                     "function returns but value is discarded"};
+                                     "return value is discarded"};
         }
 
         if (not func.returns() and not dst_info.is_empty()) {
@@ -118,24 +118,26 @@ class stmt_call : public expression {
         }
 
         if (not get_unary_ops().is_empty()) {
-            throw compiler_exception{tok(), "unary operation not allowed here"};
+            throw compiler_exception{
+                tok(), "unary operators on non-inline calls are unsupported"};
         }
 
         if (func.returns()) {
             if (not dst_info.operand.is_memory()) {
                 throw compiler_exception{
-                    tok(), "result required to be a memory location"};
+                    tok(), "result destination must be a memory location"};
             }
 
             if (dst_info.is_array) {
-                throw compiler_exception{tok(), "array not allowed here"};
+                throw compiler_exception{
+                    tok(), "array result destinations are unsupported"};
             }
 
             if (&dst_info.type_ref() != &func.get_type()) {
                 throw compiler_exception{
                     tok(),
                     std::format(
-                        "type missmatch, function is '{}', destination is '{}'",
+                        "result type mismatch: function returns '{}', destination is '{}'",
                         func.get_type().name(), dst_info.type_ref().name())};
             }
         }
@@ -143,12 +145,12 @@ class stmt_call : public expression {
         for (const auto [arg, param] : std::views::zip(args_, func.params())) {
             if (arg.is_expression()) {
                 throw compiler_exception{arg.tok(),
-                                         "expresion not allowed here"};
+                                         "expression arguments are unsupported"};
             }
 
             if (not arg.get_unary_ops().is_empty()) {
                 throw compiler_exception{arg.tok(),
-                                         "unary operations not allowed here"};
+                                         "unary operators on arguments are unsupported"};
             }
 
             const ident_info info{tc.make_ident_info(arg)};
@@ -159,24 +161,24 @@ class stmt_call : public expression {
 
             if (not info.operand.is_memory()) {
                 throw compiler_exception{arg.tok(),
-                                         "argument requires memory storage"};
+                                         "argument must be stored in memory"};
             }
 
             if (info.is_array and not arg.is_array_element()) {
                 throw compiler_exception{arg.tok(),
-                                         "array argument not supported here"};
+                                         "whole-array arguments are unsupported"};
             }
 
             if (param.is_array()) {
                 throw compiler_exception{arg.tok(),
-                                         "array parameter not supported here"};
+                                         "array parameters are unsupported"};
             }
 
             if (not param.get_register_name_or_empty().empty()) {
                 throw compiler_exception{
                     arg.tok(),
-                    std::format("register-bound parameter '{}' not supported "
-                                "here (register '{}')",
+                    std::format("register-bound parameter '{}' is unsupported "
+                                "(register '{}')",
                                 param.name(),
                                 param.get_register_name_or_empty())};
             }
@@ -296,7 +298,7 @@ class stmt_call : public expression {
 
         if (ret and dst_info.is_empty()) {
             throw compiler_exception{tok(),
-                                     "function returns but value is discarded"};
+                                     "return value is discarded"};
         }
 
         if (not ret and not dst_info.is_empty()) {
@@ -330,7 +332,7 @@ class stmt_call : public expression {
 
             if (is_reference and not arg.get_unary_ops().is_empty()) {
                 throw compiler_exception{
-                    arg.tok(), "unary operations are not allowed here"};
+                    arg.tok(), "unary operators on reference arguments are unsupported"};
             }
 
             // allocate named register if parameter requires it

@@ -1,2 +1,2 @@
 
-t248.baz:6:7: unary operations are not allowed here
+t248.baz:6:7: unary operators on reference arguments are unsupported
