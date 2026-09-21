@@ -9,6 +9,7 @@ x86_64 assembly on Linux.
 * gain experience writing compilers
 * generate handwritten-like assembler compiled by NASM for x86_64
 * super-loop program with non-reentrant inlined functions
+* limited support for non-inline functions
 
 ## Supports
 
