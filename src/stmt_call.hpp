@@ -109,8 +109,7 @@ class stmt_call : public expression {
                            const stmt_def_func& func) const -> void {
 
         if (func.returns() and dst_info.is_empty()) {
-            throw compiler_exception{tok(),
-                                     "return value is discarded"};
+            throw compiler_exception{tok(), "return value is discarded"};
         }
 
         if (not func.returns() and not dst_info.is_empty()) {
@@ -135,22 +134,22 @@ class stmt_call : public expression {
 
             if (&dst_info.type_ref() != &func.get_type()) {
                 throw compiler_exception{
-                    tok(),
-                    std::format(
-                        "result type mismatch: function returns '{}', destination is '{}'",
-                        func.get_type().name(), dst_info.type_ref().name())};
+                    tok(), std::format("result type mismatch: function returns "
+                                       "'{}', destination is '{}'",
+                                       func.get_type().name(),
+                                       dst_info.type_ref().name())};
             }
         }
 
         for (const auto [arg, param] : std::views::zip(args_, func.params())) {
             if (arg.is_expression()) {
-                throw compiler_exception{arg.tok(),
-                                         "expression arguments are unsupported"};
+                throw compiler_exception{
+                    arg.tok(), "expression arguments are unsupported"};
             }
 
             if (not arg.get_unary_ops().is_empty()) {
-                throw compiler_exception{arg.tok(),
-                                         "unary operators on arguments are unsupported"};
+                throw compiler_exception{
+                    arg.tok(), "unary operators on arguments are unsupported"};
             }
 
             const ident_info info{tc.make_ident_info(arg)};
@@ -160,8 +159,8 @@ class stmt_call : public expression {
             }
 
             if (info.is_array and not arg.is_array_element()) {
-                throw compiler_exception{arg.tok(),
-                                         "whole-array arguments are unsupported"};
+                throw compiler_exception{
+                    arg.tok(), "whole-array arguments are unsupported"};
             }
 
             if (param.is_array()) {
@@ -193,23 +192,29 @@ class stmt_call : public expression {
         std::vector<operand> addresses;
 
         if (func.returns()) {
+            // start with the result destination
             operand result_address{dst_info.operand};
 
+            // resolve a pointer slot unless the operand is already resolved
             if (dst_info.is_pointer and not dst_info.use_operand) {
 
                 const operand pointer{x.alloc_scratch_register(
                     tok(), indent, tc.get_type_default())};
 
+                // keep the register until the callee frame is populated
                 address_registers.push_back(pointer);
 
+                // load the result address into the pointer register
                 x.copy_value(
                     tok(), indent, pointer,
                     operand::mem(result_address, tc.get_type_default()));
 
+                // refer to the result storage through the loaded address
                 result_address = operand::mem(pointer.base_register(), {}, 1, 0,
                                               dst_info.type_ref());
             }
 
+            // the result address precedes the argument addresses
             addresses.push_back(result_address);
         }
 
@@ -220,6 +225,21 @@ class stmt_call : public expression {
                 tc.get_lea_operand(indent, arg, info, address_registers));
         }
 
+        // start the callee frame after the caller's storage, not on rsp
+        // example: caller uses 24 bytes; callee returns a value and takes one
+        // argument
+        //
+        // r12      +------------------------+
+        //          | caller's storage       | 24 bytes
+        // r12 + 24 +------------------------+ <- frame_address; callee's r12
+        //          | result address         | 8 bytes
+        //          +------------------------+
+        //          | argument address       | 8 bytes
+        //          +------------------------+
+        //          | callee's locals        |
+        //          +------------------------+
+        //
+        // root calls use rbp instead of r12 as the base
         const operand frame_address{tc.next_frame_address()};
 
         x.check_frame_capacity(
@@ -227,30 +247,33 @@ class stmt_call : public expression {
             operand::imm(func.frame_size_label(), tc.get_type_default()),
             "baz_frame_overflow", tc.is_frame_check());
 
+        // write pointers into the callee frame: result (if any), then arguments
+        // each slot holds an address, not the value stored at that address
         operand slot{frame_address};
-        size_t address_index{};
-        for (const operand& address : addresses) {
-            if (func.returns() and address_index == 0) {
+
+        for (const auto [i, addr] : std::views::enumerate(addresses)) {
+
+            if (func.returns() and i == 0) {
                 x.comment(tok(), indent, "result address in callee frame");
             } else {
-                const size_t argument_index{address_index -
-                                            (func.returns() ? 1UZ : 0UZ)};
+
+                const size_t arg_idx{
+                    static_cast<size_t>(i - (func.returns() ? 1 : 0))};
 
                 x.comment(tok(), indent,
                           "address of argument '{}' to parameter '{}'",
-                          statement::trimmed_source(args_[argument_index]),
-                          func.params()[argument_index].name());
+                          statement::trimmed_source(args_[arg_idx]),
+                          func.params()[arg_idx].name());
             }
 
-            x.address_of(tok(), indent, slot, address);
+            x.address_of(tok(), indent, slot, addr);
 
             slot.increment_offset(
                 static_cast<int32_t>(tc.get_type_default().size_bytes()));
-
-            ++address_index;
         }
 
         x.free_scratch_registers(tok(), indent, address_registers);
+
         x.call_function(indent, func.body_label(), frame_address);
     }
 
@@ -292,8 +315,7 @@ class stmt_call : public expression {
         const std::optional<func_return_info> ret{func.returns()};
 
         if (ret and dst_info.is_empty()) {
-            throw compiler_exception{tok(),
-                                     "return value is discarded"};
+            throw compiler_exception{tok(), "return value is discarded"};
         }
 
         if (not ret and not dst_info.is_empty()) {
@@ -327,7 +349,8 @@ class stmt_call : public expression {
 
             if (is_reference and not arg.get_unary_ops().is_empty()) {
                 throw compiler_exception{
-                    arg.tok(), "unary operators on reference arguments are unsupported"};
+                    arg.tok(),
+                    "unary operators on reference arguments are unsupported"};
             }
 
             // allocate named register if parameter requires it
