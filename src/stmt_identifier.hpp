@@ -226,25 +226,70 @@ class stmt_identifier : public statement {
         const type* value_type{&base_info.type_ref()};
 
         operand reg_offset;
+
+        // note: storage_offset_pending means that base_info.stack_idx still
+        //       needs to be added to reach the variable's storage. it is
+        //       compile-time bookkeeping, not a flag in the generated code.
+        //
+        //       rbp is the base for root/global storage; r12 is the base of
+        //       the current non-inline frame. despite its name, stack_idx is
+        //       an offset in that storage, not an offset from rsp. inline
+        //       calls use the surrounding storage base, not a new frame base.
+        //
+        //       for a direct variable at offset 24, starting with rbp alone
+        //       does not yet include the 24. the same applies to r12:
+        //         rbp + 24 -> variable in root storage
+        //         r12 + 24 -> variable in the current non-inline frame
+        //       the flag starts true when there is no existing lea and the
+        //       variable is not pointer-backed, even when stack_idx is zero.
+        //
+        //       there are two ways to include this pending offset:
+        //         [r12 + index * 4 + 24] -> fold it into the final operand
+        //         lea scratch, [r12 + 24] -> include it in a working register
+        //       the first path returns the operand immediately. the second
+        //       clears the flag so later address calculations do not add 24
+        //       again. the final non-indexed path also adds it if still
+        //       pending.
+        //
+        //       an existing lea already describes the variable's address, so
+        //       its storage offset must not be added again. for a
+        //       pointer-backed variable, stack_idx locates the pointer slot,
+        //       not the object:
+        //         mov scratch, [r12 + 24] -> load the object's address
+        //       the load below uses the slot offset once; adding it to the
+        //       loaded pointer would address the wrong part of the object.
+        //
+        //       accum_offset separately tracks field offsets within the object;
+        //       array indices add scaled element offsets. those still apply
+        //       whether the object came from rbp, r12, a lea, or a loaded
+        //       pointer.
+
         bool storage_offset_pending{lea.is_empty() and
                                     not base_info.is_pointer};
+
         int32_t accum_offset{};
+
         const size_t elem_count{elems.size()};
 
         machine& x{tc.machine()};
 
         if (lea.is_empty() and base_info.is_pointer) {
             const type& pointer_type{tc.get_type_default()};
+
             reg_offset =
                 x.alloc_scratch_register(src_loc_tk, indent, pointer_type);
+
             allocated_registers.push_back(reg_offset);
+
             x.copy_value(src_loc_tk, indent, reg_offset,
                          operand::mem(base_info.operand, pointer_type));
         }
 
-        for (size_t elem_index{elem_index_with_lea}; elem_index < elem_count;
-             ++elem_index) {
-            const ident_elem& cur_elem{elems[elem_index]};
+        for (const auto [index, cur_elem] :
+             elems | std::views::enumerate |
+                 std::views::drop(elem_index_with_lea)) {
+
+            const size_t elem_index{static_cast<size_t>(index)};
             const ident_info cur_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size_bytes{cur_info.type_ref().size_bytes()};
             const bool is_last{elem_index == elem_count - 1};
@@ -255,6 +300,7 @@ class stmt_identifier : public statement {
                 // bounds check for the last element without indexing
                 if (is_last and not reg_count.is_empty() and
                     cur_info.is_array) {
+
                     emit_bounds_check(tc, indent, src_loc_tk, reg_count,
                                       cur_info.array_count, true);
                 }
@@ -264,10 +310,12 @@ class stmt_identifier : public statement {
 
                 // special case: last element with encodable size
                 if (is_last) {
+
                     const bool is_encodable{
                         x.can_encode_index_scale(type_size_bytes)};
 
                     if (is_encodable) {
+
                         const operand reg_idx{x.alloc_scratch_register(
                             src_loc_tk, indent, tc.get_type_default())};
 
@@ -278,6 +326,7 @@ class stmt_identifier : public statement {
                                             cur_info.array_count, reg_count);
 
                         if (reg_offset.is_empty()) {
+
                             reg_offset = init_reg_offset(
                                 tc, indent, src_loc_tk, lea,
                                 allocated_registers, true, true,
@@ -299,28 +348,37 @@ class stmt_identifier : public statement {
                 // convert the variable base to a dedicated register
 
                 if (reg_offset.is_empty()) {
+
                     reg_offset = init_reg_offset(
                         tc, indent, src_loc_tk, lea, allocated_registers, false,
                         true, base_info.operand.base_register());
                 }
 
                 if (storage_offset_pending) {
+
                     const operand offset_register{x.alloc_scratch_register(
                         src_loc_tk, indent, tc.get_type_default())};
 
                     allocated_registers.push_back(offset_register);
+
                     reg_offset = offset_register;
+
                     x.address_of(src_loc_tk, indent, reg_offset,
                                  base_info.operand);
+
                     storage_offset_pending = false;
+
                 } else if (not reg_offset.is_indexed() and
                            reg_offset.base_register() ==
                                base_info.operand.base_register()) {
+
                     const operand offset_register{x.alloc_scratch_register(
                         src_loc_tk, indent, tc.get_type_default())};
 
                     allocated_registers.push_back(offset_register);
+
                     reg_offset = offset_register;
+
                     x.address_of(src_loc_tk, indent, reg_offset,
                                  operand::mem(base_info.operand.base_register(),
                                               "", 1, 0, base_info.type_ref()));
@@ -346,6 +404,7 @@ class stmt_identifier : public statement {
             // accumulate field offsets
             if (elem_index + 1 < elem_count) {
                 const ident_elem& next_elem{elems[elem_index + 1]};
+
                 accum_offset +=
                     static_cast<int32_t>(toc::get_field_offset_in_type(
                         cur_info.type_ref(), next_elem.name_tk.text()));
