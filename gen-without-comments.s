@@ -114,28 +114,28 @@ main:
     mov r14, 188
     test r15, r15
     cmovs rbp, r14
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r15, 4
     cmovge rbp, r14
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     mov dword [rbp + r15 * 4 + 224], 2
     mov r15, qword [rbp + 248]
     add r15, 1
     mov r14, 189
     test r15, r15
     cmovs rbp, r14
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r15, 4
     cmovge rbp, r14
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     mov r14, qword [rbp + 248]
     mov r13, 189
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 4
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     mov r13d, dword [rbp + r14 * 4 + 224]
     mov dword [rbp + r15 * 4 + 224], r13d
     cmp_190_12:
@@ -143,10 +143,10 @@ main:
     mov r13, 190
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 4
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp dword [rbp + r14 * 4 + 224], 2
     sete r15b
     bool_end_190_12:
@@ -168,10 +168,10 @@ main:
     mov r13, 191
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 4
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp dword [rbp + r14 * 4 + 224], 2
     sete r15b
     bool_end_191_12:
@@ -193,20 +193,20 @@ main:
     mov r14, 193
     test r15, r15
     cmovs rbp, r14
-    js baz_panic_bounds
+    js baz_bounds_panic
     mov r13, rcx
     add r13, r15
     cmp r13, 4
     cmovg rbp, r14
-    jg baz_panic_bounds
+    jg baz_bounds_panic
     lea rsi, [rbp + r15 * 4 + 224]
     mov r15, 193
     test rcx, rcx
     cmovs rbp, r15
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp rcx, 4
     cmovg rbp, r15
-    jg baz_panic_bounds
+    jg baz_bounds_panic
     lea rdi, [rbp + 224]
     shl rcx, 2
     rep movsb
@@ -215,10 +215,10 @@ main:
     mov r13, 195
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 4
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp dword [rbp + r14 * 4 + 224], 2
     sete r15b
     bool_end_195_12:
@@ -243,18 +243,18 @@ main:
     mov r15, 198
     test rcx, rcx
     cmovs rbp, r15
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp rcx, 4
     cmovg rbp, r15
-    jg baz_panic_bounds
+    jg baz_bounds_panic
     lea rsi, [rbp + 224]
     mov r15, 198
     test rcx, rcx
     cmovs rbp, r15
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp rcx, 8
     cmovg rbp, r15
-    jg baz_panic_bounds
+    jg baz_bounds_panic
     lea rdi, [rbp + 256]
     shl rcx, 2
     rep movsb
@@ -263,18 +263,18 @@ main:
         mov r13, 199
         test rcx, rcx
         cmovs rbp, r13
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp rcx, 4
         cmovg rbp, r13
-        jg baz_panic_bounds
+        jg baz_bounds_panic
         lea rsi, [rbp + 224]
         mov r13, 199
         test rcx, rcx
         cmovs rbp, r13
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp rcx, 8
         cmovg rbp, r13
-        jg baz_panic_bounds
+        jg baz_bounds_panic
         lea rdi, [rbp + 256]
         shl rcx, 2
         repe cmpsb
@@ -299,28 +299,28 @@ main:
     mov r14, 202
     test r15, r15
     cmovs rbp, r14
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r15, 8
     cmovge rbp, r14
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     mov dword [rbp + r15 * 4 + 256], -1
     cmp_203_12:
         mov rcx, 4
         mov r13, 203
         test rcx, rcx
         cmovs rbp, r13
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp rcx, 4
         cmovg rbp, r13
-        jg baz_panic_bounds
+        jg baz_bounds_panic
         lea rsi, [rbp + 224]
         mov r13, 203
         test rcx, rcx
         cmovs rbp, r13
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp rcx, 8
         cmovg rbp, r13
-        jg baz_panic_bounds
+        jg baz_bounds_panic
         lea rdi, [rbp + 256]
         shl rcx, 2
         repe cmpsb
@@ -346,19 +346,19 @@ main:
     mov r14, 206
     test r15, r15
     cmovs rbp, r14
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r15, 4
     cmovge rbp, r14
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     mov r14, qword [rbp + 248]
     sub r14, 1
     mov r13, 206
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 4
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     inv_206_16:
         mov r13d, dword [rbp + r14 * 4 + 224]
         mov dword [rbp + r15 * 4 + 224], r13d
@@ -370,10 +370,10 @@ main:
     mov r13, 207
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 4
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp dword [rbp + r14 * 4 + 224], 2
     sete r15b
     bool_end_207_12:
@@ -395,10 +395,10 @@ main:
         mov r14, 94
         test r15, r15
         cmovs rbp, r14
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp r15, 4
         cmovge rbp, r14
-        jge baz_panic_bounds
+        jge baz_bounds_panic
         mov dword [rbp + r15 * 4 + 224], 254
     faz_209_5_end:
     cmp_210_12:
@@ -406,10 +406,10 @@ main:
     mov r13, 210
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 4
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp dword [rbp + r14 * 4 + 224], 254
     sete r15b
     bool_end_210_12:
@@ -445,10 +445,10 @@ main:
     mov r13, 216
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 2
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
         mov r13, 3
         add r13, 0
         add r13, 2
@@ -473,10 +473,10 @@ main:
     mov r13, 217
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 2
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
         mov r13, 5
         add r13, 1
         add r13, 2
@@ -916,10 +916,10 @@ main:
     mov r12, 280
     test r13, r13
     cmovs rbp, r12
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r13, 2
     cmovge rbp, r12
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     imul r13, 20
     add r14, r13
     cmp qword [r14 + 8], 73
@@ -943,10 +943,10 @@ main:
     mov r13, 282
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 2
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     imul r14, 20
     add r15, r14
     object_init_282_13:
@@ -958,10 +958,10 @@ main:
     mov r12, 283
     test r13, r13
     cmovs rbp, r12
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r13, 2
     cmovge rbp, r12
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     imul r13, 20
     add r14, r13
     cmp qword [r14 + 8], 74
@@ -989,20 +989,20 @@ main:
     mov r13, 286
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 8
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     shl r14, 6
     add r15, r14
     mov r14, 1
     mov r13, 286
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 8
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     mov qword [r15 + r14 * 8], 65518
     cmp_287_12:
     lea r14, [rbp + 504]
@@ -1010,20 +1010,20 @@ main:
     mov r12, 287
     test r13, r13
     cmovs rbp, r12
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r13, 8
     cmovge rbp, r12
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     shl r13, 6
     add r14, r13
     mov r13, 1
     mov r12, 287
     test r13, r13
     cmovs rbp, r12
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r13, 8
     cmovge rbp, r12
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp qword [r14 + r13 * 8], 65518
     sete r15b
     bool_end_287_12:
@@ -1046,38 +1046,38 @@ main:
     mov r13, 290
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 8
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     shl r14, 6
     add r15, r14
     mov r14, 290
     test rcx, rcx
     cmovs rbp, r14
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp rcx, 8
     cmovg rbp, r14
-    jg baz_panic_bounds
+    jg baz_bounds_panic
     lea rsi, [r15]
     lea r15, [rbp + 504]
     mov r14, 0
     mov r13, 291
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 8
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     shl r14, 6
     add r15, r14
     mov r14, 291
     test rcx, rcx
     cmovs rbp, r14
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp rcx, 8
     cmovg rbp, r14
-    jg baz_panic_bounds
+    jg baz_bounds_panic
     lea rdi, [r15]
     shl rcx, 3
     rep movsb
@@ -1087,20 +1087,20 @@ main:
     mov r12, 297
     test r13, r13
     cmovs rbp, r12
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r13, 8
     cmovge rbp, r12
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     shl r13, 6
     add r14, r13
     mov r13, 1
     mov r12, 297
     test r13, r13
     cmovs rbp, r12
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r13, 8
     cmovge rbp, r12
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp qword [r14 + r13 * 8], 65518
     sete r15b
     bool_end_297_12:
@@ -1124,38 +1124,38 @@ main:
         mov r10, 299
         test r12, r12
         cmovs rbp, r10
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp r12, 8
         cmovge rbp, r10
-        jge baz_panic_bounds
+        jge baz_bounds_panic
         shl r12, 6
         add r13, r12
         mov r12, 299
         test rcx, rcx
         cmovs rbp, r12
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp rcx, 8
         cmovg rbp, r12
-        jg baz_panic_bounds
+        jg baz_bounds_panic
         lea rsi, [r13]
         lea r13, [rbp + 504]
         mov r12, 1
         mov r10, 300
         test r12, r12
         cmovs rbp, r10
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp r12, 8
         cmovge rbp, r10
-        jge baz_panic_bounds
+        jge baz_bounds_panic
         shl r12, 6
         add r13, r12
         mov r12, 300
         test rcx, rcx
         cmovs rbp, r12
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp rcx, 8
         cmovg rbp, r12
-        jg baz_panic_bounds
+        jg baz_bounds_panic
         lea rdi, [r13]
         shl rcx, 3
         repe cmpsb
@@ -1201,10 +1201,10 @@ main:
     mov r13, 306
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 2
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp qword [rbp + r14 * 8 + 1016], -1
     sete r15b
     bool_end_306_12:
@@ -1226,10 +1226,10 @@ main:
     mov r13, 307
     test r14, r14
     cmovs rbp, r13
-    js baz_panic_bounds
+    js baz_bounds_panic
     cmp r14, 2
     cmovge rbp, r13
-    jge baz_panic_bounds
+    jge baz_bounds_panic
     cmp qword [rbp + r14 * 8 + 1016], 2
     sete r15b
     bool_end_307_12:
@@ -1390,10 +1390,10 @@ print_num:
         mov r14, 146
         test r15, r15
         cmovs rbp, r14
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp r15, 20
         cmovge rbp, r14
-        jge baz_panic_bounds
+        jge baz_bounds_panic
         mov r14b, byte [r12 + 45]
         mov byte [r12 + r15 + 8], r14b
         mov rax, qword [r12 + 28]
@@ -1420,10 +1420,10 @@ print_num:
         mov r14, 153
         test r15, r15
         cmovs rbp, r14
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp r15, 20
         cmovge rbp, r14
-        jge baz_panic_bounds
+        jge baz_bounds_panic
         mov byte [r12 + r15 + 8], 45
     if_151_5_end:
     mov qword [r12 + 45], 0
@@ -1432,18 +1432,18 @@ print_num:
         mov r14, 158
         test r15, r15
         cmovs rbp, r14
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp r15, 20
         cmovge rbp, r14
-        jge baz_panic_bounds
+        jge baz_bounds_panic
         mov r14, qword [r12 + 37]
         mov r13, 158
         test r14, r14
         cmovs rbp, r13
-        js baz_panic_bounds
+        js baz_bounds_panic
         cmp r14, 20
         cmovge rbp, r13
-        jge baz_panic_bounds
+        jge baz_bounds_panic
         mov r13b, byte [r12 + r14 + 8]
         mov byte [r12 + r15 + 8], r13b
         add qword [r12 + 45], 1
@@ -1466,7 +1466,7 @@ print_num:
     sys_print_164_5_end:
     ret
 print_num.size equ 53
-baz_panic_bounds:
+baz_bounds_panic:
     mov rax, 1
     mov rdi, 2
     lea rsi, [msg_panic]

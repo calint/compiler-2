@@ -1006,7 +1006,7 @@ class machine_x86 final : public machine {
                 cmovs(indent, machine_x86::reg("rbp", *type_i64_),
                       reg_line_num);
             }
-            jcc(indent, "s", "baz_panic_bounds");
+            jcc(indent, "s", "baz_bounds_panic");
         }
 
         if (options.upper) {
@@ -1025,7 +1025,7 @@ class machine_x86 final : public machine {
                 op(src_loc_tk, indent, std::format("cmov{}", comparison),
                    machine_x86::reg("rbp", *type_i64_), reg_line_num);
             }
-            jcc(indent, comparison, "baz_panic_bounds");
+            jcc(indent, comparison, "baz_bounds_panic");
         }
 
         if (options.with_line) {
@@ -1036,13 +1036,13 @@ class machine_x86 final : public machine {
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
         if (not with_line) {
             println();
-            println("baz_panic_bounds:");
+            println("baz_bounds_panic:");
             println("    ; system call: exit 255");
             println("    mov rax, 60");
             println("    mov rdi, 255");
             println("    syscall");
         } else {
-            println("baz_panic_bounds:");
+            println("baz_bounds_panic:");
             println(";   print message to stderr");
             println("    mov rax, 1");
             println("    mov rdi, 2");
