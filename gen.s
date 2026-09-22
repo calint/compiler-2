@@ -91,8 +91,8 @@ lea rbp, [dat]
 ;[27:1] dat nums : i64[4] = { 1 }
 ;[27:8] nums: i64[4] (32 B @ [rbp + 63])
 ;[27:30] # remaining elements are zeroed
-;[28:1] dat s1 : str = { 3 }
-;[28:10] s1: str (128 B @ [rbp + 95])
+;[28:1] dat str1 : str = { 3 }
+;[28:8] str1: str (128 B @ [rbp + 95])
 ;[28:27] # remaining fields are zeroed
 ;[30:1] # default is to inline functions
 ;[32:1] # arguments can be placed in specified register using `reg_...` syntax
@@ -3086,7 +3086,7 @@ db `: `
 dq 1
 ;[27:15] pad 3 'i64' of size 8
 times 24 db 0
-;[28:10] s1
+;[28:8] str1
 ;[28:23] i8
 db 3
 ;[28:21] zero remaining fields

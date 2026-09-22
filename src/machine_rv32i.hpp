@@ -1940,6 +1940,7 @@ class machine_rv32i final : public machine {
     }
 
     auto emit_string_data(const std::string_view value) -> void override {
+        std::string encoded;
         for (size_t offset{}; offset < value.size(); ++offset) {
             unsigned char byte{static_cast<unsigned char>(value[offset])};
             if (byte == '\\') {
@@ -2015,8 +2016,36 @@ class machine_rv32i final : public machine {
                                              "unsupported RV32I string escape"};
                 }
             }
-            asm_line(0, ".byte {}", static_cast<unsigned int>(byte));
+            switch (byte) {
+            case '\n':
+                encoded += "\\n";
+                break;
+
+            case '\r':
+                encoded += "\\r";
+                break;
+
+            case '\t':
+                encoded += "\\t";
+                break;
+
+            case '"':
+            case '\\':
+                encoded += '\\';
+                encoded += static_cast<char>(byte);
+                break;
+
+            default:
+                if (byte >= ' ' and byte <= '~') {
+                    encoded += static_cast<char>(byte);
+                } else {
+                    encoded += std::format("\\{:03o}",
+                                           static_cast<unsigned int>(byte));
+                }
+                break;
+            }
         }
+        asm_line(0, ".ascii \"{}\"", encoded);
     }
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {

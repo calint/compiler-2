@@ -25,7 +25,7 @@ dat     dot : i8[] = "."
 dat      nl : i8[] = "\n"
 dat   colon : i8[] = ": "
 dat    nums : i64[4] = { 1 } # remaining elements are zeroed
-dat      s1 : str = { 3 } # remaining fields are zeroed
+dat    str1 : str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
 

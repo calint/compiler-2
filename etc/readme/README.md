@@ -63,10 +63,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           3039            917          10840
+C/C++ Header                    52           3043            917          10865
 C++                              1             46              7            231
 -------------------------------------------------------------------------------
-SUM:                            53           3085            924          11071
+SUM:                            53           3089            924          11096
 -------------------------------------------------------------------------------
 ```
 
@@ -100,7 +100,7 @@ dat     dot : i8[] = "."
 dat      nl : i8[] = "\n"
 dat   colon : i8[] = ": "
 dat    nums : i64[4] = { 1 } # remaining elements are zeroed
-dat      s1 : str = { 3 } # remaining fields are zeroed
+dat    str1 : str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
 
@@ -1905,8 +1905,8 @@ lea rbp, [dat]
 ;[27:1] dat nums : i64[4] = { 1 }
 ;[27:8] nums: i64[4] (32 B @ [rbp + 63])
 ;[27:30] # remaining elements are zeroed
-;[28:1] dat s1 : str = { 3 }
-;[28:10] s1: str (128 B @ [rbp + 95])
+;[28:1] dat str1 : str = { 3 }
+;[28:8] str1: str (128 B @ [rbp + 95])
 ;[28:27] # remaining fields are zeroed
 ;[30:1] # default is to inline functions
 ;[32:1] # arguments can be placed in specified register using `reg_...` syntax
@@ -4900,7 +4900,7 @@ db `: `
 dq 1
 ;[27:15] pad 3 'i64' of size 8
 times 24 db 0
-;[28:10] s1
+;[28:8] str1
 ;[28:23] i8
 db 3
 ;[28:21] zero remaining fields

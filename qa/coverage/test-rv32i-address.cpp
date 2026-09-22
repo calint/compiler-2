@@ -214,12 +214,16 @@ func main() {
     assert(shift_output.str() == "    ecall\n");
     shift_output.str({});
     backend.emit_string_data({});
-    assert(shift_output.str().empty());
+    assert(shift_output.str() == ".ascii \"\"\n");
+    shift_output.str({});
     backend.emit_string_data(R"baz(\0\a\b\t\n\v\f\r\e\"\'`\\\x00\x7F\x80\xff\x41B)baz");
-    assert(shift_output.str() == ".byte 0\n.byte 7\n.byte 8\n.byte 9\n.byte 10\n.byte 11\n.byte 12\n.byte 13\n.byte 27\n.byte 34\n.byte 39\n.byte 96\n.byte 92\n.byte 0\n.byte 127\n.byte 128\n.byte 255\n.byte 65\n.byte 66\n");
+    assert(shift_output.str() == R"baz(.ascii "\000\007\010\t\n\013\014\r\033\"'`\\\000\177\200\377AB")baz" "\n");
     shift_output.str({});
     backend.emit_string_data("\xc3\xa9\n");
-    assert(shift_output.str() == ".byte 195\n.byte 169\n.byte 10\n");
+    assert(shift_output.str() == R"baz(.ascii "\303\251\n")baz" "\n");
+    shift_output.str({});
+    backend.emit_string_data(R"baz(hello\n\x007)baz");
+    assert(shift_output.str() == R"baz(.ascii "hello\n\0007")baz" "\n");
     for (const std::string_view text : {"\\", "\\x", "\\x1", "\\xGG", "\\q"}) {
         bool rejected{};
         try {
