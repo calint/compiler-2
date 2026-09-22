@@ -1,11 +1,5 @@
 # constants shadow across nested blocks
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func assert(x : bool) if not x exit(1)
 
 const value = 1

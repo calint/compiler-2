@@ -14,12 +14,6 @@ func increment(value : item) {
     value.data[1].y = value.data[1].y + 10
 }
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func assert(x : bool) if not x exit(1)
 
 func main() {

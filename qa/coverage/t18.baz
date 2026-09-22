@@ -1,12 +1,6 @@
 dat hello:i8[]="hello\n"
 dat world:i8[]="world\n"
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func print(len:reg_rdx,ptr:reg_rsi){
     mov(rax,1)   # write system call
     mov(rdi,1)   # file descriptor for standard out

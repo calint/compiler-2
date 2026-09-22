@@ -1,0 +1,4 @@
+# reject redefinition of the reserved exit builtin
+
+func exit() {}
+func main() {}

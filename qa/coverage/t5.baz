@@ -1,11 +1,5 @@
 # boolean grouping with conjunction on both sides
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func main(){
     var a=1
     var b=2

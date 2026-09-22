@@ -3,12 +3,6 @@
 dat fld=42
 dat str:i8[]="hello world"
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 type vector{x,y}
 type object{pos:vector,vel:vector,color}
 

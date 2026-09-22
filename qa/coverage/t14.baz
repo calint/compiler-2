@@ -3,12 +3,6 @@
 dat x=1
 dat y=2
    
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func main(){
     var z=3
     x=y

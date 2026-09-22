@@ -31,12 +31,6 @@ dat      s1 : str = { 3 } # remaining fields are zeroed
 
 # arguments can be placed in specified register using `reg_...` syntax
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)  # exit system call
-    mov(rdi, v)   # return code
-    syscall()
-}
-
 # single statement blocks can ommit { ... }
 
 func assert(x : bool) if not x exit(1)

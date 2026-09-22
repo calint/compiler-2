@@ -157,8 +157,8 @@ class stmt_def_var final : public statement {
         // zero the variable data
 
         const size_t instance_count{array_count_ ? array_count_ : 1};
-        const size_t size_bytes{instance_count *
-                                var_dst_info.type_ref().size_bytes()};
+        const size_t size_bytes{multiply_storage_size(
+            var_dst_info.type_ref().size_bytes(), instance_count)};
 
         x.comment(name_tk_, indent, "zero {} * {} B = {} B", instance_count,
                   var_dst_info.type_ref().size_bytes(), size_bytes);

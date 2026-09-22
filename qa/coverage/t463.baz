@@ -1,6 +1,5 @@
 # non-inline reference arguments: narrow writes, shared storage, globals and inline forwarding
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
 func assert(err, expr : bool) if not expr exit(err)
 
 var calls : i64 = 0

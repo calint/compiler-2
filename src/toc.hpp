@@ -143,7 +143,8 @@ class frame final {
     auto add_var(const var_info& var, const size_t allocated_size_bytes,
                  const bool is_dat = false) -> void {
 
-        allocated_stack_size_bytes_ += allocated_size_bytes;
+        allocated_stack_size_bytes_ =
+            add_storage_size(allocated_stack_size_bytes_, allocated_size_bytes);
 
         vars_.put(var.name, var);
 
@@ -153,7 +154,8 @@ class frame final {
     }
 
     [[nodiscard]] auto allocated_stack_size_bytes() const -> size_t {
-        return allocated_stack_size_bytes_ + stack_padding_size_bytes_;
+        return add_storage_size(allocated_stack_size_bytes_,
+                                stack_padding_size_bytes_);
     }
 
     auto set_padding_between_dats_and_vars(const size_t size_bytes) -> void {
@@ -351,7 +353,8 @@ class toc final {
                 stmt->tok(), "'dat' can only be added before any 'var'"};
         }
         data_.emplace_back(stmt);
-        total_dat_size_bytes_ += stmt->dat_size_bytes();
+        total_dat_size_bytes_ =
+            add_storage_size(total_dat_size_bytes_, stmt->dat_size_bytes());
         const size_t alignment{machine_.get().data_alignment()};
         vars_entry_gap_ =
             (alignment - (total_dat_size_bytes_ % alignment)) % alignment;
@@ -423,13 +426,15 @@ class toc final {
         }
 
         const size_t var_size_bytes{
-            var.is_pointer ? get_type_default().size_bytes()
-                           : var.type_ptr->size_bytes() *
-                                 (var.is_array ? var.array_len : 1)};
+            var.is_pointer
+                ? machine_.get().address_size_bytes()
+                : multiply_storage_size(var.type_ptr->size_bytes(),
+                                        var.is_array ? var.array_len : 1)};
 
         if (not is_dat and not vars_entry_gap_applied_) {
             frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
-            vars_size_bytes_ += vars_entry_gap_;
+            vars_size_bytes_ =
+                add_storage_size(vars_size_bytes_, vars_entry_gap_);
             vars_entry_gap_applied_ = true;
         }
 
@@ -445,17 +450,18 @@ class toc final {
             }
         }
 
-        var.offset = static_cast<int32_t>(vars_size_bytes_);
+        var.offset = address_offset(vars_size_bytes_);
 
         if (not is_dat) {
             size_t local_size_bytes{};
             for (frame& frm : frames_ | std::views::reverse) {
-                local_size_bytes += frm.allocated_stack_size_bytes();
+                local_size_bytes = add_storage_size(
+                    local_size_bytes, frm.allocated_stack_size_bytes());
                 if (not frm.storage_base_register().empty()) {
                     var.base_register = frm.storage_base_register();
-                    var.offset = static_cast<int32_t>(local_size_bytes);
-                    frm.record_storage_size_bytes(local_size_bytes +
-                                                  var_size_bytes);
+                    var.offset = address_offset(local_size_bytes);
+                    frm.record_storage_size_bytes(
+                        add_storage_size(local_size_bytes, var_size_bytes));
 
                     break;
                 }
@@ -463,7 +469,7 @@ class toc final {
         }
 
         frames_.back().add_var(var, var_size_bytes, is_dat);
-        vars_size_bytes_ += var_size_bytes;
+        vars_size_bytes_ = add_storage_size(vars_size_bytes_, var_size_bytes);
 
         // stats
         if (not is_dat) {
@@ -489,10 +495,11 @@ class toc final {
 
             return;
         }
-        x.comment_variable(src_loc_tk, indent, text,
-                           name_info.type_ref().size_bytes() *
-                               (name_info.is_array ? name_info.array_len : 1),
-                           name_info.operand);
+        x.comment_variable(
+            src_loc_tk, indent, text,
+            multiply_storage_size(name_info.type_ref().size_bytes(),
+                                  name_info.is_array ? name_info.array_len : 1),
+            name_info.operand);
     }
 
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
@@ -553,20 +560,21 @@ class toc final {
     [[nodiscard]] auto next_frame_address() const -> operand {
         size_t local_size_bytes{};
         for (const frame& frm : frames_ | std::views::reverse) {
-            local_size_bytes += frm.allocated_stack_size_bytes();
+            local_size_bytes = add_storage_size(
+                local_size_bytes, frm.allocated_stack_size_bytes());
             if (not frm.storage_base_register().empty()) {
                 return operand::mem(frm.storage_base_register(), {}, 1,
-                                    static_cast<int32_t>(local_size_bytes),
-                                    get_type_default());
+                                    address_offset(local_size_bytes),
+                                    get_type_address());
             }
         }
 
-        const size_t root_size_bytes{
-            vars_size_bytes_ + (vars_entry_gap_applied_ ? 0 : vars_entry_gap_)};
+        const size_t root_size_bytes{add_storage_size(
+            vars_size_bytes_, vars_entry_gap_applied_ ? 0 : vars_entry_gap_)};
 
         return operand::mem(machine_.get().variables_base_register(), {}, 1,
-                            static_cast<int32_t>(root_size_bytes),
-                            get_type_default());
+                            address_offset(root_size_bytes),
+                            get_type_address());
     }
 
     auto enter_loop(const std::string_view name) -> void {
@@ -803,6 +811,11 @@ class toc final {
 
     [[nodiscard]] auto get_type_default() const -> const type& {
         return machine_.get().default_type();
+    }
+
+    [[nodiscard]] auto get_type_address() const -> const type& {
+        return get_type_or_throw(
+            token{}, machine_.get().address_size_bytes() == 4 ? "i32" : "i64");
     }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
@@ -1239,7 +1252,7 @@ class toc final {
 
         ii.operand = operand::mem(lea, ii.type_ref());
         if (offset != 0) {
-            ii.operand.increment_offset(static_cast<int32_t>(offset));
+            ii.operand.increment_offset(address_offset(offset));
         }
 
         return ii;

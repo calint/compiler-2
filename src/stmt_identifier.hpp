@@ -235,7 +235,7 @@ class stmt_identifier : public statement {
         //       accumulated_offset and scaled array indices still apply
         //       regardless of whether it is pending.
 
-        int32_t accumulated_offset{};
+        int64_t accumulated_offset{};
 
         const size_t elem_count{elems_.size()};
 
@@ -244,13 +244,13 @@ class stmt_identifier : public statement {
         // load the object's address when the base is a pointer slot
         if (lea.is_empty() and base_info.is_pointer) {
             reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
-                                                  tc.get_type_default());
+                                                  tc.get_type_address());
 
             allocated_registers.push_back(reg_offset);
 
             x.copy_value(
                 src_loc_tk, indent, reg_offset,
-                operand::mem(base_info.operand, tc.get_type_default()));
+                operand::mem(base_info.operand, tc.get_type_address()));
         }
 
         for (const auto [index, cur_elem] :
@@ -261,9 +261,10 @@ class stmt_identifier : public statement {
 
             // advance from the previous element into this field
             if (elem_index != elem_index_with_lea) {
-                accumulated_offset +=
-                    static_cast<int32_t>(toc::get_field_offset_in_type(
-                        *value_type, cur_elem.name_tk.text()));
+                accumulated_offset = add_address_offset(
+                    accumulated_offset,
+                    address_offset(toc::get_field_offset_in_type(
+                        *value_type, cur_elem.name_tk.text())));
 
                 path.push_back('.');
                 path += cur_elem.name_tk.text();
@@ -302,9 +303,10 @@ class stmt_identifier : public statement {
                         true, base_info.operand.base_register());
                 }
 
-                const int32_t offset{offset_pending
-                                         ? base_info.offset + accumulated_offset
-                                         : accumulated_offset};
+                const int64_t offset{
+                    offset_pending ? add_address_offset(base_info.offset,
+                                                        accumulated_offset)
+                                   : accumulated_offset};
 
                 return operand::mem(
                     reg_offset.base_register(), reg_idx.base_register(),
@@ -320,7 +322,7 @@ class stmt_identifier : public statement {
 
             if (offset_pending) {
                 const operand offset_register{x.alloc_scratch_register(
-                    src_loc_tk, indent, tc.get_type_default())};
+                    src_loc_tk, indent, tc.get_type_address())};
 
                 allocated_registers.push_back(offset_register);
                 reg_offset = offset_register;
@@ -332,7 +334,7 @@ class stmt_identifier : public statement {
                            base_info.operand.base_register()) {
 
                 const operand offset_register{x.alloc_scratch_register(
-                    src_loc_tk, indent, tc.get_type_default())};
+                    src_loc_tk, indent, tc.get_type_address())};
 
                 allocated_registers.push_back(offset_register);
                 reg_offset = offset_register;
@@ -434,7 +436,7 @@ class stmt_identifier : public statement {
             machine& x{tc.machine()};
 
             const operand index_reg{x.alloc_scratch_register(
-                src_loc_tk, indent, tc.get_type_default())};
+                src_loc_tk, indent, tc.get_type_address())};
 
             allocated_registers.push_back(index_reg);
 
@@ -445,13 +447,13 @@ class stmt_identifier : public statement {
             } else {
                 x.copy_value(src_loc_tk, indent, index_reg,
                              x.make_register_operand(lea.base_register(),
-                                                     tc.get_type_default()));
+                                                     tc.get_type_address()));
             }
 
             return index_reg;
         }
 
         return tc.machine().make_register_operand(base_register,
-                                                  tc.get_type_default());
+                                                  tc.get_type_address());
     }
 };

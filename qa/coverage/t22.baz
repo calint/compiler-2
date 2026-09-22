@@ -1,11 +1,5 @@
 # nested calls combine variables and function results
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func a(i):i64 res{
     res=i+1
 }

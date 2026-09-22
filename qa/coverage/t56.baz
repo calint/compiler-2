@@ -1,11 +1,5 @@
 # mixed-width function parameters
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func f1(b:i8,w:i16,d:i32,q:i64):i64 res{
     res=b+w+d+q
 }

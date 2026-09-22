@@ -91,6 +91,8 @@ class machine {
 
     virtual auto finish() -> void = 0;
 
+    [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
+
     virtual auto copy_value(const token& src_loc_tk, const size_t indent,
                             const operand& dst, const operand& src) -> void = 0;
 
@@ -204,8 +206,8 @@ class machine {
                              const operand& index,
                              const size_t element_size_bytes) -> void = 0;
 
-    virtual auto exit_process(const token& src_loc_tk, const size_t indent,
-                              const int32_t exit_code) -> void = 0;
+    virtual auto exit(const token& src_loc_tk, const size_t indent,
+                      const operand& exit_code) -> void = 0;
 
     [[nodiscard]] virtual auto variables_base_register() const
         -> std::string_view = 0;
@@ -215,7 +217,7 @@ class machine {
 
     virtual auto address_of_variable(const token& src_loc_tk,
                                      const size_t indent, const operand& dst,
-                                     const int32_t offset,
+                                     const int64_t offset,
                                      const type& value_type) -> void = 0;
 
     virtual auto reserve_variables_base() -> void = 0;

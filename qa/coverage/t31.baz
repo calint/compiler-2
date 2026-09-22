@@ -1,11 +1,5 @@
 # unary argument with a register-bound parameter
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func main(){
     var a=-(1+2)
     if a==-3

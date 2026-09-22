@@ -1,7 +1,5 @@
 # regression: shorthand bool checks must compare using scalar-width regs
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
-
 func one8() : i8 r { r = 1 }
 func one16() : i16 r { r = 1 }
 func one32() : i32 r { r = 1 }

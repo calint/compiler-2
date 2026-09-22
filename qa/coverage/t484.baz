@@ -1,0 +1,10 @@
+# write and read an indexed field in a 12-byte record
+
+type record { first: i32, second: i32, third: i32 }
+
+func main() {
+    var records: record[3] = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } }
+    var index: i32 = 1
+    records[index].second = 42
+    exit(records[index].second)
+}

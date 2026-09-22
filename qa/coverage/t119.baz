@@ -1,11 +1,5 @@
 # state mutation across nested function calls
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)  # exit system call
-    mov(rdi, v)   # return code
-    syscall()
-}
-
 func assert(expr : bool) if not expr exit(1)
 
 func f1(state) : i64 res { state = state + 1 res = state }

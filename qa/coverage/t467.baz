@@ -3,7 +3,6 @@
 type point { x: i16, y: i32 }
 type record { prefix: i8, pt: point, suffix: i64 }
 
-func exit(value: reg_rdi) { mov(rax, 60) mov(rdi, value) syscall() }
 func assert(code, condition: bool) if not condition exit(code)
 func bump(value: point) { value.y = value.y + 3 }
 

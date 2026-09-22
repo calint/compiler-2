@@ -98,7 +98,7 @@ class stmt_builtin_equal final : public expression {
                                          "sizes"};
             }
 
-            size_bytes *= lhs_info.array_len;
+            size_bytes = multiply_storage_size(size_bytes, lhs_info.array_len);
         }
 
         x.begin_memory_equal(tok(), indent);

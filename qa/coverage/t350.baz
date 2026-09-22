@@ -1,11 +1,5 @@
 # panic line from a multiline index
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func main() {
     var arr : i8[8]
     var index = -1

@@ -1,11 +1,5 @@
 # out-of-range index returned by a function
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func get_index() : i64 result {
     result = 8
 }

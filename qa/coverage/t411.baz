@@ -4,12 +4,6 @@ type point { x, y }
 
 dat points : point[3] = { {1, 2}, {3, 4}, {5, 6} }
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func assert(x : bool) if not x exit(1)
 
 func main() {

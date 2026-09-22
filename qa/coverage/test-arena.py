@@ -13,8 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 # Shared Baz helpers. A failed assertion exits with its numbered error code.
 # item occupies 13 bytes: one i8 tag plus three i32 values, without field padding.
-COMMON = """func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
-func assert(err, condition : bool) if not condition exit(err)
+COMMON = """func assert(err, condition : bool) if not condition exit(err)
 type item { tag : i8, values : i32[3] }
 func bump(value : item) { value.values[2] = value.values[2] + 1 }
 """
@@ -286,3 +285,129 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         assert result.returncode == 1, (register, result.returncode, result.stderr)
         assert f"cannot allocate register {register}" in result.stderr, result.stderr
         print(f"arena access {register}: ok", flush=True)
+
+    for offset in (2047, 2048, 8196, 2147483647, 2147483648, 2147483656):
+        source = f"""type large {{ padding : i8[{offset}], value : i32, next : i32 }}
+func noinline update(value : i32) {{ value = value + 1 }}
+func main() {{
+    var data : large
+    data.value = 7
+    data.next = data.value
+    var address = address_of(data.value)
+    var equal : bool = data.value == data.next
+    data.value = -data.value
+    update(data.next)
+}}
+"""
+        for mode, options in modes.items():
+            result = compile_source(directory, source, (offset + 4111) // 16 * 16, options)
+            assert result.returncode == 0, (offset, mode, result.stderr)
+            assert f"[rbp + {offset}]" in result.stdout if offset <= 2147483647 else f", {offset}\n" in result.stdout
+            assembly = directory / "large.s"
+            assembly.write_text(result.stdout)
+            subprocess.run(["nasm", "-Werror", "-f", "elf64", str(assembly)], check=True)
+        print(f"arena large offset {offset}: ok", flush=True)
+
+    for offset in (2147483647, 2147483648, 2147483656):
+        source = COMMON + f"""type large {{ padding : i8[{offset}], value : i32, next : i32, equal : bool, values : i32[3] }}
+func noinline update(value : i32) {{ value = value + 1 }}
+func noinline probe(data : large) {{
+    data.value = 7
+    data.next = data.value
+    data.equal = data.value == data.next
+    assert(20, data.equal)
+    data.next = 8
+    data.equal = data.value == data.next
+    assert(21, not data.equal)
+    data.value = -data.value
+    assert(22, data.value == -7)
+    update(data.next)
+    assert(23, data.next == 9)
+    var index = 2
+    data.values[index] = 42
+    assert(24, data.values[index] == 42)
+    assert(25, address_of(data.next) == address_of(data.value) + 4)
+}}
+func main() {{}}
+"""
+        harness = f"""
+section .text
+    global probe_entry
+probe_entry:
+    lea rbp, [probe_frame]
+    mov rbx, rbp
+    lea rax, [probe_values]
+    mov rdx, {offset}
+    sub rax, rdx
+    mov [rbx], rax
+    call probe
+    mov eax, 60
+    xor edi, edi
+    syscall
+section .data
+align 16
+probe_frame: times 4096 db 0
+probe_values: times 32 db 0
+"""
+        for mode, options in modes.items():
+            result = compile_source(directory, source, (offset + 4111) // 16 * 16, options)
+            assert result.returncode == 0, (offset, mode, result.stderr)
+            assembly = directory / "probe.s"
+            panic_harness = """
+section .text
+global panic_entry
+panic_entry:
+    mov ebp, 123
+    jmp baz_bounds_panic
+""" if mode != "production" else ""
+            assembly.write_text(result.stdout + harness + panic_harness)
+            subprocess.run(["nasm", "-Werror", "-f", "elf64", "probe.s"], cwd=directory, check=True)
+            subprocess.run(
+                ["ld", "-e", "probe_entry", "-T", str(ROOT / "baz.ld"), "-o", "probe", "probe.o"],
+                cwd=directory, check=True,
+            )
+            run = subprocess.run([str(directory / "probe")], capture_output=True)
+            assert run.returncode == 0, (offset, mode, run.returncode, run.stderr)
+            if panic_harness:
+                subprocess.run(
+                    ["ld", "-e", "panic_entry", "-T", str(ROOT / "baz.ld"), "-o", "panic", "probe.o"],
+                    cwd=directory, check=True,
+                )
+                run = subprocess.run([str(directory / "panic")], capture_output=True)
+                assert run.returncode == 255, (offset, mode, run.returncode, run.stderr)
+                assert run.stderr == b"panic: bounds at line 123\n", run.stderr
+        print(f"arena large offset runtime {offset}: ok", flush=True)
+
+    source = COMMON + """func noinline update(value : i32) { value = value + 1 }
+func main() {
+    var value : i32 = 41
+    update(value)
+    assert(1, value == 42)
+}
+"""
+    for vars_size in (2147483648, 4294967296):
+        for options in (["--checks=frame"], ["--checks=upper,lower,line,frame", "--nopt"]):
+            result = compile_source(directory, source, vars_size, options)
+            assert result.returncode == 0, (vars_size, options, result.stderr)
+            assembly = directory / "frame.s"
+            assembly.write_text(result.stdout)
+            subprocess.run(["nasm", "-Werror", "-f", "elf64", "frame.s"], cwd=directory, check=True)
+            subprocess.run(
+                ["ld", "-T", str(ROOT / "baz.ld"), "-o", "frame", "frame.o"],
+                cwd=directory, check=True,
+            )
+            run = subprocess.run([str(directory / "frame")], capture_output=True)
+            assert run.returncode == 0, (vars_size, options, run.returncode, run.stderr)
+        print(f"arena large frame capacity {vars_size}: ok", flush=True)
+
+    for declaration in (
+        "type huge { values : i64[2305843009213693952] }",
+        "type huge { values : i8[9223372036854775807], extra : i8 }",
+        "var huge : i64[2305843009213693952]",
+        "dat huge : i64[2305843009213693952]",
+        "dat huge : i64[1152921504606846976]",
+    ):
+        result = compile_source(directory, declaration + "\nfunc main() {}\n", 4096, [])
+        assert result.returncode == 1, result.stderr
+        assert "storage size exceeds signed 64-bit range" in result.stderr, result.stderr
+        print("arena storage arithmetic overflow: ok", flush=True)

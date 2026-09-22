@@ -1,11 +1,5 @@
 # function mutation of caller data
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)  # exit system call
-    mov(rdi, v)   # return code
-    syscall()
-}
-
 func assert(expr : bool) {
     if not expr exit(1)
 }

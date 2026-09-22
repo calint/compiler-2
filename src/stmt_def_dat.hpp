@@ -194,8 +194,9 @@ class stmt_def_dat final : public statement {
     }
 
     [[nodiscard]] auto dat_size_bytes() const -> size_t override {
-        return get_type().size_bytes() *
-               (elroot_.is_array ? elroot_.array_count : 1);
+        return multiply_storage_size(get_type().size_bytes(),
+                                     elroot_.is_array ? elroot_.array_count
+                                                      : 1);
     }
 
   private:
@@ -241,7 +242,8 @@ class stmt_def_dat final : public statement {
         x.comment(elroot.tk, 0, "pad {} '{}' of size {}", remaining_count,
                   tp.name(), tp.size_bytes());
 
-        x.emit_zero_data(remaining_count * tp.size_bytes());
+        x.emit_zero_data(
+            multiply_storage_size(tp.size_bytes(), remaining_count));
     }
 
     static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)

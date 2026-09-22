@@ -1,11 +1,5 @@
 # assignments to narrow struct fields
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 type vector{x,y}
 type object{pos:vector,vel:vector,color:i8,wrd:i16,dwrd:i32}
 

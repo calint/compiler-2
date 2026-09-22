@@ -337,6 +337,10 @@ class machine_x86 final : public machine {
         usage_max_scratch_regs_ = 0;
     }
 
+    [[nodiscard]] auto address_size_bytes() const -> size_t override {
+        return size_qword;
+    }
+
     auto copy_value(const token& src_loc_tk, const size_t indent,
                     const operand& dst, const operand& src) -> void override {
 
@@ -458,9 +462,9 @@ class machine_x86 final : public machine {
                 remaining_size_bytes -= width_size_bytes;
                 if (remaining_size_bytes != 0) {
                     src_operand.increment_offset(
-                        static_cast<int32_t>(width_size_bytes));
+                        address_offset(width_size_bytes));
                     dst_operand.increment_offset(
-                        static_cast<int32_t>(width_size_bytes));
+                        address_offset(width_size_bytes));
                 }
             }
         }
@@ -595,7 +599,7 @@ class machine_x86 final : public machine {
                 remaining_size_bytes -= width_size_bytes;
                 if (remaining_size_bytes != 0) {
                     dst_operand.increment_offset(
-                        static_cast<int32_t>(width_size_bytes));
+                        address_offset(width_size_bytes));
                 }
             }
         }
@@ -818,12 +822,12 @@ class machine_x86 final : public machine {
                                     element_size_bytes);
     }
 
-    auto exit_process(const token& src_loc_tk, const size_t indent,
-                      const int32_t exit_code) -> void override {
+    auto exit(const token& src_loc_tk, const size_t indent,
+              const operand& exit_code) -> void override {
 
-        mov(src_loc_tk, indent,
-            machine_x86::make_register_operand("rdi", *type_i64_),
-            immediate(exit_code));
+        copy_value(src_loc_tk, indent,
+                   machine_x86::make_register_operand("rdi", *type_i64_),
+                   exit_code);
 
         mov(src_loc_tk, indent,
             machine_x86::make_register_operand("rax", *type_i64_),
@@ -845,7 +849,7 @@ class machine_x86 final : public machine {
     }
 
     auto address_of_variable(const token& src_loc_tk, const size_t indent,
-                             const operand& dst, const int32_t offset,
+                             const operand& dst, const int64_t offset,
                              const type& value_type) -> void override {
 
         const operand address{operand::mem("rbp", {}, 1, offset, value_type)};
@@ -952,8 +956,8 @@ class machine_x86 final : public machine {
         lea(indent, remaining, operand::mem("vars", {}, 1, 0, *default_type_));
         cmp(indent, start, remaining);
         jcc(indent, "b", failure_label);
-        lea(indent, remaining,
-            operand::mem("vars.end", {}, 1, 0, *default_type_));
+        asm_line(indent, "mov {}, strict qword vars.end",
+                 format_operand(remaining));
 
         cmp(indent, start, remaining);
         jcc(indent, "a", failure_label);
@@ -1076,7 +1080,7 @@ class machine_x86 final : public machine {
             println(";   line number is in `rbp`");
             println("    mov rax, rbp");
             println(";   convert to string");
-            println("    lea rdi, [num_buffer + 19]");
+            println("    mov rdi, strict qword num_buffer + 19");
             println("    mov byte [rdi], 10");
             println("    dec rdi");
             println("    mov rcx, 10");
@@ -1092,7 +1096,7 @@ class machine_x86 final : public machine {
             println(";   print line number to stderr");
             println("    mov rax, 1");
             println("    mov rsi, rdi");
-            println("    lea rdx, [num_buffer + 20]");
+            println("    mov rdx, strict qword num_buffer + 20");
             println("    sub rdx, rdi");
             println("    mov rdi, 2");
             println("    syscall");
@@ -1120,9 +1124,17 @@ class machine_x86 final : public machine {
         -> void override {
 
         println("dat.end:\n\nsection .bss.vars nobits alloc write\nalign "
-                "{}\nvars:\nvars "
-                "resb {}\nvars.end:",
-                alignment, size_bytes);
+                "{}\nvars:",
+                alignment);
+        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
+        println("vars resb {}", std::min(size_bytes, max_chunk));
+        size_t remaining{size_bytes - std::min(size_bytes, max_chunk)};
+        while (remaining != 0) {
+            const size_t chunk{std::min(remaining, max_chunk)};
+            println("resb {}", chunk);
+            remaining -= chunk;
+        }
+        println("vars.end:");
     }
 
     auto emit_data(const size_t element_size_bytes,
@@ -1379,9 +1391,12 @@ class machine_x86 final : public machine {
                     s += " - ";
                 }
             }
-            s += std::format("{}", value.displacement() < 0
-                                       ? -value.displacement()
-                                       : value.displacement());
+            const uint64_t magnitude{
+                value.displacement() < 0
+                    ? uint64_t{} - static_cast<uint64_t>(value.displacement())
+                    : static_cast<uint64_t>(value.displacement())};
+
+            s += std::format("{}", magnitude);
         }
 
         return s;
@@ -1653,22 +1668,141 @@ class machine_x86 final : public machine {
         op(src_loc_tk, indent, "cmp", dst_op, src_op);
     }
 
+    [[nodiscard]] auto address_is_encodable(const operand& value) const
+        -> bool {
+        return not value.is_memory() or
+               (std::in_range<int32_t>(value.displacement()) and
+                (value.index_register().empty() or
+                 (value.index_register() != "rsp" and
+                  can_encode_index_scale(value.scale()))));
+    }
+
+    [[nodiscard]] auto lower_address(const token& src_loc_tk,
+                                     const size_t indent, const operand& value,
+                                     std::vector<operand>& registers)
+        -> operand {
+        if (address_is_encodable(value)) {
+            return value;
+        }
+
+        const operand address{
+            alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
+        registers.push_back(address);
+        asm_line(indent, "mov {}, {}", format_operand(address),
+                 value.displacement());
+
+        if (not value.base_register().empty()) {
+            asm_line(indent, "lea {}, [{} + {}]", format_operand(address),
+                     value.base_register(), address.base_register());
+        }
+
+        if (not value.index_register().empty()) {
+            if (value.index_register() != "rsp" and
+                can_encode_index_scale(value.scale())) {
+                asm_line(indent, "lea {}, [{} + {} * {}]",
+                         format_operand(address), address.base_register(),
+                         value.index_register(), value.scale());
+            } else {
+                const operand scaled{
+                    alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
+                registers.push_back(scaled);
+                asm_line(indent, "mov {}, {}", format_operand(scaled),
+                         value.index_register());
+
+                for (unsigned bit{1}; bit <= value.scale(); bit <<= 1U) {
+                    if ((value.scale() & bit) != 0) {
+                        asm_line(indent, "lea {}, [{} + {}]",
+                                 format_operand(address),
+                                 address.base_register(),
+                                 scaled.base_register());
+                    }
+                    if (bit <= static_cast<unsigned>(value.scale()) / 2) {
+                        asm_line(indent, "lea {}, [{} + {}]",
+                                 format_operand(scaled), scaled.base_register(),
+                                 scaled.base_register());
+                    }
+                }
+            }
+        }
+
+        return operand::mem(address.base_register(), {}, 1, 0,
+                            value.type_ref());
+    }
+
+    auto with_lowered_addresses(
+        const token& src_loc_tk, const size_t indent, const operand& dst,
+        const operand& src,
+        const std::function_ref<void(const operand&, const operand&)> emit)
+        -> void {
+
+        if (address_is_encodable(dst) and address_is_encodable(src)) {
+            emit(dst, src);
+
+            return;
+        }
+
+        const std::vector<std::string> saved_pool{scratch_registers_};
+        const std::array<const operand*, 2> operands{&dst, &src};
+        std::erase_if(scratch_registers_, [&](const std::string& name) -> bool {
+            return std::ranges::any_of(
+                operands, [&](const operand* value) -> bool {
+                    if (value->is_register() and
+                        sized_register_name(value->base_register(),
+                                            size_qword) == name) {
+                        return true;
+                    }
+
+                    return value->is_memory() and
+                           (value->base_register() == name or
+                            value->index_register() == name);
+                });
+        });
+
+        std::vector<operand> registers;
+        const operand lowered_dst{
+            lower_address(src_loc_tk, indent, dst, registers)};
+        const operand lowered_src{
+            lower_address(src_loc_tk, indent, src, registers)};
+        emit(lowered_dst, lowered_src);
+        free_scratch_registers(src_loc_tk, indent, registers);
+        scratch_registers_ = saved_pool;
+    }
+
+    auto emit_binary(const size_t indent, const std::string_view instruction,
+                     const operand& dst, const operand& src) -> void {
+        with_lowered_addresses(token{}, indent, dst, src,
+                               [&](const operand& lowered_dst,
+                                   const operand& lowered_src) -> void {
+                                   asm_line(indent, "{} {}, {}", instruction,
+                                            format_operand(lowered_dst),
+                                            format_operand(lowered_src));
+                               });
+    }
+
+    auto emit_unary(const size_t indent, const std::string_view instruction,
+                    const operand& value) -> void {
+        with_lowered_addresses(
+            token{}, indent, value, operand{},
+            [&](const operand& lowered,
+                [[maybe_unused]] const operand& empty) -> void {
+                asm_line(indent, "{} {}", instruction, format_operand(lowered));
+            });
+    }
+
     auto add(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        asm_line(indent, "add {}, {}", format_operand(dst),
-                 format_operand(src));
+        emit_binary(indent, "add", dst, src);
     }
 
     auto cmp(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        asm_line(indent, "cmp {}, {}", format_operand(dst),
-                 format_operand(src));
+        emit_binary(indent, "cmp", dst, src);
     }
 
     auto inc(const size_t indent, const operand& dst) -> void {
-        asm_line(indent, "inc {}", format_operand(dst));
+        emit_unary(indent, "inc", dst);
     }
 
     auto push(const size_t indent, const operand& src) -> void {
@@ -1692,8 +1826,14 @@ class machine_x86 final : public machine {
     auto lea(const size_t indent, const operand& dst, const operand& address,
              const bool explicit_displacement = false) -> void {
 
-        asm_line(indent, "lea {}, [{}]", format_operand(dst),
-                 format_address(address, explicit_displacement));
+        with_lowered_addresses(
+            token{}, indent, dst, address,
+            [&](const operand& lowered_dst,
+                const operand& lowered_address) -> void {
+                asm_line(
+                    indent, "lea {}, [{}]", format_operand(lowered_dst),
+                    format_address(lowered_address, explicit_displacement));
+            });
     }
 
     auto syscall(const size_t indent) -> void { asm_line(indent, "syscall"); }
@@ -1720,6 +1860,17 @@ class machine_x86 final : public machine {
             const operand& src_op) -> void {
 
         if (op == "mov" and same_operand(dst_op, src_op)) {
+            return;
+        }
+
+        if (not address_is_encodable(dst_op) or
+            not address_is_encodable(src_op)) {
+            with_lowered_addresses(
+                src_loc_tk, indent, dst_op, src_op,
+                [&](const operand& dst, const operand& src) -> void {
+                    this->op(src_loc_tk, indent, op, dst, src);
+                });
+
             return;
         }
 
@@ -1806,12 +1957,11 @@ class machine_x86 final : public machine {
     auto cmovs(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        asm_line(indent, "cmovs {}, {}", format_operand(dst),
-                 format_operand(src));
+        emit_binary(indent, "cmovs", dst, src);
     }
 
     auto idiv(const size_t indent, const operand& value) -> void {
-        asm_line(indent, "idiv {}", format_operand(value));
+        emit_unary(indent, "idiv", value);
     }
 
     auto jcc(const size_t indent, const std::string_view comparison,
@@ -1821,11 +1971,11 @@ class machine_x86 final : public machine {
     }
 
     auto neg(const size_t indent, const operand& value) -> void {
-        asm_line(indent, "neg {}", format_operand(value));
+        emit_unary(indent, "neg", value);
     }
 
     auto not_op(const size_t indent, const operand& value) -> void {
-        asm_line(indent, "not {}", format_operand(value));
+        emit_unary(indent, "not", value);
     }
 
     auto rep_movs(const size_t indent, const char size_suffix) -> void {
@@ -1843,28 +1993,25 @@ class machine_x86 final : public machine {
     auto setcc(const size_t indent, const std::string_view comparison,
                const operand& value) -> void {
 
-        asm_line(indent, "set{} {}", comparison, format_operand(value));
+        emit_unary(indent, std::format("set{}", comparison), value);
     }
 
     auto shl(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        asm_line(indent, "shl {}, {}", format_operand(dst),
-                 format_operand(src));
+        emit_binary(indent, "shl", dst, src);
     }
 
     auto test(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        asm_line(indent, "test {}, {}", format_operand(dst),
-                 format_operand(src));
+        emit_binary(indent, "test", dst, src);
     }
 
     auto xor_op(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        asm_line(indent, "xor {}, {}", format_operand(dst),
-                 format_operand(src));
+        emit_binary(indent, "xor", dst, src);
     }
 
     [[nodiscard]] static auto get_data_def(const size_t size_bytes)

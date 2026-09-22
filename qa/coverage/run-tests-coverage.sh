@@ -16,13 +16,14 @@ if [ "$1" != "nobuild" ]; then
 fi
 
 BIN="../../baz"
+MACHINE="${MACHINE:-x86_64}"
 OPTS="--vars=262144 --checks=upper,lower,line --reproduce-source"
 
 rm -f gen.s out err
 
 SEP="--------------------------------------------------------------------------------"
 echo $SEP
-echo "running: $BIN $OPTS"
+echo "running: $BIN --target=$MACHINE $OPTS"
 echo $SEP
 
 export UBSAN_OPTIONS="print_stacktrace=1"
@@ -31,42 +32,64 @@ export ASAN_SYMBOLIZER_PATH="$(which llvm-symbolizer)"
 export ASAN_SYMBOLIZE=1
 
 # Common: compile and assemble
+assemble_and_link() {
+    case "$MACHINE" in
+        x86_64)
+            nasm -f elf64 gen.s
+            ld -s -T ../../baz.ld -o gen gen.o
+            ;;
+        rv32i)
+            llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
+            ld.lld -m elf32lriscv -e _start -o gen gen.o
+            ;;
+    esac
+}
+
+execute_program() {
+    case "$MACHINE" in
+        x86_64) ./gen ;;
+        rv32i) qemu-riscv32 ./gen ;;
+    esac
+}
+
 compile_and_build() {
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>err >gen.s
+    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" $OPTS 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
-    nasm -f elf64 gen.s
-    ld -s -T ../../baz.ld -o gen gen.o
+    assemble_and_link
 }
 
 compile_and_build_no_checks() {
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --reproduce-source 2>err >gen.s
+    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
-    nasm -f elf64 gen.s
-    ld -s -T ../../baz.ld -o gen gen.o
+    assemble_and_link
 }
 
 compile_and_build_with_opts() {
     local opts="$1"
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $opts --reproduce-source 2>err >gen.s
+    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" $opts --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
-    nasm -f elf64 gen.s
-    ld -s -T ../../baz.ld -o gen gen.o
+    assemble_and_link
 }
 
 # Common: compile and assemble
 compile_expect_error() {
     set +e
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>out
+    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" $OPTS 2>out
+    local exit_code=$?
     set -e
+    if [[ $exit_code -ne 1 ]]; then
+        echo "FAILED. expected compiler exit 1 got $exit_code"
+        exit 1
+    fi
 }
 
 # Common: compare output with expected
@@ -86,7 +109,7 @@ RUN() {
     compile_and_build
 
     set +e
-    ./gen 2>err
+    execute_program 2>err
     local exit_code=$?
     set -e
 
@@ -103,7 +126,7 @@ RUN_ERR() {
     compile_and_build
 
     set +e
-    ./gen 2>out
+    execute_program 2>out
     local exit_code=$?
     set -e
 
@@ -120,7 +143,7 @@ RUN_ERR_OPTS() {
     compile_and_build_with_opts "$1"
 
     set +e
-    ./gen 2>out
+    execute_program 2>out
     local exit_code=$?
     set -e
 
@@ -137,7 +160,7 @@ RUN_NO_CHECKS() {
     compile_and_build_no_checks
 
     set +e
-    ./gen 2>err
+    execute_program 2>err
     local exit_code=$?
     set -e
 
@@ -153,7 +176,7 @@ RUN_NO_CHECKS() {
 DIFF() {
     echo -n "$SRC: "
     compile_and_build
-    ./gen >out
+    execute_program >out
     check_output "${SRC%.*}.out"
 }
 
@@ -161,7 +184,7 @@ DIFF() {
 DIFFINP() {
     echo -n "$SRC: "
     compile_and_build
-    ./gen <"${SRC%.*}.in" >out
+    execute_program <"${SRC%.*}.in" >out
     check_output "${SRC%.*}.out"
 }
 
@@ -173,7 +196,7 @@ DIFFINP2() {
     while read -r line; do
         echo "$line"
         sleep 0.001 # Small wait for single line to be received by `read`
-    done <"${SRC%.*}.in" | ./gen >out
+    done <"${SRC%.*}.in" | execute_program >out
 
     check_output "${SRC%.*}.out"
 }

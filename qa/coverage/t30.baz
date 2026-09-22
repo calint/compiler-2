@@ -1,11 +1,5 @@
 # unary argument passed to a function result
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func f(x:reg_rdx):i64 res{
     res=-x*2
 }

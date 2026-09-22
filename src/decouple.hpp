@@ -8,7 +8,9 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -45,6 +47,48 @@ class stmt_block;
 class type;
 class expr_any;
 
+[[nodiscard]] inline auto add_storage_size(const size_t base,
+                                           const size_t size_bytes) -> size_t {
+    if (size_bytes > static_cast<size_t>(std::numeric_limits<int64_t>::max()) or
+        base > static_cast<size_t>(std::numeric_limits<int64_t>::max()) -
+                   size_bytes) {
+
+        throw std::overflow_error{"storage size exceeds signed 64-bit range"};
+    }
+
+    return base + size_bytes;
+}
+
+[[nodiscard]] inline auto multiply_storage_size(const size_t size_bytes,
+                                                const size_t count) -> size_t {
+    if (count != 0 and
+        size_bytes >
+            static_cast<size_t>(std::numeric_limits<int64_t>::max()) / count) {
+        throw std::overflow_error{"storage size exceeds signed 64-bit range"};
+    }
+
+    return size_bytes * count;
+}
+
+[[nodiscard]] inline auto address_offset(const size_t size_bytes) -> int64_t {
+    if (not std::in_range<int64_t>(size_bytes)) {
+        throw std::overflow_error{"address offset exceeds signed 64-bit range"};
+    }
+
+    return static_cast<int64_t>(size_bytes);
+}
+
+[[nodiscard]] inline auto add_address_offset(const int64_t base,
+                                             const int64_t offset) -> int64_t {
+    if ((offset > 0 and base > std::numeric_limits<int64_t>::max() - offset) or
+        (offset < 0 and base < std::numeric_limits<int64_t>::min() - offset)) {
+
+        throw std::overflow_error{"address offset overflow"};
+    }
+
+    return base + offset;
+}
+
 class operand {
     enum class kind : uint8_t { empty, reg, memory, immediate };
 
@@ -54,7 +98,7 @@ class operand {
     std::string base_register_;
     std::string index_register_;
     std::string immediate_;
-    int32_t displacement_{};
+    int64_t displacement_{};
     uint8_t scale_{1};
 
   public:
@@ -68,7 +112,7 @@ class operand {
 
     [[nodiscard]] static auto
     mem(const std::string_view base, const std::string_view index,
-        const uint8_t index_scale, const int32_t offset, const type& value_type)
+        const uint8_t index_scale, const int64_t offset, const type& value_type)
         -> operand;
 
     [[nodiscard]] static auto mem(const operand& address,
@@ -95,7 +139,7 @@ class operand {
         return immediate_;
     }
 
-    [[nodiscard]] auto displacement() const -> int32_t { return displacement_; }
+    [[nodiscard]] auto displacement() const -> int64_t { return displacement_; }
 
     [[nodiscard]] auto scale() const -> uint8_t { return scale_; }
 
@@ -104,10 +148,10 @@ class operand {
         allocation_register_ = name;
     }
 
-    void increment_offset(const int32_t offset) {
+    void increment_offset(const int64_t offset) {
         assert(is_memory());
 
-        displacement_ += offset;
+        displacement_ = add_address_offset(displacement_, offset);
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {
@@ -139,7 +183,7 @@ struct var_info {
     std::string name;
     const type* type_ptr{};
     token src_loc_tk; // token for position in the source
-    int32_t offset{}; // location offset from base register
+    int64_t offset{}; // location offset from base register
     bool is_array{};
     bool is_pointer{};
     size_t array_len{};
@@ -154,8 +198,8 @@ struct ident_info {
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<::operand> lea_path;
-    operand operand;  // nasm valid source
-    int32_t offset{}; // location offset from base register
+    operand operand;
+    int64_t offset{}; // location offset from base register
     int64_t const_value{};
     size_t array_len{};
     bool is_array{};
@@ -212,7 +256,7 @@ struct ident_info {
     [[nodiscard]] static auto
     make_var(std::string ident, std::vector<std::string> elem_path,
              std::vector<const type*> type_path, const ::operand& op,
-             const int32_t offset, const size_t array_len, const bool is_array,
+             const int64_t offset, const size_t array_len, const bool is_array,
              const bool is_pointer = {}) -> ident_info {
 
         assert(not ident.empty());
@@ -309,11 +353,13 @@ struct ident_info {
         assert(validate_invariants());
     }
 
-    void increment_offset(const int32_t n) {
+    void increment_offset(const int64_t n) {
         assert(validate_invariants());
-        assert(offset + n >= 0);
 
-        offset += n;
+        offset = add_address_offset(offset, n);
+
+        assert(offset >= 0);
+
         operand.increment_offset(n);
 
         assert(validate_invariants());

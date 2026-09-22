@@ -1,12 +1,223 @@
 #pragma once
 
+#include <array>
+#include <bit>
 #include <cstdio>
+#include <iostream>
+#include <limits>
 #include <print>
+#include <utility>
 
+#include "compiler_exception.hpp"
 #include "machine.hpp"
 #include "panic_exception.hpp"
+#include "type.hpp"
 
 class machine_rv32i final : public machine {
+    static constexpr size_t s0_register_index{8};
+    static constexpr int64_t immediate_min{-2048};
+    static constexpr int64_t immediate_max{2047};
+
+    static constexpr std::array<std::string_view, 32> register_names_{
+        "zero", "ra", "sp", "gp", "tp",  "t0",  "t1", "t2", "s0", "s1", "a0",
+        "a1",   "a2", "a3", "a4", "a5",  "a6",  "a7", "s2", "s3", "s4", "s5",
+        "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
+    };
+    static constexpr std::array<size_t, 30> scratch_registers_{
+        1,  3,  4,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+        20, 21, 22, 23, 24, 25, 26, 27, 5,  6,  7,  28, 29, 30, 31,
+    };
+
+    struct allocation {
+        size_t register_index;
+        const type* type_ptr;
+    };
+
+    std::reference_wrapper<std::ostream> os_{std::cout};
+    const type* type_i32_{};
+    uint32_t unavailable_registers_{};
+    bool variables_base_reserved_{};
+    bool frame_base_reserved_{};
+    std::vector<allocation> allocations_;
+
+    [[nodiscard]] static auto register_index(const std::string_view name)
+        -> size_t {
+        for (const auto [index, alias] :
+             std::views::enumerate(register_names_)) {
+            if (name == alias or name == std::format("x{}", index) or
+                (std::cmp_equal(index, s0_register_index) and name == "fp")) {
+                return static_cast<size_t>(index);
+            }
+        }
+
+        return register_names_.size();
+    }
+
+    [[nodiscard]] static auto register_mask(const std::string_view name)
+        -> uint32_t {
+        const size_t index{register_index(name)};
+
+        return index == register_names_.size() ? 0 : uint32_t{1} << index;
+    }
+
+    static auto validate_scalar(const token& src_loc_tk, const type& value_type)
+        -> void {
+        if (not value_type.is_builtin() or
+            (value_type.size_bytes() != 1 and value_type.size_bytes() != 2 and
+             value_type.size_bytes() != 4)) {
+            throw compiler_exception{
+                src_loc_tk, "RV32I requires an 8-, 16-, or 32-bit scalar"};
+        }
+    }
+
+    static auto validate_address(const token& src_loc_tk,
+                                 const operand& address) -> void {
+        if (not address.is_memory()) {
+            throw compiler_exception{src_loc_tk,
+                                     "RV32I requires a memory address"};
+        }
+        constexpr int64_t limit{std::numeric_limits<uint32_t>::max()};
+        if (address.displacement() < -limit or address.displacement() > limit) {
+            throw compiler_exception{
+                src_loc_tk, "address offset exceeds RV32I address range"};
+        }
+        if (not address.index_register().empty() and
+            register_index(address.index_register()) ==
+                register_names_.size()) {
+            throw compiler_exception{src_loc_tk,
+                                     "invalid RV32I index register"};
+        }
+        if (not address.index_register().empty() and
+            not std::has_single_bit(address.scale())) {
+            throw compiler_exception{src_loc_tk,
+                                     "index scale must be a power of two"};
+        }
+    }
+
+    template <typename... args_t>
+    auto asm_line(const size_t indent,
+                  const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
+        std::print(os_.get(), "{}", std::string(indent * 4, ' '));
+        std::println(os_.get(), format, std::forward<args_t>(args)...);
+    }
+
+    class address_scope {
+        machine_rv32i& backend_;
+        uint32_t saved_mask_;
+        size_t saved_count_;
+
+      public:
+        address_scope(machine_rv32i& backend, const operand& dst,
+                      const operand& src)
+            : backend_{backend}, saved_mask_{backend.unavailable_registers_},
+              saved_count_{backend.allocations_.size()} {
+            for (const operand* value : {&dst, &src}) {
+                if (value->is_register() or value->is_memory()) {
+                    backend_.unavailable_registers_ |=
+                        register_mask(value->base_register());
+                }
+                if (value->is_memory()) {
+                    backend_.unavailable_registers_ |=
+                        register_mask(value->index_register());
+                }
+            }
+        }
+
+        address_scope(const address_scope&) = delete;
+        address_scope(address_scope&&) = delete;
+        auto operator=(const address_scope&) -> address_scope& = delete;
+        auto operator=(address_scope&&) -> address_scope& = delete;
+
+        ~address_scope() {
+            while (backend_.allocations_.size() > saved_count_) {
+                backend_.allocations_.pop_back();
+            }
+            backend_.unavailable_registers_ = saved_mask_;
+        }
+    };
+
+    // lower base + index * scale + displacement to register + signed 12-bit
+    // offset
+    [[nodiscard]] auto lower_address(const token& src_loc_tk,
+                                     const size_t indent,
+                                     const operand& address) -> operand {
+
+        validate_address(src_loc_tk, address);
+
+        const std::string& base{address.base_register()};
+        const std::string& index{address.index_register()};
+        const int64_t offset{address.displacement()};
+
+        // without an index, a small displacement already fits the memory
+        // instruction
+        if (index.empty() and offset >= immediate_min and
+            offset <= immediate_max and
+            (base.empty() or register_index(base) != register_names_.size())) {
+
+            return operand::mem(base.empty() ? "zero" : std::string_view{base},
+                                {}, 1, offset, address.type_ref());
+        }
+
+        const operand result{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+        const std::string& result_name{result.base_register()};
+
+        if (not index.empty()) {
+            if (address.scale() == 1) {
+                // scale 1 only needs a copy of the index
+                asm_line(indent, "addi {}, {}, 0", result_name, index);
+            } else {
+                // multiply by the power-of-two scale with one left shift
+                asm_line(indent, "slli {}, {}, {}", result_name, index,
+                         std::countr_zero(address.scale()));
+            }
+        } else {
+            // start with no index contribution; zero is the constant-zero
+            // register
+            asm_line(indent, "addi {}, zero, 0", result_name);
+        }
+
+        // result now holds index * scale; add the base without changing the
+        // inputs
+        if (not base.empty()) {
+            if (register_index(base) != register_names_.size()) {
+                // add the base address to the scaled index
+                asm_line(indent, "add {}, {}, {}", result_name, result_name,
+                         base);
+            } else {
+                const operand symbol{
+                    alloc_scratch_register(src_loc_tk, indent, default_type())};
+                // la materializes a symbol's address, not its contents
+                asm_line(indent, "la {}, {}", symbol.base_register(), base);
+                asm_line(indent, "add {}, {}, {}", result_name, result_name,
+                         symbol.base_register());
+                free_scratch_register(src_loc_tk, indent, symbol);
+            }
+        }
+
+        // keep a small displacement in the final load/store instead of adding
+        // it here
+        if (offset >= immediate_min and offset <= immediate_max) {
+            return operand::mem(result_name, {}, 1, offset, address.type_ref());
+        }
+
+        const operand displacement{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+        // preserve the validated offset's low 32 bits for RV32 address
+        // arithmetic
+        const int32_t bits{
+            std::bit_cast<int32_t>(static_cast<uint32_t>(offset))};
+        // li expands to instructions that load the full 32-bit offset
+        asm_line(indent, "li {}, {}", displacement.base_register(), bits);
+        // fold the offset into the base so the memory instruction can use zero
+        asm_line(indent, "add {}, {}, {}", result_name, result_name,
+                 displacement.base_register());
+        free_scratch_register(src_loc_tk, indent, displacement);
+
+        return operand::mem(result_name, {}, 1, 0, address.type_ref());
+    }
+
     [[noreturn]] static auto todo() -> void {
         std::println(stderr, "todo");
         throw panic_exception{"RV32I backend not implemented"};
@@ -16,21 +227,27 @@ class machine_rv32i final : public machine {
     using machine::comment;
     using machine::emit_data_array;
 
-    [[nodiscard]] auto default_type() const -> const type& override { todo(); }
+    [[nodiscard]] auto default_type() const -> const type& override {
+        assert(type_i32_ != nullptr);
+
+        return *type_i32_;
+    }
 
     auto set_builtin_types([[maybe_unused]] const type& t_i64,
-                           [[maybe_unused]] const type& t_i32,
+                           const type& t_i32,
                            [[maybe_unused]] const type& t_i16,
                            [[maybe_unused]] const type& t_i8,
                            [[maybe_unused]] const type& t_bool,
                            [[maybe_unused]] const type& t_void)
         -> void override {
-        todo();
+        type_i32_ = &t_i32;
     }
 
-    auto use_stream([[maybe_unused]] std::ostream& new_stream)
-        -> std::ostream& override {
-        todo();
+    auto use_stream(std::ostream& new_stream) -> std::ostream& override {
+        std::ostream& previous{os_.get()};
+        os_ = new_stream;
+
+        return previous;
     }
 
     auto comment([[maybe_unused]] const token& src_loc_tk,
@@ -50,43 +267,160 @@ class machine_rv32i final : public machine {
     }
 
     [[nodiscard]] auto
-    alloc_scratch_register([[maybe_unused]] const token& src_loc_tk,
+    alloc_scratch_register(const token& src_loc_tk,
                            [[maybe_unused]] const size_t indent,
-                           [[maybe_unused]] const type& type_ref)
-        -> operand override {
-        todo();
+                           const type& type_ref) -> operand override {
+        validate_scalar(src_loc_tk, type_ref);
+        for (const size_t index : scratch_registers_ | std::views::reverse) {
+            const uint32_t mask{uint32_t{1} << index};
+            if ((unavailable_registers_ & mask) == 0) {
+                unavailable_registers_ |= mask;
+                allocations_.push_back({
+                    .register_index{index},
+                    .type_ptr{&type_ref},
+                });
+
+                operand result{
+                    make_register_operand(register_names_.at(index), type_ref)};
+
+                result.set_allocation_register(register_names_.at(index));
+
+                return result;
+            }
+        }
+
+        throw compiler_exception{src_loc_tk, "out of RV32I scratch registers"};
     }
 
     [[nodiscard]] auto
-    alloc_named_register([[maybe_unused]] const token& src_loc_tk,
+    alloc_named_register(const token& src_loc_tk,
                          [[maybe_unused]] const size_t indent,
-                         [[maybe_unused]] const std::string_view register_name,
-                         [[maybe_unused]] const type& type_ref)
-        -> operand override {
-        todo();
+                         const std::string_view register_name,
+                         const type& type_ref) -> operand override {
+        validate_scalar(src_loc_tk, type_ref);
+        const size_t index{register_index(register_name)};
+        const uint32_t mask{register_mask(register_name)};
+        if (mask == 0 or index == 0 or index == 2 or
+            (unavailable_registers_ & mask) != 0) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("cannot allocate register {}", register_name)};
+        }
+        operand result{make_register_operand(register_name, type_ref)};
+        result.set_allocation_register(register_names_.at(index));
+        allocations_.push_back({
+            .register_index{index},
+            .type_ptr{&type_ref},
+        });
+
+        unavailable_registers_ |= mask;
+
+        return result;
     }
 
-    auto free_named_register([[maybe_unused]] const token& src_loc_tk,
-                             [[maybe_unused]] const size_t indent,
-                             [[maybe_unused]] const operand& reg)
-        -> void override {
-        todo();
+    auto free_named_register(const token& src_loc_tk, const size_t indent,
+                             const operand& reg) -> void override {
+        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     auto free_scratch_register([[maybe_unused]] const token& src_loc_tk,
                                [[maybe_unused]] const size_t indent,
-                               [[maybe_unused]] const operand& reg)
-        -> void override {
-        todo();
+                               const operand& reg) -> void override {
+        assert(not allocations_.empty());
+        const size_t index{register_index(reg.allocation_register())};
+        assert(allocations_.back().register_index == index);
+        unavailable_registers_ &= ~(uint32_t{1} << index);
+        allocations_.pop_back();
     }
 
-    auto finish() -> void override { todo(); }
+    auto finish() -> void override {
+        assert(allocations_.empty());
+        assert(unavailable_registers_ == 0);
+        assert(not variables_base_reserved_);
+        assert(not frame_base_reserved_);
+    }
 
-    auto copy_value([[maybe_unused]] const token& src_loc_tk,
-                    [[maybe_unused]] const size_t indent,
-                    [[maybe_unused]] const operand& dst,
-                    [[maybe_unused]] const operand& src) -> void override {
-        todo();
+    [[nodiscard]] auto address_size_bytes() const -> size_t override {
+        return 4;
+    }
+
+    auto copy_value(const token& src_loc_tk, const size_t indent,
+                    const operand& dst, const operand& src) -> void override {
+
+        validate_scalar(src_loc_tk, dst.type_ref());
+        validate_scalar(src_loc_tk, src.type_ref());
+
+        if (not(dst.is_register() or dst.is_memory()) or src.is_empty()) {
+            throw compiler_exception{src_loc_tk, "invalid RV32I copy operands"};
+        }
+
+        if (dst.is_memory()) {
+            validate_address(src_loc_tk, dst);
+        }
+
+        if (src.is_memory()) {
+            validate_address(src_loc_tk, src);
+        }
+
+        const address_scope scope{*this, dst, src};
+
+        const operand value{
+            dst.is_register()
+                ? dst
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        if (src.is_memory()) {
+            const operand lowered{lower_address(src_loc_tk, indent, src)};
+            const size_t width{src.type_ref().size_bytes()};
+            std::string_view instruction{"lb"};
+            if (width == 4) {
+                instruction = "lw";
+            } else if (width == 2) {
+                instruction = "lh";
+            } else if (src.type_ref().name() == "bool") {
+                instruction = "lbu";
+            }
+
+            // load from base + displacement; lb/lh sign-extend, lbu
+            // zero-extends
+            asm_line(indent, "{} {}, {}({})", instruction,
+                     value.base_register(), lowered.displacement(),
+                     lowered.base_register());
+        } else if (src.is_register()) {
+            // adding zero copies a register without changing its bits
+            asm_line(indent, "addi {}, {}, 0", value.base_register(),
+                     src.base_register());
+        } else if (src.is_immediate()) {
+            // li materializes a constant using one or more RV32I instructions
+            asm_line(indent, "li {}, {}", value.base_register(),
+                     src.immediate());
+        } else {
+            throw compiler_exception{src_loc_tk, "invalid RV32I copy source"};
+        }
+
+        if (dst.is_memory()) {
+            const operand lowered{lower_address(src_loc_tk, indent, dst)};
+            const size_t width{dst.type_ref().size_bytes()};
+            std::string_view instruction{"sb"};
+            if (width == 4) {
+                instruction = "sw";
+            } else if (width == 2) {
+                instruction = "sh";
+            }
+
+            // store the low 32, 16, or 8 bits at base + displacement
+            asm_line(indent, "{} {}, {}({})", instruction,
+                     value.base_register(), lowered.displacement(),
+                     lowered.base_register());
+        } else if (dst.type_ref().size_bytes() < 4) {
+            const size_t shift{32 - (dst.type_ref().size_bytes() * 8)};
+            // discard high bits, then sign-extend integers or zero-extend bool
+            asm_line(indent, "slli {}, {}, {}", value.base_register(),
+                     value.base_register(), shift);
+            asm_line(indent, "{} {}, {}, {}",
+                     dst.type_ref().name() == "bool" ? "srli" : "srai",
+                     value.base_register(), value.base_register(), shift);
+        }
     }
 
     auto comment_variable([[maybe_unused]] const token& src_loc_tk,
@@ -278,11 +612,28 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto address_of([[maybe_unused]] const token& src_loc_tk,
-                    [[maybe_unused]] const size_t indent,
-                    [[maybe_unused]] const operand& dst,
-                    [[maybe_unused]] const operand& address) -> void override {
-        todo();
+    auto address_of(const token& src_loc_tk, const size_t indent,
+                    const operand& dst, const operand& address)
+        -> void override {
+        if (not(dst.is_register() or dst.is_memory()) or
+            dst.type_ref().size_bytes() != 4) {
+            throw compiler_exception{
+                src_loc_tk, "RV32I address destination must be 32-bit storage"};
+        }
+        const address_scope scope{*this, dst, address};
+        const operand value{
+            dst.is_register()
+                ? dst
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand lowered{lower_address(src_loc_tk, indent, address)};
+        // compute base + the remaining 12-bit displacement without reading
+        // memory
+        asm_line(indent, "addi {}, {}, {}", value.base_register(),
+                 lowered.base_register(), lowered.displacement());
+        if (dst.is_memory()) {
+            copy_value(src_loc_tk, indent, dst, value);
+        }
     }
 
     auto unary([[maybe_unused]] const size_t indent,
@@ -294,7 +645,7 @@ class machine_rv32i final : public machine {
     [[nodiscard]] auto
     can_encode_index_scale([[maybe_unused]] const size_t size_bytes) const
         -> bool override {
-        todo();
+        return false;
     }
 
     auto scale_index([[maybe_unused]] const token& src_loc_tk,
@@ -305,46 +656,70 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto exit_process([[maybe_unused]] const token& src_loc_tk,
-                      [[maybe_unused]] const size_t indent,
-                      [[maybe_unused]] const int32_t exit_code)
-        -> void override {
-        todo();
+    auto exit(const token& src_loc_tk, const size_t indent,
+              const operand& exit_code) -> void override {
+        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
+                   exit_code);
+        asm_line(indent, "li a7, 93");
+        asm_line(indent, "ecall");
     }
 
     [[nodiscard]] auto variables_base_register() const
         -> std::string_view override {
 
-        todo();
+        return "s0";
     }
 
-    [[nodiscard]] auto
-    is_variables_base([[maybe_unused]] const operand& reg) const
+    [[nodiscard]] auto is_variables_base(const operand& reg) const
         -> bool override {
-        todo();
+        return not reg.is_indexed() and
+               register_index(reg.base_register()) == s0_register_index;
     }
 
-    auto address_of_variable([[maybe_unused]] const token& src_loc_tk,
-                             [[maybe_unused]] const size_t indent,
-                             [[maybe_unused]] const operand& dst,
-                             [[maybe_unused]] const int32_t offset,
-                             [[maybe_unused]] const type& value_type)
-        -> void override {
-        todo();
+    auto address_of_variable(const token& src_loc_tk, const size_t indent,
+                             const operand& dst, const int64_t offset,
+                             const type& value_type) -> void override {
+        address_of(
+            src_loc_tk, indent, dst,
+            operand::mem(variables_base_register(), {}, 1, offset, value_type));
     }
 
-    auto reserve_variables_base() -> void override { todo(); }
+    auto reserve_variables_base() -> void override {
+        assert(not variables_base_reserved_);
+        static_cast<void>(alloc_named_register(
+            token{}, 0, variables_base_register(), default_type()));
+        variables_base_reserved_ = true;
+    }
 
-    auto release_variables_base() -> void override { todo(); }
+    auto release_variables_base() -> void override {
+        assert(variables_base_reserved_);
+        operand base{
+            make_register_operand(variables_base_register(), default_type())};
+        base.set_allocation_register(variables_base_register());
+        free_named_register(token{}, 0, base);
+        variables_base_reserved_ = false;
+    }
 
     [[nodiscard]] auto frame_base_register() const
         -> std::string_view override {
-        todo();
+        return "s1";
     }
 
-    auto reserve_frame_base() -> void override { todo(); }
+    auto reserve_frame_base() -> void override {
+        assert(not frame_base_reserved_);
+        static_cast<void>(alloc_named_register(
+            token{}, 0, frame_base_register(), default_type()));
+        frame_base_reserved_ = true;
+    }
 
-    auto release_frame_base() -> void override { todo(); }
+    auto release_frame_base() -> void override {
+        assert(frame_base_reserved_);
+        operand base{
+            make_register_operand(frame_base_register(), default_type())};
+        base.set_allocation_register(frame_base_register());
+        free_named_register(token{}, 0, base);
+        frame_base_reserved_ = false;
+    }
 
     auto call_function([[maybe_unused]] const size_t indent,
                        [[maybe_unused]] const std::string_view label,
@@ -430,23 +805,34 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    [[nodiscard]] auto
-    register_size_bytes([[maybe_unused]] const std::string_view name) const
+    [[nodiscard]] auto register_size_bytes(const std::string_view name) const
         -> size_t override {
-        todo();
+        return register_index(name) == register_names_.size() ? 0 : 4;
     }
 
     [[nodiscard]] auto
-    allocated_register_type([[maybe_unused]] const std::string_view name) const
+    allocated_register_type(const std::string_view name) const
         -> const type* override {
-        todo();
+        const size_t index{register_index(name)};
+        for (const allocation& entry : allocations_) {
+            if (entry.register_index == index) {
+                return entry.type_ptr;
+            }
+        }
+
+        return nullptr;
     }
 
-    [[nodiscard]] auto
-    make_register_operand([[maybe_unused]] const std::string_view name,
-                          [[maybe_unused]] const type& value_type) const
+    [[nodiscard]] auto make_register_operand(const std::string_view name,
+                                             const type& value_type) const
         -> operand override {
-        todo();
+        validate_scalar(token{}, value_type);
+        const size_t index{register_index(name)};
+        if (index == register_names_.size()) {
+            throw compiler_exception{token{}, "invalid RV32I register"};
+        }
+
+        return operand::reg(register_names_.at(index), value_type);
     }
 
     auto emit_data_array(

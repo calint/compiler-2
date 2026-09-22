@@ -2,12 +2,6 @@
 
 type point { x, y }
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func assert(code, x : bool) if not x exit(code)
 
 func fooz(v) : i64 res {

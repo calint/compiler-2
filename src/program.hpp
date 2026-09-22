@@ -52,6 +52,7 @@ class program final {
         // add built-in assembler calls
         tc_.add_func(src_loc_tk, "mov", type_void, nullptr);
         tc_.add_func(src_loc_tk, "syscall", type_void, nullptr);
+        tc_.add_func(src_loc_tk, "exit", type_void, nullptr);
 
         // add built-in types
         tc_.add_type(src_loc_tk, type_i64);
@@ -159,7 +160,10 @@ class program final {
             constexpr int32_t vars_overrun_by_frame_variables = 255;
             x.comment({}, 0, "");
             x.label(indent, "baz_frame_overflow");
-            x.exit_process(token{}, indent, vars_overrun_by_frame_variables);
+            x.exit(
+                token{}, indent,
+                operand::imm(std::format("{}", vars_overrun_by_frame_variables),
+                             tc.get_type_default()));
         }
 
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {

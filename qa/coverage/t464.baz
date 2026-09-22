@@ -1,6 +1,5 @@
 # non-inline return destinations: nested calls, pointer forwarding and early returns
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
 func assert(err, expr : bool) if not expr exit(err)
 
 func noinline magnitude(value : i64) : i64 result {

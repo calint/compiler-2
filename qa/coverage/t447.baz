@@ -1,6 +1,5 @@
 # lea regression: built-in indexed src/dst aliases and index mutation
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
 func assert(err, expr : bool) if not expr exit(err)
 
 func mix(dst : i64, src : i64, ix : i64) {

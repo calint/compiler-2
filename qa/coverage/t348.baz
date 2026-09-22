@@ -1,11 +1,5 @@
 # lower-bound check without upper check
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func main() {
     var arr : i8[8]
     arr[-1] = 1

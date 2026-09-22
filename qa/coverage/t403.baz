@@ -1,11 +1,5 @@
 # truncate a qword to byte word and dword
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func assert(x : bool) if not x exit(1)
 
 func take_byte(value : i8) : i8 result {

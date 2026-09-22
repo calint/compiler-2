@@ -1,11 +1,5 @@
 # signed unary results across integer widths
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func f1(i):i64 res{
     res=-i
 }

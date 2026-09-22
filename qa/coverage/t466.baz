@@ -1,6 +1,5 @@
 # non-inline recursion: factorial results and caller-local preservation
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
 func assert(err, expr : bool) if not expr exit(err)
 
 func noinline factorial(value : i64) : i64 result {

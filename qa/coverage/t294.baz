@@ -1,11 +1,5 @@
 # unary operation on array_size_of is rejected
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)  # exit system call
-    mov(rdi, v)   # return code
-    syscall()
-}
-
 func assert(x : bool) if not x exit(1)
 
 func main() {

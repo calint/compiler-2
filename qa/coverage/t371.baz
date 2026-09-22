@@ -1,11 +1,5 @@
 # computed inner index in a nested array
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 type group { values : i8[2] }
 
 func main() {

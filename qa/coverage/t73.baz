@@ -1,11 +1,5 @@
 # constant boolean condition is folded
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)  # exit system call
-    mov(rdi, v)   # return code
-    syscall()
-}
-
 func foozi(i) {
     exit(i)
 }

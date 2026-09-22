@@ -5,12 +5,6 @@
 type point {x, y}
 type object {pos : point, color : i32}
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func assert(expr : bool) {
     if not expr exit(1)
 }

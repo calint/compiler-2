@@ -1,11 +1,5 @@
 # computed index must respect array-parameter bounds
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func write(values : i8[], index : i64) {
     values[index + 1] = 1
 }

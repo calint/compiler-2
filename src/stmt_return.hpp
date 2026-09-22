@@ -32,7 +32,7 @@ class stmt_return final : public statement {
 
         if (ret_lbl.empty()) {
             // note: return from 'main' is exiting
-            x.exit_process(tok(), indent, 0);
+            x.exit(tok(), indent, operand::imm("0", tc.get_type_default()));
 
             return;
         }

@@ -1,3 +1,13 @@
+MACHINE="${MACHINE:-x86_64}"
+case "$MACHINE" in
+	x86_64) ;;
+	rv32i)
+		source "$SCRIPT_DIR/run-tests-cases-rv32i.sh"
+		return
+		;;
+	*) echo "Unknown machine: $MACHINE" >&2; exit 1 ;;
+esac
+
 SRC=t1 && EXP=58 && RUN
 SRC=t2 && EXP=1 && RUN
 SRC=t3 && EXP=7 && RUN
@@ -452,3 +462,7 @@ SRC=t478 && COMPERR
 SRC=t479 && COMPERR
 SRC=t480 && COMPERR
 SRC=t481 && COMPERR
+SRC=t482 && EXP=42 && RUN
+SRC=t483 && EXP=42 && RUN
+SRC=t484 && EXP=42 && RUN
+SRC=t485 && COMPERR

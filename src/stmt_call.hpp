@@ -199,7 +199,7 @@ class stmt_call : public expression {
             if (dst_info.is_pointer and not dst_info.use_operand) {
 
                 const operand pointer{x.alloc_scratch_register(
-                    tok(), indent, tc.get_type_default())};
+                    tok(), indent, tc.get_type_address())};
 
                 // keep the register until the callee frame is populated
                 address_registers.push_back(pointer);
@@ -207,7 +207,7 @@ class stmt_call : public expression {
                 // load the result address into the pointer register
                 x.copy_value(
                     tok(), indent, pointer,
-                    operand::mem(result_address, tc.get_type_default()));
+                    operand::mem(result_address, tc.get_type_address()));
 
                 // refer to the result storage through the loaded address
                 result_address = operand::mem(pointer.base_register(), {}, 1, 0,
@@ -244,7 +244,7 @@ class stmt_call : public expression {
 
         x.check_frame_capacity(
             tok(), indent, frame_address,
-            operand::imm(func.frame_size_label(), tc.get_type_default()),
+            operand::imm(func.frame_size_label(), tc.get_type_address()),
             "baz_frame_overflow", tc.is_frame_check());
 
         // write pointers into the callee frame: result (if any), then arguments
@@ -268,8 +268,7 @@ class stmt_call : public expression {
 
             x.address_of(tok(), indent, slot, addr);
 
-            slot.increment_offset(
-                static_cast<int32_t>(tc.get_type_default().size_bytes()));
+            slot.increment_offset(address_offset(x.address_size_bytes()));
         }
 
         x.free_scratch_registers(tok(), indent, address_registers);

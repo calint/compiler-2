@@ -1,11 +1,5 @@
 # relational operators over booleans and integers
 
-func exit(v : reg_rdi) {
-    mov(rax, 60) # exit system call
-    mov(rdi, v)  # return code
-    syscall()
-}
-
 func main(){
     if not true exit(1)
     if true == false exit(2)

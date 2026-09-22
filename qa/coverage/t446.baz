@@ -1,6 +1,5 @@
 # regression: user-type return and user-type indexed argument aliasing
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
 func assert(err, expr : bool) if not expr exit(err)
 
 type pair {

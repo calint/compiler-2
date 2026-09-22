@@ -1,6 +1,5 @@
 # equal compares indexed i64 values (true and false paths)
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
 func assert(err, expr : bool) if not expr exit(err)
 
 func main() {

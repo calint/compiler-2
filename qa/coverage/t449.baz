@@ -1,6 +1,5 @@
 # lea regression: nested field writes through user-type alias with lea path
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
 func assert(err, expr : bool) if not expr exit(err)
 
 type pair {

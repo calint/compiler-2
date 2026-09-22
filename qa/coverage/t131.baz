@@ -1,11 +1,5 @@
 # indexed values participate in multiplication
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)  # exit system call
-    mov(rdi, v)   # return code
-    syscall()
-}
-
 func assert(expr : bool) if not expr exit(1)
 
 func fiz(x : i32, mul : i32) : i32 res {

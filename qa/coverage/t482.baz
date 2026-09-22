@@ -1,0 +1,5 @@
+# builtin exit with a constant status
+
+func main() {
+    exit(42)
+}

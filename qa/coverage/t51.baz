@@ -1,11 +1,5 @@
 # short-circuit conjunction and disjunction
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func probe(calls, expected_call, value : bool) : bool result {
     calls = calls + 1
     if calls != expected_call exit(90)

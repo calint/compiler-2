@@ -22,6 +22,7 @@
 #include "stmt_builtin_array_size_of.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_equal.hpp"
+#include "stmt_builtin_exit.hpp"
 #include "stmt_builtin_foo.hpp"
 #include "stmt_builtin_mov.hpp"
 #include "stmt_builtin_syscall.hpp"
@@ -70,7 +71,7 @@ auto operand::reg(const std::string_view name, const type& value_type)
 
 // declared in 'decouple.hpp'
 auto operand::mem(const std::string_view base, const std::string_view index,
-                  const uint8_t index_scale, const int32_t offset,
+                  const uint8_t index_scale, const int64_t offset,
                   const type& value_type) -> operand {
 
     if (base.empty() and index.empty() and offset == 0) {
@@ -106,6 +107,9 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
     }
     if (tk.is_text("syscall")) {
         return std::make_unique<stmt_builtin_syscall>(tc, tk, tz);
+    }
+    if (tk.is_text("exit")) {
+        return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
     }
     if (tk.is_text("foo")) {
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
@@ -322,15 +326,14 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
         const operand src_op{
             tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
 
-        const size_t size_bytes{src_info.is_array
-                                    ? src_info.array_len * dst_type.size_bytes()
-                                    : dst_type.size_bytes()};
+        const size_t size_bytes{multiply_storage_size(
+            dst_type.size_bytes(), src_info.is_array ? src_info.array_len : 1)};
 
         machine& x{tc.machine()};
 
         x.copy(tok(), indent, src_op, dst_op, size_bytes);
 
-        dst_op.increment_offset(static_cast<int32_t>(size_bytes));
+        dst_op.increment_offset(address_offset(size_bytes));
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
 
@@ -362,8 +365,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
             type_value.compile_assign(tc, indent, field.type(), cur_dst_info,
                                       dst_op);
             // note: dst_op was mutated in the recursive call
-            cur_dst_info.increment_offset(
-                static_cast<int32_t>(field.size_bytes));
+            cur_dst_info.increment_offset(address_offset(field.size_bytes));
             cur_dst_info.pop();
             continue;
         }
@@ -382,7 +384,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
                       field.size_bytes);
 
             x.zero(tok(), indent, dst_op, field.size_bytes);
-            const int32_t size_bytes{static_cast<int32_t>(field.size_bytes)};
+            const int64_t size_bytes{address_offset(field.size_bytes)};
             dst_op.increment_offset(size_bytes);
             cur_dst_info.increment_offset(size_bytes);
             cur_dst_info.pop();
@@ -428,7 +430,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
                 }
             }
         }
-        const int32_t size_bytes{static_cast<int32_t>(field.size_bytes)};
+        const int64_t size_bytes{address_offset(field.size_bytes)};
         dst_op.increment_offset(size_bytes);
         cur_dst_info.increment_offset(size_bytes);
         cur_dst_info.pop();
@@ -448,7 +450,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
 
     x.comment(tok(), indent, "zero remaining fields: {} B", size_bytes);
     x.zero(tok(), indent, dst_op, size_bytes);
-    dst_op.increment_offset(static_cast<int32_t>(size_bytes));
+    dst_op.increment_offset(address_offset(size_bytes));
 }
 
 // declared in 'expr_type_value.hpp'

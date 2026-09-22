@@ -92,12 +92,6 @@ dat h1 : holder[3] =
         }
     }
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func assert(x : bool) if not x exit(1)
 
 func update(h : holder) {

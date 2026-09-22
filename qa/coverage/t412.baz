@@ -4,12 +4,6 @@ type holder { values : i64[2] }
 
 dat holders : holder[2] = { {{1, 2}}, {{3, 4}} }
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 func assert(x : bool) if not x exit(1)
 
 func main() {

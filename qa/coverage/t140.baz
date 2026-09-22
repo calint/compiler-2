@@ -1,9 +1,3 @@
-func exit(v : reg_rdi) {
-    mov(rax, 60)  # exit system call
-    mov(rdi, v)   # return code
-    syscall()
-}
-
 func assert(expr : bool) if not expr exit(1)
 
 func faz(x : i32, y : i32) : i32 res {

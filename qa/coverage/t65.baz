@@ -1,11 +1,5 @@
 # mixed arithmetic and bitwise precedence
 
-func exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall()
-}
-
 func main(){
     var x = 2
     var y = 1 + ~-x    # ~-x == 1

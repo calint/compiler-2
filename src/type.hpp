@@ -44,13 +44,13 @@ class type final {
                    const std::string_view name, const type& tp,
                    const bool is_array, const size_t array_count) -> void {
 
-        const size_t total_size_bytes{tp.size_bytes_ *
-                                      (is_array ? array_count : 1)};
+        const size_t total_size_bytes{
+            multiply_storage_size(tp.size_bytes_, is_array ? array_count : 1)};
 
         fields_.emplace_back(std::string{name}, &tp, size_bytes_,
                              total_size_bytes, array_count, is_array);
 
-        size_bytes_ += total_size_bytes;
+        size_bytes_ = add_storage_size(size_bytes_, total_size_bytes);
     }
 
     [[nodiscard]] auto field(const token& src_loc_tk,
@@ -87,16 +87,17 @@ class type final {
             //       loop
 
             const type_field& tf{tp->field(src_loc_tk, field_name)};
-            offset += tf.offset;
+            offset = add_storage_size(offset, tf.offset);
             tp = tf.type_ptr;
             is_array = tf.is_array;
             array_count = tf.array_count;
             type_path.emplace_back(tp);
         }
 
-        const int32_t idx{var.reg.is_empty()
-                              ? var.offset + static_cast<int32_t>(offset)
-                              : static_cast<int32_t>(offset)};
+        const int64_t idx{
+            var.reg.is_empty()
+                ? add_address_offset(var.offset, address_offset(offset))
+                : address_offset(offset)};
 
         const std::string_view storage_base{
             var.base_register.empty() ? base_register : var.base_register};
@@ -122,7 +123,7 @@ class type final {
             //       loop
 
             const type_field& tf{tp->field(src_loc_tk, field_name)};
-            offset += tf.offset;
+            offset = add_storage_size(offset, tf.offset);
             tp = tf.type_ptr;
         }
 
@@ -146,7 +147,7 @@ class type final {
 
         size_t size_bytes{};
         for (const type_field& f : fields_ | std::views::drop(first)) {
-            size_bytes += f.size_bytes;
+            size_bytes = add_storage_size(size_bytes, f.size_bytes);
         }
 
         return size_bytes;

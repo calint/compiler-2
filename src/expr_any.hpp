@@ -132,7 +132,7 @@ class expr_any final : public statement {
             x.comment(tok(), indent, "[{}]", i);
             compile_variant(tc, indent, cur_dst_info, tok(), e);
             cur_dst_info.operand.increment_offset(
-                static_cast<int32_t>(cur_dst_info.type_ref().size_bytes()));
+                address_offset(cur_dst_info.type_ref().size_bytes()));
         }
 
         const size_t remaining_count{(array_count_ - vars_.size())};
@@ -140,8 +140,8 @@ class expr_any final : public statement {
             return;
         }
 
-        const size_t size_bytes{remaining_count *
-                                cur_dst_info.type_ref().size_bytes()};
+        const size_t size_bytes{multiply_storage_size(
+            cur_dst_info.type_ref().size_bytes(), remaining_count)};
 
         x.comment(tok(), indent, "zero remaining elements: {} * {} B = {} B",
                   remaining_count, cur_dst_info.type_ref().size_bytes(),

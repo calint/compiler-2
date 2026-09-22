@@ -1,11 +1,5 @@
 # bounds checking must resolve an index from a field
 
-func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
-    syscall()
-}
-
 type limits { index }
 
 func main() {

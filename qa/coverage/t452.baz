@@ -2,7 +2,6 @@
 # targets compile_assign branch:
 #   if (not tf.type().is_built_in()) e.compile_assign(...)
 
-func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
 func assert(err, expr : bool) if not expr exit(err)
 
 type pair {

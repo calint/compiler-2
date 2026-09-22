@@ -11,6 +11,7 @@
 #include <ranges>
 #include <span>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -256,6 +257,10 @@ auto main(const int argc, const char** const argv) -> int {
         return 1;
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
+
+        return 1;
+    } catch (const std::overflow_error& e) {
+        std::println(stderr, "\n{}", e.what());
 
         return 1;
     } catch (...) {
