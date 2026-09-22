@@ -14,6 +14,7 @@
     var x i32 = 2
 
 [ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
+    => there is a longer jump way +/- 2 GB that can be implemented later
 [ ] rv32i: check loop iteration regarding large span
 [ ]  lift the possible ai generated tests in run-tests-rv32i.sh to end-to-end
      .baz tests 

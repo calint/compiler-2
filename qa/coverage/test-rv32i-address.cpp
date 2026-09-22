@@ -218,9 +218,9 @@ auto main(const int argc, const char* argv[]) -> int {
             1, operand::mem("s0", {}, 1, 208, integer));
         located.end_array_copy(location, 1, 4);
         for (const std::string_view text :
-             {"t1: source, t2: destination, t0: count",
-              "t0: elements to bytes (4 bytes/element)",
-              "t3: copy value, t4: words, t0: tail bytes", "copy 4-byte words",
+             {"t0: source, t1: destination, t2: count",
+              "t2: elements to bytes (4 bytes/element)",
+              "t3: copy value, t4: words, t2: tail bytes", "copy 4-byte words",
               "copy optional 2-byte tail", "copy optional final byte"}) {
             assert(comments.str().contains(std::format("# [2:5] {}\n", text)));
         }
@@ -366,10 +366,10 @@ func main() {
         std::ostringstream output;
         prg.build(output);
         // reserved pointers must hold the address throughout index arithmetic
+        assert(output.str().contains("add t0, t0, t3\n"));
         assert(output.str().contains("add t1, t1, t3\n"));
-        assert(output.str().contains("add t2, t2, t3\n"));
+        assert(not output.str().contains("addi t0, t3, 0\n"));
         assert(not output.str().contains("addi t1, t3, 0\n"));
-        assert(not output.str().contains("addi t2, t3, 0\n"));
     }
     {
         const std::string_view source{R"baz(
@@ -383,14 +383,14 @@ func main() {
         program prg{compiler, source, 4096, false, false, false};
         std::ostringstream output;
         prg.build(output);
+        assert(output.str().contains("add t1, t1, t4\n"));
         assert(output.str().contains("add t2, t2, t4\n"));
-        assert(output.str().contains("add t3, t3, t4\n"));
+        assert(not output.str().contains("addi t1, t4, 0\n"));
         assert(not output.str().contains("addi t2, t4, 0\n"));
-        assert(not output.str().contains("addi t3, t4, 0\n"));
         for (const std::string_view text :
-             {"t2: source, t3: destination, t1: count",
-              "t1: elements to bytes (4 bytes/element)",
-              "t0: left value/result, t5: right value, t4: words, t1: tail "
+             {"t1: source, t2: destination, t3: count",
+              "t3: elements to bytes (4 bytes/element)",
+              "t0: left value/result, t5: right value, t4: words, t3: tail "
               "bytes",
               "stop at first mismatch", "compare 4-byte words",
               "compare optional 2-byte tail", "compare optional final byte",
