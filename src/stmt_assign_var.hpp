@@ -68,7 +68,7 @@ class stmt_assign_var final : public statement {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
 
                 src_info.is_array and var_dst_info.is_array and
-                src_info.array_count != var_dst_info.array_count) {
+                src_info.array_len != var_dst_info.array_len) {
 
                 throw compiler_exception{
                     tok(), "source and destination array sizes do not match"};
@@ -84,7 +84,7 @@ class stmt_assign_var final : public statement {
         var_dst_info.is_pointer = false;
         if (stmt_ident_.is_array_element()) {
             var_dst_info.is_array = false;
-            var_dst_info.array_count = 0;
+            var_dst_info.array_len = 0;
         }
 
         expr_.compile(tc, indent, var_dst_info);

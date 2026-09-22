@@ -491,7 +491,7 @@ class toc final {
         }
         x.comment_variable(src_loc_tk, indent, text,
                            name_info.type_ref().size_bytes() *
-                               (name_info.is_array ? name_info.array_count : 1),
+                               (name_info.is_array ? name_info.array_len : 1),
                            name_info.operand);
     }
 

@@ -108,7 +108,7 @@ class stmt_identifier : public statement {
             }
 
             is_array_ = ii.is_array;
-            array_count_ = ii.array_count;
+            array_count_ = ii.array_len;
 
             break;
         }
@@ -302,7 +302,7 @@ class stmt_identifier : public statement {
                     cur_info.is_array) {
 
                     emit_bounds_check(tc, indent, src_loc_tk, reg_count,
-                                      cur_info.array_count, true);
+                                      cur_info.array_len, true);
                 }
 
             } else {
@@ -323,7 +323,7 @@ class stmt_identifier : public statement {
 
                         compile_array_index(tc, indent,
                                             *cur_elem.array_index_expr, reg_idx,
-                                            cur_info.array_count, reg_count);
+                                            cur_info.array_len, reg_count);
 
                         if (reg_offset.is_empty()) {
 
@@ -334,7 +334,7 @@ class stmt_identifier : public statement {
                         }
 
                         const int32_t offset{storage_offset_pending
-                                                 ? base_info.stack_idx +
+                                                 ? base_info.offset +
                                                        accum_offset
                                                  : accum_offset};
 
@@ -389,7 +389,7 @@ class stmt_identifier : public statement {
                     src_loc_tk, indent, tc.get_type_default())};
 
                 compile_array_index(tc, indent, *cur_elem.array_index_expr,
-                                    reg_idx, cur_info.array_count,
+                                    reg_idx, cur_info.array_len,
                                     is_last ? reg_count : operand{});
 
                 // scale the index
@@ -429,7 +429,7 @@ class stmt_identifier : public statement {
         if (storage_offset_pending) {
             // register is not optimally encoded for trailing elements of size
             // 1, 2, 4, or 8
-            op.increment_offset(base_info.stack_idx);
+            op.increment_offset(base_info.offset);
         }
 
         return op;

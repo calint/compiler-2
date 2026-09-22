@@ -148,20 +148,20 @@ struct var_info {
 };
 
 struct ident_info {
-    enum class ident_type : uint8_t { CONST, VAR, REGISTER, EMPTY };
+    enum class kind : uint8_t { EMPTY, CONST, VAR, REGISTER };
 
     std::string id;
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<::operand> lea_path;
-    operand operand; // nasm valid source
-    int32_t stack_idx{};
+    operand operand;  // nasm valid source
+    int32_t offset{}; // location offset from base register
     int64_t const_value{};
-    size_t array_count{};
+    size_t array_len{};
     bool is_array{};
     bool is_pointer{};
-    bool use_operand{};
-    ident_type ident_type{};
+    bool use_operand{}; // operand overrides any location calculation
+    kind kind{};
 
     [[nodiscard]] static auto make_empty() -> ident_info {
         return {
@@ -170,7 +170,6 @@ struct ident_info {
             .type_path{},
             .lea_path{},
             .operand{},
-            .ident_type{ident_type::EMPTY},
         };
     }
 
@@ -187,7 +186,7 @@ struct ident_info {
             .type_path{&reg.type_ref()},
             .lea_path{::operand{}},
             .operand{reg},
-            .ident_type{ident_type::REGISTER},
+            .kind{kind::REGISTER},
         };
     }
 
@@ -206,7 +205,7 @@ struct ident_info {
             .lea_path{::operand{}},
             .operand{},
             .const_value{value},
-            .ident_type{ident_type::CONST},
+            .kind{kind::CONST},
         };
     }
 
@@ -228,11 +227,11 @@ struct ident_info {
             .type_path{std::move(type_path)},
             .lea_path{lea_count, ::operand{}},
             .operand{op},
-            .stack_idx{stack_idx},
-            .array_count{array_count},
+            .offset{stack_idx},
+            .array_len{array_count},
             .is_array{is_array},
             .is_pointer{is_pointer},
-            .ident_type{ident_type::VAR},
+            .kind{kind::VAR},
         };
     }
 
@@ -266,21 +265,15 @@ struct ident_info {
         return is_var();
     }
 
-    [[nodiscard]] auto is_const() const -> bool {
-        return ident_type == ident_type::CONST;
-    }
+    [[nodiscard]] auto is_const() const -> bool { return kind == kind::CONST; }
 
     [[nodiscard]] auto is_register() const -> bool {
-        return ident_type == ident_type::REGISTER;
+        return kind == kind::REGISTER;
     }
 
-    [[nodiscard]] auto is_var() const -> bool {
-        return ident_type == ident_type::VAR;
-    }
+    [[nodiscard]] auto is_var() const -> bool { return kind == kind::VAR; }
 
-    [[nodiscard]] auto is_empty() const -> bool {
-        return ident_type == ident_type::EMPTY;
-    }
+    [[nodiscard]] auto is_empty() const -> bool { return kind == kind::EMPTY; }
 
     [[nodiscard]] auto has_lea() const -> bool {
         return std::ranges::any_of(lea_path, [](const ::operand& lea) -> bool {
@@ -318,9 +311,9 @@ struct ident_info {
 
     void increment_offset(const int32_t n) {
         assert(validate_invariants());
-        assert(stack_idx + n >= 0);
+        assert(offset + n >= 0);
 
-        stack_idx += n;
+        offset += n;
         operand.increment_offset(n);
 
         assert(validate_invariants());

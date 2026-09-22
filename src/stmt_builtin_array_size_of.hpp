@@ -76,7 +76,7 @@ class stmt_builtin_array_size_of final : public expression {
         // variable, register or field
         x.copy_value(
             tok(), indent, dst_info.operand,
-            operand::imm(std::format("{}", src_info.array_count), get_type()));
+            operand::imm(std::format("{}", src_info.array_len), get_type()));
 
         get_unary_ops().compile(tc, indent, dst_info.operand);
     }

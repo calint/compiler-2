@@ -92,13 +92,13 @@ class stmt_builtin_equal final : public expression {
         if (lhs_info.is_array and not lhs_.is_indexed() and
             rhs_info.is_array and not rhs_.is_indexed()) {
 
-            if (lhs_info.array_count != rhs_info.array_count) {
+            if (lhs_info.array_len != rhs_info.array_len) {
                 throw compiler_exception{lhs_.tok(),
                                          "cannot compare arrays of different "
                                          "sizes"};
             }
 
-            size_bytes *= lhs_info.array_count;
+            size_bytes *= lhs_info.array_len;
         }
 
         x.begin_memory_equal(tok(), indent);

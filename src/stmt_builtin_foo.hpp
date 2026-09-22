@@ -51,7 +51,7 @@ class stmt_builtin_foo final : public statement {
 
         tc.add_var(token{}, 0, var_i, false);
 
-        tc.add_const(token{}, 0, "n", static_cast<int64_t>(ii.array_count));
+        tc.add_const(token{}, 0, "n", static_cast<int64_t>(ii.array_len));
 
         code_ = {tc, tz};
 
@@ -108,7 +108,7 @@ class stmt_builtin_foo final : public statement {
 
         // add a constant for array size
         tc.add_const(ident_.tok(), indent, "n",
-                     static_cast<int64_t>(ii.array_count));
+                     static_cast<int64_t>(ii.array_len));
 
         x.comment(ident_.tok(), indent, "initiate iterator {}", var_e.name);
 
@@ -133,7 +133,7 @@ class stmt_builtin_foo final : public statement {
         code_.compile(tc, indent, ident_info::make_empty());
         x.label(indent + 1, loop_label + "_continue");
         x.advance_array_iteration(indent + 2, reg_iter, var_i_info.operand,
-                                  ii.type_ref().size_bytes(), ii.array_count,
+                                  ii.type_ref().size_bytes(), ii.array_len,
                                   loop_label);
 
         x.label(indent, loop_label + "_end");

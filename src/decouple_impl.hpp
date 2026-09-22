@@ -323,9 +323,9 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
         const operand src_op{
             tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
 
-        const size_t size_bytes{src_info.is_array ? src_info.array_count *
-                                                        dst_type.size_bytes()
-                                                  : dst_type.size_bytes()};
+        const size_t size_bytes{src_info.is_array
+                                    ? src_info.array_len * dst_type.size_bytes()
+                                    : dst_type.size_bytes()};
 
         machine& x{tc.machine()};
 
@@ -467,11 +467,11 @@ auto expr_type_value::validate_array_assignment(const token& src_loc_tk,
 
     assert(fld.type().name() == src_info.type_ref().name());
 
-    if (fld.array_count != src_info.array_count) {
+    if (fld.array_count != src_info.array_len) {
         throw compiler_exception{
             src_loc_tk, std::format("destination array size {} does not match "
                                     "source size {}",
-                                    fld.array_count, src_info.array_count)};
+                                    fld.array_count, src_info.array_len)};
     }
 }
 
