@@ -1,6 +1,6 @@
 # array_size_of result requires a wide destination
 
 func main() {
-    var a : i8[2]
-    var n : i8 = array_size_of(a)
+    var a[2] i8
+    var n i8 = array_size_of(a)
 }

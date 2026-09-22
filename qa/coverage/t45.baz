@@ -15,15 +15,15 @@ func main(){
     var e=d>>c
     if not e==1 exit(3)
 
-    var count : i8 = 2
-    var narrow : i8 = 1
+    var count i8 = 2
+    var narrow i8 = 1
     narrow = narrow << count
     if not narrow == 4 exit(4)
     narrow = 1
     narrow = narrow << (count + 1)
     if not narrow == 8 exit(5)
 
-    var negative_count : i8 = -2
+    var negative_count i8 = -2
     narrow = 1
     narrow = narrow << -negative_count
     if not narrow == 4 exit(6)
@@ -39,10 +39,10 @@ func main(){
     narrow = narrow >> (count + 1)
     if not narrow == -8 exit(9)
 
-    var word : i16 = 16384
+    var word i16 = 16384
     word = word << (count - 1)
     if not word == -32768 exit(10)
-    var integer : i32 = -1024
+    var integer i32 = -1024
     integer = integer >> (count + 1)
     if not integer == -128 exit(11)
 

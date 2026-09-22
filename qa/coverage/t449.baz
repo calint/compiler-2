@@ -1,6 +1,6 @@
 # lea regression: nested field writes through user-type alias with lea path
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 type pair {
     x,
@@ -8,11 +8,11 @@ type pair {
 }
 
 type box {
-    p : pair,
+    p pair,
     tag
 }
 
-func set_fields(dst : box, v, i) {
+func set_fields(dst box, v, i) {
     i = i + 1
     dst.p.x = v + i
     dst.p.y = dst.p.x + 1
@@ -20,7 +20,7 @@ func set_fields(dst : box, v, i) {
 }
 
 func main() {
-    var boxes : box[2]
+    var boxes[2] box
 
     var ix = 0
     set_fields(boxes[ix], 40, ix)

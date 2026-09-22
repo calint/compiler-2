@@ -1,14 +1,14 @@
 # regression: shorthand bool checks must compare using scalar-width regs
 
-func one8() : r i8 { r = 1 }
-func one16() : r i16 { r = 1 }
-func one32() : r i32 { r = 1 }
-func one64() : r { r = 1 }
+func one8() r i8 { r = 1 }
+func one16() r i16 { r = 1 }
+func one32() r i32 { r = 1 }
+func one64() r { r = 1 }
 
-func zero8() : r i8 { r = 0 }
-func zero16() : r i16 { r = 0 }
-func zero32() : r i32 { r = 0 }
-func zero64() : r { r = 0 }
+func zero8() r i8 { r = 0 }
+func zero16() r i16 { r = 0 }
+func zero32() r i32 { r = 0 }
+func zero64() r { r = 0 }
 
 func main() {
     if not one8() exit(11)

@@ -1,6 +1,6 @@
 # block-local shadowing preserves the outer variable
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 

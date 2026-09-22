@@ -1,0 +1,3 @@
+# array brackets must precede the data element type
+dat values i8[] = "x"
+func main() {}

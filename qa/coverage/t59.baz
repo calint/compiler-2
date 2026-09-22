@@ -1,14 +1,14 @@
 # boolean function results
 
-func f(b:bool):res bool{
+func f(b bool) res bool{
     if b res=false else res=true
 }
 
 func main(){
-    var b:bool=true
+    var b bool=true
     var q=1
 
-    var r:bool=f(not b)
+    var r bool=f(not b)
     if not r exit(1)
     
     r=f(b)

@@ -1,7 +1,7 @@
 # address calculation checks a computed index
 
 func main() {
-    var values : i8[8]
+    var values[8] i8
     var index = 8
     var address = address_of(values[index])
 }

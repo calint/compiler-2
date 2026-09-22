@@ -1,10 +1,10 @@
 # equal compares arrays
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var p : i32[4]
-    var q : i32[4]
+    var p[4] i32
+    var q[4] i32
     assert(equal(p, q))
 
     q[1] = 2

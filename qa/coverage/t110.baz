@@ -1,25 +1,25 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
-type vec3 { x : i32, y : i32, z : i32 }
+type vec3 { x i32, y i32, z i32 }
 
 type mesh {
-    vertices : vec3[8],
-    indices : i32[12],
-    id : i32
+    vertices[8] vec3,
+    indices[12] i32,
+    id i32
 }
 
 type scene {
-    meshes : mesh[4],
+    meshes[4] mesh,
     time
 }
 
 type world {
-    scenes : scene[3]
+    scenes[3] scene
 }
 
-func init_mesh(m : mesh, id_val : i32) {
+func init_mesh(m mesh, id_val i32) {
     m.id = id_val
 
     var i = 0
@@ -39,7 +39,7 @@ func init_mesh(m : mesh, id_val : i32) {
     }
 }
 
-func verify_mesh(m : mesh, id_val : i32) {
+func verify_mesh(m mesh, id_val i32) {
     assert(m.id == id_val)
     var i = 0
     loop {
@@ -51,7 +51,7 @@ func verify_mesh(m : mesh, id_val : i32) {
     }
 }
 
-func transform_vertices(s : scene, offset : vec3) {
+func transform_vertices(s scene, offset vec3) {
     var i = 0
     loop {
         var j = 0
@@ -68,10 +68,10 @@ func transform_vertices(s : scene, offset : vec3) {
 }
 
 func main() {
-    var w : world[2]
+    var w[2] world
     
     # test 1: initialize nested array structures
-    var offset : vec3 = {5, 10, 15}
+    var offset vec3 = {5, 10, 15}
     
     var i = 0
     loop {
@@ -113,7 +113,7 @@ func main() {
     }
     
     # test 5: arrays_equal on nested arrays
-    var ok : bool = arrays_equal(
+    var ok bool = arrays_equal(
         w[0].scenes[0].meshes[1].vertices,
         w[1].scenes[2].meshes[1].vertices,
         array_size_of(w[0].scenes[0].meshes[1].vertices)
@@ -149,7 +149,7 @@ func main() {
     assert(w[1].scenes[0].meshes[2].vertices[7].z == 210 + 15)   # (7*30) + offset.z = 225   
     
     # test 8: struct array initialization
-    var mesh_array : mesh[4]
+    var mesh_array[4] mesh
     var m = 0
     loop {
         init_mesh(mesh_array[m], m * 100)

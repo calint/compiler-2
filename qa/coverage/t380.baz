@@ -1,10 +1,10 @@
 # computed index must respect array-parameter bounds
 
-func legacy_write(values : i8[], index) {
+func legacy_write(values[] i8, index) {
     values[index + 1] = 1
 }
 
 func main() {
-    var values : i8[8]
+    var values[8] i8
     legacy_write(values, 7)
 }

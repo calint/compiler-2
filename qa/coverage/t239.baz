@@ -3,6 +3,6 @@
 type p { x }
 type q { x }
 func main() {
-    var q1 : q
-    var p1 : p = q1
+    var q1 q
+    var p1 p = q1
 }

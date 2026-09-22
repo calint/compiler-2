@@ -1,8 +1,8 @@
 # invalid outer nested index
 
-type group { values : i8[2] }
+type group { values[2] i8 }
 
 func main() {
-    var groups : group[2]
+    var groups[2] group
     groups[2].values[0] = 1
 }

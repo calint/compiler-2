@@ -1,13 +1,13 @@
 # boolean comparisons and coercion
 
 func main(){
-    var bt1:i8=1
-    var bt2:i8=2
+    var bt1 i8=1
+    var bt2 i8=2
 
-    var b1:bool=bt1<bt2
+    var b1 bool=bt1<bt2
     if not b1 exit(1)
 
-    var b2:bool=bt1==1
+    var b2 bool=bt1==1
     b2=not bt2
     if b2 exit(2)
 

@@ -1,4 +1,4 @@
 # fixed-size array may use an empty initializer
 
-type p { data : i8[2] }
-func main() { var a : p[2] = {} }
+type p { data[2] i8 }
+func main() { var a[2] p = {} }

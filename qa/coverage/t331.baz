@@ -1,16 +1,16 @@
 # function result initializes a struct field
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
-type box { point_value : point, tag }
+type box { point_value point, tag }
 
-func make_point() : result point {
+func make_point() result point {
     result = { 8, -3 }
 }
 
 func main() {
-    var container : box
+    var container box
     container.point_value = make_point()
     assert(container.point_value.x == 8)
     assert(container.point_value.y == -3)

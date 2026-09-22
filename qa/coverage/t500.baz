@@ -1,0 +1,27 @@
+# colonless declarations retain default types, arrays and adjacent statements
+
+type point { x, y i32, values[2] }
+dat text[] i8 = ": stays in strings"
+dat data[2] = { 3, 4 }
+func assert(ok bool) { if not ok exit(1) }
+func noinline twice(value i32) result i32 { result = value * 2 }
+func sum(values[]) result { result = values[0] + values[1] }
+func identity(value) result { result = value }
+func fooz(pt point) { pt.y = 9 }
+func main() {
+    var pt point = { 1, 2, { 3, 4 } }
+    fooz(pt)
+    assert(pt.y == 9)
+    var value i32 = 5
+    var doubled i32 = twice(value)
+    assert(doubled == 10)
+    var numbers[] = { 6, 7 }
+    assert(sum(numbers) == 13)
+    assert(sum(data) == 7)
+    var plain plain = identity(8)
+    assert(plain == 8)
+    var next
+    next = 3
+    assert(next == 3)
+    assert(text[0] == 58)
+}

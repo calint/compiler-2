@@ -1,12 +1,12 @@
 # dotted field used as an array index
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type position { index }
 
 func main() {
-    var values : [4]
-    var pos : position
+    var values[4]
+    var pos position
     pos.index = 2
     values[pos.index] = 7
     assert(values[2] == 7)

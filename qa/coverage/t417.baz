@@ -1,10 +1,10 @@
 # foo over a points array in an indexed holder
 
 type point { x, y }
-type item { points : point[2] }
-type holder { cols : item[4] }
+type item { points[2] point }
+type holder { cols[4] item }
 
-dat h1 : holder[3] =
+dat h1[3] holder =
     {
         {
             {
@@ -92,9 +92,9 @@ dat h1 : holder[3] =
         }
     }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
-func update(h : holder) {
+func update(h holder) {
     foo h.cols[2].points  {
         e.y = e.y + 10
     }

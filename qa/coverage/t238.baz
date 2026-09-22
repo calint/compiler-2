@@ -1,4 +1,4 @@
 # function results must be assigned
 
-func f() : result { }
+func f() result { }
 func main() {}

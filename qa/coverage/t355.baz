@@ -1,10 +1,10 @@
 # out-of-range index returned by a function
 
-func get_index() : result {
+func get_index() result {
     result = 8
 }
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     arr[get_index()] = 1
 }

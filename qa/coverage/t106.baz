@@ -1,36 +1,36 @@
 # array_copy of an indexed struct element
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
 type point {x, y}
 
 type link {
-    pos : point,
-    name : i8[64],
-    name_len : i8,
-    loc : i32
+    pos point,
+    name[64] i8,
+    name_len i8,
+    loc i32
 }
 
 type location {
-    name : i8[64],
-    links : link[8]
+    name[64] i8,
+    links[8] link
 }
 
 type world {
     time,
-    locations : location[7]
+    locations[7] location
 }
 
-func fuz(lnks: link[]) {
+func fuz(lnks[] link) {
     lnks[1].loc = 0xba
     lnks[1].pos.y = 0xab
     array_copy(lnks[1], lnks[4], 1)
 }
 
 func main() {
-    var worlds : world[2]
+    var worlds[2] world
     fuz(worlds[1].locations[2].links)
     assert(worlds[1].locations[2].links[4].loc == 0xba)
     assert(worlds[1].locations[2].links[4].pos.y == 0xab)

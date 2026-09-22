@@ -1,2 +1,2 @@
-func f() : r i64.x { r = 1 }
+func f() r i64.x { r = 1 }
 func main() {}

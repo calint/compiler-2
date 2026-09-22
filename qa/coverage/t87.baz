@@ -1,4 +1,4 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -6,25 +6,25 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
 type location {
-    name : i8[64],
+    name[64] i8,
     name_len
 }
 
-dat nl_str : i8[] = "\n"
+dat nl_str[] i8 = "\n"
 
 func nl() {
     print(array_size_of(nl_str), address_of(nl_str))
 }
 
 func pn(num) {
-    var buf : i8[20]
+    var buf[20] i8
     var n = num
-    var is_negative : bool = false
+    var is_negative bool = false
 
     if n < 0 {
         is_negative = true
@@ -51,7 +51,7 @@ func pn(num) {
 }
 
 func main() {
-    var locations : location[4]
+    var locations[4] location
 
     var i = 0
     loop {

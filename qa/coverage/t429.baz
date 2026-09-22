@@ -1,20 +1,20 @@
 # foo indexes an array of user types in a user-type field
 
 type point { x, y }
-type item { data : point[2] }
+type item { data[2] point }
 
-dat values : item[3] =
+dat values[3] item =
     {
         { { {1, 2}, {3, 4} } },
         { { {5, 6}, {7, 8} } },
         { { {9, 10}, {11, 12} } }
     }
 
-func increment(value : point) {
+func increment(value point) {
     value.y = value.y + 10
 }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
     foo values {

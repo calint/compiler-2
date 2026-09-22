@@ -1,7 +1,7 @@
 # signed thirty-two-bit index remains negative
 
 func main() {
-    var arr : i8[8]
-    var index : i32 = -1
+    var arr[8] i8
+    var index i32 = -1
     arr[index] = 1
 }

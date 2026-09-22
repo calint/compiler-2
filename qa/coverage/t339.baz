@@ -1,16 +1,16 @@
 # indexed field passed by reference
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
-type holder { points : point[2] }
+type holder { points[2] point }
 
-func set_x(p : point) {
+func set_x(p point) {
     p.x = 9
 }
 
 func main() {
-    var h : holder
+    var h holder
     set_x(h.points[1])
     assert(h.points[1].x == 9)
 }

@@ -1,4 +1,4 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -6,15 +6,15 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
-dat ok : i8[] = "ok\n"
+dat ok[] i8 = "ok\n"
 
 func main() {
-    var word1 : i8[64]
-    var word2 : i8[64]
+    var word1[64] i8
+    var word2[64] i8
 
     print(array_size_of(ok), address_of(ok))
 

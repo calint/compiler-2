@@ -1,4 +1,4 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -6,37 +6,37 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
 type str_s {
-    size : i8,
-    data : i8[31]
+    size i8,
+    data[31] i8
 }
 
 type str_m {
-    size : i8,
-    data : i8[63]
+    size i8,
+    data[63] i8
 }
 
 type str_l {
-    size : i8,
-    data : i8[127]
+    size i8,
+    data[127] i8
 }
 
 type link {
-    name : str_s,
-    to : i32
+    name str_s,
+    to i32
 }
 
 type location {
-    name : str_s,
-    links : link[8]
+    name str_s,
+    links[8] link
 }
 
 func main() {
-    var locations : location[8]
+    var locations[8] location
     var i = 0
     loop {
         var len = 

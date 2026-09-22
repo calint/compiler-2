@@ -1,2 +1,2 @@
 
-t497.baz:4:5: expected '{' to begin block
+t497.baz:5:1: expected '{' to begin block

@@ -2,6 +2,6 @@
 
 type p { x }
 func main() {
-    var p1 : p
+    var p1 p
     var x = p1.y
 }

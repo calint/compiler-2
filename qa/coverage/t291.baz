@@ -4,8 +4,8 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-dat escapes : i8[] = "\t\r\v\f`"
-dat output : i8[] = "token escapes\n"
+dat escapes[] i8 = "\t\r\v\f`"
+dat output[] i8 = "token escapes\n"
 
 func main() {
     print(array_size_of(output), address_of(output))

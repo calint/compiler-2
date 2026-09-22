@@ -1,6 +1,6 @@
 # unary argument passed to a function result
 
-func f(x:reg_rdx):res{
+func f(x reg_rdx) res{
     res=-x*2
 }
 

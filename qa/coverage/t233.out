@@ -1,2 +1,2 @@
 
-t233.baz:3:34: expected ',' followed by initializer for type 'i8'
+t233.baz:3:32: expected ',' followed by initializer for type 'i8'

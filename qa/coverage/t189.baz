@@ -1,4 +1,4 @@
 # type fields require a name
 
-type x { : i8 }
+type x { , }
 func main() {}

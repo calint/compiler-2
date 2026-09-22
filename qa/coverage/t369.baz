@@ -1,6 +1,6 @@
 # combined bounds checks without line output
 
 func main() {
-    var values : i8[8]
+    var values[8] i8
     values[8] = 1
 }

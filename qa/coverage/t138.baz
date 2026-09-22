@@ -1,23 +1,23 @@
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
-func faz(x : i8, y : i8) : res i8 {
+func faz(x i8, y i8) res i8 {
     res = x * y 
 }
 
-func fez(x : i8, y : i8) : res i8 {
+func fez(x i8, y i8) res i8 {
     res = x * ~y 
 }
 
 func main() {
-    var arr : i32[4]
-    var ix : i32 = 2
+    var arr[4] i32
+    var ix i32 = 2
     arr[ix] = 3
-    var a : i8 = faz(arr[ix], ix)
+    var a i8 = faz(arr[ix], ix)
     assert(a == 6)
-    var b : i8 = fez(arr[ix], ix)
+    var b i8 = fez(arr[ix], ix)
     assert(b == -9)
-    var c : i8 = fez(3, ix)
+    var c i8 = fez(3, ix)
     assert(c == -9)
-    var d : i8 = fez(3, 2)
+    var d i8 = fez(3, 2)
     assert(d == -9)
 }

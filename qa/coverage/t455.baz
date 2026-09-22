@@ -1,6 +1,6 @@
 # resolver path: alias chain with lea + indexed user-type argument
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 type point {
     x,
@@ -8,19 +8,19 @@ type point {
 }
 
 type node {
-    p : point
+    p point
 }
 
 type world {
-    nodes : node[3]
+    nodes[3] node
 }
 
-func bump(a : node) {
+func bump(a node) {
     a.p.y = a.p.y + 2
 }
 
 func main() {
-    var worlds : world[2]
+    var worlds[2] world
 
     worlds[1].nodes[2].p.y = 7
 

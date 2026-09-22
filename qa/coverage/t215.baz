@@ -1,4 +1,4 @@
 # function parameters require known types
 
-func f(x : nope) {}
+func f(x nope) {}
 func main() {}

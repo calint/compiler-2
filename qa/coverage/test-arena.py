@@ -13,14 +13,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 # Shared Baz helpers. A failed assertion exits with its numbered error code.
 # item occupies 13 bytes: one i8 tag plus three i32 values, without field padding.
-COMMON = """func assert(err, condition : bool) { if not condition exit(err) }
-type item { tag : i8, values : i32[3] }
-func bump(value : item) { value.values[2] = value.values[2] + 1 }
+COMMON = """func assert(err, condition bool) { if not condition exit(err) }
+type item { tag i8, values[3] i32 }
+func bump(value item) { value.values[2] = value.values[2] + 1 }
 """
 # Runtime checks: the first local is aligned and zeroed; sibling blocks reuse
 # and re-zero storage; nested indexing and mutation through a function argument
 # work without corrupting neighbors; the machine stack pointer stays unchanged.
-BODY = """    var first_local : i8[3]
+BODY = """    var first_local[3] i8
     var original_stack = rsp
     var first_address = address_of(first_local)
     assert(1, first_address % 16 == 0)
@@ -28,16 +28,16 @@ BODY = """    var first_local : i8[3]
     first_local[2] = 23
     var block_address
     {
-        var temporary : i8[5]
+        var temporary[5] i8
         block_address = address_of(temporary)
         temporary[0] = 99
     }
     {
-        var temporary : i8[5]
+        var temporary[5] i8
         assert(3, address_of(temporary) == block_address)
         assert(4, temporary[0] == 0)
     }
-    var items : item[2]
+    var items[2] item
     var index = 1
     items[index].tag = 9
     items[index].values[2] = 41
@@ -110,7 +110,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     layouts = {
         "no-data": ("", "", 0),
         "odd-data": (
-            "dat first : i8 = 7\ndat second : i32 = 123456\ndat third : i8[2] = {11, 22}\n",
+            "dat first i8 = 7\ndat second i32 = 123456\ndat third[2] i8 = {11, 22}\n",
             """    assert(9, address_of(second) == address_of(first) + 1)
     assert(10, address_of(third) == address_of(first) + 5)
     assert(11, first_address == address_of(first) + 16)
@@ -119,7 +119,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     assert(14, third[1] == 22)
 """, 7),
         "aligned-data": (
-            "dat first : i64[2] = {7, 9}\n",
+            "dat first[2] i64 = {7, 9}\n",
             """    assert(9, first_address == address_of(first) + 16)
     assert(10, first[0] == 7)
     assert(11, first[1] == 9)
@@ -140,44 +140,44 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         ("no-data", ""),
         ("odd-data", layouts["odd-data"][0]),
         ("aligned-data", layouts["aligned-data"][0]),
-        ("one-byte", "dat data : i8[1]\n"),
-        ("before-alignment", "dat data : i8[15]\n"),
-        ("after-alignment", "dat data : i8[17]\n"),
-        ("before-second-alignment", "dat data : i8[31]\n"),
-        ("second-alignment", "dat data : i8[32]\n"),
-        ("inferred-data", "dat data : i8[] = {" + ", ".join(["1"] * 17) + "}\n"),
+        ("one-byte", "dat data[1] i8\n"),
+        ("before-alignment", "dat data[15] i8\n"),
+        ("after-alignment", "dat data[17] i8\n"),
+        ("before-second-alignment", "dat data[31] i8\n"),
+        ("second-alignment", "dat data[32] i8\n"),
+        ("inferred-data", "dat data[] i8 = {" + ", ".join(["1"] * 17) + "}\n"),
     ]
     # Each case is (name, declarations before main, main body, expected peak bytes).
     # These are simultaneous storage requirements, not sums of all declarations.
     statistics_cases = [
         ("no-vars", "", "", 0),
-        ("local", "", "var local : i8[3]", 3),
+        ("local", "", "var local[3] i8", 3),
         # Sibling blocks do not coexist: 3 + max(5, 2) = 8.
         ("sibling-scopes", "",
-         "var local : i8[3]\n{ var temporary : i8[5] }\n"
-         "{ var temporary : i8[2] }", 8),
+         "var local[3] i8\n{ var temporary[5] i8 }\n"
+         "{ var temporary[2] i8 }", 8),
         # Nested blocks coexist: 3 + 5 + 7 = 15; the later 4-byte block reuses space.
         ("nested-scopes", "",
-         "var local : i8[3]\n{ var outer : i8[5]\n"
-         "{ var inner : i8[7] } }\n{ var reused : i8[4] }", 15),
+         "var local[3] i8\n{ var outer[5] i8\n"
+         "{ var inner[7] i8 } }\n{ var reused[4] i8 }", 15),
         # Global vars remain live while main runs: 11 + 3 + 5 = 19.
-        ("global-and-local", "var global : i8[11]\n",
-         "var local : i8[3]\n{ var temporary : i8[5] }", 19),
+        ("global-and-local", "var global[11] i8\n",
+         "var local[3] i8\n{ var temporary[5] i8 }", 19),
         # main, middle, and leaf need 3 + 5 + 7 = 15 together.
         # Calling middle again must reuse its storage, not accumulate another 12.
         ("nested-calls",
-         "func leaf() { var leaf_local : i8[7] }\n"
-         "func middle() { var middle_local : i8[5] leaf() }\n",
-         "var local : i8[3]\nmiddle()\nmiddle()", 15),
+         "func leaf() { var leaf_local[7] i8 }\n"
+         "func middle() { var middle_local[5] i8 leaf() }\n",
+         "var local[3] i8\nmiddle()\nmiddle()", 15),
         # Two packed records: 2 * (1 + 3 * 4) = 26.
-        ("structured-array", "type record { tag : i8, values : i32[3] }\n",
-         "var records : record[2]", 26),
+        ("structured-array", "type record { tag i8, values[3] i32 }\n",
+         "var records[2] record", 26),
     ]
     for name, data_source in statistics_layouts:
         for case, declarations, body, expected_size in statistics_cases:
             # Parsing an unused function must not inflate generated-program usage.
             source = (data_source + declarations
-                      + "func unused() { var unused_local : i8[1024] }\n"
+                      + "func unused() { var unused_local[1024] i8 }\n"
                       + "func main() {\n" + body + "\n}\n")
             for mode, options in modes.items():
                 result = compile_source(directory, source, 4096, options)
@@ -194,7 +194,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             print(f"arena {name} max vars size: ok", flush=True)
 
     for count in (16, 17):
-        source = f"func main() {{ var buffer : i8[{count}] }}\n"
+        source = f"func main() {{ var buffer[{count}] i8 }}\n"
         result = compile_source(directory, source, 16, [])
         assert result.returncode == (0 if count == 16 else 1), result.stderr
         if count == 17:
@@ -253,7 +253,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
 
     for register, value_type in (("rbp", "i64"), ("ebp", "i32"), ("bp", "i16"), ("bpl", "i8")):
         source = COMMON + f"""func main() {{
-    var original : {value_type} = {register}
+    var original {value_type} = {register}
     mov(rbx, rbp)
     mov({register}, 42)
     mov(rax, {register})
@@ -280,21 +280,21 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             )
             run = subprocess.run([str(directory / "arena")], capture_output=True)
             assert run.returncode == 0, (register, mode, run.returncode, run.stderr)
-        source = f"func consume(value : reg_{register}) {{}}\nfunc main() {{ consume(1) }}\n"
+        source = f"func consume(value reg_{register}) {{}}\nfunc main() {{ consume(1) }}\n"
         result = compile_source(directory, source, 4096, [])
         assert result.returncode == 1, (register, result.returncode, result.stderr)
         assert f"cannot allocate register {register}" in result.stderr, result.stderr
         print(f"arena access {register}: ok", flush=True)
 
     for offset in (2047, 2048, 8196, 2147483647, 2147483648, 2147483656):
-        source = f"""type large {{ padding : i8[{offset}], value : i32, next : i32 }}
-func noinline update(value : i32) {{ value = value + 1 }}
+        source = f"""type large {{ padding[{offset}] i8, value i32, next i32 }}
+func noinline update(value i32) {{ value = value + 1 }}
 func main() {{
-    var data : large
+    var data large
     data.value = 7
     data.next = data.value
     var address = address_of(data.value)
-    var equal : bool = data.value == data.next
+    var equal bool = data.value == data.next
     data.value = -data.value
     update(data.next)
 }}
@@ -309,9 +309,9 @@ func main() {{
         print(f"arena large offset {offset}: ok", flush=True)
 
     for offset in (2147483647, 2147483648, 2147483656):
-        source = COMMON + f"""type large {{ padding : i8[{offset}], value : i32, next : i32, equal : bool, values : i32[3] }}
-func noinline update(value : i32) {{ value = value + 1 }}
-func noinline probe(data : large) {{
+        source = COMMON + f"""type large {{ padding[{offset}] i8, value i32, next i32, equal bool, values[3] i32 }}
+func noinline update(value i32) {{ value = value + 1 }}
+func noinline probe(data large) {{
     data.value = 7
     data.next = data.value
     data.equal = data.value == data.next
@@ -378,9 +378,9 @@ panic_entry:
                 assert run.stderr == b"panic: bounds at line 123\n", run.stderr
         print(f"arena large offset runtime {offset}: ok", flush=True)
 
-    source = COMMON + """func noinline update(value : i32) { value = value + 1 }
+    source = COMMON + """func noinline update(value i32) { value = value + 1 }
 func main() {
-    var value : i32 = 41
+    var value i32 = 41
     update(value)
     assert(1, value == 42)
 }
@@ -401,11 +401,11 @@ func main() {
         print(f"arena large frame capacity {vars_size}: ok", flush=True)
 
     for declaration in (
-        "type huge { values : i64[2305843009213693952] }",
-        "type huge { values : i8[9223372036854775807], extra : i8 }",
-        "var huge : i64[2305843009213693952]",
-        "dat huge : i64[2305843009213693952]",
-        "dat huge : i64[1152921504606846976]",
+        "type huge { values[2305843009213693952] i64 }",
+        "type huge { values[9223372036854775807] i8, extra i8 }",
+        "var huge[2305843009213693952] i64",
+        "dat huge[2305843009213693952] i64",
+        "dat huge[1152921504606846976] i64",
     ):
         result = compile_source(directory, declaration + "\nfunc main() {}\n", 4096, [])
         assert result.returncode == 1, result.stderr

@@ -47,15 +47,15 @@ main:
     sete r15b
     bool_end_137_12:
     assert_137_5:
-        if_32_28_137_5:
-        cmp_32_28_137_5:
+        if_32_26_137_5:
+        cmp_32_26_137_5:
         cmp r15b, 0
-        jne if_32_25_137_5_end
-        if_32_28_137_5_code:
+        jne if_32_23_137_5_end
+        if_32_26_137_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_137_5_end:
+        if_32_23_137_5_end:
     assert_137_5_end:
     mov qword [rbp + 240], -1
     cmp_141_12:
@@ -63,43 +63,43 @@ main:
     sete r15b
     bool_end_141_12:
     assert_141_5:
-        if_32_28_141_5:
-        cmp_32_28_141_5:
+        if_32_26_141_5:
+        cmp_32_26_141_5:
         cmp r15b, 0
-        jne if_32_25_141_5_end
-        if_32_28_141_5_code:
+        jne if_32_23_141_5_end
+        if_32_26_141_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_141_5_end:
+        if_32_23_141_5_end:
     assert_141_5_end:
         cmp_145_16:
         bool_end_145_16:
         mov r15b, 1
         assert_145_9:
-            if_32_28_145_9:
-            cmp_32_28_145_9:
+            if_32_26_145_9:
+            cmp_32_26_145_9:
             cmp r15b, 0
-            jne if_32_25_145_9_end
-            if_32_28_145_9_code:
+            jne if_32_23_145_9_end
+            if_32_26_145_9_code:
                 mov rdi, 1
                 mov rax, 60
                 syscall
-            if_32_25_145_9_end:
+            if_32_23_145_9_end:
         assert_145_9_end:
     cmp_148_12:
     bool_end_148_12:
     mov r15b, 1
     assert_148_5:
-        if_32_28_148_5:
-        cmp_32_28_148_5:
+        if_32_26_148_5:
+        cmp_32_26_148_5:
         cmp r15b, 0
-        jne if_32_25_148_5_end
-        if_32_28_148_5_code:
+        jne if_32_23_148_5_end
+        if_32_26_148_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_148_5_end:
+        if_32_23_148_5_end:
     assert_148_5_end:
     mov qword [rbp + 248], 1
     mov r15, qword [rbp + 248]
@@ -143,15 +143,15 @@ main:
     sete r15b
     bool_end_155_12:
     assert_155_5:
-        if_32_28_155_5:
-        cmp_32_28_155_5:
+        if_32_26_155_5:
+        cmp_32_26_155_5:
         cmp r15b, 0
-        jne if_32_25_155_5_end
-        if_32_28_155_5_code:
+        jne if_32_23_155_5_end
+        if_32_26_155_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_155_5_end:
+        if_32_23_155_5_end:
     assert_155_5_end:
     cmp_156_12:
     mov r14, 2
@@ -166,15 +166,15 @@ main:
     sete r15b
     bool_end_156_12:
     assert_156_5:
-        if_32_28_156_5:
-        cmp_32_28_156_5:
+        if_32_26_156_5:
+        cmp_32_26_156_5:
         cmp r15b, 0
-        jne if_32_25_156_5_end
-        if_32_28_156_5_code:
+        jne if_32_23_156_5_end
+        if_32_26_156_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_156_5_end:
+        if_32_23_156_5_end:
     assert_156_5_end:
     mov rcx, 2
     mov r15, 2
@@ -211,15 +211,15 @@ main:
     sete r15b
     bool_end_160_12:
     assert_160_5:
-        if_32_28_160_5:
-        cmp_32_28_160_5:
+        if_32_26_160_5:
+        cmp_32_26_160_5:
         cmp r15b, 0
-        jne if_32_25_160_5_end
-        if_32_28_160_5_code:
+        jne if_32_23_160_5_end
+        if_32_26_160_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_160_5_end:
+        if_32_23_160_5_end:
     assert_160_5_end:
     mov qword [rbp + 256], 0
     mov qword [rbp + 264], 0
@@ -274,15 +274,15 @@ main:
         sete r15b
     bool_end_164_12:
     assert_164_5:
-        if_32_28_164_5:
-        cmp_32_28_164_5:
+        if_32_26_164_5:
+        cmp_32_26_164_5:
         cmp r15b, 0
-        jne if_32_25_164_5_end
-        if_32_28_164_5_code:
+        jne if_32_23_164_5_end
+        if_32_26_164_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_164_5_end:
+        if_32_23_164_5_end:
     assert_164_5_end:
     mov r15, 2
     mov r14, 167
@@ -317,15 +317,15 @@ main:
         setne r15b
     bool_end_168_12:
     assert_168_5:
-        if_32_28_168_5:
-        cmp_32_28_168_5:
+        if_32_26_168_5:
+        cmp_32_26_168_5:
         cmp r15b, 0
-        jne if_32_25_168_5_end
-        if_32_28_168_5_code:
+        jne if_32_23_168_5_end
+        if_32_26_168_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_168_5_end:
+        if_32_23_168_5_end:
     assert_168_5_end:
     mov qword [rbp + 248], 3
     mov r15, qword [rbp + 248]
@@ -364,15 +364,15 @@ main:
     sete r15b
     bool_end_172_12:
     assert_172_5:
-        if_32_28_172_5:
-        cmp_32_28_172_5:
+        if_32_26_172_5:
+        cmp_32_26_172_5:
         cmp r15b, 0
-        jne if_32_25_172_5_end
-        if_32_28_172_5_code:
+        jne if_32_23_172_5_end
+        if_32_26_172_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_172_5_end:
+        if_32_23_172_5_end:
     assert_172_5_end:
     faz_174_5:
         mov r15, 1
@@ -398,15 +398,15 @@ main:
     sete r15b
     bool_end_175_12:
     assert_175_5:
-        if_32_28_175_5:
-        cmp_32_28_175_5:
+        if_32_26_175_5:
+        cmp_32_26_175_5:
         cmp r15b, 0
-        jne if_32_25_175_5_end
-        if_32_28_175_5_code:
+        jne if_32_23_175_5_end
+        if_32_26_175_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_175_5_end:
+        if_32_23_175_5_end:
     assert_175_5_end:
     mov qword [rbp + 288], 3
     mov qword [rbp + 296], 5
@@ -438,15 +438,15 @@ main:
     sete r15b
     bool_end_181_12:
     assert_181_5:
-        if_32_28_181_5:
-        cmp_32_28_181_5:
+        if_32_26_181_5:
+        cmp_32_26_181_5:
         cmp r15b, 0
-        jne if_32_25_181_5_end
-        if_32_28_181_5_code:
+        jne if_32_23_181_5_end
+        if_32_26_181_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_181_5_end:
+        if_32_23_181_5_end:
     assert_181_5_end:
     cmp_182_12:
     mov r14, 1
@@ -464,15 +464,15 @@ main:
     sete r15b
     bool_end_182_12:
     assert_182_5:
-        if_32_28_182_5:
-        cmp_32_28_182_5:
+        if_32_26_182_5:
+        cmp_32_26_182_5:
         cmp r15b, 0
-        jne if_32_25_182_5_end
-        if_32_28_182_5_code:
+        jne if_32_23_182_5_end
+        if_32_26_182_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_182_5_end:
+        if_32_23_182_5_end:
     assert_182_5_end:
     mov qword [rbp + 304], 0
     mov qword [rbp + 312], 0
@@ -485,30 +485,30 @@ main:
     sete r15b
     bool_end_190_12:
     assert_190_5:
-        if_32_28_190_5:
-        cmp_32_28_190_5:
+        if_32_26_190_5:
+        cmp_32_26_190_5:
         cmp r15b, 0
-        jne if_32_25_190_5_end
-        if_32_28_190_5_code:
+        jne if_32_23_190_5_end
+        if_32_26_190_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_190_5_end:
+        if_32_23_190_5_end:
     assert_190_5_end:
     cmp_191_12:
     cmp qword [rbp + 312], 11
     sete r15b
     bool_end_191_12:
     assert_191_5:
-        if_32_28_191_5:
-        cmp_32_28_191_5:
+        if_32_26_191_5:
+        cmp_32_26_191_5:
         cmp r15b, 0
-        jne if_32_25_191_5_end
-        if_32_28_191_5_code:
+        jne if_32_23_191_5_end
+        if_32_26_191_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_191_5_end:
+        if_32_23_191_5_end:
     assert_191_5_end:
     mov rax, qword [rbp + 304]
     mov qword [rbp + 320], rax
@@ -522,15 +522,15 @@ main:
         sete r15b
     bool_end_194_12:
     assert_194_5:
-        if_32_28_194_5:
-        cmp_32_28_194_5:
+        if_32_26_194_5:
+        cmp_32_26_194_5:
         cmp r15b, 0
-        jne if_32_25_194_5_end
-        if_32_28_194_5_code:
+        jne if_32_23_194_5_end
+        if_32_26_194_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_194_5_end:
+        if_32_23_194_5_end:
     assert_194_5_end:
     mov qword [rbp + 320], 3
     cmp_199_12:
@@ -541,15 +541,15 @@ main:
         setne r15b
     bool_end_199_12:
     assert_199_5:
-        if_32_28_199_5:
-        cmp_32_28_199_5:
+        if_32_26_199_5:
+        cmp_32_26_199_5:
         cmp r15b, 0
-        jne if_32_25_199_5_end
-        if_32_28_199_5_code:
+        jne if_32_23_199_5_end
+        if_32_26_199_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_199_5_end:
+        if_32_23_199_5_end:
     assert_199_5_end:
     mov qword [rbp + 336], 0
     bar_202_5:
@@ -567,15 +567,15 @@ main:
     sete r15b
     bool_end_203_12:
     assert_203_5:
-        if_32_28_203_5:
-        cmp_32_28_203_5:
+        if_32_26_203_5:
+        cmp_32_26_203_5:
         cmp r15b, 0
-        jne if_32_25_203_5_end
-        if_32_28_203_5_code:
+        jne if_32_23_203_5_end
+        if_32_26_203_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_203_5_end:
+        if_32_23_203_5_end:
     assert_203_5_end:
     mov qword [rbp + 336], 1
     bar_206_5:
@@ -593,15 +593,15 @@ main:
     sete r15b
     bool_end_207_12:
     assert_207_5:
-        if_32_28_207_5:
-        cmp_32_28_207_5:
+        if_32_26_207_5:
+        cmp_32_26_207_5:
         cmp r15b, 0
-        jne if_32_25_207_5_end
-        if_32_28_207_5_code:
+        jne if_32_23_207_5_end
+        if_32_26_207_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_207_5_end:
+        if_32_23_207_5_end:
     assert_207_5_end:
     mov qword [rbp + 344], 1
     baz_210_13:
@@ -614,15 +614,15 @@ main:
     sete r15b
     bool_end_211_12:
     assert_211_5:
-        if_32_28_211_5:
-        cmp_32_28_211_5:
+        if_32_26_211_5:
+        cmp_32_26_211_5:
         cmp r15b, 0
-        jne if_32_25_211_5_end
-        if_32_28_211_5_code:
+        jne if_32_23_211_5_end
+        if_32_26_211_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_211_5_end:
+        if_32_23_211_5_end:
     assert_211_5_end:
     baz_213_9:
         mov r15, 1
@@ -634,70 +634,70 @@ main:
     sete r15b
     bool_end_214_12:
     assert_214_5:
-        if_32_28_214_5:
-        cmp_32_28_214_5:
+        if_32_26_214_5:
+        cmp_32_26_214_5:
         cmp r15b, 0
-        jne if_32_25_214_5_end
-        if_32_28_214_5_code:
+        jne if_32_23_214_5_end
+        if_32_26_214_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_214_5_end:
+        if_32_23_214_5_end:
     assert_214_5_end:
-    baz_216_23:
+    baz_216_21:
         mov r15, 3
         imul r15, 2
         mov qword [rbp + 360], r15
-    baz_216_23_end:
+    baz_216_21_end:
     mov qword [rbp + 368], 0
     cmp_217_12:
     cmp qword [rbp + 360], 6
     sete r15b
     bool_end_217_12:
     assert_217_5:
-        if_32_28_217_5:
-        cmp_32_28_217_5:
+        if_32_26_217_5:
+        cmp_32_26_217_5:
         cmp r15b, 0
-        jne if_32_25_217_5_end
-        if_32_28_217_5_code:
+        jne if_32_23_217_5_end
+        if_32_26_217_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_217_5_end:
+        if_32_23_217_5_end:
     assert_217_5_end:
-    point_init_219_22:
+    point_init_219_20:
         mov qword [rbp + 376], -1
         mov qword [rbp + 384], -2
-    point_init_219_22_end:
+    point_init_219_20_end:
     cmp_220_12:
     cmp qword [rbp + 376], -1
     sete r15b
     bool_end_220_12:
     assert_220_5:
-        if_32_28_220_5:
-        cmp_32_28_220_5:
+        if_32_26_220_5:
+        cmp_32_26_220_5:
         cmp r15b, 0
-        jne if_32_25_220_5_end
-        if_32_28_220_5_code:
+        jne if_32_23_220_5_end
+        if_32_26_220_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_220_5_end:
+        if_32_23_220_5_end:
     assert_220_5_end:
     cmp_221_12:
     cmp qword [rbp + 384], -2
     sete r15b
     bool_end_221_12:
     assert_221_5:
-        if_32_28_221_5:
-        cmp_32_28_221_5:
+        if_32_26_221_5:
+        cmp_32_26_221_5:
         cmp r15b, 0
-        jne if_32_25_221_5_end
-        if_32_28_221_5_code:
+        jne if_32_23_221_5_end
+        if_32_26_221_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_221_5_end:
+        if_32_23_221_5_end:
     assert_221_5_end:
     mov qword [rbp + 392], 1
     mov qword [rbp + 400], 2
@@ -712,45 +712,45 @@ main:
     sete r15b
     bool_end_227_12:
     assert_227_5:
-        if_32_28_227_5:
-        cmp_32_28_227_5:
+        if_32_26_227_5:
+        cmp_32_26_227_5:
         cmp r15b, 0
-        jne if_32_25_227_5_end
-        if_32_28_227_5_code:
+        jne if_32_23_227_5_end
+        if_32_26_227_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_227_5_end:
+        if_32_23_227_5_end:
     assert_227_5_end:
     cmp_228_12:
     cmp qword [rbp + 416], 2
     sete r15b
     bool_end_228_12:
     assert_228_5:
-        if_32_28_228_5:
-        cmp_32_28_228_5:
+        if_32_26_228_5:
+        cmp_32_26_228_5:
         cmp r15b, 0
-        jne if_32_25_228_5_end
-        if_32_28_228_5_code:
+        jne if_32_23_228_5_end
+        if_32_26_228_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_228_5_end:
+        if_32_23_228_5_end:
     assert_228_5_end:
     cmp_229_12:
     cmp dword [rbp + 424], 16711680
     sete r15b
     bool_end_229_12:
     assert_229_5:
-        if_32_28_229_5:
-        cmp_32_28_229_5:
+        if_32_26_229_5:
+        cmp_32_26_229_5:
         cmp r15b, 0
-        jne if_32_25_229_5_end
-        if_32_28_229_5_code:
+        jne if_32_23_229_5_end
+        if_32_26_229_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_229_5_end:
+        if_32_23_229_5_end:
     assert_229_5_end:
     mov r15, qword [rbp + 392]
     mov qword [rbp + 428], r15
@@ -767,30 +767,30 @@ main:
     sete r15b
     bool_end_233_12:
     assert_233_5:
-        if_32_28_233_5:
-        cmp_32_28_233_5:
+        if_32_26_233_5:
+        cmp_32_26_233_5:
         cmp r15b, 0
-        jne if_32_25_233_5_end
-        if_32_28_233_5_code:
+        jne if_32_23_233_5_end
+        if_32_26_233_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_233_5_end:
+        if_32_23_233_5_end:
     assert_233_5_end:
     cmp_234_12:
     cmp qword [rbp + 416], -2
     sete r15b
     bool_end_234_12:
     assert_234_5:
-        if_32_28_234_5:
-        cmp_32_28_234_5:
+        if_32_26_234_5:
+        cmp_32_26_234_5:
         cmp r15b, 0
-        jne if_32_25_234_5_end
-        if_32_28_234_5_code:
+        jne if_32_23_234_5_end
+        if_32_26_234_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_234_5_end:
+        if_32_23_234_5_end:
     assert_234_5_end:
     lea rsi, [rbp + 408]
     lea rdi, [rbp + 444]
@@ -801,45 +801,45 @@ main:
     sete r15b
     bool_end_237_12:
     assert_237_5:
-        if_32_28_237_5:
-        cmp_32_28_237_5:
+        if_32_26_237_5:
+        cmp_32_26_237_5:
         cmp r15b, 0
-        jne if_32_25_237_5_end
-        if_32_28_237_5_code:
+        jne if_32_23_237_5_end
+        if_32_26_237_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_237_5_end:
+        if_32_23_237_5_end:
     assert_237_5_end:
     cmp_238_12:
     cmp qword [rbp + 452], -2
     sete r15b
     bool_end_238_12:
     assert_238_5:
-        if_32_28_238_5:
-        cmp_32_28_238_5:
+        if_32_26_238_5:
+        cmp_32_26_238_5:
         cmp r15b, 0
-        jne if_32_25_238_5_end
-        if_32_28_238_5_code:
+        jne if_32_23_238_5_end
+        if_32_26_238_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_238_5_end:
+        if_32_23_238_5_end:
     assert_238_5_end:
     cmp_239_12:
     cmp dword [rbp + 460], 16711680
     sete r15b
     bool_end_239_12:
     assert_239_5:
-        if_32_28_239_5:
-        cmp_32_28_239_5:
+        if_32_26_239_5:
+        cmp_32_26_239_5:
         cmp r15b, 0
-        jne if_32_25_239_5_end
-        if_32_28_239_5_code:
+        jne if_32_23_239_5_end
+        if_32_26_239_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_239_5_end:
+        if_32_23_239_5_end:
     assert_239_5_end:
     xor al, al
     lea rdi, [rbp + 464]
@@ -862,15 +862,15 @@ main:
     sete r15b
     bool_end_245_12:
     assert_245_5:
-        if_32_28_245_5:
-        cmp_32_28_245_5:
+        if_32_26_245_5:
+        cmp_32_26_245_5:
         cmp r15b, 0
-        jne if_32_25_245_5_end
-        if_32_28_245_5_code:
+        jne if_32_23_245_5_end
+        if_32_26_245_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_245_5_end:
+        if_32_23_245_5_end:
     assert_245_5_end:
     lea r15, [rbp + 464]
     mov r14, 1
@@ -902,15 +902,15 @@ main:
     sete r15b
     bool_end_248_12:
     assert_248_5:
-        if_32_28_248_5:
-        cmp_32_28_248_5:
+        if_32_26_248_5:
+        cmp_32_26_248_5:
         cmp r15b, 0
-        jne if_32_25_248_5_end
-        if_32_28_248_5_code:
+        jne if_32_23_248_5_end
+        if_32_26_248_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_248_5_end:
+        if_32_23_248_5_end:
     assert_248_5_end:
     xor al, al
     lea rdi, [rbp + 504]
@@ -960,15 +960,15 @@ main:
     sete r15b
     bool_end_252_12:
     assert_252_5:
-        if_32_28_252_5:
-        cmp_32_28_252_5:
+        if_32_26_252_5:
+        cmp_32_26_252_5:
         cmp r15b, 0
-        jne if_32_25_252_5_end
-        if_32_28_252_5_code:
+        jne if_32_23_252_5_end
+        if_32_26_252_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_252_5_end:
+        if_32_23_252_5_end:
     assert_252_5_end:
     mov rcx, 8
     lea r15, [rbp + 504]
@@ -1035,15 +1035,15 @@ main:
     sete r15b
     bool_end_262_12:
     assert_262_5:
-        if_32_28_262_5:
-        cmp_32_28_262_5:
+        if_32_26_262_5:
+        cmp_32_26_262_5:
         cmp r15b, 0
-        jne if_32_25_262_5_end
-        if_32_28_262_5_code:
+        jne if_32_23_262_5_end
+        if_32_26_262_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_262_5_end:
+        if_32_23_262_5_end:
     assert_262_5_end:
     cmp_263_12:
         mov rcx, 8
@@ -1091,15 +1091,15 @@ main:
         sete r15b
     bool_end_263_12:
     assert_263_5:
-        if_32_28_263_5:
-        cmp_32_28_263_5:
+        if_32_26_263_5:
+        cmp_32_26_263_5:
         cmp r15b, 0
-        jne if_32_25_263_5_end
-        if_32_28_263_5_code:
+        jne if_32_23_263_5_end
+        if_32_26_263_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_263_5_end:
+        if_32_23_263_5_end:
     assert_263_5_end:
     mov qword [rbp + 1016], -1
     mov qword [rbp + 1024], 2
@@ -1109,15 +1109,15 @@ main:
     sete r15b
     bool_end_270_12:
     assert_270_5:
-        if_32_28_270_5:
-        cmp_32_28_270_5:
+        if_32_26_270_5:
+        cmp_32_26_270_5:
         cmp r15b, 0
-        jne if_32_25_270_5_end
-        if_32_28_270_5_code:
+        jne if_32_23_270_5_end
+        if_32_26_270_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_270_5_end:
+        if_32_23_270_5_end:
     assert_270_5_end:
     cmp_271_12:
     mov r14, 0
@@ -1132,15 +1132,15 @@ main:
     sete r15b
     bool_end_271_12:
     assert_271_5:
-        if_32_28_271_5:
-        cmp_32_28_271_5:
+        if_32_26_271_5:
+        cmp_32_26_271_5:
         cmp r15b, 0
-        jne if_32_25_271_5_end
-        if_32_28_271_5_code:
+        jne if_32_23_271_5_end
+        if_32_26_271_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_271_5_end:
+        if_32_23_271_5_end:
     assert_271_5_end:
     cmp_272_12:
     mov r14, 1
@@ -1155,15 +1155,15 @@ main:
     sete r15b
     bool_end_272_12:
     assert_272_5:
-        if_32_28_272_5:
-        cmp_32_28_272_5:
+        if_32_26_272_5:
+        cmp_32_26_272_5:
         cmp r15b, 0
-        jne if_32_25_272_5_end
-        if_32_28_272_5_code:
+        jne if_32_23_272_5_end
+        if_32_26_272_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_25_272_5_end:
+        if_32_23_272_5_end:
     assert_272_5_end:
     mov qword [rbp + 1032], 0
     xor al, al

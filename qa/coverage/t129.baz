@@ -1,18 +1,18 @@
 # indexed struct argument is passed by reference
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type pair {
-    key : i16,
-    value : i16
+    key i16,
+    value i16
 }
 
-func foozi(kv : pair) {
+func foozi(kv pair) {
     kv.value = 0x50
 }
 
 func main() {
-    var lut : pair[2]
+    var lut[2] pair
     lut[0] = {1, 0x20}
     lut[1] = {2, 0x40}
 

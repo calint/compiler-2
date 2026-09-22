@@ -1,29 +1,29 @@
 # truncate a qword to byte word and dword
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
-func take_byte(value : i8) : result i8 {
+func take_byte(value i8) result i8 {
     result = value
 }
 
-func take_word(value : i16) : result i16 {
+func take_word(value i16) result i16 {
     result = value
 }
 
-func take_dword(value : i32) : result i32 {
+func take_dword(value i32) result i32 {
     result = value
 }
 
 func main() {
-    var qword : i64 = 0x12345678
+    var qword i64 = 0x12345678
     qword = qword << 32
-    var lower : i64 = 0x9abc
+    var lower i64 = 0x9abc
     lower = lower << 16
     lower = lower | 0xdef0
     qword = qword | lower
-    var byte : i8 = take_byte(qword)
-    var word : i16 = take_word(qword)
-    var dword : i32 = take_dword(qword)
+    var byte i8 = take_byte(qword)
+    var word i16 = take_word(qword)
+    var dword i32 = take_dword(qword)
 
     assert(byte == 0xf0)
     assert(word == 0xdef0)

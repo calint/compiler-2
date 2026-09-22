@@ -1,16 +1,16 @@
-dat hello:i8[]="hello\n"
-dat world:i8[]="world\n"
+dat hello[] i8="hello\n"
+dat world[] i8="world\n"
 
 func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func foozi(world:i8[]){
+func foozi(world[] i8){
     var len=array_size_of(world)
     print(len-1,address_of(world))
 }
 
-func bar(n,hello:i8[]){
+func bar(n,hello[] i8){
     var i=n
     loop{
         var b=2

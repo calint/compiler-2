@@ -1,20 +1,20 @@
 # computed array indexes and element functions
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
-func op_on_arr(e : i32) : res i32 {
+func op_on_arr(e i32) res i32 {
   res = e + 1
 }
 
-func op_on_arr2(e : i32) {
+func op_on_arr2(e i32) {
   e = e + 2
 }
 
 func main() {
-    var arr : i32[4]
-    var off : i32 = 2
+    var arr[4] i32
+    var off i32 = 2
 
     arr[1] = 2
     arr[2] = arr[1] + off 

@@ -1,2 +1,2 @@
 
-t207.baz:3:34: expected '}' to close array initializer for 'i8'
+t207.baz:3:32: expected '}' to close array initializer for 'i8'

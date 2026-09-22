@@ -1,6 +1,6 @@
 # short-circuit boolean disjunction
 
-func probe(calls, expected_call, value : bool) : result bool {
+func probe(calls, expected_call, value bool) result bool {
     calls = calls + 1
     if calls != expected_call exit(90)
     result = value
@@ -15,8 +15,8 @@ func main(){
     if not (a==0 or (b==1 and c==3) or d==4) exit(1)
 
     var calls = 0
-    var flag : bool = true
-    var result : bool = flag or probe(calls, 1, false)
+    var flag bool = true
+    var result bool = flag or probe(calls, 1, false)
     if not result exit(2)
     if calls != 0 exit(3)
 

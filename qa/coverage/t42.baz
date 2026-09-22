@@ -2,11 +2,11 @@
 
 dat len=-2
 
-func foozi(x:reg_rdx):res{
+func foozi(x reg_rdx) res{
     res=-x
 }
 
-func bar(x):res{
+func bar(x) res{
     res=-x
 }
 

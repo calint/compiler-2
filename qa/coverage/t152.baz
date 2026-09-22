@@ -1,33 +1,33 @@
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-type line { from : point, to : point }
+type line { from point, to point }
 
-type message { len : i8, subject : i8[128] }
+type message { len i8, subject[128] i8 }
 
 func main() {
     var x = -1
     var y = -2
 
-    var pt : point = { x, y }
+    var pt point = { x, y }
     assert(pt.x == -1)
     assert(pt.y == -2)
 
-    var ln1 : line = {  {   -1,    -2     }      ,
+    var ln1 line = {  {   -1,    -2     }      ,
                         {        3         ,          4           }           }            
     assert(ln1.from.x == -1)
     assert(ln1.from.y == -2)
 
-    var ln2 : line = { { -1 } }
+    var ln2 line = { { -1 } }
     assert(ln2.from.x == -1)
     assert(ln2.from.y == 0)
     assert(ln2.to.x == 0)
     assert(ln2.to.y == 0)
 
-    var ln3 : line = { }
+    var ln3 line = { }
 
-    var ln4 : line = { { -2 } , { 4 } }
+    var ln4 line = { { -2 } , { 4 } }
     assert(ln4.from.x == -2)
     assert(ln4.from.y == 0)
     assert(ln4.to.x == 4)
@@ -41,7 +41,7 @@ func main() {
     assert(ln4.to.x == 6)
     assert(ln4.to.y == 7)
 
-    var msg1 : message = { 8 }
+    var msg1 message = { 8 }
     assert(msg1.len == 8)
     msg1.subject[0] = 1
     msg1.subject[1] = 2
@@ -56,7 +56,7 @@ func main() {
  #   assert(msg2.subject[1] == 2)
  #   assert(msg2.subject[127] == 128)
  
-    var arr1 : i8[128]
+    var arr1[128] i8
     arr1[0] = 3
     arr1[1] = 4
 

@@ -1,0 +1,2 @@
+# array brackets must precede the variable element type
+func main() { var values i32[2] }

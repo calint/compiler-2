@@ -1,17 +1,17 @@
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 
-func fez(val : i32[]) : res i32 {
+func fez(val[] i32) res i32 {
     res = val[2] / (val[1] + val[1]) 
 }
 
-func foz(x : i32, y : i32) : res i32 {
+func foz(x i32, y i32) res i32 {
     res = x * (1 + y) 
 }
 
 
 func main() {
-    var values : i32[4]
+    var values[4] i32
     values[1] = 4
     values[2] = 8
 

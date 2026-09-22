@@ -1,15 +1,15 @@
 # array parameter mutation is visible to the caller
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
-func arrarg(arg : []) {
+func arrarg(arg[]) {
     arg[1] = 0xfe
 }
 
 func main() {
-    var arr : [7]
+    var arr[7]
     arrarg(arr)
     assert(arr[1] == 0xfe)
 }

@@ -1,20 +1,20 @@
 # foo passes a user type field to a mutating function
 
 type point { x, y }
-type item { data : point }
+type item { data point }
 
-dat values : item[3] =
+dat values[3] item =
     {
         { {1, 2} },
         { {3, 4} },
         { {5, 6} }
     }
 
-func increment(value : point) {
+func increment(value point) {
     value.y = value.y + 10
 }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
     foo values {

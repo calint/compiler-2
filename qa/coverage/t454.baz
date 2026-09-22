@@ -1,6 +1,6 @@
 # resolver path: alias chain with depth growth and no lea
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 type point {
     x,
@@ -8,19 +8,19 @@ type point {
 }
 
 type node {
-    p : point
+    p point
 }
 
 type world {
-    n : node
+    n node
 }
 
-func bump(a : node) {
+func bump(a node) {
     a.p.x = a.p.x + 1
 }
 
 func main() {
-    var w : world
+    var w world
 
     w.n.p.x = 10
     w.n.p.y = 20

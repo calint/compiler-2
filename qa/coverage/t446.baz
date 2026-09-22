@@ -1,6 +1,6 @@
 # regression: user-type return and user-type indexed argument aliasing
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 type pair {
     x,
@@ -8,26 +8,26 @@ type pair {
 }
 
 type container {
-    p : pair,
+    p pair,
     tag
 }
 
-func mk_pair(base) : out pair {
+func mk_pair(base) out pair {
     out = {base + 1, base + 2}
 }
 
-func sum_pair(src : pair) : out {
+func sum_pair(src pair) out {
     out = src.x + src.y
 }
 
-func copy_pair(src : pair, dst : pair) {
+func copy_pair(src pair, dst pair) {
     dst = {src.x, src.y}
 }
 
 func main() {
-    var srcs : pair[3]
-    var dsts : pair[3]
-    var boxes : container[2]
+    var srcs[3] pair
+    var dsts[3] pair
+    var boxes[2] container
 
     srcs[0] = {10, 20}
     srcs[1] = {30, 40}

@@ -1,17 +1,17 @@
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
 func pn(num) {
-    var buf : i8[20]
+    var buf[20] i8
     var n = num
-    var is_negative : bool = false
+    var is_negative bool = false
 
     if n < 0 {
         is_negative = true
@@ -35,25 +35,25 @@ func pn(num) {
 }
 
 type str {
-    size : i8,
-    chars : i8[127]
+    size i8,
+    chars[127] i8
 }
 
 type world {
-    name : str,
-    note : str
+    name str,
+    note str
 }
 
-func foozi(w1 : world, w2 : world){
+func foozi(w1 world, w2 world){
     assert(w1.note.size + w2.note.size == 3)
 }
 
-func bar(w1 : world, w2 : world){
+func bar(w1 world, w2 world){
     foozi(w1, w2)
 }
 
 func main() {
-    var wlds : world[2]
+    var wlds[2] world
     wlds[0].note.size = 1
     wlds[1].note.size = 2
     

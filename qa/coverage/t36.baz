@@ -1,10 +1,10 @@
-dat name:i8[]="............................................................"
+dat name[] i8="............................................................"
 
 func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes_read {
+func input(len, ptr) nbytes_read {
     nbytes_read = read(0, ptr, len)
 }
 

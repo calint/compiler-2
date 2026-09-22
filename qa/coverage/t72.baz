@@ -1,6 +1,6 @@
 # function mutation of caller data
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 

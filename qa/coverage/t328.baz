@@ -1,15 +1,15 @@
 # function returns a constructed value
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-func make_point() : res point {
+func make_point() res point {
     res = { 12, -7 }
 }
 
 func main() {
-    var point_value : point = make_point()
+    var point_value point = make_point()
     assert(point_value.x == 12)
     assert(point_value.y == -7)
 }

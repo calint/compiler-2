@@ -1,2 +1,2 @@
 
-t222.baz:5:18: destination must be an 'i64'
+t222.baz:5:16: destination must be an 'i64'

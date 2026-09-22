@@ -1,6 +1,6 @@
 # array_size_of requires an opening parenthesis
 
 func main() {
-    var x : i8[2]
+    var x[2] i8
     var n = array_size_of x
 }

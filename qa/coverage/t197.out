@@ -1,2 +1,2 @@
 
-t197.baz:1:23: type 'nope' not found
+t197.baz:1:21: cannot resolve identifier 'nope'

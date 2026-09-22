@@ -1,6 +1,6 @@
 # upper-bound check without lower check
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     arr[8] = 1
 }

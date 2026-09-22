@@ -1,6 +1,6 @@
 # remove an input prefix with array_copy
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -8,12 +8,12 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
 func main() {
-    var inp : i8[80]
+    var inp[80] i8
     var len = input(array_size_of(inp), address_of(inp))
     len = len - 3
     array_copy (  inp[3]   ,    inp     ,      len       ) 

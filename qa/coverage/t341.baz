@@ -1,9 +1,9 @@
 # valid lower array boundary
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     arr[0] = 0x61
     assert(arr[0] == 0x61)
 }

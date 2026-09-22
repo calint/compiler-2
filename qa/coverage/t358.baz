@@ -1,6 +1,6 @@
 # one-element upper failure without line output
 
 func main() {
-    var arr : i8[1]
+    var arr[1] i8
     arr[1] = 1
 }

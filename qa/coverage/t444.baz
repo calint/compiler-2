@@ -1,8 +1,8 @@
 # regression: stmt_call alias must pin indexed operand (is_indexed on)
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
-func ret_after_inc(i) : out {
+func ret_after_inc(i) out {
     i = i + 1
     out = 77
 }
@@ -13,7 +13,7 @@ func store_after_inc(v, slot, i) {
 }
 
 func main() {
-    var arr : [3] = {10, 20, 30}
+    var arr[3] = {10, 20, 30}
 
     var ix = 0
     arr[ix] = ret_after_inc(ix)

@@ -1,12 +1,12 @@
 # boolean assignment from comparisons and integers
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
     var x = 1
     var y = 2
 
-    var b : bool
+    var b bool
 
     b = x == 1
     assert(b)

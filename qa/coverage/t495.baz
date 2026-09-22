@@ -6,12 +6,12 @@
 # rv32i: produce the final 0/1 value and sb it directly
 # neither assignment needs a second normalization or an xor for negation
 
-func assert(ok : bool) { if not ok exit(1) }
+func assert(ok bool) { if not ok exit(1) }
 
 func main() {
-    var left : i8[2] = {1, 2}
-    var right : i8[2] = {1, 2}
-    var b : bool = arrays_equal(left, right, 2)
+    var left[2] i8 = {1, 2}
+    var right[2] i8 = {1, 2}
+    var b bool = arrays_equal(left, right, 2)
     assert(b)
     right[1] = 3
     b = not arrays_equal(left, right, 2)

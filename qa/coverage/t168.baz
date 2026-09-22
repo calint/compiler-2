@@ -1,7 +1,7 @@
 # array initializer cannot fill a scalar field
 
-type small { data : i8[2] }
+type small { data[2] i8 }
 func main() {
-    var src : i8[4] = { 1, 2, 3, 4 }
-    var dst : small = { src }
+    var src[4] i8 = { 1, 2, 3, 4 }
+    var dst small = { src }
 }

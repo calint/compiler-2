@@ -1,6 +1,6 @@
 # address calculation must reject an empty-array element
 
 func main() {
-    var values : i8[] = {}
+    var values[] i8 = {}
     var address = address_of(values[0])
 }

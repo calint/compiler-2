@@ -1,14 +1,14 @@
 # name-first return declarations with default, explicit and aggregate types
 
 type pair { first, second }
-func assert(ok : bool) { if not ok exit(1) }
-func twice(value) : result { result = value * 2 }
-func narrow(value : i32) : result i32 { result = value + 1 }
-func make_pair(value) : result pair { result = { value, value + 1 } }
-func commented(value) : result { # default type
+func assert(ok bool) { if not ok exit(1) }
+func twice(value) result { result = value * 2 }
+func narrow(value i32) result i32 { result = value + 1 }
+func make_pair(value) result pair { result = { value, value + 1 } }
+func commented(value) result { # default type
     result = value + 3
 }
-func noinline fact(value) : result {
+func noinline fact(value) result {
     result = 1
     if value <= 1 return
     var next = value - 1
@@ -20,10 +20,10 @@ func noinline fact(value) : result {
 func main() {
     assert(twice(7) == 14)
     assert(commented(4) == 7)
-    var small : i32 = 9
+    var small i32 = 9
     small = narrow(small)
     assert(small == 10)
-    var record : pair = make_pair(12)
+    var record pair = make_pair(12)
     assert(record.first == 12)
     assert(record.second == 13)
     var value = 5

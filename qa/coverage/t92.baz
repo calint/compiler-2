@@ -1,4 +1,4 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -6,17 +6,17 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
-func print_hex_32b(num : i32) {
-    var buf : i8[9]
-    var n : i32 = num
+func print_hex_32b(num i32) {
+    var buf[9] i8
+    var n i32 = num
     
     var i = 8
     loop {
-        var nibble : i8 = n & 0xf
+        var nibble i8 = n & 0xf
         if nibble > 9 buf[i] = nibble + 55
         else buf[i] = nibble + 48
         # note: 55 is ascii for 'A' - 10
@@ -34,7 +34,7 @@ func print_hex_32b(num : i32) {
 }
 
 func main() {
-    var nl : i8[1]
+    var nl[1] i8
     nl[0] = 0x0a
     print_hex_32b(0x1234abcd)
     print(1, address_of(nl))

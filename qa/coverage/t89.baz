@@ -1,4 +1,4 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -6,21 +6,21 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
 type string {
     len,
-    data : i8[64]
+    data[64] i8
 }
 
 type location {
-    name : string
+    name string
 }
 
 func main() {
-    var locations : location[4]
+    var locations[4] location
 
     var i = 0
     loop {

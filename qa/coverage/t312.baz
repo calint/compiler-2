@@ -2,5 +2,5 @@
 
 const n = -1
 func main() {
-    var values : i8[n]
+    var values[n] i8
 }

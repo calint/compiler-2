@@ -1,2 +1,2 @@
 
-t162.baz:4:34: too many initializers for type 'point'
+t162.baz:4:32: too many initializers for type 'point'

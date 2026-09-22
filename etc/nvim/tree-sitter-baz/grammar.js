@@ -7,6 +7,13 @@ module.exports = grammar({
     $.comment,
   ],
 
+  conflicts: $ => [
+    [$.data_declaration],
+    [$.variable_declaration],
+    [$.sized_array_type],
+    [$.unsized_array_type],
+  ],
+
   // Helper function for separated lists that must have at least one element
   // Placed outside rules for clean top-level declaration
   // ---
@@ -90,27 +97,24 @@ module.exports = grammar({
 
     // Function/Type Metadata
     return_annotation: $ => seq(
-      ':',
-      field('type', $._definition_type),
-      field('name', $.identifier)
+      field('name', $.identifier),
+      optional(field('type', $._base_type))
     ),
 
     parameter_list: $ => sep1($.parameter, ','),
 
-    // identifier : type_name (type is optional)
+    // identifier type_name (type is optional)
     parameter: $ => seq(
       field('name', $.identifier),
-      optional(
-        seq(':', field('type', $._parameter_type))
-      ),
+      optional(field('type', $._parameter_type)),
     ),
 
     member_field_list: $ => sep1($.member_field, ','),
 
-    // member_field name: type
+    // member_field name type
     member_field: $ => seq(
       field('name', $.identifier),
-      optional(seq(':', field('type', $._definition_type))),
+      optional(field('type', $._definition_type)),
     ),
 
     // -------------------------------------------------------------------------
@@ -136,23 +140,23 @@ module.exports = grammar({
     ),
 
     sized_array_type: $ => seq(
-      field('type', $._base_type),
       '[',
       field('size', $.number_literal),
       ']',
+      optional(field('type', $._base_type)),
     ),
 
     unsized_array_type: $ => seq(
-      field('type', $._base_type),
       '[',
       ']',
+      optional(field('type', $._base_type)),
     ),
 
     // -------------------------------------------------------------------------
     // 4. STATEMENT IMPLEMENTATIONS
     // -------------------------------------------------------------------------
 
-    // const identifier: type = expression
+    // const identifier = expression
     const_definition: $ => seq(
       $.const_keyword,
       field('destination', $.identifier),
@@ -160,28 +164,22 @@ module.exports = grammar({
       field('initializer', $._expression)
     ),
 
-    // dat identifier : type = expression
+    // dat identifier type = expression
     data_declaration: $ => seq(
       $.dat_keyword,
       field('destination', $.identifier),
-      optional(seq(
-        ':',
-        field('type', $._definition_type)
-      )),
+      optional(field('type', $._definition_type)),
       optional(seq(
         '=',
         field('initializer', $._expression)
       ))
     ),
 
-    // var identifier : type = expression
+    // var identifier type = expression
     variable_declaration: $ => seq(
       $.var_keyword,
       field('destination', $.identifier),
-      optional(seq(
-        ':',
-        field('type', $._definition_type)
-      )),
+      optional(field('type', $._definition_type)),
       optional(seq(
         '=',
         field('initializer', $._expression)

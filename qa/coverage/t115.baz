@@ -1,13 +1,13 @@
 # mutation through function references and return values
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
-func mutate_and_return(x) : res {
+func mutate_and_return(x) res {
     x = x * 2
     res = x + 1
 }
 
-func mutate_only(x : i32) {
+func mutate_only(x i32) {
     x = 0xff
 }
 
@@ -17,7 +17,7 @@ func main() {
     assert(a == 10)  # Verify reference semantics
     assert(r == 11)
     
-    var b : i32 = 100
+    var b i32 = 100
     mutate_only(b)
     assert(b == 0xff)
     

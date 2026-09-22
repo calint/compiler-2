@@ -1,34 +1,34 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
-type vec3 { x : i32, y : i32, z : i32 }
-type color { r : i32, g : i32, b : i32, a : i32 }
+type vec3 { x i32, y i32, z i32 }
+type color { r i32, g i32, b i32, a i32 }
 
 type vertex {
-    pos : vec3,
-    col : color,
-    uv_x : i32,
-    uv_y : i32
+    pos vec3,
+    col color,
+    uv_x i32,
+    uv_y i32
 }
 
 type mesh {
-    vertices : vertex[16],
-    indices : i32[24],
-    id : i32
+    vertices[16] vertex,
+    indices[24] i32,
+    id i32
 }
 
 type scene {
-    meshes : mesh[4],
-    active : i32
+    meshes[4] mesh,
+    active i32
 }
 
 type world {
-    scenes : scene[3],
-    metadata : i8[32]
+    scenes[3] scene,
+    metadata[32] i8
 }
 
-func init_vertex(v : vertex, idx : i32) {
+func init_vertex(v vertex, idx i32) {
     v.pos.x = idx * 11
     v.pos.y = idx * 22
     v.pos.z = idx * 33
@@ -40,7 +40,7 @@ func init_vertex(v : vertex, idx : i32) {
     v.uv_y = idx * 2
 }
 
-func verify_vertex(v : vertex, idx : i32) {
+func verify_vertex(v vertex, idx i32) {
     assert(v.pos.x == idx * 11)
     assert(v.pos.y == idx * 22)
     assert(v.pos.z == idx * 33)
@@ -52,7 +52,7 @@ func verify_vertex(v : vertex, idx : i32) {
     assert(v.uv_y == idx * 2)
 }
 
-func init_mesh(m : mesh, id_val : i32) {
+func init_mesh(m mesh, id_val i32) {
     m.id = id_val
     
     var i = 0
@@ -70,7 +70,7 @@ func init_mesh(m : mesh, id_val : i32) {
     }
 }
 
-func verify_mesh(m : mesh, id_val : i32) {
+func verify_mesh(m mesh, id_val i32) {
     assert(m.id == id_val)
     
     var i = 0
@@ -88,7 +88,7 @@ func verify_mesh(m : mesh, id_val : i32) {
     }
 }
 
-func scale_vertices(s : scene, scale_factor : i32) {
+func scale_vertices(s scene, scale_factor i32) {
     var i = 0
     loop {
         var j = 0
@@ -104,7 +104,7 @@ func scale_vertices(s : scene, scale_factor : i32) {
     }
 }
 
-func shift_colors(s : scene, shift_val : i32) {
+func shift_colors(s scene, shift_val i32) {
     var i = 0
     loop {
         var j = 0
@@ -121,7 +121,7 @@ func shift_colors(s : scene, shift_val : i32) {
 }
 
 func main() {
-    var w : world[2]
+    var w[2] world
     
     # TEST 1: Deep nested struct array initialization and verification
     var i = 0
@@ -170,7 +170,7 @@ func main() {
     verify_mesh(w[1].scenes[2].meshes[3], 3)
     
     # TEST 4: arrays_equal on complex nested vertex arrays
-    var eq1 : bool = arrays_equal(
+    var eq1 bool = arrays_equal(
         w[0].scenes[0].meshes[2].vertices,
         w[1].scenes[2].meshes[2].vertices,
         array_size_of(w[0].scenes[0].meshes[2].vertices)
@@ -201,7 +201,7 @@ func main() {
     
     array_copy(w[0], w[1], 1)
 
-    var scale : i32 = 2
+    var scale i32 = 2
     scale_vertices(w[1].scenes[0], scale)
     
     # After scaling by 2:
@@ -228,7 +228,7 @@ func main() {
     assert(w[0].scenes[2].meshes[1].vertices[8].col.g == 34)  # 8*3+10=34
 
     # TEST 9: Initialize standalone mesh array and copy to nested
-    var standalone_meshes : mesh[4]
+    var standalone_meshes[4] mesh
     var m = 0
     loop {
         init_mesh(standalone_meshes[m], 1000 + m)
@@ -246,7 +246,7 @@ func main() {
     verify_mesh(w[1].scenes[2].meshes[3], 1003)
     
     # TEST 10: Cross-scene mesh swapping via temporary
-    var temp_mesh_indices : i32[24]
+    var temp_mesh_indices[24] i32
     array_copy(
         w[0].scenes[0].meshes[1].indices,
         temp_mesh_indices,

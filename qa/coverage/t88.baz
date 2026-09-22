@@ -1,4 +1,4 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -6,12 +6,12 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
 func main() {
-    var input_buffer : i8[80]
+    var input_buffer[80] i8
     var len = input(array_size_of(input_buffer), address_of(input_buffer))
     print(len, address_of(input_buffer))
 }

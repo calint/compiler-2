@@ -1,1 +1,1 @@
-func main() { var x : nope }
+func main() { var x nope }

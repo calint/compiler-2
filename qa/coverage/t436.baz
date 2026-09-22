@@ -1,6 +1,6 @@
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
-func baz(arg) : res {
+func baz(arg) res {
     res = arg * 2
 }
 
@@ -8,14 +8,14 @@ func bazi(i) {
     i = i * 3
 }
 
-type vector {x, y : i32, z : i16, w : i8}
-type object { pos : vector, vel : vector, valid : bool }
+type vector {x, y i32, z i16, w i8}
+type object { pos vector, vel vector, valid bool }
 
 func main() {
-    var p : vector = {-1, -2, -3, -4}
-    var p2 : vector = {-11, -22, -33, -44}
-    var x : i32 = 10
-    var o2 : object = {p, p2, x == 10}
+    var p vector = {-1, -2, -3, -4}
+    var p2 vector = {-11, -22, -33, -44}
+    var x i32 = 10
+    var o2 object = {p, p2, x == 10}
 
     var j = 1
     var k = baz(j)

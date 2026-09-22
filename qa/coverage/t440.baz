@@ -1,18 +1,18 @@
-func assert(err, x : bool) { if not x exit(err) }
+func assert(err, x bool) { if not x exit(err) }
 
 type point {x, y}
 
-func baz(i) : res point { 
+func baz(i) res point { 
     res.x = i * 3
     res.y = i * 4
 }
 
-func bazi() : res point {
+func bazi() res point {
     res = {7, 13}
 }
 
 func main() {
-    var p : point = baz(2)
+    var p point = baz(2)
     assert(1, p.x == 6)
     assert(2, p.y == 8)
 

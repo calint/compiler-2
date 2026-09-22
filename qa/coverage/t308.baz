@@ -1,6 +1,6 @@
 # mov applies unary negation before assignment
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 func main() {
     var destination = 0
     mov(destination, ~-7)

@@ -1,5 +1,5 @@
 # explicit zero-sized variable arrays are invalid
 
 func main() {
-    var values : i8[0]
+    var values[0] i8
 }

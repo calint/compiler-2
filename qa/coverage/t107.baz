@@ -1,29 +1,29 @@
 # arrays_equal on nested link arrays
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
 type point {x, y}
 
 type link {
-    pos : point,
-    name : i8[64],
-    name_len : i8,
-    loc : i32
+    pos point,
+    name[64] i8,
+    name_len i8,
+    loc i32
 }
 
 type location {
-    name : i8[64],
-    links : link[8]
+    name[64] i8,
+    links[8] link
 }
 
 type world {
     time,
-    locations : location[7]
+    locations[7] location
 }
 
-func fuz(wld1 : world, wld2 : world) {
+func fuz(wld1 world, wld2 world) {
     wld1.locations[2].links[1].loc = 0xba
     wld1.locations[2].links[1].pos.y = 0xab
     array_copy(
@@ -34,10 +34,10 @@ func fuz(wld1 : world, wld2 : world) {
 }
 
 func main() {
-    var worlds : world[2]
+    var worlds[2] world
     fuz(worlds[0], worlds[1])
 
-    var ok : bool = arrays_equal(
+    var ok bool = arrays_equal(
       worlds[0].locations[2].links,
       worlds[1].locations[0].links,
       array_size_of(worlds[0].locations[2].links)

@@ -1,2 +1,2 @@
 
-t239.baz:7:18: expected type 'p', got 'q'
+t239.baz:7:16: expected type 'p', got 'q'

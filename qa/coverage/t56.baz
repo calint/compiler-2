@@ -1,17 +1,17 @@
 # mixed-width function parameters
 
-func f1(b:i8,w:i16,d:i32,q):res{
+func f1(b i8,w i16,d i32,q) res{
     res=b+w+d+q
 }
 
-func f2(b:i8,w:i16,d:i32,q):res{
+func f2(b i8,w i16,d i32,q) res{
     res=b+w+d+q
 }
 
 func main(){
-    var b:i8=-1
-    var w:i16=-2
-    var d:i32=-3
+    var b i8=-1
+    var w i16=-2
+    var d i32=-3
     var q=-4
 
     var r=f1(b,w,d,q)

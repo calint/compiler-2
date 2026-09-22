@@ -1,0 +1,3 @@
+# array brackets must precede the parameter element type
+func helper(values i32[]) {}
+func main() {}

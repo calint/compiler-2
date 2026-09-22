@@ -1,48 +1,48 @@
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-type world { locations : [4] }
+type world { locations[4] }
 
-type exits {  from : i32[4], to : i32[4] }
+type exits {  from[4] i32, to[4] i32 }
 
-type line { points : point[2] }
+type line { points[2] point }
 
-type string { data : i8[128] }
+type string { data[128] i8 }
 
-type entity { messages : string[8] }
+type entity { messages[8] string }
 
-dat    pt0 : point = { -1 }
-dat    pt1 : point = {  }
-dat    pt2 : point[2] = { {-1} }
-dat   wld0 : world = {}
+dat    pt0 point = { -1 }
+dat    pt1 point = {  }
+dat    pt2[2] point = { {-1} }
+dat   wld0 world = {}
 
 dat data_a
-dat data_b : i32 = 32
-dat data_c : i16[4] = { 1, 2, 3, 4 }
-dat data_e : i8
-dat data_f : bool = true
-dat data_g : i16[] = {  1  , 2  ,  3  }
-dat data_h : i16[5] = {1,2}
-dat data_i : i8[128]
-dat data_j : bool = false
-dat data_k : bool[] = {true, false}
-dat data_l : i8[] = "hello world\n"
-dat data_m : i8[10] = "a"
-dat data_n : i8[4] = { -1, 2 }
-dat data_o : bool[2] = { true, false }
+dat data_b i32 = 32
+dat data_c[4] i16 = { 1, 2, 3, 4 }
+dat data_e i8
+dat data_f bool = true
+dat data_g[] i16 = {  1  , 2  ,  3  }
+dat data_h[5] i16 = {1,2}
+dat data_i[128] i8
+dat data_j bool = false
+dat data_k[] bool = {true, false}
+dat data_l[] i8 = "hello world\n"
+dat data_m[10] i8 = "a"
+dat data_n[4] i8 = { -1, 2 }
+dat data_o[2] bool = { true, false }
 
-dat  point : point = { -1, -2 }
-dat  world : world = {  {-1,   2}    }
-dat  exits : exits =  {   {    1 ,  2   }  ,  {  3  ,  4  }  }
-dat  lines : line[2] = { {  { {-1,-2}, {4,5} } } }
-dat    str : string = {   "hello world\n"   }
-dat   hero : entity = { {  {   "msg1"    }     ,      {       "msg2"        }         }          }
-dat   strs : string[4] = { {"hello\n"} ,  {"world"} }
-dat  strs2 : string[] = { {"hello\n"} ,  {"world"} }
-dat    dds : i32[4]
-dat   str3 : i8[128] = ""
-dat    ln1 : line = { { { -2 } , { 4 } } }
+dat  point point = { -1, -2 }
+dat  world world = {  {-1,   2}    }
+dat  exits exits =  {   {    1 ,  2   }  ,  {  3  ,  4  }  }
+dat  lines[2] line = { {  { {-1,-2}, {4,5} } } }
+dat    str string = {   "hello world\n"   }
+dat   hero entity = { {  {   "msg1"    }     ,      {       "msg2"        }         }          }
+dat   strs[4] string = { {"hello\n"} ,  {"world"} }
+dat  strs2[] string = { {"hello\n"} ,  {"world"} }
+dat    dds[4] i32
+dat   str3[128] i8 = ""
+dat    ln1 line = { { { -2 } , { 4 } } }
 
 func main() {
     assert(data_a == 0)

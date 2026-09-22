@@ -1,13 +1,13 @@
 # indexed array values passed to a function
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
-func fiz(x, y) : res {
+func fiz(x, y) res {
     res = x + x + y
 }
 
 func main() {
-    var arr : [4]
+    var arr[4]
     var ix = 1
     arr[ix] = 2
     arr[3] = 3

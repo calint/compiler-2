@@ -1,4 +1,4 @@
 # user-type array initializers cannot exceed their size
 
 type p { x }
-func main() { dat x : p[1] = {{1},{2}} }
+func main() { dat x[1] p = {{1},{2}} }

@@ -1,0 +1,3 @@
+# colon syntax is no longer accepted for data
+dat value : i32 = 1
+func main() {}

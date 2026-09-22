@@ -1,18 +1,18 @@
 # regression: nested destinations plus by-reference call semantics
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 type bytepair {
-    a : i8,
-    b : i8
+    a i8,
+    b i8
 }
 
 type wrap {
-    l : bytepair,
-    r : bytepair
+    l bytepair,
+    r bytepair
 }
 
-func inv8(v : i8) : out i8 {
+func inv8(v i8) out i8 {
     out = ~v
 }
 
@@ -20,14 +20,14 @@ func triple(v) {
     v = v * 3
 }
 
-func swap_into(src : bytepair, dst : bytepair) {
+func swap_into(src bytepair, dst bytepair) {
     var src_a = src.a
     var src_b = src.b
     dst = {src_b, src_a}
 }
 
 func main() {
-    var ws : wrap[2]
+    var ws[2] wrap
 
     ws[0].l = {1, 2}
     swap_into(ws[0].l, ws[0].r)

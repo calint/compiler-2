@@ -1,10 +1,10 @@
-dat hello:i8[]="hello\n"
+dat hello[] i8="hello\n"
 
 func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func bar(hello:i8[]){
+func bar(hello[] i8){
     print(array_size_of(hello),address_of(hello))
 }
 

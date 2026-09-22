@@ -1,18 +1,18 @@
 # all functions are inlined
 
 # arguments can be placed in specified register using `reg_...` syntax
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
 # user types are defined using keyword `type`
 
 type point {x, y}
-type polygon {nindices, indices : i8[8]}
-type object {pos : point, pgons : polygon[8], color : i32}
+type polygon {nindices, indices[8] i8}
+type object {pos point, pgons[8] polygon, color i32}
 
 func main() {
-    var o : object[1]
+    var o[1] object
     o.pgons[3].nindices = 4
     o.pgons[3].indices[3] = 7
 

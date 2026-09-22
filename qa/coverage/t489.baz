@@ -1,11 +1,11 @@
 # foo over 8196-byte records, beyond the RV32I addi immediate range
 
-type large_item { first : i32, padding : i8[8188], last : i32 }
+type large_item { first i32, padding[8188] i8, last i32 }
 
-func assert(ok : bool) { if not ok exit(1) }
+func assert(ok bool) { if not ok exit(1) }
 
 func main() {
-    var values : large_item[3]
+    var values[3] large_item
     values[0].first = 10
     values[0].last = 20
     values[1].first = 11

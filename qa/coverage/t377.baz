@@ -1,9 +1,9 @@
 # valid four-byte element scaling
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var values : i32[2]
+    var values[2] i32
     values[1] = 1
     assert(values[1] == 1)
 }

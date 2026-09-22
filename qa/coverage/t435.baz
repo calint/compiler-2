@@ -1,13 +1,13 @@
 # local array initializes an array of types with array fields
 
 type point { x, y }
-type holder { points : point[2] }
+type holder { points[2] point }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
-    var local_points : point[2] = { {1, 2}, {3, 4} }
-    var holders : holder[2] = { { local_points }, { local_points } }
+    var local_points[2] point = { {1, 2}, {3, 4} }
+    var holders[2] holder = { { local_points }, { local_points } }
 
     assert(holders[0].points[0].x == 1)
     assert(holders[0].points[0].y == 2)

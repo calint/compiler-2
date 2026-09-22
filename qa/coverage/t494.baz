@@ -6,11 +6,11 @@
 # rv32i: equality writes 1/0 directly; negation swaps these values without xori
 # assert's own truth test is separate and still needed
 
-func assert(ok : bool) { if not ok exit(1) }
+func assert(ok bool) { if not ok exit(1) }
 
 func main() {
-    var left : i8[2] = {1, 2}
-    var right : i8[2] = {1, 2}
+    var left[2] i8 = {1, 2}
+    var right[2] i8 = {1, 2}
     assert(arrays_equal(left, right, 2))
     right[1] = 3
     assert(not arrays_equal(left, right, 2))

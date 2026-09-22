@@ -1,27 +1,27 @@
 # regression: ident_info field destination and alias lea propagation
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 type str {
-    len : i8,
-    data : i8[4]
+    len i8,
+    data[4] i8
 }
 
 type location {
-    name : str,
-    note : str
+    name str,
+    note str
 }
 
-func inv8(v : i8) : out i8 {
+func inv8(v i8) out i8 {
     out = ~v
 }
 
-func copy_name(src : location, dst : location) {
+func copy_name(src location, dst location) {
     dst.name = {src.name.len, src.name.data}
 }
 
 func main() {
-    var locations : location[2]
+    var locations[2] location
 
     locations[0].name.len = 3
     locations[0].name.data[1] = 0x61

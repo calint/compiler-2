@@ -1,0 +1,3 @@
+# colon syntax is no longer accepted for fields
+type point { value : i32 }
+func main() {}

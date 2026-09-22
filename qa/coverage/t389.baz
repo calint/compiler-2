@@ -1,7 +1,7 @@
 # boolean values cannot be arithmetic operands
 
 func main() {
-    var a : bool = false
-    var b : bool = true
+    var a bool = false
+    var b bool = true
     var c = a + b
 }

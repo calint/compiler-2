@@ -1,42 +1,42 @@
 # nested array mutation through chained parameters
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
 type link {
-    name : i8[64],
-    name_len : i8,
-    loc : i32
+    name[64] i8,
+    name_len i8,
+    loc i32
 }
 
 type location {
-    name : i8[64],
-    links : link[8]
+    name[64] i8,
+    links[8] link
 }
 
 type world {
     time,
-    locations : location[7]
+    locations[7] location
 }
 
-func foozi(lnk : link){
+func foozi(lnk link){
     lnk.loc = 2
     lnk.name_len = 1
     lnk.name[0] = 0x61 # 'a'
 }
 
-func bar(locs : location[]) {
+func bar(locs[] location) {
     foozi(locs[2].links[1])
     foozi(locs[3].links[5])
 }
 
-func baz(wld : world[]) {
+func baz(wld[] world) {
     bar(wld[1].locations)
 }
 
 func main() {
-    var worlds : world[2]
+    var worlds[2] world
     baz(worlds)
     assert(worlds[1].locations[2].links[1].loc == 2)
     assert(worlds[1].locations[2].links[1].name_len == 1)

@@ -1,6 +1,6 @@
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
-func foozi(x : i8, y : i16) {
+func foozi(x i8, y i16) {
     assert((x == y) and (x == 4 or y == 4))
 }
 
@@ -16,13 +16,13 @@ func main() {
     if not (true and false) assert(true) else assert(false)
     if not (false or true)  assert(false)
 
-    var values : i32[4]
+    var values[4] i32
     values[1] = 4
     values[2] = 3
 
     assert(values[1] == 4 and values[2] == 3)
 
-    var values_byte : i8[4]
+    var values_byte[4] i8
     values_byte[1] = 4
     values_byte[2] = 3
     assert(values_byte[1] == 4 or values_byte[2] == 3)

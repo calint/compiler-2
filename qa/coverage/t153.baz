@@ -1,28 +1,28 @@
 # nested string-field mutation through functions
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
-type string { len : i8, data : i8[127] }
+type string { len i8, data[127] i8 }
 
-type room { name : string, description : string, note : string }
+type room { name string, description string, note string }
 
-type world { rooms : room[128] }
+type world { rooms[128] room }
 
-func bar(i : i8) {
+func bar(i i8) {
     i = 1
 }
 
-func foozi(str : i8[]) {
+func foozi(str[] i8) {
     bar(str[5])
 }
 
-func fuz(rm : room) {
+func fuz(rm room) {
     rm.name.len = 2
     foozi(rm.name.data)
 }
 
 func main() {
-    var wld : world
+    var wld world
     fuz(wld.rooms[2])
 
     assert(wld.rooms[2].name.len == 2)

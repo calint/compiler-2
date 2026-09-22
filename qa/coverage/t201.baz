@@ -1,4 +1,4 @@
 # function return value is ignored
 
-func f() : r { r = 1 }
+func f() r { r = 1 }
 func main() { f() }

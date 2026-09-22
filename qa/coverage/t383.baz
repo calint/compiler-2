@@ -1,5 +1,5 @@
 # explicit zero-sized data arrays are invalid
 
-dat values : i8[0] = {}
+dat values[0] i8 = {}
 
 func main() {}

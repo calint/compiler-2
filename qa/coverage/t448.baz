@@ -1,21 +1,21 @@
 # lea regression: user-type indexed args (non-encodable element size path)
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 type pair {
     x,
     y
 }
 
-func bump(dst : pair, src : pair, i) {
+func bump(dst pair, src pair, i) {
     i = i + 1
     dst = {src.x + i, src.y + i}
     src = {src.x + 100, src.y + 200}
 }
 
 func main() {
-    var srcs : pair[2]
-    var dsts : pair[2]
+    var srcs[2] pair
+    var dsts[2] pair
 
     srcs[0] = {1, 2}
     srcs[1] = {10, 20}

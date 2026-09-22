@@ -1,6 +1,6 @@
 # return skips the required result assignment
 
-func foozi(i) : res {
+func foozi(i) res {
     return
     res = i * 2
 }

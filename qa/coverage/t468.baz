@@ -1,4 +1,4 @@
 # non-inline return value cannot be discarded
 
-func noinline target(): result { result = 1 }
+func noinline target() result { result = 1 }
 func main() { target() }

@@ -1,7 +1,7 @@
 # equal requires matching array sizes
 
 func main() {
-    var a : i8[2]
-    var b : i8[3]
+    var a[2] i8
+    var b[3] i8
     var z = equal(a,b)
 }

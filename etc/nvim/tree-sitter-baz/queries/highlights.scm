@@ -39,11 +39,11 @@
 (function_definition name: (identifier) @function)
 (type_definition name: (identifier) @type.definition)
 (member_field name: (identifier) @variable.member)
-(member_field ":" type: (_) @type)
+(member_field type: (_) @type)
 (parameter name: (identifier) @variable.parameter)
 (return_annotation
-  type: (identifier) @type
-  name: (identifier) @variable.parameter)
+  name: (identifier) @variable.parameter
+  type: (identifier)? @type)
 
 (parameter
   name: (identifier) @variable.parameter

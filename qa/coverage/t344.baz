@@ -1,7 +1,7 @@
 # dynamic lower-bound read failure
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     var index = -1
     var value = arr[index]
 }

@@ -1,13 +1,13 @@
-func assert(exit, expr : bool) {
+func assert(exit, expr bool) {
     if not expr exit(exit)
 }
 
-func inv(i) : res i32 {
+func inv(i) res i32 {
     res = ~i
 }
 
 func main() {
-    var arr : i32[4]
+    var arr[4] i32
 
     arr[1] = ~2
     arr[2] = ~arr[1]

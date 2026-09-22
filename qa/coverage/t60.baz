@@ -1,10 +1,10 @@
 # conditional result assignment
 
-func f(b:bool):res bool{
+func f(b bool) res bool{
     if b res=false else res=true
 }
 
-func f2(i):res{
+func f2(i) res{
     if i==0 res=4
     else if i==1 res=5
     else if i==2 res=6
@@ -12,7 +12,7 @@ func f2(i):res{
 }
 
 func main(){
-    var r:bool=f(true)
+    var r bool=f(true)
     if r exit(1)
 
     r=f(false)

@@ -1,7 +1,7 @@
 # arrays_equal requires matching array types
 
 func main() {
-    var a : i8[2]
-    var b : i16[2]
+    var a[2] i8
+    var b[2] i16
     var z = arrays_equal(a,b,1)
 }

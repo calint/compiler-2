@@ -1,10 +1,10 @@
 # boolean not applied to arrays_equal
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var src : i8[2]
-    var cmp : i8[2]
+    var src[2] i8
+    var cmp[2] i8
     src[0] = 1
     cmp[0] = 2
     assert(not arrays_equal(src, cmp, 2))

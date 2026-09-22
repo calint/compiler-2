@@ -1,10 +1,10 @@
 # foo over a user type with an array field
 
-type holder { values : [2] }
+type holder { values[2] }
 
-dat holders : holder[2] = { {{1, 2}}, {{3, 4}} }
+dat holders[2] holder = { {{1, 2}}, {{3, 4}} }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
     foo holders {

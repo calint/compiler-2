@@ -1,10 +1,10 @@
 # signed sixteen-bit division
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 func main() {
-    var x : i16 = 100
-    var y : i16 = 2
-    var z : i16 = x / y
+    var x i16 = 100
+    var y i16 = 2
+    var z i16 = x / y
     assert(z == 50)
 
     x = -7

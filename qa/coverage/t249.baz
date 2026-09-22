@@ -1,9 +1,9 @@
 # equal compares indexed i32 values
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 func main() {
-    var a : i32[2]
-    var b : i32[2]
+    var a[2] i32
+    var b[2] i32
     a[0] = 3
     b[0] = 3
     assert(equal(a[0],b[0]))

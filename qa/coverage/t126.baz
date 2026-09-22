@@ -1,6 +1,6 @@
 # continue skips the required result assignment
 
-func foozi(i) : res {
+func foozi(i) res {
     loop {
         continue
         res = i * 2

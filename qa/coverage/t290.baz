@@ -1,10 +1,10 @@
 # signed eight-bit division
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 func main() {
-    var x : i8 = 100
-    var y : i8 = 2
-    var z : i8 = x / y
+    var x i8 = 100
+    var y i8 = 2
+    var z i8 = x / y
     assert(z == 50)
 
     x = -7

@@ -1,4 +1,4 @@
 # non-inline argument cannot be a whole array
 
-func noinline target(parameter: []) {}
-func main() { var items: [2] target(items) }
+func noinline target(parameter[]) {}
+func main() { var items[2] target(items) }

@@ -1,6 +1,6 @@
 # global variable shadowing in a nested block
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 var value = 1
 

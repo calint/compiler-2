@@ -1,5 +1,5 @@
 # empty brace data arrays require a size
 
-dat value : i8[] = {}
+dat value[] i8 = {}
 
 func main() {}

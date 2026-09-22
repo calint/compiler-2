@@ -1,2 +1,2 @@
 
-t206.baz:3:23: expected ']' after array size
+t206.baz:3:20: expected ']' after array size

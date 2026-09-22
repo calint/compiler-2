@@ -1,4 +1,4 @@
 # non-inline result destination must have the declared type
 
-func noinline target(): result i16 { result = 1 }
-func main() { var result: i32 = target() }
+func noinline target() result i16 { result = 1 }
+func main() { var result i32 = target() }

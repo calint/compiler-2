@@ -1,5 +1,5 @@
 # assign string to array variable
 
 func main() {
-    var value : i8[8] = ""
+    var value[8] i8 = ""
 }

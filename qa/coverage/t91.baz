@@ -1,4 +1,4 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -6,14 +6,14 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
 func print_num(num) {
-    var buf : i8[20]
+    var buf[20] i8
     var n = num
-    var is_negative : bool = false
+    var is_negative bool = false
     
     if n < 0 {
         is_negative = true
@@ -47,12 +47,12 @@ func print_num(num) {
 }
 
 func main() {
-  var nl : i8[1]
+  var nl[1] i8
   nl[0] = 10
 
   var i1 = 123
-  var i2 : i32 = 321
-  var i3 : i16 = 420
+  var i2 i32 = 321
+  var i3 i16 = 420
   var i4 = 840
   var i5 = -1
   var i6 = 2147483647  

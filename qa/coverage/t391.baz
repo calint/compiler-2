@@ -2,5 +2,5 @@
 
 type p { x, y }
 func main() {
-    var value : p = {1 2}
+    var value p = {1 2}
 }

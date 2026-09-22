@@ -1,4 +1,4 @@
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -6,31 +6,31 @@ func main(){
     var x = 1
     var y = 3
     var z = 4
-    var a : bool = not ((x == 1 and y == 3) and not (x == 1 and y == 3 and z == 4))
-    var b : bool = not ((x == 1 and y == 4) or not (x == 3 or y == 4 or z == 5))
-    var c : bool = not ((true and true) and (true and true))
-    var d : bool = not ((true and true) or (true and true))
-    var e : bool = not ((false and true) and (false and true))
-    var f : bool = not ((true and true) and (x == 1 and y == 3))
-    var g : bool = not ((true or true) and (x == 1 or y == 3))
-    var h : bool = ((true or true) and (x == 1 or y == 3))
-    var i : bool = ((false and true) and (x == 1 or y == 3))
-    var j : bool = (false or (false and true)) or true
-    var k : bool = (true and false) or (true or false) or (true and false)
-    var l : bool = (true)
-    var m : bool = not true == true or not false == false
-    var n : bool = not true == false or not false == false
-    var o : bool = true
-    var p : bool = ((x < y and y <= z) or (z > x and not (y == x))) and (x != z or y == 3)
-    var q : bool = not (not (x == 1) or not (y != 3)) and not (z > 5 and x < 0)
-    var r : bool = not ((x == 1 and y == 3 and z == 4) or (x != 1 or y != 3 or z != 4))
-    var s : bool = (x < 0) or ((y == 3) and (z > 1)) or ((x != 1) and (y < z))
-    var t : bool = not ((x == 1) and not (y != 3)) or (z == 4)
-    var u : bool = not ((false or true) and not (true and false)) or (x > 10)
-    var v : bool = (not (x != 1) or not (y < 0)) and (z == 4)
-    var w : bool = (x + y <= z) and (not (z == 4) or (x == 1 and y == 3))
-    var pp : bool = not (x == 1 or (y != 3 and z == 4)) or (x > 5 and y < 0)
-    var rr : bool = (x + y <= z)  and (not (z == 4) or (x == 1 and y == 3))
+    var a bool = not ((x == 1 and y == 3) and not (x == 1 and y == 3 and z == 4))
+    var b bool = not ((x == 1 and y == 4) or not (x == 3 or y == 4 or z == 5))
+    var c bool = not ((true and true) and (true and true))
+    var d bool = not ((true and true) or (true and true))
+    var e bool = not ((false and true) and (false and true))
+    var f bool = not ((true and true) and (x == 1 and y == 3))
+    var g bool = not ((true or true) and (x == 1 or y == 3))
+    var h bool = ((true or true) and (x == 1 or y == 3))
+    var i bool = ((false and true) and (x == 1 or y == 3))
+    var j bool = (false or (false and true)) or true
+    var k bool = (true and false) or (true or false) or (true and false)
+    var l bool = (true)
+    var m bool = not true == true or not false == false
+    var n bool = not true == false or not false == false
+    var o bool = true
+    var p bool = ((x < y and y <= z) or (z > x and not (y == x))) and (x != z or y == 3)
+    var q bool = not (not (x == 1) or not (y != 3)) and not (z > 5 and x < 0)
+    var r bool = not ((x == 1 and y == 3 and z == 4) or (x != 1 or y != 3 or z != 4))
+    var s bool = (x < 0) or ((y == 3) and (z > 1)) or ((x != 1) and (y < z))
+    var t bool = not ((x == 1) and not (y != 3)) or (z == 4)
+    var u bool = not ((false or true) and not (true and false)) or (x > 10)
+    var v bool = (not (x != 1) or not (y < 0)) and (z == 4)
+    var w bool = (x + y <= z) and (not (z == 4) or (x == 1 and y == 3))
+    var pp bool = not (x == 1 or (y != 3 and z == 4)) or (x > 5 and y < 0)
+    var rr bool = (x + y <= z)  and (not (z == 4) or (x == 1 and y == 3))
 
     assert(a)
     assert(not b)
@@ -62,19 +62,19 @@ func main(){
     var value2 = 5
     var value3 = 10
     var value4 = 2
-    var flag : bool = false
+    var flag bool = false
 
-    var aa : bool = ((value1 == value2 and value3 > value1 * value4) or flag) and not (value1 != value2 or value3 < 10)
-    var bb : bool = not (flag or (value1 + value2 > value3) or (value3 / value4 == value1)) and value1 == 5
-    var cc : bool = not (value1 < value2 and value3 > value4 and flag) or (x == 1 and not (y == z))
-    var dd : bool = ((value1 == value2) and (value3 == value1 * value4)) or (value1 != 5 and value2 != 5)
-    var ee : bool = not ((value1 > 0 and value2 < 10) and not (value3 == 10)) and (value4 == 2 or flag)
-    var ff : bool = not (flag) and ((value1 == value2 or value3 != value4) and not (value4 > value3 / 2))
-    var gg : bool = (value1 == 5 and (value2 != value3 and value4 < value3)) or (value3 < value1 + value2 and flag)
-    var hh : bool = ((value1 == value2 and value3 == value3) and (value4 != value1 and flag == false)) or (value1 + 1 == 6)
-    var ii : bool = not (value1 == 5 and value2 == 5 and value3 == 10 and value4 == 2 and flag == false)
-    var jj : bool = ((value1 + value2 == value3) or (value3 / value4 == value1)) and not (value1 < flag or value2 < flag)
-    var kk : bool = not (value1 == value2 and value3 / value4 == value1)
+    var aa bool = ((value1 == value2 and value3 > value1 * value4) or flag) and not (value1 != value2 or value3 < 10)
+    var bb bool = not (flag or (value1 + value2 > value3) or (value3 / value4 == value1)) and value1 == 5
+    var cc bool = not (value1 < value2 and value3 > value4 and flag) or (x == 1 and not (y == z))
+    var dd bool = ((value1 == value2) and (value3 == value1 * value4)) or (value1 != 5 and value2 != 5)
+    var ee bool = not ((value1 > 0 and value2 < 10) and not (value3 == 10)) and (value4 == 2 or flag)
+    var ff bool = not (flag) and ((value1 == value2 or value3 != value4) and not (value4 > value3 / 2))
+    var gg bool = (value1 == 5 and (value2 != value3 and value4 < value3)) or (value3 < value1 + value2 and flag)
+    var hh bool = ((value1 == value2 and value3 == value3) and (value4 != value1 and flag == false)) or (value1 + 1 == 6)
+    var ii bool = not (value1 == 5 and value2 == 5 and value3 == 10 and value4 == 2 and flag == false)
+    var jj bool = ((value1 + value2 == value3) or (value3 / value4 == value1)) and not (value1 < flag or value2 < flag)
+    var kk bool = not (value1 == value2 and value3 / value4 == value1)
 
     assert(not aa)
     assert(not bb)
@@ -88,16 +88,16 @@ func main(){
     assert(jj)   
     assert(not kk)
     
-    var h1 : bool = not (not (value1 * 2 == value3) or (z * 2 > value3 + value4)) and (x < value4 and y > value1)
-    var h2 : bool = ( (value1 == 5 and value2 != 6) or (value3 > 100) ) and not (z - y == x or flag)
-    var h3 : bool = not (x < y and y < z and z > 0) or ( (value1 == value2) and (value3 == 10) and not (value4 * value1 > 10) )
-    var h4 : bool = ( (value1 + value2 + value4) and (value3 + 2) and (x == 1) ) and not (flag or (y > value1) or (value4 < 2))
-    var h5 : bool = not ( (x == z - y) and (value3 / value4 == value1) ) or (value1 + value2 > value3 and value3 - value1 == value2)
-    var h6 : bool = not (flag == true and x == 1) or ( (value1 * value4 <= value3 and value3 == 10) or not (z * x != 4 or y == 3) )
-    var h7 : bool = ( (value1 == value2 or value3 == value4) and not (z > x and y < z) ) and ( (flag or x != 1) or (value1 + value4 == 7) )
-    var h8 : bool = not (value3 / value4 == value1) and ( (value1 == value2 and z != 4) or not (x == 1 and y == 3 and z == 4) )
-    var h9 : bool = not ( (value1 + value2 + value3 + value4) > 20 and not flag ) and (value3 / 5 > 1 or value4 / 1 == 2)
-    var h10 : bool = ( (value1 * value4 > value3 and value3 / value4 == value1) or (value1 == value2 and value3 == 10) ) and not (flag and value4 == 2)
+    var h1 bool = not (not (value1 * 2 == value3) or (z * 2 > value3 + value4)) and (x < value4 and y > value1)
+    var h2 bool = ( (value1 == 5 and value2 != 6) or (value3 > 100) ) and not (z - y == x or flag)
+    var h3 bool = not (x < y and y < z and z > 0) or ( (value1 == value2) and (value3 == 10) and not (value4 * value1 > 10) )
+    var h4 bool = ( (value1 + value2 + value4) and (value3 + 2) and (x == 1) ) and not (flag or (y > value1) or (value4 < 2))
+    var h5 bool = not ( (x == z - y) and (value3 / value4 == value1) ) or (value1 + value2 > value3 and value3 - value1 == value2)
+    var h6 bool = not (flag == true and x == 1) or ( (value1 * value4 <= value3 and value3 == 10) or not (z * x != 4 or y == 3) )
+    var h7 bool = ( (value1 == value2 or value3 == value4) and not (z > x and y < z) ) and ( (flag or x != 1) or (value1 + value4 == 7) )
+    var h8 bool = not (value3 / value4 == value1) and ( (value1 == value2 and z != 4) or not (x == 1 and y == 3 and z == 4) )
+    var h9 bool = not ( (value1 + value2 + value3 + value4) > 20 and not flag ) and (value3 / 5 > 1 or value4 / 1 == 2)
+    var h10 bool = ( (value1 * value4 > value3 and value3 / value4 == value1) or (value1 == value2 and value3 == 10) ) and not (flag and value4 == 2)
 
     assert(not h1)
     assert(not h2)

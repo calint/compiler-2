@@ -1,2 +1,2 @@
 
-t323.baz:3:17: expected array size to be greater than 0
+t323.baz:3:12: expected array size to be greater than 0

@@ -1,9 +1,9 @@
 # parenthesized in-range index
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     var index = 3
     arr[(index + 4)] = 1
     assert(arr[7] == 1)

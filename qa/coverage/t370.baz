@@ -1,6 +1,6 @@
 # unary negative index
 
 func main() {
-    var values : i8[8]
+    var values[8] i8
     values[~0] = 1
 }

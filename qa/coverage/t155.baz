@@ -1,16 +1,16 @@
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-type msgpoint {  msg : i8[128], pt : point }
+type msgpoint {  msg[128] i8, pt point }
 
-type message { subject : i8[64], is_read : bool, checks : bool[4] }
+type message { subject[64] i8, is_read bool, checks[4] bool }
 
 func main() {
     var x = -1
     var y = -2
 
-    var mp : msgpoint[3] = { 
+    var mp[3] msgpoint = { 
         { {}, { x, y } } 
     }
     assert(mp[0].pt.x == -1)
@@ -30,7 +30,7 @@ func main() {
     assert(mp[1].msg[0] == 13)
     assert(mp[1].msg[1] == 2)
 
-    var s : i8[128] = {11, 22}
+    var s[128] i8 = {11, 22}
     mp[1] = { s }
     assert(mp[1].msg[0] == 11)
     assert(mp[1].msg[1] == 22)
@@ -39,20 +39,20 @@ func main() {
     assert(mp[1].msg[0] == 1)
     assert(mp[1].msg[1] == 8)
 
-    var source_values: i8[]  = { 12, 13, mp[1].msg[0] }
-    var copied_values : i8[3]
+    var source_values[] i8  = { 12, 13, mp[1].msg[0] }
+    var copied_values[3] i8
     copied_values = source_values
     assert(copied_values[0] == 12)
     assert(copied_values[1] == 13)
     assert(copied_values[2] == 1)
 
-    var msg : message = { { }, true, { false, true, true } }
+    var msg message = { { }, true, { false, true, true } }
     assert(msg.is_read == true)
     assert(msg.checks[0] == false)
     assert(msg.checks[1] == true)
     assert(msg.checks[2] == true)
 
-    var msg1 : message[2] = { { }, { { }, true, { false, true, true } } }
+    var msg1[2] message = { { }, { { }, true, { false, true, true } } }
     assert(msg1[1].is_read == true)
     assert(msg1[1].checks[0] == false)
     assert(msg1[1].checks[1] == true)

@@ -1,8 +1,8 @@
 # non-inline return destinations: nested calls, pointer forwarding and early returns
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
-func noinline magnitude(value) : result {
+func noinline magnitude(value) result {
     result = value
     if value < 0 {
         result = -value
@@ -11,7 +11,7 @@ func noinline magnitude(value) : result {
     value = value + 1
 }
 
-func noinline forward(value) : result {
+func noinline forward(value) result {
     var sentinel = 9876
     result = magnitude(value)
     if sentinel != 9876 result = -1

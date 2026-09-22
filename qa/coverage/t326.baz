@@ -1,11 +1,11 @@
 # nested array and field indexing
 
-type world { locations : [2] }
+type world { locations[2] }
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var worlds : world[2]
+    var worlds[2] world
     worlds[1].locations[1] = 0xffee
     assert(worlds[1].locations[1] == 0xffee)
 }

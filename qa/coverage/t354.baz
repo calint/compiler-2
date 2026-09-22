@@ -1,7 +1,7 @@
 # extreme index exposes NASM overflow
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     var index = 9223372036854775807
     arr[index] = 1
 }

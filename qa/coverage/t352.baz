@@ -1,7 +1,7 @@
 # arithmetic underflow
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     var index = 0
     arr[index - 1] = 1
 }

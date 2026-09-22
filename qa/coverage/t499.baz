@@ -1,8 +1,8 @@
 # braced functions retain single-statement if and loop bodies
 
 func noinline empty() {}
-func value() : result { result = 7 }
-func check(ok : bool)
+func value() result { result = 7 }
+func check(ok bool)
 {
     # comments inside a braced function remain ordinary statements
     if not ok exit(1)

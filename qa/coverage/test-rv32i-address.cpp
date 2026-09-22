@@ -356,8 +356,8 @@ auto main(const int argc, const char* argv[]) -> int {
     {
         const std::string_view source{R"baz(
 func main() {
-    var source : i32[4]
-    var destination : i32[4]
+    var source[4] i32
+    var destination[4] i32
     array_copy(source[2], destination[1], 2)
 }
 )baz"};
@@ -373,10 +373,10 @@ func main() {
     }
     {
         const std::string_view source{R"baz(
-func assert(ok : bool) { if not ok exit(1) }
+func assert(ok bool) { if not ok exit(1) }
 func main() {
-    var source : i32[4]
-    var destination : i32[4]
+    var source[4] i32
+    var destination[4] i32
     assert(arrays_equal(source[2], destination[1], 2))
 }
 )baz"};
@@ -403,10 +403,10 @@ func main() {
     }
     {
         const std::string_view source{R"baz(
-func assert(ok : bool) { if not ok exit(1) }
+func assert(ok bool) { if not ok exit(1) }
 func main() {
-    var left : i8[2] = {1, 2}
-    var right : i8[2] = {1, 2}
+    var left[2] i8 = {1, 2}
+    var right[2] i8 = {1, 2}
     assert(arrays_equal(left, right, 2))
     right[1] = 3
     assert(not arrays_equal(left, right, 2))
@@ -425,9 +425,9 @@ func main() {
     {
         const std::string_view source{R"baz(
 func main() {
-    var left : i8[2] = {1, 2}
-    var right : i8[2] = {1, 2}
-    var same : bool = arrays_equal(left, right, 2)
+    var left[2] i8 = {1, 2}
+    var right[2] i8 = {1, 2}
+    var same bool = arrays_equal(left, right, 2)
     same = not arrays_equal(left, right, 2)
     same = equal(left, right)
     same = not equal(left, right)
@@ -456,23 +456,23 @@ func main() {
     }
     if (argc > 1 and std::string_view{argv[1]} == "bulk") {
         const std::string_view source{R"baz(
-func assert(ok : bool) { if not ok exit(1) }
-type packed { first : i8, second : i16 }
-func nested(source : packed[], destination : packed[]) : count i32 {
+func assert(ok bool) { if not ok exit(1) }
+type packed { first i8, second i16 }
+func nested(source[] packed, destination[] packed) count i32 {
     array_copy(source, destination, 1)
     count = 2
 }
 func main() {
-    var source : packed[3] = {{1, 300}, {2, -400}, {3, 500}}
-    var destination : packed[3]
-    var single : packed = source[1]
+    var source[3] packed = {{1, 300}, {2, -400}, {3, 500}}
+    var destination[3] packed
+    var single packed = source[1]
     assert(equal(single, source[1]))
     single.second = 12
     assert(not equal(single, source[1]))
     array_copy(source, destination, nested(source, destination))
     assert(arrays_equal(source, destination, 2))
     assert(not arrays_equal(source, destination, 3))
-    var index : i32 = 2
+    var index i32 = 2
     array_copy(source[index], destination[index], 1)
     assert(arrays_equal(source[index], destination[index], 1))
     destination[index].second = 501
@@ -501,7 +501,7 @@ func main() {
     }
     if (argc > 1 and std::string_view{argv[1]} == "strings-syscall") {
         const std::string_view source{R"baz(
-dat text : i8[] = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
+dat text[] i8 = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
 func main() {
     mov(a0, 1)
     mov(a1, address_of(text))

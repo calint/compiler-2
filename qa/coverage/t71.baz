@@ -1,7 +1,7 @@
 # all functions are inlined
 
 # arguments can be placed in specified register using `reg_...` syntax 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
@@ -10,10 +10,10 @@ func assert(expr : bool) {
 # default type is target-dependent and does not need to be specified
 type point {x, y}
 
-type object {pos : point, color : i32}
+type object {pos point, color i32}
 
 # function arguments are equivalent to mutable references
-func foozi(pt : point) {
+func foozi(pt point) {
     pt.x = 0b10    # binary value 2
     pt.y = 0xb     # hex value 11
 }
@@ -25,12 +25,12 @@ func bar(arg) {
 }
 
 # return target is specified as a variable, in this case `res`
-func baz(arg) : res {
+func baz(arg) res {
     res = arg * 2
 }
 
 func main() {
-    var p : point = {0, 0}
+    var p point = {0, 0}
     foozi(p)
     assert(p.x == 2)
     assert(p.y == 0xb)
@@ -50,23 +50,23 @@ func main() {
     k = baz(1)
     assert(k == 2)
 
-    var p0 : point = {baz(2), 0}
+    var p0 point = {baz(2), 0}
     assert(p0.x == 4)
 
     var x = 1
     var y = 2
 
-    var o1 : object = {{x * 10, y}, 0xff0000}
+    var o1 object = {{x * 10, y}, 0xff0000}
     assert(o1.pos.x == 10)
     assert(o1.pos.y == 2)
     assert(o1.color == 0xff0000)
 
-    var p1 : point = {-x, -y}
+    var p1 point = {-x, -y}
     o1.pos = p1
     assert(o1.pos.x == -1)
     assert(o1.pos.y == -2)
 
-    var o2 : object = o1
+    var o2 object = o1
     assert(o2.pos.x == -1)
     assert(o2.pos.y == -2)
     assert(o2.color == 0xff0000)

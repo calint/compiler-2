@@ -37,7 +37,6 @@ class stmt_def_dat final : public statement {
     };
 
     token name_tk_;
-    token type_delim_tk_;
     token type_tk_;
     token open_bracket_tk_;
     stmt_const array_count_const_;
@@ -48,8 +47,7 @@ class stmt_def_dat final : public statement {
 
   public:
     stmt_def_dat(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()},
-          type_delim_tk_{tz.is_next_char_token(':')} {
+        : statement{tk}, name_tk_{tz.next_token()} {
 
         if (name_tk_.is_empty()) {
             throw compiler_exception{name_tk_, "expected name of data"};
@@ -58,35 +56,33 @@ class stmt_def_dat final : public statement {
         bool is_array{};
         size_t array_count{};
 
-        // check whether a type is declared
-        if (not type_delim_tk_.is_empty()) {
-            open_bracket_tk_ = tz.is_next_char_token('[');
-            if (open_bracket_tk_.is_empty()) {
-                type_tk_ = tz.next_token();
-                open_bracket_tk_ = tz.is_next_char_token('[');
+        open_bracket_tk_ = tz.is_next_char_token('[');
+        if (not open_bracket_tk_.is_empty()) {
+            is_array = true;
+
+            array_count_const_ = {tc, tz, 0};
+
+            if (array_count_const_.has_value() and
+                array_count_const_.value() <= 0) {
+
+                throw compiler_exception{
+                    array_count_const_.tok(),
+                    "expected array size to be greater than 0"};
             }
-            if (not open_bracket_tk_.is_empty()) {
-                is_array = true;
 
-                array_count_const_ = {tc, tz, 0};
+            array_count = static_cast<size_t>(array_count_const_.value());
 
-                if (array_count_const_.has_value() and
-                    array_count_const_.value() <= 0) {
-
-                    throw compiler_exception{
-                        array_count_const_.tok(),
-                        "expected array size to be greater than 0"};
-                }
-
-                array_count = static_cast<size_t>(array_count_const_.value());
-
-                close_bracket_tk_ = tz.is_next_char_token(']');
-                if (close_bracket_tk_.is_empty()) {
-                    throw compiler_exception{
-                        type_tk_.is_empty() ? open_bracket_tk_ : type_tk_,
-                        "expected ']' after array size"};
-                }
+            close_bracket_tk_ = tz.is_next_char_token(']');
+            if (close_bracket_tk_.is_empty()) {
+                throw compiler_exception{open_bracket_tk_,
+                                         "expected ']' after array size"};
             }
+        }
+
+        type_tk_ = tz.next_token();
+        if (not tc.has_type(type_tk_.text())) {
+            tz.put_back_token(type_tk_);
+            type_tk_ = {};
         }
 
         // get type reference from the token
@@ -137,16 +133,13 @@ class stmt_def_dat final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
-        if (not type_delim_tk_.is_empty()) {
-            type_delim_tk_.source_to(os);
-            if (not type_tk_.is_empty()) {
-                type_tk_.source_to(os);
-            }
-            if (elroot_.is_array) {
-                open_bracket_tk_.source_to(os);
-                array_count_const_.source_to(os);
-                close_bracket_tk_.source_to(os);
-            }
+        if (elroot_.is_array) {
+            open_bracket_tk_.source_to(os);
+            array_count_const_.source_to(os);
+            close_bracket_tk_.source_to(os);
+        }
+        if (not type_tk_.is_empty()) {
+            type_tk_.source_to(os);
         }
 
         // special case for a string

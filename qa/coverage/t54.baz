@@ -1,13 +1,13 @@
 # nested struct fields and address calculations
 
 dat fld=42
-dat str:i8[]="hello world"
+dat str[] i8="hello world"
 
 type vector{x,y}
-type object{pos:vector,vel:vector,color}
+type object{pos vector,vel vector,color}
 
-func f(str:i8[],fld){
-    var obj:object={{1,0},{0,0},0}
+func f(str[] i8,fld){
+    var obj object={{1,0},{0,0},0}
     if not obj.pos.x==1 exit(1)
     obj.pos.x=1
     obj.pos.y=2
@@ -24,7 +24,7 @@ func f(str:i8[],fld){
 }
 
 func main(){
-    var obj:object={{1,0},{0,0},0}
+    var obj object={{1,0},{0,0},0}
     if not obj.pos.x==1 exit(1)
     obj.pos.x=1
     obj.pos.y=2

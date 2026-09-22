@@ -3,16 +3,16 @@
 #   if (tf.is_array and src.is_array_identifier()) validate_array_assignment
 #   if (tf.is_array) { validate_array_assignment; x.copy(...); }
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 type holder {
-    values : [2],
+    values[2],
     tag
 }
 
 func main() {
-    var src_values : [2] = {31, 32}
-    var holders : holder[2]
+    var src_values[2] = {31, 32}
+    var holders[2] holder
 
     var ix = 1
     holders[ix] = {src_values, 9}

@@ -1,4 +1,4 @@
 # function results require known types
 
-func f() : r nope { r = 1 }
+func f() r nope { r = 1 }
 func main() {}

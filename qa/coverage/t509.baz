@@ -1,0 +1,3 @@
+# array brackets must precede the field element type
+type point { values i32[2] }
+func main() {}

@@ -1,6 +1,6 @@
 # array index expressions require a closing bracket
 
 func main() {
-    var x : i8[2]
+    var x[2] i8
     var y = x[0
 }

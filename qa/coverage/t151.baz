@@ -1,6 +1,6 @@
 # constant identifiers in data initializers
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 const yes = 1
 const no = 0
@@ -8,7 +8,7 @@ const maybe = -1
 
 type point { x, y }
 
-dat p1 : point = { true, maybe }
+dat p1 point = { true, maybe }
 
 func main() {
     assert (p1.x == yes)
@@ -20,7 +20,7 @@ func main() {
     answer = yes
     assert(answer == 1)
 
-    var p2 : point = { no, yes }
+    var p2 point = { no, yes }
     assert (p2.x == no)
     assert (p2.y == yes)
 }

@@ -1,8 +1,8 @@
 # foo loop variable indexes its data field
 
-type item { data : [2] }
+type item { data[2] }
 
-dat values : item[3] =
+dat values[3] item =
     {
         { {1, 2} },
         { {3, 4} },
@@ -13,7 +13,7 @@ func increment(value) {
     value = value + 10
 }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
     foo values {

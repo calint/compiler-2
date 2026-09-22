@@ -3,11 +3,11 @@
 type left { value }
 type right { value }
 
-func make() : result right {
+func make() result right {
     result.value = 1
 }
 
-func take(value : left) {}
+func take(value left) {}
 
 func main() {
     take(make())

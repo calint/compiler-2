@@ -1,18 +1,18 @@
 # register width inference path: rax/eax/ax/al
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 func main() {
     mov(rax, 0x0000000012345678)
 
-    var q : i64 = rax
-    var d : i32 = rax
-    var w : i16 = rax
-    var b : i8 = rax
+    var q i64 = rax
+    var d i32 = rax
+    var w i16 = rax
+    var b i8 = rax
 
-    var d2 : i32 = eax
-    var w2 : i16 = ax
-    var b2 : i8 = al
+    var d2 i32 = eax
+    var w2 i16 = ax
+    var b2 i8 = al
 
     assert(1, q == 0x0000000012345678)
     assert(2, d == 0x12345678)

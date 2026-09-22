@@ -1,0 +1,21 @@
+# arrays follow names, with optional element types
+type point { coordinates[2] i32, tags[2] }
+dat colon[] i8 = ": "
+dat numbers[2] = { 3, 4 }
+func assert(ok bool) { if not ok exit(1) }
+func sum(values[] i32) result i32 { result = values[0] + values[1] }
+func default_sum(values[]) result { result = values[0] + values[1] }
+func update(points[] point) { points[0].coordinates[1] = 9 }
+func main() {
+    var values[] i32 = { 5, 6 }
+    assert(sum(values) == 11)
+    assert(default_sum(numbers) == 7)
+    var points[2] point
+    update(points)
+    assert(points[0].coordinates[1] == 9)
+    assert(points[0].tags[1] == 0)
+    var defaults[2] = { 7, 8 }
+    assert(default_sum(defaults) == 15)
+    assert(array_size_of(colon) == 2)
+    assert(colon[0] == 58)
+}

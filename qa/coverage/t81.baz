@@ -1,15 +1,15 @@
 # nested struct fields inside arrays
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
 type point {x, y}
-type object {pos : point, color : i32}
-type cluster {objs: object[10], flags : i8}
+type object {pos point, color i32}
+type cluster {objs[10] object, flags i8}
 
 func main() {
-    var cr : cluster[7]
+    var cr[7] cluster
     cr[1].objs[2].pos.y = 8
     assert(cr[1].objs[2].pos.y == 8)
 

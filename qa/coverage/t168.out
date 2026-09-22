@@ -1,2 +1,2 @@
 
-t168.baz:6:25: destination array size 2 does not match source size 4
+t168.baz:6:23: destination array size 2 does not match source size 4

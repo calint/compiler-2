@@ -1,2 +1,2 @@
-func unused() : rbp i64 {}
+func unused() rbp i64 {}
 func main() {}

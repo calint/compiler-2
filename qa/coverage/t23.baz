@@ -1,14 +1,14 @@
 # nested calls with local function temporaries
 
-func a(i):res{
+func a(i) res{
     res=i+1
 }
 
-func b(i):res{
+func b(i) res{
     res=i+2
 }
 
-func c(i):res{
+func c(i) res{
     var a=1
     var b=2
     var c=a+b

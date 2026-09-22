@@ -1,7 +1,7 @@
 # panic line from a multiline index
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     var index = -1
     arr[
         index

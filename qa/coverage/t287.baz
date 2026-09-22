@@ -1,4 +1,4 @@
 # missing initializer delimiter is rejected
 
 type p { x, y }
-func main() { dat x : p = {1 2} }
+func main() { dat x p = {1 2} }

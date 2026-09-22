@@ -1,4 +1,4 @@
 # too many elements in a user type array
 
 type p { x }
-func main() { dat x : p[2] = {{1},{2},{3}} }
+func main() { dat x[2] p = {{1},{2},{3}} }

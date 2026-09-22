@@ -7,7 +7,6 @@
 #include "toc.hpp"
 
 class stmt_def_func_param final : public statement {
-    token type_delim_tk_;
     token type_tk_;
     token open_bracket_tk_;
     token close_bracket_tk_;
@@ -15,22 +14,33 @@ class stmt_def_func_param final : public statement {
 
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
-        : statement{tz.next_token()},
-          type_delim_tk_{tz.is_next_char_token(':')} {
+        : statement{tz.next_token()} {
 
         assert(not tok().text().empty());
 
-        if (type_delim_tk_.is_empty()) {
+        open_bracket_tk_ = tz.is_next_char_token('[');
+        if (not open_bracket_tk_.is_empty()) {
+            close_bracket_tk_ = tz.is_next_char_token(']');
+            if (close_bracket_tk_.is_empty()) {
+                throw compiler_exception{tz, "expected ']'"};
+            }
+            is_array_ = true;
+        }
+
+        token delimiter_tk{tz.is_next_char_token(',')};
+        if (delimiter_tk.is_empty()) {
+            delimiter_tk = tz.is_next_char_token(')');
+        }
+        if (not delimiter_tk.is_empty()) {
+            tz.put_back_token(delimiter_tk);
+
             // no type defined, set default
             set_type(tc.get_type_default());
 
             return;
         }
 
-        open_bracket_tk_ = tz.is_next_char_token('[');
-        if (open_bracket_tk_.is_empty()) {
-            type_tk_ = tz.next_token();
-        }
+        type_tk_ = tz.next_token();
         if (type_tk_.text().starts_with("reg_")) {
             // register parameter, set default type
             set_type(tc.get_type_default());
@@ -41,33 +51,18 @@ class stmt_def_func_param final : public statement {
         set_type(type_tk_.is_empty()
                      ? tc.get_type_default()
                      : tc.get_type_or_throw(type_tk_, type_tk_.text()));
-
-        if (open_bracket_tk_.is_empty()) {
-            open_bracket_tk_ = tz.is_next_char_token('[');
-        }
-        if (not open_bracket_tk_.is_empty()) {
-            close_bracket_tk_ = tz.is_next_char_token(']');
-            if (close_bracket_tk_.is_empty()) {
-                throw compiler_exception{tz, "expected ']'"};
-            }
-            is_array_ = true;
-        }
     }
 
     stmt_def_func_param() = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        if (type_delim_tk_.is_empty()) {
-            return;
-        }
-        type_delim_tk_.source_to(os);
-        if (not type_tk_.is_empty()) {
-            type_tk_.source_to(os);
-        }
         if (is_array_) {
             open_bracket_tk_.source_to(os);
             close_bracket_tk_.source_to(os);
+        }
+        if (not type_tk_.is_empty()) {
+            type_tk_.source_to(os);
         }
     }
 

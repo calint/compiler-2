@@ -1,2 +1,2 @@
 
-t240.baz:4:28: expected type 'p', got 'i64'
+t240.baz:4:26: expected type 'p', got 'i64'

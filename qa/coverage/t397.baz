@@ -2,6 +2,6 @@
 
 type point { x }
 func main() {
-    var points : point[1]
+    var points[1] point
     var value = points[0].y
 }

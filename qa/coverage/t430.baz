@@ -1,20 +1,20 @@
 # increment indexes an array member of its user-type argument
 
 type point { x, y }
-type item { data : point[2] }
+type item { data[2] point }
 
-dat values : item[3] =
+dat values[3] item =
     {
         { { {1, 2}, {3, 4} } },
         { { {5, 6}, {7, 8} } },
         { { {9, 10}, {11, 12} } }
     }
 
-func increment(value : item) {
+func increment(value item) {
     value.data[1].y = value.data[1].y + 10
 }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
     foo values {

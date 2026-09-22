@@ -1,2 +1,2 @@
-func f() : r {}
+func f() r {}
 func main() {}

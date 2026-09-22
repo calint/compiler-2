@@ -1,7 +1,7 @@
 # source and destination array sizes must match
 
 func main() {
-    var src : i8[4] = {1,2,3,4}
-    var dst : i8[2]
+    var src[4] i8 = {1,2,3,4}
+    var dst[2] i8
     dst = src
 }

@@ -1,4 +1,4 @@
 # array type size requires a closing bracket
 
-func f(x : i8[2) {}
+func f(x[2) {}
 func main() {}

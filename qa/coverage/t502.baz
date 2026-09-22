@@ -1,0 +1,2 @@
+# colon syntax is no longer accepted for variables
+func main() { var value : i32 }

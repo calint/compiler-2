@@ -1,15 +1,15 @@
 # indexed value inside a function argument expression
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
-func fiz(x : i32) : res i32 {
+func fiz(x i32) res i32 {
     res = x + (x + 1)
 }
 
 func main() {
-    var arr : i32[4]
+    var arr[4] i32
     var ix = 1
     arr[ix] = 2
-    var c : i32 = fiz(1 + arr[ix])
+    var c i32 = fiz(1 + arr[ix])
     assert(c == 7)
 }

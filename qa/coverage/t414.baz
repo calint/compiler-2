@@ -1,15 +1,15 @@
 # foo over an indexed array of user types
 
 type point { x, y }
-type holder { points : point[2] }
+type holder { points[2] point }
 
-dat holders : holder[2] =
+dat holders[2] holder =
     {
         { { {1, 2}, {3, 4} } },
         { { {5, 6}, {7, 8} } }
     }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
     foo holders[1].points {

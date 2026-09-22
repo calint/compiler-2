@@ -1,17 +1,17 @@
 # narrowing conversion preserves the low byte
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
-func take(value : i8) : result i8 {
+func take(value i8) result i8 {
     result = value
 }
 
 func main() {
     var bigger = 0x123
-    var smaller : i8 = take(bigger)
+    var smaller i8 = take(bigger)
     assert(smaller == 0x23)
 
     var bigger_again = 0x1234
-    var smaller_again : i8 = take(bigger_again)
+    var smaller_again i8 = take(bigger_again)
     assert(smaller_again == 0x34)
 }

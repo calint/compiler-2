@@ -1,37 +1,37 @@
 # nested link mutation through a struct parameter
 
-func assert(expr : bool) {
+func assert(expr bool) {
     if not expr exit(1)
 }
 
 type link {
-    name : i8[64],
-    name_len : i8
+    name[64] i8,
+    name_len i8
 }
 
 type location {
-    name : i8[64],
-    name_len : i8,
-    links : link[4]
+    name[64] i8,
+    name_len i8,
+    links[4] link
 }
 
 type world {
     time,
-    loc : location
+    loc location
 }
 
-func faaz(sz : i8) {
+func faaz(sz i8) {
     sz = 1
 }
 
-func fooz(lnk : link) {
+func fooz(lnk link) {
     lnk.name[0] = 0x61 # 'a'
     faaz(lnk.name_len)
     # lnk.name_len = 1
 }
 
 func main() {
-    var wld : world[1]
+    var wld[1] world
     fooz(wld.loc.links)
     assert(wld.loc.links.name_len == 1)
     assert(wld.loc.links.name[0] == 0x61 )

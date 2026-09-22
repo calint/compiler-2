@@ -1,2 +1,2 @@
 
-t208.baz:3:33: expected '}' after 1 element in array of size 1
+t208.baz:3:31: expected '}' after 1 element in array of size 1

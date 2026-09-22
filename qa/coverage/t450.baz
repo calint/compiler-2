@@ -1,24 +1,24 @@
 # lea regression: user-type return assigned to indexed dst from indexed src
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 type pair {
     x,
     y
 }
 
-func mk_from(src : pair, delta) : out pair {
+func mk_from(src pair, delta) out pair {
     out = {src.x + delta, src.y + delta}
 }
 
-func put(dst : pair, src : pair, j) {
+func put(dst pair, src pair, j) {
     j = j + 1
     dst = mk_from(src, j)
 }
 
 func main() {
-    var srcs : pair[3]
-    var dsts : pair[3]
+    var srcs[3] pair
+    var dsts[3] pair
 
     srcs[0] = {1, 2}
     srcs[1] = {30, 40}

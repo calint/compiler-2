@@ -21,7 +21,6 @@ class stmt_def_func final : public statement {
     std::vector<stmt_def_func_param> params_;
     std::vector<token> param_delims_tk_;
     token close_paren_tk_;
-    token return_delim_tk_;
     std::optional<func_return_info> returns_;
     stmt_block code_;
 
@@ -63,10 +62,9 @@ class stmt_def_func final : public statement {
             params_.emplace_back(tc, tz);
         }
 
-        return_delim_tk_ = tz.is_next_char_token(':');
-        if (not return_delim_tk_.is_empty()) {
+        const token ident_tk{tz.next_token()};
+        if (not ident_tk.text().empty()) {
             // function returns
-            const token ident_tk{tz.next_token()};
             token type_tk{tz.next_token()};
             if (not tc.has_type(type_tk.text())) {
                 tz.put_back_token(type_tk);
@@ -79,6 +77,7 @@ class stmt_def_func final : public statement {
             returns_.emplace(type_tk, ident_tk, &tp);
             set_type(tp);
         } else {
+            tz.put_back_token(ident_tk);
             // no return, set type to 'void'
             set_type(tc.get_type_void());
         }
@@ -159,7 +158,6 @@ class stmt_def_func final : public statement {
         close_paren_tk_.source_to(os);
 
         if (returns_) {
-            return_delim_tk_.source_to(os);
             returns_->ident_tk.source_to(os);
             if (not returns_->type_tk.is_empty()) {
                 returns_->type_tk.source_to(os);

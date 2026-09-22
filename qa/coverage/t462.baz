@@ -1,11 +1,11 @@
 # signed byte multiplication: wide results expose missing sign extension
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 func main() {
-    var negative : i8 = -7
-    var positive : i8 = 3
-    var other_negative : i8 = -3
+    var negative i8 = -7
+    var positive i8 = 3
+    var other_negative i8 = -3
 
     var wide = positive * negative
     assert(1, wide == -21)
@@ -14,7 +14,7 @@ func main() {
     wide = negative * other_negative
     assert(3, wide == 21)
 
-    var narrow : i8 = negative * positive
+    var narrow i8 = negative * positive
     assert(4, narrow == -21)
     narrow = negative * other_negative
     assert(5, narrow == 21)

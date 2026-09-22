@@ -1,9 +1,9 @@
 # computed inner index in a nested array
 
-type group { values : i8[2] }
+type group { values[2] i8 }
 
 func main() {
-    var groups : group[2]
+    var groups[2] group
     var outer = 0
     var inner = 2
     groups[outer].values[inner] = 1

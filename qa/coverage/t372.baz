@@ -1,9 +1,9 @@
 # valid upper boundary through address_of
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var values : i8[8]
+    var values[8] i8
     var address = address_of(values[7])
     assert(address != 0)
 }

@@ -2,11 +2,11 @@
 
 const n = 3
 
-dat values : i8[n] = {1,2,3}
+dat values[n] i8 = {1,2,3}
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 func main() {
-    var copy : i8[n]
+    var copy[n] i8
     copy[0] = values[0]
     copy[1] = values[1]
     copy[2] = values[2]

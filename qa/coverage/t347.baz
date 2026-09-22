@@ -1,7 +1,7 @@
 # arithmetic upper-bound failure
 
 func main() {
-    var arr : i8[8]
+    var arr[8] i8
     var index = 7
     arr[index + 1] = 1
 }

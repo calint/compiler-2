@@ -1,13 +1,13 @@
 # aggregate assignment with an array field
 
 type point { x, y }
-type tagged_points { tag, points : point[2] }
+type tagged_points { tag, points[2] point }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
-    var arr : point[2] = { {1, 2}, {3, 4} }
-    var type_inst : tagged_points
+    var arr[2] point = { {1, 2}, {3, 4} }
+    var type_inst tagged_points
     type_inst = { 7, arr }
 
     assert(type_inst.tag == 7)

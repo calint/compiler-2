@@ -4,7 +4,7 @@
 
 # single statement blocks can ommit braces
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 # limited built-in assembler just enough to interface with OS
 
@@ -12,16 +12,16 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes {
+func input(len, ptr) nbytes {
     nbytes = read(0, ptr, len)
 }
 
 type str {
-    len : i8,
-    data : i8[127]
+    len i8,
+    data[127] i8
 }
 
-func str_in(s : str) {
+func str_in(s str) {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, address_of(s.data)) # buffer address
@@ -30,7 +30,7 @@ func str_in(s : str) {
     mov(s.len, rax - 1) # return value
 } 
 
-func str_out(s : str) {
+func str_out(s str) {
     mov(rax, 1)   # write system call
     mov(rdi, 0)   # file descriptor for standard out
     mov(rsi, address_of(s.data)) # buffer address 
@@ -39,42 +39,42 @@ func str_out(s : str) {
 } 
 
 type list {
-    len : i8,
-    data : i8[127]
+    len i8,
+    data[127] i8
 }
 
 type exit {
-    name : str,
-    to : i8
+    name str,
+    to i8
 }
 
 type object {
-    name : str
+    name str
 }
 
 type entity {
-    name : str,
-    location: i8,
-    inventory : list
+    name str,
+    location i8,
+    inventory list
 }
 
 type location {
-    name : str,
-    note : str,
-    entities : list,
-    objects : list,
-    exits : list
+    name str,
+    note str,
+    entities list,
+    objects list,
+    exits list
 }
 
-func foozi(src : location, dst : location) {
+func foozi(src location, dst location) {
     dst.name = {src.name.len, src.name.data}
     dst.note = src.note
 }
 
 func main() {
-    var locations : location[128]
-    var entities : entity[128]
-    var exits : exit[1024]
+    var locations[128] location
+    var entities[128] entity
+    var exits[1024] exit
 
     locations[0].name.data[1] = 0x61
 

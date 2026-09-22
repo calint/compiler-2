@@ -1,11 +1,11 @@
-dat hello:i8[]="hello\n"
-dat world:i8[]="world\n"
+dat hello[] i8="hello\n"
+dat world[] i8="world\n"
 
 func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func bar(a,b,hello:i8[]){
+func bar(a,b,hello[] i8){
     loop{
         if b==0 return
         print(array_size_of(hello),address_of(hello))
@@ -13,7 +13,7 @@ func bar(a,b,hello:i8[]){
     }
 }
 
-func foozi(world:i8[]){
+func foozi(world[] i8){
     print(array_size_of(world),address_of(world))
 }
 

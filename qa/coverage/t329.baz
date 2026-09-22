@@ -1,17 +1,17 @@
 # function transforms a returned value
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-func shift_point(source : point) : result point {
+func shift_point(source point) result point {
     result.x = source.x + 5
     result.y = source.y - 3
 }
 
 func main() {
-    var source : point = { 10, 20 }
-    var shifted : point = shift_point(source)
+    var source point = { 10, 20 }
+    var shifted point = shift_point(source)
     assert(shifted.x == 15)
     assert(shifted.y == 17)
 }

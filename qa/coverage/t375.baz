@@ -1,6 +1,6 @@
 # zero-length array must reject index zero
 
 func main() {
-    var values : i8[] = {}
+    var values[] i8 = {}
     values[0] = 1
 }

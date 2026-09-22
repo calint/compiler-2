@@ -2,7 +2,7 @@
 # targets compile_assign branch:
 #   if (not tf.type().is_built_in()) e.compile_assign(...)
 
-func assert(err, expr : bool) { if not expr exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 type pair {
     x,
@@ -10,12 +10,12 @@ type pair {
 }
 
 type outer {
-    p : pair,
+    p pair,
     tag
 }
 
 func main() {
-    var data : outer[2]
+    var data[2] outer
     var ix = 1
 
     data[ix] = {{10, 20}, 7}

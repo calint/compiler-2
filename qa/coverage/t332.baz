@@ -1,17 +1,17 @@
 # struct assignment from a function result
 
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-func copy_and_shift(source : point) : result point {
+func copy_and_shift(source point) result point {
     result.x = source.x + 10
     result.y = source.y - 10
 }
 
 func main() {
-    var source : point = { 4, 25 }
-    var destination : point
+    var source point = { 4, 25 }
+    var destination point
     destination = copy_and_shift(source)
     assert(destination.x == 14)
     assert(destination.y == 15)

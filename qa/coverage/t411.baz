@@ -2,9 +2,9 @@
 
 type point { x, y }
 
-dat points : point[3] = { {1, 2}, {3, 4}, {5, 6} }
+dat points[3] point = { {1, 2}, {3, 4}, {5, 6} }
 
-func assert(x : bool) { if not x exit(1) }
+func assert(x bool) { if not x exit(1) }
 
 func main() {
     foo points {

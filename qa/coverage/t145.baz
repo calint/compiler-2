@@ -1,4 +1,4 @@
-func assert(expr : bool) { if not expr exit(1) }
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
     # test last element in a expr_bool_ops_list when constant evaluated
