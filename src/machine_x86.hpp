@@ -419,10 +419,12 @@ class machine_x86 final : public machine {
                              action.destination);
         }
 
-        branch_comparison(indent, action.operation,
-                          action.branch_on_true ? action.inverted
-                                                : not action.inverted,
-                          action.target);
+        if (not action.target.empty()) {
+            branch_comparison(indent, action.operation,
+                              action.branch_on_true ? action.inverted
+                                                    : not action.inverted,
+                              action.target);
+        }
     }
 
     auto branch(const size_t indent, const std::string_view target)

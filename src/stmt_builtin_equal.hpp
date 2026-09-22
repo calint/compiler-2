@@ -53,6 +53,10 @@ class stmt_builtin_equal final : public expression {
 
     stmt_builtin_equal() = default;
 
+    [[nodiscard]] auto produces_canonical_boolean() const -> bool override {
+        return true;
+    }
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         open_paren_tk_.source_to(os);

@@ -118,7 +118,6 @@ class expr_any final : public statement {
         // the base case
         if (is_identifier_ or not is_array_) {
             compile_variant(tc, indent, dst_info, tok(), vars_[0]);
-
             return;
         }
 
@@ -311,7 +310,6 @@ class expr_any final : public statement {
                         src_loc_tk, indent, dst_info.operand,
                         operand::imm(std::format("{}", src_info.const_value),
                                      src_info.type_ref()));
-
                     return;
                 }
 

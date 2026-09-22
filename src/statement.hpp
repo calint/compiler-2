@@ -143,6 +143,10 @@ class statement {
 
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
+    [[nodiscard]] virtual auto produces_canonical_boolean() const -> bool {
+        return false;
+    }
+
     [[nodiscard]] virtual auto identifier() const -> std::string_view {
         return token_.text();
     }

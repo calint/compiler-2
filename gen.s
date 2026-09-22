@@ -533,8 +533,7 @@ main:
 ;   [166:12] ? arrays_equal(arr[1], arr1[1], 3)
 ;   [166:12] ? arrays_equal(arr[1], arr1[1], 3)
     cmp_166_12:
-;   [166:12] allocate scratch register -> r14
-;       [166:12] r14b = arrays_equal(arr[1], arr1[1], 3)
+;       [166:12] r15b = arrays_equal(arr[1], arr1[1], 3)
 ;       [166:12] = expression
 ;       [166:12] arrays_equal(arr[1], arr1[1], 3)
 ;       [166:12] allocate named register rsi
@@ -544,58 +543,55 @@ main:
 ;       [166:42] 3
         mov rcx, 3
 ;       [166:25] arr[1]
-;       [166:25] allocate scratch register -> r13
+;       [166:25] allocate scratch register -> r14
 ;       [166:29] set array index
 ;       [166:29] 1
-        mov r13, 1
+        mov r14, 1
 ;       [166:29] bounds check
-;       [166:29] allocate scratch register -> r12
+;       [166:29] allocate scratch register -> r13
 ;       [166:29] line number
-        mov r12, 166
-        test r13, r13
-        cmovs rbp, r12
+        mov r13, 166
+        test r14, r14
+        cmovs rbp, r13
         js baz_bounds_panic
-;       [166:29] allocate scratch register -> r10
-        mov r10, rcx
-        add r10, r13
-        cmp r10, 4
-;       [166:29] free scratch register r10
-        cmovg rbp, r12
-        jg baz_bounds_panic
+;       [166:29] allocate scratch register -> r12
+        mov r12, rcx
+        add r12, r14
+        cmp r12, 4
 ;       [166:29] free scratch register r12
-        lea rsi, [rbp + r13 * 4 + 224]
-;       [166:12] free scratch register r13
+        cmovg rbp, r13
+        jg baz_bounds_panic
+;       [166:29] free scratch register r13
+        lea rsi, [rbp + r14 * 4 + 224]
+;       [166:12] free scratch register r14
 ;       [166:33] arr1[1]
-;       [166:33] allocate scratch register -> r13
+;       [166:33] allocate scratch register -> r14
 ;       [166:38] set array index
 ;       [166:38] 1
-        mov r13, 1
+        mov r14, 1
 ;       [166:38] bounds check
-;       [166:38] allocate scratch register -> r12
+;       [166:38] allocate scratch register -> r13
 ;       [166:38] line number
-        mov r12, 166
-        test r13, r13
-        cmovs rbp, r12
+        mov r13, 166
+        test r14, r14
+        cmovs rbp, r13
         js baz_bounds_panic
-;       [166:38] allocate scratch register -> r10
-        mov r10, rcx
-        add r10, r13
-        cmp r10, 8
-;       [166:38] free scratch register r10
-        cmovg rbp, r12
-        jg baz_bounds_panic
+;       [166:38] allocate scratch register -> r12
+        mov r12, rcx
+        add r12, r14
+        cmp r12, 8
 ;       [166:38] free scratch register r12
-        lea rdi, [rbp + r13 * 4 + 256]
-;       [166:12] free scratch register r13
+        cmovg rbp, r13
+        jg baz_bounds_panic
+;       [166:38] free scratch register r13
+        lea rdi, [rbp + r14 * 4 + 256]
+;       [166:12] free scratch register r14
         shl rcx, 2
         repe cmpsb
 ;       [166:12] free named register rcx
 ;       [166:12] free named register rdi
 ;       [166:12] free named register rsi
-        sete r14b
-    cmp r14b, 0
-;   [166:12] free scratch register r14
-    setne r15b
+        sete r15b
     bool_end_166_12:
 ;   [34:6] assert(x : bool)
     assert_166_5:
@@ -642,8 +638,7 @@ main:
 ;   [170:12] ? not arrays_equal(arr, arr1, 4)
 ;   [170:12] ? not arrays_equal(arr, arr1, 4)
     cmp_170_12:
-;   [170:16] allocate scratch register -> r14
-;       [170:16] r14b = arrays_equal(arr, arr1, 4)
+;       [170:16] r15b = arrays_equal(arr, arr1, 4)
 ;       [170:16] = expression
 ;       [170:16] arrays_equal(arr, arr1, 4)
 ;       [170:16] allocate named register rsi
@@ -654,39 +649,37 @@ main:
         mov rcx, 4
 ;       [170:29] arr
 ;       [170:29] bounds check
-;       [170:29] allocate scratch register -> r13
+;       [170:29] allocate scratch register -> r14
 ;       [170:29] line number
-        mov r13, 170
+        mov r14, 170
         test rcx, rcx
-        cmovs rbp, r13
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp rcx, 4
-        cmovg rbp, r13
+        cmovg rbp, r14
         jg baz_bounds_panic
-;       [170:29] free scratch register r13
+;       [170:29] free scratch register r14
         lea rsi, [rbp + 224]
 ;       [170:34] arr1
 ;       [170:34] bounds check
-;       [170:34] allocate scratch register -> r13
+;       [170:34] allocate scratch register -> r14
 ;       [170:34] line number
-        mov r13, 170
+        mov r14, 170
         test rcx, rcx
-        cmovs rbp, r13
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp rcx, 8
-        cmovg rbp, r13
+        cmovg rbp, r14
         jg baz_bounds_panic
-;       [170:34] free scratch register r13
+;       [170:34] free scratch register r14
         lea rdi, [rbp + 256]
         shl rcx, 2
         repe cmpsb
 ;       [170:16] free named register rcx
 ;       [170:16] free named register rdi
 ;       [170:16] free named register rsi
-        sete r14b
-    cmp r14b, 0
-;   [170:12] free scratch register r14
-    sete r15b
+        sete r15b
+    xor r15b, 1
     bool_end_170_12:
 ;   [34:6] assert(x : bool)
     assert_170_5:
@@ -1109,8 +1102,7 @@ main:
 ;   [196:12] ? equal(p, q)
 ;   [196:12] ? equal(p, q)
     cmp_196_12:
-;   [196:12] allocate scratch register -> r14
-;       [196:12] r14b = equal(p, q)
+;       [196:12] r15b = equal(p, q)
 ;       [196:12] = expression
 ;       [196:12] equal(p, q)
 ;       [196:12] allocate named register rsi
@@ -1125,10 +1117,7 @@ main:
 ;       [196:12] free named register rcx
 ;       [196:12] free named register rdi
 ;       [196:12] free named register rsi
-        sete r14b
-    cmp r14b, 0
-;   [196:12] free scratch register r14
-    setne r15b
+        sete r15b
     bool_end_196_12:
 ;   [34:6] assert(x : bool)
     assert_196_5:
@@ -1160,8 +1149,7 @@ main:
 ;   [201:12] ? not equal(p, q)
 ;   [201:12] ? not equal(p, q)
     cmp_201_12:
-;   [201:16] allocate scratch register -> r14
-;       [201:16] r14b = equal(p, q)
+;       [201:16] r15b = equal(p, q)
 ;       [201:16] = expression
 ;       [201:16] equal(p, q)
 ;       [201:16] allocate named register rsi
@@ -1176,10 +1164,8 @@ main:
 ;       [201:16] free named register rcx
 ;       [201:16] free named register rdi
 ;       [201:16] free named register rsi
-        sete r14b
-    cmp r14b, 0
-;   [201:12] free scratch register r14
-    sete r15b
+        sete r15b
+    xor r15b, 1
     bool_end_201_12:
 ;   [34:6] assert(x : bool)
     assert_201_5:
@@ -2232,8 +2218,7 @@ main:
 ;   [265:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;   [265:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
     cmp_265_12:
-;   [265:12] allocate scratch register -> r14
-;       [265:12] r14b = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;       [265:12] r15b = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [265:12] = expression
 ;       [265:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [265:12] allocate named register rsi
@@ -2245,82 +2230,79 @@ main:
 ;       [268:14] array_size_of(worlds.locations)
         mov rcx, 8
 ;       [266:14] worlds[0].locations
+;       [266:14] allocate scratch register -> r14
+        lea r14, [rbp + 504]
 ;       [266:14] allocate scratch register -> r13
-        lea r13, [rbp + 504]
-;       [266:14] allocate scratch register -> r12
 ;       [266:21] set array index
 ;       [266:21] 0
-        mov r12, 0
+        mov r13, 0
 ;       [266:21] bounds check
-;       [266:21] allocate scratch register -> r10
+;       [266:21] allocate scratch register -> r12
 ;       [266:21] line number
-        mov r10, 266
-        test r12, r12
-        cmovs rbp, r10
-        js baz_bounds_panic
-        cmp r12, 8
-        cmovge rbp, r10
-        jge baz_bounds_panic
-;       [266:21] free scratch register r10
-        shl r12, 6
-        add r13, r12
-;       [266:14] free scratch register r12
-;       [266:14] bounds check
-;       [266:14] allocate scratch register -> r12
-;       [266:14] line number
         mov r12, 266
-        test rcx, rcx
+        test r13, r13
         cmovs rbp, r12
         js baz_bounds_panic
+        cmp r13, 8
+        cmovge rbp, r12
+        jge baz_bounds_panic
+;       [266:21] free scratch register r12
+        shl r13, 6
+        add r14, r13
+;       [266:14] free scratch register r13
+;       [266:14] bounds check
+;       [266:14] allocate scratch register -> r13
+;       [266:14] line number
+        mov r13, 266
+        test rcx, rcx
+        cmovs rbp, r13
+        js baz_bounds_panic
         cmp rcx, 8
-        cmovg rbp, r12
+        cmovg rbp, r13
         jg baz_bounds_panic
-;       [266:14] free scratch register r12
-        lea rsi, [r13]
-;       [265:12] free scratch register r13
+;       [266:14] free scratch register r13
+        lea rsi, [r14]
+;       [265:12] free scratch register r14
 ;       [267:14] worlds[1].locations
+;       [267:14] allocate scratch register -> r14
+        lea r14, [rbp + 504]
 ;       [267:14] allocate scratch register -> r13
-        lea r13, [rbp + 504]
-;       [267:14] allocate scratch register -> r12
 ;       [267:21] set array index
 ;       [267:21] 1
-        mov r12, 1
+        mov r13, 1
 ;       [267:21] bounds check
-;       [267:21] allocate scratch register -> r10
+;       [267:21] allocate scratch register -> r12
 ;       [267:21] line number
-        mov r10, 267
-        test r12, r12
-        cmovs rbp, r10
-        js baz_bounds_panic
-        cmp r12, 8
-        cmovge rbp, r10
-        jge baz_bounds_panic
-;       [267:21] free scratch register r10
-        shl r12, 6
-        add r13, r12
-;       [267:14] free scratch register r12
-;       [267:14] bounds check
-;       [267:14] allocate scratch register -> r12
-;       [267:14] line number
         mov r12, 267
-        test rcx, rcx
+        test r13, r13
         cmovs rbp, r12
         js baz_bounds_panic
+        cmp r13, 8
+        cmovge rbp, r12
+        jge baz_bounds_panic
+;       [267:21] free scratch register r12
+        shl r13, 6
+        add r14, r13
+;       [267:14] free scratch register r13
+;       [267:14] bounds check
+;       [267:14] allocate scratch register -> r13
+;       [267:14] line number
+        mov r13, 267
+        test rcx, rcx
+        cmovs rbp, r13
+        js baz_bounds_panic
         cmp rcx, 8
-        cmovg rbp, r12
+        cmovg rbp, r13
         jg baz_bounds_panic
-;       [267:14] free scratch register r12
-        lea rdi, [r13]
-;       [265:12] free scratch register r13
+;       [267:14] free scratch register r13
+        lea rdi, [r14]
+;       [265:12] free scratch register r14
         shl rcx, 3
         repe cmpsb
 ;       [265:12] free named register rcx
 ;       [265:12] free named register rdi
 ;       [265:12] free named register rsi
-        sete r14b
-    cmp r14b, 0
-;   [265:12] free scratch register r14
-    setne r15b
+        sete r15b
     bool_end_265_12:
 ;   [34:6] assert(x : bool)
     assert_265_5:
@@ -3117,9 +3099,9 @@ vars resb 131072
 vars.end:
 ; free named register rbp
 
-; max scratch registers in use: 5
+; max scratch registers in use: 4
 ;            max frames in use: 8
 ;              dat var padding: 1 B
 ;                max vars size: 952 B
-;          optimization pass 1: 124
+;          optimization pass 1: 119
 ;          optimization pass 2: 0

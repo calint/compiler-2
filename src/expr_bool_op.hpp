@@ -199,8 +199,8 @@ class expr_bool_op final : public statement {
 
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
                                    const std::string_view jmp_to_if_false,
-                                   const bool inverted,
-                                   const operand& dst) const
+                                   const bool inverted, const operand& dst,
+                                   const bool branch_required = true) const
         -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
@@ -237,14 +237,16 @@ class expr_bool_op final : public statement {
             }
 
             // left-hand-side is expression
-            resolve_cmp_shorthand(tc, indent, lhs_,
-                                  {
-                                      .operation{"!="},
-                                      .inverted{invert},
-                                      .destination{dst},
-                                      .target{jmp_to_if_false},
-                                      .branch_on_true{},
-                                  });
+            resolve_cmp_shorthand(
+                tc, indent, lhs_,
+                {
+                    .operation{"!="},
+                    .inverted{invert},
+                    .destination{dst},
+                    .target{branch_required ? jmp_to_if_false
+                                            : std::string_view{}},
+                    .branch_on_true{},
+                });
 
             return std::nullopt;
         }
@@ -416,8 +418,35 @@ class expr_bool_op final : public statement {
 
         std::vector<operand> allocated_registers;
 
-        const operand dst{
-            resolve_expr(tc, indent, lhs, true, allocated_registers)};
+        operand dst;
+        if (lhs.is_expression() and action.destination.is_register() and
+            lhs.get_type().name() == action.destination.type_ref().name()) {
+            // matching types avoid narrowing before the in-place truth test
+            dst = action.destination;
+            lhs.compile(tc, indent + 1,
+                        toc::make_ident_info_from_register(dst));
+            if (lhs.produces_canonical_boolean()) {
+                machine& x{tc.machine()};
+
+                if (action.inverted) {
+                    x.bitwise(tok(), indent, '^', dst,
+                              operand::imm("1", dst.type_ref()));
+                }
+                if (not action.target.empty()) {
+                    machine::comparison_action branch_action{action};
+                    branch_action.destination = {};
+                    branch_action.inverted = false;
+                    x.compare_and_branch(
+                        tok(), indent, dst,
+                        operand::imm("0", tc.get_type_default()), branch_action,
+                        {});
+                }
+
+                return;
+            }
+        } else {
+            dst = resolve_expr(tc, indent, lhs, true, allocated_registers);
+        }
 
         machine& x{tc.machine()};
 

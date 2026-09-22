@@ -338,7 +338,8 @@ class expr_bool_ops_list final : public statement {
                 } else {
                     // last element
                     if (const std::optional<bool> const_eval{expr.compile_and(
-                            tc, indent, jmp_to_if_false, invert, dst)};
+                            tc, indent, jmp_to_if_false, invert, dst,
+                            jmp_to_if_false != jmp_to_if_true)};
                         const_eval) {
 
                         return *const_eval;
@@ -376,7 +377,8 @@ class expr_bool_ops_list final : public statement {
                 } else {
                     // last element
                     if (const std::optional<bool> const_eval{expr.compile_and(
-                            tc, indent, jmp_to_if_false, invert, dst)};
+                            tc, indent, jmp_to_if_false, invert, dst,
+                            jmp_to_if_false != jmp_to_if_true)};
                         const_eval) {
 
                         return *const_eval;

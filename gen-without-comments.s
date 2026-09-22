@@ -246,33 +246,31 @@ main:
     rep movsb
     cmp_166_12:
         mov rcx, 3
-        mov r13, 1
-        mov r12, 166
-        test r13, r13
-        cmovs rbp, r12
+        mov r14, 1
+        mov r13, 166
+        test r14, r14
+        cmovs rbp, r13
         js baz_bounds_panic
-        mov r10, rcx
-        add r10, r13
-        cmp r10, 4
-        cmovg rbp, r12
+        mov r12, rcx
+        add r12, r14
+        cmp r12, 4
+        cmovg rbp, r13
         jg baz_bounds_panic
-        lea rsi, [rbp + r13 * 4 + 224]
-        mov r13, 1
-        mov r12, 166
-        test r13, r13
-        cmovs rbp, r12
+        lea rsi, [rbp + r14 * 4 + 224]
+        mov r14, 1
+        mov r13, 166
+        test r14, r14
+        cmovs rbp, r13
         js baz_bounds_panic
-        mov r10, rcx
-        add r10, r13
-        cmp r10, 8
-        cmovg rbp, r12
+        mov r12, rcx
+        add r12, r14
+        cmp r12, 8
+        cmovg rbp, r13
         jg baz_bounds_panic
-        lea rdi, [rbp + r13 * 4 + 256]
+        lea rdi, [rbp + r14 * 4 + 256]
         shl rcx, 2
         repe cmpsb
-        sete r14b
-    cmp r14b, 0
-    setne r15b
+        sete r15b
     bool_end_166_12:
     assert_166_5:
         if_34_26_166_5:
@@ -296,27 +294,26 @@ main:
     mov dword [rbp + r15 * 4 + 256], -1
     cmp_170_12:
         mov rcx, 4
-        mov r13, 170
+        mov r14, 170
         test rcx, rcx
-        cmovs rbp, r13
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp rcx, 4
-        cmovg rbp, r13
+        cmovg rbp, r14
         jg baz_bounds_panic
         lea rsi, [rbp + 224]
-        mov r13, 170
+        mov r14, 170
         test rcx, rcx
-        cmovs rbp, r13
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp rcx, 8
-        cmovg rbp, r13
+        cmovg rbp, r14
         jg baz_bounds_panic
         lea rdi, [rbp + 256]
         shl rcx, 2
         repe cmpsb
-        sete r14b
-    cmp r14b, 0
-    sete r15b
+        sete r15b
+    xor r15b, 1
     bool_end_170_12:
     assert_170_5:
         if_34_26_170_5:
@@ -521,9 +518,7 @@ main:
         lea rdi, [rbp + 320]
         mov rcx, 2
         repe cmpsq
-        sete r14b
-    cmp r14b, 0
-    setne r15b
+        sete r15b
     bool_end_196_12:
     assert_196_5:
         if_34_26_196_5:
@@ -542,9 +537,8 @@ main:
         lea rdi, [rbp + 320]
         mov rcx, 2
         repe cmpsq
-        sete r14b
-    cmp r14b, 0
-    sete r15b
+        sete r15b
+    xor r15b, 1
     bool_end_201_12:
     assert_201_5:
         if_34_26_201_5:
@@ -1053,49 +1047,47 @@ main:
     assert_264_5_end:
     cmp_265_12:
         mov rcx, 8
-        lea r13, [rbp + 504]
-        mov r12, 0
-        mov r10, 266
-        test r12, r12
-        cmovs rbp, r10
-        js baz_bounds_panic
-        cmp r12, 8
-        cmovge rbp, r10
-        jge baz_bounds_panic
-        shl r12, 6
-        add r13, r12
+        lea r14, [rbp + 504]
+        mov r13, 0
         mov r12, 266
-        test rcx, rcx
+        test r13, r13
         cmovs rbp, r12
         js baz_bounds_panic
-        cmp rcx, 8
-        cmovg rbp, r12
-        jg baz_bounds_panic
-        lea rsi, [r13]
-        lea r13, [rbp + 504]
-        mov r12, 1
-        mov r10, 267
-        test r12, r12
-        cmovs rbp, r10
-        js baz_bounds_panic
-        cmp r12, 8
-        cmovge rbp, r10
+        cmp r13, 8
+        cmovge rbp, r12
         jge baz_bounds_panic
-        shl r12, 6
-        add r13, r12
-        mov r12, 267
+        shl r13, 6
+        add r14, r13
+        mov r13, 266
         test rcx, rcx
-        cmovs rbp, r12
+        cmovs rbp, r13
         js baz_bounds_panic
         cmp rcx, 8
-        cmovg rbp, r12
+        cmovg rbp, r13
         jg baz_bounds_panic
-        lea rdi, [r13]
+        lea rsi, [r14]
+        lea r14, [rbp + 504]
+        mov r13, 1
+        mov r12, 267
+        test r13, r13
+        cmovs rbp, r12
+        js baz_bounds_panic
+        cmp r13, 8
+        cmovge rbp, r12
+        jge baz_bounds_panic
+        shl r13, 6
+        add r14, r13
+        mov r13, 267
+        test rcx, rcx
+        cmovs rbp, r13
+        js baz_bounds_panic
+        cmp rcx, 8
+        cmovg rbp, r13
+        jg baz_bounds_panic
+        lea rdi, [r14]
         shl rcx, 3
         repe cmpsb
-        sete r14b
-    cmp r14b, 0
-    setne r15b
+        sete r15b
     bool_end_265_12:
     assert_265_5:
         if_34_26_265_5:

@@ -298,6 +298,11 @@ class expr_ops_list final : public expression {
         x.emit_most_efficient(tok(), indent, ss1.view(), ss2.view());
     }
 
+    [[nodiscard]] auto produces_canonical_boolean() const -> bool override {
+        return uops_.is_empty() and exprs_.size() == 1 and
+               exprs_.front()->produces_canonical_boolean();
+    }
+
     [[nodiscard]] auto is_array_element() const -> bool override {
         return exprs_.size() == 1 and exprs_.front()->is_array_element();
     }

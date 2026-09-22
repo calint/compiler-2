@@ -373,10 +373,11 @@ func main() {
     }
     {
         const std::string_view source{R"baz(
+func assert(ok : bool) if not ok exit(1)
 func main() {
     var source : i32[4]
     var destination : i32[4]
-    var same : bool = arrays_equal(source[2], destination[1], 2)
+    assert(arrays_equal(source[2], destination[1], 2))
 }
 )baz"};
         machine_rv32i compiler;
@@ -387,6 +388,8 @@ func main() {
         assert(output.str().contains("add t2, t2, t4\n"));
         assert(not output.str().contains("addi t1, t4, 0\n"));
         assert(not output.str().contains("addi t2, t4, 0\n"));
+        assert(not output.str().contains("sltu t0, zero, t0\n"));
+        assert(not output.str().contains("allocate scratch register -> t6\n"));
         for (const std::string_view text :
              {"t1: source, t2: destination, t3: count",
               "t3: elements to bytes (4 bytes/element)",
@@ -397,6 +400,27 @@ func main() {
               "all matched or empty: true", "mismatch: false"}) {
             assert(output.str().contains(std::format("# {}\n", text)));
         }
+    }
+    {
+        const std::string_view source{R"baz(
+func assert(ok : bool) if not ok exit(1)
+func main() {
+    var left : i8[2] = {1, 2}
+    var right : i8[2] = {1, 2}
+    assert(arrays_equal(left, right, 2))
+    right[1] = 3
+    assert(not arrays_equal(left, right, 2))
+}
+)baz"};
+        std::ostringstream output;
+        machine_x86 compiler{output, source};
+        program prg{compiler, source, 4096, false, false, false};
+        prg.build(output);
+        assert(output.str().contains("sete r15b\n"));
+        assert(output.str().contains("xor r15b, 1\n"));
+        assert(not output.str().contains("setne r15b\n"));
+        assert(not output.str().contains("\n    cmp r15b, 0\n"));
+        assert(not output.str().contains("allocate scratch register -> r14\n"));
     }
     if (argc > 1 and std::string_view{argv[1]} == "bulk") {
         const std::string_view source{R"baz(

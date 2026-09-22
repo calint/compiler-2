@@ -1,10 +1,32 @@
 # arrays_equal compares i32 array values
 
 func assert(x : bool) if not x exit(1)
+func probe(hits : i32) : result bool {
+    hits = hits + 1
+    result = true
+}
+func wide() : result i32 {
+    result = 256
+}
 func main() {
     var a : i32[2]
     var b : i32[2]
     a[0] = 3
     b[0] = 3
     assert(arrays_equal(a,b,2))
+    var hits : i32 = 0
+    assert(arrays_equal(a,b,2) or probe(hits))
+    assert(hits == 0)
+    assert(not (not arrays_equal(a,b,2) and probe(hits)))
+    assert(hits == 0)
+    assert(arrays_equal(a,b,2) and probe(hits))
+    assert(hits == 1)
+    b[1] = 4
+    assert(not arrays_equal(a,b,2))
+    assert(arrays_equal(a,b,2) or probe(hits))
+    assert(hits == 2)
+    if arrays_equal(a,b,2) exit(2)
+    if not arrays_equal(a,b,2) hits = hits + 1
+    assert(hits == 3)
+    assert(wide())
 }
