@@ -63,10 +63,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           2825            862           9854
+C/C++ Header                    52           2843            862           9910
 C++                              1             46              7            231
 -------------------------------------------------------------------------------
-SUM:                            53           2871            869          10085
+SUM:                            53           2889            869          10141
 -------------------------------------------------------------------------------
 ```
 
@@ -432,8 +432,7 @@ main:
         cmp r15b, 0
         jne if_36_23_141_5_end
         if_36_26_141_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_141_5_end:
@@ -449,8 +448,7 @@ main:
         cmp r15b, 0
         jne if_36_23_145_5_end
         if_36_26_145_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_145_5_end:
@@ -464,8 +462,7 @@ main:
             cmp r15b, 0
             jne if_36_23_149_9_end
             if_36_26_149_9_code:
-                mov r14, 1
-                mov rdi, r14
+                mov rdi, 1
                 mov rax, 60
                 syscall
             if_36_23_149_9_end:
@@ -479,8 +476,7 @@ main:
         cmp r15b, 0
         jne if_36_23_152_5_end
         if_36_26_152_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_152_5_end:
@@ -532,8 +528,7 @@ main:
         cmp r15b, 0
         jne if_36_23_159_5_end
         if_36_26_159_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_159_5_end:
@@ -556,8 +551,7 @@ main:
         cmp r15b, 0
         jne if_36_23_160_5_end
         if_36_26_160_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_160_5_end:
@@ -602,8 +596,7 @@ main:
         cmp r15b, 0
         jne if_36_23_164_5_end
         if_36_26_164_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_164_5_end:
@@ -661,8 +654,7 @@ main:
         cmp r15b, 0
         jne if_36_23_168_5_end
         if_36_26_168_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_168_5_end:
@@ -706,8 +698,7 @@ main:
         cmp r15b, 0
         jne if_36_23_172_5_end
         if_36_26_172_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_172_5_end:
@@ -754,8 +745,7 @@ main:
         cmp r15b, 0
         jne if_36_23_176_5_end
         if_36_26_176_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_176_5_end:
@@ -789,8 +779,7 @@ main:
         cmp r15b, 0
         jne if_36_23_179_5_end
         if_36_26_179_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_179_5_end:
@@ -830,8 +819,7 @@ main:
         cmp r15b, 0
         jne if_36_23_185_5_end
         if_36_26_185_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_185_5_end:
@@ -857,8 +845,7 @@ main:
         cmp r15b, 0
         jne if_36_23_186_5_end
         if_36_26_186_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_186_5_end:
@@ -879,8 +866,7 @@ main:
         cmp r15b, 0
         jne if_36_23_194_5_end
         if_36_26_194_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_194_5_end:
@@ -895,8 +881,7 @@ main:
         cmp r15b, 0
         jne if_36_23_195_5_end
         if_36_26_195_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_195_5_end:
@@ -920,8 +905,7 @@ main:
         cmp r15b, 0
         jne if_36_23_198_5_end
         if_36_26_198_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_198_5_end:
@@ -942,8 +926,7 @@ main:
         cmp r15b, 0
         jne if_36_23_203_5_end
         if_36_26_203_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_203_5_end:
@@ -969,8 +952,7 @@ main:
         cmp r15b, 0
         jne if_36_23_207_5_end
         if_36_26_207_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_207_5_end:
@@ -996,8 +978,7 @@ main:
         cmp r15b, 0
         jne if_36_23_211_5_end
         if_36_26_211_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_211_5_end:
@@ -1018,8 +999,7 @@ main:
         cmp r15b, 0
         jne if_36_23_215_5_end
         if_36_26_215_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_215_5_end:
@@ -1039,8 +1019,7 @@ main:
         cmp r15b, 0
         jne if_36_23_218_5_end
         if_36_26_218_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_218_5_end:
@@ -1061,8 +1040,7 @@ main:
         cmp r15b, 0
         jne if_36_23_221_5_end
         if_36_26_221_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_221_5_end:
@@ -1081,8 +1059,7 @@ main:
         cmp r15b, 0
         jne if_36_23_224_5_end
         if_36_26_224_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_224_5_end:
@@ -1097,8 +1074,7 @@ main:
         cmp r15b, 0
         jne if_36_23_225_5_end
         if_36_26_225_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_225_5_end:
@@ -1121,8 +1097,7 @@ main:
         cmp r15b, 0
         jne if_36_23_231_5_end
         if_36_26_231_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_231_5_end:
@@ -1137,8 +1112,7 @@ main:
         cmp r15b, 0
         jne if_36_23_232_5_end
         if_36_26_232_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_232_5_end:
@@ -1153,8 +1127,7 @@ main:
         cmp r15b, 0
         jne if_36_23_233_5_end
         if_36_26_233_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_233_5_end:
@@ -1179,8 +1152,7 @@ main:
         cmp r15b, 0
         jne if_36_23_237_5_end
         if_36_26_237_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_237_5_end:
@@ -1195,8 +1167,7 @@ main:
         cmp r15b, 0
         jne if_36_23_238_5_end
         if_36_26_238_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_238_5_end:
@@ -1215,8 +1186,7 @@ main:
         cmp r15b, 0
         jne if_36_23_241_5_end
         if_36_26_241_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_241_5_end:
@@ -1231,8 +1201,7 @@ main:
         cmp r15b, 0
         jne if_36_23_242_5_end
         if_36_26_242_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_242_5_end:
@@ -1247,8 +1216,7 @@ main:
         cmp r15b, 0
         jne if_36_23_243_5_end
         if_36_26_243_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_243_5_end:
@@ -1279,8 +1247,7 @@ main:
         cmp r15b, 0
         jne if_36_23_249_5_end
         if_36_26_249_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_249_5_end:
@@ -1320,8 +1287,7 @@ main:
         cmp r15b, 0
         jne if_36_23_252_5_end
         if_36_26_252_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_252_5_end:
@@ -1379,8 +1345,7 @@ main:
         cmp r15b, 0
         jne if_36_23_256_5_end
         if_36_26_256_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_256_5_end:
@@ -1455,8 +1420,7 @@ main:
         cmp r15b, 0
         jne if_36_23_266_5_end
         if_36_26_266_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_266_5_end:
@@ -1513,8 +1477,7 @@ main:
         cmp r15b, 0
         jne if_36_23_267_5_end
         if_36_26_267_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_267_5_end:
@@ -1532,8 +1495,7 @@ main:
         cmp r15b, 0
         jne if_36_23_274_5_end
         if_36_26_274_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_274_5_end:
@@ -1556,8 +1518,7 @@ main:
         cmp r15b, 0
         jne if_36_23_275_5_end
         if_36_26_275_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_275_5_end:
@@ -1580,8 +1541,7 @@ main:
         cmp r15b, 0
         jne if_36_23_276_5_end
         if_36_26_276_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_276_5_end:
@@ -1592,32 +1552,11 @@ main:
     mov rcx, 128
     rep stosb
     print_280_5:
-        mov r15, 1
-        lea r14, [rbp]
-        mov r13, 21
-        sub rsp, 8
-        push rax
-        push rdi
-        push rsi
-        push rdx
-        push rcx
-        push r11
-        push r15
-        push r14
-        push r13
-        pop rdx
-        pop rsi
-        pop rdi
+        mov rdi, 1
+        lea rsi, [rbp]
+        mov rdx, 21
         mov rax, 1
         syscall
-        mov [rsp + 48], rax
-        pop r11
-        pop rcx
-        pop rdx
-        pop rsi
-        pop rdi
-        pop rax
-        pop r12
     print_280_5_end:
     loop_281_5:
         add qword [rbp + 1032], 1
@@ -1628,89 +1567,26 @@ main:
         call print_num
         POP_REGS
         print_284_9:
-            mov r15, 1
-            lea r14, [rbp + 61]
-            mov r13, 2
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdi, 1
+            lea rsi, [rbp + 61]
+            mov rdx, 2
             mov rax, 1
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
         print_284_9_end:
         print_285_9:
-            mov r15, 1
-            lea r14, [rbp + 21]
-            mov r13, 12
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdi, 1
+            lea rsi, [rbp + 21]
+            mov rdx, 12
             mov rax, 1
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
         print_285_9_end:
         str_in_286_9:
-            mov r15, 0
-            lea r14, [rbp + 1041]
-            mov r13, 127
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdi, 0
+            lea rsi, [rbp + 1041]
+            mov rdx, 127
             mov rax, 0
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
-            mov qword [rbp + 1168], r12
+            mov qword [rbp + 1168], rax
             mov r15b, byte [rbp + 1168]
             mov byte [rbp + 1040], r15b
             sub byte [rbp + 1040], 1
@@ -1728,147 +1604,42 @@ main:
         jg if_else_287_9
         if_289_19_code:
             print_290_13:
-                mov r15, 1
-                lea r14, [rbp + 33]
-                mov r13, 20
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 33]
+                mov rdx, 20
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             print_290_13_end:
             jmp loop_281_5
         jmp if_287_9_end
         if_else_287_9:
             print_293_13:
-                mov r15, 1
-                lea r14, [rbp + 53]
-                mov r13, 6
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 53]
+                mov rdx, 6
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             print_293_13_end:
             str_out_294_13:
-                mov r15, 1
-                lea r14, [rbp + 1041]
-                movsx r13, byte [rbp + 1040]
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 1041]
+                movsx rdx, byte [rbp + 1040]
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             str_out_294_13_end:
             print_295_13:
-                mov r15, 1
-                lea r14, [rbp + 59]
-                mov r13, 1
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 59]
+                mov rdx, 1
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             print_295_13_end:
             print_296_13:
-                mov r15, 1
-                lea r14, [rbp + 60]
-                mov r13, 1
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 60]
+                mov rdx, 1
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             print_296_13_end:
         if_287_9_end:
     jmp loop_281_5
@@ -1974,32 +1745,11 @@ print_num:
         if_130_9_end:
     jmp loop_126_5
     loop_126_5_end:
-    mov r15, 1
-    lea r14, [rbx + 8]
-    mov r13, qword [rbx + 45]
-    sub rsp, 8
-    push rax
-    push rdi
-    push rsi
-    push rdx
-    push rcx
-    push r11
-    push r15
-    push r14
-    push r13
-    pop rdx
-    pop rsi
-    pop rdi
+    mov rdi, 1
+    lea rsi, [rbx + 8]
+    mov rdx, qword [rbx + 45]
     mov rax, 1
     syscall
-    mov [rsp + 48], rax
-    pop r11
-    pop rcx
-    pop rdx
-    pop rsi
-    pop rdi
-    pop rax
-    pop r12
     ret
 print_num.size equ 53
 baz_bounds_panic:
@@ -2204,13 +1954,12 @@ main:
         jne if_36_23_141_5_end
         if_36_26_141_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_141_5_end:
 ;       [141:5] free scratch register r15
     assert_141_5_end:
@@ -2237,13 +1986,12 @@ main:
         jne if_36_23_145_5_end
         if_36_26_145_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_145_5_end:
 ;       [145:5] free scratch register r15
     assert_145_5_end:
@@ -2267,13 +2015,12 @@ main:
             jne if_36_23_149_9_end
             if_36_26_149_9_code:
 ;               [36:32] exit(1)
-;               [36:32] allocate scratch register -> r14
+;               [36:32] allocate named register rdi
 ;               [36:37] 1
-                mov r14, 1
-                mov rdi, r14
+                mov rdi, 1
                 mov rax, 60
                 syscall
-;               [36:32] free scratch register r14
+;               [36:32] free named register rdi
             if_36_23_149_9_end:
 ;           [149:9] free scratch register r15
         assert_149_9_end:
@@ -2296,13 +2043,12 @@ main:
         jne if_36_23_152_5_end
         if_36_26_152_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_152_5_end:
 ;       [152:5] free scratch register r15
     assert_152_5_end:
@@ -2406,13 +2152,12 @@ main:
         jne if_36_23_159_5_end
         if_36_26_159_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_159_5_end:
 ;       [159:5] free scratch register r15
     assert_159_5_end:
@@ -2451,13 +2196,12 @@ main:
         jne if_36_23_160_5_end
         if_36_26_160_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_160_5_end:
 ;       [160:5] free scratch register r15
     assert_160_5_end:
@@ -2544,13 +2288,12 @@ main:
         jne if_36_23_164_5_end
         if_36_26_164_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_164_5_end:
 ;       [164:5] free scratch register r15
     assert_164_5_end:
@@ -2662,13 +2405,12 @@ main:
         jne if_36_23_168_5_end
         if_36_26_168_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_168_5_end:
 ;       [168:5] free scratch register r15
     assert_168_5_end:
@@ -2754,13 +2496,12 @@ main:
         jne if_36_23_172_5_end
         if_36_26_172_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_172_5_end:
 ;       [172:5] free scratch register r15
     assert_172_5_end:
@@ -2853,13 +2594,12 @@ main:
         jne if_36_23_176_5_end
         if_36_26_176_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_176_5_end:
 ;       [176:5] free scratch register r15
     assert_176_5_end:
@@ -2922,13 +2662,12 @@ main:
         jne if_36_23_179_5_end
         if_36_26_179_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_179_5_end:
 ;       [179:5] free scratch register r15
     assert_179_5_end:
@@ -3011,13 +2750,12 @@ main:
         jne if_36_23_185_5_end
         if_36_26_185_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_185_5_end:
 ;       [185:5] free scratch register r15
     assert_185_5_end:
@@ -3064,13 +2802,12 @@ main:
         jne if_36_23_186_5_end
         if_36_26_186_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_186_5_end:
 ;       [186:5] free scratch register r15
     assert_186_5_end:
@@ -3117,13 +2854,12 @@ main:
         jne if_36_23_194_5_end
         if_36_26_194_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_194_5_end:
 ;       [194:5] free scratch register r15
     assert_194_5_end:
@@ -3146,13 +2882,12 @@ main:
         jne if_36_23_195_5_end
         if_36_26_195_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_195_5_end:
 ;       [195:5] free scratch register r15
     assert_195_5_end:
@@ -3203,13 +2938,12 @@ main:
         jne if_36_23_198_5_end
         if_36_26_198_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_198_5_end:
 ;       [198:5] free scratch register r15
     assert_198_5_end:
@@ -3255,13 +2989,12 @@ main:
         jne if_36_23_203_5_end
         if_36_26_203_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_203_5_end:
 ;       [203:5] free scratch register r15
     assert_203_5_end:
@@ -3307,13 +3040,12 @@ main:
         jne if_36_23_207_5_end
         if_36_26_207_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_207_5_end:
 ;       [207:5] free scratch register r15
     assert_207_5_end:
@@ -3357,13 +3089,12 @@ main:
         jne if_36_23_211_5_end
         if_36_26_211_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_211_5_end:
 ;       [211:5] free scratch register r15
     assert_211_5_end:
@@ -3412,13 +3143,12 @@ main:
         jne if_36_23_215_5_end
         if_36_26_215_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_215_5_end:
 ;       [215:5] free scratch register r15
     assert_215_5_end:
@@ -3460,13 +3190,12 @@ main:
         jne if_36_23_218_5_end
         if_36_26_218_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_218_5_end:
 ;       [218:5] free scratch register r15
     assert_218_5_end:
@@ -3513,13 +3242,12 @@ main:
         jne if_36_23_221_5_end
         if_36_26_221_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_221_5_end:
 ;       [221:5] free scratch register r15
     assert_221_5_end:
@@ -3556,13 +3284,12 @@ main:
         jne if_36_23_224_5_end
         if_36_26_224_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_224_5_end:
 ;       [224:5] free scratch register r15
     assert_224_5_end:
@@ -3585,13 +3312,12 @@ main:
         jne if_36_23_225_5_end
         if_36_26_225_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_225_5_end:
 ;       [225:5] free scratch register r15
     assert_225_5_end:
@@ -3645,13 +3371,12 @@ main:
         jne if_36_23_231_5_end
         if_36_26_231_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_231_5_end:
 ;       [231:5] free scratch register r15
     assert_231_5_end:
@@ -3674,13 +3399,12 @@ main:
         jne if_36_23_232_5_end
         if_36_26_232_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_232_5_end:
 ;       [232:5] free scratch register r15
     assert_232_5_end:
@@ -3703,13 +3427,12 @@ main:
         jne if_36_23_233_5_end
         if_36_26_233_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_233_5_end:
 ;       [233:5] free scratch register r15
     assert_233_5_end:
@@ -3755,13 +3478,12 @@ main:
         jne if_36_23_237_5_end
         if_36_26_237_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_237_5_end:
 ;       [237:5] free scratch register r15
     assert_237_5_end:
@@ -3784,13 +3506,12 @@ main:
         jne if_36_23_238_5_end
         if_36_26_238_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_238_5_end:
 ;       [238:5] free scratch register r15
     assert_238_5_end:
@@ -3826,13 +3547,12 @@ main:
         jne if_36_23_241_5_end
         if_36_26_241_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_241_5_end:
 ;       [241:5] free scratch register r15
     assert_241_5_end:
@@ -3855,13 +3575,12 @@ main:
         jne if_36_23_242_5_end
         if_36_26_242_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_242_5_end:
 ;       [242:5] free scratch register r15
     assert_242_5_end:
@@ -3884,13 +3603,12 @@ main:
         jne if_36_23_243_5_end
         if_36_26_243_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_243_5_end:
 ;       [243:5] free scratch register r15
     assert_243_5_end:
@@ -3951,13 +3669,12 @@ main:
         jne if_36_23_249_5_end
         if_36_26_249_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_249_5_end:
 ;       [249:5] free scratch register r15
     assert_249_5_end:
@@ -4031,13 +3748,12 @@ main:
         jne if_36_23_252_5_end
         if_36_26_252_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_252_5_end:
 ;       [252:5] free scratch register r15
     assert_252_5_end:
@@ -4150,13 +3866,12 @@ main:
         jne if_36_23_256_5_end
         if_36_26_256_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_256_5_end:
 ;       [256:5] free scratch register r15
     assert_256_5_end:
@@ -4300,13 +4015,12 @@ main:
         jne if_36_23_266_5_end
         if_36_26_266_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_266_5_end:
 ;       [266:5] free scratch register r15
     assert_266_5_end:
@@ -4416,13 +4130,12 @@ main:
         jne if_36_23_267_5_end
         if_36_26_267_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_267_5_end:
 ;       [267:5] free scratch register r15
     assert_267_5_end:
@@ -4460,13 +4173,12 @@ main:
         jne if_36_23_274_5_end
         if_36_26_274_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_274_5_end:
 ;       [274:5] free scratch register r15
     assert_274_5_end:
@@ -4505,13 +4217,12 @@ main:
         jne if_36_23_275_5_end
         if_36_26_275_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_275_5_end:
 ;       [275:5] free scratch register r15
     assert_275_5_end:
@@ -4550,13 +4261,12 @@ main:
         jne if_36_23_276_5_end
         if_36_26_276_5_code:
 ;           [36:32] exit(1)
-;           [36:32] allocate scratch register -> r14
+;           [36:32] allocate named register rdi
 ;           [36:37] 1
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
-;           [36:32] free scratch register r14
+;           [36:32] free named register rdi
         if_36_23_276_5_end:
 ;       [276:5] free scratch register r15
     assert_276_5_end:
@@ -4583,47 +4293,26 @@ main:
     print_280_5:
 ;       [280:5] alias str -> hello
 ;       [39:5] write(1, address_of(str), array_size_of(str))
-;       [39:5] allocate scratch register -> r15
+;       [39:5] allocate named register rdi
 ;       [39:11] 1
-        mov r15, 1
-;       [39:5] allocate scratch register -> r14
-;       [39:14] r14 = address_of(str)
+        mov rdi, 1
+;       [39:5] allocate named register rsi
+;       [39:14] rsi = address_of(str)
 ;       [39:14] = expression
 ;       [39:14] address_of(str)
-        lea r14, [rbp]
-;       [39:5] allocate scratch register -> r13
-;       [39:31] r13 = array_size_of(str)
+        lea rsi, [rbp]
+;       [39:5] allocate named register rdx
+;       [39:31] rdx = array_size_of(str)
 ;       [39:31] = expression
 ;       [39:31] array_size_of(str)
-        mov r13, 21
-;       [39:5] allocate scratch register -> r12
-        sub rsp, 8
-        push rax
-        push rdi
-        push rsi
-        push rdx
-        push rcx
-        push r11
-        push r15
-        push r14
-        push r13
-        pop rdx
-        pop rsi
-        pop rdi
+        mov rdx, 21
+;       [39:5] allocate named register rax
         mov rax, 1
         syscall
-        mov [rsp + 48], rax
-        pop r11
-        pop rcx
-        pop rdx
-        pop rsi
-        pop rdi
-        pop rax
-        pop r12
-;       [39:5] free scratch register r12
-;       [39:5] free scratch register r13
-;       [39:5] free scratch register r14
-;       [39:5] free scratch register r15
+;       [39:5] free named register rax
+;       [39:5] free named register rdx
+;       [39:5] free named register rsi
+;       [39:5] free named register rdi
     print_280_5_end:
 ;   [281:5] label
     loop_281_5:
@@ -4647,94 +4336,52 @@ main:
         print_284_9:
 ;           [284:9] alias str -> colon
 ;           [39:5] write(1, address_of(str), array_size_of(str))
-;           [39:5] allocate scratch register -> r15
+;           [39:5] allocate named register rdi
 ;           [39:11] 1
-            mov r15, 1
-;           [39:5] allocate scratch register -> r14
-;           [39:14] r14 = address_of(str)
+            mov rdi, 1
+;           [39:5] allocate named register rsi
+;           [39:14] rsi = address_of(str)
 ;           [39:14] = expression
 ;           [39:14] address_of(str)
-            lea r14, [rbp + 61]
-;           [39:5] allocate scratch register -> r13
-;           [39:31] r13 = array_size_of(str)
+            lea rsi, [rbp + 61]
+;           [39:5] allocate named register rdx
+;           [39:31] rdx = array_size_of(str)
 ;           [39:31] = expression
 ;           [39:31] array_size_of(str)
-            mov r13, 2
-;           [39:5] allocate scratch register -> r12
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdx, 2
+;           [39:5] allocate named register rax
             mov rax, 1
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
-;           [39:5] free scratch register r12
-;           [39:5] free scratch register r13
-;           [39:5] free scratch register r14
-;           [39:5] free scratch register r15
+;           [39:5] free named register rax
+;           [39:5] free named register rdx
+;           [39:5] free named register rsi
+;           [39:5] free named register rdi
         print_284_9_end:
 ;       [285:9] print(prompt1)
 ;       [38:6] print(str : i8[])
         print_285_9:
 ;           [285:9] alias str -> prompt1
 ;           [39:5] write(1, address_of(str), array_size_of(str))
-;           [39:5] allocate scratch register -> r15
+;           [39:5] allocate named register rdi
 ;           [39:11] 1
-            mov r15, 1
-;           [39:5] allocate scratch register -> r14
-;           [39:14] r14 = address_of(str)
+            mov rdi, 1
+;           [39:5] allocate named register rsi
+;           [39:14] rsi = address_of(str)
 ;           [39:14] = expression
 ;           [39:14] address_of(str)
-            lea r14, [rbp + 21]
-;           [39:5] allocate scratch register -> r13
-;           [39:31] r13 = array_size_of(str)
+            lea rsi, [rbp + 21]
+;           [39:5] allocate named register rdx
+;           [39:31] rdx = array_size_of(str)
 ;           [39:31] = expression
 ;           [39:31] array_size_of(str)
-            mov r13, 12
-;           [39:5] allocate scratch register -> r12
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdx, 12
+;           [39:5] allocate named register rax
             mov rax, 1
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
-;           [39:5] free scratch register r12
-;           [39:5] free scratch register r13
-;           [39:5] free scratch register r14
-;           [39:5] free scratch register r15
+;           [39:5] free named register rax
+;           [39:5] free named register rdx
+;           [39:5] free named register rsi
+;           [39:5] free named register rdi
         print_285_9_end:
 ;       [286:9] str_in(nm)
 ;       [74:6] str_in(s : str)
@@ -4746,48 +4393,27 @@ main:
 ;           [75:18] nbytes = read(0, address_of(s.data), array_size_of(s.data))
 ;           [75:18] = expression
 ;           [75:18] read(0, address_of(s.data), array_size_of(s.data))
-;           [75:18] allocate scratch register -> r15
+;           [75:18] allocate named register rdi
 ;           [75:23] 0
-            mov r15, 0
-;           [75:18] allocate scratch register -> r14
-;           [75:26] r14 = address_of(s.data)
+            mov rdi, 0
+;           [75:18] allocate named register rsi
+;           [75:26] rsi = address_of(s.data)
 ;           [75:26] = expression
 ;           [75:26] address_of(s.data)
-            lea r14, [rbp + 1041]
-;           [75:18] allocate scratch register -> r13
-;           [75:46] r13 = array_size_of(s.data)
+            lea rsi, [rbp + 1041]
+;           [75:18] allocate named register rdx
+;           [75:46] rdx = array_size_of(s.data)
 ;           [75:46] = expression
 ;           [75:46] array_size_of(s.data)
-            mov r13, 127
-;           [75:18] allocate scratch register -> r12
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdx, 127
+;           [75:18] allocate named register rax
             mov rax, 0
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
-            mov qword [rbp + 1168], r12
-;           [75:18] free scratch register r12
-;           [75:18] free scratch register r13
-;           [75:18] free scratch register r14
-;           [75:18] free scratch register r15
+            mov qword [rbp + 1168], rax
+;           [75:18] free named register rax
+;           [75:18] free named register rdx
+;           [75:18] free named register rsi
+;           [75:18] free named register rdi
 ;           [76:5] s.len = nbytes - 1
 ;           [76:13] instructions without scratch register 3, with 3
 ;           [76:13] nbytes
@@ -4820,47 +4446,26 @@ main:
             print_290_13:
 ;               [290:13] alias str -> prompt2
 ;               [39:5] write(1, address_of(str), array_size_of(str))
-;               [39:5] allocate scratch register -> r15
+;               [39:5] allocate named register rdi
 ;               [39:11] 1
-                mov r15, 1
-;               [39:5] allocate scratch register -> r14
-;               [39:14] r14 = address_of(str)
+                mov rdi, 1
+;               [39:5] allocate named register rsi
+;               [39:14] rsi = address_of(str)
 ;               [39:14] = expression
 ;               [39:14] address_of(str)
-                lea r14, [rbp + 33]
-;               [39:5] allocate scratch register -> r13
-;               [39:31] r13 = array_size_of(str)
+                lea rsi, [rbp + 33]
+;               [39:5] allocate named register rdx
+;               [39:31] rdx = array_size_of(str)
 ;               [39:31] = expression
 ;               [39:31] array_size_of(str)
-                mov r13, 20
-;               [39:5] allocate scratch register -> r12
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdx, 20
+;               [39:5] allocate named register rax
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
-;               [39:5] free scratch register r12
-;               [39:5] free scratch register r13
-;               [39:5] free scratch register r14
-;               [39:5] free scratch register r15
+;               [39:5] free named register rax
+;               [39:5] free named register rdx
+;               [39:5] free named register rsi
+;               [39:5] free named register rdi
             print_290_13_end:
 ;           [291:13] continue
             jmp loop_281_5
@@ -4871,186 +4476,102 @@ main:
             print_293_13:
 ;               [293:13] alias str -> prompt3
 ;               [39:5] write(1, address_of(str), array_size_of(str))
-;               [39:5] allocate scratch register -> r15
+;               [39:5] allocate named register rdi
 ;               [39:11] 1
-                mov r15, 1
-;               [39:5] allocate scratch register -> r14
-;               [39:14] r14 = address_of(str)
+                mov rdi, 1
+;               [39:5] allocate named register rsi
+;               [39:14] rsi = address_of(str)
 ;               [39:14] = expression
 ;               [39:14] address_of(str)
-                lea r14, [rbp + 53]
-;               [39:5] allocate scratch register -> r13
-;               [39:31] r13 = array_size_of(str)
+                lea rsi, [rbp + 53]
+;               [39:5] allocate named register rdx
+;               [39:31] rdx = array_size_of(str)
 ;               [39:31] = expression
 ;               [39:31] array_size_of(str)
-                mov r13, 6
-;               [39:5] allocate scratch register -> r12
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdx, 6
+;               [39:5] allocate named register rax
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
-;               [39:5] free scratch register r12
-;               [39:5] free scratch register r13
-;               [39:5] free scratch register r14
-;               [39:5] free scratch register r15
+;               [39:5] free named register rax
+;               [39:5] free named register rdx
+;               [39:5] free named register rsi
+;               [39:5] free named register rdi
             print_293_13_end:
 ;           [294:13] str_out(nm)
 ;           [79:6] str_out(s : str)
             str_out_294_13:
 ;               [294:13] alias s -> nm
 ;               [80:5] write(1, address_of(s.data), s.len)
-;               [80:5] allocate scratch register -> r15
+;               [80:5] allocate named register rdi
 ;               [80:11] 1
-                mov r15, 1
-;               [80:5] allocate scratch register -> r14
-;               [80:14] r14 = address_of(s.data)
+                mov rdi, 1
+;               [80:5] allocate named register rsi
+;               [80:14] rsi = address_of(s.data)
 ;               [80:14] = expression
 ;               [80:14] address_of(s.data)
-                lea r14, [rbp + 1041]
-;               [80:5] allocate scratch register -> r13
+                lea rsi, [rbp + 1041]
+;               [80:5] allocate named register rdx
 ;               [80:34] s.len
-                movsx r13, byte [rbp + 1040]
-;               [80:5] allocate scratch register -> r12
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                movsx rdx, byte [rbp + 1040]
+;               [80:5] allocate named register rax
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
-;               [80:5] free scratch register r12
-;               [80:5] free scratch register r13
-;               [80:5] free scratch register r14
-;               [80:5] free scratch register r15
+;               [80:5] free named register rax
+;               [80:5] free named register rdx
+;               [80:5] free named register rsi
+;               [80:5] free named register rdi
             str_out_294_13_end:
 ;           [295:13] print(dot)
 ;           [38:6] print(str : i8[])
             print_295_13:
 ;               [295:13] alias str -> dot
 ;               [39:5] write(1, address_of(str), array_size_of(str))
-;               [39:5] allocate scratch register -> r15
+;               [39:5] allocate named register rdi
 ;               [39:11] 1
-                mov r15, 1
-;               [39:5] allocate scratch register -> r14
-;               [39:14] r14 = address_of(str)
+                mov rdi, 1
+;               [39:5] allocate named register rsi
+;               [39:14] rsi = address_of(str)
 ;               [39:14] = expression
 ;               [39:14] address_of(str)
-                lea r14, [rbp + 59]
-;               [39:5] allocate scratch register -> r13
-;               [39:31] r13 = array_size_of(str)
+                lea rsi, [rbp + 59]
+;               [39:5] allocate named register rdx
+;               [39:31] rdx = array_size_of(str)
 ;               [39:31] = expression
 ;               [39:31] array_size_of(str)
-                mov r13, 1
-;               [39:5] allocate scratch register -> r12
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdx, 1
+;               [39:5] allocate named register rax
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
-;               [39:5] free scratch register r12
-;               [39:5] free scratch register r13
-;               [39:5] free scratch register r14
-;               [39:5] free scratch register r15
+;               [39:5] free named register rax
+;               [39:5] free named register rdx
+;               [39:5] free named register rsi
+;               [39:5] free named register rdi
             print_295_13_end:
 ;           [296:13] print(nl)
 ;           [38:6] print(str : i8[])
             print_296_13:
 ;               [296:13] alias str -> nl
 ;               [39:5] write(1, address_of(str), array_size_of(str))
-;               [39:5] allocate scratch register -> r15
+;               [39:5] allocate named register rdi
 ;               [39:11] 1
-                mov r15, 1
-;               [39:5] allocate scratch register -> r14
-;               [39:14] r14 = address_of(str)
+                mov rdi, 1
+;               [39:5] allocate named register rsi
+;               [39:14] rsi = address_of(str)
 ;               [39:14] = expression
 ;               [39:14] address_of(str)
-                lea r14, [rbp + 60]
-;               [39:5] allocate scratch register -> r13
-;               [39:31] r13 = array_size_of(str)
+                lea rsi, [rbp + 60]
+;               [39:5] allocate named register rdx
+;               [39:31] rdx = array_size_of(str)
 ;               [39:31] = expression
 ;               [39:31] array_size_of(str)
-                mov r13, 1
-;               [39:5] allocate scratch register -> r12
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdx, 1
+;               [39:5] allocate named register rax
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
-;               [39:5] free scratch register r12
-;               [39:5] free scratch register r13
-;               [39:5] free scratch register r14
-;               [39:5] free scratch register r15
+;               [39:5] free named register rax
+;               [39:5] free named register rdx
+;               [39:5] free named register rsi
+;               [39:5] free named register rdi
             print_296_13_end:
         if_287_9_end:
     jmp loop_281_5
@@ -5287,45 +4808,24 @@ print_num:
     jmp loop_126_5
     loop_126_5_end:
 ;   [133:5] write(1, address_of(buf), write_pos)
-;   [133:5] allocate scratch register -> r15
+;   [133:5] allocate named register rdi
 ;   [133:11] 1
-    mov r15, 1
-;   [133:5] allocate scratch register -> r14
-;   [133:14] r14 = address_of(buf)
+    mov rdi, 1
+;   [133:5] allocate named register rsi
+;   [133:14] rsi = address_of(buf)
 ;   [133:14] = expression
 ;   [133:14] address_of(buf)
-    lea r14, [rbx + 8]
-;   [133:5] allocate scratch register -> r13
+    lea rsi, [rbx + 8]
+;   [133:5] allocate named register rdx
 ;   [133:31] write_pos
-    mov r13, qword [rbx + 45]
-;   [133:5] allocate scratch register -> r12
-    sub rsp, 8
-    push rax
-    push rdi
-    push rsi
-    push rdx
-    push rcx
-    push r11
-    push r15
-    push r14
-    push r13
-    pop rdx
-    pop rsi
-    pop rdi
+    mov rdx, qword [rbx + 45]
+;   [133:5] allocate named register rax
     mov rax, 1
     syscall
-    mov [rsp + 48], rax
-    pop r11
-    pop rcx
-    pop rdx
-    pop rsi
-    pop rdi
-    pop rax
-    pop r12
-;   [133:5] free scratch register r12
-;   [133:5] free scratch register r13
-;   [133:5] free scratch register r14
-;   [133:5] free scratch register r15
+;   [133:5] free named register rax
+;   [133:5] free named register rdx
+;   [133:5] free named register rsi
+;   [133:5] free named register rdi
     ret
 print_num.size equ 53
 ; 

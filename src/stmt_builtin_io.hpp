@@ -1,7 +1,8 @@
 #pragma once
 
-#include <array>
+#include <algorithm>
 #include <utility>
+#include <vector>
 
 #include "decouple.hpp"
 #include "stmt_call.hpp"
@@ -20,15 +21,24 @@ class stmt_builtin_io final : public stmt_call {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
-        std::array<operand, 3> args;
-        for (size_t index{}; index < args.size(); ++index) {
-            args.at(index) =
-                x.alloc_scratch_register(tok(), indent, tc.get_type_default());
-            argument(index).compile(
-                tc, indent, toc::make_ident_info_from_register(args.at(index)));
-        }
+        const machine::builtin_function function{
+            tok().is_text("read") ? machine::builtin_function::read
+                                  : machine::builtin_function::write};
+
+        const machine::builtin_registers registers{
+            x.registers_for_builtin(function)};
+        const std::vector<operand> args{
+            compile_builtin_arguments(tc, indent, registers.arguments)};
+
+        const bool result_is_argument{
+            std::ranges::contains(registers.arguments, registers.result)};
+
         const operand result{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
+            result_is_argument
+                ? x.make_register_operand(registers.result,
+                                          tc.get_type_default())
+                : x.alloc_named_register(tok(), indent, registers.result,
+                                         tc.get_type_default())};
 
         if (tok().is_text("read")) {
             x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
@@ -39,7 +49,9 @@ class stmt_builtin_io final : public stmt_call {
         if (not dst_info.is_empty()) {
             x.copy_value(tok(), indent, dst_info.operand, result);
         }
-        x.free_scratch_register(tok(), indent, result);
-        x.free_scratch_registers(tok(), indent, args);
+        if (not result_is_argument) {
+            x.free_named_register(tok(), indent, result);
+        }
+        x.free_named_registers(tok(), indent, args);
     }
 };

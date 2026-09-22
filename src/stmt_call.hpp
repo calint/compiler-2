@@ -5,6 +5,7 @@
 
 #include <format>
 #include <ranges>
+#include <span>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -103,6 +104,26 @@ class stmt_call : public expression {
     }
 
     stmt_call() = default;
+
+    [[nodiscard]] auto compile_builtin_arguments(
+        toc& tc, const size_t indent,
+        const std::span<const std::string_view> registers) const
+        -> std::vector<operand> {
+        machine& x{tc.machine()};
+
+        assert(registers.size() == args_.size());
+        std::vector<operand> args;
+        args.reserve(registers.size());
+        for (size_t index{}; index < registers.size(); ++index) {
+            args.push_back(x.alloc_named_register(
+                tok(), indent, registers[index], tc.get_type_default()));
+
+            argument(index).compile(
+                tc, indent, toc::make_ident_info_from_register(args.back()));
+        }
+
+        return args;
+    }
 
     auto compile_noninline(toc& tc, const size_t indent,
                            const ident_info& dst_info,

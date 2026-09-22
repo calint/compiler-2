@@ -218,43 +218,27 @@ class machine_rv32i final : public machine {
         return operand::mem(result_name, {}, 1, 0, address.type_ref());
     }
 
-    auto io_syscall(const size_t indent, const operand& dst,
-                    const operand& descriptor, const operand& address,
-                    const operand& count, const int syscall_number) -> void {
+    auto io_syscall(const token& src_loc_tk, const size_t indent,
+                    const operand& dst, const operand& descriptor,
+                    const operand& address, const operand& count,
+                    const int syscall_number) -> void {
         constexpr size_t word_size{4};
-        const std::array<std::string_view, 4> saved{"a0", "a1", "a2", "a7"};
-        const std::array<operand, 3> args{descriptor, address, count};
-        const size_t result_offset{(saved.size() + args.size()) * word_size};
-        const size_t frame_size{result_offset + word_size};
-
         for (const operand* value : {&dst, &descriptor, &address, &count}) {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == word_size);
-            assert(register_index(value->base_register()) !=
-                   register_index("sp"));
         }
-        asm_line(indent, "addi sp, sp, -{}", frame_size);
-        for (size_t index{}; index < saved.size(); ++index) {
-            asm_line(indent, "sw {}, {}(sp)", saved.at(index),
-                     index * word_size);
-        }
-        for (size_t index{}; index < args.size(); ++index) {
-            asm_line(indent, "sw {}, {}(sp)", args.at(index).base_register(),
-                     (saved.size() + index) * word_size);
-        }
-        for (size_t index{}; index < args.size(); ++index) {
-            asm_line(indent, "lw {}, {}(sp)", saved.at(index),
-                     (saved.size() + index) * word_size);
-        }
+        assert(register_index(dst.base_register()) == register_index("a0"));
+        assert(register_index(descriptor.base_register()) ==
+               register_index("a0"));
+        assert(register_index(address.base_register()) == register_index("a1"));
+        assert(register_index(count.base_register()) == register_index("a2"));
+
+        const operand syscall_register{
+            alloc_named_register(src_loc_tk, indent, "a7", default_type())};
+
         asm_line(indent, "li a7, {}", syscall_number);
         asm_line(indent, "ecall");
-        asm_line(indent, "sw a0, {}(sp)", result_offset);
-        for (size_t index{}; index < saved.size(); ++index) {
-            asm_line(indent, "lw {}, {}(sp)", saved.at(index),
-                     index * word_size);
-        }
-        asm_line(indent, "lw {}, {}(sp)", dst.base_register(), result_offset);
-        asm_line(indent, "addi sp, sp, {}", frame_size);
+        free_named_register(src_loc_tk, indent, syscall_register);
     }
 
     [[noreturn]] static auto todo() -> void {
@@ -265,6 +249,25 @@ class machine_rv32i final : public machine {
   public:
     using machine::comment;
     using machine::emit_data_array;
+
+    [[nodiscard]] auto
+    registers_for_builtin(const builtin_function function) const
+        -> builtin_registers override {
+        static constexpr std::array<std::string_view, 3> io_args{"a0", "a1",
+                                                                 "a2"};
+        static constexpr std::array<std::string_view, 1> exit_args{"a0"};
+        if (function == builtin_function::exit) {
+            return {
+                .arguments{exit_args},
+                .result{},
+            };
+        }
+
+        return {
+            .arguments{io_args},
+            .result{"a0"},
+        };
+    }
 
     [[nodiscard]] auto default_type() const -> const type& override {
         assert(type_i32_ != nullptr);
@@ -499,18 +502,20 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto read([[maybe_unused]] const token& src_loc_tk, const size_t indent,
-              const operand& dst, const operand& descriptor,
-              const operand& address, const operand& count) -> void override {
+    auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
+              const operand& descriptor, const operand& address,
+              const operand& count) -> void override {
         constexpr int syscall_read{63};
-        io_syscall(indent, dst, descriptor, address, count, syscall_read);
+        io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
+                   syscall_read);
     }
 
-    auto write([[maybe_unused]] const token& src_loc_tk, const size_t indent,
-               const operand& dst, const operand& descriptor,
-               const operand& address, const operand& count) -> void override {
+    auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
+               const operand& descriptor, const operand& address,
+               const operand& count) -> void override {
         constexpr int syscall_write{64};
-        io_syscall(indent, dst, descriptor, address, count, syscall_write);
+        io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
+                   syscall_write);
     }
 
     auto invoke_syscall([[maybe_unused]] const size_t indent) -> void override {

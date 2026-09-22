@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "decouple.hpp"
 #include "stmt_call.hpp"
 
@@ -19,13 +21,14 @@ class stmt_builtin_exit final : public stmt_call {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
-        const operand status{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
+        const machine::builtin_registers registers{
+            x.registers_for_builtin(machine::builtin_function::exit)};
 
-        argument(0).compile(tc, indent,
-                            toc::make_ident_info_from_register(status));
-        x.exit(tok(), indent, status);
-        x.free_scratch_register(tok(), indent, status);
+        const std::vector<operand> args{
+            compile_builtin_arguments(tc, indent, registers.arguments)};
+
+        x.exit(tok(), indent, args.at(0));
+        x.free_named_registers(tok(), indent, args);
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

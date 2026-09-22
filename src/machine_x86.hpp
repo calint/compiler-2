@@ -193,6 +193,25 @@ class machine_x86 final : public machine {
     explicit machine_x86(std::ostream& os_ref, const std::string_view source)
         : source_{source}, os_{os_ref} {}
 
+    [[nodiscard]] auto
+    registers_for_builtin(const builtin_function function) const
+        -> builtin_registers override {
+        static constexpr std::array<std::string_view, 3> io_args{"rdi", "rsi",
+                                                                 "rdx"};
+        static constexpr std::array<std::string_view, 1> exit_args{"rdi"};
+        if (function == builtin_function::exit) {
+            return {
+                .arguments{exit_args},
+                .result{},
+            };
+        }
+
+        return {
+            .arguments{io_args},
+            .result{"rax"},
+        };
+    }
+
     [[nodiscard]] auto default_type() const -> const type& override {
         assert(default_type_);
 
@@ -1286,32 +1305,27 @@ class machine_x86 final : public machine {
                     const operand& dst, const operand& descriptor,
                     const operand& address, const operand& count,
                     const int syscall_number) -> void {
-        const std::array<std::string_view, 6> saved{"rax", "rdi", "rsi",
-                                                    "rdx", "rcx", "r11"};
-
         for (const operand* value : {&dst, &descriptor, &address, &count}) {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == size_qword);
-            assert(value->base_register() != "rsp");
         }
-        asm_line(indent, "sub rsp, {}", size_qword);
-        for (const std::string_view name : saved) {
-            push(indent, make_register_operand(name, *type_i64_));
+        assert(dst.base_register() == "rax");
+        assert(descriptor.base_register() == "rdi");
+        assert(address.base_register() == "rsi");
+        assert(count.base_register() == "rdx");
+
+        std::vector<operand> saved;
+        for (const std::string_view name : {"rcx", "r11"}) {
+            if (allocated_register_type(name) != nullptr) {
+                saved.push_back(make_register_operand(name, *type_i64_));
+                push(indent, saved.back());
+            }
         }
-        push(indent, descriptor);
-        push(indent, address);
-        push(indent, count);
-        pop(indent, make_register_operand("rdx", *type_i64_));
-        pop(indent, make_register_operand("rsi", *type_i64_));
-        pop(indent, make_register_operand("rdi", *type_i64_));
-        mov(src_loc_tk, indent, make_register_operand("rax", *type_i64_),
-            immediate(syscall_number));
+        mov(src_loc_tk, indent, dst, immediate(syscall_number));
         syscall(indent);
-        asm_line(indent, "mov [rsp + {}], rax", saved.size() * size_qword);
-        for (const std::string_view name : saved | std::views::reverse) {
-            pop(indent, make_register_operand(name, *type_i64_));
+        for (const operand& reg : saved | std::views::reverse) {
+            pop(indent, reg);
         }
-        pop(indent, dst);
     }
 
     [[nodiscard]] auto sized_register(const std::string_view name,

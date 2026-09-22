@@ -52,8 +52,7 @@ main:
         cmp r15b, 0
         jne if_36_23_141_5_end
         if_36_26_141_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_141_5_end:
@@ -69,8 +68,7 @@ main:
         cmp r15b, 0
         jne if_36_23_145_5_end
         if_36_26_145_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_145_5_end:
@@ -84,8 +82,7 @@ main:
             cmp r15b, 0
             jne if_36_23_149_9_end
             if_36_26_149_9_code:
-                mov r14, 1
-                mov rdi, r14
+                mov rdi, 1
                 mov rax, 60
                 syscall
             if_36_23_149_9_end:
@@ -99,8 +96,7 @@ main:
         cmp r15b, 0
         jne if_36_23_152_5_end
         if_36_26_152_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_152_5_end:
@@ -152,8 +148,7 @@ main:
         cmp r15b, 0
         jne if_36_23_159_5_end
         if_36_26_159_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_159_5_end:
@@ -176,8 +171,7 @@ main:
         cmp r15b, 0
         jne if_36_23_160_5_end
         if_36_26_160_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_160_5_end:
@@ -222,8 +216,7 @@ main:
         cmp r15b, 0
         jne if_36_23_164_5_end
         if_36_26_164_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_164_5_end:
@@ -281,8 +274,7 @@ main:
         cmp r15b, 0
         jne if_36_23_168_5_end
         if_36_26_168_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_168_5_end:
@@ -326,8 +318,7 @@ main:
         cmp r15b, 0
         jne if_36_23_172_5_end
         if_36_26_172_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_172_5_end:
@@ -374,8 +365,7 @@ main:
         cmp r15b, 0
         jne if_36_23_176_5_end
         if_36_26_176_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_176_5_end:
@@ -409,8 +399,7 @@ main:
         cmp r15b, 0
         jne if_36_23_179_5_end
         if_36_26_179_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_179_5_end:
@@ -450,8 +439,7 @@ main:
         cmp r15b, 0
         jne if_36_23_185_5_end
         if_36_26_185_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_185_5_end:
@@ -477,8 +465,7 @@ main:
         cmp r15b, 0
         jne if_36_23_186_5_end
         if_36_26_186_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_186_5_end:
@@ -499,8 +486,7 @@ main:
         cmp r15b, 0
         jne if_36_23_194_5_end
         if_36_26_194_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_194_5_end:
@@ -515,8 +501,7 @@ main:
         cmp r15b, 0
         jne if_36_23_195_5_end
         if_36_26_195_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_195_5_end:
@@ -540,8 +525,7 @@ main:
         cmp r15b, 0
         jne if_36_23_198_5_end
         if_36_26_198_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_198_5_end:
@@ -562,8 +546,7 @@ main:
         cmp r15b, 0
         jne if_36_23_203_5_end
         if_36_26_203_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_203_5_end:
@@ -589,8 +572,7 @@ main:
         cmp r15b, 0
         jne if_36_23_207_5_end
         if_36_26_207_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_207_5_end:
@@ -616,8 +598,7 @@ main:
         cmp r15b, 0
         jne if_36_23_211_5_end
         if_36_26_211_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_211_5_end:
@@ -638,8 +619,7 @@ main:
         cmp r15b, 0
         jne if_36_23_215_5_end
         if_36_26_215_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_215_5_end:
@@ -659,8 +639,7 @@ main:
         cmp r15b, 0
         jne if_36_23_218_5_end
         if_36_26_218_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_218_5_end:
@@ -681,8 +660,7 @@ main:
         cmp r15b, 0
         jne if_36_23_221_5_end
         if_36_26_221_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_221_5_end:
@@ -701,8 +679,7 @@ main:
         cmp r15b, 0
         jne if_36_23_224_5_end
         if_36_26_224_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_224_5_end:
@@ -717,8 +694,7 @@ main:
         cmp r15b, 0
         jne if_36_23_225_5_end
         if_36_26_225_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_225_5_end:
@@ -741,8 +717,7 @@ main:
         cmp r15b, 0
         jne if_36_23_231_5_end
         if_36_26_231_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_231_5_end:
@@ -757,8 +732,7 @@ main:
         cmp r15b, 0
         jne if_36_23_232_5_end
         if_36_26_232_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_232_5_end:
@@ -773,8 +747,7 @@ main:
         cmp r15b, 0
         jne if_36_23_233_5_end
         if_36_26_233_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_233_5_end:
@@ -799,8 +772,7 @@ main:
         cmp r15b, 0
         jne if_36_23_237_5_end
         if_36_26_237_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_237_5_end:
@@ -815,8 +787,7 @@ main:
         cmp r15b, 0
         jne if_36_23_238_5_end
         if_36_26_238_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_238_5_end:
@@ -835,8 +806,7 @@ main:
         cmp r15b, 0
         jne if_36_23_241_5_end
         if_36_26_241_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_241_5_end:
@@ -851,8 +821,7 @@ main:
         cmp r15b, 0
         jne if_36_23_242_5_end
         if_36_26_242_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_242_5_end:
@@ -867,8 +836,7 @@ main:
         cmp r15b, 0
         jne if_36_23_243_5_end
         if_36_26_243_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_243_5_end:
@@ -899,8 +867,7 @@ main:
         cmp r15b, 0
         jne if_36_23_249_5_end
         if_36_26_249_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_249_5_end:
@@ -940,8 +907,7 @@ main:
         cmp r15b, 0
         jne if_36_23_252_5_end
         if_36_26_252_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_252_5_end:
@@ -999,8 +965,7 @@ main:
         cmp r15b, 0
         jne if_36_23_256_5_end
         if_36_26_256_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_256_5_end:
@@ -1075,8 +1040,7 @@ main:
         cmp r15b, 0
         jne if_36_23_266_5_end
         if_36_26_266_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_266_5_end:
@@ -1133,8 +1097,7 @@ main:
         cmp r15b, 0
         jne if_36_23_267_5_end
         if_36_26_267_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_267_5_end:
@@ -1152,8 +1115,7 @@ main:
         cmp r15b, 0
         jne if_36_23_274_5_end
         if_36_26_274_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_274_5_end:
@@ -1176,8 +1138,7 @@ main:
         cmp r15b, 0
         jne if_36_23_275_5_end
         if_36_26_275_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_275_5_end:
@@ -1200,8 +1161,7 @@ main:
         cmp r15b, 0
         jne if_36_23_276_5_end
         if_36_26_276_5_code:
-            mov r14, 1
-            mov rdi, r14
+            mov rdi, 1
             mov rax, 60
             syscall
         if_36_23_276_5_end:
@@ -1212,32 +1172,11 @@ main:
     mov rcx, 128
     rep stosb
     print_280_5:
-        mov r15, 1
-        lea r14, [rbp]
-        mov r13, 21
-        sub rsp, 8
-        push rax
-        push rdi
-        push rsi
-        push rdx
-        push rcx
-        push r11
-        push r15
-        push r14
-        push r13
-        pop rdx
-        pop rsi
-        pop rdi
+        mov rdi, 1
+        lea rsi, [rbp]
+        mov rdx, 21
         mov rax, 1
         syscall
-        mov [rsp + 48], rax
-        pop r11
-        pop rcx
-        pop rdx
-        pop rsi
-        pop rdi
-        pop rax
-        pop r12
     print_280_5_end:
     loop_281_5:
         add qword [rbp + 1032], 1
@@ -1248,89 +1187,26 @@ main:
         call print_num
         POP_REGS
         print_284_9:
-            mov r15, 1
-            lea r14, [rbp + 61]
-            mov r13, 2
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdi, 1
+            lea rsi, [rbp + 61]
+            mov rdx, 2
             mov rax, 1
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
         print_284_9_end:
         print_285_9:
-            mov r15, 1
-            lea r14, [rbp + 21]
-            mov r13, 12
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdi, 1
+            lea rsi, [rbp + 21]
+            mov rdx, 12
             mov rax, 1
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
         print_285_9_end:
         str_in_286_9:
-            mov r15, 0
-            lea r14, [rbp + 1041]
-            mov r13, 127
-            sub rsp, 8
-            push rax
-            push rdi
-            push rsi
-            push rdx
-            push rcx
-            push r11
-            push r15
-            push r14
-            push r13
-            pop rdx
-            pop rsi
-            pop rdi
+            mov rdi, 0
+            lea rsi, [rbp + 1041]
+            mov rdx, 127
             mov rax, 0
             syscall
-            mov [rsp + 48], rax
-            pop r11
-            pop rcx
-            pop rdx
-            pop rsi
-            pop rdi
-            pop rax
-            pop r12
-            mov qword [rbp + 1168], r12
+            mov qword [rbp + 1168], rax
             mov r15b, byte [rbp + 1168]
             mov byte [rbp + 1040], r15b
             sub byte [rbp + 1040], 1
@@ -1348,147 +1224,42 @@ main:
         jg if_else_287_9
         if_289_19_code:
             print_290_13:
-                mov r15, 1
-                lea r14, [rbp + 33]
-                mov r13, 20
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 33]
+                mov rdx, 20
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             print_290_13_end:
             jmp loop_281_5
         jmp if_287_9_end
         if_else_287_9:
             print_293_13:
-                mov r15, 1
-                lea r14, [rbp + 53]
-                mov r13, 6
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 53]
+                mov rdx, 6
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             print_293_13_end:
             str_out_294_13:
-                mov r15, 1
-                lea r14, [rbp + 1041]
-                movsx r13, byte [rbp + 1040]
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 1041]
+                movsx rdx, byte [rbp + 1040]
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             str_out_294_13_end:
             print_295_13:
-                mov r15, 1
-                lea r14, [rbp + 59]
-                mov r13, 1
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 59]
+                mov rdx, 1
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             print_295_13_end:
             print_296_13:
-                mov r15, 1
-                lea r14, [rbp + 60]
-                mov r13, 1
-                sub rsp, 8
-                push rax
-                push rdi
-                push rsi
-                push rdx
-                push rcx
-                push r11
-                push r15
-                push r14
-                push r13
-                pop rdx
-                pop rsi
-                pop rdi
+                mov rdi, 1
+                lea rsi, [rbp + 60]
+                mov rdx, 1
                 mov rax, 1
                 syscall
-                mov [rsp + 48], rax
-                pop r11
-                pop rcx
-                pop rdx
-                pop rsi
-                pop rdi
-                pop rax
-                pop r12
             print_296_13_end:
         if_287_9_end:
     jmp loop_281_5
@@ -1594,32 +1365,11 @@ print_num:
         if_130_9_end:
     jmp loop_126_5
     loop_126_5_end:
-    mov r15, 1
-    lea r14, [rbx + 8]
-    mov r13, qword [rbx + 45]
-    sub rsp, 8
-    push rax
-    push rdi
-    push rsi
-    push rdx
-    push rcx
-    push r11
-    push r15
-    push r14
-    push r13
-    pop rdx
-    pop rsi
-    pop rdi
+    mov rdi, 1
+    lea rsi, [rbx + 8]
+    mov rdx, qword [rbx + 45]
     mov rax, 1
     syscall
-    mov [rsp + 48], rax
-    pop r11
-    pop rcx
-    pop rdx
-    pop rsi
-    pop rdi
-    pop rax
-    pop r12
     ret
 print_num.size equ 53
 baz_bounds_panic:

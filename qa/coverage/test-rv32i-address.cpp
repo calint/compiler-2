@@ -4,6 +4,7 @@
 #include "../../src/decouple_impl.hpp"
 #include "../../src/machine_rv32i.hpp"
 #include "../../src/machine_x86.hpp"
+#include "../../src/program.hpp"
 
 auto main() -> int {
     const type integer64{"i64", 8, true};
@@ -41,6 +42,72 @@ auto main() -> int {
         registers.push_back(special);
         x86_backend.free_scratch_registers(token{}, 0, registers);
         x86_backend.finish();
+    }
+    for (const bool live_clobbers : {false, true}) {
+        std::vector<operand> scratch;
+        operand live_rcx;
+        if (live_clobbers) {
+            live_rcx = x86_backend.alloc_named_register(token{}, 0, "rcx", integer64);
+            for (size_t count{}; count < 8; ++count) {
+                scratch.push_back(x86_backend.alloc_scratch_register(token{}, 0, integer64));
+            }
+        }
+        const machine::builtin_registers contract{
+            x86_backend.registers_for_builtin(machine::builtin_function::write)};
+
+        std::vector<operand> args;
+        for (const std::string_view name : contract.arguments) {
+            args.push_back(x86_backend.alloc_named_register(token{}, 0, name, integer64));
+        }
+        const operand result{x86_backend.alloc_named_register(token{}, 0, contract.result, integer64)};
+        x86_output.str({});
+        x86_backend.write(token{}, 0, result, args.at(0), args.at(1), args.at(2));
+        const std::string assembly{x86_output.str()};
+        assert(assembly.contains("push rcx") == live_clobbers);
+        assert(assembly.contains("pop rcx") == live_clobbers);
+        assert(assembly.contains("push r11") == live_clobbers);
+        assert(assembly.contains("pop r11") == live_clobbers);
+        assert(not assembly.contains("rsp"));
+        assert(not assembly.contains("push rax"));
+        assert(not assembly.contains("push rdi"));
+        x86_backend.free_named_register(token{}, 0, result);
+        x86_backend.free_named_registers(token{}, 0, args);
+        x86_backend.free_scratch_registers(token{}, 0, scratch);
+        if (live_clobbers) {
+            x86_backend.free_named_register(token{}, 0, live_rcx);
+        }
+        x86_backend.finish();
+    }
+    {
+        const std::string_view source{
+            "func main() { var value = write(1, 0, 0) exit(value) }"};
+
+        std::ostringstream output;
+        machine_x86 compiler{output, source};
+        program prg{compiler, source, 4096, false, false, false};
+        prg.build(output);
+        const std::string assembly{output.str()};
+        const size_t main_start{assembly.find("main:")};
+        assert(main_start != std::string::npos);
+        const std::string main_body{assembly.substr(main_start)};
+        assert(main_body.contains("mov rdi, 1"));
+        assert(not main_body.contains("push "));
+        assert(not main_body.contains("pop "));
+        assert(not main_body.contains("allocate scratch register"));
+    }
+    for (const std::string_view source : {
+             "func main() { write(1, 0, write(1, 0, 0)) }",
+             "func main() { exit(write(1, 0, 0)) }"}) {
+        std::ostringstream output;
+        machine_x86 compiler{output, source};
+        program prg{compiler, source, 4096, false, false, false};
+        bool rejected{};
+        try {
+            prg.build(output);
+        } catch (const compiler_exception& error) {
+            rejected = std::string_view{error.what()}.contains("cannot allocate register rdi");
+        }
+        assert(rejected);
     }
     machine_rv32i backend;
     backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
@@ -195,19 +262,30 @@ auto main() -> int {
     }
     backend.address_of(token{}, 1, operand::reg("t6", integer), operand::mem("sp", "sp", 4, 2048, integer));
     std::println("    slli a0, sp, 2\n    add a0, a0, sp\n    li a1, 2048\n    add a0, a0, a1\n    bne t6, a0, failure");
-    std::println("    mv s2, sp\n    la a0, buffer\n    li a1, 6\n    li a2, 0\n    li a7, 123");
-    backend.read(token{}, 1, operand::reg("t6", integer), operand::reg("a2", integer),
-                 operand::reg("a0", integer), operand::reg("a1", integer));
-    std::println("    li t0, 6\n    bne t6, t0, failure\n    bne a1, t0, failure\n    bnez a2, failure\n    la t0, buffer\n    bne a0, t0, failure\n    li t0, 123\n    bne a7, t0, failure\n    bne sp, s2, failure\n    li a2, 1");
-    backend.write(token{}, 1, operand::reg("a1", integer), operand::reg("a2", integer),
-                  operand::reg("a0", integer), operand::reg("t6", integer));
-    std::println("    li t0, 6\n    bne a1, t0, failure\n    li t0, 1\n    bne a2, t0, failure\n    la t0, buffer\n    bne a0, t0, failure\n    li t0, 123\n    bne a7, t0, failure\n    li a7, -1");
-    backend.read(token{}, 1, operand::reg("a7", integer), operand::reg("a7", integer),
-                 operand::reg("a0", integer), operand::reg("a1", integer));
-    std::println("    li t0, -9\n    bne a7, t0, failure\n    li a7, -1");
-    backend.write(token{}, 1, operand::reg("a7", integer), operand::reg("a7", integer),
-                  operand::reg("a0", integer), operand::reg("a1", integer));
-    std::println("    li t0, -9\n    bne a7, t0, failure\n    bne sp, s2, failure");
+    std::vector<operand> io_args;
+    for (const std::string_view name : backend.registers_for_builtin(machine::builtin_function::read).arguments) {
+        io_args.push_back(backend.alloc_named_register(token{}, 0, name, integer));
+    }
+    std::println("    mv s2, sp\n    li a0, 0\n    la a1, buffer\n    li a2, 6");
+    backend.read(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1), io_args.at(2));
+    std::println("    li t0, 6\n    bne a0, t0, failure\n    bne a2, t0, failure\n    la t0, buffer\n    bne a1, t0, failure\n    bne sp, s2, failure\n    li a0, 1");
+    backend.write(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1), io_args.at(2));
+    std::println("    li t0, 6\n    bne a0, t0, failure\n    bne a2, t0, failure\n    la t0, buffer\n    bne a1, t0, failure\n    li a0, -1");
+    backend.read(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1), io_args.at(2));
+    std::println("    li t0, -9\n    bne a0, t0, failure\n    li a0, -1");
+    backend.write(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1), io_args.at(2));
+    std::println("    li t0, -9\n    bne a0, t0, failure\n    bne sp, s2, failure");
+    backend.free_named_registers(token{}, 0, io_args);
+    const operand held_syscall_register{backend.alloc_named_register(token{}, 0, "a7", integer)};
+    bool syscall_conflict{};
+    try {
+        backend.read(token{}, 1, operand::reg("a0", integer), operand::reg("a0", integer),
+                     operand::reg("a1", integer), operand::reg("a2", integer));
+    } catch (const compiler_exception&) {
+        syscall_conflict = true;
+    }
+    assert(syscall_conflict);
+    backend.free_named_register(token{}, 0, held_syscall_register);
     std::println("    li a0, 0\n    li a7, 93\n    ecall\nfailure:\n    li a0, 1\n    li a7, 93\n    ecall\n.data\n.balign 4\nbuffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");
     backend.finish();
 

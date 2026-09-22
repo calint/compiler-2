@@ -44,6 +44,17 @@ class machine {
         std::string_view uops; // unary operations
     };
 
+    enum class builtin_function : uint8_t { read, write, exit };
+
+    struct builtin_registers {
+        std::span<const std::string_view> arguments;
+        std::string_view result;
+    };
+
+    [[nodiscard]] virtual auto
+    registers_for_builtin(const builtin_function function) const
+        -> builtin_registers = 0;
+
     [[nodiscard]] virtual auto default_type() const -> const type& = 0;
 
     virtual auto set_builtin_types(const type& t_i64, const type& t_i32,
@@ -86,6 +97,14 @@ class machine {
 
         for (const operand& r : registers | std::views::reverse) {
             free_scratch_register(src_loc_tk, indent, r);
+        }
+    }
+
+    auto free_named_registers(const token& src_loc_tk, const size_t indent,
+                              const std::span<const operand> registers)
+        -> void {
+        for (const operand& reg : registers | std::views::reverse) {
+            free_named_register(src_loc_tk, indent, reg);
         }
     }
 

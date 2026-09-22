@@ -18,5 +18,11 @@ func main() {
     read(0, address_of(buffer), 0)
     var sum = 7 + write(1, address_of(buffer), 0)
     if sum != 7 exit(7)
+    var one = 1
+    var zero = 0
+    var calculated = write(one + zero, address_of(buffer) + zero, one * zero)
+    if calculated != 0 exit(8)
+    var negated = -write(-one, address_of(buffer), one)
+    if negated != 9 exit(9)
     exit(0)
 }
