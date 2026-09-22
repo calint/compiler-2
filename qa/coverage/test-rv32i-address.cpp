@@ -15,6 +15,43 @@ auto main(const int argc, const char* argv[]) -> int {
     const type empty{"void", 0, true};
     {
         machine_rv32i backend;
+        std::ostringstream output;
+        backend.use_stream(output);
+        // equal expanded costs must retain the version without scratch
+        for (const auto [instruction, cost] :
+             std::array<std::pair<std::string_view, size_t>, 13>{
+                 {{"li a0, 2047", 1},
+                  {"li a0, 2048", 2},
+                  {"li a0, -2048", 1},
+                  {"li a0, -2049", 2},
+                  {"li a0, 4096", 1},
+                  {"li a0, -4096", 1},
+                  {"li a0, 2147483647", 2},
+                  {"li a0, -2147483648", 1},
+                  {"li a0, 4294967295", 1},
+                  {"li a0, value + 1", 2},
+                  {"la a0, buffer", 2},
+                  {"call function", 2},
+                  {"mv a0, a1", 1}}}) {
+            const std::string candidate{
+                std::format("  # comment\n\t.option norelax\n.Lcandidate: \t# "
+                            "label\n\t{}  # instruction\n",
+                            instruction)};
+            const std::string alternative{
+                cost == 1 ? "addi a0, a1, 0\n"
+                          : "addi a0, a1, 0\naddi a0, a0, 1\n"};
+            backend.emit_most_efficient(token{}, 0, candidate, alternative);
+            assert(output.str() == candidate);
+            output.str({});
+            backend.emit_most_efficient(token{}, 0, candidate,
+                                        "addi a0, a1, 0\n");
+            assert(output.str() ==
+                   (cost == 1 ? candidate : "addi a0, a1, 0\n"));
+            output.str({});
+        }
+    }
+    {
+        machine_rv32i backend;
         std::ostringstream comments;
         backend.use_stream(comments);
         backend.comment_variable(token{}, 0, "arr: i32[4]", 16,
@@ -691,6 +728,23 @@ func main() {
     address_registers.push_back(backend.alloc_scratch_register(token{}, 0, integer));
     address_output.str({});
 
+    for (const std::string_view base : {"a2", "x11"}) {
+        backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                           operand::mem(base, "x11", 1, 4, integer));
+        assert(address_output.str() ==
+               std::format("add a1, {}, x11\nlw a1, 4(a1)\n", base));
+        address_output.str({});
+    }
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("x11", "a2", 1, 4, integer));
+    assert(address_output.str() == "add a1, x11, a2\nlw a1, 4(a1)\n");
+    address_output.str({});
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("a2", "x11", 4, 4, integer));
+    assert(address_output.str() ==
+           "slli a1, x11, 2\nadd a1, a1, a2\nlw a1, 4(a1)\n");
+    address_output.str({});
+
     backend.address_of(token{}, 0, operand::reg("a1", integer),
                        operand::mem("buffer", {}, 1, 0, integer));
 
@@ -714,6 +768,13 @@ func main() {
     backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 1);
     assert(address_output.str() == "sb zero, 0(a2)\n");
     address_output.str({});
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 208, byte), 16);
+    assert(address_output.str() == "sw zero, 208(a2)\nsw zero, 212(a2)\nsw "
+                                   "zero, 216(a2)\nsw zero, 220(a2)\n");
+    address_output.str({});
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 4);
+    assert(address_output.str() == "sw zero, 0(a2)\n");
+    address_output.str({});
 
     backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
         operand::reg("a1", integer), {
@@ -722,6 +783,37 @@ func main() {
         }, {});
 
     assert(address_output.str() == "slt a2, a0, a1\n");
+    address_output.str({});
+
+    backend.compare_and_branch(token{}, 0,
+                               operand::mem("a0", {}, 1, 0, integer),
+                               operand::reg("a1", integer),
+                               {
+                                   .operation{"<"},
+                                   .destination{operand::reg("a2", boolean)},
+                               },
+                               {});
+    assert(address_output.str() == "lw a2, 0(a0)\nslt a2, a2, a1\n");
+    address_output.str({});
+    backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
+                               operand::mem("x11", {}, 1, 0, integer),
+                               {
+                                   .operation{"=="},
+                                   .destination{operand::reg("a1", boolean)},
+                               },
+                               {});
+    assert(address_output.str() ==
+           "lw a1, 0(x11)\nxor a1, a0, a1\nsltiu a1, a1, 1\n");
+    address_output.str({});
+    backend.compare_and_branch(token{}, 0, operand::reg("a0", byte),
+                               operand::reg("a1", integer),
+                               {
+                                   .operation{"<"},
+                                   .destination{operand::reg("a1", boolean)},
+                               },
+                               {});
+    assert(address_output.str() ==
+           "slli a1, a1, 24\nsrai a1, a1, 24\nslt a1, a0, a1\n");
     address_output.str({});
 
     backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
@@ -770,6 +862,37 @@ func main() {
     backend.multiply(token{}, 0, operand::mem("a2", {}, 1, 0, integer), operand::imm("0", integer));
     assert(address_output.str() == "sw zero, 0(a2)\n");
     backend.free_scratch_registers(token{}, 0, address_registers);
+    address_registers.clear();
+    address_output.str({});
+    backend.copy(token{}, 0, operand::mem("a1", {}, 1, 208, byte),
+                 operand::mem("a2", {}, 1, 240, byte), 4);
+    assert(address_output.str() == "lw t6, 208(a1)\nsw t6, 240(a2)\n");
+    address_output.str({});
+    backend.copy(token{}, 0, operand::mem("a1", {}, 1, -16, byte),
+                 operand::mem("a2", {}, 1, 16, byte), 7);
+    assert(address_output.str() ==
+           "lw t6, -16(a1)\nsw t6, 16(a2)\nlhu t6, -12(a1)\nsh t6, 20(a2)\n"
+           "lbu t6, -10(a1)\nsb t6, 22(a2)\n");
+    address_output.str({});
+    for (size_t count{}; count < 29; ++count) {
+        address_registers.push_back(
+            backend.alloc_scratch_register(token{}, 0, integer));
+    }
+    backend.copy(token{}, 0, operand::mem("a1", {}, 1, 208, byte),
+                 operand::mem("a2", {}, 1, 240, byte), 4);
+    assert(address_output.str() == "lw a0, 208(a1)\nsw a0, 240(a2)\n");
+    backend.free_scratch_registers(token{}, 0, address_registers);
+    address_output.str({});
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 2047, byte), 16);
+    assert(address_output.str() ==
+           "addi t6, a2, 2047\nsw zero, 0(t6)\nsw zero, 4(t6)\nsw zero, "
+           "8(t6)\nsw zero, 12(t6)\n");
+    address_output.str({});
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 19);
+    assert(address_output.str() ==
+           "addi t6, a2, 0\nli t5, 4\n1:\nsw zero, 0(t6)\naddi t6, t6, 4\naddi "
+           "t5, t5, -1\nbnez t5, 1b\nsh zero, 0(t6)\nsb zero, 2(t6)\n");
+    address_output.str({});
     backend.finish();
 
     std::ostringstream rejected_output;
@@ -887,6 +1010,34 @@ func main() {
         helper_backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
         std::ostringstream output;
         helper_backend.use_stream(output);
+        if (operation != '+') {
+            const auto emit = [&]() {
+                if (operation == '*') {
+                    helper_backend.multiply(token{}, 0,
+                                            operand::reg("s2", integer),
+                                            operand::reg("s3", integer));
+                } else {
+                    helper_backend.divide(token{}, 0, operation,
+                                          operand::reg("s2", integer),
+                                          operand::reg("s3", integer));
+                }
+            };
+            emit();
+            assert(
+                output.str() ==
+                std::format(
+                    "addi a0, s2, 0\naddi a1, s3, 0\ncall {}\naddi s2, {}, 0\n",
+                    operation == '*' ? ".Lbaz_multiply" : ".Lbaz_divide",
+                    operation == '%' ? "a1" : "a0"));
+            std::vector<operand> occupied;
+            for (size_t count{}; count < 30; ++count) {
+                occupied.push_back(
+                    helper_backend.alloc_scratch_register(token{}, 0, integer));
+            }
+            emit();
+            helper_backend.free_scratch_registers(token{}, 0, occupied);
+            output.str({});
+        }
         for (size_t count{}; count < 2; ++count) {
             if (operation == '*' or operation == '+') {
                 helper_backend.multiply(token{}, 0, operand::reg("a0", integer),
@@ -915,6 +1066,8 @@ func main() {
     for (const bool counted : {false, true}) {
     for (size_t size_bytes{}; size_bytes <= 24; ++size_bytes) {
         for (size_t alignment{}; alignment < 4; ++alignment) {
+            const int displacement{
+                std::array{-2048, 0, 2047, 2048}.at(alignment)};
             std::println("    addi sp, sp, -64");
             for (size_t offset{}; offset < 32; ++offset) {
                 std::println("    li a2, {}\n    sb a2, {}(sp)\n    li a2, 85\n    sb a2, {}(sp)",
@@ -928,8 +1081,15 @@ func main() {
                 backend.set_array_copy_destination(1, operand::mem("a1", {}, 1, 0, byte));
                 backend.end_array_copy(token{}, 1, 1);
             } else {
-                backend.copy(token{}, 1, operand::mem("a0", {}, 1, 0, byte),
-                             operand::mem("a1", {}, 1, 0, byte), size_bytes);
+                std::println(
+                    "    li a2, {}\n    sub a0, a0, a2\n    sub a1, a1, a2",
+                    displacement);
+                backend.copy(
+                    token{}, 1, operand::mem("a0", {}, 1, displacement, byte),
+                    operand::mem("a1", {}, 1, displacement, byte), size_bytes);
+                std::println(
+                    "    li a2, {}\n    add a0, a0, a2\n    add a1, a1, a2",
+                    displacement);
             }
             for (size_t offset{}; offset < 32; ++offset) {
                 const size_t start{4 + alignment};
@@ -1006,6 +1166,24 @@ func main() {
         backend.free_named_registers(token{}, 0, live);
         backend.finish();
     }
+    for (const char operation : {'*', '/', '%'}) {
+        std::println("    la a1, buffer\n    addi a0, a1, 4\n    li a2, -17\n  "
+                     "  sw a2, 0(a1)\n    li a2, 3\n    sw a2, 0(a0)");
+        const operand destination{operand::mem("a1", {}, 1, 0, integer)};
+        const operand source{operand::mem("a0", {}, 1, 0, integer)};
+        if (operation == '*') {
+            backend.multiply(token{}, 1, destination, source);
+        } else {
+            backend.divide(token{}, 1, operation, destination, source);
+        }
+        const int expected{operation == '*' ? -51 : operation == '/' ? -5 : -2};
+        std::println(
+            "    la a2, buffer\n    beq a1, a2, 1f\n    j failure\n1:\n    "
+            "addi a2, a2, 4\n    beq a0, a2, 1f\n    j failure\n1:\n    lw a2, "
+            "0(a1)\n    li a3, {}\n    beq a2, a3, 1f\n    j failure\n1:",
+            expected);
+        backend.finish();
+    }
     for (const char operation : {'/', '%'}) {
         std::println("    li a1, -17\n    li a0, 3");
         backend.divide(token{}, 1, operation, operand::reg("a1", integer), operand::reg("a0", integer));
@@ -1076,6 +1254,21 @@ func main() {
 
         backend.finish();
     }
+    for (const bool shared_address : {false, true}) {
+        std::println("    la a0, buffer\n    li a1, -257\n    sw a1, 0(a0)\n   "
+                     " li a1, 257\n    sw a1, 4(a0)");
+        backend.compare_and_branch(
+            token{}, 1, operand::mem("x10", {}, 1, 0, integer),
+            shared_address ? operand::mem("a0", {}, 1, 4, integer)
+                           : operand::reg("a1", integer),
+            {
+                .operation{"<"},
+                .destination{operand::reg("a0", boolean)},
+            },
+            {});
+        std::println("    li a3, 1\n    beq a0, a3, 1f\n    j failure\n1:");
+        backend.finish();
+    }
     size_t comparison_index{};
     for (const std::string_view operation : {"==", "!=", "<", ">=", ">", "<="}) {
         for (const bool inverted : {false, true}) {
@@ -1140,14 +1333,30 @@ func main() {
             }
         }
     }
-    for (const size_t count : {size_t{1}, size_t{2}, size_t{3}, size_t{4}}) {
-        std::println("    la a2, buffer\n    li a0, -1\n    sw a0, 0(a2)\n    sw a0, 4(a2)");
-        backend.zero(token{}, 1, operand::mem("a2", {}, 1, 1, byte), count);
-        for (size_t offset{}; offset < 6; ++offset) {
-            const int expected{offset >= 1 and offset <= count ? 0 : 255};
-            std::println("    lbu a0, {}(a2)\n    li a1, {}\n    beq a0, a1, 1f\n    j failure\n1:", offset, expected);
+    for (size_t count{}; count <= 35; ++count) {
+        for (size_t alignment{}; alignment < 4; ++alignment) {
+            std::println("    addi sp, sp, -64\n    li a0, -1");
+            for (size_t offset{}; offset < 64; offset += 4) {
+                std::println("    sw a0, {}(sp)", offset);
+            }
+            const size_t start{4 + alignment};
+            const size_t displacement{count % 2 == 0 ? 2047U : 2048U};
+            std::println("    li a2, {}\n    sub a2, sp, a2",
+                         displacement - start);
+            backend.zero(token{}, 1,
+                         operand::mem("a2", {}, 1,
+                                      static_cast<int64_t>(displacement), byte),
+                         count);
+            for (size_t offset{}; offset < 64; ++offset) {
+                const int expected{
+                    offset >= start and offset < start + count ? 0 : 255};
+                std::println("    lbu a0, {}(sp)\n    li a1, {}\n    beq a0, "
+                             "a1, 1f\n    j failure\n1:",
+                             offset, expected);
+            }
+            std::println("    addi sp, sp, 64");
+            backend.finish();
         }
-        backend.finish();
     }
     for (const type* value_type : {&integer, &half, &byte, &boolean}) {
         for (const bool memory_destination : {false, true}) {

@@ -3,14 +3,9 @@
 --------------------------------------------------------------------------------
 [ ] don't allow function declarations without { }
 [ ] jump optimizer for rv32i
-[x] var array : [128] = { 1, 2 } # default type
-[x] dat array : [128] = { 1, 2 } # default type
-[x] type x { i : [4] } # uses default type
-[x] func fact(x) : result # default type
 [ ] rv32i alignment issues
     => works in qemu for now that does not require alignment
 [ ] move the coverage tests into a subdirectory
-[x] run-baz.sh switch for rv32i or x86
 [ ] syntax change: 
     func noinline factorial(value i32) result i32 {
     func noinline factorial(value) result { # default type
@@ -25,8 +20,8 @@
      .baz tests 
 [ ] change all array access using [ ] to checked using .at
 [ ] consider removing the need of ':' in function declarations
-[x] rv32i backend
 [ ] rv32i constant masks: use shifts where they avoid a scratch register
+[ ] rv32i: shorten negative constant multiplication and specialize constant division
 [ ]  make the operand the base way of addressing memory with 64 bit offset and
      machine dependent index register scalings then lower the writing and
      reading to machine specific capabilities
@@ -202,6 +197,12 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] var array : [128] = { 1, 2 } # default type
+[x] dat array : [128] = { 1, 2 } # default type
+[x] type x { i : [4] } # uses default type
+[x] func fact(x) : result # default type
+[x] run-baz.sh switch for rv32i or x86
+[x] rv32i backend
 [x] consider function calls that pass arguments and return through the stack
     return values are then no longer references
     => limited support: no unary on return or arguments, 

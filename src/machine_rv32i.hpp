@@ -214,14 +214,20 @@ class machine_rv32i final : public machine {
             return operand::mem(index, {}, 1, offset, address.type_ref());
         }
 
-        // reuse the output only when address inputs survive its construction
+        const bool base_is_register{register_index(base) !=
+                                    register_names_.size()};
+
+        // add reads both inputs before writing but li and slli can destroy a
+        // base still needed by the next instruction
         const bool reuse_destination{
             destination.is_register() and
             register_index(destination.base_register()) != 0 and
-            register_index(destination.base_register()) !=
-                register_index(base) and
-            register_index(destination.base_register()) !=
-                register_index(index)};
+            (register_index(destination.base_register()) !=
+                 register_index(base) or
+             (not index.empty() and address.scale() == 1)) and
+            (register_index(destination.base_register()) !=
+                 register_index(index) or
+             base.empty() or base_is_register or address.scale() != 1)};
 
         const operand result{
             reuse_destination
@@ -230,14 +236,13 @@ class machine_rv32i final : public machine {
 
         const std::string& result_name{result.base_register()};
 
-        const bool base_is_register{register_index(base) !=
-                                    register_names_.size()};
-
         if (index.empty()) {
             if (not base.empty() and not base_is_register) {
+                // symbolic bases need relocation before an offset can be used
                 asm_line(indent, "la {}, {}", result_name, base);
             } else {
 
+                // the earlier fast path already handled encodable offsets
                 const int32_t bits{
                     std::bit_cast<int32_t>(static_cast<uint32_t>(offset))};
 
@@ -252,10 +257,13 @@ class machine_rv32i final : public machine {
             }
         } else if (address.scale() == 1) {
             if (base.empty()) {
+                // the large offset needs a writable base to fold into
                 asm_line(indent, "addi {}, {}, 0", result_name, index);
             } else if (base_is_register) {
+                // loads and stores cannot encode a second address register
                 asm_line(indent, "add {}, {}, {}", result_name, base, index);
             } else {
+                // the reuse check keeps the index alive across la
                 asm_line(indent, "la {}, {}", result_name, base);
 
                 asm_line(indent, "add {}, {}, {}", result_name, result_name,
@@ -263,6 +271,7 @@ class machine_rv32i final : public machine {
             }
         } else {
 
+            // power-of-two scaling needs only a shift on rv32i
             asm_line(indent, "slli {}, {}, {}", result_name, index,
                      std::countr_zero(address.scale()));
 
@@ -273,6 +282,7 @@ class machine_rv32i final : public machine {
 
             } else if (not base.empty()) {
 
+                // loading the symbol must not overwrite the scaled index
                 const operand symbol{
                     alloc_scratch_register(src_loc_tk, indent, default_type())};
 
@@ -591,32 +601,52 @@ class machine_rv32i final : public machine {
                                 const bool remainder = {}) -> void {
 
         const address_scope scope{*this, destination, source};
+
         const uint32_t live{unavailable_registers_};
+
         constexpr std::array<std::string_view, 8> clobbers{
             "ra", "a0", "a1", "t0", "t1", "t2", "t3", "t4"};
+
         const size_t clobber_count{division ? clobbers.size() : 5};
         std::vector<std::string_view> saved;
         for (const std::string_view name :
              std::span{clobbers}.first(clobber_count)) {
-            // protect live values and keep operand staging outside the helper
-            // registers
+
+            // restoring a register destination would discard the result
             if ((live & register_mask(name)) != 0 and
                 (not destination.is_register() or
                  register_index(destination.base_register()) !=
                      register_index(name))) {
+
                 saved.push_back(name);
             }
+
+            // staging registers must survive the helper call
             unavailable_registers_ |= register_mask(name);
         }
 
-        const operand left{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
+        // aliases and address registers carry the same argument dependencies
+        const auto uses_register = [](const operand& value,
+                                      const std::string_view name) -> bool {
+            return (value.is_register() or value.is_memory()) and
+                   (register_index(value.base_register()) ==
+                        register_index(name) or
+                    (value.is_memory() and
+                     register_index(value.index_register()) ==
+                         register_index(name)));
+        };
 
-        const operand right{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        copy_value(src_loc_tk, indent, left, destination);
-        copy_value(src_loc_tk, indent, right, source);
+        // stack operands must be read before the save area changes sp
+        const bool stack_operands{uses_register(destination, "sp") or
+                                  uses_register(source, "sp")};
+        operand left;
+        operand right;
+        if (stack_operands) {
+            left = alloc_scratch_register(src_loc_tk, indent, default_type());
+            right = alloc_scratch_register(src_loc_tk, indent, default_type());
+            copy_value(src_loc_tk, indent, left, destination);
+            copy_value(src_loc_tk, indent, right, source);
+        }
         constexpr size_t stack_alignment{16};
         constexpr size_t word_size{4};
         const size_t stack_bytes{
@@ -627,16 +657,54 @@ class machine_rv32i final : public machine {
         if (stack_bytes != 0) {
             asm_line(indent, "addi sp, sp, -{}", stack_bytes);
         }
+        // save caller values before argument setup overwrites a0 or a1
         for (const auto [index, name] : std::views::enumerate(saved)) {
             asm_line(indent, "sw {}, {}(sp)", name,
                      static_cast<size_t>(index) * word_size);
         }
-        asm_line(indent, "mv a0, {}", left.base_register());
-        asm_line(indent, "mv a1, {}", right.base_register());
+        const operand first_argument{operand::reg("a0", default_type())};
+        const operand second_argument{operand::reg("a1", default_type())};
+        if (stack_operands) {
+            copy_value(src_loc_tk, indent, first_argument, left);
+            copy_value(src_loc_tk, indent, second_argument, right);
+        } else if (uses_register(source, "a0")) {
+            // neither argument can be written first without losing an input
+            if (uses_register(destination, "a1")) {
+                right =
+                    alloc_scratch_register(src_loc_tk, indent, default_type());
+                copy_value(src_loc_tk, indent, right, source);
+                copy_value(src_loc_tk, indent, first_argument, destination);
+                copy_value(src_loc_tk, indent, second_argument, right);
+                free_scratch_register(src_loc_tk, indent, right);
+            } else {
+                // consume the source before loading the destination into a0
+                copy_value(src_loc_tk, indent, second_argument, source);
+                copy_value(src_loc_tk, indent, first_argument, destination);
+            }
+        } else {
+            // the source does not need the old a0 so no staging is necessary
+            copy_value(src_loc_tk, indent, first_argument, destination);
+            copy_value(src_loc_tk, indent, second_argument, source);
+        }
         asm_line(indent, "call {}",
                  division ? ".Lbaz_divide" : ".Lbaz_multiply");
-        asm_line(indent, "mv {}, {}", left.base_register(),
-                 remainder ? "a1" : "a0");
+        operand result{operand::reg(remainder ? "a1" : "a0", default_type())};
+        const bool store_before_restore{destination.is_register() and
+                                        not stack_operands};
+        if (store_before_restore) {
+            // the destination is not restored so it can retain the result
+            copy_value(src_loc_tk, indent, destination, result);
+        } else if (stack_operands or
+                   std::ranges::find(saved, result.base_register()) !=
+                       saved.end()) {
+            // reuse stack staging or protect a result register being restored
+            if (left.is_empty()) {
+                left =
+                    alloc_scratch_register(src_loc_tk, indent, default_type());
+            }
+            copy_value(src_loc_tk, indent, left, result);
+            result = left;
+        }
         for (const auto [index, name] : std::views::enumerate(saved)) {
             asm_line(indent, "lw {}, {}(sp)", name,
                      static_cast<size_t>(index) * word_size);
@@ -645,7 +713,10 @@ class machine_rv32i final : public machine {
         if (stack_bytes != 0) {
             asm_line(indent, "addi sp, sp, {}", stack_bytes);
         }
-        copy_value(src_loc_tk, indent, destination, left);
+        if (not store_before_restore) {
+            // memory destinations need their original address registers back
+            copy_value(src_loc_tk, indent, destination, result);
+        }
     }
 
     auto emit_arithmetic_helpers() const -> void {
@@ -896,10 +967,67 @@ class machine_rv32i final : public machine {
             [](const std::string_view text) -> size_t {
                 size_t count{};
                 for (const auto line : text | std::views::split('\n')) {
-                    const std::string_view value{line};
+                    std::string_view value{line};
+                    value = value.substr(0, value.find('#'));
                     const size_t start{value.find_first_not_of(" \t\r")};
-                    if (start != std::string_view::npos and
-                        value[start] != '#' and value.back() != ':') {
+                    if (start == std::string_view::npos) {
+                        continue;
+                    }
+                    value = value.substr(
+                        start, value.find_last_not_of(" \t\r") - start + 1);
+                    // emitted labels and directives occupy no instruction slots
+                    if (value.front() == '.' or value.back() == ':') {
+                        continue;
+                    }
+                    const std::string_view instruction{
+                        value.substr(0, value.find_first_of(" \t"))};
+                    // norelax keeps address and call sequences at two
+                    // instructions
+                    if (instruction == "la" or instruction == "call") {
+                        count += 2;
+                    } else if (instruction == "li") {
+                        size_t cost{2};
+                        const size_t comma{value.find(',')};
+                        if (comma != std::string_view::npos) {
+                            std::string_view literal{value.substr(comma + 1)};
+                            const size_t digits{
+                                literal.find_first_not_of(" \t")};
+                            if (digits != std::string_view::npos) {
+                                literal.remove_prefix(digits);
+                                int64_t parsed{};
+                                const char* const end{
+                                    std::to_address(literal.end())};
+                                const std::from_chars_result conversion{
+                                    std::from_chars(
+                                        std::to_address(literal.begin()), end,
+                                        parsed)};
+
+                                // unresolved expressions retain the
+                                // conservative cost
+                                if (conversion.ec == std::errc{} and
+                                    conversion.ptr == end and
+                                    parsed >=
+                                        std::numeric_limits<int32_t>::min() and
+                                    std::cmp_less_equal(
+                                        parsed,
+                                        std::numeric_limits<uint32_t>::max())) {
+                                    const uint32_t bits{
+                                        static_cast<uint32_t>(parsed)};
+                                    const int32_t immediate{
+                                        std::bit_cast<int32_t>(bits)};
+                                    constexpr uint32_t low_mask{0xfff};
+                                    // addi handles signed 12 bits and lui needs
+                                    // no low-part add
+                                    if ((immediate >= immediate_min and
+                                         immediate <= immediate_max) or
+                                        (bits & low_mask) == 0) {
+                                        cost = 1;
+                                    }
+                                }
+                            }
+                        }
+                        count += cost;
+                    } else {
                         ++count;
                     }
                 }
@@ -1152,7 +1280,8 @@ class machine_rv32i final : public machine {
             validate_scalar(src_loc_tk, lhs.type_ref());
             validate_scalar(src_loc_tk, rhs.type_ref());
 
-            const auto prepare = [&](const operand& source) -> operand {
+            const auto prepare = [&](const operand& source,
+                                     const operand& other) -> operand {
                 // matching register representations need no conversion
                 if (source.is_register() and
                     source.type_ref().name() == lhs.type_ref().name()) {
@@ -1163,8 +1292,27 @@ class machine_rv32i final : public machine {
                     return operand::reg("zero", lhs.type_ref());
                 }
 
+                // the output can hold an input unless doing so destroys the
+                // other value or an address still needed to load it
+                const size_t output_register{
+                    register_index(action.destination.base_register())};
+                const bool reuse_destination{
+                    action.destination.is_register() and
+                    output_register != 0 and
+                    (not(other.is_register() or other.is_memory()) or
+                     output_register !=
+                         register_index(other.base_register())) and
+                    (not other.is_memory() or
+                     output_register !=
+                         register_index(other.index_register()))};
+
+                // preserve the comparison width rather than narrowing to bool
                 const operand value{
-                    alloc_scratch_register(src_loc_tk, indent, lhs.type_ref())};
+                    reuse_destination
+                        ? operand::reg(action.destination.base_register(),
+                                       lhs.type_ref())
+                        : alloc_scratch_register(src_loc_tk, indent,
+                                                 lhs.type_ref())};
 
                 copy_value(src_loc_tk, indent, value, source);
 
@@ -1206,11 +1354,11 @@ class machine_rv32i final : public machine {
                 not action.destination.is_empty() and constant.has_value() and
                 immediate >= immediate_min and immediate <= immediate_max};
 
-            const operand left{prepare(lhs)};
+            const operand left{prepare(lhs, rhs)};
 
             const operand right{use_immediate
                                     ? operand::reg("zero", lhs.type_ref())
-                                    : prepare(rhs)};
+                                    : prepare(rhs, left)};
 
             // branch-only comparisons do not need a materialized boolean
             if (action.destination.is_empty()) {
@@ -1429,16 +1577,30 @@ class machine_rv32i final : public machine {
                                      "copy size exceeds RV32I address range"};
         }
         const address_scope scope{*this, dst, src};
-        const operand src_pointer{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        const operand dst_pointer{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        address_of(src_loc_tk, indent, src_pointer, src);
-        const operand& dst_address{dst};
-        address_of(src_loc_tk, indent, dst_pointer, dst_address);
         if (size_bytes <= copy_unroll_threshold_bytes_) {
+            const auto prepare_address =
+                [&](const operand& address) -> operand {
+                operand lowered{lower_address(src_loc_tk, indent, address)};
+                // keep the entire unrolled copy within the load/store offset
+                // range
+                if (lowered.displacement() + static_cast<int64_t>(size_bytes) -
+                        1 >
+                    immediate_max) {
+                    const operand pointer{alloc_scratch_register(
+                        src_loc_tk, indent, default_type())};
+
+                    address_of(src_loc_tk, indent, pointer, lowered);
+                    lowered = operand::mem(pointer.base_register(), {}, 1, 0,
+                                           address.type_ref());
+                }
+
+                return lowered;
+            };
+
+            // direct offsets avoid two pointer temporaries for ordinary small
+            // copies
+            const operand src_address{prepare_address(src)};
+            const operand dst_address{prepare_address(dst)};
             const operand value{
                 alloc_scratch_register(src_loc_tk, indent, default_type())};
 
@@ -1455,17 +1617,30 @@ class machine_rv32i final : public machine {
                 }
                 while (size_bytes - offset >= width) {
                     asm_line(indent, "{} {}, {}({})", load,
-                             value.base_register(), offset,
-                             src_pointer.base_register());
+                             value.base_register(),
+                             src_address.displacement() +
+                                 static_cast<int64_t>(offset),
+                             src_address.base_register());
                     asm_line(indent, "{} {}, {}({})", store,
-                             value.base_register(), offset,
-                             dst_pointer.base_register());
+                             value.base_register(),
+                             dst_address.displacement() +
+                                 static_cast<int64_t>(offset),
+                             dst_address.base_register());
                     offset += width;
                 }
             }
 
             return;
         }
+        const operand src_pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand dst_pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        address_of(src_loc_tk, indent, src_pointer, src);
+        const operand& dst_address{dst};
+        address_of(src_loc_tk, indent, dst_pointer, dst_address);
         const operand count{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
 
@@ -1550,17 +1725,37 @@ class machine_rv32i final : public machine {
             return;
         }
         const address_scope scope{*this, destination, operand{}};
-        constexpr size_t direct_store_limit{4};
-        // tiny fills need neither a loop counter nor a moving pointer
+        constexpr size_t direct_store_limit{16};
+        // match bulk copies: wide stores may be unaligned until alignment is
+        // handled
         if (size_bytes <= direct_store_limit) {
-            for (size_t offset{}; offset < size_bytes; ++offset) {
-                operand address{destination};
-                address.increment_offset(static_cast<int64_t>(offset));
-                const operand lowered{
-                    lower_address(src_loc_tk, indent, address)};
+            operand address{lower_address(src_loc_tk, indent, destination)};
+            // keep every unrolled store inside the signed 12-bit offset range
+            if (address.displacement() + static_cast<int64_t>(size_bytes) - 1 >
+                immediate_max) {
+                const operand pointer{
+                    alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-                asm_line(indent, "sb zero, {}({})", lowered.displacement(),
-                         lowered.base_register());
+                address_of(src_loc_tk, indent, pointer, address);
+                address = operand::mem(pointer.base_register(), {}, 1, 0,
+                                       destination.type_ref());
+            }
+            size_t offset{};
+            for (const size_t width : {size_t{4}, size_t{2}, size_t{1}}) {
+                std::string_view instruction{"sb"};
+                if (width == 4) {
+                    instruction = "sw";
+                } else if (width == 2) {
+                    instruction = "sh";
+                }
+
+                while (size_bytes - offset >= width) {
+                    asm_line(indent, "{} zero, {}({})", instruction,
+                             address.displacement() +
+                                 static_cast<int64_t>(offset),
+                             address.base_register());
+                    offset += width;
+                }
             }
 
             return;
@@ -1574,19 +1769,29 @@ class machine_rv32i final : public machine {
 
         address_of(src_loc_tk, indent, dst_pointer, destination);
 
-        copy_value(src_loc_tk, indent, remaining,
-                   operand::imm(std::format("{}", size_bytes), default_type()));
+        copy_value(
+            src_loc_tk, indent, remaining,
+            operand::imm(std::format("{}", size_bytes / 4), default_type()));
 
         asm_line(indent, "1:");
-        asm_line(indent, "sb zero, 0({})", dst_pointer.base_register());
+        asm_line(indent, "sw zero, 0({})", dst_pointer.base_register());
 
-        asm_line(indent, "addi {}, {}, 1", dst_pointer.base_register(),
+        asm_line(indent, "addi {}, {}, 4", dst_pointer.base_register(),
                  dst_pointer.base_register());
 
         asm_line(indent, "addi {}, {}, -1", remaining.base_register(),
                  remaining.base_register());
 
         asm_line(indent, "bnez {}, 1b", remaining.base_register());
+        // the known tail needs no runtime tests or additional scratch
+        // registers
+        if ((size_bytes & 2U) != 0) {
+            asm_line(indent, "sh zero, 0({})", dst_pointer.base_register());
+        }
+        if ((size_bytes & 1U) != 0) {
+            asm_line(indent, "sb zero, {}({})", size_bytes & 2U,
+                     dst_pointer.base_register());
+        }
     }
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
