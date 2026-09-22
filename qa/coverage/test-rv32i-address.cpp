@@ -137,6 +137,130 @@ auto main() -> int {
     assert(backend.address_size_bytes() == 4);
     assert(not backend.can_encode_index_scale(1));
 
+    std::ostringstream shift_output;
+    backend.use_stream(shift_output);
+    std::vector<operand> shift_registers;
+    for (size_t count{}; count < 30; ++count) {
+        shift_registers.push_back(backend.alloc_scratch_register(token{}, 0, integer));
+    }
+    for (const char operation : {'<', '>'}) {
+        shift_output.str({});
+
+        backend.shift(token{}, 0, operation, operand::reg("a0", integer),
+                      operand::reg("a1", integer));
+
+        assert(shift_output.str() == (operation == '<' ? "sll a0, a0, a1\n" : "sra a0, a0, a1\n"));
+        shift_output.str({});
+
+        backend.shift(token{}, 0, operation, operand::reg("a0", integer),
+                      operand::imm("35", integer));
+
+        assert(shift_output.str() == (operation == '<' ? "slli a0, a0, ((35) & 31)\n" : "srai a0, a0, ((35) & 31)\n"));
+    }
+    for (const char operation : {'+', '-', '&', '|', '^'}) {
+        shift_output.str({});
+        std::string_view instruction;
+        if (operation == '+' or operation == '-') {
+            instruction = operation == '+' ? "add" : "sub";
+
+            backend.add_subtract(token{}, 0, operation, operand::reg("a0", integer),
+                                 operand::reg("a1", integer));
+
+        } else {
+            instruction = operation == '&' ? "and" : operation == '|' ? "or" : "xor";
+
+            backend.bitwise(token{}, 0, operation, operand::reg("a0", integer),
+                            operand::reg("a1", integer));
+
+        }
+        assert(shift_output.str() == std::format("{} a0, a0, a1\n", instruction));
+        for (const std::string_view constant : {"7", "-7", "~-8", "--7", "2047", "-2047"}) {
+            shift_output.str({});
+
+            const operand source{operand::imm(std::string{constant}, integer)};
+
+            if (operation == '+' or operation == '-') {
+                backend.add_subtract(token{}, 0, operation, operand::reg("a0", integer), source);
+            } else {
+                backend.bitwise(token{}, 0, operation, operand::reg("a0", integer), source);
+            }
+            int expected{7};
+            if (constant == "-7") {
+                expected = -7;
+            } else if (constant == "2047") {
+                expected = 2047;
+            } else if (constant == "-2047") {
+                expected = -2047;
+            }
+            if (operation == '-') {
+                expected = -expected;
+            }
+
+            assert(shift_output.str() == std::format("{}i a0, a0, {}\n",
+                operation == '-' ? "add" : instruction, expected));
+
+        }
+    }
+    backend.free_scratch_registers(token{}, 0, shift_registers);
+    backend.finish();
+    for (const type* value_type : {&integer, &half, &byte}) {
+        shift_output.str({});
+
+        backend.copy_value(token{}, 0, operand::mem("a0", {}, 1, 0, *value_type),
+                           operand::reg("a1", *value_type));
+
+        const std::string_view store{value_type == &integer ? "sw" : value_type == &half ? "sh" : "sb"};
+        assert(shift_output.str() == std::format("{} a1, 0(a0)\n", store));
+        shift_output.str({});
+
+        backend.copy_value(token{}, 0, operand::reg("a1", *value_type),
+                           operand::mem("a0", {}, 1, 0, *value_type));
+
+        const std::string_view load{value_type == &integer ? "lw" : value_type == &half ? "lh" : "lb"};
+        assert(shift_output.str() == std::format("{} a1, 0(a0)\n", load));
+        shift_output.str({});
+
+        backend.copy_value(token{}, 0, operand::reg("a1", *value_type),
+                           operand::reg("x11", *value_type));
+
+        assert(shift_output.str().empty());
+        backend.finish();
+    }
+    for (const char operation : {'&', '|', '^'}) {
+        shift_output.str({});
+
+        backend.bitwise(token{}, 0, operation, operand::reg("a0", byte),
+                        operand::reg("a1", byte));
+
+        assert(std::ranges::count(shift_output.str(), '\n') == 1);
+        backend.finish();
+    }
+    shift_output.str({});
+
+    backend.add_subtract(token{}, 0, '+', operand::mem("a0", {}, 1, 0, integer),
+                         operand::mem("x10", {}, 1, 0, integer));
+
+    assert(shift_output.str() == "lw t6, 0(a0)\nadd t6, t6, t6\nsw t6, 0(a0)\n");
+    backend.finish();
+    shift_output.str({});
+
+    backend.shift(token{}, 0, '<', operand::mem("a0", {}, 1, 0, integer),
+                  operand::mem("x10", {}, 1, 0, integer));
+
+    assert(shift_output.str() == "lw t6, 0(a0)\nsll t6, t6, t6\nsw t6, 0(a0)\n");
+    backend.finish();
+    {
+        const std::string_view source{
+            "func main() { var a = 3 var b = 2 var x = a << b exit(x) }"};
+
+        std::ostringstream output;
+        machine_rv32i compiler;
+        program prg{compiler, source, 4096, false, false, false};
+        prg.build(output);
+        assert(output.str().contains("sll t6, t6, t5"));
+        assert(not output.str().contains("addi t5, t6, 0"));
+    }
+
     std::ostringstream rejected_output;
     backend.use_stream(rejected_output);
     for (const int64_t offset : {INT64_MIN, INT64_C(-4294967296), INT64_C(4294967296), INT64_MAX}) {
@@ -248,6 +372,111 @@ auto main() -> int {
     backend.use_stream(std::cout);
 
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+    for (const type* value_type : {&integer, &half, &byte}) {
+        for (const char operation : {'+', '-', '&', '|', '^'}) {
+            for (const bool memory_destination : {false, true}) {
+                for (const unsigned source_kind : {0U, 1U, 2U}) {
+                    for (const int32_t source_value : {-2049, -2048, -1, 0, 1, 2047, 2048}) {
+                        std::println("    la a2, buffer\n    li a1, {}\n    sw a1, 4(a2)", source_value);
+
+                        const operand destination{memory_destination
+                            ? operand::mem("a2", {}, 1, 0, *value_type)
+                            : operand::reg("a0", *value_type)};
+
+                        operand source{operand::reg("a1", integer)};
+                        if (source_kind == 1) {
+                            source = operand::mem("a2", {}, 1, 4, integer);
+                        } else if (source_kind == 2) {
+                            source = operand::imm(std::format("{}", source_value), integer);
+                        }
+                        backend.copy_value(token{}, 1, destination, operand::imm("127", integer));
+                        uint32_t expected{127};
+                        const uint32_t rhs{static_cast<uint32_t>(source_value)};
+                        if (operation == '+' or operation == '-') {
+                            backend.add_subtract(token{}, 1, operation, destination, source);
+                            expected = operation == '+' ? expected + rhs : expected - rhs;
+                        } else {
+                            backend.bitwise(token{}, 1, operation, destination, source);
+                            if (operation == '&') {
+                                expected &= rhs;
+                            } else if (operation == '|') {
+                                expected |= rhs;
+                            } else {
+                                expected ^= rhs;
+                            }
+                        }
+                        const size_t bits{value_type->size_bytes() * 8};
+                        const uint32_t sign{uint32_t{1} << (bits - 1)};
+                        const uint32_t mask{UINT32_MAX >> (32 - bits)};
+                        expected &= mask;
+                        if ((expected & sign) != 0) {
+                            expected |= ~mask;
+                        }
+                        backend.copy_value(token{}, 1, operand::reg("a0", integer), destination);
+
+                        std::println("    li a3, {}\n    beq a0, a3, 1f\n    j failure\n1:",
+                                     std::bit_cast<int32_t>(expected));
+
+                        backend.finish();
+                    }
+                }
+            }
+        }
+    }
+    for (const char operation : {'+', '-', '&', '|', '^'}) {
+        std::println("    la a0, buffer\n    li a1, -7\n    sw a1, 0(a0)");
+        const operand destination{operand::mem("a0", {}, 1, 0, integer)};
+        const operand source{operand::mem("x10", {}, 1, 0, integer)};
+        int expected{};
+        if (operation == '+' or operation == '-') {
+            backend.add_subtract(token{}, 1, operation, destination, source);
+            expected = operation == '+' ? -14 : 0;
+        } else {
+            backend.bitwise(token{}, 1, operation, destination, source);
+            expected = operation == '^' ? 0 : -7;
+        }
+
+        std::println("    lw a1, 0(a0)\n    li a3, {}\n    beq a1, a3, 1f\n    j failure\n1:", expected);
+
+        backend.finish();
+    }
+    for (const type* value_type : {&integer, &half, &byte, &boolean}) {
+        for (const char operation : {'<', '>'}) {
+            for (const bool memory_destination : {false, true}) {
+                for (const unsigned count_kind : {0U, 1U, 2U}) {
+                    std::println("    la a2, buffer\n    li a1, 35\n    sw a1, 4(a2)");
+
+                    const operand destination{memory_destination
+                        ? operand::mem("a2", {}, 1, 0, *value_type)
+                        : operand::reg("a0", *value_type)};
+
+                    operand count{operand::reg("a1", byte)};
+                    if (count_kind == 1) {
+                        count = operand::mem("a2", {}, 1, 4, byte);
+                    } else if (count_kind == 2) {
+                        count = operand::imm("35", integer);
+                    }
+
+                    backend.copy_value(token{}, 1, destination, operand::imm("-16", integer));
+                    backend.shift(token{}, 1, operation, destination, count);
+                    backend.copy_value(token{}, 1, operand::reg("a0", integer), destination);
+
+                    std::println("    li a3, {}\n    beq a0, a3, 1f\n    j failure\n1:",
+                                 value_type == &boolean ? (operation == '<' ? 128 : 30)
+                                                        : (operation == '<' ? -128 : -2));
+
+                    backend.finish();
+                }
+            }
+        }
+    }
+    std::println("    li a0, 3");
+    backend.shift(token{}, 1, '<', operand::reg("a0", integer), operand::reg("x10", integer));
+    std::println("    li a3, 24\n    beq a0, a3, 1f\n    j failure\n1:");
+    std::println("    la a0, buffer\n    li a1, 2\n    sw a1, 0(a0)");
+    backend.shift(token{}, 1, '<', operand::mem("a0", {}, 1, 0, integer), operand::mem("a0", {}, 1, 0, integer));
+    std::println("    lw a1, 0(a0)\n    li a3, 8\n    beq a1, a3, 1f\n    j failure\n1:");
+    backend.finish();
     for (const int64_t offset : {INT64_C(-4294967295), INT64_C(-2147483648), INT64_C(-2049),
                                  INT64_C(-2048), INT64_C(2047), INT64_C(2048), INT64_C(8196),
                                  INT64_C(2147483648), INT64_C(4294967295)}) {
