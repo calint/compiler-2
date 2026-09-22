@@ -145,6 +145,14 @@ auto main(const int argc, const char* argv[]) -> int {
         assert(comments.str() == "# arr: i32[4] (16 B @ [s0 + 208])\n"
                                  "# indexed (4 B @ [s1 + t0 * 4 - 16])\n"
                                  "# first (4 B @ [s0])\n");
+        // columns must be relative to the source line rather than the file
+        machine_rv32i located{"first\n    value"};
+        located.use_stream(comments);
+        comments.str({});
+        const token location{{}, 10, "value", 15, {}, 2, false};
+        located.comment(location, 1, "assignment");
+        located.comment(token{}, 0, "generated");
+        assert(comments.str() == "    # [2:5] assignment\n# generated\n");
     }
     if (argc > 1 and std::string_view{argv[1]} == "noninline") {
         machine_rv32i backend;

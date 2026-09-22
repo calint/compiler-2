@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "machine.hpp"
 #include "panic_exception.hpp"
 #include "type.hpp"
@@ -41,6 +42,7 @@ class machine_rv32i final : public machine {
     };
 
     std::reference_wrapper<std::ostream> os_{std::cout};
+    std::string_view source_;
     const type* type_i32_{};
     uint32_t unavailable_registers_{};
     bool variables_base_reserved_{};
@@ -907,6 +909,9 @@ class machine_rv32i final : public machine {
     }
 
   public:
+    explicit machine_rv32i(const std::string_view source = {})
+        : source_{source} {}
+
     using machine::comment;
     using machine::emit_data_array;
 
@@ -952,9 +957,17 @@ class machine_rv32i final : public machine {
         return previous;
     }
 
-    auto comment([[maybe_unused]] const token& src_loc_tk, const size_t indent,
+    auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void override {
-        asm_line(indent, "# {}", text);
+        // synthetic tokens and standalone backend calls have no source location
+        if (src_loc_tk.at_line() == 0 or source_.empty()) {
+            asm_line(indent, "# {}", text);
+        } else {
+            const auto [line, column]{line_and_col_num_for_char_index(
+                src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+
+            asm_line(indent, "# [{}:{}] {}", line, column, text);
+        }
     }
 
     auto emit_most_efficient([[maybe_unused]] const token& src_loc_tk,

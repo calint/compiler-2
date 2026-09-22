@@ -211,7 +211,7 @@ auto main(const int argc, const char** const argv) -> int {
         if (target == "x86_64") {
             backend = std::make_unique<machine_x86>(initial_output, src);
         } else {
-            backend = std::make_unique<machine_rv32i>();
+            backend = std::make_unique<machine_rv32i>(src);
         }
 
         program prg{*backend,     src,          vars_size_bytes,
