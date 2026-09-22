@@ -40,6 +40,8 @@ class machine_x86 final : public machine {
     static constexpr std::string_view data_word{"dw"};
     static constexpr std::string_view data_byte{"db"};
 
+    static constexpr std::array<size_t, 4> index_register_scalings{1, 2, 4, 8};
+
     static constexpr size_t threshold_for_rep_stos_size_bytes{32};
     static constexpr size_t threshold_for_rep_movs_size_bytes{16};
     static constexpr int syscall_exit{60};
@@ -786,8 +788,7 @@ class machine_x86 final : public machine {
     [[nodiscard]] auto can_encode_index_scale(const size_t size_bytes) const
         -> bool override {
 
-        return size_bytes == size_byte or size_bytes == size_word or
-               size_bytes == size_dword or size_bytes == size_qword;
+        return std::ranges::contains(index_register_scalings, size_bytes);
     }
 
     auto scale_index(const token& src_loc_tk, const size_t indent,
