@@ -6,6 +6,7 @@
 "}" @comment
 
 (func_keyword) @keyword.function
+(noinline_keyword) @keyword.modifier
 (type_keyword) @keyword.type
 (dat_keyword) @keyword.storage
 (const_keyword) @keyword.storage

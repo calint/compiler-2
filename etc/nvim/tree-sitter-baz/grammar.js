@@ -70,10 +70,11 @@ module.exports = grammar({
       $.variable_declaration,
     ),
 
-    // func identifier ( parameters ) return_annotation body
+    // func [noinline] identifier ( parameters ) return_annotation body
     function_definition: $ => seq(
       $.func_keyword,
-      field('name', $.identifier),
+      optional(field('modifier', $.noinline_keyword)),
+      field('name', choice($.identifier, alias($.noinline_keyword, $.identifier))),
       '(',
       optional($.parameter_list),
       ')',
@@ -424,6 +425,7 @@ module.exports = grammar({
     const_keyword: $ => 'const',
     dat_keyword: $ => 'dat',
     func_keyword: $ => 'func',
+    noinline_keyword: $ => 'noinline',
     type_keyword: $ => 'type',
 
     // Statement Keywords
