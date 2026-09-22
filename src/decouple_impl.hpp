@@ -91,8 +91,7 @@ auto operand::mem(const std::string_view base, const std::string_view index,
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop',
 // 'if', 'mov', 'syscall'
-[[nodiscard]] auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
-                                                  const token tk)
+auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement> {
 
     // note: no 'std:move' on 'tk' because it is trivially copyable
@@ -117,10 +116,8 @@ auto operand::mem(const std::string_view base, const std::string_view index,
 
 // declared in 'decouple.hpp'
 // called from 'stmt_block'
-[[nodiscard]] auto create_stmt_call(toc& tc, tokenizer& tz,
-                                    const stmt_identifier& si,
-                                    const token open_paren_tk)
-    -> std::unique_ptr<statement> {
+auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si,
+                      const token open_paren_tk) -> std::unique_ptr<statement> {
 
     return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
                                        open_paren_tk, tz);
@@ -129,7 +126,7 @@ auto operand::mem(const std::string_view base, const std::string_view index,
 // declared in 'decouple.hpp'
 // called from 'expr_ops_list' to solve circular dependencies with function
 // calls
-[[nodiscard]] auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
+auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     // note: no 'std::move' on 'tk' because it is trivially copyable
@@ -290,6 +287,8 @@ auto expr_type_value::is_array_element() const -> bool {
     return stmt_ident_ and stmt_ident_->is_array_element();
 }
 
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 auto expr_type_value::compile(toc& tc, const size_t indent,
                               const ident_info& dst_info) const -> void {
 
@@ -487,10 +486,12 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-[[nodiscard]] auto expr_type_value::compile_lea(
-    toc& tc, const size_t indent, const token& src_loc_tk,
-    std::vector<operand>& allocated_registers, const operand& reg_count,
-    const std::span<const operand> lea_path) const -> operand {
+auto expr_type_value::compile_lea(toc& tc, const size_t indent,
+                                  const token& src_loc_tk,
+                                  std::vector<operand>& allocated_registers,
+                                  const operand& reg_count,
+                                  const std::span<const operand> lea_path) const
+    -> operand {
 
     return stmt_ident_->compile_lea(tc, indent, src_loc_tk, allocated_registers,
                                     reg_count, lea_path);
@@ -498,7 +499,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-[[nodiscard]] auto expr_type_value::identifier() const -> std::string_view {
+auto expr_type_value::identifier() const -> std::string_view {
     if (stmt_ident_) {
         return stmt_ident_->identifier();
     }
@@ -508,7 +509,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-[[nodiscard]] auto expr_type_value::is_indexed() const -> bool {
+auto expr_type_value::is_indexed() const -> bool {
     return stmt_ident_ and stmt_ident_->is_indexed();
 }
 
