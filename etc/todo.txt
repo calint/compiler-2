@@ -153,6 +153,7 @@
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
 [ ] rv32i backend
+[ ] rv32i constant masks: use shifts where they avoid a scratch register
 [ ] simple LSP supporting rename
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack

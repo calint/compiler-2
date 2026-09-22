@@ -145,9 +145,10 @@ class machine_rv32i final : public machine {
 
     // lower base + index * scale + displacement to register + signed 12-bit
     // offset
-    [[nodiscard]] auto lower_address(const token& src_loc_tk,
-                                     const size_t indent,
-                                     const operand& address) -> operand {
+    [[nodiscard]] auto
+    lower_address(const token& src_loc_tk, const size_t indent,
+                  const operand& address, const operand& destination = {})
+        -> operand {
 
         validate_address(src_loc_tk, address);
 
@@ -165,39 +166,80 @@ class machine_rv32i final : public machine {
                                 {}, 1, offset, address.type_ref());
         }
 
-        const operand result{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
-        const std::string& result_name{result.base_register()};
+        // an unscaled index alone is already a usable base register
+        if (base.empty() and not index.empty() and address.scale() == 1 and
+            offset >= immediate_min and offset <= immediate_max) {
 
-        if (not index.empty()) {
-            if (address.scale() == 1) {
-                // scale 1 only needs a copy of the index
-                asm_line(indent, "addi {}, {}, 0", result_name, index);
-            } else {
-                // multiply by the power-of-two scale with one left shift
-                asm_line(indent, "slli {}, {}, {}", result_name, index,
-                         std::countr_zero(address.scale()));
-            }
-        } else {
-            // start with no index contribution; zero is the constant-zero
-            // register
-            asm_line(indent, "addi {}, zero, 0", result_name);
+            return operand::mem(index, {}, 1, offset, address.type_ref());
         }
 
-        // result now holds index * scale; add the base without changing the
-        // inputs
-        if (not base.empty()) {
-            if (register_index(base) != register_names_.size()) {
-                // add the base address to the scaled index
+        // reuse the output only when address inputs survive its construction
+        const bool reuse_destination{
+            destination.is_register() and
+            register_index(destination.base_register()) != 0 and
+            register_index(destination.base_register()) !=
+                register_index(base) and
+            register_index(destination.base_register()) !=
+                register_index(index)};
+
+        const operand result{
+            reuse_destination
+                ? destination
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const std::string& result_name{result.base_register()};
+
+        const bool base_is_register{register_index(base) !=
+                                    register_names_.size()};
+
+        if (index.empty()) {
+            if (not base.empty() and not base_is_register) {
+                asm_line(indent, "la {}, {}", result_name, base);
+            } else {
+
+                const int32_t bits{
+                    std::bit_cast<int32_t>(static_cast<uint32_t>(offset))};
+
+                asm_line(indent, "li {}, {}", result_name, bits);
+                if (not base.empty()) {
+
+                    asm_line(indent, "add {}, {}, {}", result_name, result_name,
+                             base);
+                }
+
+                return operand::mem(result_name, {}, 1, 0, address.type_ref());
+            }
+        } else if (address.scale() == 1) {
+            if (base.empty()) {
+                asm_line(indent, "addi {}, {}, 0", result_name, index);
+            } else if (base_is_register) {
+                asm_line(indent, "add {}, {}, {}", result_name, base, index);
+            } else {
+                asm_line(indent, "la {}, {}", result_name, base);
+
+                asm_line(indent, "add {}, {}, {}", result_name, result_name,
+                         index);
+            }
+        } else {
+
+            asm_line(indent, "slli {}, {}, {}", result_name, index,
+                     std::countr_zero(address.scale()));
+
+            if (base_is_register) {
+
                 asm_line(indent, "add {}, {}, {}", result_name, result_name,
                          base);
-            } else {
+
+            } else if (not base.empty()) {
+
                 const operand symbol{
                     alloc_scratch_register(src_loc_tk, indent, default_type())};
-                // la materializes a symbol's address, not its contents
+
                 asm_line(indent, "la {}, {}", symbol.base_register(), base);
+
                 asm_line(indent, "add {}, {}, {}", result_name, result_name,
                          symbol.base_register());
+
                 free_scratch_register(src_loc_tk, indent, symbol);
             }
         }
@@ -210,15 +252,18 @@ class machine_rv32i final : public machine {
 
         const operand displacement{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
+
         // preserve the validated offset's low 32 bits for RV32 address
         // arithmetic
         const int32_t bits{
             std::bit_cast<int32_t>(static_cast<uint32_t>(offset))};
+
         // li expands to instructions that load the full 32-bit offset
         asm_line(indent, "li {}, {}", displacement.base_register(), bits);
         // fold the offset into the base so the memory instruction can use zero
         asm_line(indent, "add {}, {}, {}", result_name, result_name,
                  displacement.base_register());
+
         free_scratch_register(src_loc_tk, indent, displacement);
 
         return operand::mem(result_name, {}, 1, 0, address.type_ref());
@@ -684,6 +729,31 @@ class machine_rv32i final : public machine {
 
         const address_scope scope{*this, dst, src};
 
+        const std::optional<int32_t> constant{immediate_value(src)};
+        // known constants can be truncated and extended before emission
+        if (constant.has_value()) {
+            const size_t bits{dst.type_ref().size_bytes() * 8};
+
+            constexpr size_t register_bits{
+                std::numeric_limits<uint32_t>::digits};
+
+            const uint32_t mask{std::numeric_limits<uint32_t>::max() >>
+                                (register_bits - bits)};
+
+            uint32_t value{static_cast<uint32_t>(*constant) & mask};
+            // signed destinations need the stored sign bit extended
+            if (dst.type_ref().name() != "bool" and
+                (value & (uint32_t{1} << (bits - 1))) != 0) {
+
+                value |= ~mask;
+            }
+
+            store_constant_result(src_loc_tk, indent, dst,
+                                  std::bit_cast<int32_t>(value));
+
+            return;
+        }
+
         operand value{dst};
         if (not dst.is_register()) {
 
@@ -693,7 +763,10 @@ class machine_rv32i final : public machine {
         }
 
         if (src.is_memory()) {
-            const operand lowered{lower_address(src_loc_tk, indent, src)};
+            // a load may build its address in the register it will overwrite
+            const operand lowered{
+                lower_address(src_loc_tk, indent, src, value)};
+
             const size_t width{src.type_ref().size_bytes()};
             std::string_view instruction{"lb"};
             if (width == 4) {
@@ -784,42 +857,207 @@ class machine_rv32i final : public machine {
 
             const address_scope scope{*this, lhs, rhs};
 
-            const operand left{
-                alloc_scratch_register(src_loc_tk, indent, lhs.type_ref())};
+            validate_scalar(src_loc_tk, lhs.type_ref());
+            validate_scalar(src_loc_tk, rhs.type_ref());
 
-            const operand right{
-                alloc_scratch_register(src_loc_tk, indent, lhs.type_ref())};
+            const auto prepare = [&](const operand& source) -> operand {
+                // matching register representations need no conversion
+                if (source.is_register() and
+                    source.type_ref().name() == lhs.type_ref().name()) {
+                    return source;
+                }
+                // zero has the same representation at every supported width
+                if (immediate_value(source) == 0) {
+                    return operand::reg("zero", lhs.type_ref());
+                }
 
-            copy_value(src_loc_tk, indent, left, lhs);
-            copy_value(src_loc_tk, indent, right, rhs);
-            const std::string& result{left.base_register()};
-            const std::string& other{right.base_register()};
+                const operand value{
+                    alloc_scratch_register(src_loc_tk, indent, lhs.type_ref())};
+
+                copy_value(src_loc_tk, indent, value, source);
+
+                return value;
+            };
+
             const std::string_view operation{action.operation};
-            bool inverted{action.inverted};
-            if (operation == "==" or operation == "!=") {
-                asm_line(indent, "xor {}, {}, {}", result, result, other);
-                asm_line(indent, "sltiu {}, {}, 1", result, result);
-                inverted = inverted != (operation == "!=");
-            } else if (operation == "<" or operation == ">=") {
-                asm_line(indent, "slt {}, {}, {}", result, result, other);
-                inverted = inverted != (operation == ">=");
-            } else {
-                assert(operation == ">" or operation == "<=");
-                asm_line(indent, "slt {}, {}, {}", result, other, result);
-                inverted = inverted != (operation == "<=");
-            }
-            if (inverted) {
-                asm_line(indent, "xori {}, {}, 1", result, result);
-            }
-            if (not action.destination.is_empty()) {
-                copy_value(src_loc_tk, indent, action.destination, left);
-            }
-            if (not action.target.empty()) {
-                asm_line(indent, "{} {}, zero, 1f",
-                         action.branch_on_true ? "beq" : "bne", result);
+            std::optional<int32_t> constant{immediate_value(rhs)};
+            // comparisons convert the right operand to the left operand's width
+            if (constant.has_value()) {
+                constexpr size_t register_bits{
+                    std::numeric_limits<uint32_t>::digits};
+                const size_t bits{lhs.type_ref().size_bytes() * 8};
 
-                branch(indent, action.target);
-                asm_line(indent, "1:");
+                const uint32_t mask{std::numeric_limits<uint32_t>::max() >>
+                                    (register_bits - bits)};
+
+                uint32_t value{static_cast<uint32_t>(*constant) & mask};
+                // signed operands extend the narrowed sign bit
+                if (lhs.type_ref().name() != "bool" and
+                    (value & (uint32_t{1} << (bits - 1))) != 0) {
+
+                    value |= ~mask;
+                }
+                constant = std::bit_cast<int32_t>(value);
+            }
+            const bool equality{operation == "==" or operation == "!="};
+
+            const bool inclusive_threshold{operation == ">" or
+                                           operation == "<="};
+
+            int64_t immediate{constant.value_or(0)};
+            // x > c and x <= c use the signed threshold c + 1
+            if (inclusive_threshold) {
+                ++immediate;
+            }
+
+            const bool use_immediate{
+                not action.destination.is_empty() and constant.has_value() and
+                immediate >= immediate_min and immediate <= immediate_max};
+
+            const operand left{prepare(lhs)};
+
+            const operand right{use_immediate
+                                    ? operand::reg("zero", lhs.type_ref())
+                                    : prepare(rhs)};
+
+            // branch-only comparisons do not need a materialized boolean
+            if (action.destination.is_empty()) {
+                // no target means the comparison result is discarded
+                if (not action.target.empty()) {
+                    std::string_view instruction;
+                    std::string_view first{left.base_register()};
+                    std::string_view second{right.base_register()};
+                    bool inverted{action.inverted != not action.branch_on_true};
+                    // equality and inequality share one branch pair
+                    if (operation == "==" or operation == "!=") {
+                        inverted = inverted != (operation == "!=");
+                        instruction = inverted ? "beq" : "bne";
+                    } else {
+                        // ordered comparisons use signed blt/bge, swapping for
+                        // > and <=
+                        if (operation == ">" or operation == "<=") {
+                            std::swap(first, second);
+                        }
+
+                        inverted = inverted !=
+                                   (operation == ">=" or operation == "<=");
+
+                        instruction = inverted ? "blt" : "bge";
+                    }
+
+                    asm_line(indent, "{} {}, {}, 1f", instruction, first,
+                             second);
+
+                    branch(indent, action.target);
+                    asm_line(indent, "1:");
+                }
+            } else {
+                // a boolean is required; prefer its output register or an owned
+                // temporary
+                operand value{action.destination};
+                if (not value.is_register()) {
+                    // materialized operands are ours to overwrite after the
+                    // comparison
+                    if (not left.allocation_register().empty() and
+                        not lhs.is_register()) {
+                        value = left;
+                    } else if (not right.allocation_register().empty() and
+                               not rhs.is_register()) {
+                        // only the right operand supplied a reusable temporary
+                        value = right;
+                    } else {
+                        // both operands are live inputs or zero, so reserve a
+                        // result
+
+                        value = alloc_scratch_register(src_loc_tk, indent,
+                                                       default_type());
+                    }
+                }
+                const std::string& result{value.base_register()};
+                bool inverted{action.inverted};
+                // equality needs a zero test, with xor only for a nonzero
+                // operand
+                if (equality) {
+                    std::string_view tested{left.base_register()};
+                    // an immediate zero can be tested without transforming the
+                    // input
+                    if (use_immediate) {
+                        // nonzero small constants fit directly in xori
+                        if (immediate != 0) {
+
+                            asm_line(indent, "xori {}, {}, {}", result,
+                                     left.base_register(), immediate);
+
+                            tested = result;
+                        }
+                    } else if (register_index(right.base_register()) == 0) {
+                        // the right operand is zero, so test the left operand
+                        tested = left.base_register();
+                    } else if (register_index(left.base_register()) == 0) {
+                        // the left operand is zero, so test the right operand
+                        tested = right.base_register();
+                    } else {
+                        // neither operand is zero and the constant did not fit
+
+                        asm_line(indent, "xor {}, {}, {}", result,
+                                 left.base_register(), right.base_register());
+
+                        tested = result;
+                    }
+
+                    inverted = inverted != (operation == "!=");
+                    // inverted equality is a nonzero test, not a second boolean
+                    // inversion
+                    if (inverted) {
+                        asm_line(indent, "sltu {}, zero, {}", result, tested);
+                    } else {
+                        // plain equality tests whether the xor is zero
+                        asm_line(indent, "sltiu {}, {}, 1", result, tested);
+                    }
+                } else {
+                    // encodable thresholds avoid materializing a constant
+                    // register
+                    if (use_immediate) {
+
+                        asm_line(indent, "slti {}, {}, {}", result,
+                                 left.base_register(), immediate);
+
+                        inverted =
+                            inverted != (operation == ">=" or operation == ">");
+                    } else {
+                        // other thresholds use register comparison and operand
+                        // order
+
+                        asm_line(indent, "slt {}, {}, {}", result,
+                                 inclusive_threshold ? right.base_register()
+                                                     : left.base_register(),
+                                 inclusive_threshold ? left.base_register()
+                                                     : right.base_register());
+
+                        inverted = inverted !=
+                                   (operation == ">=" or operation == "<=");
+                    }
+
+                    // inclusive comparisons or explicit inversion complement
+                    // the result
+                    if (inverted) {
+                        asm_line(indent, "xori {}, {}, 1", result, result);
+                    }
+                }
+                // memory results require a store; register results are already
+                // in place
+                if (action.destination.is_memory()) {
+                    copy_value(src_loc_tk, indent, action.destination, value);
+                }
+                // some callers request both a stored boolean and a branch
+                if (not action.target.empty()) {
+
+                    asm_line(indent, "{} {}, zero, 1f",
+                             action.branch_on_true ? "beq" : "bne", result);
+
+                    branch(indent, action.target);
+                    asm_line(indent, "1:");
+                }
             }
         }
         free_scratch_registers(src_loc_tk, indent, scratch_registers_to_free);
@@ -937,6 +1175,21 @@ class machine_rv32i final : public machine {
             return;
         }
         const address_scope scope{*this, destination, operand{}};
+        constexpr size_t direct_store_limit{4};
+        // tiny fills need neither a loop counter nor a moving pointer
+        if (size_bytes <= direct_store_limit) {
+            for (size_t offset{}; offset < size_bytes; ++offset) {
+                operand address{destination};
+                address.increment_offset(static_cast<int64_t>(offset));
+                const operand lowered{
+                    lower_address(src_loc_tk, indent, address)};
+
+                asm_line(indent, "sb zero, {}({})", lowered.displacement(),
+                         lowered.base_register());
+            }
+
+            return;
+        }
 
         const operand dst_pointer{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
@@ -1125,11 +1378,16 @@ class machine_rv32i final : public machine {
                 ? dst
                 : alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        const operand lowered{lower_address(src_loc_tk, indent, address)};
-        // compute base + the remaining 12-bit displacement without reading
-        // memory
-        asm_line(indent, "addi {}, {}, {}", value.base_register(),
-                 lowered.base_register(), lowered.displacement());
+        const operand lowered{
+            lower_address(src_loc_tk, indent, address, value)};
+        // a distinct base or nonzero residual offset still needs an add
+        if (register_index(value.base_register()) !=
+                register_index(lowered.base_register()) or
+            lowered.displacement() != 0) {
+
+            asm_line(indent, "addi {}, {}, {}", value.base_register(),
+                     lowered.base_register(), lowered.displacement());
+        }
         if (dst.is_memory()) {
             copy_value(src_loc_tk, indent, dst, value);
         }

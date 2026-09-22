@@ -320,6 +320,112 @@ auto main() -> int {
         assert(not output.str().contains("addi t5, t6, 0"));
     }
 
+    std::ostringstream address_output;
+    backend.use_stream(address_output);
+    std::vector<operand> address_registers;
+    for (size_t count{}; count < 30; ++count) {
+        address_registers.push_back(backend.alloc_scratch_register(token{}, 0, integer));
+    }
+    assert(address_registers.back().base_register() == "a0");
+    backend.free_scratch_register(token{}, 0, address_registers.back());
+    address_registers.pop_back();
+    address_output.str({});
+
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("buffer", {}, 1, 4, integer));
+
+    assert(address_output.str() == "la a1, buffer\nlw a1, 4(a1)\n");
+    address_output.str({});
+
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("a2", "a3", 1, 4, integer));
+
+    assert(address_output.str() == "add a1, a2, a3\nlw a1, 4(a1)\n");
+    address_output.str({});
+
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("a2", {}, 1, 8196, integer));
+
+    assert(address_output.str() == "li a1, 8196\nadd a1, a1, a2\nlw a1, 0(a1)\n");
+    address_output.str({});
+
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("buffer", "a3", 1, 4, integer));
+
+    assert(address_output.str() == "la a1, buffer\nadd a1, a1, a3\nlw a1, 4(a1)\n");
+    address_registers.push_back(backend.alloc_scratch_register(token{}, 0, integer));
+    address_output.str({});
+
+    backend.address_of(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("buffer", {}, 1, 0, integer));
+
+    assert(address_output.str() == "la a1, buffer\n");
+    address_output.str({});
+
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem({}, "a2", 1, 4, integer));
+
+    assert(address_output.str() == "lw a1, 4(a2)\n");
+    address_output.str({});
+
+    backend.copy_value(token{}, 0, operand::mem("a2", {}, 1, 0, integer),
+                       operand::imm("0", integer));
+
+    assert(address_output.str() == "sw zero, 0(a2)\n");
+    address_output.str({});
+    backend.copy_value(token{}, 0, operand::reg("a1", byte), operand::imm("255", integer));
+    assert(address_output.str() == "li a1, -1\n");
+    address_output.str({});
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 1);
+    assert(address_output.str() == "sb zero, 0(a2)\n");
+    address_output.str({});
+
+    backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
+        operand::reg("a1", integer), {
+            .operation{"<"},
+            .destination{operand::reg("a2", boolean)},
+        }, {});
+
+    assert(address_output.str() == "slt a2, a0, a1\n");
+    address_output.str({});
+
+    backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
+        operand::reg("a1", integer), {
+            .operation{"=="},
+            .target{"comparison_target"},
+            .branch_on_true{true},
+        }, {});
+
+    assert(address_output.str() == "bne a0, a1, 1f\nj comparison_target\n1:\n");
+    for (const std::string_view operation : {"<", "==", "!="}) {
+        address_output.str({});
+
+        backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
+            operand::imm(operation == "<" ? "7" : "0", integer), {
+                .operation{operation},
+                .destination{operand::reg("a0", boolean)},
+            }, {});
+
+        if (operation == "<") {
+            assert(address_output.str() == "slti a0, a0, 7\n");
+        } else if (operation == "==") {
+            assert(address_output.str() == "sltiu a0, a0, 1\n");
+        } else {
+            assert(address_output.str() == "sltu a0, zero, a0\n");
+        }
+    }
+    address_output.str({});
+
+    backend.compare_and_branch(token{}, 0, operand::reg("a0", byte),
+        operand::imm("255", integer), {
+            .operation{"<"},
+            .destination{operand::reg("a1", boolean)},
+        }, {});
+
+    assert(address_output.str() == "slti a1, a0, -1\n");
+    backend.free_scratch_registers(token{}, 0, address_registers);
+    backend.finish();
+
     std::ostringstream rejected_output;
     backend.use_stream(rejected_output);
     for (const int64_t offset : {INT64_MIN, INT64_C(-4294967296), INT64_C(4294967296), INT64_MAX}) {
@@ -359,7 +465,7 @@ auto main() -> int {
     bool exhausted{};
     try {
         backend.address_of(token{}, 1, operand::reg("a0", integer),
-                           operand::mem("a1", {}, 1, 8196, integer));
+                           operand::mem("a0", {}, 1, 8196, integer));
     } catch (const compiler_exception&) {
         exhausted = true;
     }
@@ -431,6 +537,79 @@ auto main() -> int {
     backend.use_stream(std::cout);
 
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+    size_t comparison_index{};
+    for (const std::string_view operation : {"==", "!=", "<", ">=", ">", "<="}) {
+        for (const bool inverted : {false, true}) {
+            for (const bool branch_on_true : {false, true}) {
+                for (const int32_t right_value : {INT32_MIN, -2049, -2048, -9, -7, 0, 3, 2046, 2047, 2048, INT32_MAX}) {
+                    for (const unsigned mode : {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U}) {
+                        const std::string target{std::format("comparison_{}", comparison_index++)};
+                        bool expected{};
+                        if (operation == "==") {
+                            expected = -7 == right_value;
+                        } else if (operation == "!=") {
+                            expected = -7 != right_value;
+                        } else if (operation == "<") {
+                            expected = -7 < right_value;
+                        } else if (operation == ">=") {
+                            expected = -7 >= right_value;
+                        } else if (operation == ">") {
+                            expected = -7 > right_value;
+                        } else {
+                            expected = -7 <= right_value;
+                        }
+                        expected = expected != inverted;
+                        operand destination;
+                        if (mode == 1 or mode == 4 or mode == 6) {
+                            destination = operand::reg("a0", boolean);
+                        } else if (mode == 2) {
+                            destination = operand::reg("a1", boolean);
+                        } else if (mode == 3 or mode == 5 or mode == 7) {
+                            destination = operand::mem("a2", {}, 1, 8, boolean);
+                        }
+                        std::println("    li a0, -7\n    li a1, {}\n    la a2, buffer\n    sw a0, 0(a2)\n    sw a1, 4(a2)", right_value);
+                        const operand lhs{mode == 5 ? operand::mem("a2", {}, 1, 0, integer) : operand::reg("a0", integer)};
+                        operand rhs{operand::reg("a1", integer)};
+                        if (mode == 5) {
+                            rhs = operand::mem("a2", {}, 1, 4, integer);
+                        } else if (mode >= 6) {
+                            rhs = operand::imm(std::format("{}", right_value), integer);
+                        }
+
+                        backend.compare_and_branch(token{}, 1, lhs, rhs, {
+                            .operation{operation},
+                            .inverted{inverted},
+                            .destination{destination},
+                            .target{mode == 4 ? std::string_view{} : target},
+                            .branch_on_true{branch_on_true},
+                        }, {});
+
+                        if (mode != 4) {
+                            if (expected == branch_on_true) {
+                                std::println("    j failure\n{}:", target);
+                            } else {
+                                std::println("    j {}_done\n{}:\n    j failure\n{}_done:", target, target, target);
+                            }
+                        }
+                        if (not destination.is_empty()) {
+                            backend.copy_value(token{}, 1, operand::reg("a3", integer), destination);
+                            std::println("    li a4, {}\n    beq a3, a4, 1f\n    j failure\n1:", expected ? 1 : 0);
+                        }
+                        backend.finish();
+                    }
+                }
+            }
+        }
+    }
+    for (const size_t count : {size_t{1}, size_t{2}, size_t{3}, size_t{4}}) {
+        std::println("    la a2, buffer\n    li a0, -1\n    sw a0, 0(a2)\n    sw a0, 4(a2)");
+        backend.zero(token{}, 1, operand::mem("a2", {}, 1, 1, byte), count);
+        for (size_t offset{}; offset < 6; ++offset) {
+            const int expected{offset >= 1 and offset <= count ? 0 : 255};
+            std::println("    lbu a0, {}(a2)\n    li a1, {}\n    beq a0, a1, 1f\n    j failure\n1:", offset, expected);
+        }
+        backend.finish();
+    }
     for (const type* value_type : {&integer, &half, &byte, &boolean}) {
         for (const bool memory_destination : {false, true}) {
             for (const int32_t initial : {0, 1, -1, -128, -32768, INT32_MIN}) {
