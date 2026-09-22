@@ -83,7 +83,7 @@ compile_and_build_with_opts() {
 # Common: compile and assemble
 compile_expect_error() {
     set +e
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" $OPTS 2>out
+    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" $OPTS >gen.s 2>out
     local exit_code=$?
     set -e
     if [[ $exit_code -ne 1 ]]; then

@@ -46,12 +46,13 @@ CLI_TARGETS() {
     $BIN --nopt t15.baz >gen.s 2>err
     $BIN --target=x86_64 --nopt t15.baz >out 2>err
     cmp -s gen.s out
-    local exit_code=0
-    $BIN --target=rv32i t15.baz >out 2>err || exit_code=$?
-    [[ $exit_code -eq 1 ]]
-    [[ ! -s out ]]
-    grep -Fxq "todo" err
-    grep -Fxq "panic: RV32I backend not implemented" err
+    $BIN --target=rv32i t482.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Fxq ".option norvc" gen.s
+    grep -Eq '^[[:space:]]*ecall$' gen.s
+    $BIN --target=rv32i --nopt t482.baz >out 2>err
+    [[ ! -s err ]]
+    cmp -s gen.s out
     echo ok
 }
 

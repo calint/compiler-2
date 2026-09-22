@@ -15,6 +15,7 @@
 
 class machine_rv32i final : public machine {
     static constexpr size_t s0_register_index{8};
+    static constexpr size_t data_alignment_{16};
     static constexpr int64_t immediate_min{-2048};
     static constexpr int64_t immediate_max{2047};
 
@@ -99,8 +100,8 @@ class machine_rv32i final : public machine {
 
     template <typename... args_t>
     auto asm_line(const size_t indent,
-                  const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
+                  const std::format_string<args_t...> format,
+                  args_t&&... args) const -> void {
         std::print(os_.get(), "{}", std::string(indent * 4, ' '));
         std::println(os_.get(), format, std::forward<args_t>(args)...);
     }
@@ -295,11 +296,9 @@ class machine_rv32i final : public machine {
         return previous;
     }
 
-    auto comment([[maybe_unused]] const token& src_loc_tk,
-                 [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const std::string_view text)
-        -> void override {
-        todo();
+    auto comment([[maybe_unused]] const token& src_loc_tk, const size_t indent,
+                 const std::string_view text) -> void override {
+        asm_line(indent, "# {}", text);
     }
 
     auto
@@ -471,22 +470,18 @@ class machine_rv32i final : public machine {
         }
     }
 
-    auto comment_variable([[maybe_unused]] const token& src_loc_tk,
-                          [[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const std::string_view text,
-                          [[maybe_unused]] const size_t size_bytes,
+    auto comment_variable(const token& src_loc_tk, const size_t indent,
+                          const std::string_view text, const size_t size_bytes,
                           [[maybe_unused]] const operand& address)
         -> void override {
-        todo();
+        comment(src_loc_tk, indent, "{} ({} B)", text, size_bytes);
     }
 
-    auto comment_alias([[maybe_unused]] const token& src_loc_tk,
-                       [[maybe_unused]] const size_t indent,
-                       [[maybe_unused]] const std::string_view from,
-                       [[maybe_unused]] const std::string_view to,
+    auto comment_alias(const token& src_loc_tk, const size_t indent,
+                       const std::string_view from, const std::string_view to,
                        [[maybe_unused]] const operand& address)
         -> void override {
-        todo();
+        comment(src_loc_tk, indent, "alias {} -> {}", from, to);
     }
 
     auto compare_and_branch([[maybe_unused]] const token& src_loc_tk,
@@ -671,9 +666,9 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto label([[maybe_unused]] const size_t indent,
-               [[maybe_unused]] const std::string_view label) -> void override {
-        todo();
+    auto label(const size_t indent, const std::string_view label)
+        -> void override {
+        asm_line(indent, "{}:", label);
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
@@ -813,9 +808,18 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto program_start() -> void override { todo(); }
+    auto program_start() -> void override {
+        asm_line(0, ".option norvc");
+        asm_line(0, ".option norelax");
+        asm_line(0, ".text");
+        asm_line(0, ".globl _start");
+        label(0, "_start");
+        asm_line(1, "la s0, dat");
+    }
 
-    auto program_end() -> void override { todo(); }
+    auto program_end() -> void override {
+        exit(token{}, 1, operand::imm("0", default_type()));
+    }
 
     auto check_bounds([[maybe_unused]] const token& src_loc_tk,
                       [[maybe_unused]] const size_t indent,
@@ -833,22 +837,28 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    [[nodiscard]] auto data_alignment() const -> size_t override { todo(); }
-
-    auto begin_data([[maybe_unused]] const size_t alignment) -> void override {
-        todo();
+    [[nodiscard]] auto data_alignment() const -> size_t override {
+        return data_alignment_;
     }
 
-    auto reserve_variables([[maybe_unused]] const size_t alignment,
-                           [[maybe_unused]] const size_t size_bytes)
-        -> void override {
-        todo();
+    auto begin_data(const size_t alignment) -> void override {
+        asm_line(0, ".data");
+        asm_line(0, ".balign {}", alignment);
+        label(0, "dat");
     }
 
-    auto emit_data([[maybe_unused]] const size_t element_size_bytes,
-                   [[maybe_unused]] const data_initializer& value)
+    auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
-        todo();
+        label(0, "dat.end");
+        asm_line(0, ".balign {}", alignment);
+        label(0, "vars");
+        asm_line(0, ".zero {}", size_bytes);
+        label(0, "vars.end");
+    }
+
+    auto emit_data(const size_t element_size_bytes,
+                   const data_initializer& value) -> void override {
+        emit_repeated_data(element_size_bytes, 1, value);
     }
 
     auto emit_string_data([[maybe_unused]] const std::string_view value)
@@ -856,17 +866,34 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto emit_zero_data([[maybe_unused]] const size_t size_bytes) const
-        -> void override {
-        todo();
+    auto emit_zero_data(const size_t size_bytes) const -> void override {
+        asm_line(0, ".zero {}", size_bytes);
     }
 
-    auto
-    emit_repeated_data([[maybe_unused]] const size_t element_size_bytes,
-                       [[maybe_unused]] const size_t count,
-                       [[maybe_unused]] const data_initializer& value) const
+    auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
+                            const data_initializer& value) const
         -> void override {
-        todo();
+        std::string_view directive;
+        switch (element_size_bytes) {
+        case 1:
+            directive = ".byte";
+            break;
+
+        case 2:
+            directive = ".half";
+            break;
+
+        case 4:
+            directive = ".word";
+            break;
+
+        default:
+            throw compiler_exception{
+                token{}, "RV32I data elements must be 1, 2, or 4 bytes"};
+        }
+        asm_line(0, ".rept {}", count);
+        asm_line(0, "{} {}{}", directive, value.uops, value.value);
+        asm_line(0, ".endr");
     }
 
     [[nodiscard]] auto register_size_bytes(const std::string_view name) const
@@ -899,10 +926,12 @@ class machine_rv32i final : public machine {
         return operand::reg(register_names_.at(index), value_type);
     }
 
-    auto emit_data_array(
-        [[maybe_unused]] const size_t element_size_bytes,
-        [[maybe_unused]] const std::function_ref<bool(data_initializer&)> next)
+    auto emit_data_array(const size_t element_size_bytes,
+                         const std::function_ref<bool(data_initializer&)> next)
         -> void override {
-        todo();
+        data_initializer value;
+        while (next(value)) {
+            emit_data(element_size_bytes, value);
+        }
     }
 };

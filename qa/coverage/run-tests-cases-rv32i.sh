@@ -1,9 +1,9 @@
 # Temporary RV32I subset of run-tests-cases.sh; uncomment cases as support lands.
-# Runtime cases still require program startup, data emission, and other backend operations.
+# Enabled runtime cases use RUN_NO_CHECKS until RV32I bounds handling is implemented.
 # Explicit i64 and x86 register/syscall cases also need portable fixtures or target support.
 
 # SRC=t1 && EXP=58 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t2 && EXP=1 && RUN # todo: RV32I runtime backend incomplete
+SRC=t2 && EXP=1 && RUN_NO_CHECKS
 # SRC=t3 && EXP=7 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t4 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t5 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
@@ -14,7 +14,7 @@
 # SRC=t10 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t11 && EXP=14 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t12 && EXP=24 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t13 && EXP=2 && RUN # todo: RV32I runtime backend incomplete
+SRC=t13 && EXP=2 && RUN_NO_CHECKS
 # SRC=t14 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t15 && DIFF # todo: x86 registers/syscalls; backend incomplete
 # SRC=t16 && DIFF # todo: x86 registers/syscalls; backend incomplete
@@ -74,7 +74,7 @@
 # SRC=t70 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t71 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t72 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t73 && EXP=5 && RUN # todo: RV32I runtime backend incomplete
+SRC=t73 && EXP=5 && RUN_NO_CHECKS
 # SRC=t74 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t75 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t76 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
@@ -101,9 +101,9 @@
 # SRC=t97 && DIFFINP2 # todo: x86 registers/syscalls; backend incomplete
 # SRC=t98 && EXP=0 && RUN # todo: x86 registers/syscalls; backend incomplete
 # SRC=t99 && DIFFINP2 # todo: x86 registers/syscalls; backend incomplete
-# SRC=t100 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t101 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t102 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t100 && COMPERR
+SRC=t101 && COMPERR
+SRC=t102 && COMPERR
 # SRC=t103 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t104 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t105 && EXP=0 && RUN # todo: explicit i64; backend incomplete
@@ -123,11 +123,11 @@
 # SRC=t119 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t120 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
 # SRC=t121 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
-# SRC=t123 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t124 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t125 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t126 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t127 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t123 && COMPERR
+SRC=t124 && COMPERR
+SRC=t125 && COMPERR
+SRC=t126 && COMPERR
+SRC=t127 && COMPERR
 # SRC=t128 && EXP=0 && RUN # todo: x86 registers/syscalls; backend incomplete
 # SRC=t129 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t130 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
@@ -158,87 +158,87 @@
 # SRC=t155 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t156 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t157 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t161 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t162 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t163 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t164 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t165 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t166 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t161 && COMPERR
+SRC=t162 && COMPERR
+SRC=t163 && COMPERR
+SRC=t164 && COMPERR
+SRC=t165 && COMPERR
+SRC=t166 && COMPERR
 # SRC=t167 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t168 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t169 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t170 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t171 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t172 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t173 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t174 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t168 && COMPERR
+SRC=t169 && COMPERR
+SRC=t170 && COMPERR
+SRC=t171 && COMPERR
+SRC=t172 && COMPERR
+SRC=t173 && COMPERR
+SRC=t174 && COMPERR
 # SRC=t175 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t176 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t176 && COMPERR
 # SRC=t177 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t178 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t179 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 SRC=t180 && COMPERR
-# SRC=t181 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t182 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t181 && COMPERR
+SRC=t182 && COMPERR
 SRC=t183 && COMPERR
 SRC=t184 && COMPERR
-# SRC=t185 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t186 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t185 && COMPERR
+SRC=t186 && COMPERR
 SRC=t188 && COMPERR
 SRC=t189 && COMPERR
-# SRC=t190 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t191 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t192 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t193 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t194 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t195 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t196 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t190 && COMPERR
+SRC=t191 && COMPERR
+SRC=t192 && COMPERR
+SRC=t193 && COMPERR
+SRC=t194 && COMPERR
+SRC=t195 && COMPERR
+SRC=t196 && COMPERR
 SRC=t197 && COMPERR
-# SRC=t198 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t199 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t200 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t201 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t202 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t203 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t198 && COMPERR
+SRC=t199 && COMPERR
+SRC=t200 && COMPERR
+SRC=t201 && COMPERR
+SRC=t202 && COMPERR
+SRC=t203 && COMPERR
 SRC=t204 && COMPERR
-# SRC=t205 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t205 && COMPERR
 SRC=t206 && COMPERR
-# SRC=t207 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t208 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t210 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t207 && COMPERR
+SRC=t208 && COMPERR
+SRC=t210 && COMPERR
 SRC=t211 && COMPERR
 SRC=t212 && COMPERR
 SRC=t213 && COMPERR
 SRC=t214 && COMPERR
 SRC=t215 && COMPERR
 SRC=t216 && COMPERR
-# SRC=t217 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t218 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t219 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t220 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t217 && COMPERR
+SRC=t218 && COMPERR
+SRC=t219 && COMPERR
+SRC=t220 && COMPERR
 # SRC=t221 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t222 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t223 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t224 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t225 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t226 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t227 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t228 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t223 && COMPERR
+SRC=t224 && COMPERR
+SRC=t225 && COMPERR
+SRC=t226 && COMPERR
+SRC=t227 && COMPERR
+SRC=t228 && COMPERR
 SRC=t229 && COMPERR
 SRC=t230 && COMPERR
 SRC=t231 && COMPERR
 SRC=t232 && COMPERR
-# SRC=t233 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t233 && COMPERR
 SRC=t234 && COMPERR
 SRC=t235 && COMPERR
 SRC=t236 && COMPERR
 SRC=t237 && COMPERR
 SRC=t238 && COMPERR
-# SRC=t239 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t239 && COMPERR
 # SRC=t240 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t241 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t242 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t243 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t241 && COMPERR
+SRC=t242 && COMPERR
+SRC=t243 && COMPERR
 # SRC=t245 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t246 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t249 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
@@ -246,31 +246,31 @@ SRC=t238 && COMPERR
 # SRC=t250 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t251 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t252 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t253 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t253 && COMPERR
 SRC=t254 && COMPERR
-# SRC=t255 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t256 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t257 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t258 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t259 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t260 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t261 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t255 && COMPERR
+SRC=t256 && COMPERR
+SRC=t257 && COMPERR
+SRC=t258 && COMPERR
+SRC=t259 && COMPERR
+SRC=t260 && COMPERR
+SRC=t261 && COMPERR
 # SRC=t262 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t263 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t265 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t266 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t267 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t269 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t270 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t265 && COMPERR
+SRC=t266 && COMPERR
+SRC=t267 && COMPERR
+SRC=t269 && COMPERR
+SRC=t270 && COMPERR
 # SRC=t271 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t272 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t273 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t272 && COMPERR
+SRC=t273 && COMPERR
 # SRC=t275 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t277 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t277 && COMPERR
 # SRC=t278 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t279 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t299 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t280 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t280 && COMPERR
 # SRC=t286 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t287 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t289 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
@@ -280,45 +280,45 @@ SRC=t254 && COMPERR
 # SRC=t293 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t294 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t295 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t296 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t298 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t300 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
+SRC=t296 && COMPERR
+SRC=t298 && COMPERR
+SRC=t300 && EXP=0 && RUN_NO_CHECKS
 SRC=t301 && COMPERR
-# SRC=t302 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t303 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t304 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t302 && COMPERR
+SRC=t303 && COMPERR
+SRC=t304 && COMPERR
 SRC=t307 && COMPERR
 # SRC=t308 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t311 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t312 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t312 && COMPERR
 # SRC=t313 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 SRC=t314 && COMPERR
 SRC=t315 && COMPERR
 # SRC=t316 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t317 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t318 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t318 && COMPERR
 SRC=t319 && COMPERR
-# SRC=t320 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t320 && COMPERR
 # SRC=t321 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 SRC=t322 && COMPERR
 SRC=t323 && COMPERR
 # SRC=t324 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t325 && EXP=0 && RUN_NO_CHECKS # todo: explicit i64; backend incomplete
 # SRC=t326 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t327 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t327 && COMPERR
 # SRC=t328 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t329 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t330 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t331 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t332 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t333 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t334 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t334 && COMPERR
 # SRC=t335 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t336 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t337 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t338 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t339 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t340 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t340 && COMPERR
 # SRC=t341 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t342 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t343 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
@@ -350,41 +350,41 @@ SRC=t323 && COMPERR
 # SRC=t372 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t373 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t374 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t375 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t375 && COMPERR
 # SRC=t376 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t377 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t378 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
 # SRC=t379 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
 # SRC=t380 && EXP=255 && RUN_ERR # todo: explicit i64; backend incomplete
-# SRC=t381 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t381 && COMPERR
 SRC=t382 && COMPERR
 SRC=t383 && COMPERR
 # SRC=t384 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t385 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t386 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t385 && COMPERR
+SRC=t386 && COMPERR
 # SRC=t387 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t388 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t389 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t389 && COMPERR
 # SRC=t390 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t391 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t392 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t393 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t391 && COMPERR
+SRC=t392 && COMPERR
+SRC=t393 && COMPERR
 # SRC=t394 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 SRC=t395 && COMPERR
 # SRC=t396 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t397 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t398 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t399 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t397 && COMPERR
+SRC=t398 && COMPERR
+SRC=t399 && COMPERR
 # SRC=t400 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t401 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t402 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t402 && COMPERR
 # SRC=t403 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t404 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t405 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t404 && COMPERR
+SRC=t405 && COMPERR
 # SRC=t406 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t407 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t407 && COMPERR
 # SRC=t408 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t409 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t409 && COMPERR
 # SRC=t410 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t411 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t412 && EXP=0 && RUN # todo: explicit i64; backend incomplete
@@ -393,7 +393,7 @@ SRC=t395 && COMPERR
 # SRC=t415 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t416 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t417 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t421 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t421 && COMPERR
 SRC=t422 && COMPERR
 # SRC=t423 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t427 && EXP=0 && RUN # todo: explicit i64; backend incomplete
@@ -440,22 +440,22 @@ SRC=t422 && COMPERR
 # SRC=t466 && EXP=255 && OPTS="--vars=64 --checks=frame --reproduce-source" RUN # todo: explicit i64; backend incomplete
 # SRC=t467 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t467 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN # todo: explicit i64; backend incomplete
-# SRC=t468 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t469 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t470 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t468 && COMPERR
+SRC=t469 && COMPERR
+SRC=t470 && COMPERR
 # SRC=t471 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t472 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t473 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t474 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t475 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t476 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t472 && COMPERR
+SRC=t473 && COMPERR
+SRC=t474 && COMPERR
+SRC=t475 && COMPERR
+SRC=t476 && COMPERR
 # SRC=t477 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t478 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t479 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
+SRC=t479 && COMPERR
 # SRC=t480 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 # SRC=t481 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
-# SRC=t482 && EXP=42 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t483 && EXP=42 && RUN # todo: RV32I runtime backend incomplete
+SRC=t482 && EXP=42 && RUN_NO_CHECKS
+SRC=t483 && EXP=42 && RUN_NO_CHECKS
 # SRC=t484 && EXP=42 && RUN # todo: RV32I runtime backend incomplete
 SRC=t485 && COMPERR
 # SRC=t486 && DIFFINP # todo: RV32I runtime backend incomplete

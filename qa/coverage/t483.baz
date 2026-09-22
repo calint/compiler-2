@@ -1,7 +1,11 @@
 # copy an i32 scalar and exit with the copied value
 
+dat prefix: i8[3] = {1, 2, 3}
+dat initial: i32 = 42
+dat padding: i8[5]
+
 func main() {
-    var source: i32 = 42
+    var source: i32 = initial
     var destination: i32 = source
     exit(destination)
 }
