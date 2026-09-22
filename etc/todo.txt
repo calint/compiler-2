@@ -1,7 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] rv32i alignment issues
+    => works in qemu for now that does not require alignment
 [ ] move the coverage tests into a subdirectory
+[ ] run-baz.sh switch for rv32i or x86
 [ ] syntax change: 
     func noinline factorial(value i32) result i32 {
     func noinline factorial(value) result { # default type
@@ -16,10 +19,8 @@
      .baz tests 
 [ ] change all array access using [ ] to checked using .at
 [ ] consider removing the need of ':' in function declarations
-[o] rv32i backend
+[x] rv32i backend
 [ ] rv32i constant masks: use shifts where they avoid a scratch register
-[ ] rv32i alignment issues
-    => works in qemu for now that does not require alignment
 [ ]  make the operand the base way of addressing memory with 64 bit offset and
      machine dependent index register scalings then lower the writing and
      reading to machine specific capabilities
