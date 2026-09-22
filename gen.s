@@ -153,7 +153,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_172_5_end:
         if_42_23_172_5_end:
@@ -195,7 +197,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_176_5_end:
         if_42_23_176_5_end:
@@ -234,7 +238,9 @@ main:
 ;                       [36:14] v
 ;                   [36:19] # return code
 ;                   [37:5] syscall()
+                    push r11
                     syscall
+                    pop r11
 ;                   [42:32] free named register rdi
                 exit_42_32_180_9_end:
             if_42_23_180_9_end:
@@ -272,7 +278,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_183_5_end:
         if_42_23_183_5_end:
@@ -391,7 +399,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_190_5_end:
         if_42_23_190_5_end:
@@ -445,7 +455,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_191_5_end:
         if_42_23_191_5_end:
@@ -547,7 +559,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_195_5_end:
         if_42_23_195_5_end:
@@ -674,7 +688,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_199_5_end:
         if_42_23_199_5_end:
@@ -775,7 +791,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_203_5_end:
         if_42_23_203_5_end:
@@ -883,7 +901,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_207_5_end:
         if_42_23_207_5_end:
@@ -961,7 +981,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_210_5_end:
         if_42_23_210_5_end:
@@ -1059,7 +1081,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_216_5_end:
         if_42_23_216_5_end:
@@ -1121,7 +1145,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_217_5_end:
         if_42_23_217_5_end:
@@ -1183,7 +1209,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_225_5_end:
         if_42_23_225_5_end:
@@ -1221,7 +1249,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_226_5_end:
         if_42_23_226_5_end:
@@ -1287,7 +1317,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_229_5_end:
         if_42_23_229_5_end:
@@ -1348,7 +1380,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_234_5_end:
         if_42_23_234_5_end:
@@ -1409,7 +1443,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_238_5_end:
         if_42_23_238_5_end:
@@ -1468,7 +1504,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_242_5_end:
         if_42_23_242_5_end:
@@ -1532,7 +1570,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_246_5_end:
         if_42_23_246_5_end:
@@ -1589,7 +1629,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_249_5_end:
         if_42_23_249_5_end:
@@ -1651,7 +1693,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_252_5_end:
         if_42_23_252_5_end:
@@ -1703,7 +1747,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_255_5_end:
         if_42_23_255_5_end:
@@ -1741,7 +1787,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_256_5_end:
         if_42_23_256_5_end:
@@ -1810,7 +1858,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_262_5_end:
         if_42_23_262_5_end:
@@ -1848,7 +1898,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_263_5_end:
         if_42_23_263_5_end:
@@ -1886,7 +1938,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_264_5_end:
         if_42_23_264_5_end:
@@ -1947,7 +2001,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_268_5_end:
         if_42_23_268_5_end:
@@ -1985,7 +2041,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_269_5_end:
         if_42_23_269_5_end:
@@ -2036,7 +2094,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_272_5_end:
         if_42_23_272_5_end:
@@ -2074,7 +2134,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_273_5_end:
         if_42_23_273_5_end:
@@ -2112,7 +2174,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_274_5_end:
         if_42_23_274_5_end:
@@ -2188,7 +2252,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_280_5_end:
         if_42_23_280_5_end:
@@ -2277,7 +2343,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_283_5_end:
         if_42_23_283_5_end:
@@ -2405,7 +2473,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_287_5_end:
         if_42_23_287_5_end:
@@ -2564,7 +2634,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_297_5_end:
         if_42_23_297_5_end:
@@ -2595,16 +2667,16 @@ main:
 ;       [299:21] 0
         mov r12, 0
 ;       [299:21] bounds check
-;       [299:21] allocate scratch register -> r10
+;       [299:21] allocate scratch register -> r11
 ;       [299:21] line number
-        mov r10, 299
+        mov r11, 299
         test r12, r12
-        cmovs rbp, r10
+        cmovs rbp, r11
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r10
+        cmovge rbp, r11
         jge baz_bounds_panic
-;       [299:21] free scratch register r10
+;       [299:21] free scratch register r11
         shl r12, 6
         add r13, r12
 ;       [299:14] free scratch register r12
@@ -2629,16 +2701,16 @@ main:
 ;       [300:21] 1
         mov r12, 1
 ;       [300:21] bounds check
-;       [300:21] allocate scratch register -> r10
+;       [300:21] allocate scratch register -> r11
 ;       [300:21] line number
-        mov r10, 300
+        mov r11, 300
         test r12, r12
-        cmovs rbp, r10
+        cmovs rbp, r11
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r10
+        cmovge rbp, r11
         jge baz_bounds_panic
-;       [300:21] free scratch register r10
+;       [300:21] free scratch register r11
         shl r12, 6
         add r13, r12
 ;       [300:14] free scratch register r12
@@ -2689,7 +2761,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_298_5_end:
         if_42_23_298_5_end:
@@ -2742,7 +2816,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_305_5_end:
         if_42_23_305_5_end:
@@ -2796,7 +2872,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_306_5_end:
         if_42_23_306_5_end:
@@ -2850,7 +2928,9 @@ main:
 ;                   [36:14] v
 ;               [36:19] # return code
 ;               [37:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [42:32] free named register rdi
             exit_42_32_307_5_end:
         if_42_23_307_5_end:
@@ -2908,7 +2988,9 @@ main:
 ;               [48:14] len
 ;           [48:19] # buffer size
 ;           [49:5] syscall()
+            push r11
             syscall
+            pop r11
 ;           [53:4] free named register rsi
 ;           [53:4] free named register rdx
         sys_print_53_4_311_5_end:
@@ -2964,7 +3046,9 @@ main:
 ;                   [48:14] len
 ;               [48:19] # buffer size
 ;               [49:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [53:4] free named register rsi
 ;               [53:4] free named register rdx
             sys_print_53_4_315_9_end:
@@ -3003,7 +3087,9 @@ main:
 ;                   [48:14] len
 ;               [48:19] # buffer size
 ;               [49:5] syscall()
+                push r11
                 syscall
+                pop r11
 ;               [53:4] free named register rsi
 ;               [53:4] free named register rdx
             sys_print_53_4_316_9_end:
@@ -3033,7 +3119,9 @@ main:
                 mov rdx, 127
 ;           [101:37] # buffer size
 ;           [102:5] syscall()
+            push r11
             syscall
+            pop r11
 ;           [103:5] mov(s.len, rax - 1)
 ;               [103:16] instructions without scratch register 2, with 3
 ;               [103:16] rax
@@ -3093,7 +3181,9 @@ main:
 ;                       [48:14] len
 ;                   [48:19] # buffer size
 ;                   [49:5] syscall()
+                    push r11
                     syscall
+                    pop r11
 ;                   [53:4] free named register rsi
 ;                   [53:4] free named register rdx
                 sys_print_53_4_321_13_end:
@@ -3136,7 +3226,9 @@ main:
 ;                       [48:14] len
 ;                   [48:19] # buffer size
 ;                   [49:5] syscall()
+                    push r11
                     syscall
+                    pop r11
 ;                   [53:4] free named register rsi
 ;                   [53:4] free named register rdx
                 sys_print_53_4_324_13_end:
@@ -3164,7 +3256,9 @@ main:
                     movsx rdx, byte [rbp + 1040]
 ;               [110:34] # buffer size
 ;               [111:5] syscall()
+                push r11
                 syscall
+                pop r11
             str_out_325_13_end:
 ;           [326:13] print(dot)
 ;           [52:6] print(str : i8[])
@@ -3200,7 +3294,9 @@ main:
 ;                       [48:14] len
 ;                   [48:19] # buffer size
 ;                   [49:5] syscall()
+                    push r11
                     syscall
+                    pop r11
 ;                   [53:4] free named register rsi
 ;                   [53:4] free named register rdx
                 sys_print_53_4_326_13_end:
@@ -3239,7 +3335,9 @@ main:
 ;                       [48:14] len
 ;                   [48:19] # buffer size
 ;                   [49:5] syscall()
+                    push r11
                     syscall
+                    pop r11
 ;                   [53:4] free named register rsi
 ;                   [53:4] free named register rdx
                 sys_print_53_4_327_13_end:
@@ -3505,7 +3603,9 @@ print_num:
 ;           [48:14] len
 ;       [48:19] # buffer size
 ;       [49:5] syscall()
+        push r11
         syscall
+        pop r11
 ;       [164:5] free named register rsi
 ;       [164:5] free named register rdx
     sys_print_164_5_end:

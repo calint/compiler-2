@@ -55,7 +55,9 @@ main:
             mov rdi, 1
             exit_42_32_172_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_172_5_end:
         if_42_23_172_5_end:
     assert_172_5_end:
@@ -73,7 +75,9 @@ main:
             mov rdi, 1
             exit_42_32_176_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_176_5_end:
         if_42_23_176_5_end:
     assert_176_5_end:
@@ -89,7 +93,9 @@ main:
                 mov rdi, 1
                 exit_42_32_180_9:
                         mov rax, 60
+                    push r11
                     syscall
+                    pop r11
                 exit_42_32_180_9_end:
             if_42_23_180_9_end:
         assert_180_9_end:
@@ -105,7 +111,9 @@ main:
             mov rdi, 1
             exit_42_32_183_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_183_5_end:
         if_42_23_183_5_end:
     assert_183_5_end:
@@ -159,7 +167,9 @@ main:
             mov rdi, 1
             exit_42_32_190_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_190_5_end:
         if_42_23_190_5_end:
     assert_190_5_end:
@@ -184,7 +194,9 @@ main:
             mov rdi, 1
             exit_42_32_191_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_191_5_end:
         if_42_23_191_5_end:
     assert_191_5_end:
@@ -231,7 +243,9 @@ main:
             mov rdi, 1
             exit_42_32_195_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_195_5_end:
         if_42_23_195_5_end:
     assert_195_5_end:
@@ -291,7 +305,9 @@ main:
             mov rdi, 1
             exit_42_32_199_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_199_5_end:
         if_42_23_199_5_end:
     assert_199_5_end:
@@ -337,7 +353,9 @@ main:
             mov rdi, 1
             exit_42_32_203_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_203_5_end:
         if_42_23_203_5_end:
     assert_203_5_end:
@@ -386,7 +404,9 @@ main:
             mov rdi, 1
             exit_42_32_207_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_207_5_end:
         if_42_23_207_5_end:
     assert_207_5_end:
@@ -422,7 +442,9 @@ main:
             mov rdi, 1
             exit_42_32_210_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_210_5_end:
         if_42_23_210_5_end:
     assert_210_5_end:
@@ -464,7 +486,9 @@ main:
             mov rdi, 1
             exit_42_32_216_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_216_5_end:
         if_42_23_216_5_end:
     assert_216_5_end:
@@ -492,7 +516,9 @@ main:
             mov rdi, 1
             exit_42_32_217_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_217_5_end:
         if_42_23_217_5_end:
     assert_217_5_end:
@@ -515,7 +541,9 @@ main:
             mov rdi, 1
             exit_42_32_225_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_225_5_end:
         if_42_23_225_5_end:
     assert_225_5_end:
@@ -532,7 +560,9 @@ main:
             mov rdi, 1
             exit_42_32_226_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_226_5_end:
         if_42_23_226_5_end:
     assert_226_5_end:
@@ -558,7 +588,9 @@ main:
             mov rdi, 1
             exit_42_32_229_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_229_5_end:
         if_42_23_229_5_end:
     assert_229_5_end:
@@ -581,7 +613,9 @@ main:
             mov rdi, 1
             exit_42_32_234_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_234_5_end:
         if_42_23_234_5_end:
     assert_234_5_end:
@@ -609,7 +643,9 @@ main:
             mov rdi, 1
             exit_42_32_238_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_238_5_end:
         if_42_23_238_5_end:
     assert_238_5_end:
@@ -637,7 +673,9 @@ main:
             mov rdi, 1
             exit_42_32_242_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_242_5_end:
         if_42_23_242_5_end:
     assert_242_5_end:
@@ -660,7 +698,9 @@ main:
             mov rdi, 1
             exit_42_32_246_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_246_5_end:
         if_42_23_246_5_end:
     assert_246_5_end:
@@ -682,7 +722,9 @@ main:
             mov rdi, 1
             exit_42_32_249_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_249_5_end:
         if_42_23_249_5_end:
     assert_249_5_end:
@@ -705,7 +747,9 @@ main:
             mov rdi, 1
             exit_42_32_252_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_252_5_end:
         if_42_23_252_5_end:
     assert_252_5_end:
@@ -726,7 +770,9 @@ main:
             mov rdi, 1
             exit_42_32_255_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_255_5_end:
         if_42_23_255_5_end:
     assert_255_5_end:
@@ -743,7 +789,9 @@ main:
             mov rdi, 1
             exit_42_32_256_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_256_5_end:
         if_42_23_256_5_end:
     assert_256_5_end:
@@ -768,7 +816,9 @@ main:
             mov rdi, 1
             exit_42_32_262_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_262_5_end:
         if_42_23_262_5_end:
     assert_262_5_end:
@@ -785,7 +835,9 @@ main:
             mov rdi, 1
             exit_42_32_263_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_263_5_end:
         if_42_23_263_5_end:
     assert_263_5_end:
@@ -802,7 +854,9 @@ main:
             mov rdi, 1
             exit_42_32_264_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_264_5_end:
         if_42_23_264_5_end:
     assert_264_5_end:
@@ -829,7 +883,9 @@ main:
             mov rdi, 1
             exit_42_32_268_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_268_5_end:
         if_42_23_268_5_end:
     assert_268_5_end:
@@ -846,7 +902,9 @@ main:
             mov rdi, 1
             exit_42_32_269_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_269_5_end:
         if_42_23_269_5_end:
     assert_269_5_end:
@@ -867,7 +925,9 @@ main:
             mov rdi, 1
             exit_42_32_272_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_272_5_end:
         if_42_23_272_5_end:
     assert_272_5_end:
@@ -884,7 +944,9 @@ main:
             mov rdi, 1
             exit_42_32_273_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_273_5_end:
         if_42_23_273_5_end:
     assert_273_5_end:
@@ -901,7 +963,9 @@ main:
             mov rdi, 1
             exit_42_32_274_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_274_5_end:
         if_42_23_274_5_end:
     assert_274_5_end:
@@ -934,7 +998,9 @@ main:
             mov rdi, 1
             exit_42_32_280_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_280_5_end:
         if_42_23_280_5_end:
     assert_280_5_end:
@@ -976,7 +1042,9 @@ main:
             mov rdi, 1
             exit_42_32_283_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_283_5_end:
         if_42_23_283_5_end:
     assert_283_5_end:
@@ -1036,7 +1104,9 @@ main:
             mov rdi, 1
             exit_42_32_287_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_287_5_end:
         if_42_23_287_5_end:
     assert_287_5_end:
@@ -1113,7 +1183,9 @@ main:
             mov rdi, 1
             exit_42_32_297_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_297_5_end:
         if_42_23_297_5_end:
     assert_297_5_end:
@@ -1121,12 +1193,12 @@ main:
         mov rcx, 8
         lea r13, [rbp + 504]
         mov r12, 0
-        mov r10, 299
+        mov r11, 299
         test r12, r12
-        cmovs rbp, r10
+        cmovs rbp, r11
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r10
+        cmovge rbp, r11
         jge baz_bounds_panic
         shl r12, 6
         add r13, r12
@@ -1140,12 +1212,12 @@ main:
         lea rsi, [r13]
         lea r13, [rbp + 504]
         mov r12, 1
-        mov r10, 300
+        mov r11, 300
         test r12, r12
-        cmovs rbp, r10
+        cmovs rbp, r11
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r10
+        cmovge rbp, r11
         jge baz_bounds_panic
         shl r12, 6
         add r13, r12
@@ -1172,7 +1244,9 @@ main:
             mov rdi, 1
             exit_42_32_298_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_298_5_end:
         if_42_23_298_5_end:
     assert_298_5_end:
@@ -1192,7 +1266,9 @@ main:
             mov rdi, 1
             exit_42_32_305_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_305_5_end:
         if_42_23_305_5_end:
     assert_305_5_end:
@@ -1217,7 +1293,9 @@ main:
             mov rdi, 1
             exit_42_32_306_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_306_5_end:
         if_42_23_306_5_end:
     assert_306_5_end:
@@ -1242,7 +1320,9 @@ main:
             mov rdi, 1
             exit_42_32_307_5:
                     mov rax, 60
+                push r11
                 syscall
+                pop r11
             exit_42_32_307_5_end:
         if_42_23_307_5_end:
     assert_307_5_end:
@@ -1257,7 +1337,9 @@ main:
         sys_print_53_4_311_5:
                 mov rax, 1
                 mov rdi, 0
+            push r11
             syscall
+            pop r11
         sys_print_53_4_311_5_end:
     print_311_5_end:
     loop_312_5:
@@ -1274,7 +1356,9 @@ main:
             sys_print_53_4_315_9:
                     mov rax, 1
                     mov rdi, 0
+                push r11
                 syscall
+                pop r11
             sys_print_53_4_315_9_end:
         print_315_9_end:
         print_316_9:
@@ -1283,7 +1367,9 @@ main:
             sys_print_53_4_316_9:
                     mov rax, 1
                     mov rdi, 0
+                push r11
                 syscall
+                pop r11
             sys_print_53_4_316_9_end:
         print_316_9_end:
         str_in_317_9:
@@ -1291,7 +1377,9 @@ main:
                 mov rdi, 0
                 lea rsi, [rbp + 1041]
                 mov rdx, 127
+            push r11
             syscall
+            pop r11
                 mov byte [rbp + 1040], al
                 sub byte [rbp + 1040], 1
         str_in_317_9_end:
@@ -1313,7 +1401,9 @@ main:
                 sys_print_53_4_321_13:
                         mov rax, 1
                         mov rdi, 0
+                    push r11
                     syscall
+                    pop r11
                 sys_print_53_4_321_13_end:
             print_321_13_end:
             jmp loop_312_5
@@ -1325,7 +1415,9 @@ main:
                 sys_print_53_4_324_13:
                         mov rax, 1
                         mov rdi, 0
+                    push r11
                     syscall
+                    pop r11
                 sys_print_53_4_324_13_end:
             print_324_13_end:
             str_out_325_13:
@@ -1333,7 +1425,9 @@ main:
                     mov rdi, 0
                     lea rsi, [rbp + 1041]
                     movsx rdx, byte [rbp + 1040]
+                push r11
                 syscall
+                pop r11
             str_out_325_13_end:
             print_326_13:
                 mov rdx, 1
@@ -1341,7 +1435,9 @@ main:
                 sys_print_53_4_326_13:
                         mov rax, 1
                         mov rdi, 0
+                    push r11
                     syscall
+                    pop r11
                 sys_print_53_4_326_13_end:
             print_326_13_end:
             print_327_13:
@@ -1350,7 +1446,9 @@ main:
                 sys_print_53_4_327_13:
                         mov rax, 1
                         mov rdi, 0
+                    push r11
                     syscall
+                    pop r11
                 sys_print_53_4_327_13_end:
             print_327_13_end:
         if_318_9_end:
@@ -1462,7 +1560,9 @@ print_num:
     sys_print_164_5:
             mov rax, 1
             mov rdi, 0
+        push r11
         syscall
+        pop r11
     sys_print_164_5_end:
     ret
 print_num.size equ 53

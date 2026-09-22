@@ -164,12 +164,11 @@ class machine_x86 final : public machine {
 
     size_t all_registers_initial_count_{all_registers_.size()};
     std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
-                                              "rsi", "rdi", "rbp"};
+                                              "rsi", "rdi", "rbp", "rsp"};
 
     size_t named_registers_initial_count_{named_registers_.size()};
-    std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r12",
-                                                "r13", "r14", "r15"};
-    // note: r11 gets clobbered by syscall
+    std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
+                                                "r12", "r13", "r14", "r15"};
 
     size_t scratch_registers_initial_count_{scratch_registers_.size()};
     bool frame_base_reserved_{};
@@ -394,7 +393,12 @@ class machine_x86 final : public machine {
     }
 
     auto invoke_syscall(const size_t indent) -> void override {
+        const operand saved_register{reg("r11", *default_type_)};
+        // note: syscall clobbers r11
+
+        push(indent, saved_register);
         syscall(indent);
+        pop(indent, saved_register);
     }
 
     auto advance_array_iteration(const size_t indent, const operand& iterator,
@@ -956,13 +960,13 @@ class machine_x86 final : public machine {
 
         println("%macro PUSH_REGS 0");
         for (const std::string_view name : saved_registers) {
-            println("    push {}", name);
+            push(1, reg(name, *default_type_));
         }
         println("%endmacro\n");
         println("%macro POP_REGS 0");
         for (const std::string_view name :
              saved_registers | std::views::reverse) {
-            println("    pop {}", name);
+            pop(1, reg(name, *default_type_));
         }
         println("%endmacro");
         println("\nsection .text\nbits 64\nglobal _start\n_start:\nlea rbp, "
@@ -1642,6 +1646,16 @@ class machine_x86 final : public machine {
 
     auto inc(const size_t indent, const operand& dst) -> void {
         asm_line(indent, "inc {}", format_operand(dst));
+    }
+
+    auto push(const size_t indent, const operand& src) -> void {
+        assert(src.is_register() and src.type_ref().size_bytes() == size_qword);
+        asm_line(indent, "push {}", format_operand(src));
+    }
+
+    auto pop(const size_t indent, const operand& dst) -> void {
+        assert(dst.is_register() and dst.type_ref().size_bytes() == size_qword);
+        asm_line(indent, "pop {}", format_operand(dst));
     }
 
     auto jmp(const size_t indent, const std::string_view label) -> void {
