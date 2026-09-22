@@ -324,6 +324,34 @@ class machine_rv32i final : public machine {
         }
     }
 
+    auto store_constant_result(const token& src_loc_tk, const size_t indent,
+                               const operand& destination,
+                               const int32_t constant) -> void {
+
+        const address_scope scope{*this, destination, operand{}};
+
+        const operand address{
+            destination.is_memory()
+                ? lower_address(src_loc_tk, indent, destination)
+                : operand{}};
+
+        if (destination.is_memory() and constant == 0) {
+
+            store_operation_result(indent, destination, address,
+                                   operand::reg("zero", default_type()), false);
+
+            return;
+        }
+
+        const operand value{
+            destination.is_register()
+                ? destination
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        asm_line(indent, "li {}, {}", value.base_register(), constant);
+        store_operation_result(indent, destination, address, value, false);
+    }
+
     auto binary_operation(const token& src_loc_tk, const size_t indent,
                           const std::string_view instruction,
                           const operand& destination, const operand& src)
@@ -334,6 +362,58 @@ class machine_rv32i final : public machine {
         if (not(destination.is_register() or destination.is_memory())) {
             throw compiler_exception{src_loc_tk,
                                      "invalid RV32I operation destination"};
+        }
+        if (destination.is_memory()) {
+            validate_address(src_loc_tk, destination);
+        }
+        if (src.is_memory()) {
+            validate_address(src_loc_tk, src);
+        }
+        const bool arithmetic{instruction == "add" or instruction == "sub"};
+        const size_t width{destination.type_ref().size_bytes()};
+        std::optional<int32_t> constant{immediate_value(src)};
+        const uint32_t mask{std::numeric_limits<uint32_t>::max() >>
+                            ((4 - width) * 8)};
+        if (constant.has_value()) {
+            uint32_t bits{static_cast<uint32_t>(*constant) & mask};
+            const uint32_t sign{uint32_t{1} << ((width * 8) - 1)};
+            if (destination.type_ref().name() != "bool" and
+                (bits & sign) != 0) {
+                bits |= ~mask;
+            }
+            constant = std::bit_cast<int32_t>(bits);
+            const bool all_bits{(bits & mask) == mask};
+            if ((*constant == 0 and instruction != "and") or
+                (all_bits and instruction == "and")) {
+
+                return;
+            }
+            if ((*constant == 0 and instruction == "and") or
+                (all_bits and instruction == "or")) {
+
+                store_constant_result(src_loc_tk, indent, destination,
+                                      *constant);
+
+                return;
+            }
+        }
+
+        const bool identical{
+            same_memory(destination, src) or
+            (destination.is_register() and src.is_register() and
+             register_index(destination.base_register()) ==
+                 register_index(src.base_register()) and
+             destination.type_ref().name() == src.type_ref().name())};
+
+        if (identical) {
+            if (instruction == "and" or instruction == "or") {
+                return;
+            }
+            if (instruction == "sub" or instruction == "xor") {
+                store_constant_result(src_loc_tk, indent, destination, 0);
+
+                return;
+            }
         }
         const address_scope scope{*this, destination, src};
 
@@ -350,11 +430,8 @@ class machine_rv32i final : public machine {
         if (destination.is_memory()) {
             copy_value(src_loc_tk, indent, left, address);
         }
-        const std::optional<int32_t> constant{immediate_value(src)};
-        const bool arithmetic{instruction == "add" or instruction == "sub"};
         bool normalize{true};
         if (not arithmetic) {
-            const size_t width{destination.type_ref().size_bytes()};
             if (constant.has_value()) {
                 const int64_t limit{
                     static_cast<int64_t>(uint64_t{1} << ((width * 8) - 1))};
@@ -383,6 +460,18 @@ class machine_rv32i final : public machine {
             asm_line(indent, "{}i {}, {}, {}", arithmetic ? "add" : instruction,
                      left.base_register(), left.base_register(), immediate);
 
+        } else if (constant.has_value() and arithmetic and
+                   immediate >= 2 * immediate_min and
+                   immediate <= 2 * immediate_max) {
+
+            const int64_t first{immediate < 0 ? immediate_min : immediate_max};
+
+            asm_line(indent, "addi {}, {}, {}", left.base_register(),
+                     left.base_register(), first);
+
+            asm_line(indent, "addi {}, {}, {}", left.base_register(),
+                     left.base_register(), immediate - first);
+
         } else {
             const bool reuse_left{same_memory(destination, src)};
             operand right{left};
@@ -394,7 +483,12 @@ class machine_rv32i final : public machine {
                                                      default_type());
 
                 if (not src.is_register()) {
-                    copy_value(src_loc_tk, indent, right, src);
+                    if (constant.has_value()) {
+                        asm_line(indent, "li {}, {}", right.base_register(),
+                                 *constant);
+                    } else {
+                        copy_value(src_loc_tk, indent, right, src);
+                    }
                 }
             }
 
@@ -917,6 +1011,24 @@ class machine_rv32i final : public machine {
             throw compiler_exception{src_loc_tk,
                                      "invalid RV32I shift destination"};
         }
+        if (dst.is_memory()) {
+            validate_address(src_loc_tk, dst);
+        }
+        const std::optional<int32_t> constant{immediate_value(count)};
+        const uint32_t shift_count{static_cast<uint32_t>(constant.value_or(0)) &
+                                   31U};
+        const size_t bits{dst.type_ref().size_bytes() * 8};
+        if (constant.has_value()) {
+            if (shift_count == 0) {
+                return;
+            }
+            if (shift_count >= bits and
+                (operation == '<' or dst.type_ref().name() == "bool")) {
+                store_constant_result(src_loc_tk, indent, dst, 0);
+
+                return;
+            }
+        }
         const address_scope scope{*this, dst, count};
         const operand address{dst.is_memory()
                                   ? lower_address(src_loc_tk, indent, dst)
@@ -930,7 +1042,21 @@ class machine_rv32i final : public machine {
         if (dst.is_memory()) {
             copy_value(src_loc_tk, indent, value, address);
         }
-        if (count.is_immediate()) {
+        bool normalize{operation == '<'};
+        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
+        if (constant.has_value() and operation == '<' and
+            bits < register_bits and dst.is_register()) {
+
+            asm_line(indent, "slli {}, {}, {}", value.base_register(),
+                     value.base_register(), register_bits - bits + shift_count);
+
+            asm_line(indent, "{} {}, {}, {}",
+                     dst.type_ref().name() == "bool" ? "srli" : "srai",
+                     value.base_register(), value.base_register(),
+                     register_bits - bits);
+
+            normalize = false;
+        } else if (count.is_immediate()) {
 
             asm_line(indent, "{} {}, {}, (({}) & 31)",
                      operation == '<' ? "slli" : "srai", value.base_register(),
@@ -955,7 +1081,7 @@ class machine_rv32i final : public machine {
                      value.base_register(), value.base_register(),
                      amount.base_register());
         }
-        store_operation_result(indent, dst, address, value, operation == '<');
+        store_operation_result(indent, dst, address, value, normalize);
     }
 
     auto
@@ -1013,23 +1139,40 @@ class machine_rv32i final : public machine {
                const operand& destination) -> void override {
 
         assert(operation == '-' or operation == '~');
+        validate_scalar(token{}, destination.type_ref());
+        if (not(destination.is_register() or destination.is_memory())) {
+            throw compiler_exception{token{},
+                                     "invalid RV32I unary destination"};
+        }
         const address_scope scope{*this, destination, operand{}};
 
-        const operand value{
-            alloc_scratch_register(token{}, indent, destination.type_ref())};
+        const operand address{destination.is_memory()
+                                  ? lower_address(token{}, indent, destination)
+                                  : operand{}};
 
-        copy_value(token{}, indent, value, destination);
+        const operand value{
+            destination.is_register()
+                ? destination
+                : alloc_scratch_register(token{}, indent, default_type())};
+
+        if (destination.is_memory()) {
+            copy_value(token{}, indent, value, address);
+        }
         if (operation == '-') {
 
             asm_line(indent, "sub {}, zero, {}", value.base_register(),
                      value.base_register());
 
         } else {
+            const int mask{destination.type_ref().name() == "bool"
+                               ? std::numeric_limits<uint8_t>::max()
+                               : -1};
 
-            asm_line(indent, "xori {}, {}, -1", value.base_register(),
-                     value.base_register());
+            asm_line(indent, "xori {}, {}, {}", value.base_register(),
+                     value.base_register(), mask);
         }
-        copy_value(token{}, indent, destination, value);
+        store_operation_result(indent, destination, address, value,
+                               operation == '-');
     }
 
     [[nodiscard]] auto
