@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 [ ] consider making a verilog cpu that implements just the subset of x86 used
     instead of a rv32i backend
-    => more register, more scaling of index register in operand
+    => more register, more scalings of index register in operand
 [ ] remove panic_exception
 [ ] consider that what registers might be allocated in a noinline functions can
     be listed thus the call can push/pop just the registers the function uses
