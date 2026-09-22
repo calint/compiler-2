@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # tools:
 #   clang-tidy: 22.1.8
 cd $(dirname "$0")

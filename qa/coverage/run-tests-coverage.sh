@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # tools:
 #   llvm-profdata: 21.1.4
 #        llvm-cov: 21.1.4
