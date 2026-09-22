@@ -29,8 +29,6 @@ dat    str1 : str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
 
-# arguments can be placed in specified register using `reg_...` syntax
-
 # single statement blocks can ommit { ... }
 
 func assert(x : bool) if not x exit(1)
@@ -46,7 +44,7 @@ func fooz(pt : point) {
     pt.y = 0xb     # hex value 11
 }
 
-# default argument type is target-dependent
+# default argument type is i64 on x86_64 and i32 on rv32i
 
 func bar(arg) {
     if arg == 0 return
