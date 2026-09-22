@@ -3,6 +3,7 @@
 
 #include "../../src/decouple_impl.hpp"
 #include "../../src/machine_rv32i.hpp"
+#include "../../src/machine_x86.hpp"
 
 auto main() -> int {
     const type integer64{"i64", 8, true};
@@ -11,6 +12,36 @@ auto main() -> int {
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
+    std::ostringstream x86_output;
+    machine_x86 x86_backend{x86_output, {}};
+    x86_backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
+    for (size_t pass{}; pass < 2; ++pass) {
+        std::vector<operand> registers;
+        for (size_t count{}; count < 8; ++count) {
+            const operand reg{x86_backend.alloc_scratch_register(token{}, 0, integer64)};
+            assert((reg.base_register() == "r11") == (count == 7));
+            registers.push_back(reg);
+        }
+        bool x86_exhausted{};
+        try {
+            static_cast<void>(x86_backend.alloc_scratch_register(token{}, 0, integer64));
+        } catch (const compiler_exception&) {
+            x86_exhausted = true;
+        }
+        assert(x86_exhausted);
+        for (size_t count{}; count < 2; ++count) {
+            x86_backend.free_scratch_register(token{}, 0, registers.back());
+            registers.pop_back();
+        }
+        const operand ordinary{x86_backend.alloc_scratch_register(token{}, 0, integer64)};
+        assert(ordinary.base_register() == "r8");
+        registers.push_back(ordinary);
+        const operand special{x86_backend.alloc_scratch_register(token{}, 0, integer64)};
+        assert(special.base_register() == "r11");
+        registers.push_back(special);
+        x86_backend.free_scratch_registers(token{}, 0, registers);
+        x86_backend.finish();
+    }
     machine_rv32i backend;
     backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
     assert(&backend.default_type() == &integer);
@@ -64,6 +95,10 @@ auto main() -> int {
     backend.free_scratch_registers(token{}, 0, held_registers);
     backend.finish();
     for (const size_t reserved_count : {size_t{}, size_t{1}, size_t{2}}) {
+        for (const std::string_view name : {"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"}) {
+            const operand reg{backend.alloc_named_register(token{}, 0, name, integer)};
+            backend.free_named_register(token{}, 0, reg);
+        }
         if (reserved_count >= 1) {
             backend.reserve_variables_base();
             assert(backend.is_variables_base(operand::reg("fp", integer)));
@@ -79,6 +114,7 @@ auto main() -> int {
             assert(reg.base_register() != "zero" and reg.base_register() != "sp");
             assert(reserved_count == 0 or reg.base_register() != "s0");
             assert(reserved_count != 2 or reg.base_register() != "s1");
+            assert(reg.base_register().starts_with("a") == (count >= 22 - reserved_count));
             assert(backend.allocated_register_type(reg.base_register()) == &integer);
             if (reg.base_register() == "ra") {
                 register_mask |= 1;

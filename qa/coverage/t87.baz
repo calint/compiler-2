@@ -2,21 +2,12 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-func print(len : reg_rdx, ptr : reg_rsi) {
-    mov(rax, 1)   # write system call
-    mov(rdi, 1)   # file descriptor for standard out
-    mov(rsi, ptr) # buffer address 
-    mov(rdx, len) # buffer size
-    syscall()
+func print(len, ptr) {
+    write(1, ptr, len)
 }
 
-func legacy_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
-    mov(rax, 0)   # read system call
-    mov(rdi, 0)   # file descriptor for standard input
-    mov(rsi, ptr) # buffer address
-    mov(rdx, len) # buffer size
-    syscall()
-    mov(nbytes, rax) # return value
+func input(len, ptr) : i64 nbytes {
+    nbytes = read(0, ptr, len)
 }
 
 type location {
@@ -64,7 +55,7 @@ func main() {
 
     var i = 0
     loop {
-      locations[i].name_len = legacy_read(array_size_of(locations[i].name), address_of(locations[i].name))
+      locations[i].name_len = input(array_size_of(locations[i].name), address_of(locations[i].name))
       pn(locations[i].name_len)
       nl()
       print(locations[i].name_len, address_of(locations[i].name))

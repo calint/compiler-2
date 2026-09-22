@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <bitset>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -167,10 +168,10 @@ class machine_x86 final : public machine {
                                               "rsi", "rdi", "rbp", "rsp"};
 
     size_t named_registers_initial_count_{named_registers_.size()};
-    std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
-                                                "r12", "r13", "r14", "r15"};
+    static constexpr std::array<std::string_view, 8> scratch_registers_{
+        "r15", "r14", "r13", "r12", "r10", "r9", "r8", "r11"};
 
-    size_t scratch_registers_initial_count_{scratch_registers_.size()};
+    std::bitset<scratch_registers_.size()> unavailable_scratch_registers_;
     bool frame_base_reserved_{};
     size_t frame_base_pool_index_{};
     std::vector<allocated_register> allocated_registers_;
@@ -259,31 +260,36 @@ class machine_x86 final : public machine {
                                               const type& type_ref)
         -> operand override {
 
-        if (scratch_registers_.empty()) {
-            throw compiler_exception{src_loc_tk,
-                                     "out of scratch registers. try to reduce "
-                                     "expression complexity"};
+        for (size_t index{}; index < scratch_registers_.size(); ++index) {
+            if (unavailable_scratch_registers_.test(index)) {
+                continue;
+            }
+
+            const std::string_view register_name{scratch_registers_.at(index)};
+
+            unavailable_scratch_registers_.set(index);
+
+            comment(src_loc_tk, indent, "allocate scratch register -> {}",
+                    register_name);
+
+            usage_max_scratch_regs_ =
+                std::max(unavailable_scratch_registers_.count(),
+                         usage_max_scratch_regs_);
+
+            allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
+                                              std::string{register_name},
+                                              &type_ref);
+
+            operand result{make_register_operand(register_name, type_ref)};
+
+            result.set_allocation_register(register_name);
+
+            return result;
         }
 
-        std::string register_name{std::move(scratch_registers_.back())};
-        scratch_registers_.pop_back();
-
-        comment(src_loc_tk, indent, "allocate scratch register -> {}",
-                register_name);
-
-        const size_t n{scratch_registers_initial_count_ -
-                       scratch_registers_.size()};
-
-        usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
-
-        allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
-                                          std::move(register_name), &type_ref);
-
-        const std::string& allocated_name{allocated_registers_.back().name};
-        operand result{make_register_operand(allocated_name, type_ref)};
-        result.set_allocation_register(allocated_name);
-
-        return result;
+        throw compiler_exception{src_loc_tk,
+                                 "out of scratch registers. try to reduce "
+                                 "expression complexity"};
     }
 
     [[nodiscard]] auto
@@ -292,7 +298,9 @@ class machine_x86 final : public machine {
                          const type& type_ref) -> operand override {
 
         reserve_named_register(src_loc_tk, indent, register_name, type_ref);
+
         operand result{make_register_operand(register_name, type_ref)};
+
         result.set_allocation_register(register_name);
 
         return result;
@@ -316,8 +324,13 @@ class machine_x86 final : public machine {
 
         assert(allocated_registers_.back().name == reg.allocation_register());
 
-        scratch_registers_.emplace_back(
-            std::move(allocated_registers_.back().name));
+        for (size_t index{}; index < scratch_registers_.size(); ++index) {
+            if (scratch_registers_.at(index) == reg.allocation_register()) {
+                assert(unavailable_scratch_registers_.test(index));
+                unavailable_scratch_registers_.reset(index);
+                break;
+            }
+        }
 
         allocated_registers_.pop_back();
     }
@@ -331,7 +344,7 @@ class machine_x86 final : public machine {
         assert(all_registers_.size() == all_registers_initial_count_);
         assert(allocated_registers_.empty());
         assert(named_registers_.size() == named_registers_initial_count_);
-        assert(scratch_registers_.size() == scratch_registers_initial_count_);
+        assert(unavailable_scratch_registers_.none());
         assert(not frame_base_reserved_);
 
         usage_max_scratch_regs_ = 0;
@@ -893,7 +906,7 @@ class machine_x86 final : public machine {
 
     auto reserve_frame_base() -> void override {
         assert(not frame_base_reserved_);
-        assert(scratch_registers_.size() == scratch_registers_initial_count_);
+        assert(unavailable_scratch_registers_.none());
 
         const auto position{
             std::ranges::find(named_registers_, frame_base_register())};
@@ -911,7 +924,7 @@ class machine_x86 final : public machine {
 
     auto release_frame_base() -> void override {
         assert(frame_base_reserved_);
-        assert(scratch_registers_.size() == scratch_registers_initial_count_);
+        assert(unavailable_scratch_registers_.none());
 
         assert(not allocated_registers_.empty());
         assert(allocated_registers_.back().name == frame_base_register());
@@ -1483,6 +1496,7 @@ class machine_x86 final : public machine {
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
+
             std::string loc;
             for (const allocated_register& allocated : allocated_registers_) {
                 if (allocated.name == reg) {
@@ -1490,6 +1504,7 @@ class machine_x86 final : public machine {
                     break;
                 }
             }
+
             throw compiler_exception{
                 src_loc_tk, std::format("cannot allocate register {} because "
                                         "it was allocated at {}",
@@ -1785,22 +1800,27 @@ class machine_x86 final : public machine {
             return;
         }
 
-        const std::vector<std::string> saved_pool{scratch_registers_};
-        const std::array<const operand*, 2> operands{&dst, &src};
-        std::erase_if(scratch_registers_, [&](const std::string& name) -> bool {
-            return std::ranges::any_of(
-                operands, [&](const operand* value) -> bool {
-                    if (value->is_register() and
-                        sized_register_name(value->base_register(),
-                                            size_qword) == name) {
-                        return true;
-                    }
+        const std::bitset<scratch_registers_.size()> saved_pool{
+            unavailable_scratch_registers_};
 
-                    return value->is_memory() and
-                           (value->base_register() == name or
-                            value->index_register() == name);
-                });
-        });
+        const std::array<const operand*, 2> operands{&dst, &src};
+        for (size_t index{}; index < scratch_registers_.size(); ++index) {
+            const std::string_view name{scratch_registers_.at(index)};
+            if (std::ranges::any_of(
+                    operands, [&](const operand* value) -> bool {
+                        if (value->is_register() and
+                            sized_register_name(value->base_register(),
+                                                size_qword) == name) {
+                            return true;
+                        }
+
+                        return value->is_memory() and
+                               (value->base_register() == name or
+                                value->index_register() == name);
+                    })) {
+                unavailable_scratch_registers_.set(index);
+            }
+        }
 
         std::vector<operand> registers;
         const operand lowered_dst{
@@ -1809,7 +1829,7 @@ class machine_x86 final : public machine {
             lower_address(src_loc_tk, indent, src, registers)};
         emit(lowered_dst, lowered_src);
         free_scratch_registers(src_loc_tk, indent, registers);
-        scratch_registers_ = saved_pool;
+        unavailable_scratch_registers_ = saved_pool;
     }
 
     auto emit_binary(const size_t indent, const std::string_view instruction,

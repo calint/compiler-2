@@ -1,24 +1,15 @@
 dat name:i8[]="............................................................"
 
-func print(len:reg_rdx,ptr:reg_rsi){
-    mov(rax,1)   # write system call
-    mov(rdi,1)   # file descriptor for standard out
-    mov(rsi,ptr) # buffer address 
-    mov(rdx,len) # buffer size
-    syscall()
+func print(len, ptr) {
+    write(1, ptr, len)
 }
 
-func legacy_read(len:reg_rdx,ptr:reg_rsi):i64 nbytes_read{
-    mov(rax,0)    # read system call
-    mov(rdi,0)    # file descriptor for standard input
-    mov(rsi,ptr)  # buffer address
-    mov(rdx,len)  # buffer size
-    syscall()
-    mov(nbytes_read,rax)
+func input(len, ptr) : i64 nbytes_read {
+    nbytes_read = read(0, ptr, len)
 }
 
 func main(){
-    var len=legacy_read(array_size_of(name),address_of(name))-1 # remove the \n
+    var len=input(array_size_of(name),address_of(name))-1 # remove the \n
     print(len,address_of(name))
     exit(0)
 }

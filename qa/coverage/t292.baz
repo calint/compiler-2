@@ -1,9 +1,7 @@
 # hexadecimal string escape decoding
 
-func print(len : reg_rdx, ptr : reg_rsi) {
-    mov(rax, 1)
-    mov(rdi, 1)
-    syscall()
+func print(len, ptr) {
+    write(1, ptr, len)
 }
 
 dat letter : i8[] = "\x41"

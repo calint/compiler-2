@@ -1,11 +1,7 @@
 # non-inline print_num: repeated calls, local arrays and inline syscall helpers
 
-func print(len : reg_rdx, ptr : reg_rsi) {
-    mov(rax, 1)
-    mov(rdi, 1)
-    mov(rsi, ptr)
-    mov(rdx, len)
-    syscall()
+func print(len, ptr) {
+    write(1, ptr, len)
 }
 
 func noinline print_num(num : i64) {

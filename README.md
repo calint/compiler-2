@@ -63,10 +63,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           2815            862           9841
+C/C++ Header                    52           2825            862           9854
 C++                              1             46              7            231
 -------------------------------------------------------------------------------
-SUM:                            53           2861            869          10072
+SUM:                            53           2871            869          10085
 -------------------------------------------------------------------------------
 ```
 
@@ -1465,12 +1465,12 @@ main:
         mov rcx, 8
         lea r13, [rbp + 504]
         mov r12, 0
-        mov r11, 268
+        mov r10, 268
         test r12, r12
-        cmovs rbp, r11
+        cmovs rbp, r10
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r11
+        cmovge rbp, r10
         jge baz_bounds_panic
         shl r12, 6
         add r13, r12
@@ -1484,12 +1484,12 @@ main:
         lea rsi, [r13]
         lea r13, [rbp + 504]
         mov r12, 1
-        mov r11, 269
+        mov r10, 269
         test r12, r12
-        cmovs rbp, r11
+        cmovs rbp, r10
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r11
+        cmovge rbp, r10
         jge baz_bounds_panic
         shl r12, 6
         add r13, r12
@@ -4335,16 +4335,16 @@ main:
 ;       [268:21] 0
         mov r12, 0
 ;       [268:21] bounds check
-;       [268:21] allocate scratch register -> r11
+;       [268:21] allocate scratch register -> r10
 ;       [268:21] line number
-        mov r11, 268
+        mov r10, 268
         test r12, r12
-        cmovs rbp, r11
+        cmovs rbp, r10
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r11
+        cmovge rbp, r10
         jge baz_bounds_panic
-;       [268:21] free scratch register r11
+;       [268:21] free scratch register r10
         shl r12, 6
         add r13, r12
 ;       [268:14] free scratch register r12
@@ -4369,16 +4369,16 @@ main:
 ;       [269:21] 1
         mov r12, 1
 ;       [269:21] bounds check
-;       [269:21] allocate scratch register -> r11
+;       [269:21] allocate scratch register -> r10
 ;       [269:21] line number
-        mov r11, 269
+        mov r10, 269
         test r12, r12
-        cmovs rbp, r11
+        cmovs rbp, r10
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r11
+        cmovge rbp, r10
         jge baz_bounds_panic
-;       [269:21] free scratch register r11
+;       [269:21] free scratch register r10
         shl r12, 6
         add r13, r12
 ;       [269:14] free scratch register r12

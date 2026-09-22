@@ -24,8 +24,8 @@ class machine_rv32i final : public machine {
         "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
     };
     static constexpr std::array<size_t, 30> scratch_registers_{
-        1,  3,  4,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-        20, 21, 22, 23, 24, 25, 26, 27, 5,  6,  7,  28, 29, 30, 31,
+        10, 11, 12, 13, 14, 15, 16, 17, 1, 3, 4, 8,  9,  18, 19,
+        20, 21, 22, 23, 24, 25, 26, 27, 5, 6, 7, 28, 29, 30, 31,
     };
 
     struct allocation {
@@ -279,13 +279,13 @@ class machine_rv32i final : public machine {
                            [[maybe_unused]] const type& t_bool,
                            [[maybe_unused]] const type& t_void)
         -> void override {
+
         type_i32_ = &t_i32;
     }
 
     auto use_stream(std::ostream& new_stream) -> std::ostream& override {
         std::ostream& previous{os_.get()};
         os_ = new_stream;
-
         return previous;
     }
 
@@ -309,6 +309,7 @@ class machine_rv32i final : public machine {
     alloc_scratch_register(const token& src_loc_tk,
                            [[maybe_unused]] const size_t indent,
                            const type& type_ref) -> operand override {
+
         validate_scalar(src_loc_tk, type_ref);
         for (const size_t index : scratch_registers_ | std::views::reverse) {
             const uint32_t mask{uint32_t{1} << index};
@@ -336,6 +337,7 @@ class machine_rv32i final : public machine {
                          [[maybe_unused]] const size_t indent,
                          const std::string_view register_name,
                          const type& type_ref) -> operand override {
+
         validate_scalar(src_loc_tk, type_ref);
         const size_t index{register_index(register_name)};
         const uint32_t mask{register_mask(register_name)};
@@ -365,6 +367,7 @@ class machine_rv32i final : public machine {
     auto free_scratch_register([[maybe_unused]] const token& src_loc_tk,
                                [[maybe_unused]] const size_t indent,
                                const operand& reg) -> void override {
+
         assert(not allocations_.empty());
         const size_t index{register_index(reg.allocation_register())};
         assert(allocations_.back().register_index == index);

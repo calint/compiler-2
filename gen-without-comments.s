@@ -1085,12 +1085,12 @@ main:
         mov rcx, 8
         lea r13, [rbp + 504]
         mov r12, 0
-        mov r11, 268
+        mov r10, 268
         test r12, r12
-        cmovs rbp, r11
+        cmovs rbp, r10
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r11
+        cmovge rbp, r10
         jge baz_bounds_panic
         shl r12, 6
         add r13, r12
@@ -1104,12 +1104,12 @@ main:
         lea rsi, [r13]
         lea r13, [rbp + 504]
         mov r12, 1
-        mov r11, 269
+        mov r10, 269
         test r12, r12
-        cmovs rbp, r11
+        cmovs rbp, r10
         js baz_bounds_panic
         cmp r12, 8
-        cmovge rbp, r11
+        cmovge rbp, r10
         jge baz_bounds_panic
         shl r12, 6
         add r13, r12
