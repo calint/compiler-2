@@ -16,7 +16,7 @@ SRC=t11 && EXP=14 && RUN_NO_CHECKS
 SRC=t12 && EXP=24 && RUN_NO_CHECKS
 SRC=t13 && EXP=2 && RUN_NO_CHECKS
 SRC=t14 && EXP=0 && RUN_NO_CHECKS
-# SRC=t15 && DIFF # todo: x86 registers/syscalls; backend incomplete
+SRC=t15 && DIFF
 # SRC=t16 && DIFF # todo: x86 registers/syscalls; backend incomplete
 # SRC=t17 && DIFF # todo: x86 registers/syscalls; backend incomplete
 # SRC=t18 && DIFF # todo: x86 registers/syscalls; backend incomplete
@@ -97,7 +97,7 @@ SRC=t73 && EXP=5 && RUN_NO_CHECKS
 # SRC=t93 && DIFFINP2 # todo: x86 registers/syscalls; backend incomplete
 SRC=t94 && EXP=0 && RUN_NO_CHECKS
 SRC=t95 && EXP=0 && RUN_NO_CHECKS
-# SRC=t96 && DIFF # todo: x86 registers/syscalls; backend incomplete
+SRC=t96 && DIFF
 # SRC=t97 && DIFFINP2 # todo: x86 registers/syscalls; backend incomplete
 # SRC=t98 && EXP=0 && RUN # todo: x86 registers/syscalls; backend incomplete
 # SRC=t99 && DIFFINP2 # todo: x86 registers/syscalls; backend incomplete
@@ -275,8 +275,8 @@ SRC=t280 && COMPERR
 # SRC=t287 && COMPERR # todo: RV32I diagnostic differs or backend is incomplete
 SRC=t289 && EXP=0 && RUN_NO_CHECKS
 # SRC=t290 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t291 && DIFF # todo: x86 registers/syscalls; backend incomplete
-# SRC=t292 && DIFF # todo: x86 registers/syscalls; backend incomplete
+SRC=t291 && DIFF
+SRC=t292 && DIFF
 SRC=t293 && COMPERR
 SRC=t294 && EXP=0 && RUN_NO_CHECKS
 SRC=t295 && COMPERR

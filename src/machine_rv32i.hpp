@@ -1203,8 +1203,8 @@ class machine_rv32i final : public machine {
                    syscall_write);
     }
 
-    auto invoke_syscall([[maybe_unused]] const size_t indent) -> void override {
-        todo();
+    auto invoke_syscall(const size_t indent) -> void override {
+        asm_line(indent, "ecall");
     }
 
     auto
@@ -1939,9 +1939,84 @@ class machine_rv32i final : public machine {
         emit_repeated_data(element_size_bytes, 1, value);
     }
 
-    auto emit_string_data([[maybe_unused]] const std::string_view value)
-        -> void override {
-        todo();
+    auto emit_string_data(const std::string_view value) -> void override {
+        for (size_t offset{}; offset < value.size(); ++offset) {
+            unsigned char byte{static_cast<unsigned char>(value[offset])};
+            if (byte == '\\') {
+                ++offset;
+                if (offset == value.size()) {
+                    throw compiler_exception{token{},
+                                             "incomplete string escape"};
+                }
+                switch (value[offset]) {
+                case '0':
+                    byte = 0;
+                    break;
+
+                case 'a':
+                    byte = '\a';
+                    break;
+
+                case 'b':
+                    byte = '\b';
+                    break;
+
+                case 't':
+                    byte = '\t';
+                    break;
+
+                case 'n':
+                    byte = '\n';
+                    break;
+
+                case 'v':
+                    byte = '\v';
+                    break;
+
+                case 'f':
+                    byte = '\f';
+                    break;
+
+                case 'r':
+                    byte = '\r';
+                    break;
+
+                case 'e':
+                    byte = '\x1b';
+                    break;
+
+                case '\\':
+                case '\'':
+                case '"':
+                case '`':
+                    byte = static_cast<unsigned char>(value[offset]);
+                    break;
+
+                case 'x': {
+                    const std::string_view digits{value.substr(offset + 1, 2)};
+                    unsigned int decoded{};
+                    const std::from_chars_result parsed{std::from_chars(
+                        std::to_address(digits.begin()),
+                        std::to_address(digits.end()), decoded, 16)};
+
+                    if (digits.size() != 2 or parsed.ec != std::errc{} or
+                        parsed.ptr != std::to_address(digits.end())) {
+                        throw compiler_exception{token{},
+                                                 "string hex escape requires "
+                                                 "two hexadecimal digits"};
+                    }
+                    byte = static_cast<unsigned char>(decoded);
+                    offset += 2;
+                    break;
+                }
+
+                default:
+                    throw compiler_exception{token{},
+                                             "unsupported RV32I string escape"};
+                }
+            }
+            asm_line(0, ".byte {}", static_cast<unsigned int>(byte));
+        }
     }
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {

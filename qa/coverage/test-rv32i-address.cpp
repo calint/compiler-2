@@ -13,6 +13,31 @@ auto main(const int argc, const char* argv[]) -> int {
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
+    if (argc > 1 and std::string_view{argv[1]} == "strings-syscall") {
+        const std::string_view source{R"baz(
+dat text : i8[] = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
+func main() {
+    mov(a0, 1)
+    mov(a1, address_of(text))
+    mov(a2, array_size_of(text))
+    mov(a7, 64)
+    syscall()
+    if a0 != 20 exit(1)
+    mov(a0, -1)
+    mov(a7, 64)
+    syscall()
+    if a0 != -9 exit(2)
+    mov(a0, 0)
+    mov(a7, 93)
+    syscall()
+}
+)baz"};
+        machine_rv32i compiler;
+        program prg{compiler, source, 4096, false, false, false};
+        prg.build(std::cout);
+
+        return 0;
+    }
     if (argc > 1) {
         machine_rv32i bounds_backend;
         bounds_backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
@@ -185,6 +210,26 @@ auto main(const int argc, const char* argv[]) -> int {
 
     std::ostringstream shift_output;
     backend.use_stream(shift_output);
+    backend.invoke_syscall(1);
+    assert(shift_output.str() == "    ecall\n");
+    shift_output.str({});
+    backend.emit_string_data({});
+    assert(shift_output.str().empty());
+    backend.emit_string_data(R"baz(\0\a\b\t\n\v\f\r\e\"\'`\\\x00\x7F\x80\xff\x41B)baz");
+    assert(shift_output.str() == ".byte 0\n.byte 7\n.byte 8\n.byte 9\n.byte 10\n.byte 11\n.byte 12\n.byte 13\n.byte 27\n.byte 34\n.byte 39\n.byte 96\n.byte 92\n.byte 0\n.byte 127\n.byte 128\n.byte 255\n.byte 65\n.byte 66\n");
+    shift_output.str({});
+    backend.emit_string_data("\xc3\xa9\n");
+    assert(shift_output.str() == ".byte 195\n.byte 169\n.byte 10\n");
+    for (const std::string_view text : {"\\", "\\x", "\\x1", "\\xGG", "\\q"}) {
+        bool rejected{};
+        try {
+            backend.emit_string_data(text);
+        } catch (const compiler_exception&) {
+            rejected = true;
+        }
+        assert(rejected);
+    }
+    shift_output.str({});
     std::vector<operand> shift_registers;
     for (size_t count{}; count < 30; ++count) {
         shift_registers.push_back(backend.alloc_scratch_register(token{}, 0, integer));

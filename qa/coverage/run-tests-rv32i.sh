@@ -57,3 +57,12 @@ for mode in bounds-matrix bounds-silent; do
     test ! -s "$TEST_DIR/err"
 done
 printf 'rv32i address lowering: ok\n'
+printf 'rv32i strings and raw syscalls: compiling and executing\n'
+"$TEST_DIR/generate" strings-syscall > "$TEST_DIR/strings.s"
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
+    "$TEST_DIR/strings.s" -o "$TEST_DIR/strings.o"
+ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/strings" "$TEST_DIR/strings.o"
+qemu-riscv32 "$TEST_DIR/strings" > "$TEST_DIR/output"
+printf '\101\000\007\010\011\012\013\014\015\033\042\047\140\134\000\177\200\377\101\102' > "$TEST_DIR/expected"
+cmp "$TEST_DIR/output" "$TEST_DIR/expected"
+printf 'rv32i strings and raw syscalls: ok\n'
