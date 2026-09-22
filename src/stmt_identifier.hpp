@@ -444,12 +444,14 @@ class stmt_identifier : public statement {
                 x.address_of(src_loc_tk, indent, index_reg, lea);
             } else {
                 x.copy_value(src_loc_tk, indent, index_reg,
-                             x.reg(lea.base_register(), tc.get_type_default()));
+                             x.make_register_operand(lea.base_register(),
+                                                     tc.get_type_default()));
             }
 
             return index_reg;
         }
 
-        return tc.machine().reg(base_register, tc.get_type_default());
+        return tc.machine().make_register_operand(base_register,
+                                                  tc.get_type_default());
     }
 };

@@ -442,8 +442,9 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    [[nodiscard]] auto reg([[maybe_unused]] const std::string_view name,
-                           [[maybe_unused]] const type& value_type) const
+    [[nodiscard]] auto
+    make_register_operand([[maybe_unused]] const std::string_view name,
+                          [[maybe_unused]] const type& value_type) const
         -> operand override {
         todo();
     }

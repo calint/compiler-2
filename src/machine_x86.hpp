@@ -280,7 +280,7 @@ class machine_x86 final : public machine {
                                           std::move(register_name), &type_ref);
 
         const std::string& allocated_name{allocated_registers_.back().name};
-        operand result{reg(allocated_name, type_ref)};
+        operand result{make_register_operand(allocated_name, type_ref)};
         result.set_allocation_register(allocated_name);
 
         return result;
@@ -292,7 +292,7 @@ class machine_x86 final : public machine {
                          const type& type_ref) -> operand override {
 
         reserve_named_register(src_loc_tk, indent, register_name, type_ref);
-        operand result{reg(register_name, type_ref)};
+        operand result{make_register_operand(register_name, type_ref)};
         result.set_allocation_register(register_name);
 
         return result;
@@ -393,7 +393,8 @@ class machine_x86 final : public machine {
     }
 
     auto invoke_syscall(const size_t indent) -> void override {
-        const operand saved_register{reg("r11", *default_type_)};
+        const operand saved_register{
+            make_register_operand("r11", *default_type_)};
         // note: syscall clobbers r11
 
         push(indent, saved_register);
@@ -422,9 +423,12 @@ class machine_x86 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
             reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
 
-            lea(indent, machine_x86::reg("rsi", *type_i64_), src);
-            lea(indent, machine_x86::reg("rdi", *type_i64_), dst);
-            mov(src_loc_tk, indent, machine_x86::reg("rcx", *type_i64_),
+            lea(indent, machine_x86::make_register_operand("rsi", *type_i64_),
+                src);
+            lea(indent, machine_x86::make_register_operand("rdi", *type_i64_),
+                dst);
+            mov(src_loc_tk, indent,
+                machine_x86::make_register_operand("rcx", *type_i64_),
                 immediate(size_bytes));
 
             rep_movs(indent, 'b');
@@ -473,21 +477,24 @@ class machine_x86 final : public machine {
     auto set_array_copy_source(const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, machine_x86::reg("rsi", *type_i64_), address);
+        lea(indent, machine_x86::make_register_operand("rsi", *type_i64_),
+            address);
     }
 
     auto set_array_copy_destination(const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, machine_x86::reg("rdi", *type_i64_), address);
+        lea(indent, machine_x86::make_register_operand("rdi", *type_i64_),
+            address);
     }
 
     auto end_array_copy(const token& src_loc_tk, const size_t indent,
                         const size_t element_size_bytes) -> void override {
 
-        scale_by_element_size_bytes(src_loc_tk, indent,
-                                    machine_x86::reg("rcx", *type_i64_),
-                                    element_size_bytes);
+        scale_by_element_size_bytes(
+            src_loc_tk, indent,
+            machine_x86::make_register_operand("rcx", *type_i64_),
+            element_size_bytes);
 
         rep_movs(indent, 'b');
         release_bulk_registers(src_loc_tk, indent);
@@ -502,13 +509,15 @@ class machine_x86 final : public machine {
     auto set_memory_equal_left(const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, machine_x86::reg("rsi", *type_i64_), address);
+        lea(indent, machine_x86::make_register_operand("rsi", *type_i64_),
+            address);
     }
 
     auto set_memory_equal_right(const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, machine_x86::reg("rdi", *type_i64_), address);
+        lea(indent, machine_x86::make_register_operand("rdi", *type_i64_),
+            address);
     }
 
     auto end_memory_equal(const token& src_loc_tk, const size_t indent,
@@ -527,7 +536,8 @@ class machine_x86 final : public machine {
             size_suffix = 'w';
             count /= size_word;
         }
-        mov(src_loc_tk, indent, machine_x86::reg("rcx", *type_i64_),
+        mov(src_loc_tk, indent,
+            machine_x86::make_register_operand("rcx", *type_i64_),
             immediate(count));
         repe_cmps(indent, size_suffix);
         release_bulk_registers(src_loc_tk, indent);
@@ -538,9 +548,10 @@ class machine_x86 final : public machine {
                           const size_t element_size_bytes, const operand& dst)
         -> void override {
 
-        scale_by_element_size_bytes(src_loc_tk, indent,
-                                    machine_x86::reg("rcx", *type_i64_),
-                                    element_size_bytes);
+        scale_by_element_size_bytes(
+            src_loc_tk, indent,
+            machine_x86::make_register_operand("rcx", *type_i64_),
+            element_size_bytes);
 
         repe_cmps(indent, 'b');
         release_bulk_registers(src_loc_tk, indent);
@@ -554,10 +565,12 @@ class machine_x86 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
             reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
             reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
-            xor_op(indent, machine_x86::reg("al", *type_i8_),
-                   machine_x86::reg("al", *type_i8_));
-            lea(indent, machine_x86::reg("rdi", *type_i64_), dst);
-            mov(src_loc_tk, indent, machine_x86::reg("rcx", *type_i64_),
+            xor_op(indent, machine_x86::make_register_operand("al", *type_i8_),
+                   machine_x86::make_register_operand("al", *type_i8_));
+            lea(indent, machine_x86::make_register_operand("rdi", *type_i64_),
+                dst);
+            mov(src_loc_tk, indent,
+                machine_x86::make_register_operand("rcx", *type_i64_),
                 immediate(size_bytes));
             rep_stos(indent, 'b');
             release_named_register(src_loc_tk, indent, "rcx");
@@ -717,7 +730,8 @@ class machine_x86 final : public machine {
         assert(operation == '/' or operation == '%');
 
         reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
-        mov(src_loc_tk, indent, machine_x86::reg("rax", *type_i64_), dst);
+        mov(src_loc_tk, indent,
+            machine_x86::make_register_operand("rax", *type_i64_), dst);
 
         reserve_named_register(src_loc_tk, indent, "rdx", *default_type_);
         asm_line(indent, "cqo");
@@ -735,7 +749,8 @@ class machine_x86 final : public machine {
         }
 
         mov(src_loc_tk, indent, dst,
-            machine_x86::reg(operation == '/' ? "rax" : "rdx", *type_i64_));
+            machine_x86::make_register_operand(operation == '/' ? "rax" : "rdx",
+                                               *type_i64_));
 
         release_named_register(src_loc_tk, indent, "rdx");
         release_named_register(src_loc_tk, indent, "rax");
@@ -806,10 +821,12 @@ class machine_x86 final : public machine {
     auto exit_process(const token& src_loc_tk, const size_t indent,
                       const int32_t exit_code) -> void override {
 
-        mov(src_loc_tk, indent, machine_x86::reg("rdi", *type_i64_),
+        mov(src_loc_tk, indent,
+            machine_x86::make_register_operand("rdi", *type_i64_),
             immediate(exit_code));
 
-        mov(src_loc_tk, indent, machine_x86::reg("rax", *type_i64_),
+        mov(src_loc_tk, indent,
+            machine_x86::make_register_operand("rax", *type_i64_),
             immediate(syscall_exit));
 
         syscall(indent);
@@ -900,8 +917,9 @@ class machine_x86 final : public machine {
         assert(frame_address.base_register() != "rsp");
 
         asm_line(indent, "PUSH_REGS");
-        lea(indent, reg(frame_base_register(), *default_type_), frame_address,
-            true);
+        lea(indent,
+            make_register_operand(frame_base_register(), *default_type_),
+            frame_address, true);
 
         asm_line(indent, "call {}", label);
         asm_line(indent, "POP_REGS");
@@ -960,13 +978,13 @@ class machine_x86 final : public machine {
 
         println("%macro PUSH_REGS 0");
         for (const std::string_view name : saved_registers) {
-            push(1, reg(name, *default_type_));
+            push(1, make_register_operand(name, *default_type_));
         }
         println("%endmacro\n");
         println("%macro POP_REGS 0");
         for (const std::string_view name :
              saved_registers | std::views::reverse) {
-            pop(1, reg(name, *default_type_));
+            pop(1, make_register_operand(name, *default_type_));
         }
         println("%endmacro");
         println("\nsection .text\nbits 64\nglobal _start\n_start:\nlea rbp, "
@@ -1007,7 +1025,8 @@ class machine_x86 final : public machine {
         if (options.lower) {
             test(indent, reg_to_check, reg_to_check);
             if (options.with_line) {
-                cmovs(indent, machine_x86::reg("rbp", *type_i64_),
+                cmovs(indent,
+                      machine_x86::make_register_operand("rbp", *type_i64_),
                       reg_line_num);
             }
             jcc(indent, "s", "baz_bounds_panic");
@@ -1027,7 +1046,8 @@ class machine_x86 final : public machine {
             }
             if (options.with_line) {
                 op(src_loc_tk, indent, std::format("cmov{}", comparison),
-                   machine_x86::reg("rbp", *type_i64_), reg_line_num);
+                   machine_x86::make_register_operand("rbp", *type_i64_),
+                   reg_line_num);
             }
             jcc(indent, comparison, "baz_bounds_panic");
         }
@@ -1207,8 +1227,10 @@ class machine_x86 final : public machine {
         return nullptr;
     }
 
-    [[nodiscard]] auto reg(const std::string_view name,
-                           const type& value_type) const -> operand override {
+    [[nodiscard]] auto make_register_operand(const std::string_view name,
+                                             const type& value_type) const
+        -> operand override {
+
         const size_t size_bytes{register_size_bytes(name)};
         if (size_bytes == 0) {
             throw std::invalid_argument{"unknown register"};
@@ -1227,7 +1249,8 @@ class machine_x86 final : public machine {
                                       const size_t size_bytes) const
         -> operand {
 
-        return reg(name, builtin_type_for_size_bytes(size_bytes));
+        return make_register_operand(name,
+                                     builtin_type_for_size_bytes(size_bytes));
     }
 
     [[nodiscard]] auto sized_register(const operand& reg,

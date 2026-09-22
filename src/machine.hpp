@@ -283,8 +283,9 @@ class machine {
     allocated_register_type(const std::string_view name) const
         -> const type* = 0;
 
-    [[nodiscard]] virtual auto reg(const std::string_view name,
-                                   const type& value_type) const -> operand = 0;
+    [[nodiscard]] virtual auto
+    make_register_operand(const std::string_view name,
+                          const type& value_type) const -> operand = 0;
 
     virtual auto
     emit_data_array(const size_t element_size_bytes,

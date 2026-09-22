@@ -1261,7 +1261,8 @@ class toc final {
                 type_ptr = &builtin_type_for_size_bytes(reg_size_bytes);
             }
 
-            const operand reg{machine_.get().reg(id.str(), *type_ptr)};
+            const operand reg{
+                machine_.get().make_register_operand(id.str(), *type_ptr)};
 
             return ident_info::make_register(ident, reg);
         }
