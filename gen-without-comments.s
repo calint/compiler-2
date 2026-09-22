@@ -1265,7 +1265,7 @@ main:
         lea r15, [rbp + 1032]
         mov qword [rbp + 1168], r15
         PUSH_REGS
-        lea r12, [rbp + 1168]
+        lea rbx, [rbp + 1168]
         call print_num
         POP_REGS
         print_315_9:
@@ -1360,33 +1360,33 @@ main:
     mov rdi, 0
     syscall
 print_num:
-    mov qword [r12 + 8], 0
-    mov qword [r12 + 16], 0
-    mov dword [r12 + 24], 0
-    mov r15, qword [r12]
+    mov qword [rbx + 8], 0
+    mov qword [rbx + 16], 0
+    mov dword [rbx + 24], 0
+    mov r15, qword [rbx]
     mov r14, qword [r15]
-    mov qword [r12 + 28], r14
-    mov byte [r12 + 36], 0
+    mov qword [rbx + 28], r14
+    mov byte [rbx + 36], 0
     if_136_8:
     cmp_136_8:
-    cmp qword [r12 + 28], 0
+    cmp qword [rbx + 28], 0
     jge if_136_5_end
     if_136_8_code:
-        mov byte [r12 + 36], 1
-        neg qword [r12 + 28]
+        mov byte [rbx + 36], 1
+        neg qword [rbx + 28]
     if_136_5_end:
-    mov qword [r12 + 37], 20
+    mov qword [rbx + 37], 20
     loop_142_5:
-        sub qword [r12 + 37], 1
-        mov qword [r12 + 45], 48
-        mov r15, qword [r12 + 28]
+        sub qword [rbx + 37], 1
+        mov qword [rbx + 45], 48
+        mov r15, qword [rbx + 28]
         mov rax, r15
         cqo
         mov r14, 10
         idiv r14
         mov r15, rdx
-        add qword [r12 + 45], r15
-        mov r15, qword [r12 + 37]
+        add qword [rbx + 45], r15
+        mov r15, qword [rbx + 37]
         mov r14, 146
         test r15, r15
         cmovs rbp, r14
@@ -1394,16 +1394,16 @@ print_num:
         cmp r15, 20
         cmovge rbp, r14
         jge baz_bounds_panic
-        mov r14b, byte [r12 + 45]
-        mov byte [r12 + r15 + 8], r14b
-        mov rax, qword [r12 + 28]
+        mov r14b, byte [rbx + 45]
+        mov byte [rbx + r15 + 8], r14b
+        mov rax, qword [rbx + 28]
         cqo
         mov r15, 10
         idiv r15
-        mov qword [r12 + 28], rax
+        mov qword [rbx + 28], rax
         if_148_12:
         cmp_148_12:
-        cmp qword [r12 + 28], 0
+        cmp qword [rbx + 28], 0
         jne if_148_9_end
         if_148_12_code:
             jmp loop_142_5_end
@@ -1412,11 +1412,11 @@ print_num:
     loop_142_5_end:
     if_151_8:
     cmp_151_8:
-    cmp byte [r12 + 36], 0
+    cmp byte [rbx + 36], 0
     je if_151_5_end
     if_151_8_code:
-        sub qword [r12 + 37], 1
-        mov r15, qword [r12 + 37]
+        sub qword [rbx + 37], 1
+        mov r15, qword [rbx + 37]
         mov r14, 153
         test r15, r15
         cmovs rbp, r14
@@ -1424,11 +1424,11 @@ print_num:
         cmp r15, 20
         cmovge rbp, r14
         jge baz_bounds_panic
-        mov byte [r12 + r15 + 8], 45
+        mov byte [rbx + r15 + 8], 45
     if_151_5_end:
-    mov qword [r12 + 45], 0
+    mov qword [rbx + 45], 0
     loop_157_5:
-        mov r15, qword [r12 + 45]
+        mov r15, qword [rbx + 45]
         mov r14, 158
         test r15, r15
         cmovs rbp, r14
@@ -1436,7 +1436,7 @@ print_num:
         cmp r15, 20
         cmovge rbp, r14
         jge baz_bounds_panic
-        mov r14, qword [r12 + 37]
+        mov r14, qword [rbx + 37]
         mov r13, 158
         test r14, r14
         cmovs rbp, r13
@@ -1444,21 +1444,21 @@ print_num:
         cmp r14, 20
         cmovge rbp, r13
         jge baz_bounds_panic
-        mov r13b, byte [r12 + r14 + 8]
-        mov byte [r12 + r15 + 8], r13b
-        add qword [r12 + 45], 1
-        add qword [r12 + 37], 1
+        mov r13b, byte [rbx + r14 + 8]
+        mov byte [rbx + r15 + 8], r13b
+        add qword [rbx + 45], 1
+        add qword [rbx + 37], 1
         if_161_12:
         cmp_161_12:
-        cmp qword [r12 + 37], 20
+        cmp qword [rbx + 37], 20
         jne if_161_9_end
         if_161_12_code:
             jmp loop_157_5_end
         if_161_9_end:
     jmp loop_157_5
     loop_157_5_end:
-    mov rdx, qword [r12 + 45]
-    lea rsi, [r12 + 8]
+    mov rdx, qword [rbx + 45]
+    lea rsi, [rbx + 8]
     sys_print_164_5:
             mov rax, 1
             mov rdi, 0

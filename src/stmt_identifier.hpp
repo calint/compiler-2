@@ -231,21 +231,21 @@ class stmt_identifier : public statement {
         //       needs to be added to reach the variable's storage. it is
         //       compile-time bookkeeping, not a flag in the generated code.
         //
-        //       rbp is the base for root/global storage; r12 is the base of
+        //       rbp is the base for root/global storage; rbx is the base of
         //       the current non-inline frame. despite its name, stack_idx is
         //       an offset in that storage, not an offset from rsp. inline
         //       calls use the surrounding storage base, not a new frame base.
         //
         //       for a direct variable at offset 24, starting with rbp alone
-        //       does not yet include the 24. the same applies to r12:
+        //       does not yet include the 24. the same applies to rbx:
         //         rbp + 24 -> variable in root storage
-        //         r12 + 24 -> variable in the current non-inline frame
+        //         rbx + 24 -> variable in the current non-inline frame
         //       the flag starts true when there is no existing lea and the
         //       variable is not pointer-backed, even when stack_idx is zero.
         //
         //       there are two ways to include this pending offset:
-        //         [r12 + index * 4 + 24] -> fold it into the final operand
-        //         lea scratch, [r12 + 24] -> include it in a working register
+        //         [rbx + index * 4 + 24] -> fold it into the final operand
+        //         lea scratch, [rbx + 24] -> include it in a working register
         //       the first path returns the operand immediately. the second
         //       clears the flag so later address calculations do not add 24
         //       again. the final non-indexed path also adds it if still
@@ -255,13 +255,13 @@ class stmt_identifier : public statement {
         //       its storage offset must not be added again. for a
         //       pointer-backed variable, stack_idx locates the pointer slot,
         //       not the object:
-        //         mov scratch, [r12 + 24] -> load the object's address
+        //         mov scratch, [rbx + 24] -> load the object's address
         //       the load below uses the slot offset once; adding it to the
         //       loaded pointer would address the wrong part of the object.
         //
         //       accum_offset separately tracks field offsets within the object;
         //       array indices add scaled element offsets. those still apply
-        //       whether the object came from rbp, r12, a lea, or a loaded
+        //       whether the object came from rbp, rbx, a lea, or a loaded
         //       pointer.
 
         bool storage_offset_pending{lea.is_empty() and

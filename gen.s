@@ -2927,7 +2927,7 @@ main:
         mov qword [rbp + 1168], r15
 ;       [314:9] free scratch register r15
         PUSH_REGS
-        lea r12, [rbp + 1168]
+        lea rbx, [rbp + 1168]
         call print_num
         POP_REGS
 ;       [315:9] print(colon)
@@ -3255,64 +3255,64 @@ main:
 ; 
 ;[131:15] noinline print_num(num)
 print_num:
-;   [131:25] num: i64 (8 B @ [r12])
+;   [131:25] num: i64 (8 B @ [rbx])
 ;   [132:5] var buf : i8[20]
-;   [132:9] buf: i8[20] (20 B @ [r12 + 8])
+;   [132:9] buf: i8[20] (20 B @ [rbx + 8])
 ;   [132:9] zero 20 * 1 B = 20 B
 ;   [132:5] size <= 32 B, use mov
-    mov qword [r12 + 8], 0
-    mov qword [r12 + 16], 0
-    mov dword [r12 + 24], 0
+    mov qword [rbx + 8], 0
+    mov qword [rbx + 16], 0
+    mov dword [rbx + 24], 0
 ;   [133:5] var n = num
-;   [133:9] n: i64 (8 B @ [r12 + 28])
+;   [133:9] n: i64 (8 B @ [rbx + 28])
 ;   [133:9] n = num
 ;   [133:13] num
 ;   [133:13] allocate scratch register -> r15
-    mov r15, qword [r12]
+    mov r15, qword [rbx]
 ;   [133:13] allocate scratch register -> r14
     mov r14, qword [r15]
-    mov qword [r12 + 28], r14
+    mov qword [rbx + 28], r14
 ;   [133:13] free scratch register r14
 ;   [133:13] free scratch register r15
 ;   [134:5] var is_negative : bool = false
-;   [134:9] is_negative: bool (1 B @ [r12 + 36])
+;   [134:9] is_negative: bool (1 B @ [rbx + 36])
 ;   [134:9] is_negative = false
-    mov byte [r12 + 36], 0
+    mov byte [rbx + 36], 0
     if_136_8:
 ;   [136:8] ? n < 0
 ;   [136:8] ? n < 0
     cmp_136_8:
-    cmp qword [r12 + 28], 0
+    cmp qword [rbx + 28], 0
     jge if_136_5_end
     if_136_8_code:
 ;       [137:9] is_negative = true
-        mov byte [r12 + 36], 1
+        mov byte [rbx + 36], 1
 ;       [138:9] n = -n
 ;       [138:14] -n
-        neg qword [r12 + 28]
+        neg qword [rbx + 28]
     if_136_5_end:
 ;   [141:5] var i = 20
-;   [141:9] i: i64 (8 B @ [r12 + 37])
+;   [141:9] i: i64 (8 B @ [rbx + 37])
 ;   [141:9] i = 20
 ;   [141:13] 20
-    mov qword [r12 + 37], 20
+    mov qword [rbx + 37], 20
 ;   [142:5] label
     loop_142_5:
 ;       [143:9] i = i - 1
 ;       [143:13] instructions without scratch register 1, with 3
 ;       [143:13] i
 ;       [143:17] i - 1
-        sub qword [r12 + 37], 1
+        sub qword [rbx + 37], 1
 ;       [144:9] var ascii = 48 + (n % 10)
-;       [144:13] ascii: i64 (8 B @ [r12 + 45])
+;       [144:13] ascii: i64 (8 B @ [rbx + 45])
 ;       [144:13] ascii = 48 + (n % 10)
 ;       [144:21] instructions without scratch register 8, with 9
 ;       [144:21] 48
-        mov qword [r12 + 45], 48
+        mov qword [rbx + 45], 48
 ;       [144:27] ascii + (n % 10)
 ;       [144:27] allocate scratch register -> r15
 ;       [144:27] n
-        mov r15, qword [r12 + 28]
+        mov r15, qword [rbx + 28]
 ;       [144:31] r15 % 10
 ;       [144:31] div const
 ;       [144:31] allocate named register rax
@@ -3326,14 +3326,14 @@ print_num:
         mov r15, rdx
 ;       [144:31] free named register rdx
 ;       [144:31] free named register rax
-        add qword [r12 + 45], r15
+        add qword [rbx + 45], r15
 ;       [144:27] free scratch register r15
 ;       [145:9] # note: not buf[i] = 48 + ... because expression will be executed as byte sized and n overflows
 ;       [146:9] buf[i] = ascii
 ;       [146:9] allocate scratch register -> r15
 ;       [146:13] set array index
 ;       [146:13] i
-        mov r15, qword [r12 + 37]
+        mov r15, qword [rbx + 37]
 ;       [146:13] bounds check
 ;       [146:13] allocate scratch register -> r14
 ;       [146:13] line number
@@ -3347,8 +3347,8 @@ print_num:
 ;       [146:13] free scratch register r14
 ;       [146:18] ascii
 ;       [146:18] allocate scratch register -> r14
-        mov r14b, byte [r12 + 45]
-        mov byte [r12 + r15 + 8], r14b
+        mov r14b, byte [rbx + 45]
+        mov byte [rbx + r15 + 8], r14b
 ;       [146:18] free scratch register r14
 ;       [146:9] free scratch register r15
 ;       [147:9] n = n / 10
@@ -3357,21 +3357,21 @@ print_num:
 ;       [147:17] n / 10
 ;       [147:17] div const
 ;       [147:17] allocate named register rax
-        mov rax, qword [r12 + 28]
+        mov rax, qword [rbx + 28]
 ;       [147:17] allocate named register rdx
         cqo
 ;       [147:17] allocate scratch register -> r15
         mov r15, 10
         idiv r15
 ;       [147:17] free scratch register r15
-        mov qword [r12 + 28], rax
+        mov qword [rbx + 28], rax
 ;       [147:17] free named register rdx
 ;       [147:17] free named register rax
         if_148_12:
 ;       [148:12] ? n == 0
 ;       [148:12] ? n == 0
         cmp_148_12:
-        cmp qword [r12 + 28], 0
+        cmp qword [rbx + 28], 0
         jne if_148_9_end
         if_148_12_code:
 ;           [148:19] break
@@ -3383,19 +3383,19 @@ print_num:
 ;   [151:8] ? is_negative
 ;   [151:8] ? is_negative
     cmp_151_8:
-    cmp byte [r12 + 36], 0
+    cmp byte [rbx + 36], 0
     je if_151_5_end
     if_151_8_code:
 ;       [152:9] i = i - 1
 ;       [152:13] instructions without scratch register 1, with 3
 ;       [152:13] i
 ;       [152:17] i - 1
-        sub qword [r12 + 37], 1
+        sub qword [rbx + 37], 1
 ;       [153:9] buf[i] = 45
 ;       [153:9] allocate scratch register -> r15
 ;       [153:13] set array index
 ;       [153:13] i
-        mov r15, qword [r12 + 37]
+        mov r15, qword [rbx + 37]
 ;       [153:13] bounds check
 ;       [153:13] allocate scratch register -> r14
 ;       [153:13] line number
@@ -3408,21 +3408,21 @@ print_num:
         jge baz_bounds_panic
 ;       [153:13] free scratch register r14
 ;       [153:18] 45
-        mov byte [r12 + r15 + 8], 45
+        mov byte [rbx + r15 + 8], 45
 ;       [153:9] free scratch register r15
     if_151_5_end:
 ;   [156:5] var write_pos = 0
-;   [156:9] write_pos: i64 (8 B @ [r12 + 45])
+;   [156:9] write_pos: i64 (8 B @ [rbx + 45])
 ;   [156:9] write_pos = 0
 ;   [156:21] 0
-    mov qword [r12 + 45], 0
+    mov qword [rbx + 45], 0
 ;   [157:5] label
     loop_157_5:
 ;       [158:9] buf[write_pos] = buf[i]
 ;       [158:9] allocate scratch register -> r15
 ;       [158:13] set array index
 ;       [158:13] write_pos
-        mov r15, qword [r12 + 45]
+        mov r15, qword [rbx + 45]
 ;       [158:13] bounds check
 ;       [158:13] allocate scratch register -> r14
 ;       [158:13] line number
@@ -3438,7 +3438,7 @@ print_num:
 ;       [158:26] allocate scratch register -> r14
 ;       [158:30] set array index
 ;       [158:30] i
-        mov r14, qword [r12 + 37]
+        mov r14, qword [rbx + 37]
 ;       [158:30] bounds check
 ;       [158:30] allocate scratch register -> r13
 ;       [158:30] line number
@@ -3451,8 +3451,8 @@ print_num:
         jge baz_bounds_panic
 ;       [158:30] free scratch register r13
 ;       [158:26] allocate scratch register -> r13
-        mov r13b, byte [r12 + r14 + 8]
-        mov byte [r12 + r15 + 8], r13b
+        mov r13b, byte [rbx + r14 + 8]
+        mov byte [rbx + r15 + 8], r13b
 ;       [158:26] free scratch register r13
 ;       [158:26] free scratch register r14
 ;       [158:9] free scratch register r15
@@ -3460,17 +3460,17 @@ print_num:
 ;       [159:21] instructions without scratch register 1, with 3
 ;       [159:21] write_pos
 ;       [159:33] write_pos + 1
-        add qword [r12 + 45], 1
+        add qword [rbx + 45], 1
 ;       [160:9] i = i + 1
 ;       [160:13] instructions without scratch register 1, with 3
 ;       [160:13] i
 ;       [160:17] i + 1
-        add qword [r12 + 37], 1
+        add qword [rbx + 37], 1
         if_161_12:
 ;       [161:12] ? i == 20
 ;       [161:12] ? i == 20
         cmp_161_12:
-        cmp qword [r12 + 37], 20
+        cmp qword [rbx + 37], 20
         jne if_161_9_end
         if_161_12_code:
 ;           [161:20] break
@@ -3480,12 +3480,12 @@ print_num:
     loop_157_5_end:
 ;   [164:5] sys_print(write_pos, address_of(buf))
 ;   [164:15] allocate named register rdx
-    mov rdx, qword [r12 + 45]
+    mov rdx, qword [rbx + 45]
 ;   [164:26] allocate named register rsi
 ;   [164:26] rsi = address_of(buf)
 ;   [164:26] = expression
 ;   [164:26] address_of(buf)
-    lea rsi, [r12 + 8]
+    lea rsi, [rbx + 8]
 ;   [44:6] sys_print(len : reg_rdx, ptr : reg_rsi)
     sys_print_164_5:
 ;       [164:5] alias len -> rdx

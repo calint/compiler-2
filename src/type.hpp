@@ -79,7 +79,7 @@ class type final {
 
         size_t offset{};
         bool is_array{var.is_array};
-        size_t array_count{var.array_count};
+        size_t array_count{var.array_len};
 
         const type* tp{this};
         for (const std::string& field_name : path | std::views::drop(1)) {
@@ -94,20 +94,20 @@ class type final {
             type_path.emplace_back(tp);
         }
 
-        const int32_t stack_idx{
-            var.reg.is_empty() ? var.stack_idx + static_cast<int32_t>(offset)
-                               : static_cast<int32_t>(offset)};
+        const int32_t idx{var.reg.is_empty()
+                              ? var.offset + static_cast<int32_t>(offset)
+                              : static_cast<int32_t>(offset)};
 
         const std::string_view storage_base{
             var.base_register.empty() ? base_register : var.base_register};
 
         const operand op{operand::mem(
             var.reg.is_empty() ? storage_base : var.reg.base_register(), "", 1,
-            stack_idx, *tp)};
+            idx, *tp)};
 
         return ident_info::make_var(std::string{ident}, path,
-                                    std::move(type_path), op, stack_idx,
-                                    array_count, is_array, var.is_pointer);
+                                    std::move(type_path), op, idx, array_count,
+                                    is_array, var.is_pointer);
     }
 
     [[nodiscard]] auto

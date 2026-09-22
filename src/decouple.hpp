@@ -139,11 +139,11 @@ struct var_info {
     std::string name;
     const type* type_ptr{};
     token src_loc_tk; // token for position in the source
-    int32_t stack_idx{};
+    int32_t offset{}; // location offset from base register
     bool is_array{};
     bool is_pointer{};
-    size_t array_count{};
-    operand reg;
+    size_t array_len{};
+    operand reg; // variable location is in register
     std::string_view base_register;
 };
 
@@ -212,8 +212,8 @@ struct ident_info {
     [[nodiscard]] static auto
     make_var(std::string ident, std::vector<std::string> elem_path,
              std::vector<const type*> type_path, const ::operand& op,
-             const int32_t stack_idx, const size_t array_count,
-             const bool is_array, const bool is_pointer = {}) -> ident_info {
+             const int32_t offset, const size_t array_len, const bool is_array,
+             const bool is_pointer = {}) -> ident_info {
 
         assert(not ident.empty());
         assert(not elem_path.empty());
@@ -227,8 +227,8 @@ struct ident_info {
             .type_path{std::move(type_path)},
             .lea_path{lea_count, ::operand{}},
             .operand{op},
-            .offset{stack_idx},
-            .array_len{array_count},
+            .offset{offset},
+            .array_len{array_len},
             .is_array{is_array},
             .is_pointer{is_pointer},
             .kind{kind::VAR},

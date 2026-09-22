@@ -79,7 +79,7 @@ class stmt_def_var final : public statement {
             .type_ptr{&tp},
             .src_loc_tk{name_tk_},
             .is_array{is_array_},
-            .array_count{array_count_},
+            .array_len{array_count_},
             .reg{},
             .base_register{},
         };
@@ -138,7 +138,7 @@ class stmt_def_var final : public statement {
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
             .is_array{is_array_},
-            .array_count{array_count_},
+            .array_len{array_count_},
             .reg{},
             .base_register{},
         };

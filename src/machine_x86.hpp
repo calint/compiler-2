@@ -850,7 +850,7 @@ class machine_x86 final : public machine {
 
     [[nodiscard]] auto frame_base_register() const
         -> std::string_view override {
-        return "r12";
+        return "rbx";
     }
 
     auto reserve_frame_base() -> void override {
@@ -858,13 +858,13 @@ class machine_x86 final : public machine {
         assert(scratch_registers_.size() == scratch_registers_initial_count_);
 
         const auto position{
-            std::ranges::find(scratch_registers_, frame_base_register())};
+            std::ranges::find(named_registers_, frame_base_register())};
 
-        assert(position != scratch_registers_.end());
+        assert(position != named_registers_.end());
         frame_base_pool_index_ =
-            static_cast<size_t>(position - scratch_registers_.begin());
+            static_cast<size_t>(position - named_registers_.begin());
 
-        scratch_registers_.erase(position);
+        named_registers_.erase(position);
         allocated_registers_.emplace_back(
             "", std::string{frame_base_register()}, default_type_);
 
@@ -873,14 +873,13 @@ class machine_x86 final : public machine {
 
     auto release_frame_base() -> void override {
         assert(frame_base_reserved_);
-        assert(scratch_registers_.size() + 1 ==
-               scratch_registers_initial_count_);
+        assert(scratch_registers_.size() == scratch_registers_initial_count_);
 
         assert(not allocated_registers_.empty());
         assert(allocated_registers_.back().name == frame_base_register());
 
-        scratch_registers_.insert(
-            scratch_registers_.begin() +
+        named_registers_.insert(
+            named_registers_.begin() +
                 static_cast<std::vector<std::string>::difference_type>(
                     frame_base_pool_index_),
             std::move(allocated_registers_.back().name));

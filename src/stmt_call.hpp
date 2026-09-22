@@ -229,9 +229,9 @@ class stmt_call : public expression {
         // example: caller uses 24 bytes; callee returns a value and takes one
         // argument
         //
-        // r12      +------------------------+
+        // rbx      +------------------------+
         //          | caller's storage       | 24 bytes
-        // r12 + 24 +------------------------+ <- frame_address; callee's r12
+        // rbx + 24 +------------------------+ <- frame_address; callee's rbx
         //          | result address         | 8 bytes
         //          +------------------------+
         //          | argument address       | 8 bytes
@@ -239,7 +239,7 @@ class stmt_call : public expression {
         //          | callee's locals        |
         //          +------------------------+
         //
-        // root calls use rbp instead of r12 as the base
+        // root calls use rbp instead of rbx as the base
         const operand frame_address{tc.next_frame_address()};
 
         x.check_frame_capacity(

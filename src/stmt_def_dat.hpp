@@ -105,7 +105,7 @@ class stmt_def_dat final : public statement {
             .type_ptr{&tp},
             .src_loc_tk{name_tk_},
             .is_array{is_array},
-            .array_count{array_count},
+            .array_len{array_count},
             .reg{},
             .base_register{},
         };
@@ -178,7 +178,7 @@ class stmt_def_dat final : public statement {
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
             .is_array{elroot_.is_array},
-            .array_count{elroot_.array_count},
+            .array_len{elroot_.array_count},
             .reg{},
             .base_register{},
         };

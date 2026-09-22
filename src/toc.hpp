@@ -425,7 +425,7 @@ class toc final {
         const size_t var_size_bytes{
             var.is_pointer ? get_type_default().size_bytes()
                            : var.type_ptr->size_bytes() *
-                                 (var.is_array ? var.array_count : 1)};
+                                 (var.is_array ? var.array_len : 1)};
 
         if (not is_dat and not vars_entry_gap_applied_) {
             frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
@@ -445,7 +445,7 @@ class toc final {
             }
         }
 
-        var.stack_idx = static_cast<int32_t>(vars_size_bytes_);
+        var.offset = static_cast<int32_t>(vars_size_bytes_);
 
         if (not is_dat) {
             size_t local_size_bytes{};
@@ -453,7 +453,7 @@ class toc final {
                 local_size_bytes += frm.allocated_stack_size_bytes();
                 if (not frm.storage_base_register().empty()) {
                     var.base_register = frm.storage_base_register();
-                    var.stack_idx = static_cast<int32_t>(local_size_bytes);
+                    var.offset = static_cast<int32_t>(local_size_bytes);
                     frm.record_storage_size_bytes(local_size_bytes +
                                                   var_size_bytes);
 
@@ -480,8 +480,8 @@ class toc final {
         std::string text{
             std::format("{}: {}", var.name, name_info.type_ref().name())};
 
-        if (var.array_count) {
-            text += std::format("[{}]", var.array_count);
+        if (var.array_len) {
+            text += std::format("[{}]", var.array_len);
         }
         if (not var.reg.is_empty()) {
             x.comment(src_loc_tk, indent, "{} ({})", text,
