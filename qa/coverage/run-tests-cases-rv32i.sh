@@ -1,5 +1,5 @@
 # Temporary RV32I subset of run-tests-cases.sh; uncomment cases as support lands.
-# Enabled runtime cases use RUN_NO_CHECKS until RV32I bounds handling is implemented.
+# Runtime cases are promoted from RUN_NO_CHECKS as checked paths are validated.
 # Explicit i64 and x86 register/syscall cases also need portable fixtures or target support.
 
 # SRC=t1 && EXP=58 && RUN # todo: RV32I runtime backend incomplete
@@ -121,8 +121,8 @@ SRC=t102 && COMPERR
 SRC=t117 && EXP=0 && RUN_NO_CHECKS
 SRC=t118 && EXP=0 && RUN_NO_CHECKS
 # SRC=t119 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t120 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
-# SRC=t121 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
+SRC=t120 && EXP=255 && RUN_ERR
+SRC=t121 && EXP=255 && RUN_ERR
 SRC=t123 && COMPERR
 SRC=t124 && COMPERR
 SRC=t125 && COMPERR
@@ -130,9 +130,9 @@ SRC=t126 && COMPERR
 SRC=t127 && COMPERR
 # SRC=t128 && EXP=0 && RUN # todo: x86 registers/syscalls; backend incomplete
 # SRC=t129 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t130 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t131 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t132 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
+SRC=t130 && EXP=0 && RUN
+SRC=t131 && EXP=0 && RUN
+SRC=t132 && EXP=0 && RUN
 # SRC=t133 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t134 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t135 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
@@ -326,8 +326,8 @@ SRC=t340 && COMPERR
 # SRC=t345 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
 # SRC=t346 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
 # SRC=t347 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
-# SRC=t348 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower,line" # todo: RV32I runtime backend incomplete
-# SRC=t349 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=upper,line" # todo: RV32I runtime backend incomplete
+SRC=t348 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower,line"
+SRC=t349 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=upper,line"
 # SRC=t350 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete
 # SRC=t351 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t352 && EXP=255 && RUN_ERR # todo: RV32I runtime backend incomplete

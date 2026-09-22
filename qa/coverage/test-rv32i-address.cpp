@@ -6,13 +6,59 @@
 #include "../../src/machine_x86.hpp"
 #include "../../src/program.hpp"
 
-auto main() -> int {
+auto main(const int argc, const char* argv[]) -> int {
     const type integer64{"i64", 8, true};
     const type integer{"i32", 4, true};
     const type half{"i16", 2, true};
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
+    if (argc > 1) {
+        machine_rv32i bounds_backend;
+        bounds_backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
+        bounds_backend.use_stream(std::cout);
+        std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+        if (std::string_view{argv[1]} == "bounds-silent") {
+            std::println("    li a0, -1");
+            bounds_backend.check_bounds(token{}, 1, operand::reg("a0", integer), 4, false, {},
+                                        {.upper{true}, .lower{true}, .with_line{}});
+            bounds_backend.program_end();
+            bounds_backend.emit_bounds_failure_handler(false);
+        } else {
+            const operand continuation{bounds_backend.alloc_named_register(token{}, 0, "s3", integer)};
+            size_t case_index{};
+            for (const bool upper : {false, true}) {
+                for (const bool lower : {false, true}) {
+                    for (const bool allow_end : {false, true}) {
+                        for (const uint32_t size : {0U, 4U, uint32_t{INT32_MAX}, UINT32_MAX}) {
+                            for (const int32_t index : {INT32_MIN, -1, 0, 3, 4, 5, INT32_MAX}) {
+                                for (const int32_t count : {INT32_MIN, -1, 0, 1, 4, INT32_MAX}) {
+                                    for (const bool slice : {false, true}) {
+                                        const int64_t top{int64_t{index} + (slice ? count : 0)};
+                                        const bool expected{(lower and index < 0) or
+                                            (upper and (allow_end ? top > size : top >= size))};
+                                        std::println("    li a0, {}\n    li a1, {}\n    la s3, bounds_result_{}", index, count, case_index);
+                                        bounds_backend.check_bounds(token{}, 1, operand::reg("a0", integer), size, allow_end,
+                                            slice ? operand::reg("a1", integer) : operand{},
+                                            {.upper{upper}, .lower{lower}, .with_line{}});
+                                        std::println("    li a3, 0\nbounds_result_{}:\n    li a4, {}\n    beq a3, a4, 1f\n    j bounds_failure\n1:", case_index++, expected ? 1 : 0);
+                                        std::println("    li a4, {}\n    beq a0, a4, 1f\n    j bounds_failure\n1:\n    li a4, {}\n    beq a1, a4, 1f\n    j bounds_failure\n1:", index, count);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            bounds_backend.free_named_register(token{}, 0, continuation);
+            bounds_backend.program_end();
+            std::println("baz_bounds_panic:\n    li a3, 1\n    jr s3\nbounds_failure:");
+            bounds_backend.exit(token{}, 1, operand::imm("1", integer));
+        }
+        bounds_backend.finish();
+
+        return 0;
+    }
     std::ostringstream x86_output;
     machine_x86 x86_backend{x86_output, {}};
     x86_backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
@@ -983,6 +1029,14 @@ auto main() -> int {
     std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
     backend.divide(token{}, 1, '/', operand::reg("a0", integer), operand::imm("0", integer));
     backend.exit(token{}, 1, operand::imm("0", integer));
+    for (const uint32_t line : {0U, 9U, 123U, UINT32_MAX}) {
+        std::println(".globl bounds_line_{}\nbounds_line_{}:\n    li a0, -1", line, line);
+        const token location{{}, 0, {}, 0, {}, line, false};
+        backend.check_bounds(location, 1, operand::reg("a0", integer), 4, false, {},
+                             {.upper{true}, .lower{true}, .with_line{true}});
+        backend.exit(token{}, 1, operand::imm("0", integer));
+    }
+    backend.emit_bounds_failure_handler(true);
     std::println("failure:\n    li a0, 1\n    li a7, 93\n    ecall");
     backend.begin_data(4);
     std::println("buffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");

@@ -1793,20 +1793,125 @@ class machine_rv32i final : public machine {
         exit(token{}, 1, operand::imm("0", default_type()));
     }
 
-    auto check_bounds([[maybe_unused]] const token& src_loc_tk,
-                      [[maybe_unused]] const size_t indent,
-                      [[maybe_unused]] const operand& reg_to_check,
-                      [[maybe_unused]] const size_t array_count,
-                      [[maybe_unused]] const bool allow_end,
-                      [[maybe_unused]] const operand& reg_count,
-                      [[maybe_unused]] const bounds_check_options& options)
-        -> void override {
-        todo();
+    auto check_bounds(const token& src_loc_tk, const size_t indent,
+                      const operand& reg_to_check, const size_t array_count,
+                      const bool allow_end, const operand& reg_count,
+                      const bounds_check_options& options) -> void override {
+        if (not options.upper and not options.lower) {
+            return;
+        }
+        if (array_count > std::numeric_limits<uint32_t>::max() or
+            src_loc_tk.at_line() > std::numeric_limits<uint32_t>::max()) {
+            throw compiler_exception{src_loc_tk,
+                                     "bounds check exceeds RV32I range"};
+        }
+        const address_scope scope{*this, reg_to_check, reg_count};
+        const std::string_view index{reg_to_check.base_register()};
+        comment(src_loc_tk, indent, "bounds check");
+        if (options.lower) {
+            asm_line(indent, "bltz {}, 1f", index);
+        }
+        if (options.upper) {
+            const operand limit{
+                alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+            std::string_view top{index};
+            if (not reg_count.is_empty()) {
+                const operand sum{
+                    alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+                const operand high{
+                    alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+                top = sum.base_register();
+                asm_line(indent, "srai {}, {}, 31", high.base_register(),
+                         index);
+                asm_line(indent, "srai {}, {}, 31", limit.base_register(),
+                         reg_count.base_register());
+                asm_line(indent, "add {}, {}, {}", high.base_register(),
+                         high.base_register(), limit.base_register());
+                asm_line(indent, "add {}, {}, {}", top, index,
+                         reg_count.base_register());
+                asm_line(indent, "sltu {}, {}, {}", limit.base_register(), top,
+                         index);
+                asm_line(indent, "add {}, {}, {}", high.base_register(),
+                         high.base_register(), limit.base_register());
+                asm_line(indent, "bltz {}, 2f", high.base_register());
+                asm_line(indent, "bgtz {}, 1f", high.base_register());
+            } else {
+                asm_line(indent, "bltz {}, 2f", index);
+            }
+            asm_line(indent, "li {}, {}", limit.base_register(), array_count);
+            if (allow_end) {
+                asm_line(indent, "bltu {}, {}, 1f", limit.base_register(), top);
+            } else {
+                asm_line(indent, "bgeu {}, {}, 1f", top, limit.base_register());
+            }
+        }
+        asm_line(indent, "j 2f");
+        asm_line(indent, "1:");
+        if (options.with_line) {
+            asm_line(indent, "li a0, {}", src_loc_tk.at_line());
+        }
+        asm_line(indent, "j baz_bounds_panic");
+        asm_line(indent, "2:");
     }
 
-    auto emit_bounds_failure_handler([[maybe_unused]] const bool with_line)
-        -> void override {
-        todo();
+    auto emit_bounds_failure_handler(const bool with_line) -> void override {
+        constexpr std::string_view message{"panic: bounds at line "};
+        asm_line(0, "baz_bounds_panic:");
+        if (with_line) {
+            asm_line(1, "mv s2, a0");
+            asm_line(1, "li a0, 2");
+            asm_line(1, "la a1, .Lbaz_bounds_message");
+            asm_line(1, "li a2, {}", message.size());
+            asm_line(1, "li a7, 64");
+            asm_line(1, "ecall");
+            asm_line(1, "addi sp, sp, -16");
+            asm_line(1, "mv a1, sp");
+            asm_line(1, "li a2, 0");
+            asm_line(1, "la t0, .Lbaz_decimal_places");
+            asm_line(0, "1:");
+            asm_line(1, "lw t1, 0(t0)");
+            asm_line(1, "li t2, 0");
+            asm_line(0, "2:");
+            asm_line(1, "bltu s2, t1, 3f");
+            asm_line(1, "sub s2, s2, t1");
+            asm_line(1, "addi t2, t2, 1");
+            asm_line(1, "j 2b");
+            asm_line(0, "3:");
+            asm_line(1, "or t3, a2, t2");
+            asm_line(1, "bnez t3, 4f");
+            asm_line(1, "li t3, 1");
+            asm_line(1, "bne t1, t3, 5f");
+            asm_line(0, "4:");
+            asm_line(1, "addi t2, t2, 48");
+            asm_line(1, "sb t2, 0(a1)");
+            asm_line(1, "addi a1, a1, 1");
+            asm_line(1, "addi a2, a2, 1");
+            asm_line(0, "5:");
+            asm_line(1, "addi t0, t0, 4");
+            asm_line(1, "li t3, 1");
+            asm_line(1, "bne t1, t3, 1b");
+            asm_line(1, "li t2, 10");
+            asm_line(1, "sb t2, 0(a1)");
+            asm_line(1, "addi a2, a2, 1");
+            asm_line(1, "mv a1, sp");
+            asm_line(1, "li a0, 2");
+            asm_line(1, "li a7, 64");
+            asm_line(1, "ecall");
+        }
+        exit(token{}, 1, operand::imm("255", default_type()));
+        if (with_line) {
+            asm_line(0, ".section .rodata");
+            asm_line(0, ".Lbaz_bounds_message:");
+            asm_line(0, ".ascii \"{}\"", message);
+            asm_line(0, ".balign 4");
+            asm_line(0, ".Lbaz_decimal_places:");
+            asm_line(0, ".word 1000000000, 100000000, 10000000, 1000000, "
+                        "100000, 10000, 1000, 100, 10, 1");
+            asm_line(0, ".text");
+        }
     }
 
     [[nodiscard]] auto data_alignment() const -> size_t override {
