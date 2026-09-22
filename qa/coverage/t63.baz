@@ -7,7 +7,7 @@ func print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
-func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+func legacy_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -29,7 +29,7 @@ func main(){
     print(array_size_of(hello), address_of(hello))
     loop {
         print(array_size_of(prompt1), address_of(prompt1))
-        var len = read(array_size_of(input), address_of(input)) - 1    # -1 don't include the '\n'
+        var len = legacy_read(array_size_of(input), address_of(input)) - 1    # -1 don't include the '\n'
         if len == 0 {
             break
         }

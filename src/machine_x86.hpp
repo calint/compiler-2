@@ -406,6 +406,18 @@ class machine_x86 final : public machine {
         pop(indent, saved_register);
     }
 
+    auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
+              const operand& descriptor, const operand& address,
+              const operand& count) -> void override {
+        io_syscall(src_loc_tk, indent, dst, descriptor, address, count, 0);
+    }
+
+    auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
+               const operand& descriptor, const operand& address,
+               const operand& count) -> void override {
+        io_syscall(src_loc_tk, indent, dst, descriptor, address, count, 1);
+    }
+
     auto advance_array_iteration(const size_t indent, const operand& iterator,
                                  const operand& counter,
                                  const size_t element_size_bytes,
@@ -1257,6 +1269,38 @@ class machine_x86 final : public machine {
     }
 
   private:
+    auto io_syscall(const token& src_loc_tk, const size_t indent,
+                    const operand& dst, const operand& descriptor,
+                    const operand& address, const operand& count,
+                    const int syscall_number) -> void {
+        const std::array<std::string_view, 6> saved{"rax", "rdi", "rsi",
+                                                    "rdx", "rcx", "r11"};
+
+        for (const operand* value : {&dst, &descriptor, &address, &count}) {
+            assert(value->is_register() and
+                   value->type_ref().size_bytes() == size_qword);
+            assert(value->base_register() != "rsp");
+        }
+        asm_line(indent, "sub rsp, {}", size_qword);
+        for (const std::string_view name : saved) {
+            push(indent, make_register_operand(name, *type_i64_));
+        }
+        push(indent, descriptor);
+        push(indent, address);
+        push(indent, count);
+        pop(indent, make_register_operand("rdx", *type_i64_));
+        pop(indent, make_register_operand("rsi", *type_i64_));
+        pop(indent, make_register_operand("rdi", *type_i64_));
+        mov(src_loc_tk, indent, make_register_operand("rax", *type_i64_),
+            immediate(syscall_number));
+        syscall(indent);
+        asm_line(indent, "mov [rsp + {}], rax", saved.size() * size_qword);
+        for (const std::string_view name : saved | std::views::reverse) {
+            pop(indent, make_register_operand(name, *type_i64_));
+        }
+        pop(indent, dst);
+    }
+
     [[nodiscard]] auto sized_register(const std::string_view name,
                                       const size_t size_bytes) const
         -> operand {

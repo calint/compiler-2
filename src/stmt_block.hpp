@@ -95,7 +95,8 @@ class stmt_block final : public statement {
                     std::make_unique<stmt_builtin_array_copy>(tc, tk, tz));
             } else if (tk.is_text("loop") or tk.is_text("if") or
                        tk.is_text("mov") or tk.is_text("syscall") or
-                       tk.is_text("foo") or tk.is_text("exit")) {
+                       tk.is_text("foo") or tk.is_text("exit") or
+                       tk.is_text("read") or tk.is_text("write")) {
 
                 stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
                 // note: solves circular reference problem

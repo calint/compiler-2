@@ -116,6 +116,15 @@ class machine {
 
     virtual auto invoke_syscall(const size_t indent) -> void = 0;
 
+    virtual auto read(const token& src_loc_tk, const size_t indent,
+                      const operand& dst, const operand& descriptor,
+                      const operand& address, const operand& count) -> void = 0;
+
+    virtual auto write(const token& src_loc_tk, const size_t indent,
+                       const operand& dst, const operand& descriptor,
+                       const operand& address, const operand& count)
+        -> void = 0;
+
     virtual auto advance_array_iteration(
         const size_t indent, const operand& iterator, const operand& counter,
         const size_t element_size_bytes, const size_t array_count,

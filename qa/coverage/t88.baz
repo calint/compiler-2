@@ -10,7 +10,7 @@ func print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
-func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+func legacy_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -21,6 +21,6 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
 
 func main() {
     var input_buffer : i8[80]
-    var len = read(array_size_of(input_buffer), address_of(input_buffer))
+    var len = legacy_read(array_size_of(input_buffer), address_of(input_buffer))
     print(len, address_of(input_buffer))
 }

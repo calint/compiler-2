@@ -458,3 +458,6 @@ SRC=t422 && COMPERR
 # SRC=t483 && EXP=42 && RUN # todo: RV32I runtime backend incomplete
 # SRC=t484 && EXP=42 && RUN # todo: RV32I runtime backend incomplete
 SRC=t485 && COMPERR
+# SRC=t486 && DIFFINP # todo: RV32I runtime backend incomplete
+SRC=t487 && COMPERR
+SRC=t488 && COMPERR

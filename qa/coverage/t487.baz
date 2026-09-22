@@ -1,0 +1,3 @@
+# read requires descriptor, address, and count
+
+func main() { read(0, 0) }

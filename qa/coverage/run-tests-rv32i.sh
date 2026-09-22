@@ -21,5 +21,6 @@ llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/test.s" -o "$TEST_DIR/test.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
 printf 'rv32i address lowering: executing with QEMU\n'
-qemu-riscv32 "$TEST_DIR/test"
+qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/t486.in" > "$TEST_DIR/output"
+cmp "$TEST_DIR/output" "$SCRIPT_DIR/t486.out"
 printf 'rv32i address lowering: ok\n'

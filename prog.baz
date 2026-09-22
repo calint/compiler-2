@@ -35,25 +35,8 @@ dat      s1 : str = { 3 } # remaining fields are zeroed
 
 func assert(x : bool) if not x exit(1)
 
-func sys_print(len : reg_rdx, ptr : reg_rsi) {
-    mov(rax, 1)   # write system call
-    mov(rdi, 0)   # file descriptor for standard out
-    mov(rsi, ptr) # buffer address 
-    mov(rdx, len) # buffer size
-    syscall()
-}
-
 func print(str : i8[]) {
-   sys_print(array_size_of(str), address_of(str)) 
-}
-
-func sys_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
-    mov(rax, 0)   # read system call
-    mov(rdi, 0)   # file descriptor for standard input
-    mov(rsi, ptr) # buffer address
-    mov(rdx, len) # buffer size
-    syscall()
-    mov(nbytes, rax) # return value
+    write(1, address_of(str), array_size_of(str))
 }
 
 # function arguments and return are equivalent to mutable references
@@ -89,20 +72,12 @@ func faz(arg : i32[]) {
 }
 
 func str_in(s : str) {
-    mov(rax, 0)                     # read system call
-    mov(rdi, 0)                     # file descriptor for standard input
-    mov(rsi, address_of(s.data))    # buffer address
-    mov(rdx, array_size_of(s.data)) # buffer size
-    syscall()
-    mov(s.len, rax - 1) # return value
+    var nbytes = read(0, address_of(s.data), array_size_of(s.data))
+    s.len = nbytes - 1
 } 
 
 func str_out(s : str) {
-    mov(rax, 1)                  # write system call
-    mov(rdi, 0)                  # file descriptor for standard out
-    mov(rsi, address_of(s.data)) # buffer address 
-    mov(rdx, s.len)              # buffer size
-    syscall()
+    write(1, address_of(s.data), s.len)
 } 
 
 func point_init() : point res {
@@ -155,7 +130,7 @@ func noinline print_num(num) {
         if i == 20 break
     }
  
-    sys_print(write_pos, address_of(buf))
+    write(1, address_of(buf), write_pos)
 }
 
 func main() {

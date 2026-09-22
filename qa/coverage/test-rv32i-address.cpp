@@ -159,7 +159,20 @@ auto main() -> int {
     }
     backend.address_of(token{}, 1, operand::reg("t6", integer), operand::mem("sp", "sp", 4, 2048, integer));
     std::println("    slli a0, sp, 2\n    add a0, a0, sp\n    li a1, 2048\n    add a0, a0, a1\n    bne t6, a0, failure");
-    std::println("    li a0, 0\n    li a7, 93\n    ecall\nfailure:\n    li a0, 1\n    li a7, 93\n    ecall\n.data\n.balign 4\nbuffer: .word 0\nbuffer_copy: .word 0\npointer: .word 0");
+    std::println("    mv s2, sp\n    la a0, buffer\n    li a1, 6\n    li a2, 0\n    li a7, 123");
+    backend.read(token{}, 1, operand::reg("t6", integer), operand::reg("a2", integer),
+                 operand::reg("a0", integer), operand::reg("a1", integer));
+    std::println("    li t0, 6\n    bne t6, t0, failure\n    bne a1, t0, failure\n    bnez a2, failure\n    la t0, buffer\n    bne a0, t0, failure\n    li t0, 123\n    bne a7, t0, failure\n    bne sp, s2, failure\n    li a2, 1");
+    backend.write(token{}, 1, operand::reg("a1", integer), operand::reg("a2", integer),
+                  operand::reg("a0", integer), operand::reg("t6", integer));
+    std::println("    li t0, 6\n    bne a1, t0, failure\n    li t0, 1\n    bne a2, t0, failure\n    la t0, buffer\n    bne a0, t0, failure\n    li t0, 123\n    bne a7, t0, failure\n    li a7, -1");
+    backend.read(token{}, 1, operand::reg("a7", integer), operand::reg("a7", integer),
+                 operand::reg("a0", integer), operand::reg("a1", integer));
+    std::println("    li t0, -9\n    bne a7, t0, failure\n    li a7, -1");
+    backend.write(token{}, 1, operand::reg("a7", integer), operand::reg("a7", integer),
+                  operand::reg("a0", integer), operand::reg("a1", integer));
+    std::println("    li t0, -9\n    bne a7, t0, failure\n    bne sp, s2, failure");
+    std::println("    li a0, 0\n    li a7, 93\n    ecall\nfailure:\n    li a0, 1\n    li a7, 93\n    ecall\n.data\n.balign 4\nbuffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");
     backend.finish();
 
     return 0;

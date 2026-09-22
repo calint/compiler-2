@@ -2,12 +2,12 @@
 
 func assert(expr : bool) if not expr exit(1)
 
-func write(values : i8[]) {
+func legacy_write(values : i8[]) {
     values[7] = 1
 }
 
 func main() {
     var values : i8[8]
-    write(values)
+    legacy_write(values)
     assert(values[7] == 1)
 }

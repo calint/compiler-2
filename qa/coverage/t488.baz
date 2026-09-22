@@ -1,0 +1,3 @@
+# write requires descriptor, address, and count
+
+func main() { write(1, 0, 0, 0) }

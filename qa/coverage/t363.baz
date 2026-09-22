@@ -1,10 +1,10 @@
 # array-parameter upper-bound failure
 
-func write(values : i8[]) {
+func legacy_write(values : i8[]) {
     values[8] = 1
 }
 
 func main() {
     var values : i8[8]
-    write(values)
+    legacy_write(values)
 }

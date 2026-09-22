@@ -24,6 +24,7 @@
 #include "stmt_builtin_equal.hpp"
 #include "stmt_builtin_exit.hpp"
 #include "stmt_builtin_foo.hpp"
+#include "stmt_builtin_io.hpp"
 #include "stmt_builtin_mov.hpp"
 #include "stmt_builtin_syscall.hpp"
 #include "stmt_call.hpp"
@@ -111,6 +112,9 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
     if (tk.is_text("exit")) {
         return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
     }
+    if (tk.is_text("read") or tk.is_text("write")) {
+        return std::make_unique<stmt_builtin_io>(tc, unary_ops{}, tk, tz);
+    }
     if (tk.is_text("foo")) {
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
     }
@@ -146,6 +150,9 @@ auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     if (tk.is_text("address_of")) {
         return std::make_unique<stmt_builtin_address_of>(tc, std::move(uops),
                                                          tk, tz);
+    }
+    if (tk.is_text("read") or tk.is_text("write")) {
+        return std::make_unique<stmt_builtin_io>(tc, std::move(uops), tk, tz);
     }
     if (tk.is_text("array_size_of")) {
         return std::make_unique<stmt_builtin_array_size_of>(tc, std::move(uops),

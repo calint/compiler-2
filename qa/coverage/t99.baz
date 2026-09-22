@@ -10,7 +10,7 @@ func print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
-func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+func legacy_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -28,12 +28,12 @@ func main() {
     print(array_size_of(ok), address_of(ok))
 
     # expect same word input for both
-    var len1 = read(array_size_of(word1), address_of(word1))
+    var len1 = legacy_read(array_size_of(word1), address_of(word1))
     print(len1, address_of(word1))
 
     print(array_size_of(ok), address_of(ok))
 
-    var len2 = read(array_size_of(word2), address_of(word2))
+    var len2 = legacy_read(array_size_of(word2), address_of(word2))
     print(len2, address_of(word2))
   
     assert(arrays_equal(word1, word2, len1))
@@ -41,12 +41,12 @@ func main() {
     print(array_size_of(ok), address_of(ok))
 
     # expect not same word input for both
-    len1 = read(array_size_of(word1), address_of(word1))
+    len1 = legacy_read(array_size_of(word1), address_of(word1))
     print(len1, address_of(word1))
 
     print(array_size_of(ok), address_of(ok))
  
-    len2 = read(array_size_of(word2), address_of(word2))
+    len2 = legacy_read(array_size_of(word2), address_of(word2))
     print(len2, address_of(word2))
  
     assert(not arrays_equal(word1, word2, len1))

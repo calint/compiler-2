@@ -71,6 +71,9 @@ class program final {
         x.set_builtin_types(type_i64, type_i32, type_i16, type_i8, type_bool,
                             type_void);
 
+        tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr);
+        tc_.add_func(src_loc_tk, "write", tc_.get_type_default(), nullptr);
+
         tc_.enter_block();
 
         tokenizer tz{source};
