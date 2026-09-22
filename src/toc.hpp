@@ -999,6 +999,7 @@ class toc final {
 
         return std::nullopt;
     }
+#pragma clang diagnostic pop
 
   private:
     [[nodiscard]] auto
@@ -1323,6 +1324,4 @@ class toc final {
         usage_max_frame_count_ =
             std::max(frames_.size(), usage_max_frame_count_);
     }
-
-#pragma clang diagnostic pop
 };
