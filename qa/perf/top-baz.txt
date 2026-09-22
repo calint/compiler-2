@@ -1,16 +1,19 @@
 Compiler-owned symbols: self % of baz samples, not suite time.
-  1.80%  [.] tokenizer::next_token()
-  1.69%  [.] toc::add_type(token const&, type const&)
-  1.28%  [.] toc::make_ident_info_or_throw(token const&, std::basic_string_view<char, std::char_traits<char> >) const
-  1.16%  [.] toc::get_func_return_type_or_throw(token const&, std::basic_string_view<char, std::char_traits<char> >) const
-  1.11%  [.] toc::make_ident_info_from_frame(frame const&, token const&, std::basic_string_view<char, std::char_traits<char> >, ident_path const&, std::vector<operand, std::allocator<operand> >) const
-  0.63%  [.] toc::has_lea(statement const&) const
-  0.56%  [.] program::compile(toc&, unsigned long) const
-  0.48%  [.] tokenizer::is_next_char_token(char)
-  0.46%  [.] expr_any::source_to(std::ostream&) const
-  0.22%  [.] stmt_identifier::stmt_identifier(toc&, unary_ops, token, tokenizer&)
-  0.19%  [.] expr_any::expr_any(toc&, tokenizer&, type const&, bool, bool, unsigned long)
-  0.00%  [.] jump_optimizer::pass2(std::istream&, std::ostream&)
-  0.00%  [.] expr_bool_ops_list::source_to(std::ostream&) const
+  1.89%  [.] jump_optimizer::pass1(std::istream&, std::ostream&)
+  1.32%  [.] stmt_identifier::ident_elem::source_to(std::ostream&) const
+  1.31%  [.] statement::collapse_whitespace[abi:cxx11](std::basic_string_view<char, std::char_traits<char> >)
+  0.85%  [.] expr_bool_op::expr_bool_op(toc&, tokenizer&)
+  0.85%  [.] toc::make_ident_info_from_frame(frame const&, token const&, std::basic_string_view<char, std::char_traits<char> >, ident_path const&, std::vector<operand, std::allocator<operand> >) const
+  0.85%  [.] tokenizer::next_whitespace_token()
+  0.61%  [.] type::accessor(token const&, std::basic_string_view<char, std::char_traits<char> >, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, var_info const&, std::basic_string_view<char, std::char_traits<char> >) const
+  0.60%  [.] toc::make_ident_info_from_var_info(token const&, std::basic_string_view<char, std::char_traits<char> >, ident_path const&, var_info const&, std::vector<operand, std::allocator<operand> >) const
+  0.55%  [.] frame::~frame()
+  0.40%  [.] toc::make_ident_info_or_empty(token const&, std::basic_string_view<char, std::char_traits<char> >) const
+  0.37%  [.] expr_any::expr_any(toc&, tokenizer&, type const&, bool, bool, unsigned long)
+  0.01%  [.] stmt_def_func::source_def_to(std::ostream&, bool) const
+  0.01%  [.] expr_any::source_to(std::ostream&) const
+  0.00%  [.] tokenizer::next_token()
+  0.00%  [.] stmt_builtin_array_copy::stmt_builtin_array_copy(toc&, token, tokenizer&)
+  0.00%  [.] tokenizer::is_next_char_token(char)
+  0.00%  [.] stmt_def_func::stmt_def_func(toc&, token, tokenizer&)
   0.00%  [.] stmt_block::stmt_block(toc&, tokenizer&)
-  0.00%  [.] toc::make_ident_info_or_empty(token const&, std::basic_string_view<char, std::char_traits<char> >) const

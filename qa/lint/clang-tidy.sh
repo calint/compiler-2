@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/bin/bash
+set -e
+set -o pipefail
+
 # tools:
 #   clang-tidy: 22.1.8
 cd $(dirname "$0")
