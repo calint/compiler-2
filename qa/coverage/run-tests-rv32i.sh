@@ -82,3 +82,12 @@ llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/long-loop" "$TEST_DIR/long-loop.o"
 timeout -k 1s 5s qemu-riscv32 "$TEST_DIR/long-loop"
 printf 'rv32i array iteration: long loop: ok\n'
+for mode in noninline frame-checks; do
+    printf 'rv32i functions: %s\n' "$mode"
+    "$TEST_DIR/generate" "$mode" > "$TEST_DIR/functions.s"
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
+        "$TEST_DIR/functions.s" -o "$TEST_DIR/functions.o"
+    ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/functions" "$TEST_DIR/functions.o"
+    timeout -k 1s 5s qemu-riscv32 "$TEST_DIR/functions"
+done
+printf 'rv32i functions: ok\n'

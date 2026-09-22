@@ -13,6 +13,104 @@ auto main(const int argc, const char* argv[]) -> int {
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
+    if (argc > 1 and std::string_view{argv[1]} == "noninline") {
+        machine_rv32i backend;
+        backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
+        backend.use_stream(std::cout);
+        backend.program_start();
+        std::println("    addi sp, sp, -128\n    sw sp, 124(sp)");
+        for (size_t index{1}; index < 32; ++index) {
+            if (index != 2 and index != 8) {
+                std::println("    li x{}, {}", index, 100 + index);
+            }
+        }
+        backend.call_function(1, "outer", operand::mem("s0", {}, 1, 4096, integer));
+        for (size_t index{1}; index < 32; ++index) {
+            if (index != 2) {
+                std::println("    sw x{}, {}(sp)", index, (index - 1) * 4);
+            }
+        }
+        std::println("    lw t0, 124(sp)\n    beq t0, sp, 1f\n    j call_failure\n1:");
+        for (size_t index{1}; index < 32; ++index) {
+            if (index == 2) {
+                continue;
+            }
+            std::println("    lw t0, {}(sp)", (index - 1) * 4);
+            if (index == 8) {
+                std::println("    la t1, dat");
+            } else {
+                std::println("    li t1, {}", 100 + index);
+            }
+            std::println("    beq t0, t1, 1f\n    j call_failure\n1:");
+        }
+        std::println("    addi sp, sp, 128");
+        backend.program_end();
+        backend.label(0, "call_failure");
+        backend.exit(token{}, 1, operand::imm("1", integer));
+        backend.label(0, "outer");
+        backend.reserve_frame_base();
+        std::println("    la t0, dat\n    li t1, 4096\n    add t0, t0, t1\n"
+                     "    beq s1, t0, 1f\n    j call_failure\n1:");
+        backend.call_function(1, "inner", operand::mem("s1", {}, 1, 8192, integer));
+        backend.return_function(1);
+        backend.release_frame_base();
+        backend.label(0, "inner");
+        backend.reserve_frame_base();
+        std::println("    la t0, dat\n    li t1, 12288\n    add t0, t0, t1\n"
+                     "    beq s1, t0, 1f\n    j call_failure\n1:");
+        for (size_t index{1}; index < 32; ++index) {
+            if (index != 2) {
+                std::println("    li x{}, -1", index);
+            }
+        }
+        backend.return_function(1);
+        backend.release_frame_base();
+        backend.finish();
+        std::println(".data\ndat:\n    .zero 16384");
+
+        return 0;
+    }
+    if (argc > 1 and std::string_view{argv[1]} == "frame-checks") {
+        machine_rv32i backend;
+        backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
+        backend.use_stream(std::cout);
+        backend.program_start();
+        const operand continuation{backend.alloc_named_register(token{}, 0, "s3", integer)};
+        size_t case_index{};
+        for (const bool enabled : {false, true}) {
+            for (const int offset : {-1, 0, 1, 255, 256, 257}) {
+                for (const uint32_t size : {0U, 1U, 256U, 257U, UINT32_MAX}) {
+                    const bool failed{enabled and (offset < 0 or offset > 256 or
+                        size > static_cast<uint32_t>(256 - offset))};
+                    const std::string size_label{std::format("frame_size_{}", case_index)};
+                    std::println("    la a0, vars\n    addi a0, a0, {}\n"
+                                 "    la s3, frame_result_{}", offset, case_index);
+                    backend.check_frame_capacity(token{}, 1, operand::mem("a0", {}, 1, 0, integer),
+                        operand::imm(size_label, integer), "frame_overflow", enabled);
+                    std::println("    li a3, 0\nframe_result_{}:\n    li a4, {}\n"
+                                 "    beq a3, a4, 1f\n    j frame_failure\n1:", case_index++, failed ? 1 : 0);
+                    backend.define_constant(size_label, size);
+                }
+            }
+        }
+        for (const bool positive : {false, true}) {
+            std::println("    la a0, vars\n    addi a0, a0, {}\n    la s3, frame_result_{}",
+                         positive ? 1 : -1, case_index);
+            backend.check_frame_capacity(token{}, 1,
+                operand::mem("a0", {}, 1, positive ? int64_t{UINT32_MAX} : -int64_t{UINT32_MAX}, integer),
+                operand::imm("0", integer), "frame_overflow", true);
+            std::println("    li a3, 0\nframe_result_{}:\n    li a4, 1\n"
+                         "    beq a3, a4, 1f\n    j frame_failure\n1:", case_index++);
+        }
+        backend.free_named_register(token{}, 0, continuation);
+        backend.program_end();
+        std::println("frame_overflow:\n    li a3, 1\n    jr s3\nframe_failure:");
+        backend.exit(token{}, 1, operand::imm("1", integer));
+        backend.finish();
+        std::println(".data\ndat:\nvars:\n    .zero 256\nvars.end:");
+
+        return 0;
+    }
     if (argc > 1 and std::string_view{argv[1]} == "long-loop") {
         machine_rv32i backend;
         backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);

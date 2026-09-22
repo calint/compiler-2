@@ -1963,6 +1963,8 @@ class machine_rv32i final : public machine {
         static_cast<void>(alloc_named_register(
             token{}, 0, frame_base_register(), default_type()));
         frame_base_reserved_ = true;
+        asm_line(1, "addi sp, sp, -16");
+        asm_line(1, "sw ra, 0(sp)");
     }
 
     auto release_frame_base() -> void override {
@@ -1974,32 +1976,91 @@ class machine_rv32i final : public machine {
         frame_base_reserved_ = false;
     }
 
-    auto call_function([[maybe_unused]] const size_t indent,
-                       [[maybe_unused]] const std::string_view label,
-                       [[maybe_unused]] const operand& frame_address)
-        -> void override {
-        todo();
+    auto call_function(const size_t indent, const std::string_view label,
+                       const operand& frame_address) -> void override {
+
+        assert(frame_address.is_memory());
+        assert(frame_address.index_register().empty());
+        assert(register_index(frame_address.base_register()) !=
+               register_index("sp"));
+
+        asm_line(indent, "addi sp, sp, -128");
+
+        for (const size_t index : scratch_registers_) {
+            asm_line(indent, "sw {}, {}(sp)", register_names_.at(index),
+                     (index - 1) * 4);
+        }
+
+        address_of(token{}, indent,
+                   make_register_operand(frame_base_register(), default_type()),
+                   frame_address);
+
+        asm_line(indent, "call {}", label);
+        for (const size_t index : scratch_registers_) {
+            asm_line(indent, "lw {}, {}(sp)", register_names_.at(index),
+                     (index - 1) * 4);
+        }
+
+        asm_line(indent, "addi sp, sp, 128");
     }
 
-    auto return_function([[maybe_unused]] const size_t indent)
-        -> void override {
-        todo();
+    auto return_function(const size_t indent) -> void override {
+        asm_line(indent, "lw ra, 0(sp)");
+        asm_line(indent, "addi sp, sp, 16");
+        asm_line(indent, "ret");
     }
 
-    auto
-    check_frame_capacity([[maybe_unused]] const token& src_loc_tk,
-                         [[maybe_unused]] const size_t indent,
-                         [[maybe_unused]] const operand& frame_address,
-                         [[maybe_unused]] const operand& frame_size_bytes,
-                         [[maybe_unused]] const std::string_view failure_label,
-                         [[maybe_unused]] const bool enabled = {})
-        -> void override {
-        todo();
+    auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
+                              const operand& frame_address,
+                              const operand& frame_size_bytes,
+                              const std::string_view failure_label,
+                              const bool enabled = {}) -> void override {
+        if (not enabled) {
+            return;
+        }
+        assert(frame_address.is_memory());
+        assert(frame_address.index_register().empty());
+        assert(frame_size_bytes.is_immediate());
+
+        const address_scope scope{*this, frame_address, frame_size_bytes};
+        const operand start{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand remaining{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        address_of(src_loc_tk, indent, start, frame_address);
+        if (register_mask(frame_address.base_register()) != 0 and
+            frame_address.displacement() != 0) {
+            asm_line(indent, "{} {}, {}, 1f",
+                     frame_address.displacement() > 0 ? "bltu" : "bgtu",
+                     start.base_register(), frame_address.base_register());
+        }
+        asm_line(indent, "la {}, vars", remaining.base_register());
+        asm_line(indent, "bltu {}, {}, 1f", start.base_register(),
+                 remaining.base_register());
+        asm_line(indent, "la {}, vars.end", remaining.base_register());
+        asm_line(indent, "bltu {}, {}, 1f", remaining.base_register(),
+                 start.base_register());
+        asm_line(indent, "sub {}, {}, {}", remaining.base_register(),
+                 remaining.base_register(), start.base_register());
+        asm_line(indent, "lui {}, %hi({})", start.base_register(),
+                 frame_size_bytes.immediate());
+        asm_line(indent, "addi {}, {}, %lo({})", start.base_register(),
+                 start.base_register(), frame_size_bytes.immediate());
+        asm_line(indent, "bgeu {}, {}, 2f", remaining.base_register(),
+                 start.base_register());
+        asm_line(indent, "1:");
+        branch(indent, failure_label);
+        asm_line(indent, "2:");
     }
 
-    auto define_constant([[maybe_unused]] const std::string_view name,
-                         [[maybe_unused]] const size_t value) -> void override {
-        todo();
+    auto define_constant(const std::string_view name, const size_t value)
+        -> void override {
+        if (value > std::numeric_limits<uint32_t>::max()) {
+            throw compiler_exception{token{}, "constant exceeds RV32I range"};
+        }
+        asm_line(0, ".equ {}, {}", name, value);
     }
 
     auto program_start() -> void override {

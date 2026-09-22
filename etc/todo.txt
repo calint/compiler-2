@@ -1,7 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] syntax change: var x : [] makes a machine default type array
+[ ] move the coverage tests into a subdirectory
+[ ] syntax change: 
+    func noinline factorial(value i32) result i32 {
+    func noinline factorial(value) result { # default type
+    var array[128] = {} # default type
+    var array : [128] = { 1, 2 }
+    var array[128] i32 = {} 
+    var x i32 = 2
+
 [ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
 [ ] rv32i: check loop iteration regarding large span
 [ ]  lift the possible ai generated tests in run-tests-rv32i.sh to end-to-end
