@@ -2,7 +2,6 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] don't allow function declarations without { }
-[ ] jump optimizer for rv32i
 [ ] rv32i alignment issues
     => works in qemu for now that does not require alignment
 [ ] move the coverage tests into a subdirectory
@@ -197,6 +196,7 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] jump optimizer for rv32i
 [x] var array : [128] = { 1, 2 } # default type
 [x] dat array : [128] = { 1, 2 } # default type
 [x] type x { i : [4] } # uses default type

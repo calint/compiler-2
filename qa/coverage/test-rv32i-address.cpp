@@ -1,12 +1,94 @@
 #include <iostream>
 #include <sstream>
 
+#include "../../src/decouple_impl.hpp"
+#include "../../src/jump_optimizer.hpp"
 #include "../../src/machine_rv32i.hpp"
 #include "../../src/machine_x86.hpp"
 #include "../../src/program.hpp"
-#include "../../src/decouple_impl.hpp"
 
 auto main(const int argc, const char* argv[]) -> int {
+    if (argc > 1 and std::string_view{argv[1]} == "optimize-jumps") {
+        jump_optimizer::rv32i::optimize(std::cin, std::cout);
+
+        return 0;
+    }
+    {
+        const auto optimize = [](const std::string& assembly) -> std::string {
+            std::istringstream input{assembly};
+            std::ostringstream output;
+            jump_optimizer::rv32i::optimize(input, output);
+
+            return output.str();
+        };
+        assert(optimize("    j bool_end_139_12\n    1:\n    j "
+                        "bool_end_139_12\n    bool_end_139_12:\n") ==
+               "    1:\n    bool_end_139_12:\n");
+        assert(optimize("beq a0, a1, 1f\nj end\n1:\naddi a0, a0, 1\nend:\n") ==
+               "bne a0, a1, end\n1:\naddi a0, a0, 1\nend:\n");
+        assert(
+            optimize("1:\naddi a0, a0, 1\nbnez a0, 1b\nj 1f\n# next\n1:\n") ==
+            "1:\naddi a0, a0, 1\nbnez a0, 1b\n# next\n1:\n");
+        const std::string barrier{
+            "beqz a0, 1f\nj end\n1:\n.space 8192\nend:\n"};
+        assert(optimize(barrier) == barrier);
+        std::string distant{"beqz a0, 1f\nj end\n1:\n"};
+        for (size_t count{}; count < 1024; ++count) {
+            distant += "addi a0, a0, 1\n";
+        }
+        distant += "end:\n";
+        assert(optimize(distant) == distant);
+        // every supported inverse must preserve operand order in both
+        // directions
+        for (const auto& [first, second] :
+             std::array<std::pair<std::string_view, std::string_view>, 8>{{
+                 {"beq", "bne"},
+                 {"blt", "bge"},
+                 {"bltu", "bgeu"},
+                 {"bgt", "ble"},
+                 {"bgtu", "bleu"},
+                 {"beqz", "bnez"},
+                 {"bltz", "bgez"},
+                 {"bgtz", "blez"},
+             }}) {
+            for (const bool reverse : {false, true}) {
+                const std::string_view mnemonic{reverse ? second : first};
+                const std::string_view inverted{reverse ? first : second};
+                const std::string_view operands{
+                    first.ends_with('z') ? "a0," : "a0, a1,"};
+                const std::string input{std::format(
+                    "{} {} 1f\n# keep\nj 2f\n1:\naddi a0, a0, 1\n2:\n",
+                    mnemonic, operands)};
+                const std::string expected{
+                    std::format("{} {} 2f\n# keep\n1:\naddi a0, a0, 1\n2:\n",
+                                inverted, operands)};
+                assert(optimize(input) == expected);
+                assert(optimize(expected) == expected);
+            }
+        }
+        assert(optimize("beqz a0, end\nj end\naddi a0, a0, 1\nend:\n") ==
+               "j end\naddi a0, a0, 1\nend:\n");
+        assert(
+            optimize("j end\nj other\naddi a0, a0, 1\nother:\necall\nend:\n") ==
+            "j end\naddi a0, a0, 1\nother:\necall\nend:\n");
+        assert(optimize("1:\naddi a0, a0, 1\nbeqz a0, 2f\nj 1b\n2:\n") ==
+               "1:\naddi a0, a0, 1\nbnez a0, 1b\n2:\n");
+        for (const std::string unchanged :
+             {"1:\nj 1b\n", "call end\nend:\n", "jal ra, end\nend:\n",
+              "beqz a0, 1f\nentry:\nj end\n1:\necall\nend:\n",
+              "beqz a0, 1f\nj end\n1:\nunknown_instruction\nend:\n",
+              "j end\n.balign 16\nend:\n", "j missing\n"}) {
+            assert(optimize(unchanged) == unchanged);
+        }
+        // pseudo-instructions can exceed branch reach with fewer than 1024
+        // lines
+        std::string expanded{"beqz a0, 1f\nj end\n1:\n"};
+        for (size_t count{}; count < 512; ++count) {
+            expanded += "li a0, 1234567\n";
+        }
+        expanded += "end:\n";
+        assert(optimize(expanded) == expanded);
+    }
     const type integer64{"i64", 8, true};
     const type integer{"i32", 4, true};
     const type half{"i16", 2, true};

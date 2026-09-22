@@ -23,6 +23,13 @@ ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
 printf 'rv32i address lowering: executing with QEMU\n'
 qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/t486.in" > "$TEST_DIR/output"
 cmp "$TEST_DIR/output" "$SCRIPT_DIR/t486.out"
+printf 'rv32i jumps: assembling and executing optimized backend cases\n'
+"$TEST_DIR/generate" optimize-jumps < "$TEST_DIR/test.s" > "$TEST_DIR/optimized.s"
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
+    "$TEST_DIR/optimized.s" -o "$TEST_DIR/test.o"
+ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
+qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/t486.in" > "$TEST_DIR/output"
+cmp "$TEST_DIR/output" "$SCRIPT_DIR/t486.out"
 printf 'rv32i arithmetic: checking division by zero trap\n'
 ld.lld -m elf32lriscv -e divide_by_zero -o "$TEST_DIR/divide-by-zero" "$TEST_DIR/test.o"
 ulimit -c 0
@@ -79,6 +86,11 @@ printf 'rv32i array iteration: executing loop body larger than 4 KiB\n'
 "$TEST_DIR/generate" long-loop > "$TEST_DIR/long-loop.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/long-loop.s" -o "$TEST_DIR/long-loop.o"
+ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/long-loop" "$TEST_DIR/long-loop.o"
+timeout -k 1s 5s qemu-riscv32 "$TEST_DIR/long-loop"
+"$TEST_DIR/generate" optimize-jumps < "$TEST_DIR/long-loop.s" > "$TEST_DIR/optimized.s"
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
+    "$TEST_DIR/optimized.s" -o "$TEST_DIR/long-loop.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/long-loop" "$TEST_DIR/long-loop.o"
 timeout -k 1s 5s qemu-riscv32 "$TEST_DIR/long-loop"
 printf 'rv32i array iteration: long loop: ok\n'

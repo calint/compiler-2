@@ -4,36 +4,22 @@
 
 // NOLINTBEGIN(misc-definitions-in-headers)
 
+#include <algorithm>
+#include <array>
 #include <istream>
 #include <optional>
 #include <ostream>
 #include <print>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace jump_optimizer {
 
-struct jump_info {
-    std::string_view mnemonic;
-    std::string_view label;
-};
-
 [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
     return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or ch == '\f' or
            ch == '\v';
-}
-
-[[nodiscard]] static auto is_ascii_lower(const char ch) -> bool {
-    return ch >= 'a' and ch <= 'z';
-}
-
-[[nodiscard]] static auto is_ascii_alpha(const char ch) -> bool {
-    return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z');
-}
-
-[[nodiscard]] static auto is_ascii_alnum(const char ch) -> bool {
-    return is_ascii_alpha(ch) or (ch >= '0' and ch <= '9');
 }
 
 [[nodiscard]] static auto leading_ws(const std::string_view line)
@@ -45,6 +31,26 @@ struct jump_info {
     }
 
     return line.substr(0, first);
+}
+
+// keep target-specific parsing separate because branch syntax differs
+namespace x86 {
+
+struct jump_info {
+    std::string_view mnemonic;
+    std::string_view label;
+};
+
+[[nodiscard]] static auto is_ascii_lower(const char ch) -> bool {
+    return ch >= 'a' and ch <= 'z';
+}
+
+[[nodiscard]] static auto is_ascii_alpha(const char ch) -> bool {
+    return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z');
+}
+
+[[nodiscard]] static auto is_ascii_alnum(const char ch) -> bool {
+    return is_ascii_alpha(ch) or (ch >= '0' and ch <= '9');
 }
 
 [[nodiscard]] static auto parse_jump(const std::string_view line)
@@ -341,6 +347,267 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
 
     std::println(os, ";          optimization pass 2: {}", optimizations);
 }
+
+} // namespace x86
+
+namespace rv32i {
+
+struct assembly_line {
+    std::string text;
+    std::string label;
+    std::string mnemonic;
+    std::string operands;
+    std::string target;
+    std::optional<size_t> destination;
+    size_t max_size{};
+    bool barrier{};
+    bool removed{};
+};
+
+[[nodiscard]] static auto trim(const std::string_view text)
+    -> std::string_view {
+    const size_t first{text.find_first_not_of(" \t\r")};
+    if (first == std::string_view::npos) {
+        return {};
+    }
+
+    return text.substr(first, text.find_last_not_of(" \t\r") - first + 1);
+}
+
+[[nodiscard]] static auto inverse(const std::string_view mnemonic)
+    -> std::optional<std::string_view> {
+    constexpr std::array<std::pair<std::string_view, std::string_view>, 8>
+        pairs{{
+            {"beq", "bne"},
+            {"blt", "bge"},
+            {"bltu", "bgeu"},
+            {"bgt", "ble"},
+            {"bgtu", "bleu"},
+            {"beqz", "bnez"},
+            {"bltz", "bgez"},
+            {"bgtz", "blez"},
+        }};
+    for (const auto& [first, second] : pairs) {
+        if (mnemonic == first) {
+            return second;
+        }
+        if (mnemonic == second) {
+            return first;
+        }
+    }
+
+    return {};
+}
+
+static auto optimize(std::istream& is, std::ostream& os) -> void {
+    constexpr size_t instruction_size_bytes{4};
+    constexpr size_t branch_limit_bytes{4094};
+    std::vector<assembly_line> lines;
+    std::unordered_map<std::string, std::vector<size_t>> labels;
+    std::string text;
+    while (getline(is, text)) {
+        assembly_line line{
+            .text{text},
+            .label{},
+            .mnemonic{},
+            .operands{},
+            .target{},
+            .destination{},
+            .max_size{},
+            .barrier{},
+            .removed{},
+        };
+        const std::string_view code{
+            trim(std::string_view{text}.substr(0, text.find('#')))};
+        if (not code.empty()) {
+            if (code.back() == ':' and
+                code.find_first_of(" \t") == std::string_view::npos) {
+                line.label = code.substr(0, code.size() - 1);
+                labels[line.label].push_back(lines.size());
+            } else if (code.front() == '.') {
+                // directives may change sections, alignment or instruction
+                // widths
+                line.barrier = true;
+            } else {
+                const size_t split{code.find_first_of(" \t")};
+                line.mnemonic = code.substr(0, split);
+                const std::string_view arguments{
+                    split == std::string_view::npos ? std::string_view{}
+                                                    : trim(code.substr(split))};
+                if (line.mnemonic == "j") {
+                    line.target = arguments;
+                } else if (inverse(line.mnemonic)) {
+                    const size_t comma{arguments.rfind(',')};
+                    if (comma != std::string_view::npos) {
+                        line.operands = arguments.substr(0, comma + 1);
+                        line.target = trim(arguments.substr(comma + 1));
+                    }
+                }
+                // upper bounds avoid shortening a long jump beyond branch reach
+                if (line.mnemonic == "li" or line.mnemonic == "la" or
+                    line.mnemonic == "call") {
+                    line.max_size = 2 * instruction_size_bytes;
+                } else {
+                    constexpr std::array<std::string_view, 46> single{
+                        "add",   "addi", "sub",   "and",  "andi",  "or",
+                        "ori",   "xor",  "xori",  "sll",  "slli",  "srl",
+                        "srli",  "sra",  "srai",  "slt",  "slti",  "sltu",
+                        "sltiu", "lui",  "auipc", "lb",   "lbu",   "lh",
+                        "lhu",   "lw",   "sb",    "sh",   "sw",    "j",
+                        "jr",    "jalr", "mv",    "ret",  "ecall", "ebreak",
+                        "nop",   "neg",  "not",   "seqz", "snez",  "sltz",
+                        "sgtz",  "beq",  "bne",   "blt",
+                    };
+                    if (inverse(line.mnemonic) or
+                        std::ranges::find(single, line.mnemonic) !=
+                            single.end()) {
+                        line.max_size = instruction_size_bytes;
+                    } else {
+                        // unknown assembler constructs are not safe to size or
+                        // cross
+                        line.barrier = true;
+                    }
+                }
+            }
+        }
+        lines.push_back(std::move(line));
+    }
+
+    // resolve numeric references before editing so repeated labels remain
+    // distinct
+    for (size_t index{}; index < lines.size(); ++index) {
+        assembly_line& line{lines[index]};
+        std::string_view name{line.target};
+        if (name.empty()) {
+            continue;
+        }
+        const bool directional{
+            name.size() > 1 and (name.back() == 'f' or name.back() == 'b') and
+            name.substr(0, name.size() - 1).find_first_not_of("0123456789") ==
+                std::string_view::npos};
+        const char direction{name.back()};
+        if (directional) {
+            name.remove_suffix(1);
+        }
+        const auto found{labels.find(std::string{name})};
+        if (found == labels.end()) {
+            continue;
+        }
+        const std::vector<size_t>& definitions{found->second};
+        if (not directional) {
+            if (definitions.size() == 1) {
+                line.destination = definitions.front();
+            }
+        } else {
+            const auto next{std::ranges::upper_bound(definitions, index)};
+            if (direction == 'f' and next != definitions.end()) {
+                line.destination = *next;
+            } else if (direction == 'b' and next != definitions.begin()) {
+                line.destination = *std::prev(next);
+            }
+        }
+    }
+
+    const auto next_instruction = [&](size_t index) -> size_t {
+        while (index < lines.size() and
+               (lines[index].removed or
+                (lines[index].mnemonic.empty() and not lines[index].barrier))) {
+            ++index;
+        }
+
+        return index;
+    };
+    const auto in_branch_range = [&](const size_t source,
+                                     const size_t destination) -> bool {
+        size_t distance{};
+        for (size_t index{std::min(source, destination)};
+             index < std::max(source, destination); ++index) {
+            if (lines[index].barrier) {
+                return false;
+            }
+            if (not lines[index].removed) {
+                distance += lines[index].max_size;
+            }
+            // the conservative bound also covers backward branches
+            if (distance > branch_limit_bytes) {
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    // deletions expose more fallthroughs but labels must remain for other users
+    bool changed{true};
+    while (changed) {
+        changed = false;
+        for (size_t index{}; index < lines.size(); ++index) {
+            assembly_line& line{lines[index]};
+            if (line.removed or not line.destination) {
+                continue;
+            }
+            const size_t next{next_instruction(index + 1)};
+            if (next_instruction(*line.destination) == next) {
+                line.removed = true;
+                changed = true;
+                continue;
+            }
+            // only comments may separate the pair because labels allow entry
+            // midway
+            size_t following{index + 1};
+            while (following < lines.size() and
+                   lines[following].label.empty() and
+                   not lines[following].barrier and
+                   (lines[following].removed or
+                    lines[following].mnemonic.empty())) {
+                ++following;
+            }
+            if (following == lines.size() or
+                not lines[following].label.empty()) {
+                continue;
+            }
+            assembly_line& jump{lines[following]};
+            if (jump.mnemonic != "j" or not jump.destination) {
+                continue;
+            }
+            if (line.mnemonic == "j") {
+                // no entry point exists between these jumps so the second is
+                // unreachable
+                jump.removed = true;
+                changed = true;
+            } else if (next_instruction(*line.destination) ==
+                       next_instruction(*jump.destination)) {
+                // either outcome takes the same path so the condition is
+                // irrelevant
+                line.removed = true;
+                changed = true;
+            } else if (const std::optional<std::string_view> inverted{
+                           inverse(line.mnemonic)};
+                       inverted and
+                       next_instruction(*line.destination) ==
+                           next_instruction(following + 1) and
+                       in_branch_range(index, *jump.destination)) {
+                // moving the target across no labels preserves numeric f/b
+                // references
+                line.mnemonic = *inverted;
+                line.target = jump.target;
+                line.destination = jump.destination;
+                line.text =
+                    std::format("{}{} {} {}", leading_ws(line.text),
+                                line.mnemonic, line.operands, line.target);
+                jump.removed = true;
+                changed = true;
+            }
+        }
+    }
+    for (const assembly_line& line : lines) {
+        if (not line.removed) {
+            std::println(os, "{}", line.text);
+        }
+    }
+}
+
+} // namespace rv32i
 
 } // namespace jump_optimizer
 

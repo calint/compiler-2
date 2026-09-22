@@ -229,13 +229,17 @@ auto main(const int argc, const char** const argv) -> int {
             }
         }
 
-        if (optimize_jumps and target == "x86_64") {
-            // with jump optimizations
+        if (optimize_jumps) {
+            // each target has different branch syntax and displacement limits
             std::stringstream ss1;
-            std::stringstream ss2;
             prg.build(ss1);
-            jump_optimizer::pass1(ss1, ss2);
-            jump_optimizer::pass2(ss2, std::cout);
+            if (target == "rv32i") {
+                jump_optimizer::rv32i::optimize(ss1, std::cout);
+            } else {
+                std::stringstream ss2;
+                jump_optimizer::x86::pass1(ss1, ss2);
+                jump_optimizer::x86::pass2(ss2, std::cout);
+            }
         } else {
             prg.build(std::cout);
         }

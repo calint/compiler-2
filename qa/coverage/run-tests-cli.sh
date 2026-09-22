@@ -52,8 +52,43 @@ CLI_TARGETS() {
     grep -Eq '^[[:space:]]*ecall$' gen.s
     $BIN --target=rv32i --nopt t482.baz >out 2>err
     [[ ! -s err ]]
-    cmp -s gen.s out
+    [[ $(wc -l <gen.s) -le $(wc -l <out) ]]
     echo ok
+}
+
+CLI_JUMP_OPTIMIZATIONS() {
+    echo -n "cli x86 jump optimizations: "
+    $BIN --target=x86_64 --nopt t493.baz >gen.s 2>err
+    [[ ! -s err ]]
+    $BIN --target=x86_64 t493.baz >out 2>err
+    [[ ! -s err ]]
+    local raw optimized
+    raw=$(sed 's/^[[:space:]]*//' gen.s)
+    optimized=$(sed 's/^[[:space:]]*//' out)
+    # counts alone cannot prove the intended branches were transformed
+    [[ "$raw" == *$'jmp if_10_8_code\nif_10_8_code:'* ]]
+    [[ "$optimized" != *'jmp if_10_8_code'* ]]
+    [[ "$optimized" == *$'je if_10_5_end\nif_10_8_code:'* ]]
+    [[ "$raw" == *$'jne cmp_5_31\njmp if_5_8_code\ncmp_5_31:'* ]]
+    [[ "$optimized" == *$'je if_5_8_code\ncmp_5_31:'* ]]
+    [[ "$optimized" == *';          optimization pass 1: 2'* ]]
+    [[ "$optimized" == *';          optimization pass 2: 1'* ]]
+    [[ "$raw" != *'optimization pass'* ]]
+    local raw_count optimized_count
+    raw_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' gen.s)
+    optimized_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' out)
+    [[ $((raw_count - optimized_count)) -eq 3 ]]
+    # identical exit status checks that branch removal preserves the result
+    local temp_dir assembly
+    temp_dir=$(mktemp -d /tmp/baz-jump-cli.XXXXXX)
+    for assembly in gen.s out; do
+        nasm -f elf64 "$assembly" -o "$temp_dir/test.o"
+        ld -s -T ../../baz.ld -o "$temp_dir/test" "$temp_dir/test.o"
+        "$temp_dir/test"
+    done
+    rm -f "$temp_dir/test.o" "$temp_dir/test"
+    rmdir "$temp_dir"
+    echo "ok (pass 1: 2, pass 2: 1; jumps $raw_count -> $optimized_count; both exit 0)"
 }
 
 CLI --vars=65536 0 --help
@@ -75,5 +110,6 @@ CLI --target= 1 --help
 CLI --target=unknown 1 --help
 CLI_TARGETS
 CLI_REPRODUCE_SOURCE
+CLI_JUMP_OPTIMIZATIONS
 
 rm -f gen.s diff.baz out err
