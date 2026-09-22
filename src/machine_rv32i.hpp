@@ -44,6 +44,8 @@ class machine_rv32i final : public machine {
     uint32_t unavailable_registers_{};
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
+    bool multiply_helper_used_{};
+    bool divide_helper_used_{};
     std::vector<allocation> allocations_;
 
     [[nodiscard]] static auto register_index(const std::string_view name)
@@ -542,6 +544,122 @@ class machine_rv32i final : public machine {
         }
 
         store_operation_result(indent, destination, address, left, normalize);
+    }
+
+    auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
+                                const operand& destination,
+                                const operand& source, const bool division,
+                                const bool remainder = {}) -> void {
+
+        const address_scope scope{*this, destination, source};
+        const uint32_t live{unavailable_registers_};
+        constexpr std::array<std::string_view, 8> clobbers{
+            "ra", "a0", "a1", "t0", "t1", "t2", "t3", "t4"};
+        const size_t clobber_count{division ? clobbers.size() : 5};
+        std::vector<std::string_view> saved;
+        for (const std::string_view name :
+             std::span{clobbers}.first(clobber_count)) {
+            // protect live values and keep operand staging outside the helper
+            // registers
+            if ((live & register_mask(name)) != 0 and
+                (not destination.is_register() or
+                 register_index(destination.base_register()) !=
+                     register_index(name))) {
+                saved.push_back(name);
+            }
+            unavailable_registers_ |= register_mask(name);
+        }
+
+        const operand left{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand right{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        copy_value(src_loc_tk, indent, left, destination);
+        copy_value(src_loc_tk, indent, right, source);
+        constexpr size_t stack_alignment{16};
+        constexpr size_t word_size{4};
+        const size_t stack_bytes{
+            (((saved.size() * word_size) + stack_alignment - 1) /
+             stack_alignment) *
+            stack_alignment};
+        // allocate an aligned save area only when a clobbered register is live
+        if (stack_bytes != 0) {
+            asm_line(indent, "addi sp, sp, -{}", stack_bytes);
+        }
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            asm_line(indent, "sw {}, {}(sp)", name,
+                     static_cast<size_t>(index) * word_size);
+        }
+        asm_line(indent, "mv a0, {}", left.base_register());
+        asm_line(indent, "mv a1, {}", right.base_register());
+        asm_line(indent, "call {}",
+                 division ? ".Lbaz_divide" : ".Lbaz_multiply");
+        asm_line(indent, "mv {}, {}", left.base_register(),
+                 remainder ? "a1" : "a0");
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            asm_line(indent, "lw {}, {}(sp)", name,
+                     static_cast<size_t>(index) * word_size);
+        }
+        // restore sp before writing a possibly stack-relative destination
+        if (stack_bytes != 0) {
+            asm_line(indent, "addi sp, sp, {}", stack_bytes);
+        }
+        copy_value(src_loc_tk, indent, destination, left);
+    }
+
+    auto emit_arithmetic_helpers() const -> void {
+        // unused helpers contribute no code
+        if (multiply_helper_used_) {
+            asm_line(0, ".Lbaz_multiply:");
+            asm_line(1, "mv t0, a0");
+            asm_line(1, "li a0, 0");
+            asm_line(1, "beqz a1, 3f");
+            asm_line(0, "1:");
+            asm_line(1, "andi t1, a1, 1");
+            asm_line(1, "beqz t1, 2f");
+            asm_line(1, "add a0, a0, t0");
+            asm_line(0, "2:");
+            asm_line(1, "slli t0, t0, 1");
+            asm_line(1, "srli a1, a1, 1");
+            asm_line(1, "bnez a1, 1b");
+            asm_line(0, "3:");
+            asm_line(1, "ret");
+        }
+        // divide and remainder share magnitude division and sign restoration
+        if (divide_helper_used_) {
+            asm_line(0, ".Lbaz_divide:");
+            asm_line(1, "beqz a1, 5f");
+            asm_line(1, "srai t2, a0, 31");
+            asm_line(1, "srai t1, a1, 31");
+            asm_line(1, "xor a0, a0, t2");
+            asm_line(1, "sub a0, a0, t2");
+            asm_line(1, "xor a1, a1, t1");
+            asm_line(1, "sub a1, a1, t1");
+            asm_line(1, "xor t1, t1, t2");
+            asm_line(1, "li t0, 0");
+            asm_line(1, "li t3, 32");
+            asm_line(0, "1:");
+            asm_line(1, "srli t4, a0, 31");
+            asm_line(1, "slli t0, t0, 1");
+            asm_line(1, "or t0, t0, t4");
+            asm_line(1, "slli a0, a0, 1");
+            asm_line(1, "bltu t0, a1, 2f");
+            asm_line(1, "sub t0, t0, a1");
+            asm_line(1, "ori a0, a0, 1");
+            asm_line(0, "2:");
+            asm_line(1, "addi t3, t3, -1");
+            asm_line(1, "bnez t3, 1b");
+            asm_line(1, "xor a0, a0, t1");
+            asm_line(1, "sub a0, a0, t1");
+            asm_line(1, "xor a1, t0, t2");
+            asm_line(1, "sub a1, a1, t2");
+            asm_line(1, "ret");
+            asm_line(0, "5:");
+            asm_line(1, "ebreak");
+            asm_line(1, "j 5b");
+        }
     }
 
     [[noreturn]] static auto todo() -> void {
@@ -1240,7 +1358,8 @@ class machine_rv32i final : public machine {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  const bool reuse_source = false) -> void override {
+                  [[maybe_unused]] const bool reuse_source = false)
+        -> void override {
 
         validate_scalar(src_loc_tk, product.type_ref());
         validate_scalar(src_loc_tk, factor.type_ref());
@@ -1266,6 +1385,13 @@ class machine_rv32i final : public machine {
 
         const uint32_t multiplier{static_cast<uint32_t>(constant.value_or(0)) &
                                   mask};
+        // variable factors use the shared runtime helper
+        if (not constant.has_value()) {
+            multiply_helper_used_ = true;
+            call_arithmetic_helper(src_loc_tk, indent, product, factor, false);
+
+            return;
+        }
         // constant zero and one need no multiplication machinery
         if (constant.has_value()) {
             if (multiplier == 0) {
@@ -1310,76 +1436,33 @@ class machine_rv32i final : public machine {
         copy_value(src_loc_tk, indent, left,
                    product.is_memory() ? address : product);
         // known multipliers use an unrolled sequence of shifts and adds
-        if (constant.has_value()) {
-            bool initialized{};
-            int pending_shift{};
-            for (unsigned bit{
-                     static_cast<unsigned>(std::bit_width(multiplier)) - 1};
-                 bit != 0;) {
-                --bit;
-                ++pending_shift;
-                // emit a shift when the next set bit needs an addition
-                if ((multiplier & (uint32_t{1} << bit)) != 0) {
-
-                    asm_line(indent, "slli {}, {}, {}", result.base_register(),
-                             initialized ? result.base_register()
-                                         : left.base_register(),
-                             pending_shift);
-
-                    asm_line(indent, "add {}, {}, {}", result.base_register(),
-                             result.base_register(), left.base_register());
-
-                    pending_shift = 0;
-                    initialized = true;
-                }
-            }
-            // trailing zero bits require only a final shift
-            if (pending_shift != 0) {
+        bool initialized{};
+        int pending_shift{};
+        for (unsigned bit{static_cast<unsigned>(std::bit_width(multiplier)) -
+                          1};
+             bit != 0;) {
+            --bit;
+            ++pending_shift;
+            // emit a shift when the next set bit needs an addition
+            if ((multiplier & (uint32_t{1} << bit)) != 0) {
 
                 asm_line(indent, "slli {}, {}, {}", result.base_register(),
-                         result.base_register(), pending_shift);
+                         initialized ? result.base_register()
+                                     : left.base_register(),
+                         pending_shift);
+
+                asm_line(indent, "add {}, {}, {}", result.base_register(),
+                         result.base_register(), left.base_register());
+
+                pending_shift = 0;
+                initialized = true;
             }
-        } else {
-            // a variable multiplier is consumed one bit at a time
+        }
+        // trailing zero bits require only a final shift
+        if (pending_shift != 0) {
 
-            const bool reuse_factor{
-                reuse_source and factor.is_register() and
-                register_index(factor.base_register()) !=
-                    register_index(result.base_register()) and
-                register_index(factor.base_register()) !=
-                    register_index(product.base_register()) and
-                register_index(factor.base_register()) !=
-                    register_index(product.index_register())};
-
-            const operand right{reuse_factor
-                                    ? factor
-                                    : alloc_scratch_register(src_loc_tk, indent,
-                                                             default_type())};
-
-            const operand low_bit{
-                alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-            // preserve ordinary factors and factors that alias the destination
-            if (not reuse_factor) {
-                copy_value(src_loc_tk, indent, right, factor);
-            }
-            asm_line(indent, "li {}, 0", result.base_register());
-            asm_line(indent, "beqz {}, 3f", right.base_register());
-            asm_line(indent, "1:");
-            asm_line(indent, "andi {}, {}, 1", low_bit.base_register(),
-                     right.base_register());
-            asm_line(indent, "beqz {}, 2f", low_bit.base_register());
-
-            asm_line(indent, "add {}, {}, {}", result.base_register(),
-                     result.base_register(), left.base_register());
-
-            asm_line(indent, "2:");
-            asm_line(indent, "slli {}, {}, 1", left.base_register(),
-                     left.base_register());
-            asm_line(indent, "srli {}, {}, 1", right.base_register(),
-                     right.base_register());
-            asm_line(indent, "bnez {}, 1b", right.base_register());
-            asm_line(indent, "3:");
+            asm_line(indent, "slli {}, {}, {}", result.base_register(),
+                     result.base_register(), pending_shift);
         }
         store_operation_result(indent, product, address, result, true);
     }
@@ -1474,19 +1557,28 @@ class machine_rv32i final : public machine {
         store_operation_result(indent, dst, address, value, normalize);
     }
 
-    auto
-    validate_division_operand([[maybe_unused]] const token& src_loc_tk,
-                              [[maybe_unused]] const operand& divisor) const
+    auto validate_division_operand(const token& src_loc_tk,
+                                   const operand& divisor) const
         -> void override {
-        todo();
+
+        validate_scalar(src_loc_tk, divisor.type_ref());
     }
 
-    auto divide([[maybe_unused]] const token& src_loc_tk,
-                [[maybe_unused]] const size_t indent,
-                [[maybe_unused]] const char operation,
-                [[maybe_unused]] const operand& dst,
-                [[maybe_unused]] const operand& divisor) -> void override {
-        todo();
+    auto divide(const token& src_loc_tk, const size_t indent,
+                const char operation, const operand& dst,
+                const operand& divisor) -> void override {
+
+        assert(operation == '/' or operation == '%');
+        validate_scalar(src_loc_tk, dst.type_ref());
+        validate_division_operand(src_loc_tk, divisor);
+        // division requires a writable quotient or remainder destination
+        if (not(dst.is_register() or dst.is_memory())) {
+            throw compiler_exception{src_loc_tk,
+                                     "invalid RV32I division destination"};
+        }
+        divide_helper_used_ = true;
+        call_arithmetic_helper(src_loc_tk, indent, dst, divisor, true,
+                               operation == '%');
     }
 
     auto store_boolean(const token& src_loc_tk, const size_t indent,
@@ -1687,6 +1779,8 @@ class machine_rv32i final : public machine {
     }
 
     auto program_start() -> void override {
+        multiply_helper_used_ = false;
+        divide_helper_used_ = false;
         asm_line(0, ".option norvc");
         asm_line(0, ".option norelax");
         asm_line(0, ".text");
@@ -1720,6 +1814,7 @@ class machine_rv32i final : public machine {
     }
 
     auto begin_data(const size_t alignment) -> void override {
+        emit_arithmetic_helpers();
         asm_line(0, ".data");
         asm_line(0, ".balign {}", alignment);
         label(0, "dat");

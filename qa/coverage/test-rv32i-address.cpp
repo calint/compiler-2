@@ -547,7 +547,114 @@ auto main() -> int {
     }
     backend.use_stream(std::cout);
 
+    for (const char operation : {'*', '/', '%', '+'}) {
+        machine_rv32i helper_backend;
+        helper_backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
+        std::ostringstream output;
+        helper_backend.use_stream(output);
+        for (size_t count{}; count < 2; ++count) {
+            if (operation == '*' or operation == '+') {
+                helper_backend.multiply(token{}, 0, operand::reg("a0", integer),
+                    operation == '+' ? operand::imm("3", integer) : operand::reg("a1", integer));
+            } else {
+                helper_backend.divide(token{}, 0, operation, operand::reg("a0", integer), operand::reg("a1", integer));
+            }
+        }
+        assert(not output.str().contains(".Lbaz_multiply:"));
+        assert(not output.str().contains(".Lbaz_divide:"));
+        helper_backend.program_end();
+        helper_backend.begin_data(4);
+        const std::string assembly{output.str()};
+        for (const std::string_view label : {".Lbaz_multiply:", ".Lbaz_divide:"}) {
+            const bool expected{label == ".Lbaz_multiply:" ? operation == '*' : operation == '/' or operation == '%'};
+            const size_t first{assembly.find(label)};
+            assert((first != std::string::npos) == expected);
+            if (expected) {
+                assert(assembly.find(label, first + label.size()) == std::string::npos);
+            }
+        }
+        helper_backend.finish();
+    }
+
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+    for (const type* value_type : {&integer, &half, &byte}) {
+        const size_t bits{value_type->size_bytes() * 8};
+        const uint32_t mask{UINT32_MAX >> (32 - bits)};
+        const auto normalize{[mask, bits](const int64_t value) -> int32_t {
+            uint32_t narrowed{static_cast<uint32_t>(value) & mask};
+            if ((narrowed & (uint32_t{1} << (bits - 1))) != 0) {
+                narrowed |= ~mask;
+            }
+
+            return std::bit_cast<int32_t>(narrowed);
+        }};
+        for (const bool memory_destination : {false, true}) {
+            for (const int32_t initial : {0, 1, -1, 7, -7, -128, -32768, 32767, INT32_MIN, INT32_MAX}) {
+                for (const int32_t divisor : {1, -1, 2, -2, 3, -7, 255, 65536, INT32_MIN, INT32_MAX}) {
+                    for (const unsigned source_kind : {0U, 1U, 2U}) {
+                        for (const char operation : {'/', '%'}) {
+                            std::println("    la a2, buffer\n    li a1, {}\n    sw a1, 4(a2)", divisor);
+                            const operand destination{memory_destination
+                                ? operand::mem("a2", {}, 1, 0, *value_type)
+                                : operand::reg("a0", *value_type)};
+
+                            operand source{operand::reg("a1", integer)};
+                            if (source_kind == 1) {
+                                source = operand::mem("a2", {}, 1, 4, integer);
+                            } else if (source_kind == 2) {
+                                source = operand::imm(std::format("{}", divisor), integer);
+                            }
+                            backend.copy_value(token{}, 1, destination, operand::imm(std::format("{}", initial), integer));
+                            backend.divide(token{}, 1, operation, destination, source);
+                            backend.copy_value(token{}, 1, operand::reg("a0", integer), destination);
+                            const int64_t dividend{normalize(initial)};
+                            const int32_t expected{normalize(operation == '/' ? dividend / divisor : dividend % divisor)};
+                            std::println("    li a3, {}\n    beq a0, a3, 1f\n    j failure\n1:", expected);
+                            if (source_kind == 0) {
+                                std::println("    li a3, {}\n    beq a1, a3, 1f\n    j failure\n1:", divisor);
+                            }
+                            backend.finish();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    for (const char operation : {'*', '/', '%'}) {
+        std::vector<operand> live;
+        for (const std::string_view name : {"ra", "a0", "a1", "t0", "t1", "t2", "t3", "t4"}) {
+            live.push_back(backend.alloc_named_register(token{}, 0, name, integer));
+            std::println("    li {}, {}", name, 100 + live.size());
+        }
+        std::println("    addi sp, sp, -16\n    mv s2, sp\n    li a2, -17\n    sw a2, 0(sp)\n    li a2, 3\n    sw a2, 4(sp)");
+        const operand destination{operand::mem("sp", {}, 1, 0, integer)};
+        const operand source{operand::mem("sp", {}, 1, 4, integer)};
+        if (operation == '*') {
+            backend.multiply(token{}, 1, destination, source);
+        } else {
+            backend.divide(token{}, 1, operation, destination, source);
+        }
+        for (const auto [index, reg] : std::views::enumerate(live)) {
+            std::println("    li a2, {}\n    beq {}, a2, 1f\n    j failure\n1:", 101 + index, reg.base_register());
+        }
+        const int expected{operation == '*' ? -51 : operation == '/' ? -5 : -2};
+        std::println("    lw a2, 0(sp)\n    li a3, {}\n    beq a2, a3, 1f\n    j failure\n1:\n    beq sp, s2, 1f\n    j failure\n1:\n    addi sp, sp, 16", expected);
+        backend.free_named_registers(token{}, 0, live);
+        backend.finish();
+    }
+    for (const char operation : {'/', '%'}) {
+        std::println("    li a1, -17\n    li a0, 3");
+        backend.divide(token{}, 1, operation, operand::reg("a1", integer), operand::reg("a0", integer));
+        std::println("    li a3, {}\n    beq a1, a3, 1f\n    j failure\n1:\n    li a3, 3\n    beq a0, a3, 1f\n    j failure\n1:", operation == '/' ? -5 : -2);
+        std::println("    li a0, -17");
+        backend.divide(token{}, 1, operation, operand::reg("a0", integer), operand::reg("x10", integer));
+        std::println("    li a3, {}\n    beq a0, a3, 1f\n    j failure\n1:", operation == '/' ? 1 : 0);
+        std::println("    la t0, buffer\n    li a0, -17\n    sw a0, 0(t0)");
+        const operand address{operand::mem("t0", {}, 1, 0, integer)};
+        backend.divide(token{}, 1, operation, address, address);
+        std::println("    lw a0, 0(t0)\n    li a3, {}\n    beq a0, a3, 1f\n    j failure\n1:", operation == '/' ? 1 : 0);
+        backend.finish();
+    }
     for (const type* value_type : {&integer, &half, &byte}) {
         for (const bool memory_product : {false, true}) {
             for (const int32_t initial : {0, 1, -1, 7, -128, 32767, INT32_MIN, INT32_MAX}) {
@@ -872,7 +979,13 @@ auto main() -> int {
     }
     assert(syscall_conflict);
     backend.free_named_register(token{}, 0, held_syscall_register);
-    std::println("    li a0, 0\n    li a7, 93\n    ecall\nfailure:\n    li a0, 1\n    li a7, 93\n    ecall\n.data\n.balign 4\nbuffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");
+    backend.program_end();
+    std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
+    backend.divide(token{}, 1, '/', operand::reg("a0", integer), operand::imm("0", integer));
+    backend.exit(token{}, 1, operand::imm("0", integer));
+    std::println("failure:\n    li a0, 1\n    li a7, 93\n    ecall");
+    backend.begin_data(4);
+    std::println("buffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");
     backend.finish();
 
     return 0;
