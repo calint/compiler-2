@@ -1,15 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] jump optimizer for rv32i
+[ ] var array : [128] = { 1, 2 } # default type
 [ ] rv32i alignment issues
     => works in qemu for now that does not require alignment
 [ ] move the coverage tests into a subdirectory
-[ ] run-baz.sh switch for rv32i or x86
+[x] run-baz.sh switch for rv32i or x86
 [ ] syntax change: 
     func noinline factorial(value i32) result i32 {
     func noinline factorial(value) result { # default type
     var array[128] = {} # default type
-    var array : [128] = { 1, 2 }
     var array[128] i32 = {} 
     var x i32 = 2
 
