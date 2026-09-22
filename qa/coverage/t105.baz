@@ -16,7 +16,7 @@ type location {
 }
 
 type world {
-    time : i64,
+    time,
     locations : location[7]
 }
 

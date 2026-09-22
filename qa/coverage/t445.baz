@@ -2,18 +2,18 @@
 
 func assert(err, expr : bool) if not expr exit(err)
 
-func ret_after_inc(i : i64) : out i64 {
+func ret_after_inc(i) : out {
     i = i + 1
     out = 77
 }
 
-func store_after_inc(v : i64, slot : i64, i : i64) {
+func store_after_inc(v, slot, i) {
     i = i + 1
     slot = v
 }
 
 func main() {
-    var plain : i64 = 0
+    var plain = 0
     var j = 4
 
     plain = ret_after_inc(j)
@@ -21,7 +21,7 @@ func main() {
     assert(1, j == 5)
     assert(2, plain == 77)
 
-    var plain2 : i64 = 9
+    var plain2 = 9
     var k = 2
 
     store_after_inc(55, plain2, k)

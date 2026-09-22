@@ -3,11 +3,11 @@
 func assert(err, expr : bool) if not expr exit(err)
 
 type pair {
-    x : i64,
-    y : i64
+    x,
+    y
 }
 
-func bump(dst : pair, src : pair, i : i64) {
+func bump(dst : pair, src : pair, i) {
     i = i + 1
     dst = {src.x + i, src.y + i}
     src = {src.x + 100, src.y + 200}

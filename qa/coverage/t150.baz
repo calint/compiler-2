@@ -2,7 +2,7 @@ func assert(expr : bool) if not expr exit(1)
 
 type point { x, y }
 
-type world { locations : i64[4] }
+type world { locations : [4] }
 
 type exits {  from : i32[4], to : i32[4] }
 

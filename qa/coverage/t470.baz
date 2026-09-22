@@ -1,4 +1,4 @@
 # unary operator on a non-inline call
 
-func noinline target(): result i64 { result = 1 }
+func noinline target(): result { result = 1 }
 func main() { var result = -target() }

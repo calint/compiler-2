@@ -1,6 +1,6 @@
 # foo loop variable passed to a mutating function
 
-dat values : i64[] = {1, 2, 3}
+dat values : [] = {1, 2, 3}
 
 func increment(value) {
     value = value + 10

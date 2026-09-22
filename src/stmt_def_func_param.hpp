@@ -27,8 +27,10 @@ class stmt_def_func_param final : public statement {
             return;
         }
 
-        // get type
-        type_tk_ = tz.next_token();
+        open_bracket_tk_ = tz.is_next_char_token('[');
+        if (open_bracket_tk_.is_empty()) {
+            type_tk_ = tz.next_token();
+        }
         if (type_tk_.text().starts_with("reg_")) {
             // register parameter, set default type
             set_type(tc.get_type_default());
@@ -36,9 +38,13 @@ class stmt_def_func_param final : public statement {
             return;
         }
 
-        set_type(tc.get_type_or_throw(type_tk_, type_tk_.text()));
+        set_type(type_tk_.is_empty()
+                     ? tc.get_type_default()
+                     : tc.get_type_or_throw(type_tk_, type_tk_.text()));
 
-        open_bracket_tk_ = tz.is_next_char_token('[');
+        if (open_bracket_tk_.is_empty()) {
+            open_bracket_tk_ = tz.is_next_char_token('[');
+        }
         if (not open_bracket_tk_.is_empty()) {
             close_bracket_tk_ = tz.is_next_char_token(']');
             if (close_bracket_tk_.is_empty()) {
@@ -52,11 +58,13 @@ class stmt_def_func_param final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        if (type_tk_.text().empty()) {
+        if (type_delim_tk_.is_empty()) {
             return;
         }
         type_delim_tk_.source_to(os);
-        type_tk_.source_to(os);
+        if (not type_tk_.is_empty()) {
+            type_tk_.source_to(os);
+        }
         if (is_array_) {
             open_bracket_tk_.source_to(os);
             close_bracket_tk_.source_to(os);

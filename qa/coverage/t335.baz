@@ -7,11 +7,11 @@ func take(value : i8) : result i8 {
 }
 
 func main() {
-    var bigger : i64 = 0x123
+    var bigger = 0x123
     var smaller : i8 = take(bigger)
     assert(smaller == 0x23)
 
-    var bigger_again : i64 = 0x1234
+    var bigger_again = 0x1234
     var smaller_again : i8 = take(bigger_again)
     assert(smaller_again == 0x34)
 }

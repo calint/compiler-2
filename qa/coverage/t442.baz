@@ -1,10 +1,10 @@
-# equal compares indexed i64 values (true and false paths)
+# equal compares indexed default-type values (true and false paths)
 
 func assert(err, expr : bool) if not expr exit(err)
 
 func main() {
-    var a : i64[2]
-    var b : i64[2]
+    var a : [2]
+    var b : [2]
 
     a[0] = 5
     b[0] = 5

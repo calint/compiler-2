@@ -1,10 +1,10 @@
 # signed unary results across integer widths
 
-func f1(i):res i64{
+func f1(i):res{
     res=-i
 }
 
-func f2(i):res i64{
+func f2(i):res{
     res=-i*2
 }
 
@@ -20,7 +20,7 @@ func f5(i:i8):res i8{
     res=-i*4
 }
 
-func f6(i:i8):res i64{
+func f6(i:i8):res{
     res=-i
 }
 
@@ -31,7 +31,7 @@ func main(){
     var bt:i8=1
     var wd:i16=2
     var dd:i32=3
-    var qd:i64=4
+    var qd=4
     
     var b:i8=f5(bt)
     if not b==-4 exit(2)

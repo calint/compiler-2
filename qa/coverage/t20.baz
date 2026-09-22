@@ -1,14 +1,14 @@
 # nested inlined function calls
 
-func a(i):res i64{
+func a(i):res{
     res=i+1
 }
 
-func b(i):res i64{
+func b(i):res{
     res=i+2
 }
 
-func c(i):res i64{
+func c(i):res{
     res=i+3
 }
 

@@ -1,6 +1,6 @@
 # nested array and field indexing
 
-type world { locations : i64[2] }
+type world { locations : [2] }
 
 func assert(expr : bool) if not expr exit(1)
 

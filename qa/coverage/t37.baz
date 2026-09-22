@@ -1,6 +1,6 @@
 # negated function result
 
-func f(a):res i64{
+func f(a):res{
     res=-a*2
 }
 

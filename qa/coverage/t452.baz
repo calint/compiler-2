@@ -5,13 +5,13 @@
 func assert(err, expr : bool) if not expr exit(err)
 
 type pair {
-    x : i64,
-    y : i64
+    x,
+    y
 }
 
 type outer {
     p : pair,
-    tag : i64
+    tag
 }
 
 func main() {

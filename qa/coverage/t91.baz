@@ -6,7 +6,7 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes i64 {
+func input(len, ptr) : nbytes {
     nbytes = read(0, ptr, len)
 }
 
@@ -17,13 +17,13 @@ func print_num(num) {
     
     if n < 0 {
         is_negative = true
-        n = -n
     }
+    if n > 0 n = -n
     
     var i = 20
     loop {
         i = i - 1
-        var ascii = 48 + (n % 10)
+        var ascii = 48 - (n % 10)
         # note: not buf[i] = 48 + ... because expression will be executed as byte sized and n overflows
         buf[i] = ascii 
         n = n / 10
@@ -53,7 +53,7 @@ func main() {
   var i1 = 123
   var i2 : i32 = 321
   var i3 : i16 = 420
-  var i4 : i64 = 840
+  var i4 = 840
   var i5 = -1
   var i6 = 2147483647  
   var i7 = -2147483648

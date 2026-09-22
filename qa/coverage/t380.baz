@@ -1,6 +1,6 @@
 # computed index must respect array-parameter bounds
 
-func legacy_write(values : i8[], index : i64) {
+func legacy_write(values : i8[], index) {
     values[index + 1] = 1
 }
 

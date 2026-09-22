@@ -3,20 +3,20 @@
 func assert(err, expr : bool) if not expr exit(err)
 
 type pair {
-    x : i64,
-    y : i64
+    x,
+    y
 }
 
 type container {
     p : pair,
-    tag : i64
+    tag
 }
 
-func mk_pair(base : i64) : out pair {
+func mk_pair(base) : out pair {
     out = {base + 1, base + 2}
 }
 
-func sum_pair(src : pair) : out i64 {
+func sum_pair(src : pair) : out {
     out = src.x + src.y
 }
 

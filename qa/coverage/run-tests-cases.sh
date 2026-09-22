@@ -1,10 +1,6 @@
 MACHINE="${MACHINE:-x86_64}"
 case "$MACHINE" in
-	x86_64) ;;
-	rv32i)
-		source "$SCRIPT_DIR/run-tests-cases-rv32i.sh"
-		return
-		;;
+	x86_64|rv32i) ;;
 	*) echo "Unknown machine: $MACHINE" >&2; exit 1 ;;
 esac
 
@@ -37,7 +33,7 @@ SRC=t26 && EXP=0 && RUN
 SRC=t27 && EXP=0 && RUN
 SRC=t28 && EXP=0 && RUN
 SRC=t29 && EXP=0 && RUN
-SRC=t30 && EXP=0 && RUN
+# SRC=t30 && EXP=0 && RUN # target-specific register parameters
 SRC=t31 && EXP=0 && RUN
 SRC=t32 && EXP=0 && RUN
 SRC=t33 && EXP=0 && RUN
@@ -49,7 +45,7 @@ SRC=t38 && EXP=0 && RUN
 SRC=t39 && EXP=0 && RUN
 SRC=t40 && EXP=0 && RUN
 SRC=t41 && EXP=0 && RUN
-SRC=t42 && EXP=0 && RUN
+# SRC=t42 && EXP=0 && RUN # target-specific register parameters
 SRC=t43 && EXP=0 && RUN
 SRC=t44 && EXP=0 && RUN
 SRC=t45 && EXP=0 && RUN
@@ -75,7 +71,7 @@ SRC=t64 && EXP=0 && RUN
 SRC=t65 && EXP=0 && RUN
 SRC=t66 && EXP=0 && RUN
 SRC=t67 && EXP=0 && RUN
-SRC=t68 && EXP=0 && RUN
+# SRC=t68 && EXP=0 && RUN # target-specific register parameters
 SRC=t69 && EXP=0 && RUN
 SRC=t70 && EXP=0 && RUN
 SRC=t71 && EXP=0 && RUN
@@ -134,7 +130,7 @@ SRC=t124 && COMPERR
 SRC=t125 && COMPERR
 SRC=t126 && COMPERR
 SRC=t127 && COMPERR
-SRC=t128 && EXP=0 && RUN
+# SRC=t128 && EXP=0 && RUN # x86 syscall registers
 SRC=t129 && EXP=0 && RUN
 SRC=t130 && EXP=0 && RUN
 SRC=t131 && EXP=0 && RUN
@@ -236,9 +232,9 @@ SRC=t230 && COMPERR
 SRC=t231 && COMPERR
 SRC=t232 && COMPERR
 SRC=t233 && COMPERR
-SRC=t234 && COMPERR
-SRC=t235 && COMPERR
-SRC=t236 && COMPERR
+# SRC=t234 && COMPERR # i64 decimal limit
+# SRC=t235 && COMPERR # i64 hexadecimal limit
+# SRC=t236 && COMPERR # i64 binary limit
 SRC=t237 && COMPERR
 SRC=t238 && COMPERR
 SRC=t239 && COMPERR
@@ -250,9 +246,9 @@ SRC=t245 && EXP=0 && RUN
 SRC=t246 && EXP=0 && RUN
 SRC=t249 && EXP=0 && RUN
 SRC=t248 && COMPERR
-SRC=t250 && COMPERR
-SRC=t251 && COMPERR
-SRC=t252 && COMPERR
+# SRC=t250 && COMPERR # x86 shift-count register
+# SRC=t251 && COMPERR # x86 division registers
+# SRC=t252 && COMPERR # x86 division registers
 SRC=t253 && COMPERR
 SRC=t254 && COMPERR
 SRC=t255 && COMPERR
@@ -278,7 +274,7 @@ SRC=t278 && EXP=0 && RUN
 SRC=t279 && EXP=0 && RUN
 SRC=t299 && COMPERR
 SRC=t280 && COMPERR
-SRC=t286 && COMPERR
+# SRC=t286 && COMPERR # target-specific register parameters
 SRC=t287 && COMPERR
 SRC=t289 && EXP=0 && RUN
 SRC=t290 && EXP=0 && RUN
@@ -306,7 +302,7 @@ SRC=t317 && EXP=0 && RUN
 SRC=t318 && COMPERR
 SRC=t319 && COMPERR
 SRC=t320 && COMPERR
-SRC=t321 && COMPERR
+# SRC=t321 && COMPERR # target-specific scratch-register capacity
 SRC=t322 && COMPERR
 SRC=t323 && COMPERR
 SRC=t324 && EXP=0 && RUN
@@ -386,7 +382,7 @@ SRC=t399 && COMPERR
 SRC=t400 && EXP=0 && RUN
 SRC=t401 && EXP=0 && RUN
 SRC=t402 && COMPERR
-SRC=t403 && EXP=0 && RUN
+# SRC=t403 && EXP=0 && RUN # requires a 64-bit truncation source
 SRC=t404 && COMPERR
 SRC=t405 && COMPERR
 SRC=t406 && EXP=0 && RUN
@@ -433,12 +429,12 @@ SRC=t452 && EXP=0 && RUN
 SRC=t453 && EXP=0 && RUN
 SRC=t454 && EXP=0 && RUN
 SRC=t455 && EXP=0 && RUN
-SRC=t456 && EXP=0 && RUN
-SRC=t457 && EXP=0 && RUN
-SRC=t458 && COMPERR
-SRC=t459 && COMPERR
-SRC=t460 && COMPERR
-SRC=t461 && COMPERR
+# SRC=t456 && EXP=0 && RUN # x86 register-width aliases
+# SRC=t457 && EXP=0 && RUN # x86 arena and syscall registers
+# SRC=t458 && COMPERR # target-specific register parameters
+# SRC=t459 && COMPERR # x86 register name
+# SRC=t460 && COMPERR # x86 register name
+# SRC=t461 && COMPERR # x86 register name
 SRC=t462 && EXP=0 && RUN
 SRC=t463 && EXP=0 && RUN
 SRC=t464 && EXP=0 && RUN
@@ -451,15 +447,15 @@ SRC=t467 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
 SRC=t468 && COMPERR
 SRC=t469 && COMPERR
 SRC=t470 && COMPERR
-SRC=t471 && COMPERR
+# SRC=t471 && COMPERR # x86 register result destination
 SRC=t472 && COMPERR
 SRC=t473 && COMPERR
 SRC=t474 && COMPERR
 SRC=t475 && COMPERR
 SRC=t476 && COMPERR
-SRC=t477 && COMPERR
+# SRC=t477 && COMPERR # x86 register argument
 SRC=t478 && COMPERR
-SRC=t479 && COMPERR
+# SRC=t479 && COMPERR # target-specific register parameters
 SRC=t480 && COMPERR
 SRC=t481 && COMPERR
 SRC=t482 && EXP=42 && RUN

@@ -1,9 +1,9 @@
-# direct i64 array indexing
+# direct default-type array indexing
 
 func assert(expr : bool) if not expr exit(1)
 
 func main() {
-    var values : i64[2]
+    var values : [2]
     values[1] = 7
     assert(values[1] == 7)
 }

@@ -6,12 +6,12 @@
 func assert(err, expr : bool) if not expr exit(err)
 
 type holder {
-    values : i64[2],
-    tag : i64
+    values : [2],
+    tag
 }
 
 func main() {
-    var src_values : i64[2] = {31, 32}
+    var src_values : [2] = {31, 32}
     var holders : holder[2]
 
     var ix = 1

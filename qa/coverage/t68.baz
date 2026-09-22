@@ -15,7 +15,7 @@ func fow(x : reg_rsi, y : reg_rcx) {
 }
 
 func main(){
-    var a : i64 = 1
+    var a = 1
     foozi(~1, ~a)
     fow(~-1, ~-a)
     foozi(a - 3, -2)

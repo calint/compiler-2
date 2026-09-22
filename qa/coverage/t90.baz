@@ -9,8 +9,8 @@ func main() {
   var w2 : i16 = 22
   var dw : i32 = 3
   var dw2 : i32 = 33
-  var q : i64 = 4
-  var q2 : i64 = 44
+  var q = 4
+  var q2 = 44
 
   b = b2
   assert(b == 11)

@@ -1,23 +1,23 @@
 func assert(expr : bool) if not expr exit(1)
 
-func faz(x, y) : res i64 {
+func faz(x, y) : res {
     res = x / y 
 }
 
-func fez(val : i64[]) : res i64 {
+func fez(val : []) : res {
     res = val[2] / val[1] 
 }
 
-func foz(x, y) : res i64 {
+func foz(x, y) : res {
     res = ~x / ~y 
 }
 
-func fuz(x, y) : res i64 {
+func fuz(x, y) : res {
     res = ~x % ~y 
 }
 
 func main() {
-    var values : i64[4]
+    var values : [4]
     values[1] = 4
     values[2] = 8
 

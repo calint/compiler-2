@@ -1,7 +1,7 @@
-# boolean result cannot initialize an i64 variable
+# boolean result cannot initialize an integer variable
 
 func main() {
     var a : i8[2]
     var b : i8[2]
-    var result : i64 = arrays_equal(a, b, 1)
+    var result : i16 = arrays_equal(a, b, 1)
 }

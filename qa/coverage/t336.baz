@@ -6,12 +6,12 @@ type record { first, second, third, fourth }
 
 func main() {
     {
-        var dirty_values : i64[4] = { 11, 22, 33, 44 }
+        var dirty_values : [4] = { 11, 22, 33, 44 }
         assert(dirty_values[3] == 44)
     }
 
     {
-        var zeroed_values : i64[4] = { 99 }
+        var zeroed_values : [4] = { 99 }
         assert(zeroed_values[0] == 99)
         assert(zeroed_values[1] == 0)
         assert(zeroed_values[2] == 0)

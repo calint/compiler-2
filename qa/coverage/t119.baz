@@ -2,9 +2,9 @@
 
 func assert(expr : bool) if not expr exit(1)
 
-func f1(state) : res i64 { state = state + 1 res = state }
-func f2(x) : res i64 { res = x * 2 }
-func f3(x) : res i64 { res = x + 10 }
+func f1(state) : res { state = state + 1 res = state }
+func f2(x) : res { res = x * 2 }
+func f3(x) : res { res = x + 10 }
 
 dat state = 0
 

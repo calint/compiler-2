@@ -12,7 +12,7 @@ type mesh {
 
 type scene {
     meshes : mesh[4],
-    time : i64
+    time
 }
 
 type world {

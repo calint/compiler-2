@@ -2,12 +2,12 @@
 
 func assert(expr : bool) if not expr exit(1)
 
-func fiz(x, y) : res i64 {
+func fiz(x, y) : res {
     res = x + x + y
 }
 
 func main() {
-    var arr : i64[4]
+    var arr : [4]
     var ix = 1
     arr[ix] = 2
     arr[3] = 3

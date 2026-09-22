@@ -2,7 +2,7 @@
 
 func assert(expr : bool) if not expr exit(1)
 
-func fiz(x, y) : res i64 {
+func fiz(x, y) : res {
     res = x + x + y
 }
 

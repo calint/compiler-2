@@ -4,14 +4,14 @@ type point { x, y }
 
 func assert(code, x : bool) if not x exit(code)
 
-func fooz(v) : res i64 {
+func fooz(v) : res {
     res = v * 2
 }
 
 func main() {
     var x = 10
     var y = 4
-    var numbers : i64[3] = { x, 20, 30 }
+    var numbers : [3] = { x, 20, 30 }
     var points : point[2] = { {1, 2}, {3, fooz(y) + 1} }
 
     assert(1, numbers[0] == 10)

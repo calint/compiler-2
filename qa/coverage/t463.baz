@@ -2,7 +2,7 @@
 
 func assert(err, expr : bool) if not expr exit(err)
 
-var calls : i64 = 0
+var calls = 0
 
 func bump(value : i16) {
     value = value + 1

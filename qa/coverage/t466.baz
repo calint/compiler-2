@@ -2,13 +2,13 @@
 
 func assert(err, expr : bool) if not expr exit(err)
 
-func noinline factorial(value : i64) : result i64 {
+func noinline factorial(value) : result {
     result = 1
     if value <= 1 return
 
-    var saved : i64 = value
-    var next : i64 = value - 1
-    var partial : i64 = 0
+    var saved = value
+    var next = value - 1
+    var partial = 0
     partial = factorial(next)
     if saved != value or next != value - 1 {
         result = -1
@@ -18,8 +18,8 @@ func noinline factorial(value : i64) : result i64 {
 }
 
 func main() {
-    var value : i64 = 5
-    var result : i64 = 0
+    var value = 5
+    var result = 0
     result = factorial(value)
     assert(3, result == 120)
     assert(4, value == 5)

@@ -8,7 +8,7 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func input(len, ptr) : nbytes i64 {
+func input(len, ptr) : nbytes {
     nbytes = read(0, ptr, len)
 }
 

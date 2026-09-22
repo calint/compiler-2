@@ -3,15 +3,15 @@
 func assert(err, expr : bool) if not expr exit(err)
 
 type pair {
-    x : i64,
-    y : i64
+    x,
+    y
 }
 
-func mk_from(src : pair, delta : i64) : out pair {
+func mk_from(src : pair, delta) : out pair {
     out = {src.x + delta, src.y + delta}
 }
 
-func put(dst : pair, src : pair, j : i64) {
+func put(dst : pair, src : pair, j) {
     j = j + 1
     dst = mk_from(src, j)
 }

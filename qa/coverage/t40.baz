@@ -1,8 +1,8 @@
-func foozi(x):res i64{
+func foozi(x):res{
     res=-x*2
 }
 
-func bar(y):res i64{
+func bar(y):res{
     res=-y
 }
 

@@ -24,10 +24,10 @@ func main() {
     var c32 : i32 = 1
     assert(9, ~c32)
 
-    var b64 : i64 = -1
+    var b64 = -1
     assert(10, b64)
     assert(11, not ~b64)
 
-    var c64 : i64 = 1
+    var c64 = 1
     assert(12, ~c64)
 }

@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
 import subprocess
+import os
 
-p = subprocess.Popen(['./gen'],
+command = ['qemu-riscv32', './gen'] if os.environ.get('MACHINE') == 'rv32i' else ['./gen']
+p = subprocess.Popen(command,
                            stdin=subprocess.PIPE,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE,

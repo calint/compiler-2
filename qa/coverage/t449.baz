@@ -3,16 +3,16 @@
 func assert(err, expr : bool) if not expr exit(err)
 
 type pair {
-    x : i64,
-    y : i64
+    x,
+    y
 }
 
 type box {
     p : pair,
-    tag : i64
+    tag
 }
 
-func set_fields(dst : box, v : i64, i : i64) {
+func set_fields(dst : box, v, i) {
     i = i + 1
     dst.p.x = v + i
     dst.p.y = dst.p.x + 1

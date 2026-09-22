@@ -193,10 +193,7 @@ DIFFINP2() {
     echo -n "$SRC: "
     compile_and_build
 
-    while read -r line; do
-        echo "$line"
-        sleep 0.001 # Small wait for single line to be received by `read`
-    done <"${SRC%.*}.in" | execute_program >out
+    python3 "$SCRIPT_DIR/input-lines.py" "$MACHINE" "${SRC%.*}.in" >out
 
     check_output "${SRC%.*}.out"
 }
@@ -205,7 +202,7 @@ DIFFINP2() {
 DIFFPY() {
     echo -n "$SRC: "
     compile_and_build
-    "./${SRC%.*}.py" >out
+    MACHINE="$MACHINE" "./${SRC%.*}.py" >out
     check_output "${SRC%.*}.out"
 }
 
@@ -213,7 +210,11 @@ DIFFPY() {
 COMPERR() {
     echo -n "$SRC: "
     compile_expect_error
-    check_output "${SRC%.*}.out"
+    local expected="${SRC%.*}.$MACHINE.out"
+    if [[ ! -f "$expected" ]]; then
+        expected="${SRC%.*}.out"
+    fi
+    check_output "$expected"
 }
 
 # Run all test cases

@@ -1,6 +1,6 @@
 # foo loop variable indexes its data field
 
-type item { data : i64[2] }
+type item { data : [2] }
 
 dat values : item[3] =
     {

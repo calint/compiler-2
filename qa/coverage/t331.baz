@@ -3,7 +3,7 @@
 func assert(expr : bool) if not expr exit(1)
 
 type point { x, y }
-type box { point_value : point, tag : i64 }
+type box { point_value : point, tag }
 
 func make_point() : result point {
     result = { 8, -3 }

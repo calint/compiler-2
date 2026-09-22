@@ -1,4 +1,4 @@
 # non-inline result cannot target a whole array
 
-func noinline target(): result i64 { result = 1 }
-func main() { var result: i64[2] = {target()} }
+func noinline target(): result { result = 1 }
+func main() { var result: [2] = {target()} }

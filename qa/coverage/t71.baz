@@ -7,7 +7,7 @@ func assert(expr : bool) {
 
 # user types are defined using keyword `type`
 
-# default type is `i64` and does not need to be specified
+# default type is target-dependent and does not need to be specified
 type point {x, y}
 
 type object {pos : point, color : i32}
@@ -18,14 +18,14 @@ func foozi(pt : point) {
     pt.y = 0xb     # hex value 11
 }
 
-# default argument type is `i64`
+# default argument type is target-dependent
 func bar(arg) {
     if arg == 0 return
     arg = 0xff
 }
 
 # return target is specified as a variable, in this case `res`
-func baz(arg) : res i64 {
+func baz(arg) : res {
     res = arg * 2
 }
 

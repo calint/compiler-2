@@ -4,16 +4,16 @@ func print(len, ptr) {
     write(1, ptr, len)
 }
 
-func noinline print_num(num : i64) {
+func noinline print_num(num) {
     var buf : i8[20]
-    var n : i64 = num
+    var n = num
     var negative : bool = n < 0
-    if negative n = -n
+    if not negative n = -n
 
     var i = 20
     loop {
         i = i - 1
-        var ascii = 48 + (n % 10)
+        var ascii = 48 - (n % 10)
         buf[i] = ascii
         n = n / 10
         if n == 0 break
@@ -37,9 +37,9 @@ func noinline print_num(num : i64) {
 func main() {
     var newline : i8[1]
     newline[0] = 10
-    var first : i64 = 123
-    var second : i64 = -2147483648
-    var third : i64 = 0
+    var first = 123
+    var second = -2147483648
+    var third = 0
 
     print_num(first)
     print(1, address_of(newline))

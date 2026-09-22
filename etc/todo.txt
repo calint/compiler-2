@@ -6,7 +6,7 @@
 [x] var array : [128] = { 1, 2 } # default type
 [x] dat array : [128] = { 1, 2 } # default type
 [x] type x { i : [4] } # uses default type
-[ ] func fact(x) : result # default type
+[x] func fact(x) : result # default type
 [ ] rv32i alignment issues
     => works in qemu for now that does not require alignment
 [ ] move the coverage tests into a subdirectory
@@ -14,6 +14,7 @@
 [ ] syntax change: 
     func noinline factorial(value i32) result i32 {
     func noinline factorial(value) result { # default type
+    func noinline factorial(value[]) result { # default type
     var array[128] = {} # default type
     var array[128] i32 = {} 
     var x i32 = 2

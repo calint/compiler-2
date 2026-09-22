@@ -7,7 +7,7 @@ func main() {
     var positive : i8 = 3
     var other_negative : i8 = -3
 
-    var wide : i64 = positive * negative
+    var wide = positive * negative
     assert(1, wide == -21)
     wide = negative * positive
     assert(2, wide == -21)

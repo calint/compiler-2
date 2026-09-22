@@ -10,7 +10,7 @@ func foozi(pt : point) {
     pt.y = 0xb     # hex value 11
 }
 
-# default argument type is `i64`
+# default argument type is target-dependent
 func bar(arg) {
     if arg == 0 return
     arg = 0xff
@@ -21,7 +21,7 @@ func inv(i : i32) : res i32 {
 }
 
 # return target is specified as a variable, in this case `res`
-func baz(arg) : res i64 {
+func baz(arg) : res {
     res = arg * 2
 }
 

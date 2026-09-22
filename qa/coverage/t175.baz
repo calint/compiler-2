@@ -1,4 +1,4 @@
-# address_of requires an i64 destination
+# address_of requires an address-sized destination
 
 func main() {
     var x : i8

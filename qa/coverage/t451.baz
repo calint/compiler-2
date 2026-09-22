@@ -5,8 +5,8 @@
 func assert(err, expr : bool) if not expr exit(err)
 
 func main() {
-    var src : i64[4] = {1, 2, 3, 4}
-    var dst : i64[4] = {0, 0, 0, 0}
+    var src : [4] = {1, 2, 3, 4}
+    var dst : [4] = {0, 0, 0, 0}
 
     var n = 3
     array_copy(src, dst, n)

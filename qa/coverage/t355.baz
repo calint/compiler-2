@@ -1,6 +1,6 @@
 # out-of-range index returned by a function
 
-func get_index() : result i64 {
+func get_index() : result {
     result = 8
 }
 

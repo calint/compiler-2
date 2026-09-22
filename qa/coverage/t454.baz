@@ -3,8 +3,8 @@
 func assert(err, expr : bool) if not expr exit(err)
 
 type point {
-    x : i64,
-    y : i64
+    x,
+    y
 }
 
 type node {

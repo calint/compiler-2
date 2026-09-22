@@ -1,6 +1,6 @@
 # boolean arrays_equal result used in non-boolean arithmetic argument
 
-func take(value : i64) {
+func take(value : i16) {
 }
 
 func main() {

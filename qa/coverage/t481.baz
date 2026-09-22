@@ -1,4 +1,4 @@
 # non-inline array parameter cannot accept an indexed argument
 
-func noinline target(parameter: i64[]) {}
-func main() { var items: i64[2] target(items[0]) }
+func noinline target(parameter: []) {}
+func main() { var items: [2] target(items[0]) }

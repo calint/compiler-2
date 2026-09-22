@@ -39,12 +39,12 @@ func main() {
     assert(mp[1].msg[0] == 1)
     assert(mp[1].msg[1] == 8)
 
-    var s1: i8[]  = { 12, 13, mp[1].msg[0] }
-    var s2 : i8[3]
-    s2 = s1
-    assert(s2[0] == 12)
-    assert(s2[1] == 13)
-    assert(s2[2] == 1)
+    var source_values: i8[]  = { 12, 13, mp[1].msg[0] }
+    var copied_values : i8[3]
+    copied_values = source_values
+    assert(copied_values[0] == 12)
+    assert(copied_values[1] == 13)
+    assert(copied_values[2] == 1)
 
     var msg : message = { { }, true, { false, true, true } }
     assert(msg.is_read == true)

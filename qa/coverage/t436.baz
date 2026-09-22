@@ -1,6 +1,6 @@
 func assert(x : bool) if not x exit(1)
 
-func baz(arg) : res i64 {
+func baz(arg) : res {
     res = arg * 2
 }
 

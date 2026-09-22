@@ -4,12 +4,12 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-func arrarg(arg : i64[]) {
+func arrarg(arg : []) {
     arg[1] = 0xfe
 }
 
 func main() {
-    var arr : i64[7]
+    var arr : [7]
     arrarg(arr)
     assert(arr[1] == 0xfe)
 }

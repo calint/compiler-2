@@ -2,15 +2,15 @@
 
 func assert(err, expr : bool) if not expr exit(err)
 
-func mix(dst : i64, src : i64, ix : i64) {
+func mix(dst, src, ix) {
     ix = ix + 1
     dst = src + ix
     src = src + 10
 }
 
 func main() {
-    var srcs : i64[4] = {5, 6, 7, 8}
-    var dsts : i64[4] = {0, 0, 0, 0}
+    var srcs : [4] = {5, 6, 7, 8}
+    var dsts : [4] = {0, 0, 0, 0}
 
     var dst_index = 1
     var src_index = 2

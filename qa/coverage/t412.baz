@@ -1,6 +1,6 @@
 # foo over a user type with an array field
 
-type holder { values : i64[2] }
+type holder { values : [2] }
 
 dat holders : holder[2] = { {{1, 2}}, {{3, 4}} }
 

@@ -38,7 +38,7 @@ func main() {
     z = x % -1
     assert(z == 0)
 
-    var wide : i64 = 259
+    var wide = 259
     x = 7
     z = x / wide
     assert(z == 0)
