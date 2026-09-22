@@ -1,10 +1,10 @@
 func assert(expr : bool) if not expr exit(1)
 
-func faz(x : i8, y : i8) : i8 res {
+func faz(x : i8, y : i8) : res i8 {
     res = x * y 
 }
 
-func fez(x : i8, y : i8) : i8 res {
+func fez(x : i8, y : i8) : res i8 {
     res = x * ~y 
 }
 

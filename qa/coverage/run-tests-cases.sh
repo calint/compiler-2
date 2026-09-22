@@ -473,3 +473,5 @@ SRC=t489 && EXP=0 && RUN
 SRC=t490 && EXP=0 && RUN
 SRC=t490 && EXP=0 && OPTS="--vars=262144 --checks=upper,lower,line,frame --reproduce-source" RUN
 SRC=t490 && EXP=255 && OPTS="--vars=4128 --checks=frame --reproduce-source" RUN
+SRC=t491 && EXP=0 && RUN
+SRC=t492 && EXP=0 && RUN

@@ -1,26 +1,26 @@
 # signed unary results across integer widths
 
-func f1(i):i64 res{
+func f1(i):res i64{
     res=-i
 }
 
-func f2(i):i64 res{
+func f2(i):res i64{
     res=-i*2
 }
 
-func f3(i:i32):i32 res{
+func f3(i:i32):res i32{
     res=-i*3
 }
 
-func f4(i:i16):i16 res{
+func f4(i:i16):res i16{
     res=-i*4
 }
 
-func f5(i:i8):i8 res{
+func f5(i:i8):res i8{
     res=-i*4
 }
 
-func f6(i:i8):i64 res{
+func f6(i:i8):res i64{
     res=-i
 }
 

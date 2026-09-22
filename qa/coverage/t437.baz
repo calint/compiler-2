@@ -12,7 +12,7 @@ type location {
     note : str
 }
 
-func inv8(v : i8) : i8 out {
+func inv8(v : i8) : out i8 {
     out = ~v
 }
 

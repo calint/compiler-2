@@ -1,6 +1,6 @@
 # conditional return assignment is not guaranteed
 
-func foozi(i) : i64 res {
+func foozi(i) : res i64 {
     if i == 3 res = 2
 }
 

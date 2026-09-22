@@ -6,15 +6,15 @@ type record { prefix: i8, pt: point, suffix: i64 }
 func assert(code, condition: bool) if not condition exit(code)
 func bump(value: point) { value.y = value.y + 3 }
 
-func noinline shift(value: point): point result {
+func noinline shift(value: point): result point {
     result = { value.x, value.y }
     value.x = value.x + 2
     result.y = result.y + 4
 }
 
-func relay(value: point): point result { result = shift(value) }
+func relay(value: point): result point { result = shift(value) }
 
-func noinline change(value: record): record result {
+func noinline change(value: record): result record {
     var saved: record = value
     value.pt.x = value.pt.x + 1
     bump(value.pt)
@@ -22,11 +22,11 @@ func noinline change(value: record): record result {
     result.pt.y = value.pt.y
 }
 
-func noinline forward(value: record): record result {
+func noinline forward(value: record): result record {
     result = change(value)
 }
 
-func noinline nested(value: record): point result {
+func noinline nested(value: record): result point {
     result = relay(value.pt)
 }
 

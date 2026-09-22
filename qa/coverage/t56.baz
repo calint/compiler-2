@@ -1,10 +1,10 @@
 # mixed-width function parameters
 
-func f1(b:i8,w:i16,d:i32,q:i64):i64 res{
+func f1(b:i8,w:i16,d:i32,q:i64):res i64{
     res=b+w+d+q
 }
 
-func f2(b:i8,w:i16,d:i32,q:i64):i64 res{
+func f2(b:i8,w:i16,d:i32,q:i64):res i64{
     res=b+w+d+q
 }
 

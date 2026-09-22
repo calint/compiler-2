@@ -4,7 +4,7 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-func op_on_arr(e : i32) : i32 res {
+func op_on_arr(e : i32) : res i32 {
   res = e + 1
 }
 

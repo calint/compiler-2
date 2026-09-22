@@ -2,7 +2,7 @@
 
 func assert(expr : bool) if not expr exit(1)
 
-func take(value : i8) : i8 result {
+func take(value : i8) : result i8 {
     result = value
 }
 

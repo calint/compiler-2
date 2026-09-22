@@ -7,7 +7,7 @@ type pair {
     y : i64
 }
 
-func mk_from(src : pair, delta : i64) : pair out {
+func mk_from(src : pair, delta : i64) : out pair {
     out = {src.x + delta, src.y + delta}
 }
 

@@ -2,17 +2,17 @@ func assert(expr : bool) if not expr exit(1)
 
 type point {x, y}
 
-func point_init() : point res {
+func point_init() : res point {
     res.x = -1
     res.y = -2
 }
 
-func point_foo(pt : point) : point res{
+func point_foo(pt : point) : res point{
     res.x = pt.x * 2
     res.y = pt.y * 2
 }
 
-func point_bar() : point res{
+func point_bar() : res point{
     res = { -9, 10 }
 }
 

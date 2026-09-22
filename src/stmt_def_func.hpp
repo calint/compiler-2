@@ -66,9 +66,16 @@ class stmt_def_func final : public statement {
         return_delim_tk_ = tz.is_next_char_token(':');
         if (not return_delim_tk_.is_empty()) {
             // function returns
-            const token type_tk{tz.next_token()};
             const token ident_tk{tz.next_token()};
-            const type& tp{tc.get_type_or_throw(type_tk, type_tk.text())};
+            token type_tk{tz.next_token()};
+            if (not tc.has_type(type_tk.text())) {
+                tz.put_back_token(type_tk);
+                type_tk = {};
+            }
+            const type& tp{type_tk.is_empty()
+                               ? tc.get_type_default()
+                               : tc.get_type_or_throw(type_tk, type_tk.text())};
+
             returns_.emplace(type_tk, ident_tk, &tp);
             set_type(tp);
         } else {
@@ -153,8 +160,10 @@ class stmt_def_func final : public statement {
 
         if (returns_) {
             return_delim_tk_.source_to(os);
-            returns_->type_tk.source_to(os);
             returns_->ident_tk.source_to(os);
+            if (not returns_->type_tk.is_empty()) {
+                returns_->type_tk.source_to(os);
+            }
         }
     }
 

@@ -9,55 +9,55 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-func double(x) : i64 ret {
+func double(x) : ret i64 {
     ret = x * 2
 }
 
-func triple(x) : i64 ret {
+func triple(x) : ret i64 {
     ret = x * 3
 }
 
-func add(a, b) : i64 res {
+func add(a, b) : res i64 {
     res = a + b
 }
 
-func subtract(a, b) : i64 res {
+func subtract(a, b) : res i64 {
     res = a - b
 }
 
-func multiply(x, y) : i64 result {
+func multiply(x, y) : result i64 {
     result = x * y
 }
 
-func negate(v) : i64 neg {
+func negate(v) : neg i64 {
     neg = -v
 }
 
-func compute_color(r : i32, g : i32, b : i32) : i32 color {
+func compute_color(r : i32, g : i32, b : i32) : color i32 {
     color = (r * 0x10000) + (g * 0x100) + b
 }
 
-func square(n) : i64 sq {
+func square(n) : sq i64 {
     sq = n * n
 }
 
-func cube(n) : i64 cb {
+func cube(n) : cb i64 {
     cb = n * n * n
 }
 
-func increment(n) : i64 inc {
+func increment(n) : inc i64 {
     inc = n + 1
 }
 
-func decrement(n) : i64 dec {
+func decrement(n) : dec i64 {
     dec = n - 1
 }
 
-func halve(n) : i64 half {
+func halve(n) : half i64 {
     half = n / 2
 }
 
-func max(a, b) : i64 result {
+func max(a, b) : result i64 {
     if a > b {
         result = a
     } else {
@@ -65,7 +65,7 @@ func max(a, b) : i64 result {
     }
 }
 
-func min(a, b) : i64 result {
+func min(a, b) : result i64 {
     if a < b {
         result = a
     } else {
@@ -73,7 +73,7 @@ func min(a, b) : i64 result {
     }
 }
 
-func abs(v) : i64 result {
+func abs(v) : result i64 {
     if v < 0 {
         result = -v
     } else {

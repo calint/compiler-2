@@ -35,11 +35,11 @@ class stmt_def_type_field final : public statement {
             return;
         }
 
-        // get type name
-        type_tk_ = tz.next_token();
-
-        // array?
         open_bracket_tk_ = tz.is_next_char_token('[');
+        if (open_bracket_tk_.is_empty()) {
+            type_tk_ = tz.next_token();
+            open_bracket_tk_ = tz.is_next_char_token('[');
+        }
         if (not open_bracket_tk_.is_empty()) {
             is_array_ = true;
 
@@ -67,11 +67,13 @@ class stmt_def_type_field final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        if (type_tk_.is_empty()) {
+        if (type_delim_tk_.is_empty()) {
             return;
         }
         type_delim_tk_.source_to(os);
-        type_tk_.source_to(os);
+        if (not type_tk_.is_empty()) {
+            type_tk_.source_to(os);
+        }
         if (is_array_) {
             open_bracket_tk_.source_to(os);
             array_count_const_.source_to(os);

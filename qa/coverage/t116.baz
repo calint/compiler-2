@@ -2,7 +2,7 @@
 
 func assert(expr : bool) if not expr exit(1)
 
-func mutate_and_return(x) : i64 res {
+func mutate_and_return(x) : res i64 {
     x = x * 2
     res = x + 1
 }

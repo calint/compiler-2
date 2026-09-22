@@ -1,14 +1,14 @@
 # nested calls with repeated subexpressions
 
-func a(i):i64 res{
+func a(i):res i64{
     res=i+1
 }
 
-func b(i):i64 res{
+func b(i):res i64{
     res=i+2
 }
 
-func c(i):i64 res{
+func c(i):res i64{
     res=i+3
 }
 

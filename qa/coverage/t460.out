@@ -1,2 +1,2 @@
 
-t460.baz:1:21: cannot use register name 'rbp' as a variable name
+t460.baz:1:17: cannot use register name 'rbp' as a variable name

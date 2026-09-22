@@ -144,7 +144,7 @@ auto main(const int argc, const char* argv[]) -> int {
         const std::string_view source{R"baz(
 func assert(ok : bool) if not ok exit(1)
 type packed { first : i8, second : i16 }
-func nested(source : packed[], destination : packed[]) : i32 count {
+func nested(source : packed[], destination : packed[]) : count i32 {
     array_copy(source, destination, 1)
     count = 2
 }

@@ -1,4 +1,4 @@
 # function return value is ignored
 
-func f() : i64 r { r = 1 }
+func f() : r i64 { r = 1 }
 func main() { f() }

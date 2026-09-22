@@ -4,7 +4,7 @@ func assert(expr : bool) if not expr exit(1)
 
 type point { x, y }
 
-func make_point() : point res {
+func make_point() : res point {
     res = { 12, -7 }
 }
 

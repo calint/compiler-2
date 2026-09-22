@@ -1,6 +1,6 @@
 # function argument cannot read its own uninitialized caller variable
 
-func foozi(i) : i64 res {
+func foozi(i) : res i64 {
     res = 1
 }
 

@@ -24,7 +24,7 @@ func print(str : i8[]) {
    sys_print(array_size_of(str), address_of(str)) 
 }
 
-func sys_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+func sys_read(len : reg_rdx, ptr : reg_rsi) : nbytes i64 {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -59,11 +59,11 @@ func bar(arg) {
 
 # return target is specified as a variable, in this case `res`
 
-func inv(i : i32) : i32 res {
+func inv(i : i32) : res i32 {
     res = ~i
 }
 
-func baz(arg) : i64 res {
+func baz(arg) : res i64 {
     res = arg * 2
 }
 
@@ -97,12 +97,12 @@ func str_out(s : str) {
 
 # return variable is a mutable reference to destination
 
-func point_init() : point res {
+func point_init() : res point {
     res.x = -1
     res.y = -2
 }
 
-func object_init() : object res {
+func object_init() : res object {
     res.pos.y = 74
 }
 

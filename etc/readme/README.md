@@ -63,10 +63,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           3082            932          11102
+C/C++ Header                    52           3082            930          11129
 C++                              1             46              7            231
 -------------------------------------------------------------------------------
-SUM:                            53           3128            939          11333
+SUM:                            53           3128            937          11360
 -------------------------------------------------------------------------------
 ```
 
@@ -77,7 +77,7 @@ SUM:                            53           3128            939          11333
 
 # built-in types are `i63`, `i32`, `i16`, `i8` and `bool`
 
-# default type is `i64` and does not need to be specified
+# default type is used if ommitted (`i64` on x86_64 and 'i32' on rv32i)
 
 type point {x, y}
 
@@ -132,11 +132,11 @@ func bar(arg) {
 
 # return variable is a mutable reference to destination
 
-func inv(i : i32) : i32 res {
+func inv(i : i32) : res i32 {
     res = ~i
 }
 
-func baz(arg) : i64 res {
+func baz(arg) : res i64 {
     res = arg * 2
 }
 
@@ -155,12 +155,12 @@ func str_out(s : str) {
     write(1, address_of(s.data), s.len)
 } 
 
-func point_init() : point res {
+func point_init() : res point {
     res.x = -1
     res.y = -2
 }
 
-func object_init() : object res {
+func object_init() : res object {
     res.pos.y = 74
 }
 
@@ -1867,7 +1867,7 @@ lea rbp, [dat]
 
 ;[1:1] # user types are defined using keyword `type`
 ;[3:1] # built-in types are `i63`, `i32`, `i16`, `i8` and `bool`
-;[5:1] # default type is `i64` and does not need to be specified
+;[5:1] # default type is used if ommitted (`i64` on x86_64 and 'i32' on rv32i)
 ;[7:1] point : 16 B    fields:
 ;[7:1]       name :  offset :    size :  array? : array size
 ;[7:1]          x :       0 :       8 :      no :           
@@ -2544,7 +2544,7 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
 ;   [175:24] free scratch register r13
-;   [60:6] inv(i : i32) : i32 res
+;   [60:6] inv(i : i32) : res i32
     inv_175_16:
 ;       [175:16] alias res -> arr (lea: rbp + r15 * 4 + 224)
 ;       [175:16] alias i -> arr (lea: rbp + r14 * 4 + 224)
@@ -3109,7 +3109,7 @@ main:
 ;   [214:13] k = baz(j)
 ;   [214:13] = expression
 ;   [214:13] baz(j)
-;   [64:6] baz(arg) : i64 res
+;   [64:6] baz(arg) : res i64
     baz_214_13:
 ;       [214:13] alias res -> k
 ;       [214:13] alias arg -> j
@@ -3156,7 +3156,7 @@ main:
 ;   [217:9] k = baz(1)
 ;   [217:9] = expression
 ;   [217:9] baz(1)
-;   [64:6] baz(arg) : i64 res
+;   [64:6] baz(arg) : res i64
     baz_217_9:
 ;       [217:9] alias res -> k
 ;       [217:9] alias arg -> 1
@@ -3206,7 +3206,7 @@ main:
 ;   [220:23] p0.x = baz(3)
 ;   [220:23] = expression
 ;   [220:23] baz(3)
-;   [64:6] baz(arg) : i64 res
+;   [64:6] baz(arg) : res i64
     baz_220_23:
 ;       [220:23] alias res -> p0.x (lea: rbp + 360)
 ;       [220:23] alias arg -> 3
@@ -3255,7 +3255,7 @@ main:
 ;   [223:9] pt: point (16 B @ [rbp + 376])
 ;   [223:9] pt = point_init()
 ;   [223:22] point_init()
-;   [83:6] point_init() : point res
+;   [83:6] point_init() : res point
     point_init_223_22:
 ;       [223:22] alias res -> pt
 ;       [84:5] res.x = -1
@@ -3700,7 +3700,7 @@ main:
     add r15, r14
 ;   [251:5] free scratch register r14
 ;   [251:13] object_init()
-;   [88:6] object_init() : object res
+;   [88:6] object_init() : res object
     object_init_251_13:
 ;       [251:13] alias res -> o3 (lea: r15)
 ;       [89:5] res.pos.y = 74

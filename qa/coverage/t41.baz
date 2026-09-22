@@ -2,7 +2,7 @@
 
 dat len=-2
 
-func foozi(x):i64 res{
+func foozi(x):res i64{
     res=-x
 }
 

@@ -1,8 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] don't allow function declarations without { }
 [ ] jump optimizer for rv32i
-[ ] var array : [128] = { 1, 2 } # default type
+[x] var array : [128] = { 1, 2 } # default type
+[x] dat array : [128] = { 1, 2 } # default type
+[x] type x { i : [4] } # uses default type
+[ ] func fact(x) : result # default type
 [ ] rv32i alignment issues
     => works in qemu for now that does not require alignment
 [ ] move the coverage tests into a subdirectory

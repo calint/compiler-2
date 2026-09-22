@@ -2,7 +2,7 @@
 
 # built-in types are `i63`, `i32`, `i16`, `i8` and `bool`
 
-# default type is `i64` and does not need to be specified
+# default type is used if ommitted (`i64` on x86_64 and 'i32' on rv32i)
 
 type point {x, y}
 
@@ -57,11 +57,11 @@ func bar(arg) {
 
 # return variable is a mutable reference to destination
 
-func inv(i : i32) : i32 res {
+func inv(i : i32) : res i32 {
     res = ~i
 }
 
-func baz(arg) : i64 res {
+func baz(arg) : res i64 {
     res = arg * 2
 }
 
@@ -80,12 +80,12 @@ func str_out(s : str) {
     write(1, address_of(s.data), s.len)
 } 
 
-func point_init() : point res {
+func point_init() : res point {
     res.x = -1
     res.y = -2
 }
 
-func object_init() : object res {
+func object_init() : res object {
     res.pos.y = 74
 }
 

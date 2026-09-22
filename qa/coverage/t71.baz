@@ -25,7 +25,7 @@ func bar(arg) {
 }
 
 # return target is specified as a variable, in this case `res`
-func baz(arg) : i64 res {
+func baz(arg) : res i64 {
     res = arg * 2
 }
 

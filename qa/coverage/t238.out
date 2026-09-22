@@ -1,2 +1,2 @@
 
-t238.baz:3:16: expected return reference name
+t238.baz:3:1: function may return without setting its return value

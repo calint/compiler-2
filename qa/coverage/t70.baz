@@ -6,7 +6,7 @@ func assert(expr : bool) {
 
 type point {x, y}
 
-func baz(arg) : i64 res {
+func baz(arg) : res i64 {
     res = arg * 2
 }
 

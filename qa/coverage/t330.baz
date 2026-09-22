@@ -5,16 +5,16 @@ func assert(expr : bool) if not expr exit(1)
 type point { x, y }
 type rectangle { top_left : point, bottom_right : point }
 
-func make_point() : point result {
+func make_point() : result point {
     result = { 3, 4 }
 }
 
-func scale_point(source : point) : point result {
+func scale_point(source : point) : result point {
     result.x = source.x * 2
     result.y = source.y * 3
 }
 
-func make_rectangle() : rectangle result {
+func make_rectangle() : result rectangle {
     result.top_left = make_point()
     result.bottom_right = scale_point(result.top_left)
 }

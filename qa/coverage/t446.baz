@@ -12,11 +12,11 @@ type container {
     tag : i64
 }
 
-func mk_pair(base : i64) : pair out {
+func mk_pair(base : i64) : out pair {
     out = {base + 1, base + 2}
 }
 
-func sum_pair(src : pair) : i64 out {
+func sum_pair(src : pair) : out i64 {
     out = src.x + src.y
 }
 

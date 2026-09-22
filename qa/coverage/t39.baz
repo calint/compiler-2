@@ -1,10 +1,10 @@
 # nested negated function calls
 
-func foozi(x):i64 res{
+func foozi(x):res i64{
     res=-x*2
 }
 
-func bar(y):i64 res{
+func bar(y):res i64{
     res=-y
 }
 

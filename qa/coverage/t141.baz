@@ -1,11 +1,11 @@
 func assert(expr : bool) if not expr exit(1)
 
 
-func fez(val : i32[]) : i32 res {
+func fez(val : i32[]) : res i32 {
     res = val[2] / (val[1] + val[1]) 
 }
 
-func foz(x : i32, y : i32) : i32 res {
+func foz(x : i32, y : i32) : res i32 {
     res = x * (1 + y) 
 }
 

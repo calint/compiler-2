@@ -818,6 +818,10 @@ class toc final {
             token{}, machine_.get().address_size_bytes() == 4 ? "i32" : "i64");
     }
 
+    [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
+        return types_.has(std::string{name});
+    }
+
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
                                          const std::string_view name) const
         -> const type& {

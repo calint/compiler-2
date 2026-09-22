@@ -1,4 +1,4 @@
-func f(x):i64 res{
+func f(x):res i64{
     res=-x*2
 }
 

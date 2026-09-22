@@ -16,12 +16,12 @@ func bar(arg) {
     arg = 0xff
 }
 
-func inv(i : i32) : i32 res {
+func inv(i : i32) : res i32 {
     res = ~i
 }
 
 # return target is specified as a variable, in this case `res`
-func baz(arg) : i64 res {
+func baz(arg) : res i64 {
     res = arg * 2
 }
 

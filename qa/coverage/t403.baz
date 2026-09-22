@@ -2,15 +2,15 @@
 
 func assert(x : bool) if not x exit(1)
 
-func take_byte(value : i8) : i8 result {
+func take_byte(value : i8) : result i8 {
     result = value
 }
 
-func take_word(value : i16) : i16 result {
+func take_word(value : i16) : result i16 {
     result = value
 }
 
-func take_dword(value : i32) : i32 result {
+func take_dword(value : i32) : result i32 {
     result = value
 }
 

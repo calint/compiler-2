@@ -5,7 +5,7 @@ func assert(expr : bool) if not expr exit(1)
 type point { x, y }
 type collection { points : point[3] }
 
-func make_point() : point result {
+func make_point() : result point {
     result = { 6, 9 }
 }
 

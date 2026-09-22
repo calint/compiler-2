@@ -1,6 +1,6 @@
 # boolean function results
 
-func f(b:bool):bool res{
+func f(b:bool):res bool{
     if b res=false else res=true
 }
 

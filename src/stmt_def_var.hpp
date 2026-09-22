@@ -35,8 +35,11 @@ class stmt_def_var final : public statement {
 
         // check whether a type is declared
         if (not type_delim_tk_.is_empty()) {
-            type_tk_ = tz.next_token();
             open_bracket_tk_ = tz.is_next_char_token('[');
+            if (open_bracket_tk_.is_empty()) {
+                type_tk_ = tz.next_token();
+                open_bracket_tk_ = tz.is_next_char_token('[');
+            }
             if (not open_bracket_tk_.is_empty()) {
                 is_array_ = true;
 
@@ -110,9 +113,11 @@ class stmt_def_var final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
-        if (not type_tk_.is_empty()) {
+        if (not type_delim_tk_.is_empty()) {
             type_delim_tk_.source_to(os);
-            type_tk_.source_to(os);
+            if (not type_tk_.is_empty()) {
+                type_tk_.source_to(os);
+            }
             if (is_array_) {
                 open_bracket_tk_.source_to(os);
                 array_count_const_.source_to(os);

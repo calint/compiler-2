@@ -4,7 +4,7 @@ func assert(expr : bool) if not expr exit(1)
 
 type point {x, y}
 
-func point_init() : point res {
+func point_init() : res point {
     res.x = -1
     res.y = -2
 }

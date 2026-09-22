@@ -1,0 +1,59 @@
+# arrays with omitted element type use the target's default integer type
+
+type holder { first, values : [3], last }
+dat data : [128] = { 1, 2 }
+dat inferred_data : [] = { -3, 4, 5 }
+dat cleared_data : [3]
+dat record : holder = { 7, { 10, 20 }, 9 }
+
+func assert(ok : bool) if not ok exit(1)
+
+func main() {
+    var array : [128] = { 1, 2 }
+    var inferred : [] = { -3, 4, 5 }
+    var cleared : [3]
+    var scalar
+    assert(array_size_of(array) == 128)
+    assert(array[0] == 1)
+    assert(array[1] == 2)
+    assert(array[127] == 0)
+    assert(array_size_of(inferred) == 3)
+    assert(inferred[0] == -3)
+    assert(inferred[2] == 5)
+    assert(cleared[0] == 0)
+    assert(cleared[2] == 0)
+    array[127] = 99
+    scalar = inferred[0]
+    inferred[0] = scalar - 1
+    assert(inferred[0] == -4)
+    assert(array[127] == 99)
+    foo inferred {
+        e = e + 1
+    }
+    assert(inferred[0] == -3)
+    assert(inferred[1] == 5)
+    assert(inferred[2] == 6)
+    assert(array_size_of(data) == 128)
+    assert(data[0] == 1)
+    assert(data[1] == 2)
+    assert(data[127] == 0)
+    assert(array_size_of(inferred_data) == 3)
+    assert(inferred_data[0] == -3)
+    assert(inferred_data[2] == 5)
+    assert(cleared_data[0] == 0)
+    assert(cleared_data[2] == 0)
+    assert(array_size_of(record.values) == 3)
+    assert(record.values[2] == 0)
+    var local : holder = record
+    foo local.values {
+        e = e + i
+    }
+    assert(local.first == 7)
+    assert(local.values[0] == 10)
+    assert(local.values[1] == 21)
+    assert(local.values[2] == 2)
+    assert(local.last == 9)
+    assert(record.values[1] == 20)
+    assert(address_of(data[1]) - address_of(data[0]) == address_of(array[1]) - address_of(array[0]))
+    assert(address_of(local.values[1]) - address_of(local.values[0]) == address_of(array[1]) - address_of(array[0]))
+}

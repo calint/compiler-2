@@ -2,12 +2,12 @@ func assert(err, x : bool) if not x exit(err)
 
 type point {x, y}
 
-func baz(i) : point res { 
+func baz(i) : res point { 
     res.x = i * 3
     res.y = i * 4
 }
 
-func bazi() : point res {
+func bazi() : res point {
     res = {7, 13}
 }
 

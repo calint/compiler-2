@@ -1,4 +1,4 @@
 # function results must be assigned
 
-func f() : i64 { }
+func f() : result { }
 func main() {}

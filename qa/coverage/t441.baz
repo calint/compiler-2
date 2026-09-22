@@ -2,7 +2,7 @@ func assert(exit, expr : bool) {
     if not expr exit(exit)
 }
 
-func inv(i) : i32 res {
+func inv(i) : res i32 {
     res = ~i
 }
 

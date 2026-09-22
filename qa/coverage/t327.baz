@@ -3,7 +3,7 @@
 type left { value }
 type right { value }
 
-func make() : right result {
+func make() : result right {
     result.value = 1
 }
 
