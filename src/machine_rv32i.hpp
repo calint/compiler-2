@@ -245,6 +245,29 @@ class machine_rv32i final : public machine {
         free_named_register(src_loc_tk, indent, syscall_register);
     }
 
+    auto binary_operation(const token& src_loc_tk, const size_t indent,
+                          const std::string_view instruction,
+                          const operand& destination, const operand& src,
+                          const bool shift_count = {}) -> void {
+
+        const address_scope scope{*this, destination, src};
+
+        const operand left{
+            alloc_scratch_register(src_loc_tk, indent, destination.type_ref())};
+
+        const operand right{alloc_scratch_register(
+            src_loc_tk, indent,
+            shift_count ? default_type() : destination.type_ref())};
+
+        copy_value(src_loc_tk, indent, left, destination);
+        copy_value(src_loc_tk, indent, right, src);
+
+        asm_line(indent, "{} {}, {}, {}", instruction, left.base_register(),
+                 left.base_register(), right.base_register());
+
+        copy_value(src_loc_tk, indent, destination, left);
+    }
+
     [[noreturn]] static auto todo() -> void {
         std::println(stderr, "todo");
         throw panic_exception{"RV32I backend not implemented"};
@@ -301,13 +324,32 @@ class machine_rv32i final : public machine {
         asm_line(indent, "# {}", text);
     }
 
-    auto
-    emit_most_efficient([[maybe_unused]] const token& src_loc_tk,
-                        [[maybe_unused]] const size_t indent,
-                        [[maybe_unused]] const std::string_view without_scratch,
-                        [[maybe_unused]] const std::string_view with_scratch)
+    auto emit_most_efficient([[maybe_unused]] const token& src_loc_tk,
+                             [[maybe_unused]] const size_t indent,
+                             const std::string_view without_scratch,
+                             const std::string_view with_scratch)
         -> void override {
-        todo();
+
+        const auto count_instructions{
+            [](const std::string_view text) -> size_t {
+                size_t count{};
+                for (const auto line : text | std::views::split('\n')) {
+                    const std::string_view value{line};
+                    const size_t start{value.find_first_not_of(" \t\r")};
+                    if (start != std::string_view::npos and
+                        value[start] != '#' and value.back() != ':') {
+                        ++count;
+                    }
+                }
+
+                return count;
+            }};
+
+        std::print(os_.get(), "{}",
+                   count_instructions(without_scratch) <=
+                           count_instructions(with_scratch)
+                       ? without_scratch
+                       : with_scratch);
     }
 
     [[nodiscard]] auto
@@ -484,20 +526,64 @@ class machine_rv32i final : public machine {
         comment(src_loc_tk, indent, "alias {} -> {}", from, to);
     }
 
-    auto compare_and_branch([[maybe_unused]] const token& src_loc_tk,
-                            [[maybe_unused]] const size_t indent,
-                            [[maybe_unused]] const operand& lhs,
-                            [[maybe_unused]] const operand& rhs,
-                            [[maybe_unused]] const comparison_action& action,
-                            [[maybe_unused]] const std::span<const operand>
-                                scratch_registers_to_free) -> void override {
-        todo();
+    auto
+    compare_and_branch(const token& src_loc_tk, const size_t indent,
+                       const operand& lhs, const operand& rhs,
+                       const comparison_action& action,
+                       const std::span<const operand> scratch_registers_to_free)
+        -> void override {
+
+        {
+            const address_scope destination_scope{*this, action.destination,
+                                                  operand{}};
+
+            const address_scope scope{*this, lhs, rhs};
+
+            const operand left{
+                alloc_scratch_register(src_loc_tk, indent, lhs.type_ref())};
+
+            const operand right{
+                alloc_scratch_register(src_loc_tk, indent, lhs.type_ref())};
+
+            copy_value(src_loc_tk, indent, left, lhs);
+            copy_value(src_loc_tk, indent, right, rhs);
+            const std::string& result{left.base_register()};
+            const std::string& other{right.base_register()};
+            const std::string_view operation{action.operation};
+            bool inverted{action.inverted};
+            if (operation == "==" or operation == "!=") {
+                asm_line(indent, "xor {}, {}, {}", result, result, other);
+                asm_line(indent, "sltiu {}, {}, 1", result, result);
+                inverted = inverted != (operation == "!=");
+            } else if (operation == "<" or operation == ">=") {
+                asm_line(indent, "slt {}, {}, {}", result, result, other);
+                inverted = inverted != (operation == ">=");
+            } else {
+                assert(operation == ">" or operation == "<=");
+                asm_line(indent, "slt {}, {}, {}", result, other, result);
+                inverted = inverted != (operation == "<=");
+            }
+            if (inverted) {
+                asm_line(indent, "xori {}, {}, 1", result, result);
+            }
+            if (not action.destination.is_empty()) {
+                copy_value(src_loc_tk, indent, action.destination, left);
+            }
+            if (not action.target.empty()) {
+                asm_line(indent, "{} {}, zero, 1f",
+                         action.branch_on_true ? "beq" : "bne", result);
+
+                branch(indent, action.target);
+                asm_line(indent, "1:");
+            }
+        }
+        free_scratch_registers(src_loc_tk, indent, scratch_registers_to_free);
     }
 
-    auto branch([[maybe_unused]] const size_t indent,
-                [[maybe_unused]] const std::string_view target)
+    auto branch(const size_t indent, const std::string_view target)
         -> void override {
-        todo();
+
+        asm_line(indent, "j {}", target);
     }
 
     auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -598,27 +684,60 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto zero([[maybe_unused]] const token& src_loc_tk,
-              [[maybe_unused]] const size_t indent,
-              [[maybe_unused]] const operand& dst,
-              [[maybe_unused]] const size_t size_bytes) -> void override {
-        todo();
+    auto zero(const token& src_loc_tk, const size_t indent,
+              const operand& destination, const size_t size_bytes)
+        -> void override {
+
+        if (size_bytes == 0) {
+            return;
+        }
+        const address_scope scope{*this, destination, operand{}};
+
+        const operand dst_pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand remaining{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        address_of(src_loc_tk, indent, dst_pointer, destination);
+
+        copy_value(src_loc_tk, indent, remaining,
+                   operand::imm(std::format("{}", size_bytes), default_type()));
+
+        asm_line(indent, "1:");
+        asm_line(indent, "sb zero, 0({})", dst_pointer.base_register());
+
+        asm_line(indent, "addi {}, {}, 1", dst_pointer.base_register(),
+                 dst_pointer.base_register());
+
+        asm_line(indent, "addi {}, {}, -1", remaining.base_register(),
+                 remaining.base_register());
+
+        asm_line(indent, "bnez {}, 1b", remaining.base_register());
     }
 
-    auto add_subtract([[maybe_unused]] const token& src_loc_tk,
-                      [[maybe_unused]] const size_t indent,
-                      [[maybe_unused]] const char operation,
-                      [[maybe_unused]] const operand& dst,
-                      [[maybe_unused]] const operand& src) -> void override {
-        todo();
+    auto add_subtract(const token& src_loc_tk, const size_t indent,
+                      const char operation, const operand& dst,
+                      const operand& src) -> void override {
+
+        assert(operation == '+' or operation == '-');
+
+        binary_operation(src_loc_tk, indent, operation == '+' ? "add" : "sub",
+                         dst, src);
     }
 
-    auto bitwise([[maybe_unused]] const token& src_loc_tk,
-                 [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const char operation,
-                 [[maybe_unused]] const operand& dst,
-                 [[maybe_unused]] const operand& src) -> void override {
-        todo();
+    auto bitwise(const token& src_loc_tk, const size_t indent,
+                 const char operation, const operand& dst, const operand& src)
+        -> void override {
+
+        assert(operation == '&' or operation == '|' or operation == '^');
+        std::string_view instruction{"xor"};
+        if (operation == '&') {
+            instruction = "and";
+        } else if (operation == '|') {
+            instruction = "or";
+        }
+        binary_operation(src_loc_tk, indent, instruction, dst, src);
     }
 
     auto multiply([[maybe_unused]] const token& src_loc_tk,
@@ -630,18 +749,21 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto validate_shift_operand([[maybe_unused]] const token& src_loc_tk,
-                                [[maybe_unused]] const operand& count) const
-        -> void override {
-        todo();
+    auto validate_shift_operand(const token& src_loc_tk,
+                                const operand& count) const -> void override {
+
+        validate_scalar(src_loc_tk, count.type_ref());
     }
 
-    auto shift([[maybe_unused]] const token& src_loc_tk,
-               [[maybe_unused]] const size_t indent,
-               [[maybe_unused]] const char operation,
-               [[maybe_unused]] const operand& dst,
-               [[maybe_unused]] const operand& count) -> void override {
-        todo();
+    auto shift(const token& src_loc_tk, const size_t indent,
+               const char operation, const operand& dst, const operand& count)
+        -> void override {
+
+        assert(operation == '<' or operation == '>');
+        validate_shift_operand(src_loc_tk, count);
+
+        binary_operation(src_loc_tk, indent, operation == '<' ? "sll" : "sra",
+                         dst, count, true);
     }
 
     auto
@@ -659,11 +781,11 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto store_boolean([[maybe_unused]] const token& src_loc_tk,
-                       [[maybe_unused]] const size_t indent,
-                       [[maybe_unused]] const operand& dst,
-                       [[maybe_unused]] const bool value) -> void override {
-        todo();
+    auto store_boolean(const token& src_loc_tk, const size_t indent,
+                       const operand& dst, const bool value) -> void override {
+
+        copy_value(src_loc_tk, indent, dst,
+                   operand::imm(value ? "1" : "0", default_type()));
     }
 
     auto label(const size_t indent, const std::string_view label)
@@ -695,10 +817,27 @@ class machine_rv32i final : public machine {
         }
     }
 
-    auto unary([[maybe_unused]] const size_t indent,
-               [[maybe_unused]] const char operation,
-               [[maybe_unused]] const operand& dst) -> void override {
-        todo();
+    auto unary(const size_t indent, const char operation,
+               const operand& destination) -> void override {
+
+        assert(operation == '-' or operation == '~');
+        const address_scope scope{*this, destination, operand{}};
+
+        const operand value{
+            alloc_scratch_register(token{}, indent, destination.type_ref())};
+
+        copy_value(token{}, indent, value, destination);
+        if (operation == '-') {
+
+            asm_line(indent, "sub {}, zero, {}", value.base_register(),
+                     value.base_register());
+
+        } else {
+
+            asm_line(indent, "xori {}, {}, -1", value.base_register(),
+                     value.base_register());
+        }
+        copy_value(token{}, indent, destination, value);
     }
 
     [[nodiscard]] auto
