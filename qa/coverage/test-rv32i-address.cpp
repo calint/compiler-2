@@ -417,10 +417,42 @@ func main() {
         program prg{compiler, source, 4096, false, false, false};
         prg.build(output);
         assert(output.str().contains("sete r15b\n"));
-        assert(output.str().contains("xor r15b, 1\n"));
-        assert(not output.str().contains("setne r15b\n"));
+        assert(not output.str().contains("xor r15b, 1\n"));
+        assert(output.str().contains("setne r15b\n"));
         assert(not output.str().contains("\n    cmp r15b, 0\n"));
         assert(not output.str().contains("allocate scratch register -> r14\n"));
+    }
+    {
+        const std::string_view source{R"baz(
+func main() {
+    var left : i8[2] = {1, 2}
+    var right : i8[2] = {1, 2}
+    var same : bool = arrays_equal(left, right, 2)
+    same = not arrays_equal(left, right, 2)
+    same = equal(left, right)
+    same = not equal(left, right)
+}
+)baz"};
+        std::ostringstream x86_output;
+        machine_x86 x86_compiler{x86_output, source};
+        program x86_program{x86_compiler, source, 4096, false, false, false};
+        x86_program.build(x86_output);
+        assert(x86_output.str().contains("sete byte [rbp + 4]\n"));
+        assert(x86_output.str().contains("setne byte [rbp + 4]\n"));
+        assert(not x86_output.str().contains("sete r15b\n"));
+        assert(not x86_output.str().contains("setne r15b\n"));
+        assert(not x86_output.str().contains("cmp r15b, 0\n"));
+        assert(not x86_output.str().contains("xor r15b, 1\n"));
+
+        std::ostringstream rv32i_output;
+        machine_rv32i rv32i_compiler;
+        program rv32i_program{rv32i_compiler, source, 4096,
+                              false,          false,  false};
+        rv32i_program.build(rv32i_output);
+        assert(rv32i_output.str().contains("sb t3, 4(s0)\n"));
+        assert(not rv32i_output.str().contains("sltu "));
+        assert(not rv32i_output.str().contains("sltiu "));
+        assert(not rv32i_output.str().contains("xori "));
     }
     if (argc > 1 and std::string_view{argv[1]} == "bulk") {
         const std::string_view source{R"baz(

@@ -269,6 +269,7 @@ main:
         jg baz_bounds_panic
         lea rdi, [rbp + r14 * 4 + 256]
         shl rcx, 2
+        test rcx, rcx
         repe cmpsb
         sete r15b
     bool_end_166_12:
@@ -311,9 +312,9 @@ main:
         jg baz_bounds_panic
         lea rdi, [rbp + 256]
         shl rcx, 2
+        test rcx, rcx
         repe cmpsb
-        sete r15b
-    xor r15b, 1
+        setne r15b
     bool_end_170_12:
     assert_170_5:
         if_34_26_170_5:
@@ -537,8 +538,7 @@ main:
         lea rdi, [rbp + 320]
         mov rcx, 2
         repe cmpsq
-        sete r15b
-    xor r15b, 1
+        setne r15b
     bool_end_201_12:
     assert_201_5:
         if_34_26_201_5:
@@ -1086,6 +1086,7 @@ main:
         jg baz_bounds_panic
         lea rdi, [r14]
         shl rcx, 3
+        test rcx, rcx
         repe cmpsb
         sete r15b
     bool_end_265_12:

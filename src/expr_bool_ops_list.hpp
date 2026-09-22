@@ -152,7 +152,52 @@ class expr_bool_ops_list final : public statement {
     [[nodiscard]] auto compile(toc& tc, const size_t indent,
                                const std::string_view jmp_to_if_false,
                                const std::string_view jmp_to_if_true,
-                               const bool inverted, const operand& dst) const
+                               const operand& dst) const
+        -> std::optional<bool> {
+
+        return compile_rec(tc, indent, jmp_to_if_false, jmp_to_if_true, false,
+                           dst);
+    }
+
+    // assumes callers only query this when expression status is relevant
+    [[nodiscard]] auto is_expression() const -> bool override {
+        // is there more than 1 bool in the list?
+        if (bools_.size() > 1) {
+            // yes, it is an expression
+            return true;
+        }
+
+        assert(not bools_.empty());
+
+        // 1 expression in the list
+
+        return bools_[0].visit(
+            [](const auto& e) -> bool { return e.is_expression(); });
+    }
+
+    [[nodiscard]] auto identifier() const -> std::string_view override {
+        assert(bools_.size() == 1);
+
+        return bools_[0].visit(
+            [](const auto& e) -> std::string_view { return e.identifier(); });
+    }
+
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
+
+        for (const auto& e : bools_) {
+            e.visit([&var](const auto& item) -> void {
+                item.assert_var_not_used(var);
+            });
+        }
+    }
+
+  private:
+    [[nodiscard]] auto compile_rec(toc& tc, const size_t indent,
+                                   const std::string_view jmp_to_if_false,
+                                   const std::string_view jmp_to_if_true,
+                                   const bool inverted,
+                                   const operand& dst) const
         -> std::optional<bool> {
 
         machine& x{tc.machine()};
@@ -196,8 +241,8 @@ class expr_bool_ops_list final : public statement {
                         }
 
                         if (const std::optional<bool> const_eval{
-                                nested_expr.compile(tc, indent, jmp_false,
-                                                    jmp_true, invert, dst)};
+                                nested_expr.compile_rec(tc, indent, jmp_false,
+                                                        jmp_true, invert, dst)};
                             const_eval) {
 
                             // expression evaluated to a constant
@@ -239,8 +284,8 @@ class expr_bool_ops_list final : public statement {
 
                         // does expression evaluate to a constant?
                         if (const std::optional<bool> const_eval{
-                                nested_expr.compile(tc, indent, jmp_false,
-                                                    jmp_true, invert, dst)};
+                                nested_expr.compile_rec(tc, indent, jmp_false,
+                                                        jmp_true, invert, dst)};
                             const_eval) {
 
                             // yes, short-circuit
@@ -265,8 +310,9 @@ class expr_bool_ops_list final : public statement {
                     // did expression evaluate to a constant?
                     // single-element case: result is definitively true/false
                     if (const std::optional<bool> const_eval{
-                            nested_expr.compile(tc, indent, jmp_to_if_false,
-                                                jmp_to_if_true, invert, dst)};
+                            nested_expr.compile_rec(tc, indent, jmp_to_if_false,
+                                                    jmp_to_if_true, invert,
+                                                    dst)};
                         const_eval) {
 
                         // if only element return evaluation
@@ -392,40 +438,6 @@ class expr_bool_ops_list final : public statement {
         return std::nullopt;
     }
 
-    // assumes callers only query this when expression status is relevant
-    [[nodiscard]] auto is_expression() const -> bool override {
-        // is there more than 1 bool in the list?
-        if (bools_.size() > 1) {
-            // yes, it is an expression
-            return true;
-        }
-
-        assert(not bools_.empty());
-
-        // 1 expression in the list
-
-        return bools_[0].visit(
-            [](const auto& e) -> bool { return e.is_expression(); });
-    }
-
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(bools_.size() == 1);
-
-        return bools_[0].visit(
-            [](const auto& e) -> std::string_view { return e.identifier(); });
-    }
-
-    auto assert_var_not_used(const std::string_view var) const
-        -> void override {
-
-        for (const auto& e : bools_) {
-            e.visit([&var](const auto& item) -> void {
-                item.assert_var_not_used(var);
-            });
-        }
-    }
-
-  private:
     [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
         -> std::string {
 

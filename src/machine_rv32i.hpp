@@ -807,8 +807,8 @@ class machine_rv32i final : public machine {
 
     auto emit_bulk_loop(const token& src_loc_tk, const size_t indent,
                         const operand& count, const operand& source,
-                        const operand& destination, const operand& result = {})
-        -> void {
+                        const operand& destination, const operand& result = {},
+                        const bool inverted = false) -> void {
 
         const address_scope scope{*this, result, operand{}};
 
@@ -927,12 +927,16 @@ class machine_rv32i final : public machine {
         // every chunk matched or the range was empty unless a mismatch branched
         // here
         if (compare) {
-            comment(src_loc_tk, indent, "all matched or empty: true");
-            asm_line(indent, "li {}, 1", left.base_register());
+            comment(src_loc_tk, indent, "all matched or empty: {}",
+                    inverted ? "false" : "true");
+            asm_line(indent, "li {}, {}", left.base_register(),
+                     inverted ? 0 : 1);
             asm_line(indent, "j 6f");
             asm_line(indent, "5:");
-            comment(src_loc_tk, indent, "mismatch: false");
-            asm_line(indent, "li {}, 0", left.base_register());
+            comment(src_loc_tk, indent, "mismatch: {}",
+                    inverted ? "true" : "false");
+            asm_line(indent, "li {}, {}", left.base_register(),
+                     inverted ? 1 : 0);
             asm_line(indent, "6:");
             if (not reuse_result) {
                 copy_value(src_loc_tk, indent, result, left);
@@ -1790,8 +1794,8 @@ class machine_rv32i final : public machine {
     }
 
     auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t size_bytes, const operand& dst)
-        -> void override {
+                          const size_t size_bytes, const operand& dst,
+                          const bool inverted = false) -> void override {
         if (size_bytes > std::numeric_limits<uint32_t>::max()) {
             throw compiler_exception{
                 src_loc_tk, "comparison size exceeds RV32I address range"};
@@ -1800,13 +1804,13 @@ class machine_rv32i final : public machine {
         asm_line(indent, "li {}, {}", registers.at(2).base_register(),
                  size_bytes);
         emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
-                       registers.at(1), dst);
+                       registers.at(1), dst, inverted);
         release_bulk(src_loc_tk, indent);
     }
 
     auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t element_size_bytes, const operand& dst)
-        -> void override {
+                          const size_t element_size_bytes, const operand& dst,
+                          const bool inverted = false) -> void override {
         const std::array<operand, 3>& registers{bulk_registers_.back()};
         {
             const address_scope scope{*this, dst, operand{}};
@@ -1816,7 +1820,7 @@ class machine_rv32i final : public machine {
             scale_index(src_loc_tk, indent, registers.at(2),
                         element_size_bytes);
             emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
-                           registers.at(1), dst);
+                           registers.at(1), dst, inverted);
         }
         release_bulk(src_loc_tk, indent);
     }

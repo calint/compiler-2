@@ -3,10 +3,48 @@
 type result { equal : bool }
 
 func assert(expr : bool) if not expr exit(1)
+func probe(hits : i32) : value bool {
+    hits = hits + 1
+    value = true
+}
 
 func main() {
     var source : i8[2] = { 1, 2 }
     var compare : i8[2] = { 1, 2 }
     var result_value : result = { arrays_equal(source, compare, 2) }
     assert(result_value.equal)
+    var results : result[2]
+    var index : i32 = 1
+    results[index].equal = arrays_equal(source, compare, 2)
+    assert(results[index].equal)
+    assert(not results[0].equal)
+    compare[1] = 3
+    results[index].equal = not arrays_equal(source, compare, 2)
+    assert(results[index].equal)
+    results[index].equal = equal(source, compare)
+    assert(not results[index].equal)
+    results[index].equal = not equal(source, compare)
+    assert(results[index].equal)
+    results[index].equal = arrays_equal(source, compare, 0)
+    assert(results[index].equal)
+    results[index].equal = not arrays_equal(source, compare, 0)
+    assert(not results[index].equal)
+
+    var hits : i32 = 0
+    results[index].equal = arrays_equal(source, compare, 2) and probe(hits)
+    assert(not results[index].equal)
+    assert(hits == 0)
+    results[index].equal = not arrays_equal(source, compare, 2) or probe(hits)
+    assert(results[index].equal)
+    assert(hits == 0)
+    results[index].equal = arrays_equal(source, compare, 2) or probe(hits)
+    assert(results[index].equal)
+    assert(hits == 1)
+    results[index].equal = not (not arrays_equal(source, compare, 2) and probe(hits))
+    assert(not results[index].equal)
+    assert(hits == 2)
+
+    var expected : result = {false}
+    results[index].equal = equal(results[index], expected)
+    assert(results[index].equal)
 }

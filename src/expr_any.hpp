@@ -333,7 +333,7 @@ class expr_any final : public statement {
                 const operand& dst{dst_info.operand};
 
                 const std::optional<bool> const_eval{
-                    e.compile(tc, indent, jmp_to_end, jmp_to_end, false, dst)};
+                    e.compile(tc, indent, jmp_to_end, jmp_to_end, dst)};
 
                 // not constant evaluation
                 x.label(indent, jmp_to_end);

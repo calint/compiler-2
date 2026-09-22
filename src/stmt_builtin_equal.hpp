@@ -69,6 +69,12 @@ class stmt_builtin_equal final : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
+        compile_boolean(tc, indent, dst_info.operand, false);
+    }
+
+    auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
+                         const bool inverted) const -> void override {
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
@@ -131,6 +137,6 @@ class stmt_builtin_equal final : public expression {
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
-        x.end_memory_equal(tok(), indent, size_bytes, dst_info.operand);
+        x.end_memory_equal(tok(), indent, size_bytes, dst, inverted);
     }
 };

@@ -194,12 +194,13 @@ class machine {
                                         const operand& address) -> void = 0;
 
     virtual auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                                  const size_t size_bytes, const operand& dst)
-        -> void = 0;
+                                  const size_t size_bytes, const operand& dst,
+                                  const bool inverted = false) -> void = 0;
 
     virtual auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
                                   const size_t element_size_bytes,
-                                  const operand& dst) -> void = 0;
+                                  const operand& dst,
+                                  const bool inverted = false) -> void = 0;
 
     virtual auto zero(const token& src_loc_tk, const size_t indent,
                       const operand& dst, const size_t size_bytes) -> void = 0;

@@ -83,6 +83,12 @@ class stmt_builtin_arrays_equal final : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
+        compile_boolean(tc, indent, dst_info.operand, false);
+    }
+
+    auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
+                         const bool inverted) const -> void override {
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
@@ -98,11 +104,10 @@ class stmt_builtin_arrays_equal final : public expression {
                             rhs_info.type_ref().name())};
         }
 
-        if (dst_info.type_ref().name() != get_type().name()) {
+        if (dst.type_ref().name() != get_type().name()) {
             throw compiler_exception{
-                tok(),
-                std::format("destination type must be '{}', not '{}'",
-                            get_type().name(), dst_info.type_ref().name())};
+                tok(), std::format("destination type must be '{}', not '{}'",
+                                   get_type().name(), dst.type_ref().name())};
         }
 
         const operand count_register{x.begin_memory_equal(tok(), indent)};
@@ -137,15 +142,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
-        if (dst_info.is_register()) {
-            x.end_arrays_equal(tok(), indent, lhs_info.type_ref().size_bytes(),
-                               dst_info.operand);
-
-            return;
-        }
-
-        // memory operand does not happen in current bool implementation
-
-        std::unreachable();
+        x.end_arrays_equal(tok(), indent, lhs_info.type_ref().size_bytes(), dst,
+                           inverted);
     }
 };

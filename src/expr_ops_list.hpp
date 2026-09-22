@@ -303,6 +303,13 @@ class expr_ops_list final : public expression {
                exprs_.front()->produces_canonical_boolean();
     }
 
+    auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
+                         const bool inverted) const -> void override {
+
+        assert(produces_canonical_boolean());
+        exprs_.front()->compile_boolean(tc, indent, dst, inverted);
+    }
+
     [[nodiscard]] auto is_array_element() const -> bool override {
         return exprs_.size() == 1 and exprs_.front()->is_array_element();
     }

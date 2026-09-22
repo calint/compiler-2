@@ -577,8 +577,8 @@ class machine_x86 final : public machine {
     }
 
     auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t size_bytes, const operand& dst)
-        -> void override {
+                          const size_t size_bytes, const operand& dst,
+                          const bool inverted = false) -> void override {
 
         char size_suffix{'b'};
         size_t count{size_bytes};
@@ -597,21 +597,23 @@ class machine_x86 final : public machine {
             immediate(count));
         repe_cmps(indent, size_suffix);
         release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(indent, dst);
+        store_equal_result(indent, dst, inverted);
     }
 
     auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t element_size_bytes, const operand& dst)
-        -> void override {
+                          const size_t element_size_bytes, const operand& dst,
+                          const bool inverted = false) -> void override {
 
         scale_by_element_size_bytes(
             src_loc_tk, indent,
             machine_x86::make_register_operand("rcx", *type_i64_),
             element_size_bytes);
 
+        test(indent, machine_x86::make_register_operand("rcx", *type_i64_),
+             machine_x86::make_register_operand("rcx", *type_i64_));
         repe_cmps(indent, 'b');
         release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(indent, dst);
+        store_equal_result(indent, dst, inverted);
     }
 
     auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -1667,13 +1669,15 @@ class machine_x86 final : public machine {
         setcc(indent, asm_cc_for_op(comparison, inverted), dst);
     }
 
-    auto store_equal_result(const size_t indent, const operand& dst) -> void {
+    auto store_equal_result(const size_t indent, const operand& dst,
+                            const bool inverted) -> void {
         if (dst.is_register()) {
-            setcc(indent, "e", sized_register(dst, size_byte));
+            setcc(indent, inverted ? "ne" : "e",
+                  sized_register(dst, size_byte));
 
             return;
         }
-        setcc(indent, "e", sized_memory(dst, size_byte));
+        setcc(indent, inverted ? "ne" : "e", sized_memory(dst, size_byte));
     }
 
     template <typename... args_t>

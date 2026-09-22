@@ -147,6 +147,15 @@ class statement {
         return false;
     }
 
+    virtual auto compile_boolean([[maybe_unused]] toc& tc,
+                                 [[maybe_unused]] const size_t indent,
+                                 [[maybe_unused]] const operand& dst,
+                                 [[maybe_unused]] const bool inverted) const
+        -> void {
+
+        std::unreachable();
+    }
+
     [[nodiscard]] virtual auto identifier() const -> std::string_view {
         return token_.text();
     }

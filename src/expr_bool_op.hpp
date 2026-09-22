@@ -416,6 +416,26 @@ class expr_bool_op final : public statement {
                                const machine::comparison_action& action) const
         -> void {
 
+        if (lhs.produces_canonical_boolean() and
+            not action.destination.is_empty() and
+            lhs.get_type().name() == action.destination.type_ref().name()) {
+            lhs.compile_boolean(tc, indent + 1, action.destination,
+                                action.inverted);
+
+            machine& x{tc.machine()};
+
+            if (not action.target.empty()) {
+                machine::comparison_action branch_action{action};
+                branch_action.destination = {};
+                branch_action.inverted = false;
+                x.compare_and_branch(tok(), indent, action.destination,
+                                     operand::imm("0", tc.get_type_default()),
+                                     branch_action, {});
+            }
+
+            return;
+        }
+
         std::vector<operand> allocated_registers;
 
         operand dst;
@@ -425,25 +445,6 @@ class expr_bool_op final : public statement {
             dst = action.destination;
             lhs.compile(tc, indent + 1,
                         toc::make_ident_info_from_register(dst));
-            if (lhs.produces_canonical_boolean()) {
-                machine& x{tc.machine()};
-
-                if (action.inverted) {
-                    x.bitwise(tok(), indent, '^', dst,
-                              operand::imm("1", dst.type_ref()));
-                }
-                if (not action.target.empty()) {
-                    machine::comparison_action branch_action{action};
-                    branch_action.destination = {};
-                    branch_action.inverted = false;
-                    x.compare_and_branch(
-                        tok(), indent, dst,
-                        operand::imm("0", tc.get_type_default()), branch_action,
-                        {});
-                }
-
-                return;
-            }
         } else {
             dst = resolve_expr(tc, indent, lhs, true, allocated_registers);
         }

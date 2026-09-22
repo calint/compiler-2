@@ -65,10 +65,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           3138            998          11715
+C/C++ Header                    52           3147            997          11748
 C++                              1             46              7            235
 -------------------------------------------------------------------------------
-SUM:                            53           3184           1005          11950
+SUM:                            53           3193           1004          11983
 -------------------------------------------------------------------------------
 ```
 
@@ -649,6 +649,7 @@ main:
         jg baz_bounds_panic
         lea rdi, [rbp + r14 * 4 + 256]
         shl rcx, 2
+        test rcx, rcx
         repe cmpsb
         sete r15b
     bool_end_166_12:
@@ -691,9 +692,9 @@ main:
         jg baz_bounds_panic
         lea rdi, [rbp + 256]
         shl rcx, 2
+        test rcx, rcx
         repe cmpsb
-        sete r15b
-    xor r15b, 1
+        setne r15b
     bool_end_170_12:
     assert_170_5:
         if_34_26_170_5:
@@ -917,8 +918,7 @@ main:
         lea rdi, [rbp + 320]
         mov rcx, 2
         repe cmpsq
-        sete r15b
-    xor r15b, 1
+        setne r15b
     bool_end_201_12:
     assert_201_5:
         if_34_26_201_5:
@@ -1466,6 +1466,7 @@ main:
         jg baz_bounds_panic
         lea rdi, [r14]
         shl rcx, 3
+        test rcx, rcx
         repe cmpsb
         sete r15b
     bool_end_265_12:
@@ -2345,8 +2346,6 @@ main:
 ;   [166:12] ? arrays_equal(arr[1], arr1[1], 3)
 ;   [166:12] ? arrays_equal(arr[1], arr1[1], 3)
     cmp_166_12:
-;       [166:12] r15b = arrays_equal(arr[1], arr1[1], 3)
-;       [166:12] = expression
 ;       [166:12] arrays_equal(arr[1], arr1[1], 3)
 ;       [166:12] allocate named register rsi
 ;       [166:12] allocate named register rdi
@@ -2399,6 +2398,7 @@ main:
         lea rdi, [rbp + r14 * 4 + 256]
 ;       [166:12] free scratch register r14
         shl rcx, 2
+        test rcx, rcx
         repe cmpsb
 ;       [166:12] free named register rcx
 ;       [166:12] free named register rdi
@@ -2450,8 +2450,6 @@ main:
 ;   [170:12] ? not arrays_equal(arr, arr1, 4)
 ;   [170:12] ? not arrays_equal(arr, arr1, 4)
     cmp_170_12:
-;       [170:16] r15b = arrays_equal(arr, arr1, 4)
-;       [170:16] = expression
 ;       [170:16] arrays_equal(arr, arr1, 4)
 ;       [170:16] allocate named register rsi
 ;       [170:16] allocate named register rdi
@@ -2486,12 +2484,12 @@ main:
 ;       [170:34] free scratch register r14
         lea rdi, [rbp + 256]
         shl rcx, 2
+        test rcx, rcx
         repe cmpsb
 ;       [170:16] free named register rcx
 ;       [170:16] free named register rdi
 ;       [170:16] free named register rsi
-        sete r15b
-    xor r15b, 1
+        setne r15b
     bool_end_170_12:
 ;   [34:6] assert(x : bool)
     assert_170_5:
@@ -2914,8 +2912,6 @@ main:
 ;   [196:12] ? equal(p, q)
 ;   [196:12] ? equal(p, q)
     cmp_196_12:
-;       [196:12] r15b = equal(p, q)
-;       [196:12] = expression
 ;       [196:12] equal(p, q)
 ;       [196:12] allocate named register rsi
 ;       [196:12] allocate named register rdi
@@ -2961,8 +2957,6 @@ main:
 ;   [201:12] ? not equal(p, q)
 ;   [201:12] ? not equal(p, q)
     cmp_201_12:
-;       [201:16] r15b = equal(p, q)
-;       [201:16] = expression
 ;       [201:16] equal(p, q)
 ;       [201:16] allocate named register rsi
 ;       [201:16] allocate named register rdi
@@ -2976,8 +2970,7 @@ main:
 ;       [201:16] free named register rcx
 ;       [201:16] free named register rdi
 ;       [201:16] free named register rsi
-        sete r15b
-    xor r15b, 1
+        setne r15b
     bool_end_201_12:
 ;   [34:6] assert(x : bool)
     assert_201_5:
@@ -4030,8 +4023,6 @@ main:
 ;   [265:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;   [265:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
     cmp_265_12:
-;       [265:12] r15b = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
-;       [265:12] = expression
 ;       [265:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [265:12] allocate named register rsi
 ;       [265:12] allocate named register rdi
@@ -4110,6 +4101,7 @@ main:
         lea rdi, [r14]
 ;       [265:12] free scratch register r14
         shl rcx, 3
+        test rcx, rcx
         repe cmpsb
 ;       [265:12] free named register rcx
 ;       [265:12] free named register rdi
