@@ -1,0 +1,42 @@
+# foo over 8196-byte records, beyond the RV32I addi immediate range
+
+type large_item { first : i32, padding : i8[8188], last : i32 }
+
+func assert(ok : bool) if not ok exit(1)
+
+func main() {
+    var values : large_item[3]
+    values[0].first = 10
+    values[0].last = 20
+    values[1].first = 11
+    values[1].last = 21
+    values[2].first = 12
+    values[2].last = 22
+
+    var visits = 0
+    foo values {
+        assert(n == 3)
+        assert(i == visits)
+        assert(e.first == 10 + i)
+        assert(e.last == 20 + i)
+        e.first = e.first + 100
+        e.last = e.last + 200
+        e.padding[0] = 7
+        e.padding[8187] = 9
+        visits = visits + 1
+    }
+
+    assert(visits == 3)
+    assert(values[0].first == 110)
+    assert(values[0].last == 220)
+    assert(values[1].first == 111)
+    assert(values[1].last == 221)
+    assert(values[2].first == 112)
+    assert(values[2].last == 222)
+    assert(values[0].padding[0] == 7)
+    assert(values[0].padding[8187] == 9)
+    assert(values[1].padding[0] == 7)
+    assert(values[1].padding[8187] == 9)
+    assert(values[2].padding[0] == 7)
+    assert(values[2].padding[8187] == 9)
+}

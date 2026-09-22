@@ -1,10 +1,10 @@
 #include <iostream>
 #include <sstream>
 
-#include "../../src/decouple_impl.hpp"
 #include "../../src/machine_rv32i.hpp"
 #include "../../src/machine_x86.hpp"
 #include "../../src/program.hpp"
+#include "../../src/decouple_impl.hpp"
 
 auto main(const int argc, const char* argv[]) -> int {
     const type integer64{"i64", 8, true};
@@ -13,6 +13,35 @@ auto main(const int argc, const char* argv[]) -> int {
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
+    if (argc > 1 and std::string_view{argv[1]} == "long-loop") {
+        machine_rv32i backend;
+        backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
+        backend.use_stream(std::cout);
+        backend.program_start();
+        std::println("    addi sp, sp, -16");
+        for (const size_t stride : {4U, 2047U, 2048U, 4094U, 4095U, 8192U}) {
+            const std::string loop_label{std::format("long_loop_{}", stride)};
+            std::println("    sw zero, 0(sp)\n    li s2, 0");
+            backend.label(0, loop_label);
+            std::println("    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1");
+            backend.advance_array_iteration(1, operand::reg("s2", integer),
+                                            operand::mem("sp", {}, 1, 0, integer),
+                                            stride, 3, loop_label);
+            std::println("    li t0, {}\n    beq s2, t0, 1f\n"
+                         "    j long_loop_failure\n1:\n"
+                         "    lw t1, 0(sp)\n    li t0, 3\n"
+                         "    beq t1, t0, 1f\n    j long_loop_failure\n1:",
+                         3 * (stride + 1));
+        }
+        std::println("    addi sp, sp, 16");
+        backend.program_end();
+        backend.label(0, "long_loop_failure");
+        backend.exit(token{}, 1, operand::imm("1", integer));
+        backend.finish();
+        std::println(".data\ndat:\n    .word 0");
+
+        return 0;
+    }
     if (argc > 1 and std::string_view{argv[1]} == "bulk") {
         const std::string_view source{R"baz(
 func assert(ok : bool) if not ok exit(1)

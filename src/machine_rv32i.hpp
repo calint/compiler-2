@@ -1348,15 +1348,42 @@ class machine_rv32i final : public machine {
         asm_line(indent, "ecall");
     }
 
-    auto
-    advance_array_iteration([[maybe_unused]] const size_t indent,
-                            [[maybe_unused]] const operand& iterator,
-                            [[maybe_unused]] const operand& counter,
-                            [[maybe_unused]] const size_t element_size_bytes,
-                            [[maybe_unused]] const size_t array_count,
-                            [[maybe_unused]] const std::string_view loop_label)
+    auto advance_array_iteration(const size_t indent, const operand& iterator,
+                                 const operand& counter,
+                                 const size_t element_size_bytes,
+                                 const size_t array_count,
+                                 const std::string_view loop_label)
         -> void override {
-        todo();
+
+        if (element_size_bytes > std::numeric_limits<uint32_t>::max() or
+            array_count > std::numeric_limits<uint32_t>::max()) {
+            throw compiler_exception{token{},
+                                     "array iteration exceeds RV32I range"};
+        }
+
+        const address_scope scope{*this, iterator, counter};
+        add_subtract(token{}, indent, '+', iterator,
+                     operand::imm(std::format("{}", element_size_bytes),
+                                  default_type()));
+
+        const operand value{
+            counter.is_register()
+                ? counter
+                : alloc_scratch_register(token{}, indent, default_type())};
+
+        copy_value(token{}, indent, value, counter);
+        add_subtract(token{}, indent, '+', value,
+                     operand::imm("1", default_type()));
+        copy_value(token{}, indent, counter, value);
+
+        const operand limit{
+            alloc_scratch_register(token{}, indent, default_type())};
+
+        asm_line(indent, "li {}, {}", limit.base_register(), array_count);
+        asm_line(indent, "beq {}, {}, 1f", value.base_register(),
+                 limit.base_register());
+        branch(indent, loop_label);
+        asm_line(indent, "1:");
     }
 
     auto copy(const token& src_loc_tk, const size_t indent, const operand& src,

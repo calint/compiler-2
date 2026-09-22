@@ -75,3 +75,10 @@ llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/bulk" "$TEST_DIR/bulk.o"
 qemu-riscv32 "$TEST_DIR/bulk"
 printf 'rv32i bulk operations: ok\n'
+printf 'rv32i array iteration: executing loop body larger than 4 KiB\n'
+"$TEST_DIR/generate" long-loop > "$TEST_DIR/long-loop.s"
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
+    "$TEST_DIR/long-loop.s" -o "$TEST_DIR/long-loop.o"
+ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/long-loop" "$TEST_DIR/long-loop.o"
+timeout -k 1s 5s qemu-riscv32 "$TEST_DIR/long-loop"
+printf 'rv32i array iteration: long loop: ok\n'

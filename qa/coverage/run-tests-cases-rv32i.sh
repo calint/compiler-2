@@ -386,21 +386,21 @@ SRC=t407 && COMPERR
 SRC=t408 && EXP=0 && RUN_NO_CHECKS
 SRC=t409 && COMPERR
 # SRC=t410 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t411 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
+SRC=t411 && EXP=0 && RUN
 # SRC=t412 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t413 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t414 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t415 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t416 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t417 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
+SRC=t413 && EXP=0 && RUN
+SRC=t414 && EXP=0 && RUN
+SRC=t415 && EXP=0 && RUN
+SRC=t416 && EXP=0 && RUN
+SRC=t417 && EXP=0 && RUN
 SRC=t421 && COMPERR
 SRC=t422 && COMPERR
 # SRC=t423 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 # SRC=t427 && EXP=0 && RUN # todo: explicit i64; backend incomplete
-# SRC=t428 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t429 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t430 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t431 && EXP=0 && RUN # todo: RV32I runtime backend incomplete
+SRC=t428 && EXP=0 && RUN
+SRC=t429 && EXP=0 && RUN
+SRC=t430 && EXP=0 && RUN
+SRC=t431 && EXP=0 && RUN
 # SRC=t432 && EXP=0 && RUN # todo: explicit i64; backend incomplete
 SRC=t433 && EXP=0 && RUN
 # SRC=t434 && EXP=0 && RUN # todo: explicit i64; backend incomplete
@@ -461,3 +461,4 @@ SRC=t485 && COMPERR
 # SRC=t486 && DIFFINP # todo: RV32I runtime backend incomplete
 SRC=t487 && COMPERR
 SRC=t488 && COMPERR
+SRC=t489 && EXP=0 && RUN

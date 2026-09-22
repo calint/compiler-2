@@ -1,6 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] syntax change: var x : [] makes a machine default type array
+[ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
+[ ] rv32i: check loop iteration regarding large span
 [ ]  lift the possible ai generated tests in run-tests-rv32i.sh to end-to-end
      .baz tests 
 [ ] change all array access using [ ] to checked using .at
@@ -15,7 +18,7 @@
 [ ] consider making a verilog cpu that implements just the subset of x86 used
     instead of a rv32i backend
     => more registers, more scalings of operand index register, more 
-       displacement
+       displacement, more branch offset
 [ ] remove panic_exception
 [ ] consider that what registers might be allocated in a noinline functions can
     be listed thus the call can push/pop just the registers the function uses
