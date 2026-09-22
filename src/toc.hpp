@@ -958,10 +958,6 @@ class toc final {
         std::unreachable();
     }
 
-// pragma below for clang++ to not generate warning stemming from
-// 'std::from_chars' requiring pointers
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
     [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
                                              const std::string_view str)
         -> std::optional<int64_t> {
@@ -981,6 +977,10 @@ class toc final {
         }
 
         int64_t value{};
+// pragma below for clang++ to not generate warning stemming from
+// 'std::from_chars' requiring pointers
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
         const std::from_chars_result result{std::from_chars(
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             digits.data(), digits.data() + digits.size(), value, base)};
@@ -996,10 +996,10 @@ class toc final {
 
             return value;
         }
+#pragma clang diagnostic pop
 
         return std::nullopt;
     }
-#pragma clang diagnostic pop
 
   private:
     [[nodiscard]] auto
