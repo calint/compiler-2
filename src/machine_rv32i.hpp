@@ -18,6 +18,7 @@
 class machine_rv32i final : public machine {
     static constexpr size_t s0_register_index{8};
     static constexpr size_t data_alignment_{16};
+    static constexpr size_t copy_unroll_threshold_bytes_{16};
     static constexpr int64_t immediate_min{-2048};
     static constexpr int64_t immediate_max{2047};
 
@@ -47,6 +48,7 @@ class machine_rv32i final : public machine {
     bool multiply_helper_used_{};
     bool divide_helper_used_{};
     std::vector<allocation> allocations_;
+    std::vector<std::array<operand, 3>> bulk_registers_;
 
     [[nodiscard]] static auto register_index(const std::string_view name)
         -> size_t {
@@ -110,6 +112,14 @@ class machine_rv32i final : public machine {
         std::println(os_.get(), format, std::forward<args_t>(args)...);
     }
 
+    // 'address_scope' protects operand registers and memory base/index
+    // registers from scratch allocation while lowering an operation, including
+    // raw register operands on scope exit, drops temporaries allocated within
+    // the scope and restores the previous unavailable mask, including during
+    // exception unwinding this restores allocator bookkeeping only, not runtime
+    // register values allocations that existed on entry must not be freed
+    // within the scope
+
     class address_scope {
         machine_rv32i& backend_;
         uint32_t saved_mask_;
@@ -120,6 +130,7 @@ class machine_rv32i final : public machine {
                       const operand& src)
             : backend_{backend}, saved_mask_{backend.unavailable_registers_},
               saved_count_{backend.allocations_.size()} {
+
             for (const operand* value : {&dst, &src}) {
                 if (value->is_register() or value->is_memory()) {
                     backend_.unavailable_registers_ |=
@@ -662,6 +673,135 @@ class machine_rv32i final : public machine {
         }
     }
 
+    auto begin_bulk(const token& src_loc_tk, const size_t indent) -> operand {
+        std::array<operand, 3> registers;
+        for (operand& reg : registers) {
+            reg = alloc_scratch_register(src_loc_tk, indent, default_type());
+        }
+        bulk_registers_.push_back(registers);
+
+        return registers.front();
+    }
+
+    auto release_bulk(const token& src_loc_tk, const size_t indent) -> void {
+        for (const operand& reg :
+             bulk_registers_.back() | std::views::reverse) {
+            free_scratch_register(src_loc_tk, indent, reg);
+        }
+        bulk_registers_.pop_back();
+    }
+
+    auto emit_bulk_loop(const token& src_loc_tk, const size_t indent,
+                        const operand& count, const operand& source,
+                        const operand& destination, const operand& result = {})
+        -> void {
+
+        const address_scope scope{*this, result, operand{}};
+
+        const bool reuse_result{
+            result.is_register() and
+            register_index(result.base_register()) != register_index("zero") and
+            register_index(result.base_register()) != register_index("sp") and
+            register_index(result.base_register()) !=
+                register_index(count.base_register()) and
+            register_index(result.base_register()) !=
+                register_index(source.base_register()) and
+            register_index(result.base_register()) !=
+                register_index(destination.base_register())};
+
+        const operand left{
+            reuse_result
+                ? result
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand right{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const bool compare{not result.is_empty()};
+
+        const operand compared{
+            compare ? alloc_scratch_register(src_loc_tk, indent, default_type())
+                    : operand{}};
+
+        // right holds count / 4 words and count retains count % 4 tail bytes
+        // alignment handling is deferred so wide accesses may be unaligned
+        asm_line(indent, "srli {}, {}, 2", right.base_register(),
+                 count.base_register());
+        asm_line(indent, "andi {}, {}, 3", count.base_register(),
+                 count.base_register());
+        asm_line(indent, "beqz {}, 2f", right.base_register());
+        // process four bytes per iteration and stop comparing at the first
+        // mismatch
+        asm_line(indent, "1:");
+        asm_line(indent, "lw {}, 0({})", left.base_register(),
+                 source.base_register());
+        if (compare) {
+            asm_line(indent, "lw {}, 0({})", compared.base_register(),
+                     destination.base_register());
+            asm_line(indent, "bne {}, {}, 5f", left.base_register(),
+                     compared.base_register());
+        } else {
+            asm_line(indent, "sw {}, 0({})", left.base_register(),
+                     destination.base_register());
+        }
+        asm_line(indent, "addi {}, {}, 4", source.base_register(),
+                 source.base_register());
+        asm_line(indent, "addi {}, {}, 4", destination.base_register(),
+                 destination.base_register());
+        asm_line(indent, "addi {}, {}, -1", right.base_register(),
+                 right.base_register());
+        asm_line(indent, "bnez {}, 1b", right.base_register());
+        asm_line(indent, "2:");
+        // remainder bit 1 selects a halfword for tails of two or three bytes
+        asm_line(indent, "andi {}, {}, 2", left.base_register(),
+                 count.base_register());
+        asm_line(indent, "beqz {}, 3f", left.base_register());
+        asm_line(indent, "lhu {}, 0({})", left.base_register(),
+                 source.base_register());
+        if (compare) {
+            asm_line(indent, "lhu {}, 0({})", compared.base_register(),
+                     destination.base_register());
+            asm_line(indent, "bne {}, {}, 5f", left.base_register(),
+                     compared.base_register());
+        } else {
+            asm_line(indent, "sh {}, 0({})", left.base_register(),
+                     destination.base_register());
+        }
+        asm_line(indent, "addi {}, {}, 2", source.base_register(),
+                 source.base_register());
+        asm_line(indent, "addi {}, {}, 2", destination.base_register(),
+                 destination.base_register());
+        asm_line(indent, "3:");
+        // remainder bit 0 selects the final byte for tails of one or three
+        asm_line(indent, "andi {}, {}, 1", count.base_register(),
+                 count.base_register());
+        asm_line(indent, "beqz {}, 4f", count.base_register());
+        asm_line(indent, "lbu {}, 0({})", left.base_register(),
+                 source.base_register());
+        if (compare) {
+            asm_line(indent, "lbu {}, 0({})", compared.base_register(),
+                     destination.base_register());
+            asm_line(indent, "bne {}, {}, 5f", left.base_register(),
+                     compared.base_register());
+        } else {
+            asm_line(indent, "sb {}, 0({})", left.base_register(),
+                     destination.base_register());
+        }
+        asm_line(indent, "4:");
+        // every chunk matched or the range was empty unless a mismatch branched
+        // here
+        if (compare) {
+            asm_line(indent, "li {}, 1", left.base_register());
+            asm_line(indent, "j 6f");
+            asm_line(indent, "5:");
+            asm_line(indent, "li {}, 0", left.base_register());
+            asm_line(indent, "6:");
+            if (not reuse_result) {
+                copy_value(src_loc_tk, indent, result, left);
+            }
+        }
+    }
+
     [[noreturn]] static auto todo() -> void {
         std::println(stderr, "todo");
         throw panic_exception{"RV32I backend not implemented"};
@@ -817,6 +957,7 @@ class machine_rv32i final : public machine {
     }
 
     auto finish() -> void override {
+        assert(bulk_registers_.empty());
         assert(allocations_.empty());
         assert(unavailable_registers_ == 0);
         assert(not variables_base_reserved_);
@@ -1218,71 +1359,127 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto copy([[maybe_unused]] const token& src_loc_tk,
-              [[maybe_unused]] const size_t indent,
-              [[maybe_unused]] const operand& src,
-              [[maybe_unused]] const operand& dst,
-              [[maybe_unused]] const size_t size_bytes) -> void override {
-        todo();
+    auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
+              const operand& dst, const size_t size_bytes) -> void override {
+        if (size_bytes == 0) {
+            return;
+        }
+        if (size_bytes > std::numeric_limits<uint32_t>::max()) {
+            throw compiler_exception{src_loc_tk,
+                                     "copy size exceeds RV32I address range"};
+        }
+        const address_scope scope{*this, dst, src};
+        const operand src_pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand dst_pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        address_of(src_loc_tk, indent, src_pointer, src);
+        const operand& dst_address{dst};
+        address_of(src_loc_tk, indent, dst_pointer, dst_address);
+        if (size_bytes <= copy_unroll_threshold_bytes_) {
+            const operand value{
+                alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+            size_t offset{};
+            for (const size_t width : {size_t{4}, size_t{2}, size_t{1}}) {
+                std::string_view load{"lbu"};
+                std::string_view store{"sb"};
+                if (width == 4) {
+                    load = "lw";
+                    store = "sw";
+                } else if (width == 2) {
+                    load = "lhu";
+                    store = "sh";
+                }
+                while (size_bytes - offset >= width) {
+                    asm_line(indent, "{} {}, {}({})", load,
+                             value.base_register(), offset,
+                             src_pointer.base_register());
+                    asm_line(indent, "{} {}, {}({})", store,
+                             value.base_register(), offset,
+                             dst_pointer.base_register());
+                    offset += width;
+                }
+            }
+
+            return;
+        }
+        const operand count{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        asm_line(indent, "li {}, {}", count.base_register(), size_bytes);
+        emit_bulk_loop(src_loc_tk, indent, count, src_pointer, dst_pointer);
     }
 
-    [[nodiscard]] auto
-    begin_array_copy([[maybe_unused]] const token& src_loc_tk,
-                     [[maybe_unused]] const size_t indent) -> operand override {
-        todo();
-    }
-
-    auto set_array_copy_source([[maybe_unused]] const size_t indent,
-                               [[maybe_unused]] const operand& address)
-        -> void override {
-        todo();
-    }
-
-    auto set_array_copy_destination([[maybe_unused]] const size_t indent,
-                                    [[maybe_unused]] const operand& address)
-        -> void override {
-        todo();
-    }
-
-    auto end_array_copy([[maybe_unused]] const token& src_loc_tk,
-                        [[maybe_unused]] const size_t indent,
-                        [[maybe_unused]] const size_t element_size_bytes)
-        -> void override {
-        todo();
-    }
-
-    auto begin_memory_equal([[maybe_unused]] const token& src_loc_tk,
-                            [[maybe_unused]] const size_t indent)
+    [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
+                                        const size_t indent)
         -> operand override {
-        todo();
+        return begin_bulk(src_loc_tk, indent);
     }
 
-    auto set_memory_equal_left([[maybe_unused]] const size_t indent,
-                               [[maybe_unused]] const operand& address)
+    auto set_array_copy_source(const size_t indent, const operand& address)
         -> void override {
-        todo();
+        address_of(token{}, indent, bulk_registers_.back().at(1), address);
     }
 
-    auto set_memory_equal_right([[maybe_unused]] const size_t indent,
-                                [[maybe_unused]] const operand& address)
+    auto set_array_copy_destination(const size_t indent, const operand& address)
         -> void override {
-        todo();
+        address_of(token{}, indent, bulk_registers_.back().at(2), address);
     }
 
-    auto end_memory_equal([[maybe_unused]] const token& src_loc_tk,
-                          [[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const size_t size_bytes,
-                          [[maybe_unused]] const operand& dst)
-        -> void override {
-        todo();
+    auto end_array_copy(const token& src_loc_tk, const size_t indent,
+                        const size_t element_size_bytes) -> void override {
+        const std::array<operand, 3>& registers{bulk_registers_.back()};
+        scale_index(src_loc_tk, indent, registers.at(0), element_size_bytes);
+        emit_bulk_loop(src_loc_tk, indent, registers.at(0), registers.at(1),
+                       registers.at(2));
+        release_bulk(src_loc_tk, indent);
     }
 
-    auto end_arrays_equal([[maybe_unused]] const token& src_loc_tk,
-                          [[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const size_t element_size_bytes,
-                          [[maybe_unused]] const operand& dst)
+    auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
+        -> operand override {
+        return begin_bulk(src_loc_tk, indent);
+    }
+
+    auto set_memory_equal_left(const size_t indent, const operand& address)
         -> void override {
-        todo();
+        set_array_copy_source(indent, address);
+    }
+
+    auto set_memory_equal_right(const size_t indent, const operand& address)
+        -> void override {
+        set_array_copy_destination(indent, address);
+    }
+
+    auto end_memory_equal(const token& src_loc_tk, const size_t indent,
+                          const size_t size_bytes, const operand& dst)
+        -> void override {
+        if (size_bytes > std::numeric_limits<uint32_t>::max()) {
+            throw compiler_exception{
+                src_loc_tk, "comparison size exceeds RV32I address range"};
+        }
+        const std::array<operand, 3>& registers{bulk_registers_.back()};
+        asm_line(indent, "li {}, {}", registers.at(0).base_register(),
+                 size_bytes);
+        emit_bulk_loop(src_loc_tk, indent, registers.at(0), registers.at(1),
+                       registers.at(2), dst);
+        release_bulk(src_loc_tk, indent);
+    }
+
+    auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
+                          const size_t element_size_bytes, const operand& dst)
+        -> void override {
+        const std::array<operand, 3>& registers{bulk_registers_.back()};
+        {
+            const address_scope scope{*this, dst, operand{}};
+            scale_index(src_loc_tk, indent, registers.at(0),
+                        element_size_bytes);
+            emit_bulk_loop(src_loc_tk, indent, registers.at(0), registers.at(1),
+                           registers.at(2), dst);
+        }
+        release_bulk(src_loc_tk, indent);
     }
 
     auto zero(const token& src_loc_tk, const size_t indent,
@@ -1797,25 +1994,31 @@ class machine_rv32i final : public machine {
                       const operand& reg_to_check, const size_t array_count,
                       const bool allow_end, const operand& reg_count,
                       const bounds_check_options& options) -> void override {
+
         if (not options.upper and not options.lower) {
             return;
         }
+
         if (array_count > std::numeric_limits<uint32_t>::max() or
             src_loc_tk.at_line() > std::numeric_limits<uint32_t>::max()) {
             throw compiler_exception{src_loc_tk,
                                      "bounds check exceeds RV32I range"};
         }
+
         const address_scope scope{*this, reg_to_check, reg_count};
+
         const std::string_view index{reg_to_check.base_register()};
+
         comment(src_loc_tk, indent, "bounds check");
         if (options.lower) {
             asm_line(indent, "bltz {}, 1f", index);
         }
+
         if (options.upper) {
             const operand limit{
                 alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-            std::string_view top{index};
+            std::string top{index};
             if (not reg_count.is_empty()) {
                 const operand sum{
                     alloc_scratch_register(src_loc_tk, indent, default_type())};

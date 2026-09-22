@@ -13,6 +13,46 @@ auto main(const int argc, const char* argv[]) -> int {
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
+    if (argc > 1 and std::string_view{argv[1]} == "bulk") {
+        const std::string_view source{R"baz(
+func assert(ok : bool) if not ok exit(1)
+type packed { first : i8, second : i16 }
+func nested(source : packed[], destination : packed[]) : i32 count {
+    array_copy(source, destination, 1)
+    count = 2
+}
+func main() {
+    var source : packed[3] = {{1, 300}, {2, -400}, {3, 500}}
+    var destination : packed[3]
+    var single : packed = source[1]
+    assert(equal(single, source[1]))
+    single.second = 12
+    assert(not equal(single, source[1]))
+    array_copy(source, destination, nested(source, destination))
+    assert(arrays_equal(source, destination, 2))
+    assert(not arrays_equal(source, destination, 3))
+    array_copy(source[2], destination[2], 1)
+    assert(equal(source, destination))
+    array_copy(source, destination, 0)
+    assert(arrays_equal(source, destination, 0))
+    array_copy(source, source, 3)
+    assert(equal(source, destination))
+    array_copy(destination[1], destination, 2)
+    assert(equal(destination[0], source[1]))
+    assert(equal(destination[1], source[2]))
+    destination[0].first = 7
+    assert(not arrays_equal(source[1], destination, 1))
+    destination[0] = source[1]
+    destination[0].second = 10
+    assert(not arrays_equal(source[1], destination, 1))
+}
+)baz"};
+        machine_rv32i compiler;
+        program prg{compiler, source, 4096, true, true, true};
+        prg.build(std::cout);
+
+        return 0;
+    }
     if (argc > 1 and std::string_view{argv[1]} == "strings-syscall") {
         const std::string_view source{R"baz(
 dat text : i8[] = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
@@ -210,6 +250,65 @@ func main() {
 
     std::ostringstream shift_output;
     backend.use_stream(shift_output);
+    for (const bool counted : {false, true}) {
+        std::vector<operand> held;
+        for (size_t count{}; count < 25; ++count) {
+            held.push_back(backend.alloc_scratch_register(token{}, 0, boolean));
+        }
+        const operand result{held.front()};
+        const operand count{backend.begin_memory_equal(token{}, 0)};
+        backend.copy_value(token{}, 0, count, operand::imm("7", integer));
+        backend.set_memory_equal_left(0, operand::mem("buffer", {}, 1, 0, byte));
+        backend.set_memory_equal_right(0, operand::mem("buffer", {}, 1, 0, byte));
+        shift_output.str({});
+        if (counted) {
+            backend.end_arrays_equal(token{}, 0, 1, result);
+        } else {
+            backend.end_memory_equal(token{}, 0, 7, result);
+        }
+        const std::string assembly{shift_output.str()};
+        for (const std::string_view instruction : {"lw", "lhu", "lbu"}) {
+            assert(assembly.contains(std::format("{} {}, 0(", instruction, result.base_register())));
+        }
+        assert(assembly.contains(std::format("li {}, 1", result.base_register())));
+        assert(assembly.contains(std::format("li {}, 0", result.base_register())));
+        assert(not assembly.contains(std::format("addi {},", result.base_register())));
+        assert(not assembly.contains("slli"));
+        backend.free_scratch_registers(token{}, 0, held);
+        backend.finish();
+        shift_output.str({});
+    }
+    for (size_t size_bytes{}; size_bytes <= 24; ++size_bytes) {
+        backend.copy(token{}, 0, operand::mem("a0", {}, 1, 0, byte),
+                     operand::mem("a1", {}, 1, 0, byte), size_bytes);
+        const std::string assembly{shift_output.str()};
+        assert(assembly.contains("bnez") == (size_bytes > 16));
+        if (size_bytes == 0) {
+            assert(assembly.empty());
+        } else if (size_bytes <= 16) {
+            for (const size_t width : {size_t{4}, size_t{2}, size_t{1}}) {
+                const std::string load{width == 4 ? "lw " : width == 2 ? "lhu " : "lbu "};
+                const std::string store{width == 4 ? "sw " : width == 2 ? "sh " : "sb "};
+                size_t loads{};
+                size_t stores{};
+                std::istringstream lines{assembly};
+                for (std::string line; std::getline(lines, line);) {
+                    loads += line.starts_with(load);
+                    stores += line.starts_with(store);
+                }
+                const size_t expected{width == 4 ? size_bytes / 4 : (size_bytes % (width * 2)) / width};
+                assert(loads == expected and stores == expected);
+            }
+            assert(not assembly.contains("beqz"));
+        } else {
+            assert(assembly.contains("lw ") and assembly.contains("sw "));
+            assert(assembly.contains("lhu ") and assembly.contains("sh "));
+            assert(assembly.contains("lbu ") and assembly.contains("sb "));
+            assert(assembly.contains("srli ") and assembly.contains("andi "));
+        }
+        backend.finish();
+        shift_output.str({});
+    }
     backend.invoke_syscall(1);
     assert(shift_output.str() == "    ecall\n");
     shift_output.str({});
@@ -672,6 +771,35 @@ func main() {
     }
 
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+    for (const bool counted : {false, true}) {
+    for (size_t size_bytes{}; size_bytes <= 24; ++size_bytes) {
+        for (size_t alignment{}; alignment < 4; ++alignment) {
+            std::println("    addi sp, sp, -64");
+            for (size_t offset{}; offset < 32; ++offset) {
+                std::println("    li a2, {}\n    sb a2, {}(sp)\n    li a2, 85\n    sb a2, {}(sp)",
+                             128 + offset, offset, 32 + offset);
+            }
+            std::println("    addi a0, sp, {}\n    addi a1, sp, {}", alignment, 36 + alignment);
+            if (counted) {
+                const operand count{backend.begin_array_copy(token{}, 1)};
+                backend.copy_value(token{}, 1, count, operand::imm(std::format("{}", size_bytes), integer));
+                backend.set_array_copy_source(1, operand::mem("a0", {}, 1, 0, byte));
+                backend.set_array_copy_destination(1, operand::mem("a1", {}, 1, 0, byte));
+                backend.end_array_copy(token{}, 1, 1);
+            } else {
+                backend.copy(token{}, 1, operand::mem("a0", {}, 1, 0, byte),
+                             operand::mem("a1", {}, 1, 0, byte), size_bytes);
+            }
+            for (size_t offset{}; offset < 32; ++offset) {
+                const size_t start{4 + alignment};
+                const size_t expected{offset >= start and offset < start + size_bytes ? 128 + offset - 4 : 85};
+                std::println("    lbu a2, {}(sp)\n    li a3, {}\n    beq a2, a3, 1f\n    j failure\n1:", 32 + offset, expected);
+            }
+            std::println("    addi a2, sp, {}\n    beq a0, a2, 1f\n    j failure\n1:\n    addi a2, sp, {}\n    beq a1, a2, 1f\n    j failure\n1:\n    addi sp, sp, 64", alignment, 36 + alignment);
+            backend.finish();
+        }
+    }
+    }
     for (const type* value_type : {&integer, &half, &byte}) {
         const size_t bits{value_type->size_bytes() * 8};
         const uint32_t mask{UINT32_MAX >> (32 - bits)};

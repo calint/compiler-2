@@ -27,11 +27,13 @@ printf 'rv32i arithmetic: checking division by zero trap\n'
 ld.lld -m elf32lriscv -e divide_by_zero -o "$TEST_DIR/divide-by-zero" "$TEST_DIR/test.o"
 ulimit -c 0
 status=0
-qemu-riscv32 "$TEST_DIR/divide-by-zero" || status=$?
+{ qemu-riscv32 "$TEST_DIR/divide-by-zero" || status=$?; } 2> "$TEST_DIR/err"
 if [ "$status" -ne 133 ]; then
+    cat "$TEST_DIR/err" >&2
     printf 'Expected SIGTRAP (133), got %s\n' "$status" >&2
     exit 1
 fi
+printf 'rv32i arithmetic: division by zero trap: ok\n'
 printf 'rv32i bounds: checking diagnostic line numbers\n'
 for line in 0 9 123 4294967295; do
     ld.lld -m elf32lriscv -e "bounds_line_$line" -o "$TEST_DIR/bounds" "$TEST_DIR/test.o"
@@ -66,3 +68,10 @@ qemu-riscv32 "$TEST_DIR/strings" > "$TEST_DIR/output"
 printf '\101\000\007\010\011\012\013\014\015\033\042\047\140\134\000\177\200\377\101\102' > "$TEST_DIR/expected"
 cmp "$TEST_DIR/output" "$TEST_DIR/expected"
 printf 'rv32i strings and raw syscalls: ok\n'
+printf 'rv32i bulk operations: compiling and executing\n'
+"$TEST_DIR/generate" bulk > "$TEST_DIR/bulk.s"
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
+    "$TEST_DIR/bulk.s" -o "$TEST_DIR/bulk.o"
+ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/bulk" "$TEST_DIR/bulk.o"
+qemu-riscv32 "$TEST_DIR/bulk"
+printf 'rv32i bulk operations: ok\n'

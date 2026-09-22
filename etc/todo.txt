@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ]  lift the possible ai generated tests in run-tests-rv32i.sh to end-to-end
+     .baz tests 
+[ ] change all array access using [ ] to checked using .at
+[ ] consider removing the need of ':' in function declarations
+[o] rv32i backend
+[ ] rv32i constant masks: use shifts where they avoid a scratch register
+[ ] rv32i alignment issues
+    => works in qemu for now that does not require alignment
 [ ]  make the operand the base way of addressing memory with 64 bit offset and
      machine dependent index register scalings then lower the writing and
      reading to machine specific capabilities
@@ -152,8 +160,6 @@
     issues do not exist in this project. they are ugly. ponder switching to =
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
-[ ] rv32i backend
-[ ] rv32i constant masks: use shifts where they avoid a scratch register
 [ ] simple LSP supporting rename
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack
