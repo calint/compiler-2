@@ -193,10 +193,11 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
-    // build a memory operand for the identifier, emitting address calculations
-    // as needed. its form depends on the existing lea, storage offset, pointer
-    // indirection, and whether the index scale is encodable. on x86 this may
-    // be [rbp + r15 * 4 + 24] or [r14 + 28] with a computed base in r14.
+    // builds a memory operand for the identifier, emitting address calculations
+    // as needed and adding allocated registers to the vector. its form depends
+    // on the existing "lea", storage offset, pointer indirection, and whether
+    // the index scale is encodable. on x86 this may be e.g. [rbp + r15 * 4 +
+    // 24] or [r14 + 28] with a computed base in r14 or simply [r13]
     [[nodiscard]] static auto compile_effective_address(
         toc& tc, const size_t indent, const token& src_loc_tk,
         const std::span<const ident_elem> elems,
@@ -206,7 +207,7 @@ class stmt_identifier : public statement {
         // align the full lea path with this identifier's elements
         const std::span<const operand> leas{lea_path.last(elems.size())};
 
-        // start from the deepest known address, or the root if none exists
+        // start from the first known address, or the root if none exists
         size_t elem_index_with_lea{leas.size()};
         operand lea;
         while (elem_index_with_lea) {
@@ -217,13 +218,17 @@ class stmt_identifier : public statement {
             }
         }
 
-        // start at an element with 'lea' or 0 when no 'lea' found
+        // start at an element with "lea" or 0 when no "lea" found
         std::string path{elems[elem_index_with_lea].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
         const type* value_type{&base_info.type_ref()};
 
+        // working address base: a storage register, existing lea, or scratch
+        // register holding a loaded/computed address; empty until initialized.
+        // field offsets and any pending storage offset are added separately.
         operand reg_offset;
 
+        bool offset_pending{lea.is_empty() and not base_info.is_pointer};
         // note: offset_pending means base_info.offset has not yet been
         //       included in the address. starting from rbp or rbx alone still
         //       requires this offset to reach the variable's storage.
@@ -240,8 +245,6 @@ class stmt_identifier : public statement {
         //       the flag tracks only base_info.offset. field offsets in
         //       accumulated_offset and scaled array indices still apply
         //       regardless of whether it is pending.
-
-        bool offset_pending{lea.is_empty() and not base_info.is_pointer};
 
         int32_t accumulated_offset{};
 
