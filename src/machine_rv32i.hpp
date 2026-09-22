@@ -1238,13 +1238,150 @@ class machine_rv32i final : public machine {
         binary_operation(src_loc_tk, indent, instruction, dst, src);
     }
 
-    auto multiply([[maybe_unused]] const token& src_loc_tk,
-                  [[maybe_unused]] const size_t indent,
-                  [[maybe_unused]] const operand& product,
-                  [[maybe_unused]] const operand& factor,
-                  [[maybe_unused]] const bool reuse_source = false)
-        -> void override {
-        todo();
+    auto multiply(const token& src_loc_tk, const size_t indent,
+                  const operand& product, const operand& factor,
+                  const bool reuse_source = false) -> void override {
+
+        validate_scalar(src_loc_tk, product.type_ref());
+        validate_scalar(src_loc_tk, factor.type_ref());
+        // the product must be writable storage
+        if (not(product.is_register() or product.is_memory())) {
+            throw compiler_exception{src_loc_tk,
+                                     "invalid RV32I multiply destination"};
+        }
+        // validate memory operands even when a constant eliminates the
+        // operation
+        if (product.is_memory()) {
+            validate_address(src_loc_tk, product);
+        }
+        if (factor.is_memory()) {
+            validate_address(src_loc_tk, factor);
+        }
+        const std::optional<int32_t> constant{immediate_value(factor)};
+        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
+        const size_t bits{product.type_ref().size_bytes() * 8};
+
+        const uint32_t mask{std::numeric_limits<uint32_t>::max() >>
+                            (register_bits - bits)};
+
+        const uint32_t multiplier{static_cast<uint32_t>(constant.value_or(0)) &
+                                  mask};
+        // constant zero and one need no multiplication machinery
+        if (constant.has_value()) {
+            if (multiplier == 0) {
+                store_constant_result(src_loc_tk, indent, product, 0);
+
+                return;
+            }
+            if (multiplier == 1) {
+                return;
+            }
+            // all low bits set is multiplication by minus one at this width
+            if (multiplier == mask) {
+                unary(indent, '-', product);
+
+                return;
+            }
+            // a power of two requires only a shift
+            if (std::has_single_bit(multiplier)) {
+
+                shift(src_loc_tk, indent, '<', product,
+                      operand::imm(
+                          std::format("{}", std::countr_zero(multiplier)),
+                          default_type()));
+
+                return;
+            }
+        }
+        const address_scope scope{*this, product, factor};
+
+        const operand address{product.is_memory()
+                                  ? lower_address(src_loc_tk, indent, product)
+                                  : operand{}};
+
+        const operand result{
+            product.is_register()
+                ? product
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand left{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        copy_value(src_loc_tk, indent, left,
+                   product.is_memory() ? address : product);
+        // known multipliers use an unrolled sequence of shifts and adds
+        if (constant.has_value()) {
+            bool initialized{};
+            int pending_shift{};
+            for (unsigned bit{
+                     static_cast<unsigned>(std::bit_width(multiplier)) - 1};
+                 bit != 0;) {
+                --bit;
+                ++pending_shift;
+                // emit a shift when the next set bit needs an addition
+                if ((multiplier & (uint32_t{1} << bit)) != 0) {
+
+                    asm_line(indent, "slli {}, {}, {}", result.base_register(),
+                             initialized ? result.base_register()
+                                         : left.base_register(),
+                             pending_shift);
+
+                    asm_line(indent, "add {}, {}, {}", result.base_register(),
+                             result.base_register(), left.base_register());
+
+                    pending_shift = 0;
+                    initialized = true;
+                }
+            }
+            // trailing zero bits require only a final shift
+            if (pending_shift != 0) {
+
+                asm_line(indent, "slli {}, {}, {}", result.base_register(),
+                         result.base_register(), pending_shift);
+            }
+        } else {
+            // a variable multiplier is consumed one bit at a time
+
+            const bool reuse_factor{
+                reuse_source and factor.is_register() and
+                register_index(factor.base_register()) !=
+                    register_index(result.base_register()) and
+                register_index(factor.base_register()) !=
+                    register_index(product.base_register()) and
+                register_index(factor.base_register()) !=
+                    register_index(product.index_register())};
+
+            const operand right{reuse_factor
+                                    ? factor
+                                    : alloc_scratch_register(src_loc_tk, indent,
+                                                             default_type())};
+
+            const operand low_bit{
+                alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+            // preserve ordinary factors and factors that alias the destination
+            if (not reuse_factor) {
+                copy_value(src_loc_tk, indent, right, factor);
+            }
+            asm_line(indent, "li {}, 0", result.base_register());
+            asm_line(indent, "beqz {}, 3f", right.base_register());
+            asm_line(indent, "1:");
+            asm_line(indent, "andi {}, {}, 1", low_bit.base_register(),
+                     right.base_register());
+            asm_line(indent, "beqz {}, 2f", low_bit.base_register());
+
+            asm_line(indent, "add {}, {}, {}", result.base_register(),
+                     result.base_register(), left.base_register());
+
+            asm_line(indent, "2:");
+            asm_line(indent, "slli {}, {}, 1", left.base_register(),
+                     left.base_register());
+            asm_line(indent, "srli {}, {}, 1", right.base_register(),
+                     right.base_register());
+            asm_line(indent, "bnez {}, 1b", right.base_register());
+            asm_line(indent, "3:");
+        }
+        store_operation_result(indent, product, address, result, true);
     }
 
     auto validate_shift_operand(const token& src_loc_tk,
@@ -1439,12 +1576,21 @@ class machine_rv32i final : public machine {
         return false;
     }
 
-    auto scale_index([[maybe_unused]] const token& src_loc_tk,
-                     [[maybe_unused]] const size_t indent,
-                     [[maybe_unused]] const operand& index,
-                     [[maybe_unused]] const size_t element_size_bytes)
+    auto scale_index(const token& src_loc_tk, const size_t indent,
+                     const operand& index, const size_t element_size_bytes)
         -> void override {
-        todo();
+
+        // index scaling uses the target's address width
+        if (index.type_ref().size_bytes() != address_size_bytes() or
+            element_size_bytes > std::numeric_limits<uint32_t>::max()) {
+
+            throw compiler_exception{src_loc_tk,
+                                     "index scale exceeds RV32I address range"};
+        }
+
+        multiply(src_loc_tk, indent, index,
+                 operand::imm(std::format("{}", element_size_bytes),
+                              default_type()));
     }
 
     auto exit(const token& src_loc_tk, const size_t indent,

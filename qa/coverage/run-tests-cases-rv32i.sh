@@ -4,7 +4,7 @@
 
 # SRC=t1 && EXP=58 && RUN # todo: RV32I runtime backend incomplete
 SRC=t2 && EXP=1 && RUN_NO_CHECKS
-# SRC=t3 && EXP=7 && RUN # todo: RV32I runtime backend incomplete
+SRC=t3 && EXP=7 && RUN_NO_CHECKS
 SRC=t4 && EXP=0 && RUN_NO_CHECKS
 SRC=t5 && EXP=0 && RUN_NO_CHECKS
 SRC=t6 && EXP=0 && RUN_NO_CHECKS
@@ -12,8 +12,8 @@ SRC=t7 && EXP=0 && RUN_NO_CHECKS
 SRC=t8 && EXP=0 && RUN_NO_CHECKS
 SRC=t9 && EXP=0 && RUN_NO_CHECKS
 SRC=t10 && EXP=0 && RUN_NO_CHECKS
-# SRC=t11 && EXP=14 && RUN # todo: RV32I runtime backend incomplete
-# SRC=t12 && EXP=24 && RUN # todo: RV32I runtime backend incomplete
+SRC=t11 && EXP=14 && RUN_NO_CHECKS
+SRC=t12 && EXP=24 && RUN_NO_CHECKS
 SRC=t13 && EXP=2 && RUN_NO_CHECKS
 SRC=t14 && EXP=0 && RUN_NO_CHECKS
 # SRC=t15 && DIFF # todo: x86 registers/syscalls; backend incomplete

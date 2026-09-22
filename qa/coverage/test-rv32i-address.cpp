@@ -423,6 +423,17 @@ auto main() -> int {
         }, {});
 
     assert(address_output.str() == "slti a1, a0, -1\n");
+    address_output.str({});
+    backend.multiply(token{}, 0, operand::reg("a1", integer), operand::imm("1", integer));
+    assert(address_output.str().empty());
+    backend.multiply(token{}, 0, operand::reg("a1", integer), operand::imm("8", integer));
+    assert(address_output.str() == "slli a1, a1, ((3) & 31)\n");
+    address_output.str({});
+    backend.multiply(token{}, 0, operand::reg("a1", integer), operand::imm("-1", integer));
+    assert(address_output.str() == "sub a1, zero, a1\n");
+    address_output.str({});
+    backend.multiply(token{}, 0, operand::mem("a2", {}, 1, 0, integer), operand::imm("0", integer));
+    assert(address_output.str() == "sw zero, 0(a2)\n");
     backend.free_scratch_registers(token{}, 0, address_registers);
     backend.finish();
 
@@ -537,6 +548,63 @@ auto main() -> int {
     backend.use_stream(std::cout);
 
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+    for (const type* value_type : {&integer, &half, &byte}) {
+        for (const bool memory_product : {false, true}) {
+            for (const int32_t initial : {0, 1, -1, 7, -128, 32767, INT32_MIN, INT32_MAX}) {
+                for (const int32_t multiplier : {0, 1, -1, 2, 3, 12, -7, 255, INT32_MIN, INT32_MAX}) {
+                    for (const unsigned source_kind : {0U, 1U, 2U, 3U}) {
+                        std::println("    la a2, buffer\n    li a1, {}\n    sw a1, 4(a2)", multiplier);
+
+                        const operand product{memory_product
+                            ? operand::mem("a2", {}, 1, 0, *value_type)
+                            : operand::reg("a0", *value_type)};
+
+                        operand factor{operand::reg("a1", integer)};
+                        if (source_kind == 1) {
+                            factor = operand::mem("a2", {}, 1, 4, integer);
+                        } else if (source_kind == 2) {
+                            factor = operand::imm(std::format("{}", multiplier), integer);
+                        }
+                        backend.copy_value(token{}, 1, product, operand::imm(std::format("{}", initial), integer));
+                        backend.multiply(token{}, 1, product, factor, source_kind == 3);
+                        backend.copy_value(token{}, 1, operand::reg("a0", integer), product);
+                        const size_t bits{value_type->size_bytes() * 8};
+                        const uint32_t mask{UINT32_MAX >> (32 - bits)};
+                        uint32_t expected{(static_cast<uint32_t>(initial) * static_cast<uint32_t>(multiplier)) & mask};
+                        if ((expected & (uint32_t{1} << (bits - 1))) != 0) {
+                            expected |= ~mask;
+                        }
+
+                        std::println("    li a3, {}\n    beq a0, a3, 1f\n    j failure\n1:", std::bit_cast<int32_t>(expected));
+
+                        if (source_kind == 0) {
+                            std::println("    li a3, {}\n    beq a1, a3, 1f\n    j failure\n1:", multiplier);
+                        }
+                        backend.finish();
+                    }
+                }
+            }
+        }
+    }
+    for (const bool reuse : {false, true}) {
+        std::println("    li a0, -7");
+        backend.multiply(token{}, 1, operand::reg("a0", integer), operand::reg("x10", integer), reuse);
+        std::println("    li a3, 49\n    beq a0, a3, 1f\n    j failure\n1:");
+        std::println("    la a2, buffer\n    li a0, -7\n    sw a0, 0(a2)");
+        const operand address{operand::mem("a2", {}, 1, 0, integer)};
+        backend.multiply(token{}, 1, address, address, reuse);
+        std::println("    lw a0, 0(a2)\n    li a3, 49\n    beq a0, a3, 1f\n    j failure\n1:");
+        backend.finish();
+    }
+    for (const size_t scale : {size_t{0}, size_t{1}, size_t{2}, size_t{3}, size_t{7}, size_t{12}, size_t{256}, size_t{4097}}) {
+        std::println("    li a0, -7");
+        backend.scale_index(token{}, 1, operand::reg("a0", integer), scale);
+
+        std::println("    li a3, {}\n    beq a0, a3, 1f\n    j failure\n1:",
+                     std::bit_cast<int32_t>(uint32_t{0xfffffff9} * static_cast<uint32_t>(scale)));
+
+        backend.finish();
+    }
     size_t comparison_index{};
     for (const std::string_view operation : {"==", "!=", "<", ">=", ">", "<="}) {
         for (const bool inverted : {false, true}) {
