@@ -114,7 +114,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
         const operand lhs_operand{lhs_.compile_lea(
             tc, indent, lhs_.first_token(), allocated_scratch_registers,
-            count_register, lhs_info.lea_path)};
+            count_register, lhs_info.lea_path, x.memory_equal_left_register())};
 
         x.set_memory_equal_left(indent, lhs_operand);
 
@@ -126,7 +126,8 @@ class stmt_builtin_arrays_equal final : public expression {
 
         const operand rhs_operand{rhs_.compile_lea(
             tc, indent, rhs_.first_token(), allocated_scratch_registers,
-            count_register, rhs_info.lea_path)};
+            count_register, rhs_info.lea_path,
+            x.memory_equal_right_register())};
 
         x.set_memory_equal_right(indent, rhs_operand);
 

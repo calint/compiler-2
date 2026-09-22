@@ -451,7 +451,7 @@ class expr_bool_op final : public statement {
 
             const ident_info expr_info{tc.make_ident_info(expr)};
             return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
-                                    {}, expr_info.lea_path);
+                                    {}, expr_info.lea_path, {});
         }
 
         if (expr.is_expression()) {

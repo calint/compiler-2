@@ -81,7 +81,7 @@ class stmt_builtin_address_of final : public expression {
 
         const operand oper{stmt_ident_.compile_lea(
             tc, indent, stmt_ident_.first_token(), allocated_registers, {},
-            src_info.lea_path)};
+            src_info.lea_path, {})};
 
         x.address_of(tok(), indent, dst_info.operand, oper);
 

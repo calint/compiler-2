@@ -30,15 +30,19 @@ class machine_rv32i final : public machine {
     };
 
     static constexpr std::array<size_t, 30> scratch_registers_{
-        10, 11, 12, 13, 14, 15, 16, 17, 1, 3, 4, 8,  9,  18, 19,
-        20, 21, 22, 23, 24, 25, 26, 27, 5, 6, 7, 28, 29, 30, 31,
+        5,  6,  7,  28, 29, 30, 31, 8,  9,  18, 19, 20, 21, 22, 23,
+        24, 25, 26, 27, 4,  3,  1,  11, 12, 13, 14, 15, 16, 17, 10,
     };
-    // note: reverse allocation keeps a0-a7 last to reduce register conflicts
-    //       with builtins that require argument, result, or syscall registers.
+    // note: ascending t and s names keep generated code readable while argument
+    //       registers stay late to avoid builtin conflicts and a0 stays last
+    //       because syscalls overwrite it with their result
 
     struct allocation {
         size_t register_index;
         const type* type_ptr;
+        token source_location;
+        size_t indent;
+        bool named;
     };
 
     std::reference_wrapper<std::ostream> os_{std::cout};
@@ -180,6 +184,13 @@ class machine_rv32i final : public machine {
 
         ~address_scope() {
             while (backend_.allocations_.size() > saved_count_) {
+                // implicit releases need the allocation context for a balanced
+                // trace
+                const allocation& entry{backend_.allocations_.back()};
+                backend_.comment(entry.source_location, entry.indent,
+                                 "free {} register {}",
+                                 entry.named ? "named" : "scratch",
+                                 register_names_.at(entry.register_index));
                 backend_.allocations_.pop_back();
             }
             backend_.unavailable_registers_ = saved_mask_;
@@ -826,6 +837,22 @@ class machine_rv32i final : public machine {
 
         // right holds count / 4 words and count retains count % 4 tail bytes
         // alignment handling is deferred so wide accesses may be unaligned
+        if (not compare) {
+            comment(src_loc_tk, indent,
+                    "{}: copy value, {}: words, {}: tail bytes",
+                    left.base_register(), right.base_register(),
+                    count.base_register());
+        } else {
+            comment(src_loc_tk, indent,
+                    "{}: left value/result, {}: right value, {}: words, {}: "
+                    "tail bytes",
+                    left.base_register(), compared.base_register(),
+                    right.base_register(), count.base_register());
+            comment(src_loc_tk, indent, "stop at first mismatch");
+        }
+
+        comment(src_loc_tk, indent,
+                "split bytes into words and tail; skip word loop if none");
         asm_line(indent, "srli {}, {}, 2", right.base_register(),
                  count.base_register());
         asm_line(indent, "andi {}, {}, 3", count.base_register(),
@@ -833,6 +860,8 @@ class machine_rv32i final : public machine {
         asm_line(indent, "beqz {}, 2f", right.base_register());
         // process four bytes per iteration and stop comparing at the first
         // mismatch
+        comment(src_loc_tk, indent, "{} 4-byte words",
+                compare ? "compare" : "copy");
         asm_line(indent, "1:");
         asm_line(indent, "lw {}, 0({})", left.base_register(),
                  source.base_register());
@@ -854,6 +883,8 @@ class machine_rv32i final : public machine {
         asm_line(indent, "bnez {}, 1b", right.base_register());
         asm_line(indent, "2:");
         // remainder bit 1 selects a halfword for tails of two or three bytes
+        comment(src_loc_tk, indent, "{} optional 2-byte tail",
+                compare ? "compare" : "copy");
         asm_line(indent, "andi {}, {}, 2", left.base_register(),
                  count.base_register());
         asm_line(indent, "beqz {}, 3f", left.base_register());
@@ -874,6 +905,8 @@ class machine_rv32i final : public machine {
                  destination.base_register());
         asm_line(indent, "3:");
         // remainder bit 0 selects the final byte for tails of one or three
+        comment(src_loc_tk, indent, "{} optional final byte",
+                compare ? "compare" : "copy");
         asm_line(indent, "andi {}, {}, 1", count.base_register(),
                  count.base_register());
         asm_line(indent, "beqz {}, 4f", count.base_register());
@@ -892,9 +925,11 @@ class machine_rv32i final : public machine {
         // every chunk matched or the range was empty unless a mismatch branched
         // here
         if (compare) {
+            comment(src_loc_tk, indent, "all matched or empty: true");
             asm_line(indent, "li {}, 1", left.base_register());
             asm_line(indent, "j 6f");
             asm_line(indent, "5:");
+            comment(src_loc_tk, indent, "mismatch: false");
             asm_line(indent, "li {}, 0", left.base_register());
             asm_line(indent, "6:");
             if (not reuse_result) {
@@ -1055,20 +1090,26 @@ class machine_rv32i final : public machine {
                        : with_scratch);
     }
 
-    [[nodiscard]] auto
-    alloc_scratch_register(const token& src_loc_tk,
-                           [[maybe_unused]] const size_t indent,
-                           const type& type_ref) -> operand override {
+    [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
+                                              const size_t indent,
+                                              const type& type_ref)
+        -> operand override {
 
         validate_scalar(src_loc_tk, type_ref);
-        for (const size_t index : scratch_registers_ | std::views::reverse) {
+        for (const size_t index : scratch_registers_) {
             const uint32_t mask{uint32_t{1} << index};
             if ((unavailable_registers_ & mask) == 0) {
                 unavailable_registers_ |= mask;
                 allocations_.push_back({
                     .register_index{index},
                     .type_ptr{&type_ref},
+                    .source_location{src_loc_tk},
+                    .indent{indent},
+                    .named{},
                 });
+
+                comment(src_loc_tk, indent, "allocate scratch register -> {}",
+                        register_names_.at(index));
 
                 operand result{
                     make_register_operand(register_names_.at(index), type_ref)};
@@ -1083,8 +1124,7 @@ class machine_rv32i final : public machine {
     }
 
     [[nodiscard]] auto
-    alloc_named_register(const token& src_loc_tk,
-                         [[maybe_unused]] const size_t indent,
+    alloc_named_register(const token& src_loc_tk, const size_t indent,
                          const std::string_view register_name,
                          const type& type_ref) -> operand override {
 
@@ -1102,9 +1142,14 @@ class machine_rv32i final : public machine {
         allocations_.push_back({
             .register_index{index},
             .type_ptr{&type_ref},
+            .source_location{src_loc_tk},
+            .indent{indent},
+            .named{true},
         });
 
         unavailable_registers_ |= mask;
+        comment(src_loc_tk, indent, "allocate named register {}",
+                register_names_.at(index));
 
         return result;
     }
@@ -1114,13 +1159,16 @@ class machine_rv32i final : public machine {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    auto free_scratch_register([[maybe_unused]] const token& src_loc_tk,
-                               [[maybe_unused]] const size_t indent,
+    auto free_scratch_register(const token& src_loc_tk, const size_t indent,
                                const operand& reg) -> void override {
 
         assert(not allocations_.empty());
         const size_t index{register_index(reg.allocation_register())};
         assert(allocations_.back().register_index == index);
+        // named and scratch allocations share the same lifo pool
+        comment(src_loc_tk, indent, "free {} register {}",
+                allocations_.back().named ? "named" : "scratch",
+                register_names_.at(index));
         unavailable_registers_ &= ~(uint32_t{1} << index);
         allocations_.pop_back();
     }
@@ -1664,7 +1712,25 @@ class machine_rv32i final : public machine {
     [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
                                         const size_t indent)
         -> operand override {
-        return begin_bulk(src_loc_tk, indent);
+
+        const operand count{begin_bulk(src_loc_tk, indent)};
+
+        const std::array<operand, 3>& registers{bulk_registers_.back()};
+
+        comment(src_loc_tk, indent, "{}: source, {}: destination, {}: count",
+                registers.at(1).base_register(),
+                registers.at(2).base_register(), count.base_register());
+
+        return count;
+    }
+
+    [[nodiscard]] auto array_copy_source_register() const -> operand override {
+        return bulk_registers_.back().at(1);
+    }
+
+    [[nodiscard]] auto array_copy_destination_register() const
+        -> operand override {
+        return bulk_registers_.back().at(2);
     }
 
     auto set_array_copy_source(const size_t indent, const operand& address)
@@ -1680,6 +1746,8 @@ class machine_rv32i final : public machine {
     auto end_array_copy(const token& src_loc_tk, const size_t indent,
                         const size_t element_size_bytes) -> void override {
         const std::array<operand, 3>& registers{bulk_registers_.back()};
+        comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
+                registers.at(0).base_register(), element_size_bytes);
         scale_index(src_loc_tk, indent, registers.at(0), element_size_bytes);
         emit_bulk_loop(src_loc_tk, indent, registers.at(0), registers.at(1),
                        registers.at(2));
@@ -1688,7 +1756,25 @@ class machine_rv32i final : public machine {
 
     auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
         -> operand override {
-        return begin_bulk(src_loc_tk, indent);
+
+        const operand count{begin_bulk(src_loc_tk, indent)};
+
+        const std::array<operand, 3>& registers{bulk_registers_.back()};
+
+        comment(src_loc_tk, indent, "{}: source, {}: destination, {}: count",
+                registers.at(1).base_register(),
+                registers.at(2).base_register(), count.base_register());
+
+        return count;
+    }
+
+    // borrowed pointers avoid a temporary address and final move for indexing
+    [[nodiscard]] auto memory_equal_left_register() const -> operand override {
+        return bulk_registers_.back().at(1);
+    }
+
+    [[nodiscard]] auto memory_equal_right_register() const -> operand override {
+        return bulk_registers_.back().at(2);
     }
 
     auto set_memory_equal_left(const size_t indent, const operand& address)
@@ -1722,6 +1808,9 @@ class machine_rv32i final : public machine {
         const std::array<operand, 3>& registers{bulk_registers_.back()};
         {
             const address_scope scope{*this, dst, operand{}};
+            comment(src_loc_tk, indent,
+                    "{}: elements to bytes ({} bytes/element)",
+                    registers.at(0).base_register(), element_size_bytes);
             scale_index(src_loc_tk, indent, registers.at(0),
                         element_size_bytes);
             emit_bulk_loop(src_loc_tk, indent, registers.at(0), registers.at(1),
@@ -1963,6 +2052,11 @@ class machine_rv32i final : public machine {
             validate_address(src_loc_tk, dst);
         }
         const std::optional<int32_t> constant{immediate_value(count)};
+        // immediate shifts must be resolved here rather than by the assembler
+        if (count.is_immediate() and not constant.has_value()) {
+            throw compiler_exception{src_loc_tk,
+                                     "invalid RV32I immediate shift count"};
+        }
         const uint32_t shift_count{static_cast<uint32_t>(constant.value_or(0)) &
                                    31U};
         const size_t bits{dst.type_ref().size_bytes() * 8};
@@ -2004,12 +2098,11 @@ class machine_rv32i final : public machine {
                      register_bits - bits);
 
             normalize = false;
-        } else if (count.is_immediate()) {
-
-            asm_line(indent, "{} {}, {}, (({}) & 31)",
+        } else if (constant.has_value()) {
+            // known counts already have rv32's five-bit shift semantics applied
+            asm_line(indent, "{} {}, {}, {}",
                      operation == '<' ? "slli" : "srai", value.base_register(),
-                     value.base_register(), count.immediate());
-
+                     value.base_register(), shift_count);
         } else {
 
             operand amount{value};

@@ -188,10 +188,13 @@ class stmt_identifier : public statement {
     // on the existing "lea", storage offset, pointer indirection, and whether
     // the index scale is encodable. on x86 this may be e.g. [rbp + r15 * 4 +
     // 24] or [r14 + 28] with a computed base in r14 or simply [r13]
-    [[nodiscard]] auto compile_lea(
-        toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const operand& reg_count,
-        const std::span<const operand> lea_path) const -> operand override {
+    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
+                                   const token& src_loc_tk,
+                                   std::vector<operand>& allocated_registers,
+                                   const operand& reg_count,
+                                   const std::span<const operand> lea_path,
+                                   const operand& address_register) const
+        -> operand override {
 
         // align the full lea path with this identifier's elements
         const std::span<const operand> leas{lea_path.last(elems_.size())};
@@ -321,11 +324,15 @@ class stmt_identifier : public statement {
             }
 
             if (offset_pending) {
-                const operand offset_register{x.alloc_scratch_register(
-                    src_loc_tk, indent, tc.get_type_address())};
+                // borrow the reserved pointer to avoid a temporary and final
+                // move
+                reg_offset = address_register;
+                if (reg_offset.is_empty()) {
+                    reg_offset = x.alloc_scratch_register(
+                        src_loc_tk, indent, tc.get_type_address());
 
-                allocated_registers.push_back(offset_register);
-                reg_offset = offset_register;
+                    allocated_registers.push_back(reg_offset);
+                }
                 x.address_of(src_loc_tk, indent, reg_offset, base_info.operand);
                 offset_pending = false;
 

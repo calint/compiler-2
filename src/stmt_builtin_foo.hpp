@@ -117,7 +117,7 @@ class stmt_builtin_foo final : public statement {
             std::vector<operand> allocated_registers;
 
             const operand op{ident_.compile_lea(
-                tc, indent, tok(), allocated_registers, {}, ii.lea_path)};
+                tc, indent, tok(), allocated_registers, {}, ii.lea_path, {})};
 
             x.address_of(tok(), indent, reg_iter, op);
 

@@ -174,7 +174,8 @@ class statement {
                 [[maybe_unused]] const token& src_loc_tk,
                 [[maybe_unused]] std::vector<operand>& allocated_registers,
                 [[maybe_unused]] const operand& reg_count,
-                [[maybe_unused]] const std::span<const operand> lea_path) const
+                [[maybe_unused]] const std::span<const operand> lea_path,
+                [[maybe_unused]] const operand& address_register) const
         -> operand {
 
         std::unreachable();

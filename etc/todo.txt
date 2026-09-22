@@ -89,6 +89,9 @@
     handle it
 [ ] UB analysis and path-sensitive initialization checks
 [ ] support boolean expression results directly in memory destinations
+[ ] forward canonical boolean results (e.g. arrays_equal) to the destination
+    => avoid scratch + normalization in expr_bool_op; preserve not/branches
+       and review x86 setcc byte-destination handling
 [ ] t158 is ub
 [ ] ub? mp[1] = { mp[2].msg } see t155.baz:44
 [ ] a return reference might be used as an argument to a function that set it.

@@ -61,10 +61,13 @@ class expr_type_value final : public statement {
     [[nodiscard]] auto identifier() const -> std::string_view override;
 
     // implemented in 'decouple_impl.hpp' due to circular reference
-    [[nodiscard]] auto compile_lea(
-        toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const operand& reg_count,
-        const std::span<const operand> lea_path) const -> operand override;
+    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
+                                   const token& src_loc_tk,
+                                   std::vector<operand>& allocated_registers,
+                                   const operand& reg_count,
+                                   const std::span<const operand> lea_path,
+                                   const operand& address_register) const
+        -> operand override;
 
   private:
     // implemented in 'decouple_impl.hpp' due to circular reference:

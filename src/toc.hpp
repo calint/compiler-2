@@ -773,7 +773,7 @@ class toc final {
         }
 
         return src.compile_lea(*this, indent, src.tok(), lea_registers, {},
-                               src_info.lea_path);
+                               src_info.lea_path, {});
     }
 
     [[nodiscard]] auto get_looping_label_or_throw(const token& src_loc_tk) const

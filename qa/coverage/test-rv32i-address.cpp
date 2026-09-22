@@ -7,6 +7,31 @@
 #include "../../src/machine_x86.hpp"
 #include "../../src/program.hpp"
 
+// instruction-shape tests must not depend on register diagnostic comments
+class assembly_output : public std::ostringstream {
+  public:
+    using std::ostringstream::str;
+
+    auto str() const -> std::string {
+        std::istringstream input{std::ostringstream::str()};
+        std::string result;
+        std::string line;
+        while (std::getline(input, line)) {
+            const size_t start{line.find_first_not_of(" \t")};
+            if (start != std::string::npos and line[start] == '#' and
+                (line.contains("allocate scratch register") or
+                 line.contains("allocate named register") or
+                 line.contains("free scratch register") or
+                 line.contains("free named register"))) {
+                continue;
+            }
+            result += line + '\n';
+        }
+
+        return result;
+    }
+};
+
 auto main(const int argc, const char* argv[]) -> int {
     if (argc > 1 and std::string_view{argv[1]} == "optimize-jumps") {
         jump_optimizer::rv32i::optimize(std::cin, std::cout);
@@ -153,6 +178,53 @@ auto main(const int argc, const char* argv[]) -> int {
         located.comment(location, 1, "assignment");
         located.comment(token{}, 0, "generated");
         assert(comments.str() == "    # [2:5] assignment\n# generated\n");
+        located.set_builtin_types(integer64, integer, half, byte, boolean,
+                                  empty);
+        comments.str({});
+        const operand scratch{
+            located.alloc_scratch_register(location, 1, integer)};
+        const operand named{
+            located.alloc_named_register(location, 1, "x10", integer)};
+        located.free_named_register(location, 1, named);
+        located.free_scratch_register(location, 1, scratch);
+        assert(comments.str() == "    # [2:5] allocate scratch register -> t0\n"
+                                 "    # [2:5] allocate named register a0\n"
+                                 "    # [2:5] free named register a0\n"
+                                 "    # [2:5] free scratch register t0\n");
+        comments.str({});
+        located.add_subtract(location, 1, '+',
+                             operand::mem("a0", {}, 1, 0, integer),
+                             operand::imm("1", integer));
+        assert(comments.str() ==
+               "    # [2:5] allocate scratch register -> t0\n"
+               "    lw t0, 0(a0)\n    addi t0, t0, 1\n    sw t0, 0(a0)\n"
+               "    # [2:5] free scratch register t0\n");
+        std::vector<operand> ordered;
+        for (const std::string_view name :
+             {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0",  "s1",  "s2",
+              "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "tp",
+              "gp", "ra", "a1", "a2", "a3", "a4", "a5", "a6",  "a7",  "a0"}) {
+            ordered.push_back(
+                located.alloc_scratch_register(location, 1, integer));
+            assert(ordered.back().base_register() == name);
+        }
+        located.free_scratch_registers(location, 1, ordered);
+        comments.str({});
+        const operand count{located.begin_array_copy(location, 1)};
+        located.copy_value(location, 1, count, operand::imm("2", integer));
+        located.set_array_copy_source(1,
+                                      operand::mem("s0", {}, 1, 216, integer));
+        located.set_array_copy_destination(
+            1, operand::mem("s0", {}, 1, 208, integer));
+        located.end_array_copy(location, 1, 4);
+        for (const std::string_view text :
+             {"t1: source, t2: destination, t0: count",
+              "t0: elements to bytes (4 bytes/element)",
+              "t3: copy value, t4: words, t0: tail bytes", "copy 4-byte words",
+              "copy optional 2-byte tail", "copy optional final byte"}) {
+            assert(comments.str().contains(std::format("# [2:5] {}\n", text)));
+        }
+        located.finish();
     }
     if (argc > 1 and std::string_view{argv[1]} == "noninline") {
         machine_rv32i backend;
@@ -281,6 +353,51 @@ auto main(const int argc, const char* argv[]) -> int {
 
         return 0;
     }
+    {
+        const std::string_view source{R"baz(
+func main() {
+    var source : i32[4]
+    var destination : i32[4]
+    array_copy(source[2], destination[1], 2)
+}
+)baz"};
+        machine_rv32i compiler;
+        program prg{compiler, source, 4096, false, false, false};
+        std::ostringstream output;
+        prg.build(output);
+        // reserved pointers must hold the address throughout index arithmetic
+        assert(output.str().contains("add t1, t1, t3\n"));
+        assert(output.str().contains("add t2, t2, t3\n"));
+        assert(not output.str().contains("addi t1, t3, 0\n"));
+        assert(not output.str().contains("addi t2, t3, 0\n"));
+    }
+    {
+        const std::string_view source{R"baz(
+func main() {
+    var source : i32[4]
+    var destination : i32[4]
+    var same : bool = arrays_equal(source[2], destination[1], 2)
+}
+)baz"};
+        machine_rv32i compiler;
+        program prg{compiler, source, 4096, false, false, false};
+        std::ostringstream output;
+        prg.build(output);
+        assert(output.str().contains("add t2, t2, t4\n"));
+        assert(output.str().contains("add t3, t3, t4\n"));
+        assert(not output.str().contains("addi t2, t4, 0\n"));
+        assert(not output.str().contains("addi t3, t4, 0\n"));
+        for (const std::string_view text :
+             {"t2: source, t3: destination, t1: count",
+              "t1: elements to bytes (4 bytes/element)",
+              "t0: left value/result, t5: right value, t4: words, t1: tail "
+              "bytes",
+              "stop at first mismatch", "compare 4-byte words",
+              "compare optional 2-byte tail", "compare optional final byte",
+              "all matched or empty: true", "mismatch: false"}) {
+            assert(output.str().contains(std::format("# {}\n", text)));
+        }
+    }
     if (argc > 1 and std::string_view{argv[1]} == "bulk") {
         const std::string_view source{R"baz(
 func assert(ok : bool) if not ok exit(1)
@@ -299,7 +416,12 @@ func main() {
     array_copy(source, destination, nested(source, destination))
     assert(arrays_equal(source, destination, 2))
     assert(not arrays_equal(source, destination, 3))
-    array_copy(source[2], destination[2], 1)
+    var index : i32 = 2
+    array_copy(source[index], destination[index], 1)
+    assert(arrays_equal(source[index], destination[index], 1))
+    destination[index].second = 501
+    assert(not arrays_equal(source[index], destination[index], 1))
+    destination[index].second = 500
     assert(equal(source, destination))
     array_copy(source, destination, 0)
     assert(arrays_equal(source, destination, 0))
@@ -516,7 +638,7 @@ func main() {
     assert(backend.address_size_bytes() == 4);
     assert(not backend.can_encode_index_scale(1));
 
-    std::ostringstream shift_output;
+    assembly_output shift_output;
     backend.use_stream(shift_output);
     for (const bool counted : {false, true}) {
         std::vector<operand> held;
@@ -614,10 +736,35 @@ func main() {
         assert(shift_output.str() == (operation == '<' ? "sll a0, a0, a1\n" : "sra a0, a0, a1\n"));
         shift_output.str({});
 
-        backend.shift(token{}, 0, operation, operand::reg("a0", integer),
-                      operand::imm("35", integer));
-
-        assert(shift_output.str() == (operation == '<' ? "slli a0, a0, ((35) & 31)\n" : "srai a0, a0, ((35) & 31)\n"));
+        for (const unsigned count : {0U, 2U, 31U, 32U, 34U, 35U, 64U}) {
+            shift_output.str({});
+            backend.shift(token{}, 0, operation, operand::reg("a0", integer),
+                          operand::imm(std::format("{}", count), integer));
+            const unsigned masked{count & 31U};
+            assert(shift_output.str() ==
+                   (masked == 0
+                        ? std::string{}
+                        : std::format("{} a0, a0, {}\n",
+                                      operation == '<' ? "slli" : "srai",
+                                      masked)));
+        }
+        for (const operand& destination :
+             {operand::reg("a0", integer),
+              operand::mem("a0", {}, 1, 0, integer)}) {
+            for (const std::string_view count :
+                 {"shift_amount + 1", "2 + 1", "-~"}) {
+                shift_output.str({});
+                bool rejected{};
+                try {
+                    backend.shift(token{}, 0, operation, destination,
+                                  operand::imm(std::string{count}, integer));
+                } catch (const compiler_exception&) {
+                    rejected = true;
+                }
+                assert(rejected);
+                assert(shift_output.str().empty());
+            }
+        }
     }
     for (const char operation : {'+', '-', '&', '|', '^'}) {
         shift_output.str({});
@@ -761,14 +908,16 @@ func main() {
     backend.add_subtract(token{}, 0, '+', operand::mem("a0", {}, 1, 0, integer),
                          operand::mem("x10", {}, 1, 0, integer));
 
-    assert(shift_output.str() == "lw t6, 0(a0)\nadd t6, t6, t6\nsw t6, 0(a0)\n");
+    assert(shift_output.str() ==
+           "lw t0, 0(a0)\nadd t0, t0, t0\nsw t0, 0(a0)\n");
     backend.finish();
     shift_output.str({});
 
     backend.shift(token{}, 0, '<', operand::mem("a0", {}, 1, 0, integer),
                   operand::mem("x10", {}, 1, 0, integer));
 
-    assert(shift_output.str() == "lw t6, 0(a0)\nsll t6, t6, t6\nsw t6, 0(a0)\n");
+    assert(shift_output.str() ==
+           "lw t0, 0(a0)\nsll t0, t0, t0\nsw t0, 0(a0)\n");
     backend.finish();
     {
         const std::string_view source{
@@ -778,11 +927,11 @@ func main() {
         machine_rv32i compiler;
         program prg{compiler, source, 4096, false, false, false};
         prg.build(output);
-        assert(output.str().contains("sll t6, t6, t5"));
-        assert(not output.str().contains("addi t5, t6, 0"));
+        assert(output.str().contains("sll t0, t0, t1"));
+        assert(not output.str().contains("addi t1, t0, 0"));
     }
 
-    std::ostringstream address_output;
+    assembly_output address_output;
     backend.use_stream(address_output);
     std::vector<operand> address_registers;
     for (size_t count{}; count < 30; ++count) {
@@ -944,7 +1093,7 @@ func main() {
     backend.multiply(token{}, 0, operand::reg("a1", integer), operand::imm("1", integer));
     assert(address_output.str().empty());
     backend.multiply(token{}, 0, operand::reg("a1", integer), operand::imm("8", integer));
-    assert(address_output.str() == "slli a1, a1, ((3) & 31)\n");
+    assert(address_output.str() == "slli a1, a1, 3\n");
     address_output.str({});
     backend.multiply(token{}, 0, operand::reg("a1", integer), operand::imm("-1", integer));
     assert(address_output.str() == "sub a1, zero, a1\n");
@@ -956,13 +1105,13 @@ func main() {
     address_output.str({});
     backend.copy(token{}, 0, operand::mem("a1", {}, 1, 208, byte),
                  operand::mem("a2", {}, 1, 240, byte), 4);
-    assert(address_output.str() == "lw t6, 208(a1)\nsw t6, 240(a2)\n");
+    assert(address_output.str() == "lw t0, 208(a1)\nsw t0, 240(a2)\n");
     address_output.str({});
     backend.copy(token{}, 0, operand::mem("a1", {}, 1, -16, byte),
                  operand::mem("a2", {}, 1, 16, byte), 7);
     assert(address_output.str() ==
-           "lw t6, -16(a1)\nsw t6, 16(a2)\nlhu t6, -12(a1)\nsh t6, 20(a2)\n"
-           "lbu t6, -10(a1)\nsb t6, 22(a2)\n");
+           "lw t0, -16(a1)\nsw t0, 16(a2)\nlhu t0, -12(a1)\nsh t0, 20(a2)\n"
+           "lbu t0, -10(a1)\nsb t0, 22(a2)\n");
     address_output.str({});
     for (size_t count{}; count < 29; ++count) {
         address_registers.push_back(
@@ -975,13 +1124,13 @@ func main() {
     address_output.str({});
     backend.zero(token{}, 0, operand::mem("a2", {}, 1, 2047, byte), 16);
     assert(address_output.str() ==
-           "addi t6, a2, 2047\nsw zero, 0(t6)\nsw zero, 4(t6)\nsw zero, "
-           "8(t6)\nsw zero, 12(t6)\n");
+           "addi t0, a2, 2047\nsw zero, 0(t0)\nsw zero, 4(t0)\nsw zero, "
+           "8(t0)\nsw zero, 12(t0)\n");
     address_output.str({});
     backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 19);
     assert(address_output.str() ==
-           "addi t6, a2, 0\nli t5, 4\n1:\nsw zero, 0(t6)\naddi t6, t6, 4\naddi "
-           "t5, t5, -1\nbnez t5, 1b\nsh zero, 0(t6)\nsb zero, 2(t6)\n");
+           "addi t0, a2, 0\nli t1, 4\n1:\nsw zero, 0(t0)\naddi t0, t0, 4\naddi "
+           "t1, t1, -1\nbnez t1, 1b\nsh zero, 0(t0)\nsb zero, 2(t0)\n");
     address_output.str({});
     backend.finish();
 

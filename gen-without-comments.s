@@ -245,23 +245,29 @@ main:
     shl rcx, 2
     rep movsb
     cmp_166_12:
-        mov rcx, 4
-        mov r13, 166
-        test rcx, rcx
-        cmovs rbp, r13
+        mov rcx, 3
+        mov r13, 1
+        mov r12, 166
+        test r13, r13
+        cmovs rbp, r12
         js baz_bounds_panic
-        cmp rcx, 4
-        cmovg rbp, r13
+        mov r10, rcx
+        add r10, r13
+        cmp r10, 4
+        cmovg rbp, r12
         jg baz_bounds_panic
-        lea rsi, [rbp + 224]
-        mov r13, 166
-        test rcx, rcx
-        cmovs rbp, r13
+        lea rsi, [rbp + r13 * 4 + 224]
+        mov r13, 1
+        mov r12, 166
+        test r13, r13
+        cmovs rbp, r12
         js baz_bounds_panic
-        cmp rcx, 8
-        cmovg rbp, r13
+        mov r10, rcx
+        add r10, r13
+        cmp r10, 8
+        cmovg rbp, r12
         jg baz_bounds_panic
-        lea rdi, [rbp + 256]
+        lea rdi, [rbp + r13 * 4 + 256]
         shl rcx, 2
         repe cmpsb
         sete r14b

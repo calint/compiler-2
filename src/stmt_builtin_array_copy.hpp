@@ -102,7 +102,8 @@ class stmt_builtin_array_copy final : public statement {
 
         const operand src_operand{src_.compile_lea(
             tc, indent, src_.first_token(), allocated_scratch_registers,
-            count_register, array_src_info.lea_path)};
+            count_register, array_src_info.lea_path,
+            x.array_copy_source_register())};
 
         x.set_array_copy_source(indent, src_operand);
 
@@ -114,7 +115,8 @@ class stmt_builtin_array_copy final : public statement {
 
         const operand dst_operand{dst_.compile_lea(
             tc, indent, dst_.first_token(), allocated_scratch_registers,
-            count_register, array_dst_info.lea_path)};
+            count_register, array_dst_info.lea_path,
+            x.array_copy_destination_register())};
 
         x.set_array_copy_destination(indent, dst_operand);
 

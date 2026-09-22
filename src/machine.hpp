@@ -157,6 +157,16 @@ class machine {
                                                 const size_t indent)
         -> operand = 0;
 
+    // an empty operand keeps address preparation independent of backend setup
+    [[nodiscard]] virtual auto array_copy_source_register() const -> operand {
+        return {};
+    }
+
+    [[nodiscard]] virtual auto array_copy_destination_register() const
+        -> operand {
+        return {};
+    }
+
     virtual auto set_array_copy_source(const size_t indent,
                                        const operand& address) -> void = 0;
 
@@ -168,6 +178,14 @@ class machine {
 
     virtual auto begin_memory_equal(const token& src_loc_tk,
                                     const size_t indent) -> operand = 0;
+
+    [[nodiscard]] virtual auto memory_equal_left_register() const -> operand {
+        return {};
+    }
+
+    [[nodiscard]] virtual auto memory_equal_right_register() const -> operand {
+        return {};
+    }
 
     virtual auto set_memory_equal_left(const size_t indent,
                                        const operand& address) -> void = 0;

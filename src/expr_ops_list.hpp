@@ -354,15 +354,19 @@ class expr_ops_list final : public expression {
         return exprs_.size() == 1 and exprs_[0]->is_identifier();
     }
 
-    [[nodiscard]] auto compile_lea(
-        toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const operand& reg_count,
-        const std::span<const operand> lea_path) const -> operand override {
+    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
+                                   const token& src_loc_tk,
+                                   std::vector<operand>& allocated_registers,
+                                   const operand& reg_count,
+                                   const std::span<const operand> lea_path,
+                                   const operand& address_register) const
+        -> operand override {
 
         assert(exprs_.size() == 1);
 
         return exprs_[0]->compile_lea(tc, indent, src_loc_tk,
-                                      allocated_registers, reg_count, lea_path);
+                                      allocated_registers, reg_count, lea_path,
+                                      address_register);
     }
 
   private:

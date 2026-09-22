@@ -109,7 +109,7 @@ class stmt_builtin_equal final : public expression {
 
         const operand lhs_operand{lhs_.compile_lea(
             tc, indent, lhs_.first_token(), allocated_scratch_registers, {},
-            lhs_info.lea_path)};
+            lhs_info.lea_path, {})};
 
         x.set_memory_equal_left(indent, lhs_operand);
 
@@ -121,7 +121,7 @@ class stmt_builtin_equal final : public expression {
 
         const operand rhs_operand{rhs_.compile_lea(
             tc, indent, rhs_.first_token(), allocated_scratch_registers, {},
-            rhs_info.lea_path)};
+            rhs_info.lea_path, {})};
 
         x.set_memory_equal_right(indent, rhs_operand);
 

@@ -400,8 +400,9 @@ class stmt_call : public expression {
 
                 std::vector<operand> regs_lea;
 
-                const operand lea{arg.compile_lea(
-                    tc, indent, arg.tok(), regs_lea, {}, arg_info.lea_path)};
+                const operand lea{arg.compile_lea(tc, indent, arg.tok(),
+                                                  regs_lea, {},
+                                                  arg_info.lea_path, {})};
 
                 for (const operand& r : regs_lea) {
                     allocated_registers.push_back({
