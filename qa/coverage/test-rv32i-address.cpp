@@ -159,6 +159,24 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     {
         machine_rv32i backend;
+        assembly_output copies;
+        backend.set_builtin_types(integer64, integer, half, byte, boolean,
+                                  empty);
+        backend.use_stream(copies);
+        const operand address{operand::mem("s0", {}, 1, 24, integer)};
+        backend.copy_value(token{}, 0, address, address);
+        assert(copies.str().empty());
+        backend.copy_value(token{}, 0,
+                           operand::mem("s0", {}, 1, 28, integer), address);
+        assert(copies.str().contains("lw t0, 24(s0)\n"));
+        assert(copies.str().contains("sw t0, 28(s0)\n"));
+
+        copies.str({});
+        backend.copy_value(token{}, 0,
+                           operand::mem("s0", {}, 1, 24, byte), address);
+        assert(copies.str().contains("lw t0, 24(s0)\n"));
+        assert(copies.str().contains("sb t0, 24(s0)\n"));
+
         std::ostringstream comments;
         backend.use_stream(comments);
         backend.comment_variable(token{}, 0, "arr: i32[4]", 16,

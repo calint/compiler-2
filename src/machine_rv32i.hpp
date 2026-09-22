@@ -1209,6 +1209,15 @@ class machine_rv32i final : public machine {
             validate_address(src_loc_tk, src);
         }
 
+        if (dst.is_memory() and src.is_memory() and
+            dst.type_ref().name() == src.type_ref().name() and
+            dst.base_register() == src.base_register() and
+            dst.index_register() == src.index_register() and
+            dst.scale() == src.scale() and
+            dst.displacement() == src.displacement()) {
+            return;
+        }
+
         const address_scope scope{*this, dst, src};
 
         const std::optional<int32_t> constant{immediate_value(src)};
