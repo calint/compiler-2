@@ -1461,7 +1461,6 @@ class machine_x86 final : public machine {
 
         reserve_named_register(src_loc_tk, indent, "rsi", *default_type_);
         reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
-
         return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
     }
 
@@ -1480,11 +1479,12 @@ class machine_x86 final : public machine {
         if (element_size_bytes <= 1) {
             return;
         }
+
         if (std::has_single_bit(element_size_bytes)) {
             shl(indent, value, immediate(std::countr_zero(element_size_bytes)));
-
             return;
         }
+
         imul(src_loc_tk, indent, value, immediate(element_size_bytes));
     }
 
