@@ -10,6 +10,7 @@ x86_64 assembly on Linux.
 * generate handwritten-like assembler compiled by NASM for x86_64
 * super-loop program with non-reentrant inlined functions
 * limited support for non-inline functions
+* target x86_64 and rv32i (running in QEMU)
 
 ## Supports
 

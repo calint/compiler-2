@@ -13,6 +13,20 @@ auto main(const int argc, const char* argv[]) -> int {
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
+    {
+        machine_rv32i backend;
+        std::ostringstream comments;
+        backend.use_stream(comments);
+        backend.comment_variable(token{}, 0, "arr: i32[4]", 16,
+                                 operand::mem("s0", {}, 1, 208, integer));
+        backend.comment_variable(token{}, 0, "indexed", 4,
+                                 operand::mem("s1", "t0", 4, -16, integer));
+        backend.comment_variable(token{}, 0, "first", 4,
+                                 operand::mem("s0", {}, 1, 0, integer));
+        assert(comments.str() == "# arr: i32[4] (16 B @ [s0 + 208])\n"
+                                 "# indexed (4 B @ [s1 + t0 * 4 - 16])\n"
+                                 "# first (4 B @ [s0])\n");
+    }
     if (argc > 1 and std::string_view{argv[1]} == "noninline") {
         machine_rv32i backend;
         backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);

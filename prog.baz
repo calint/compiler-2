@@ -8,7 +8,7 @@ type point {x, y}
 
 type object {pos : point, color : i32}
 
-type world { locations : i64[8] }
+type world { locations : [8] }
 
 type str {
     len : i8,
@@ -24,7 +24,7 @@ dat prompt3 : i8[] = "hello "
 dat     dot : i8[] = "."
 dat      nl : i8[] = "\n"
 dat   colon : i8[] = ": "
-dat    nums : i64[4] = { 1 } # remaining elements are zeroed
+dat    nums : [4] = { 1 } # remaining elements are zeroed
 dat    str1 : str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
@@ -46,7 +46,7 @@ func fooz(pt : point) {
     pt.y = 0xb     # hex value 11
 }
 
-# default argument type is `i64`
+# default argument type is target-dependent
 
 func bar(arg) {
     if arg == 0 return
@@ -61,7 +61,7 @@ func inv(i : i32) : res i32 {
     res = ~i
 }
 
-func baz(arg) : res i64 {
+func baz(arg) : res {
     res = arg * 2
 }
 
@@ -178,7 +178,7 @@ func main() {
     faz(arr)
     assert(arr[1] == 0xfe)
 
-    var arr3 : i64[] = { 3, 5 }
+    var arr3 : [] = { 3, 5 }
     foo arr3 {
         e = e + i + n
     }
@@ -270,7 +270,7 @@ func main() {
              array_size_of(worlds.locations)
           ))
 
-    var arr2 : i64[] = { -1, 2 }
+    var arr2 : [] = { -1, 2 }
     assert(array_size_of(arr2) == 2)
     assert(arr2[0] == -1)
     assert(arr2[1] == 2)

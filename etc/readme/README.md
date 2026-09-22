@@ -10,6 +10,7 @@ x86_64 assembly on Linux.
 * generate handwritten-like assembler compiled by NASM for x86_64
 * super-loop program with non-reentrant inlined functions
 * limited support for non-inline functions
+* target x86_64 and rv32i (running in QEMU)
 
 ## Supports
 
@@ -63,10 +64,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           3082            929          11138
+C/C++ Header                    52           3090            931          11161
 C++                              1             46              7            231
 -------------------------------------------------------------------------------
-SUM:                            53           3128            936          11369
+SUM:                            53           3136            938          11392
 -------------------------------------------------------------------------------
 ```
 
@@ -83,7 +84,7 @@ type point {x, y}
 
 type object {pos : point, color : i32}
 
-type world { locations : i64[8] }
+type world { locations : [8] }
 
 type str {
     len : i8,
@@ -99,7 +100,7 @@ dat prompt3 : i8[] = "hello "
 dat     dot : i8[] = "."
 dat      nl : i8[] = "\n"
 dat   colon : i8[] = ": "
-dat    nums : i64[4] = { 1 } # remaining elements are zeroed
+dat    nums : [4] = { 1 } # remaining elements are zeroed
 dat    str1 : str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
@@ -121,7 +122,7 @@ func fooz(pt : point) {
     pt.y = 0xb     # hex value 11
 }
 
-# default argument type is `i64`
+# default argument type is target-dependent
 
 func bar(arg) {
     if arg == 0 return
@@ -136,7 +137,7 @@ func inv(i : i32) : res i32 {
     res = ~i
 }
 
-func baz(arg) : res i64 {
+func baz(arg) : res {
     res = arg * 2
 }
 
@@ -253,7 +254,7 @@ func main() {
     faz(arr)
     assert(arr[1] == 0xfe)
 
-    var arr3 : i64[] = { 3, 5 }
+    var arr3 : [] = { 3, 5 }
     foo arr3 {
         e = e + i + n
     }
@@ -345,7 +346,7 @@ func main() {
              array_size_of(worlds.locations)
           ))
 
-    var arr2 : i64[] = { -1, 2 }
+    var arr2 : [] = { -1, 2 }
     assert(array_size_of(arr2) == 2)
     assert(arr2[0] == -1)
     assert(arr2[1] == 2)
@@ -1902,9 +1903,9 @@ lea rbp, [dat]
 ;[25:10] nl: i8[1] (1 B @ [rbp + 60])
 ;[26:1] dat colon : i8[] = ": "
 ;[26:7] colon: i8[2] (2 B @ [rbp + 61])
-;[27:1] dat nums : i64[4] = { 1 }
+;[27:1] dat nums : [4] = { 1 }
 ;[27:8] nums: i64[4] (32 B @ [rbp + 63])
-;[27:30] # remaining elements are zeroed
+;[27:27] # remaining elements are zeroed
 ;[28:1] dat str1 : str = { 3 }
 ;[28:8] str1: str (128 B @ [rbp + 95])
 ;[28:27] # remaining fields are zeroed
@@ -1912,7 +1913,7 @@ lea rbp, [dat]
 ;[32:1] # arguments can be placed in specified register using `reg_...` syntax
 ;[34:1] # single statement blocks can ommit { ... }
 ;[42:1] # function arguments and return are equivalent to mutable references
-;[49:1] # default argument type is `i64`
+;[49:1] # default argument type is target-dependent
 ;[56:1] # return target is specified as a variable, in this case `res`
 ;[58:1] # return variable is a mutable reference to destination
 ;[68:1] # array arguments are declared with type and []
@@ -2671,14 +2672,14 @@ main:
         if_36_23_179_5_end:
 ;       [179:5] free scratch register r15
     assert_179_5_end:
-;   [181:5] var arr3 : i64[] = { 3, 5 }
+;   [181:5] var arr3 : [] = { 3, 5 }
 ;   [181:9] arr3: i64[2] (16 B @ [rbp + 288])
 ;   [181:9] arr3 = { 3, 5 }
-;   [181:26] [0]
-;   [181:26] 3
+;   [181:23] [0]
+;   [181:23] 3
     mov qword [rbp + 288], 3
-;   [181:26] [1]
-;   [181:29] 5
+;   [181:23] [1]
+;   [181:26] 5
     mov qword [rbp + 296], 5
 ;   [182:5] foo arr3
 ;   [182:9] allocate scratch register -> r15
@@ -3109,7 +3110,7 @@ main:
 ;   [214:13] k = baz(j)
 ;   [214:13] = expression
 ;   [214:13] baz(j)
-;   [64:6] baz(arg) : res i64
+;   [64:6] baz(arg) : res
     baz_214_13:
 ;       [214:13] alias res -> k
 ;       [214:13] alias arg -> j
@@ -3156,7 +3157,7 @@ main:
 ;   [217:9] k = baz(1)
 ;   [217:9] = expression
 ;   [217:9] baz(1)
-;   [64:6] baz(arg) : res i64
+;   [64:6] baz(arg) : res
     baz_217_9:
 ;       [217:9] alias res -> k
 ;       [217:9] alias arg -> 1
@@ -3206,7 +3207,7 @@ main:
 ;   [220:23] p0.x = baz(3)
 ;   [220:23] = expression
 ;   [220:23] baz(3)
-;   [64:6] baz(arg) : res i64
+;   [64:6] baz(arg) : res
     baz_220_23:
 ;       [220:23] alias res -> p0.x (lea: rbp + 360)
 ;       [220:23] alias arg -> 3
@@ -4139,14 +4140,14 @@ main:
         if_36_23_267_5_end:
 ;       [267:5] free scratch register r15
     assert_267_5_end:
-;   [273:5] var arr2 : i64[] = { -1, 2 }
+;   [273:5] var arr2 : [] = { -1, 2 }
 ;   [273:9] arr2: i64[2] (16 B @ [rbp + 1016])
 ;   [273:9] arr2 = { -1, 2 }
-;   [273:26] [0]
-;   [273:27] -1
+;   [273:23] [0]
+;   [273:24] -1
     mov qword [rbp + 1016], -1
-;   [273:26] [1]
-;   [273:30] 2
+;   [273:23] [1]
+;   [273:27] 2
     mov qword [rbp + 1024], 2
 ;   [274:5] assert(array_size_of(arr2) == 2)
 ;   [274:12] allocate scratch register -> r15
@@ -4894,11 +4895,11 @@ db `\n`
 ;[26:22] i8[2]
 db `: `
 ;[27:8] nums
-;[27:15] i64[4]
-;[27:26] [0]
-;[27:26] i64
+; i64[4]
+;[27:23] [0]
+;[27:23] i64
 dq 1
-;[27:15] pad 3 'i64' of size 8
+; pad 3 'i64' of size 8
 times 24 db 0
 ;[28:8] str1
 ;[28:23] i8

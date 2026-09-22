@@ -50,6 +50,34 @@ class machine_rv32i final : public machine {
     std::vector<allocation> allocations_;
     std::vector<std::array<operand, 3>> bulk_registers_;
 
+    [[nodiscard]] static auto format_address(const operand& address)
+        -> std::string {
+
+        std::string text{address.base_register()};
+        if (not address.index_register().empty()) {
+            if (not text.empty()) {
+                text += " + ";
+            }
+            text += address.index_register();
+            if (address.scale() > 1) {
+                text += std::format(" * {}", address.scale());
+            }
+        }
+
+        if (text.empty()) {
+            text = std::format("{}", address.displacement());
+        } else if (address.displacement() < 0) {
+            const uint64_t magnitude{
+                uint64_t{} - static_cast<uint64_t>(address.displacement())};
+
+            text += std::format(" - {}", magnitude);
+        } else if (address.displacement() > 0) {
+            text += std::format(" + {}", address.displacement());
+        }
+
+        return text;
+    }
+
     [[nodiscard]] static auto register_index(const std::string_view name)
         -> size_t {
         for (const auto [index, alias] :
@@ -1091,15 +1119,17 @@ class machine_rv32i final : public machine {
 
     auto comment_variable(const token& src_loc_tk, const size_t indent,
                           const std::string_view text, const size_t size_bytes,
-                          [[maybe_unused]] const operand& address)
-        -> void override {
-        comment(src_loc_tk, indent, "{} ({} B)", text, size_bytes);
+                          const operand& address) -> void override {
+
+        comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, size_bytes,
+                format_address(address));
     }
 
     auto comment_alias(const token& src_loc_tk, const size_t indent,
                        const std::string_view from, const std::string_view to,
                        [[maybe_unused]] const operand& address)
         -> void override {
+
         comment(src_loc_tk, indent, "alias {} -> {}", from, to);
     }
 
@@ -1111,6 +1141,9 @@ class machine_rv32i final : public machine {
         -> void override {
 
         {
+            // note: open code scope for 'address_scop' to trigger delete before
+            //       freeing scratch registers
+
             const address_scope destination_scope{*this, action.destination,
                                                   operand{}};
 
