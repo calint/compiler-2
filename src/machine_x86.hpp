@@ -170,6 +170,8 @@ class machine_x86 final : public machine {
     size_t named_registers_initial_count_{named_registers_.size()};
     static constexpr std::array<std::string_view, 8> scratch_registers_{
         "r15", "r14", "r13", "r12", "r10", "r9", "r8", "r11"};
+    // note: r11 is allocated last to avoid save/restore overhead around
+    //       syscalls
 
     std::bitset<scratch_registers_.size()> unavailable_scratch_registers_;
     bool frame_base_reserved_{};
@@ -429,13 +431,17 @@ class machine_x86 final : public machine {
     }
 
     auto invoke_syscall(const size_t indent) -> void override {
-        const operand saved_register{
-            make_register_operand("r11", *default_type_)};
-        // note: syscall clobbers r11
-
-        push(indent, saved_register);
+        std::vector<operand> saved;
+        for (const std::string_view name : {"rcx", "r11"}) {
+            if (allocated_register_type(name) != nullptr) {
+                saved.push_back(make_register_operand(name, *type_i64_));
+                push(indent, saved.back());
+            }
+        }
         syscall(indent);
-        pop(indent, saved_register);
+        for (const operand& reg : saved | std::views::reverse) {
+            pop(indent, reg);
+        }
     }
 
     auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -1314,18 +1320,8 @@ class machine_x86 final : public machine {
         assert(address.base_register() == "rsi");
         assert(count.base_register() == "rdx");
 
-        std::vector<operand> saved;
-        for (const std::string_view name : {"rcx", "r11"}) {
-            if (allocated_register_type(name) != nullptr) {
-                saved.push_back(make_register_operand(name, *type_i64_));
-                push(indent, saved.back());
-            }
-        }
         mov(src_loc_tk, indent, dst, immediate(syscall_number));
-        syscall(indent);
-        for (const operand& reg : saved | std::views::reverse) {
-            pop(indent, reg);
-        }
+        invoke_syscall(indent);
     }
 
     [[nodiscard]] auto sized_register(const std::string_view name,

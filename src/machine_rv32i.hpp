@@ -23,10 +23,13 @@ class machine_rv32i final : public machine {
         "a1",   "a2", "a3", "a4", "a5",  "a6",  "a7", "s2", "s3", "s4", "s5",
         "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
     };
+
     static constexpr std::array<size_t, 30> scratch_registers_{
         10, 11, 12, 13, 14, 15, 16, 17, 1, 3, 4, 8,  9,  18, 19,
         20, 21, 22, 23, 24, 25, 26, 27, 5, 6, 7, 28, 29, 30, 31,
     };
+    // note: reverse allocation keeps a0-a7 last to reduce register conflicts
+    //       with builtins that require argument, result, or syscall registers.
 
     struct allocation {
         size_t register_index;

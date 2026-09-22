@@ -43,13 +43,17 @@ auto main() -> int {
         x86_backend.free_scratch_registers(token{}, 0, registers);
         x86_backend.finish();
     }
-    for (const bool live_clobbers : {false, true}) {
+    for (const unsigned live_mask : {0U, 1U, 2U, 3U}) {
+        const bool rcx_allocated{(live_mask & 1U) != 0};
+        const bool r11_allocated{(live_mask & 2U) != 0};
         std::vector<operand> scratch;
         operand live_rcx;
-        if (live_clobbers) {
-            live_rcx = x86_backend.alloc_named_register(token{}, 0, "rcx", integer64);
+        if (rcx_allocated) {
+            live_rcx = x86_backend.alloc_named_register(token{}, 0, "rcx", byte);
+        }
+        if (r11_allocated) {
             for (size_t count{}; count < 8; ++count) {
-                scratch.push_back(x86_backend.alloc_scratch_register(token{}, 0, integer64));
+                scratch.push_back(x86_backend.alloc_scratch_register(token{}, 0, byte));
             }
         }
         const machine::builtin_registers contract{
@@ -60,20 +64,38 @@ auto main() -> int {
             args.push_back(x86_backend.alloc_named_register(token{}, 0, name, integer64));
         }
         const operand result{x86_backend.alloc_named_register(token{}, 0, contract.result, integer64)};
+        for (const unsigned operation : {0U, 1U, 2U}) {
+            x86_output.str({});
+            if (operation == 0) {
+                x86_backend.read(token{}, 0, result, args.at(0), args.at(1), args.at(2));
+            } else if (operation == 1) {
+                x86_backend.write(token{}, 0, result, args.at(0), args.at(1), args.at(2));
+            } else {
+                x86_backend.invoke_syscall(0);
+            }
+            const std::string assembly{x86_output.str()};
+            assert(assembly.contains("push rcx") == rcx_allocated);
+            assert(assembly.contains("pop rcx") == rcx_allocated);
+            assert(assembly.contains("push r11") == r11_allocated);
+            assert(assembly.contains("pop r11") == r11_allocated);
+            assert(not assembly.contains("rsp"));
+            assert(not assembly.contains("push rax"));
+            assert(not assembly.contains("push rdi"));
+            for (const std::string_view name : {"rcx", "r11"}) {
+                if (assembly.contains(std::format("push {}", name))) {
+                    assert(assembly.find(std::format("push {}", name)) < assembly.find("syscall"));
+                    assert(assembly.find(std::format("pop {}", name)) > assembly.find("syscall"));
+                }
+            }
+        }
         x86_output.str({});
-        x86_backend.write(token{}, 0, result, args.at(0), args.at(1), args.at(2));
-        const std::string assembly{x86_output.str()};
-        assert(assembly.contains("push rcx") == live_clobbers);
-        assert(assembly.contains("pop rcx") == live_clobbers);
-        assert(assembly.contains("push r11") == live_clobbers);
-        assert(assembly.contains("pop r11") == live_clobbers);
-        assert(not assembly.contains("rsp"));
-        assert(not assembly.contains("push rax"));
-        assert(not assembly.contains("push rdi"));
+        x86_backend.exit(token{}, 0, args.at(0));
+        assert(not x86_output.str().contains("push "));
+        assert(not x86_output.str().contains("pop "));
         x86_backend.free_named_register(token{}, 0, result);
         x86_backend.free_named_registers(token{}, 0, args);
         x86_backend.free_scratch_registers(token{}, 0, scratch);
-        if (live_clobbers) {
+        if (rcx_allocated) {
             x86_backend.free_named_register(token{}, 0, live_rcx);
         }
         x86_backend.finish();
