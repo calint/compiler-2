@@ -175,16 +175,6 @@ class stmt_identifier : public statement {
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
-    [[nodiscard]] auto compile_lea(
-        toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const operand& reg_count,
-        const std::span<const operand> lea_path) const -> operand override {
-
-        return compile_effective_address(tc, indent, src_loc_tk, elems_,
-                                         allocated_registers, reg_count,
-                                         lea_path);
-    }
-
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
     [[nodiscard]] auto is_array_element() const -> bool override {
@@ -198,14 +188,13 @@ class stmt_identifier : public statement {
     // on the existing "lea", storage offset, pointer indirection, and whether
     // the index scale is encodable. on x86 this may be e.g. [rbp + r15 * 4 +
     // 24] or [r14 + 28] with a computed base in r14 or simply [r13]
-    [[nodiscard]] static auto compile_effective_address(
+    [[nodiscard]] auto compile_lea(
         toc& tc, const size_t indent, const token& src_loc_tk,
-        const std::span<const ident_elem> elems,
         std::vector<operand>& allocated_registers, const operand& reg_count,
-        const std::span<const operand> lea_path) -> operand {
+        const std::span<const operand> lea_path) const -> operand override {
 
         // align the full lea path with this identifier's elements
-        const std::span<const operand> leas{lea_path.last(elems.size())};
+        const std::span<const operand> leas{lea_path.last(elems_.size())};
 
         // start from the first known address, or the root if none exists
         size_t elem_index_with_lea{leas.size()};
@@ -219,7 +208,7 @@ class stmt_identifier : public statement {
         }
 
         // start at an element with "lea" or 0 when no "lea" found
-        std::string path{elems[elem_index_with_lea].name_tk.text()};
+        std::string path{elems_[elem_index_with_lea].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
         const type* value_type{&base_info.type_ref()};
 
@@ -248,7 +237,7 @@ class stmt_identifier : public statement {
 
         int32_t accumulated_offset{};
 
-        const size_t elem_count{elems.size()};
+        const size_t elem_count{elems_.size()};
 
         machine& x{tc.machine()};
 
@@ -265,7 +254,7 @@ class stmt_identifier : public statement {
         }
 
         for (const auto [index, cur_elem] :
-             elems | std::views::enumerate |
+             elems_ | std::views::enumerate |
                  std::views::drop(elem_index_with_lea)) {
 
             const size_t elem_index{static_cast<size_t>(index)};
