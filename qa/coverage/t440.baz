@@ -1,4 +1,4 @@
-func assert(err, x : bool) if not x exit(err)
+func assert(err, x : bool) { if not x exit(err) }
 
 type point {x, y}
 

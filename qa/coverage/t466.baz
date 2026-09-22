@@ -1,6 +1,6 @@
 # non-inline recursion: factorial results and caller-local preservation
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 func noinline factorial(value) : result {
     result = 1

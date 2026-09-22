@@ -1,6 +1,6 @@
 # function result initializes a struct field
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 type point { x, y }
 type box { point_value : point, tag }

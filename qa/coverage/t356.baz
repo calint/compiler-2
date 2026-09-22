@@ -1,6 +1,6 @@
 # valid boundary of a one-element array
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func main() {
     var arr : i8[1]

@@ -1,6 +1,6 @@
 # nested struct literal initialization
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 type point {x, y}
 

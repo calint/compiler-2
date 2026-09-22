@@ -3,7 +3,7 @@
 type point { x: i16, y: i32 }
 type record { prefix: i8, pt: point, suffix }
 
-func assert(code, condition: bool) if not condition exit(code)
+func assert(code, condition: bool) { if not condition exit(code) }
 func bump(value: point) { value.y = value.y + 3 }
 
 func noinline shift(value: point): result point {

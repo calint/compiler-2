@@ -1,6 +1,6 @@
 # mixed width values and indexed addressing
 
-func assert(expr:bool) if not expr exit(1)
+func assert(expr:bool) { if not expr exit(1) }
 
 func main(){
     var b8:i8 = -7

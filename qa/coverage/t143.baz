@@ -1,4 +1,4 @@
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func foozi(x : i8, y : i16) {
     assert((x == y) and (x == 4 or y == 4))

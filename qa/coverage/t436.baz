@@ -1,4 +1,4 @@
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func baz(arg) : res {
     res = arg * 2

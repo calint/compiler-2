@@ -1,4 +1,4 @@
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func faz(x : i32, y : i32) : res i32 {
     res = x / y 

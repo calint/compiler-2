@@ -1,6 +1,6 @@
 # equal compares user-defined values
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 type point {x : i32, y : i32}
 

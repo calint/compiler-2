@@ -2,7 +2,7 @@
 
 type point { x, y }
 
-func assert(code, x : bool) if not x exit(code)
+func assert(code, x : bool) { if not x exit(code) }
 
 func fooz(v) : res {
     res = v * 2

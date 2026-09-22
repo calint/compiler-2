@@ -1,6 +1,6 @@
 # lea regression: user-type return assigned to indexed dst from indexed src
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 type pair {
     x,

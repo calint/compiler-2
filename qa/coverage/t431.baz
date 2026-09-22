@@ -24,7 +24,7 @@ func increment(value : data_holder) {
     value.data[2].x = value.data[2].x + 10
 }
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func main() {
     foo values {

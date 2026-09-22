@@ -1,6 +1,6 @@
 # partial array and record initializers zero-fill the rest
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 type record { first, second, third, fourth }
 

@@ -2,7 +2,7 @@
 # targets compile_effective_address branch:
 #   if (is_last and not reg_size.empty() and curr_info.is_array)
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 func main() {
     var src : [4] = {1, 2, 3, 4}

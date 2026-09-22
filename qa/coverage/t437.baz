@@ -1,6 +1,6 @@
 # regression: ident_info field destination and alias lea propagation
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 type str {
     len : i8,

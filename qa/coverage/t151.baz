@@ -1,6 +1,6 @@
 # constant identifiers in data initializers
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 const yes = 1
 const no = 0

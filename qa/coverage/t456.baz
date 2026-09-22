@@ -1,6 +1,6 @@
 # register width inference path: rax/eax/ax/al
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 func main() {
     mov(rax, 0x0000000012345678)

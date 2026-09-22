@@ -1,6 +1,6 @@
 # truncate a qword to byte word and dword
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func take_byte(value : i8) : result i8 {
     result = value

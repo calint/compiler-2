@@ -1,6 +1,6 @@
 # regression: nested destinations plus by-reference call semantics
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 type bytepair {
     a : i8,

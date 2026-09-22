@@ -8,9 +8,9 @@ func exit(v : reg_rdi) {
     syscall()
 }
 
-# single statement blocks can ommit { ... }
+# function bodies require { ... }; single-statement if/loop bodies may omit them
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func sys_print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call

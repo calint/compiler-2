@@ -1,6 +1,6 @@
 # valid two-byte element scaling
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func main() {
     var values : i16[2]

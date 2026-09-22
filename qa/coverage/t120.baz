@@ -1,6 +1,6 @@
 # bounds check overflow
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func main() {
     var arr : i8[8]

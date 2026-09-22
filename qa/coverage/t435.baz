@@ -3,7 +3,7 @@
 type point { x, y }
 type holder { points : point[2] }
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func main() {
     var local_points : point[2] = { {1, 2}, {3, 4} }

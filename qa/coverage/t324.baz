@@ -2,7 +2,7 @@
 
 type point { x, y }
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func inspect(points : point[]) {
     var addr = address_of(points[1])

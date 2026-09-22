@@ -1,0 +1,3 @@
+# a function cannot omit its body at end of input
+
+func main()

@@ -2,7 +2,7 @@
 
 type world { locations : [2] }
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func main() {
     var worlds : world[2]

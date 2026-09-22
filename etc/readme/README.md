@@ -65,10 +65,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           3147            997          11748
+C/C++ Header                    52           3147            997          11751
 C++                              1             46              7            235
 -------------------------------------------------------------------------------
-SUM:                            53           3193           1004          11983
+SUM:                            53           3193           1004          11986
 -------------------------------------------------------------------------------
 ```
 
@@ -106,9 +106,9 @@ dat    str1 : str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
 
-# single statement blocks can ommit { ... }
+# function bodies require { ... }; single-statement if/loop bodies may omit them
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func print(str : i8[]) {
     write(1, address_of(str), array_size_of(str))
@@ -427,15 +427,15 @@ main:
     sete r15b
     bool_end_139_12:
     assert_139_5:
-        if_34_26_139_5:
-        cmp_34_26_139_5:
+        if_34_28_139_5:
+        cmp_34_28_139_5:
         cmp r15b, 0
-        jne if_34_23_139_5_end
-        if_34_26_139_5_code:
+        jne if_34_25_139_5_end
+        if_34_28_139_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_139_5_end:
+        if_34_25_139_5_end:
     assert_139_5_end:
     mov qword [rbp + 240], -1
     cmp_143_12:
@@ -443,43 +443,43 @@ main:
     sete r15b
     bool_end_143_12:
     assert_143_5:
-        if_34_26_143_5:
-        cmp_34_26_143_5:
+        if_34_28_143_5:
+        cmp_34_28_143_5:
         cmp r15b, 0
-        jne if_34_23_143_5_end
-        if_34_26_143_5_code:
+        jne if_34_25_143_5_end
+        if_34_28_143_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_143_5_end:
+        if_34_25_143_5_end:
     assert_143_5_end:
         cmp_147_16:
         bool_end_147_16:
         mov r15b, 1
         assert_147_9:
-            if_34_26_147_9:
-            cmp_34_26_147_9:
+            if_34_28_147_9:
+            cmp_34_28_147_9:
             cmp r15b, 0
-            jne if_34_23_147_9_end
-            if_34_26_147_9_code:
+            jne if_34_25_147_9_end
+            if_34_28_147_9_code:
                 mov rdi, 1
                 mov rax, 60
                 syscall
-            if_34_23_147_9_end:
+            if_34_25_147_9_end:
         assert_147_9_end:
     cmp_150_12:
     bool_end_150_12:
     mov r15b, 1
     assert_150_5:
-        if_34_26_150_5:
-        cmp_34_26_150_5:
+        if_34_28_150_5:
+        cmp_34_28_150_5:
         cmp r15b, 0
-        jne if_34_23_150_5_end
-        if_34_26_150_5_code:
+        jne if_34_25_150_5_end
+        if_34_28_150_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_150_5_end:
+        if_34_25_150_5_end:
     assert_150_5_end:
     mov qword [rbp + 248], 1
     mov r15, qword [rbp + 248]
@@ -523,15 +523,15 @@ main:
     sete r15b
     bool_end_157_12:
     assert_157_5:
-        if_34_26_157_5:
-        cmp_34_26_157_5:
+        if_34_28_157_5:
+        cmp_34_28_157_5:
         cmp r15b, 0
-        jne if_34_23_157_5_end
-        if_34_26_157_5_code:
+        jne if_34_25_157_5_end
+        if_34_28_157_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_157_5_end:
+        if_34_25_157_5_end:
     assert_157_5_end:
     cmp_158_12:
     mov r14, 2
@@ -546,15 +546,15 @@ main:
     sete r15b
     bool_end_158_12:
     assert_158_5:
-        if_34_26_158_5:
-        cmp_34_26_158_5:
+        if_34_28_158_5:
+        cmp_34_28_158_5:
         cmp r15b, 0
-        jne if_34_23_158_5_end
-        if_34_26_158_5_code:
+        jne if_34_25_158_5_end
+        if_34_28_158_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_158_5_end:
+        if_34_25_158_5_end:
     assert_158_5_end:
     mov rcx, 2
     mov r15, 2
@@ -591,15 +591,15 @@ main:
     sete r15b
     bool_end_162_12:
     assert_162_5:
-        if_34_26_162_5:
-        cmp_34_26_162_5:
+        if_34_28_162_5:
+        cmp_34_28_162_5:
         cmp r15b, 0
-        jne if_34_23_162_5_end
-        if_34_26_162_5_code:
+        jne if_34_25_162_5_end
+        if_34_28_162_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_162_5_end:
+        if_34_25_162_5_end:
     assert_162_5_end:
     mov qword [rbp + 256], 0
     mov qword [rbp + 264], 0
@@ -654,15 +654,15 @@ main:
         sete r15b
     bool_end_166_12:
     assert_166_5:
-        if_34_26_166_5:
-        cmp_34_26_166_5:
+        if_34_28_166_5:
+        cmp_34_28_166_5:
         cmp r15b, 0
-        jne if_34_23_166_5_end
-        if_34_26_166_5_code:
+        jne if_34_25_166_5_end
+        if_34_28_166_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_166_5_end:
+        if_34_25_166_5_end:
     assert_166_5_end:
     mov r15, 2
     mov r14, 169
@@ -697,15 +697,15 @@ main:
         setne r15b
     bool_end_170_12:
     assert_170_5:
-        if_34_26_170_5:
-        cmp_34_26_170_5:
+        if_34_28_170_5:
+        cmp_34_28_170_5:
         cmp r15b, 0
-        jne if_34_23_170_5_end
-        if_34_26_170_5_code:
+        jne if_34_25_170_5_end
+        if_34_28_170_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_170_5_end:
+        if_34_25_170_5_end:
     assert_170_5_end:
     mov qword [rbp + 248], 3
     mov r15, qword [rbp + 248]
@@ -744,15 +744,15 @@ main:
     sete r15b
     bool_end_174_12:
     assert_174_5:
-        if_34_26_174_5:
-        cmp_34_26_174_5:
+        if_34_28_174_5:
+        cmp_34_28_174_5:
         cmp r15b, 0
-        jne if_34_23_174_5_end
-        if_34_26_174_5_code:
+        jne if_34_25_174_5_end
+        if_34_28_174_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_174_5_end:
+        if_34_25_174_5_end:
     assert_174_5_end:
     faz_176_5:
         mov r15, 1
@@ -778,15 +778,15 @@ main:
     sete r15b
     bool_end_177_12:
     assert_177_5:
-        if_34_26_177_5:
-        cmp_34_26_177_5:
+        if_34_28_177_5:
+        cmp_34_28_177_5:
         cmp r15b, 0
-        jne if_34_23_177_5_end
-        if_34_26_177_5_code:
+        jne if_34_25_177_5_end
+        if_34_28_177_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_177_5_end:
+        if_34_25_177_5_end:
     assert_177_5_end:
     mov qword [rbp + 288], 3
     mov qword [rbp + 296], 5
@@ -818,15 +818,15 @@ main:
     sete r15b
     bool_end_183_12:
     assert_183_5:
-        if_34_26_183_5:
-        cmp_34_26_183_5:
+        if_34_28_183_5:
+        cmp_34_28_183_5:
         cmp r15b, 0
-        jne if_34_23_183_5_end
-        if_34_26_183_5_code:
+        jne if_34_25_183_5_end
+        if_34_28_183_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_183_5_end:
+        if_34_25_183_5_end:
     assert_183_5_end:
     cmp_184_12:
     mov r14, 1
@@ -844,15 +844,15 @@ main:
     sete r15b
     bool_end_184_12:
     assert_184_5:
-        if_34_26_184_5:
-        cmp_34_26_184_5:
+        if_34_28_184_5:
+        cmp_34_28_184_5:
         cmp r15b, 0
-        jne if_34_23_184_5_end
-        if_34_26_184_5_code:
+        jne if_34_25_184_5_end
+        if_34_28_184_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_184_5_end:
+        if_34_25_184_5_end:
     assert_184_5_end:
     mov qword [rbp + 304], 0
     mov qword [rbp + 312], 0
@@ -865,30 +865,30 @@ main:
     sete r15b
     bool_end_192_12:
     assert_192_5:
-        if_34_26_192_5:
-        cmp_34_26_192_5:
+        if_34_28_192_5:
+        cmp_34_28_192_5:
         cmp r15b, 0
-        jne if_34_23_192_5_end
-        if_34_26_192_5_code:
+        jne if_34_25_192_5_end
+        if_34_28_192_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_192_5_end:
+        if_34_25_192_5_end:
     assert_192_5_end:
     cmp_193_12:
     cmp qword [rbp + 312], 11
     sete r15b
     bool_end_193_12:
     assert_193_5:
-        if_34_26_193_5:
-        cmp_34_26_193_5:
+        if_34_28_193_5:
+        cmp_34_28_193_5:
         cmp r15b, 0
-        jne if_34_23_193_5_end
-        if_34_26_193_5_code:
+        jne if_34_25_193_5_end
+        if_34_28_193_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_193_5_end:
+        if_34_25_193_5_end:
     assert_193_5_end:
     mov rax, qword [rbp + 304]
     mov qword [rbp + 320], rax
@@ -902,15 +902,15 @@ main:
         sete r15b
     bool_end_196_12:
     assert_196_5:
-        if_34_26_196_5:
-        cmp_34_26_196_5:
+        if_34_28_196_5:
+        cmp_34_28_196_5:
         cmp r15b, 0
-        jne if_34_23_196_5_end
-        if_34_26_196_5_code:
+        jne if_34_25_196_5_end
+        if_34_28_196_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_196_5_end:
+        if_34_25_196_5_end:
     assert_196_5_end:
     mov qword [rbp + 320], 3
     cmp_201_12:
@@ -921,15 +921,15 @@ main:
         setne r15b
     bool_end_201_12:
     assert_201_5:
-        if_34_26_201_5:
-        cmp_34_26_201_5:
+        if_34_28_201_5:
+        cmp_34_28_201_5:
         cmp r15b, 0
-        jne if_34_23_201_5_end
-        if_34_26_201_5_code:
+        jne if_34_25_201_5_end
+        if_34_28_201_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_201_5_end:
+        if_34_25_201_5_end:
     assert_201_5_end:
     mov qword [rbp + 336], 0
     bar_204_5:
@@ -947,15 +947,15 @@ main:
     sete r15b
     bool_end_205_12:
     assert_205_5:
-        if_34_26_205_5:
-        cmp_34_26_205_5:
+        if_34_28_205_5:
+        cmp_34_28_205_5:
         cmp r15b, 0
-        jne if_34_23_205_5_end
-        if_34_26_205_5_code:
+        jne if_34_25_205_5_end
+        if_34_28_205_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_205_5_end:
+        if_34_25_205_5_end:
     assert_205_5_end:
     mov qword [rbp + 336], 1
     bar_208_5:
@@ -973,15 +973,15 @@ main:
     sete r15b
     bool_end_209_12:
     assert_209_5:
-        if_34_26_209_5:
-        cmp_34_26_209_5:
+        if_34_28_209_5:
+        cmp_34_28_209_5:
         cmp r15b, 0
-        jne if_34_23_209_5_end
-        if_34_26_209_5_code:
+        jne if_34_25_209_5_end
+        if_34_28_209_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_209_5_end:
+        if_34_25_209_5_end:
     assert_209_5_end:
     mov qword [rbp + 344], 1
     baz_212_13:
@@ -994,15 +994,15 @@ main:
     sete r15b
     bool_end_213_12:
     assert_213_5:
-        if_34_26_213_5:
-        cmp_34_26_213_5:
+        if_34_28_213_5:
+        cmp_34_28_213_5:
         cmp r15b, 0
-        jne if_34_23_213_5_end
-        if_34_26_213_5_code:
+        jne if_34_25_213_5_end
+        if_34_28_213_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_213_5_end:
+        if_34_25_213_5_end:
     assert_213_5_end:
     baz_215_9:
         mov r15, 1
@@ -1014,15 +1014,15 @@ main:
     sete r15b
     bool_end_216_12:
     assert_216_5:
-        if_34_26_216_5:
-        cmp_34_26_216_5:
+        if_34_28_216_5:
+        cmp_34_28_216_5:
         cmp r15b, 0
-        jne if_34_23_216_5_end
-        if_34_26_216_5_code:
+        jne if_34_25_216_5_end
+        if_34_28_216_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_216_5_end:
+        if_34_25_216_5_end:
     assert_216_5_end:
     baz_218_23:
         mov r15, 3
@@ -1035,15 +1035,15 @@ main:
     sete r15b
     bool_end_219_12:
     assert_219_5:
-        if_34_26_219_5:
-        cmp_34_26_219_5:
+        if_34_28_219_5:
+        cmp_34_28_219_5:
         cmp r15b, 0
-        jne if_34_23_219_5_end
-        if_34_26_219_5_code:
+        jne if_34_25_219_5_end
+        if_34_28_219_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_219_5_end:
+        if_34_25_219_5_end:
     assert_219_5_end:
     point_init_221_22:
         mov qword [rbp + 376], -1
@@ -1054,30 +1054,30 @@ main:
     sete r15b
     bool_end_222_12:
     assert_222_5:
-        if_34_26_222_5:
-        cmp_34_26_222_5:
+        if_34_28_222_5:
+        cmp_34_28_222_5:
         cmp r15b, 0
-        jne if_34_23_222_5_end
-        if_34_26_222_5_code:
+        jne if_34_25_222_5_end
+        if_34_28_222_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_222_5_end:
+        if_34_25_222_5_end:
     assert_222_5_end:
     cmp_223_12:
     cmp qword [rbp + 384], -2
     sete r15b
     bool_end_223_12:
     assert_223_5:
-        if_34_26_223_5:
-        cmp_34_26_223_5:
+        if_34_28_223_5:
+        cmp_34_28_223_5:
         cmp r15b, 0
-        jne if_34_23_223_5_end
-        if_34_26_223_5_code:
+        jne if_34_25_223_5_end
+        if_34_28_223_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_223_5_end:
+        if_34_25_223_5_end:
     assert_223_5_end:
     mov qword [rbp + 392], 1
     mov qword [rbp + 400], 2
@@ -1092,45 +1092,45 @@ main:
     sete r15b
     bool_end_229_12:
     assert_229_5:
-        if_34_26_229_5:
-        cmp_34_26_229_5:
+        if_34_28_229_5:
+        cmp_34_28_229_5:
         cmp r15b, 0
-        jne if_34_23_229_5_end
-        if_34_26_229_5_code:
+        jne if_34_25_229_5_end
+        if_34_28_229_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_229_5_end:
+        if_34_25_229_5_end:
     assert_229_5_end:
     cmp_230_12:
     cmp qword [rbp + 416], 2
     sete r15b
     bool_end_230_12:
     assert_230_5:
-        if_34_26_230_5:
-        cmp_34_26_230_5:
+        if_34_28_230_5:
+        cmp_34_28_230_5:
         cmp r15b, 0
-        jne if_34_23_230_5_end
-        if_34_26_230_5_code:
+        jne if_34_25_230_5_end
+        if_34_28_230_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_230_5_end:
+        if_34_25_230_5_end:
     assert_230_5_end:
     cmp_231_12:
     cmp dword [rbp + 424], 16711680
     sete r15b
     bool_end_231_12:
     assert_231_5:
-        if_34_26_231_5:
-        cmp_34_26_231_5:
+        if_34_28_231_5:
+        cmp_34_28_231_5:
         cmp r15b, 0
-        jne if_34_23_231_5_end
-        if_34_26_231_5_code:
+        jne if_34_25_231_5_end
+        if_34_28_231_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_231_5_end:
+        if_34_25_231_5_end:
     assert_231_5_end:
     mov r15, qword [rbp + 392]
     mov qword [rbp + 428], r15
@@ -1147,30 +1147,30 @@ main:
     sete r15b
     bool_end_235_12:
     assert_235_5:
-        if_34_26_235_5:
-        cmp_34_26_235_5:
+        if_34_28_235_5:
+        cmp_34_28_235_5:
         cmp r15b, 0
-        jne if_34_23_235_5_end
-        if_34_26_235_5_code:
+        jne if_34_25_235_5_end
+        if_34_28_235_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_235_5_end:
+        if_34_25_235_5_end:
     assert_235_5_end:
     cmp_236_12:
     cmp qword [rbp + 416], -2
     sete r15b
     bool_end_236_12:
     assert_236_5:
-        if_34_26_236_5:
-        cmp_34_26_236_5:
+        if_34_28_236_5:
+        cmp_34_28_236_5:
         cmp r15b, 0
-        jne if_34_23_236_5_end
-        if_34_26_236_5_code:
+        jne if_34_25_236_5_end
+        if_34_28_236_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_236_5_end:
+        if_34_25_236_5_end:
     assert_236_5_end:
     lea rsi, [rbp + 408]
     lea rdi, [rbp + 444]
@@ -1181,45 +1181,45 @@ main:
     sete r15b
     bool_end_239_12:
     assert_239_5:
-        if_34_26_239_5:
-        cmp_34_26_239_5:
+        if_34_28_239_5:
+        cmp_34_28_239_5:
         cmp r15b, 0
-        jne if_34_23_239_5_end
-        if_34_26_239_5_code:
+        jne if_34_25_239_5_end
+        if_34_28_239_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_239_5_end:
+        if_34_25_239_5_end:
     assert_239_5_end:
     cmp_240_12:
     cmp qword [rbp + 452], -2
     sete r15b
     bool_end_240_12:
     assert_240_5:
-        if_34_26_240_5:
-        cmp_34_26_240_5:
+        if_34_28_240_5:
+        cmp_34_28_240_5:
         cmp r15b, 0
-        jne if_34_23_240_5_end
-        if_34_26_240_5_code:
+        jne if_34_25_240_5_end
+        if_34_28_240_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_240_5_end:
+        if_34_25_240_5_end:
     assert_240_5_end:
     cmp_241_12:
     cmp dword [rbp + 460], 16711680
     sete r15b
     bool_end_241_12:
     assert_241_5:
-        if_34_26_241_5:
-        cmp_34_26_241_5:
+        if_34_28_241_5:
+        cmp_34_28_241_5:
         cmp r15b, 0
-        jne if_34_23_241_5_end
-        if_34_26_241_5_code:
+        jne if_34_25_241_5_end
+        if_34_28_241_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_241_5_end:
+        if_34_25_241_5_end:
     assert_241_5_end:
     xor al, al
     lea rdi, [rbp + 464]
@@ -1242,15 +1242,15 @@ main:
     sete r15b
     bool_end_247_12:
     assert_247_5:
-        if_34_26_247_5:
-        cmp_34_26_247_5:
+        if_34_28_247_5:
+        cmp_34_28_247_5:
         cmp r15b, 0
-        jne if_34_23_247_5_end
-        if_34_26_247_5_code:
+        jne if_34_25_247_5_end
+        if_34_28_247_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_247_5_end:
+        if_34_25_247_5_end:
     assert_247_5_end:
     lea r15, [rbp + 464]
     mov r14, 1
@@ -1282,15 +1282,15 @@ main:
     sete r15b
     bool_end_250_12:
     assert_250_5:
-        if_34_26_250_5:
-        cmp_34_26_250_5:
+        if_34_28_250_5:
+        cmp_34_28_250_5:
         cmp r15b, 0
-        jne if_34_23_250_5_end
-        if_34_26_250_5_code:
+        jne if_34_25_250_5_end
+        if_34_28_250_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_250_5_end:
+        if_34_25_250_5_end:
     assert_250_5_end:
     xor al, al
     lea rdi, [rbp + 504]
@@ -1340,15 +1340,15 @@ main:
     sete r15b
     bool_end_254_12:
     assert_254_5:
-        if_34_26_254_5:
-        cmp_34_26_254_5:
+        if_34_28_254_5:
+        cmp_34_28_254_5:
         cmp r15b, 0
-        jne if_34_23_254_5_end
-        if_34_26_254_5_code:
+        jne if_34_25_254_5_end
+        if_34_28_254_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_254_5_end:
+        if_34_25_254_5_end:
     assert_254_5_end:
     mov rcx, 8
     lea r15, [rbp + 504]
@@ -1415,15 +1415,15 @@ main:
     sete r15b
     bool_end_264_12:
     assert_264_5:
-        if_34_26_264_5:
-        cmp_34_26_264_5:
+        if_34_28_264_5:
+        cmp_34_28_264_5:
         cmp r15b, 0
-        jne if_34_23_264_5_end
-        if_34_26_264_5_code:
+        jne if_34_25_264_5_end
+        if_34_28_264_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_264_5_end:
+        if_34_25_264_5_end:
     assert_264_5_end:
     cmp_265_12:
         mov rcx, 8
@@ -1471,15 +1471,15 @@ main:
         sete r15b
     bool_end_265_12:
     assert_265_5:
-        if_34_26_265_5:
-        cmp_34_26_265_5:
+        if_34_28_265_5:
+        cmp_34_28_265_5:
         cmp r15b, 0
-        jne if_34_23_265_5_end
-        if_34_26_265_5_code:
+        jne if_34_25_265_5_end
+        if_34_28_265_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_265_5_end:
+        if_34_25_265_5_end:
     assert_265_5_end:
     mov qword [rbp + 1016], -1
     mov qword [rbp + 1024], 2
@@ -1489,15 +1489,15 @@ main:
     sete r15b
     bool_end_272_12:
     assert_272_5:
-        if_34_26_272_5:
-        cmp_34_26_272_5:
+        if_34_28_272_5:
+        cmp_34_28_272_5:
         cmp r15b, 0
-        jne if_34_23_272_5_end
-        if_34_26_272_5_code:
+        jne if_34_25_272_5_end
+        if_34_28_272_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_272_5_end:
+        if_34_25_272_5_end:
     assert_272_5_end:
     cmp_273_12:
     mov r14, 0
@@ -1512,15 +1512,15 @@ main:
     sete r15b
     bool_end_273_12:
     assert_273_5:
-        if_34_26_273_5:
-        cmp_34_26_273_5:
+        if_34_28_273_5:
+        cmp_34_28_273_5:
         cmp r15b, 0
-        jne if_34_23_273_5_end
-        if_34_26_273_5_code:
+        jne if_34_25_273_5_end
+        if_34_28_273_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_273_5_end:
+        if_34_25_273_5_end:
     assert_273_5_end:
     cmp_274_12:
     mov r14, 1
@@ -1535,15 +1535,15 @@ main:
     sete r15b
     bool_end_274_12:
     assert_274_5:
-        if_34_26_274_5:
-        cmp_34_26_274_5:
+        if_34_28_274_5:
+        cmp_34_28_274_5:
         cmp r15b, 0
-        jne if_34_23_274_5_end
-        if_34_26_274_5_code:
+        jne if_34_25_274_5_end
+        if_34_28_274_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_34_23_274_5_end:
+        if_34_25_274_5_end:
     assert_274_5_end:
     mov qword [rbp + 1032], 0
     xor al, al
@@ -1908,7 +1908,7 @@ lea rbp, [dat]
 ;[28:8] str1: str (128 B @ [rbp + 95])
 ;[28:27] # remaining fields are zeroed
 ;[30:1] # default is to inline functions
-;[32:1] # single statement blocks can ommit { ... }
+;[32:1] # function bodies require { ... }; single-statement if/loop bodies may omit them
 ;[40:1] # function arguments and return are equivalent to mutable references
 ;[47:1] # default argument type is i64 on x86_64 and i32 on rv32i
 ;[54:1] # return target is specified as a variable, in this case `res`
@@ -1944,21 +1944,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_139_5:
 ;       [139:5] alias x -> r15b
-        if_34_26_139_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_139_5:
+        if_34_28_139_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_139_5:
         cmp r15b, 0
-        jne if_34_23_139_5_end
-        if_34_26_139_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_139_5_end
+        if_34_28_139_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_139_5_end:
+;           [34:34] free named register rdi
+        if_34_25_139_5_end:
 ;       [139:5] free scratch register r15
     assert_139_5_end:
 ;   [140:5] # variables without initializer are zeroed
@@ -1976,21 +1976,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_143_5:
 ;       [143:5] alias x -> r15b
-        if_34_26_143_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_143_5:
+        if_34_28_143_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_143_5:
         cmp r15b, 0
-        jne if_34_23_143_5_end
-        if_34_26_143_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_143_5_end
+        if_34_28_143_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_143_5_end:
+;           [34:34] free named register rdi
+        if_34_25_143_5_end:
 ;       [143:5] free scratch register r15
     assert_143_5_end:
 ;       [146:15] const maybe = 33
@@ -2005,21 +2005,21 @@ main:
 ;       [34:6] assert(x : bool)
         assert_147_9:
 ;           [147:9] alias x -> r15b
-            if_34_26_147_9:
-;           [34:26] ? not x
-;           [34:26] ? not x
-            cmp_34_26_147_9:
+            if_34_28_147_9:
+;           [34:28] ? not x
+;           [34:28] ? not x
+            cmp_34_28_147_9:
             cmp r15b, 0
-            jne if_34_23_147_9_end
-            if_34_26_147_9_code:
-;               [34:32] exit(1)
-;               [34:32] allocate named register rdi
-;               [34:37] 1
+            jne if_34_25_147_9_end
+            if_34_28_147_9_code:
+;               [34:34] exit(1)
+;               [34:34] allocate named register rdi
+;               [34:39] 1
                 mov rdi, 1
                 mov rax, 60
                 syscall
-;               [34:32] free named register rdi
-            if_34_23_147_9_end:
+;               [34:34] free named register rdi
+            if_34_25_147_9_end:
 ;           [147:9] free scratch register r15
         assert_147_9_end:
 ;   [150:5] assert(maybe == -1)
@@ -2033,21 +2033,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_150_5:
 ;       [150:5] alias x -> r15b
-        if_34_26_150_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_150_5:
+        if_34_28_150_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_150_5:
         cmp r15b, 0
-        jne if_34_23_150_5_end
-        if_34_26_150_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_150_5_end
+        if_34_28_150_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_150_5_end:
+;           [34:34] free named register rdi
+        if_34_25_150_5_end:
 ;       [150:5] free scratch register r15
     assert_150_5_end:
 ;   [152:5] var ix = 1
@@ -2142,21 +2142,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_157_5:
 ;       [157:5] alias x -> r15b
-        if_34_26_157_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_157_5:
+        if_34_28_157_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_157_5:
         cmp r15b, 0
-        jne if_34_23_157_5_end
-        if_34_26_157_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_157_5_end
+        if_34_28_157_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_157_5_end:
+;           [34:34] free named register rdi
+        if_34_25_157_5_end:
 ;       [157:5] free scratch register r15
     assert_157_5_end:
 ;   [158:5] assert(arr[2] == 2)
@@ -2186,21 +2186,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_158_5:
 ;       [158:5] alias x -> r15b
-        if_34_26_158_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_158_5:
+        if_34_28_158_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_158_5:
         cmp r15b, 0
-        jne if_34_23_158_5_end
-        if_34_26_158_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_158_5_end
+        if_34_28_158_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_158_5_end:
+;           [34:34] free named register rdi
+        if_34_25_158_5_end:
 ;       [158:5] free scratch register r15
     assert_158_5_end:
 ;   [160:5] array_copy(arr[2], arr, 2)
@@ -2278,21 +2278,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_162_5:
 ;       [162:5] alias x -> r15b
-        if_34_26_162_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_162_5:
+        if_34_28_162_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_162_5:
         cmp r15b, 0
-        jne if_34_23_162_5_end
-        if_34_26_162_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_162_5_end
+        if_34_28_162_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_162_5_end:
+;           [34:34] free named register rdi
+        if_34_25_162_5_end:
 ;       [162:5] free scratch register r15
     assert_162_5_end:
 ;   [164:5] var arr1 : i32[8]
@@ -2408,21 +2408,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_166_5:
 ;       [166:5] alias x -> r15b
-        if_34_26_166_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_166_5:
+        if_34_28_166_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_166_5:
         cmp r15b, 0
-        jne if_34_23_166_5_end
-        if_34_26_166_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_166_5_end
+        if_34_28_166_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_166_5_end:
+;           [34:34] free named register rdi
+        if_34_25_166_5_end:
 ;       [166:5] free scratch register r15
     assert_166_5_end:
 ;   [167:5] # `arrays_equal` is built-in function
@@ -2494,21 +2494,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_170_5:
 ;       [170:5] alias x -> r15b
-        if_34_26_170_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_170_5:
+        if_34_28_170_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_170_5:
         cmp r15b, 0
-        jne if_34_23_170_5_end
-        if_34_26_170_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_170_5_end
+        if_34_28_170_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_170_5_end:
+;           [34:34] free named register rdi
+        if_34_25_170_5_end:
 ;       [170:5] free scratch register r15
     assert_170_5_end:
 ;   [172:5] ix = 3
@@ -2592,21 +2592,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_174_5:
 ;       [174:5] alias x -> r15b
-        if_34_26_174_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_174_5:
+        if_34_28_174_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_174_5:
         cmp r15b, 0
-        jne if_34_23_174_5_end
-        if_34_26_174_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_174_5_end
+        if_34_28_174_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_174_5_end:
+;           [34:34] free named register rdi
+        if_34_25_174_5_end:
 ;       [174:5] free scratch register r15
     assert_174_5_end:
 ;   [176:5] faz(arr)
@@ -2660,21 +2660,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_177_5:
 ;       [177:5] alias x -> r15b
-        if_34_26_177_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_177_5:
+        if_34_28_177_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_177_5:
         cmp r15b, 0
-        jne if_34_23_177_5_end
-        if_34_26_177_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_177_5_end
+        if_34_28_177_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_177_5_end:
+;           [34:34] free named register rdi
+        if_34_25_177_5_end:
 ;       [177:5] free scratch register r15
     assert_177_5_end:
 ;   [179:5] var arr3 : [] = { 3, 5 }
@@ -2748,21 +2748,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_183_5:
 ;       [183:5] alias x -> r15b
-        if_34_26_183_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_183_5:
+        if_34_28_183_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_183_5:
         cmp r15b, 0
-        jne if_34_23_183_5_end
-        if_34_26_183_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_183_5_end
+        if_34_28_183_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_183_5_end:
+;           [34:34] free named register rdi
+        if_34_25_183_5_end:
 ;       [183:5] free scratch register r15
     assert_183_5_end:
 ;   [184:5] assert(arr3[1] == 5 + 1 + 2)
@@ -2800,21 +2800,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_184_5:
 ;       [184:5] alias x -> r15b
-        if_34_26_184_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_184_5:
+        if_34_28_184_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_184_5:
         cmp r15b, 0
-        jne if_34_23_184_5_end
-        if_34_26_184_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_184_5_end
+        if_34_28_184_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_184_5_end:
+;           [34:34] free named register rdi
+        if_34_25_184_5_end:
 ;       [184:5] free scratch register r15
     assert_184_5_end:
 ;   [185:5] # `foo` is a language construct that iterates over an array injecting:
@@ -2852,21 +2852,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_192_5:
 ;       [192:5] alias x -> r15b
-        if_34_26_192_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_192_5:
+        if_34_28_192_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_192_5:
         cmp r15b, 0
-        jne if_34_23_192_5_end
-        if_34_26_192_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_192_5_end
+        if_34_28_192_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_192_5_end:
+;           [34:34] free named register rdi
+        if_34_25_192_5_end:
 ;       [192:5] free scratch register r15
     assert_192_5_end:
 ;   [193:5] assert(p.y == 0xb)
@@ -2880,21 +2880,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_193_5:
 ;       [193:5] alias x -> r15b
-        if_34_26_193_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_193_5:
+        if_34_28_193_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_193_5:
         cmp r15b, 0
-        jne if_34_23_193_5_end
-        if_34_26_193_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_193_5_end
+        if_34_28_193_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_193_5_end:
+;           [34:34] free named register rdi
+        if_34_25_193_5_end:
 ;       [193:5] free scratch register r15
     assert_193_5_end:
 ;   [195:5] var q : point = p
@@ -2930,21 +2930,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_196_5:
 ;       [196:5] alias x -> r15b
-        if_34_26_196_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_196_5:
+        if_34_28_196_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_196_5:
         cmp r15b, 0
-        jne if_34_23_196_5_end
-        if_34_26_196_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_196_5_end
+        if_34_28_196_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_196_5_end:
+;           [34:34] free named register rdi
+        if_34_25_196_5_end:
 ;       [196:5] free scratch register r15
     assert_196_5_end:
 ;   [197:5] # `equal` is built-in function to compare user types for equality or same
@@ -2975,21 +2975,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_201_5:
 ;       [201:5] alias x -> r15b
-        if_34_26_201_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_201_5:
+        if_34_28_201_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_201_5:
         cmp r15b, 0
-        jne if_34_23_201_5_end
-        if_34_26_201_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_201_5_end
+        if_34_28_201_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_201_5_end:
+;           [34:34] free named register rdi
+        if_34_25_201_5_end:
 ;       [201:5] free scratch register r15
     assert_201_5_end:
 ;   [203:5] var i = 0
@@ -3026,21 +3026,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_205_5:
 ;       [205:5] alias x -> r15b
-        if_34_26_205_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_205_5:
+        if_34_28_205_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_205_5:
         cmp r15b, 0
-        jne if_34_23_205_5_end
-        if_34_26_205_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_205_5_end
+        if_34_28_205_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_205_5_end:
+;           [34:34] free named register rdi
+        if_34_25_205_5_end:
 ;       [205:5] free scratch register r15
     assert_205_5_end:
 ;   [207:5] i = 1
@@ -3075,21 +3075,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_209_5:
 ;       [209:5] alias x -> r15b
-        if_34_26_209_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_209_5:
+        if_34_28_209_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_209_5:
         cmp r15b, 0
-        jne if_34_23_209_5_end
-        if_34_26_209_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_209_5_end
+        if_34_28_209_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_209_5_end:
+;           [34:34] free named register rdi
+        if_34_25_209_5_end:
 ;       [209:5] free scratch register r15
     assert_209_5_end:
 ;   [211:5] var j = 1
@@ -3129,21 +3129,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_213_5:
 ;       [213:5] alias x -> r15b
-        if_34_26_213_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_213_5:
+        if_34_28_213_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_213_5:
         cmp r15b, 0
-        jne if_34_23_213_5_end
-        if_34_26_213_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_213_5_end
+        if_34_28_213_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_213_5_end:
+;           [34:34] free named register rdi
+        if_34_25_213_5_end:
 ;       [213:5] free scratch register r15
     assert_213_5_end:
 ;   [215:5] k = baz(1)
@@ -3176,21 +3176,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_216_5:
 ;       [216:5] alias x -> r15b
-        if_34_26_216_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_216_5:
+        if_34_28_216_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_216_5:
         cmp r15b, 0
-        jne if_34_23_216_5_end
-        if_34_26_216_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_216_5_end
+        if_34_28_216_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_216_5_end:
+;           [34:34] free named register rdi
+        if_34_25_216_5_end:
 ;       [216:5] free scratch register r15
     assert_216_5_end:
 ;   [218:5] var p0 : point = {baz(3), 0}
@@ -3228,21 +3228,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_219_5:
 ;       [219:5] alias x -> r15b
-        if_34_26_219_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_219_5:
+        if_34_28_219_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_219_5:
         cmp r15b, 0
-        jne if_34_23_219_5_end
-        if_34_26_219_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_219_5_end
+        if_34_28_219_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_219_5_end:
+;           [34:34] free named register rdi
+        if_34_25_219_5_end:
 ;       [219:5] free scratch register r15
     assert_219_5_end:
 ;   [221:5] var pt : point = point_init()
@@ -3270,21 +3270,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_222_5:
 ;       [222:5] alias x -> r15b
-        if_34_26_222_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_222_5:
+        if_34_28_222_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_222_5:
         cmp r15b, 0
-        jne if_34_23_222_5_end
-        if_34_26_222_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_222_5_end
+        if_34_28_222_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_222_5_end:
+;           [34:34] free named register rdi
+        if_34_25_222_5_end:
 ;       [222:5] free scratch register r15
     assert_222_5_end:
 ;   [223:5] assert(pt.y == -2)
@@ -3298,21 +3298,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_223_5:
 ;       [223:5] alias x -> r15b
-        if_34_26_223_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_223_5:
+        if_34_28_223_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_223_5:
         cmp r15b, 0
-        jne if_34_23_223_5_end
-        if_34_26_223_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_223_5_end
+        if_34_28_223_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_223_5_end:
+;           [34:34] free named register rdi
+        if_34_25_223_5_end:
 ;       [223:5] free scratch register r15
     assert_223_5_end:
 ;   [225:5] var x = 1
@@ -3357,21 +3357,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_229_5:
 ;       [229:5] alias x -> r15b
-        if_34_26_229_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_229_5:
+        if_34_28_229_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_229_5:
         cmp r15b, 0
-        jne if_34_23_229_5_end
-        if_34_26_229_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_229_5_end
+        if_34_28_229_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_229_5_end:
+;           [34:34] free named register rdi
+        if_34_25_229_5_end:
 ;       [229:5] free scratch register r15
     assert_229_5_end:
 ;   [230:5] assert(o1.pos.y == 2)
@@ -3385,21 +3385,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_230_5:
 ;       [230:5] alias x -> r15b
-        if_34_26_230_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_230_5:
+        if_34_28_230_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_230_5:
         cmp r15b, 0
-        jne if_34_23_230_5_end
-        if_34_26_230_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_230_5_end
+        if_34_28_230_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_230_5_end:
+;           [34:34] free named register rdi
+        if_34_25_230_5_end:
 ;       [230:5] free scratch register r15
     assert_230_5_end:
 ;   [231:5] assert(o1.color == 0xff0000)
@@ -3413,21 +3413,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_231_5:
 ;       [231:5] alias x -> r15b
-        if_34_26_231_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_231_5:
+        if_34_28_231_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_231_5:
         cmp r15b, 0
-        jne if_34_23_231_5_end
-        if_34_26_231_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_231_5_end
+        if_34_28_231_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_231_5_end:
+;           [34:34] free named register rdi
+        if_34_25_231_5_end:
 ;       [231:5] free scratch register r15
     assert_231_5_end:
 ;   [233:5] var p1 : point = {-x, -y}
@@ -3464,21 +3464,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_235_5:
 ;       [235:5] alias x -> r15b
-        if_34_26_235_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_235_5:
+        if_34_28_235_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_235_5:
         cmp r15b, 0
-        jne if_34_23_235_5_end
-        if_34_26_235_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_235_5_end
+        if_34_28_235_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_235_5_end:
+;           [34:34] free named register rdi
+        if_34_25_235_5_end:
 ;       [235:5] free scratch register r15
     assert_235_5_end:
 ;   [236:5] assert(o1.pos.y == -2)
@@ -3492,21 +3492,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_236_5:
 ;       [236:5] alias x -> r15b
-        if_34_26_236_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_236_5:
+        if_34_28_236_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_236_5:
         cmp r15b, 0
-        jne if_34_23_236_5_end
-        if_34_26_236_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_236_5_end
+        if_34_28_236_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_236_5_end:
+;           [34:34] free named register rdi
+        if_34_25_236_5_end:
 ;       [236:5] free scratch register r15
     assert_236_5_end:
 ;   [238:5] var o2 : object = o1
@@ -3533,21 +3533,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_239_5:
 ;       [239:5] alias x -> r15b
-        if_34_26_239_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_239_5:
+        if_34_28_239_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_239_5:
         cmp r15b, 0
-        jne if_34_23_239_5_end
-        if_34_26_239_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_239_5_end
+        if_34_28_239_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_239_5_end:
+;           [34:34] free named register rdi
+        if_34_25_239_5_end:
 ;       [239:5] free scratch register r15
     assert_239_5_end:
 ;   [240:5] assert(o2.pos.y == -2)
@@ -3561,21 +3561,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_240_5:
 ;       [240:5] alias x -> r15b
-        if_34_26_240_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_240_5:
+        if_34_28_240_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_240_5:
         cmp r15b, 0
-        jne if_34_23_240_5_end
-        if_34_26_240_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_240_5_end
+        if_34_28_240_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_240_5_end:
+;           [34:34] free named register rdi
+        if_34_25_240_5_end:
 ;       [240:5] free scratch register r15
     assert_240_5_end:
 ;   [241:5] assert(o2.color == 0xff0000)
@@ -3589,21 +3589,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_241_5:
 ;       [241:5] alias x -> r15b
-        if_34_26_241_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_241_5:
+        if_34_28_241_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_241_5:
         cmp r15b, 0
-        jne if_34_23_241_5_end
-        if_34_26_241_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_241_5_end
+        if_34_28_241_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_241_5_end:
+;           [34:34] free named register rdi
+        if_34_25_241_5_end:
 ;       [241:5] free scratch register r15
     assert_241_5_end:
 ;   [243:5] var o3 : object[2]
@@ -3655,21 +3655,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_247_5:
 ;       [247:5] alias x -> r15b
-        if_34_26_247_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_247_5:
+        if_34_28_247_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_247_5:
         cmp r15b, 0
-        jne if_34_23_247_5_end
-        if_34_26_247_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_247_5_end
+        if_34_28_247_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_247_5_end:
+;           [34:34] free named register rdi
+        if_34_25_247_5_end:
 ;       [247:5] free scratch register r15
     assert_247_5_end:
 ;   [249:5] o3[1] = object_init()
@@ -3734,21 +3734,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_250_5:
 ;       [250:5] alias x -> r15b
-        if_34_26_250_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_250_5:
+        if_34_28_250_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_250_5:
         cmp r15b, 0
-        jne if_34_23_250_5_end
-        if_34_26_250_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_250_5_end
+        if_34_28_250_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_250_5_end:
+;           [34:34] free named register rdi
+        if_34_25_250_5_end:
 ;       [250:5] free scratch register r15
     assert_250_5_end:
 ;   [252:5] var worlds : world[8]
@@ -3852,21 +3852,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_254_5:
 ;       [254:5] alias x -> r15b
-        if_34_26_254_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_254_5:
+        if_34_28_254_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_254_5:
         cmp r15b, 0
-        jne if_34_23_254_5_end
-        if_34_26_254_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_254_5_end
+        if_34_28_254_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_254_5_end:
+;           [34:34] free named register rdi
+        if_34_25_254_5_end:
 ;       [254:5] free scratch register r15
     assert_254_5_end:
 ;   [256:5] array_copy( worlds[1].locations, worlds[0].locations, array_size_of(worlds.locations) )
@@ -4001,21 +4001,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_264_5:
 ;       [264:5] alias x -> r15b
-        if_34_26_264_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_264_5:
+        if_34_28_264_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_264_5:
         cmp r15b, 0
-        jne if_34_23_264_5_end
-        if_34_26_264_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_264_5_end
+        if_34_28_264_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_264_5_end:
+;           [34:34] free named register rdi
+        if_34_25_264_5_end:
 ;       [264:5] free scratch register r15
     assert_264_5_end:
 ;   [265:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) ))
@@ -4111,21 +4111,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_265_5:
 ;       [265:5] alias x -> r15b
-        if_34_26_265_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_265_5:
+        if_34_28_265_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_265_5:
         cmp r15b, 0
-        jne if_34_23_265_5_end
-        if_34_26_265_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_265_5_end
+        if_34_28_265_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_265_5_end:
+;           [34:34] free named register rdi
+        if_34_25_265_5_end:
 ;       [265:5] free scratch register r15
     assert_265_5_end:
 ;   [271:5] var arr2 : [] = { -1, 2 }
@@ -4154,21 +4154,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_272_5:
 ;       [272:5] alias x -> r15b
-        if_34_26_272_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_272_5:
+        if_34_28_272_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_272_5:
         cmp r15b, 0
-        jne if_34_23_272_5_end
-        if_34_26_272_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_272_5_end
+        if_34_28_272_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_272_5_end:
+;           [34:34] free named register rdi
+        if_34_25_272_5_end:
 ;       [272:5] free scratch register r15
     assert_272_5_end:
 ;   [273:5] assert(arr2[0] == -1)
@@ -4198,21 +4198,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_273_5:
 ;       [273:5] alias x -> r15b
-        if_34_26_273_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_273_5:
+        if_34_28_273_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_273_5:
         cmp r15b, 0
-        jne if_34_23_273_5_end
-        if_34_26_273_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_273_5_end
+        if_34_28_273_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_273_5_end:
+;           [34:34] free named register rdi
+        if_34_25_273_5_end:
 ;       [273:5] free scratch register r15
     assert_273_5_end:
 ;   [274:5] assert(arr2[1] == 2)
@@ -4242,21 +4242,21 @@ main:
 ;   [34:6] assert(x : bool)
     assert_274_5:
 ;       [274:5] alias x -> r15b
-        if_34_26_274_5:
-;       [34:26] ? not x
-;       [34:26] ? not x
-        cmp_34_26_274_5:
+        if_34_28_274_5:
+;       [34:28] ? not x
+;       [34:28] ? not x
+        cmp_34_28_274_5:
         cmp r15b, 0
-        jne if_34_23_274_5_end
-        if_34_26_274_5_code:
-;           [34:32] exit(1)
-;           [34:32] allocate named register rdi
-;           [34:37] 1
+        jne if_34_25_274_5_end
+        if_34_28_274_5_code:
+;           [34:34] exit(1)
+;           [34:34] allocate named register rdi
+;           [34:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [34:32] free named register rdi
-        if_34_23_274_5_end:
+;           [34:34] free named register rdi
+        if_34_25_274_5_end:
 ;       [274:5] free scratch register r15
     assert_274_5_end:
 ;   [276:5] var counter

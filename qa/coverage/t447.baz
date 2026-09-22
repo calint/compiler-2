@@ -1,6 +1,6 @@
 # lea regression: built-in indexed src/dst aliases and index mutation
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 func mix(dst, src, ix) {
     ix = ix + 1

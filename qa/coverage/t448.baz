@@ -1,6 +1,6 @@
 # lea regression: user-type indexed args (non-encodable element size path)
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 type pair {
     x,

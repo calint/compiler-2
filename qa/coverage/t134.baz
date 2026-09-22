@@ -1,6 +1,6 @@
 # i32 array values passed to a typed function
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func fiz(x, y) : res {
     res = x + x + y

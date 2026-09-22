@@ -6,7 +6,7 @@
 # rv32i: produce the final 0/1 value and sb it directly
 # neither assignment needs a second normalization or an xor for negation
 
-func assert(ok : bool) if not ok exit(1)
+func assert(ok : bool) { if not ok exit(1) }
 
 func main() {
     var left : i8[2] = {1, 2}

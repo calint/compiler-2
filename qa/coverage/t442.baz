@@ -1,6 +1,6 @@
 # equal compares indexed default-type values (true and false paths)
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 func main() {
     var a : [2]

@@ -1,6 +1,6 @@
 # mixed-size struct layout and array stride
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 # Verify struct field ordering and padding
 type packed_small { a : i8, b : i8, c : i8, d : i8 }

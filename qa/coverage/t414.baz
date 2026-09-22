@@ -9,7 +9,7 @@ dat holders : holder[2] =
         { { {5, 6}, {7, 8} } }
     }
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func main() {
     foo holders[1].points {

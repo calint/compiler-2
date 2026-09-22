@@ -2,7 +2,7 @@
 
 type result { equal : bool }
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 func probe(hits : i32) : value bool {
     hits = hits + 1
     value = true

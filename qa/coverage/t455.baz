@@ -1,6 +1,6 @@
 # resolver path: alias chain with lea + indexed user-type argument
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 type point {
     x,

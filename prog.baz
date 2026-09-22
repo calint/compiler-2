@@ -29,9 +29,7 @@ dat    str1 : str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
 
-# single statement blocks can ommit { ... }
-
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func print(str : i8[]) {
     write(1, address_of(str), array_size_of(str))

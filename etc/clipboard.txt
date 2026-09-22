@@ -175,7 +175,7 @@ func p(len : reg_rdx, ptr : reg_rsi) {
 
 field nl_str = "\n"
 
-func nl() p(nl_str.len, nl_str)
+func nl() { p(nl_str.len, nl_str) }
 
 func pn(num) {
     var buf : i8[20]

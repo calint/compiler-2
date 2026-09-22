@@ -1,6 +1,6 @@
 # boolean not applied to arrays_equal
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func main() {
     var src : i8[2]

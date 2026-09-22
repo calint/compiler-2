@@ -92,7 +92,7 @@ dat h1 : holder[3] =
         }
     }
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func update(h : holder) {
     foo h.cols[2].points  {

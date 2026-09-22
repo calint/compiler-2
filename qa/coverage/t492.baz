@@ -1,12 +1,13 @@
 # name-first return declarations with default, explicit and aggregate types
 
 type pair { first, second }
-func assert(ok : bool) if not ok exit(1)
-func twice(value) : result result = value * 2
+func assert(ok : bool) { if not ok exit(1) }
+func twice(value) : result { result = value * 2 }
 func narrow(value : i32) : result i32 { result = value + 1 }
 func make_pair(value) : result pair { result = { value, value + 1 } }
-func commented(value) : result # default type
+func commented(value) : result { # default type
     result = value + 3
+}
 func noinline fact(value) : result {
     result = 1
     if value <= 1 return

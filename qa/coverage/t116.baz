@@ -1,6 +1,6 @@
 # nested function mutation propagation
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func mutate_and_return(x) : res {
     x = x * 2

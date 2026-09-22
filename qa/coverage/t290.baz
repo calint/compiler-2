@@ -1,6 +1,6 @@
 # signed eight-bit division
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 func main() {
     var x : i8 = 100
     var y : i8 = 2

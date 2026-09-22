@@ -1,6 +1,6 @@
 # indexed struct argument is passed by reference
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 type pair {
     key : i16,

@@ -2,7 +2,7 @@
 
 dat value : i8[8] = ""
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func main() {
 	assert(value[0] == 0)

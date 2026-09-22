@@ -1,0 +1,3 @@
+# inline function bodies require braces even for one statement
+
+func main() exit(0)

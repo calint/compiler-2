@@ -1,6 +1,6 @@
 # constant boolean expression folding
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func main() {
     if not (false or false or false) assert(true) else assert(false)

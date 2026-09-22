@@ -1,6 +1,6 @@
 # break and continue in nested loops
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 # Break/continue in nested loops, multiple breaks
 func main() {

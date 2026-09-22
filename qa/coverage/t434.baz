@@ -1,6 +1,6 @@
 # array variable assignment
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func main() {
     var source : [3] = { 10, 20, 30 }

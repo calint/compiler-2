@@ -13,7 +13,7 @@ func increment(value) {
     value = value + 10
 }
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func main() {
     foo values {

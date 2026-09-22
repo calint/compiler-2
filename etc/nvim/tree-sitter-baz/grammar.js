@@ -24,11 +24,8 @@ module.exports = grammar({
       $._statement,
     ),
 
-    // Body for a function, which can be a block or a single statement
-    _function_body: $ => choice(
-      prec.right(1, $.block), // Prefer parsing a block as the explicit function body
-      $._statement,
-    ),
+    // Function bodies always require braces
+    _function_body: $ => $.block,
 
     // A grouping of statements { ... }
     block: $ => seq(

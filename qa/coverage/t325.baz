@@ -1,6 +1,6 @@
 # direct default-type array indexing
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func main() {
     var values : [2]

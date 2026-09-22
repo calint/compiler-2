@@ -1,6 +1,6 @@
 # state mutation across nested function calls
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func f1(state) : res { state = state + 1 res = state }
 func f2(x) : res { res = x * 2 }

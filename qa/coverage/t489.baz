@@ -2,7 +2,7 @@
 
 type large_item { first : i32, padding : i8[8188], last : i32 }
 
-func assert(ok : bool) if not ok exit(1)
+func assert(ok : bool) { if not ok exit(1) }
 
 func main() {
     var values : large_item[3]

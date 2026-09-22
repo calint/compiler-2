@@ -1,6 +1,6 @@
 # resolver path: alias chain with depth growth and no lea
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 type point {
     x,

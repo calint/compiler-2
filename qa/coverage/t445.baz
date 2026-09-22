@@ -1,6 +1,6 @@
 # regression: stmt_call alias plain variables (is_indexed off)
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 func ret_after_inc(i) : out {
     i = i + 1

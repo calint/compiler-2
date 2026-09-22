@@ -1,0 +1,5 @@
+# non-inline function bodies require braces across newlines too
+
+func noinline helper()
+    return
+func main() { helper() }

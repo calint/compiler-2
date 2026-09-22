@@ -1,6 +1,6 @@
 # shorthand bool truthiness with unary '~' across scalar widths
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 func main() {
     var b8 : i8 = -1

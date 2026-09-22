@@ -128,7 +128,7 @@ class stmt_def_func final : public statement {
             tc.add_var(param.tok(), 0, var, false);
         }
 
-        code_ = {tc, tz};
+        code_ = {tc, tz, true};
 
         tc.exit_func(name());
     }

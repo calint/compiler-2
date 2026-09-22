@@ -1,6 +1,6 @@
 # nested string-field mutation through functions
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 type string { len : i8, data : i8[127] }
 

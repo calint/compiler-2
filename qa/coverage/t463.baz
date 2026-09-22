@@ -1,6 +1,6 @@
 # non-inline reference arguments: narrow writes, shared storage, globals and inline forwarding
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 var calls = 0
 

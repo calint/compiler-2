@@ -1,6 +1,6 @@
 # arrays_equal compares i32 array values
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 func probe(hits : i32) : result bool {
     hits = hits + 1
     result = true

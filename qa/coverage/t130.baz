@@ -1,6 +1,6 @@
 # indexed values participate in a shift expression
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func fiz(x : i32, shf) : res i32 {
     res = x + x << shf

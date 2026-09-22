@@ -1,6 +1,6 @@
 # non-inline return destinations: nested calls, pointer forwarding and early returns
 
-func assert(err, expr : bool) if not expr exit(err)
+func assert(err, expr : bool) { if not expr exit(err) }
 
 func noinline magnitude(value) : result {
     result = value

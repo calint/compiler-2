@@ -4,7 +4,7 @@
 
 # single statement blocks can ommit braces
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 # limited built-in assembler just enough to interface with OS
 

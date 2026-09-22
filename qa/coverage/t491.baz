@@ -6,7 +6,7 @@ dat inferred_data : [] = { -3, 4, 5 }
 dat cleared_data : [3]
 dat record : holder = { 7, { 10, 20 }, 9 }
 
-func assert(ok : bool) if not ok exit(1)
+func assert(ok : bool) { if not ok exit(1) }
 
 func main() {
     var array : [128] = { 1, 2 }

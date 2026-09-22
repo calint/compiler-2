@@ -1,6 +1,6 @@
 # narrowing conversion preserves the low byte
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func take(value : i8) : result i8 {
     result = value

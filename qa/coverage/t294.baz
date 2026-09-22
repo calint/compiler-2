@@ -1,6 +1,6 @@
 # unary operation on array_size_of is rejected
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 
 func main() {
     var a : i8[2]

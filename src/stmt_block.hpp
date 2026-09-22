@@ -27,15 +27,18 @@ class stmt_block final : public statement {
     bool is_one_statement_{};
 
   public:
-    // note: parser assumes the tokenizer is at a '{' or it is considered a
-    // single statement block
-    stmt_block(toc& tc, tokenizer& tz)
+    // note: without '{', a single statement is allowed unless braces are
+    // required
+    stmt_block(toc& tc, tokenizer& tz, const bool braces_required = false)
         : statement{tz.cur_position_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
         set_type(tc.get_type_void());
 
         if (open_brace_tk_.is_empty()) {
+            if (braces_required) {
+                throw compiler_exception{tz, "expected '{' to begin block"};
+            }
             is_one_statement_ = true;
         }
 

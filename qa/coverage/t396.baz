@@ -1,6 +1,6 @@
 # array_copy handles a byte remainder
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 func main() {
     var source : i8[3] = { 11, 22, 33 }

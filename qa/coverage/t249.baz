@@ -1,6 +1,6 @@
 # equal compares indexed i32 values
 
-func assert(x : bool) if not x exit(1)
+func assert(x : bool) { if not x exit(1) }
 func main() {
     var a : i32[2]
     var b : i32[2]

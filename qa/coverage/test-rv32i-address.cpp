@@ -373,7 +373,7 @@ func main() {
     }
     {
         const std::string_view source{R"baz(
-func assert(ok : bool) if not ok exit(1)
+func assert(ok : bool) { if not ok exit(1) }
 func main() {
     var source : i32[4]
     var destination : i32[4]
@@ -403,7 +403,7 @@ func main() {
     }
     {
         const std::string_view source{R"baz(
-func assert(ok : bool) if not ok exit(1)
+func assert(ok : bool) { if not ok exit(1) }
 func main() {
     var left : i8[2] = {1, 2}
     var right : i8[2] = {1, 2}
@@ -456,7 +456,7 @@ func main() {
     }
     if (argc > 1 and std::string_view{argv[1]} == "bulk") {
         const std::string_view source{R"baz(
-func assert(ok : bool) if not ok exit(1)
+func assert(ok : bool) { if not ok exit(1) }
 type packed { first : i8, second : i16 }
 func nested(source : packed[], destination : packed[]) : count i32 {
     array_copy(source, destination, 1)

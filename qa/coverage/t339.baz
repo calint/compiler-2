@@ -1,6 +1,6 @@
 # indexed field passed by reference
 
-func assert(expr : bool) if not expr exit(1)
+func assert(expr : bool) { if not expr exit(1) }
 
 type point { x, y }
 type holder { points : point[2] }
