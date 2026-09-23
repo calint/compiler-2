@@ -467,6 +467,7 @@ class stmt_identifier : public statement {
             src_loc_tk, indent, tc.get_type_address())};
 
         allocated_registers.push_back(pointer_register);
+
         x.copy_value(src_loc_tk, indent, pointer_register,
                      operand::mem(pointer_slot, tc.get_type_address()));
 
@@ -492,6 +493,7 @@ class stmt_identifier : public statement {
                       array_info.type_ref().size_bytes());
 
         x.add_subtract(src_loc_tk, indent, '+', base_register, checked_index);
+
         x.free_scratch_register(src_loc_tk, indent, index_register);
 
         return base_register;
@@ -505,8 +507,10 @@ class stmt_identifier : public statement {
         machine& x{tc.machine()};
 
         if (destination_register.is_empty()) {
+
             destination_register = x.alloc_scratch_register(
                 src_loc_tk, indent, tc.get_type_address());
+
             allocated_registers.push_back(destination_register);
         }
 
