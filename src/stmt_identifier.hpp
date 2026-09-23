@@ -202,24 +202,30 @@ class stmt_identifier : public statement {
 
         const ident_info storage{tc.make_ident_info(src_loc_tk, path)};
 
-        const operand& lea{known_addresses[start_index]};
+        const operand& known_address{known_addresses[start_index]};
 
-        operand working_base{address_register};
+        operand writable_base{address_register};
         operand index_register;
-        operand base;
-        if (not lea.is_empty()) {
-            base = lea;
+        operand address;
+
+        if (not known_address.is_empty()) {
+            address = known_address;
         } else if (storage.is_pointer) {
-            base = load_pointer(tc, indent, src_loc_tk, allocated_registers,
-                                storage.operand);
-            if (working_base.is_empty()) {
-                working_base = allocated_registers.back();
+
+            address = load_pointer(tc, indent, src_loc_tk, allocated_registers,
+                                   storage.operand);
+
+            if (writable_base.is_empty()) {
+                // 'load_pointer' just appended its scratch register; nothing
+                // has been appended since; reuse that private pointer copy
+                // as a writable base; it stays allocated until caller cleanup
+                writable_base = allocated_registers.back();
             }
         } else {
-            base = storage.operand;
+            address = storage.operand;
         }
 
-        const type* prev_type{};
+        const type* parent_type{};
 
         for (size_t elem_index{start_index}; elem_index < elems_.size();
              ++elem_index) {
@@ -233,15 +239,15 @@ class stmt_identifier : public statement {
                 path.push_back('.');
                 path += cur_elem.name_tk.text();
 
-                const size_t offset{prev_type->field_offset(
+                const size_t offset{parent_type->field_offset(
                     cur_elem.name_tk, cur_elem.name_tk.text())};
 
-                base.increment_offset(static_cast<int64_t>(offset));
+                address.increment_offset(static_cast<int64_t>(offset));
             }
 
             const ident_info cur_info{tc.make_ident_info(src_loc_tk, path)};
 
-            prev_type = &cur_info.type_ref();
+            parent_type = &cur_info.type_ref();
 
             const bool is_last_elem{elem_index == elems_.size() - 1};
 
@@ -260,35 +266,36 @@ class stmt_identifier : public statement {
 
             // indexed element
 
-            if (not base.index_register().empty()) {
+            if (not address.index_register().empty()) {
 
-                if (working_base.is_empty() and not index_register.is_empty()) {
-                    working_base = index_register;
+                if (writable_base.is_empty() and
+                    not index_register.is_empty()) {
+                    writable_base = index_register;
                     index_register = {};
                 }
 
-                working_base = compute_address_in_register(
-                    tc, indent, src_loc_tk, allocated_registers, base,
-                    working_base);
+                writable_base =
+                    fold_address(tc, indent, src_loc_tk, allocated_registers,
+                                 address, writable_base);
 
-                base = operand::mem(working_base, cur_info.type_ref());
+                address = operand::mem(writable_base, cur_info.type_ref());
             }
 
-            base = extend_with_index(
-                tc, cur_elem.array_index_expr->tok(), indent,
-                allocated_registers, cur_elem, cur_info,
-                is_last_elem ? reg_count : operand{}, base, index_register);
+            address = add_index(tc, cur_elem.array_index_expr->tok(), indent,
+                                allocated_registers, cur_elem, cur_info,
+                                is_last_elem ? reg_count : operand{}, address,
+                                index_register);
         }
 
-        return operand::mem(base, *prev_type);
+        return operand::mem(address, *parent_type);
     }
 
   private:
-    [[nodiscard]] auto static extend_with_index(
+    [[nodiscard]] auto static add_index(
         toc& tc, const token& src_loc_tk, const size_t indent,
         std::vector<operand>& allocated_registers, const ident_elem& cur_elem,
         const ident_info& cur_info, const operand& reg_count,
-        const operand& base, operand& index_register) -> operand {
+        const operand& address, operand& index_register) -> operand {
 
         machine& x{tc.machine()};
 
@@ -313,8 +320,9 @@ class stmt_identifier : public statement {
             x.scale_index(src_loc_tk, indent, checked_index, type_size);
         }
 
-        return operand::mem(base.base_register(), checked_index.base_register(),
-                            scale, base.displacement(), cur_info.type_ref());
+        return operand::mem(address.base_register(),
+                            checked_index.base_register(), scale,
+                            address.displacement(), cur_info.type_ref());
     }
 
     [[nodiscard]] static auto
@@ -349,10 +357,11 @@ class stmt_identifier : public statement {
         return operand::mem(pointer_register, tc.get_type_address());
     }
 
-    [[nodiscard]] static auto compute_address_in_register(
-        toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const operand& address,
-        operand destination_register) -> operand {
+    [[nodiscard]] static auto
+    fold_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                 std::vector<operand>& allocated_registers,
+                 const operand& address, operand destination_register)
+        -> operand {
 
         machine& x{tc.machine()};
 
