@@ -36,6 +36,15 @@ class stmt_identifier : public statement {
         }
     };
 
+    struct lea_state {
+        operand lea;
+        ident_info base_info;
+        operand reg_offset;
+        // only the storage offset is pending; field offsets stay separate
+        bool offset_pending{};
+        int64_t accumulated_offset{};
+    };
+
     std::vector<ident_elem> elems_;
     std::vector<token> elem_delims_tk_;
     std::string path_as_string_;
@@ -183,11 +192,9 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
-    // builds a memory operand for the identifier, emitting address calculations
-    // as needed and adding allocated registers to the vector. its form depends
-    // on the existing "lea", storage offset, pointer indirection, and whether
-    // the index scale is encodable. on x86 this may be e.g. [rbp + r15 * 4 +
-    // 24] or [r14 + 28] with a computed base in r14 or simply [r13]
+    // walk the identifier from a known address and collect field offsets
+    // keep the final index in the operand when the backend supports its scale
+    // otherwise compute a base register and leave its encoding to the backend
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
@@ -199,62 +206,33 @@ class stmt_identifier : public statement {
         // align the full lea path with this identifier's elements
         const std::span<const operand> leas{lea_path.last(elems_.size())};
 
-        // start from the first known address, or the root if none exists
-        size_t elem_index_with_lea{leas.size()};
-        operand lea;
-        while (elem_index_with_lea) {
-            --elem_index_with_lea;
-            if (not leas[elem_index_with_lea].is_empty()) {
-                lea = leas[elem_index_with_lea];
-                break;
-            }
-        }
+        // start at the nearest known address from the top, or the root if none
+        // exists
+        const size_t elem_index_with_lea{find_lea_start(leas)};
+        const operand& lea{leas[elem_index_with_lea]};
 
         // start at an element with "lea" or 0 when no "lea" found
         std::string path{elems_[elem_index_with_lea].name_tk.text()};
+
+        // create the starting point where "lea" was found
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
+
         const type* value_type{&base_info.type_ref()};
 
-        // working address base: a storage register, existing lea, or scratch
-        // register holding a loaded/computed address; empty until initialized.
-        // field offsets and any pending storage offset are added separately.
-        operand reg_offset;
+        // a known address or a loaded pointer already accounts for storage
+        // field offsets remain separate until the final operand is built
 
-        bool offset_pending{lea.is_empty() and not base_info.is_pointer};
-        // note: offset_pending means base_info.offset has not yet been
-        //       included in the address. starting from rbp or rbx alone still
-        //       requires this offset to reach the variable's storage.
-        //
-        //       while pending, add it to the final operand's displacement,
-        //       e.g. [rbx + r15 * 4 + 24]. if address_of first incorporates
-        //       it into reg_offset, clear the flag to avoid adding it twice.
-        //
-        //       an existing lea already includes the storage offset. for a
-        //       pointer-backed variable, the offset locates the pointer slot;
-        //       the load below uses it to obtain the object's address. neither
-        //       case needs the offset added to the resulting address.
-        //
-        //       the flag tracks only base_info.offset. field offsets in
-        //       accumulated_offset and scaled array indices still apply
-        //       regardless of whether it is pending.
+        lea_state state{
+            .lea{lea},
+            .base_info{base_info},
+            .reg_offset{},
+            .offset_pending{lea.is_empty() and not base_info.is_pointer},
+            .accumulated_offset{},
+        };
+        // note: 'offset_pending' indicates whether there is an offset that has
+        // yet to be applied to the base address
 
-        int64_t accumulated_offset{};
-
-        const size_t elem_count{elems_.size()};
-
-        machine& x{tc.machine()};
-
-        // load the object's address when the base is a pointer slot
-        if (lea.is_empty() and base_info.is_pointer) {
-            reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
-                                                  tc.get_type_address());
-
-            allocated_registers.push_back(reg_offset);
-
-            x.copy_value(
-                src_loc_tk, indent, reg_offset,
-                operand::mem(base_info.operand, tc.get_type_address()));
-        }
+        load_pointer_base(tc, indent, src_loc_tk, allocated_registers, state);
 
         for (const auto [index, cur_elem] :
              elems_ | std::views::enumerate |
@@ -262,132 +240,241 @@ class stmt_identifier : public statement {
 
             const size_t elem_index{static_cast<size_t>(index)};
 
-            // advance from the previous element into this field
+            // advance from the previous element to the next if this is not the
+            // starting point want to find the offset from "lea" to the
+            // requested element address
+
             if (elem_index != elem_index_with_lea) {
-                accumulated_offset = add_address_offset(
-                    accumulated_offset,
-                    address_offset(toc::get_field_offset_in_type(
+
+                state.accumulated_offset = add_address_offset(
+                    state.accumulated_offset,
+                    address_offset(toc::field_offset_in_type(
                         *value_type, cur_elem.name_tk.text())));
 
+                // add another element to the path
                 path.push_back('.');
                 path += cur_elem.name_tk.text();
             }
 
             const ident_info cur_info{tc.make_ident_info(src_loc_tk, path)};
-            const size_t type_size_bytes{cur_info.type_ref().size_bytes()};
-            const bool is_last_elem{elem_index == elem_count - 1};
+
+            const bool is_last_elem{elem_index == elems_.size() - 1};
+
             value_type = &cur_info.type_ref();
 
             // an unindexed element only needs a possible range bounds check
             if (not cur_elem.array_index_expr) {
-                if (is_last_elem and not reg_count.is_empty() and
-                    cur_info.is_array) {
+
+                if (cur_info.is_array and is_last_elem and
+                    not reg_count.is_empty()) {
 
                     emit_bounds_check(tc, indent, src_loc_tk, reg_count,
                                       cur_info.array_len, true);
+
+                    // note: 'reg_count' is a register that contains a count so
+                    //       bounds checking is done for a span; used in
+                    //       'array_copy' and similar operations that will
+                    //       iterate of a range
                 }
 
                 continue;
             }
 
-            // leave the final index scaled in the operand when supported
-            if (is_last_elem and x.can_lower_index_scale(type_size_bytes)) {
-                const operand reg_idx{x.alloc_scratch_register(
-                    src_loc_tk, indent, tc.get_type_default())};
+            // try to do the last part of the address calculation as a scaled
+            // index register
 
-                allocated_registers.push_back(reg_idx);
+            if (is_last_elem and tc.machine().can_lower_index_scale(
+                                     cur_info.type_ref().size_bytes())) {
 
-                compile_array_index(tc, indent, *cur_elem.array_index_expr,
-                                    reg_idx, cur_info.array_len, reg_count);
-
-                if (reg_offset.is_empty()) {
-                    reg_offset = init_reg_offset(
-                        tc, indent, src_loc_tk, lea, allocated_registers, true,
-                        true, base_info.operand.base_register());
-                }
-
-                const int64_t offset{
-                    offset_pending ? add_address_offset(base_info.offset,
-                                                        accumulated_offset)
-                                   : accumulated_offset};
-
-                return operand::mem(reg_offset.base_register(),
-                                    reg_idx.base_register(), type_size_bytes,
-                                    offset, *value_type);
+                return compile_final_index(
+                    tc, indent, src_loc_tk, allocated_registers, state,
+                    *cur_elem.array_index_expr, cur_info, reg_count);
             }
 
-            // prepare a writable base for index arithmetic
-            if (reg_offset.is_empty()) {
-                reg_offset = init_reg_offset(tc, indent, src_loc_tk, lea,
-                                             allocated_registers, false, true,
-                                             base_info.operand.base_register());
-            }
+            // earlier indices and unsupported scales need a computed base
 
-            if (offset_pending) {
-                // borrow the reserved pointer to avoid a temporary and final
-                // move
-                reg_offset = address_register;
-                if (reg_offset.is_empty()) {
-                    reg_offset = x.alloc_scratch_register(
-                        src_loc_tk, indent, tc.get_type_address());
+            state.reg_offset =
+                prepare_index_base(tc, indent, src_loc_tk, allocated_registers,
+                                   state, address_register);
 
-                    allocated_registers.push_back(reg_offset);
-                }
-                x.address_of(src_loc_tk, indent, reg_offset, base_info.operand);
-                offset_pending = false;
-
-            } else if (not reg_offset.is_indexed() and
-                       reg_offset.base_register() ==
-                           base_info.operand.base_register()) {
-
-                const operand offset_register{x.alloc_scratch_register(
-                    src_loc_tk, indent, tc.get_type_address())};
-
-                allocated_registers.push_back(offset_register);
-                reg_offset = offset_register;
-
-                // copy the shared storage base before modifying it
-                x.address_of(src_loc_tk, indent, reg_offset,
-                             operand::mem(base_info.operand.base_register(), "",
-                                          1, 0, base_info.type_ref()));
-            }
-
-            // add the scaled index to the working address
-            const operand reg_idx{x.alloc_scratch_register(
-                src_loc_tk, indent, tc.get_type_default())};
-
-            compile_array_index(tc, indent, *cur_elem.array_index_expr, reg_idx,
-                                cur_info.array_len,
-                                is_last_elem ? reg_count : operand{});
-
-            x.scale_index(cur_elem.array_index_expr->tok(), indent, reg_idx,
-                          type_size_bytes);
-
-            x.add_subtract(src_loc_tk, indent, '+', reg_offset, reg_idx);
-            x.free_scratch_register(src_loc_tk, indent, reg_idx);
+            add_array_index(tc, indent, src_loc_tk, state.reg_offset,
+                            *cur_elem.array_index_expr, cur_info,
+                            is_last_elem ? reg_count : operand{});
         }
 
-        // finish with field offsets and any storage offset not yet included
-        if (reg_offset.is_empty()) {
-            reg_offset = init_reg_offset(tc, indent, src_loc_tk, lea,
-                                         allocated_registers, true, false,
-                                         base_info.operand.base_register());
-        }
-
-        operand op{operand::mem(reg_offset.base_register(),
-                                reg_offset.index_register(), reg_offset.scale(),
-                                reg_offset.displacement(), *value_type)};
-
-        op.increment_offset(accumulated_offset);
-
-        if (offset_pending) {
-            op.increment_offset(base_info.offset);
-        }
-
-        return op;
+        return finish_lea(tc, indent, src_loc_tk, allocated_registers, state,
+                          *value_type);
     }
 
   private:
+    [[nodiscard]] static auto
+    find_lea_start(const std::span<const operand> leas) -> size_t {
+        size_t index{leas.size()};
+        while (index != 0) {
+            --index;
+            if (not leas[index].is_empty()) {
+                return index;
+            }
+        }
+        return 0;
+    }
+
+    static auto load_pointer_base(toc& tc, const size_t indent,
+                                  const token& src_loc_tk,
+                                  std::vector<operand>& allocated_registers,
+                                  lea_state& state) -> void {
+
+        // a known address needs no load, and ordinary storage is not a pointer
+        if (not state.lea.is_empty() or not state.base_info.is_pointer) {
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        state.reg_offset =
+            x.alloc_scratch_register(src_loc_tk, indent, tc.get_type_address());
+
+        allocated_registers.push_back(state.reg_offset);
+
+        x.copy_value(
+            src_loc_tk, indent, state.reg_offset,
+            operand::mem(state.base_info.operand, tc.get_type_address()));
+    }
+
+    [[nodiscard]] static auto
+    compile_final_index(toc& tc, const size_t indent, const token& src_loc_tk,
+                        std::vector<operand>& allocated_registers,
+                        lea_state& state, const expr_any& index_expr,
+                        const ident_info& cur_info, const operand& reg_count)
+        -> operand {
+
+        machine& x{tc.machine()};
+
+        // the returned operand needs this index register to stay live
+        const operand reg_idx{x.alloc_scratch_register(src_loc_tk, indent,
+                                                       tc.get_type_default())};
+
+        allocated_registers.push_back(reg_idx);
+
+        compile_array_index(tc, indent, index_expr, reg_idx, cur_info.array_len,
+                            reg_count);
+
+        if (state.reg_offset.is_empty()) {
+
+            state.reg_offset = init_reg_offset(
+                tc, indent, src_loc_tk, state.lea, allocated_registers, true,
+                true, state.base_info.operand.base_register());
+        }
+
+        const int64_t offset{state.offset_pending
+                                 ? add_address_offset(state.base_info.offset,
+                                                      state.accumulated_offset)
+                                 : state.accumulated_offset};
+
+        return operand::mem(
+            state.reg_offset.base_register(), reg_idx.base_register(),
+            cur_info.type_ref().size_bytes(), offset, cur_info.type_ref());
+    }
+
+    static auto
+    add_array_index(toc& tc, const size_t indent, const token& src_loc_tk,
+                    const operand& reg_offset, const expr_any& index_expr,
+                    const ident_info& cur_info, const operand& reg_count)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        const operand reg_idx{x.alloc_scratch_register(src_loc_tk, indent,
+                                                       tc.get_type_default())};
+
+        compile_array_index(tc, indent, index_expr, reg_idx, cur_info.array_len,
+                            reg_count);
+
+        x.scale_index(index_expr.tok(), indent, reg_idx,
+                      cur_info.type_ref().size_bytes());
+
+        x.add_subtract(src_loc_tk, indent, '+', reg_offset, reg_idx);
+        x.free_scratch_register(src_loc_tk, indent, reg_idx);
+    }
+
+    [[nodiscard]] static auto
+    finish_lea(toc& tc, const size_t indent, const token& src_loc_tk,
+               std::vector<operand>& allocated_registers, lea_state& state,
+               const type& value_type) -> operand {
+
+        if (state.reg_offset.is_empty()) {
+            state.reg_offset = init_reg_offset(
+                tc, indent, src_loc_tk, state.lea, allocated_registers, true,
+                false, state.base_info.operand.base_register());
+        }
+
+        operand result{operand::mem(
+            state.reg_offset.base_register(), state.reg_offset.index_register(),
+            state.reg_offset.scale(), state.reg_offset.displacement(),
+            value_type)};
+
+        result.increment_offset(state.accumulated_offset);
+
+        // the storage offset must not be counted again after address_of
+        if (not state.offset_pending) {
+            return result;
+        }
+
+        result.increment_offset(state.base_info.offset);
+
+        return result;
+    }
+
+    [[nodiscard]] static auto
+    prepare_index_base(toc& tc, const size_t indent, const token& src_loc_tk,
+                       std::vector<operand>& allocated_registers,
+                       lea_state& state, const operand& address_register)
+        -> operand {
+
+        machine& x{tc.machine()};
+
+        operand reg_offset{state.reg_offset};
+        const ident_info& base_info{state.base_info};
+
+        if (reg_offset.is_empty()) {
+            reg_offset = init_reg_offset(tc, indent, src_loc_tk, state.lea,
+                                         allocated_registers, false, true,
+                                         base_info.operand.base_register());
+        }
+
+        // include the storage offset once, using the reserved pointer if given
+        if (state.offset_pending) {
+            reg_offset = address_register;
+            if (reg_offset.is_empty()) {
+                reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
+                                                      tc.get_type_address());
+
+                allocated_registers.push_back(reg_offset);
+            }
+            x.address_of(src_loc_tk, indent, reg_offset, base_info.operand);
+            state.offset_pending = false;
+
+            return reg_offset;
+        }
+
+        // this address does not use the shared storage base directly
+        if (reg_offset.is_indexed() or
+            reg_offset.base_register() != base_info.operand.base_register()) {
+            return reg_offset;
+        }
+
+        // preserve the shared storage base before adding an index
+        reg_offset =
+            x.alloc_scratch_register(src_loc_tk, indent, tc.get_type_address());
+
+        allocated_registers.push_back(reg_offset);
+        x.address_of(src_loc_tk, indent, reg_offset,
+                     operand::mem(base_info.operand.base_register(), "", 1, 0,
+                                  base_info.type_ref()));
+
+        return reg_offset;
+    }
+
     static auto compile_array_index(toc& tc, const size_t indent,
                                     const expr_any& index_expr,
                                     const operand& reg_idx,
@@ -427,40 +514,48 @@ class stmt_identifier : public statement {
     init_reg_offset(toc& tc, const size_t indent, const token& src_loc_tk,
                     const operand& lea,
                     std::vector<operand>& allocated_registers,
-                    const bool no_changes_to_reg_offset_after_this,
+                    const bool no_changes_to_offset_after_this,
                     const bool will_be_indirect_indexed,
                     const std::string& base_register) -> operand {
 
-        if (not lea.is_empty()) {
+        machine& x{tc.machine()};
 
-            // if no change is done to the lea register, just return it
-            if (no_changes_to_reg_offset_after_this and
-                not(will_be_indirect_indexed and lea.is_indexed())) {
+        if (lea.is_empty()) {
+            // without a known address, start from the shared storage base
 
-                return lea;
-            }
+            return x.make_register_operand(base_register,
+                                           tc.get_type_address());
+        }
 
-            machine& x{tc.machine()};
+        // reuse the address when it stays unchanged and needs no second index
 
-            const operand index_reg{x.alloc_scratch_register(
-                src_loc_tk, indent, tc.get_type_address())};
+        if (no_changes_to_offset_after_this and
+            not(will_be_indirect_indexed and lea.is_indexed())) {
 
-            allocated_registers.push_back(index_reg);
+            return lea;
+        }
 
-            // changes will be made to the register so return an allocated
-            // register
-            if (lea.is_indexed()) {
-                x.address_of(src_loc_tk, indent, index_reg, lea);
-            } else {
-                x.copy_value(src_loc_tk, indent, index_reg,
-                             x.make_register_operand(lea.base_register(),
-                                                     tc.get_type_address()));
-            }
+        const operand index_reg{x.alloc_scratch_register(
+            src_loc_tk, indent, tc.get_type_address())};
+
+        allocated_registers.push_back(index_reg);
+
+        // combine the existing address before modifying it or adding an index
+        if (lea.is_indexed()) {
+            // load 'index_reg' with address that 'lea' currently holds
+            x.address_of(src_loc_tk, indent, index_reg, lea);
 
             return index_reg;
         }
 
-        return tc.machine().make_register_operand(base_register,
-                                                  tc.get_type_address());
+        // 'lea' has no index register
+
+        // preserve the original base by working on a copy
+
+        x.copy_value(src_loc_tk, indent, index_reg,
+                     x.make_register_operand(lea.base_register(),
+                                             tc.get_type_address()));
+
+        return index_reg;
     }
 };

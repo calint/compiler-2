@@ -80,6 +80,7 @@ class expr_any;
 
 [[nodiscard]] inline auto add_address_offset(const int64_t base,
                                              const int64_t offset) -> int64_t {
+
     if ((offset > 0 and base > std::numeric_limits<int64_t>::max() - offset) or
         (offset < 0 and base < std::numeric_limits<int64_t>::min() - offset)) {
 

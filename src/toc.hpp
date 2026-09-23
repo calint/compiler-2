@@ -963,7 +963,7 @@ class toc final {
     }
 
     [[nodiscard]] static auto
-    get_field_offset_in_type(const type& tp, const std::string_view field_name)
+    field_offset_in_type(const type& tp, const std::string_view field_name)
         -> size_t {
 
         for (const type_field& f : tp.fields()) {
