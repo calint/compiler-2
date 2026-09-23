@@ -247,7 +247,7 @@ class machine {
                        const operand& dst) -> void = 0;
 
     [[nodiscard]] virtual auto
-    can_encode_index_scale(const size_t size_bytes) const -> bool = 0;
+    can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
 
     virtual auto scale_index(const token& src_loc_tk, const size_t indent,
                              const operand& index,

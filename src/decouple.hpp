@@ -99,7 +99,7 @@ class operand {
     std::string index_register_;
     std::string immediate_;
     int64_t displacement_{};
-    uint8_t scale_{1};
+    uint64_t scale_{1};
 
   public:
     operand() = default;
@@ -110,9 +110,10 @@ class operand {
     [[nodiscard]] static auto reg(const std::string_view name,
                                   const type& value_type) -> operand;
 
-    [[nodiscard]] static auto
-    mem(const std::string_view base, const std::string_view index,
-        const uint8_t index_scale, const int64_t offset, const type& value_type)
+    [[nodiscard]] static auto mem(const std::string_view base,
+                                  const std::string_view index,
+                                  const uint64_t index_scale,
+                                  const int64_t offset, const type& value_type)
         -> operand;
 
     [[nodiscard]] static auto mem(const operand& address,
@@ -141,7 +142,7 @@ class operand {
 
     [[nodiscard]] auto displacement() const -> int64_t { return displacement_; }
 
-    [[nodiscard]] auto scale() const -> uint8_t { return scale_; }
+    [[nodiscard]] auto scale() const -> uint64_t { return scale_; }
 
     void set_allocation_register(const std::string_view name) {
         assert(is_register());

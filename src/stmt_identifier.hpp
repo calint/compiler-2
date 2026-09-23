@@ -290,8 +290,8 @@ class stmt_identifier : public statement {
                 continue;
             }
 
-            // leave the final index scaled in the operand when encodable
-            if (is_last_elem and x.can_encode_index_scale(type_size_bytes)) {
+            // leave the final index scaled in the operand when supported
+            if (is_last_elem and x.can_lower_index_scale(type_size_bytes)) {
                 const operand reg_idx{x.alloc_scratch_register(
                     src_loc_tk, indent, tc.get_type_default())};
 
@@ -311,9 +311,9 @@ class stmt_identifier : public statement {
                                                         accumulated_offset)
                                    : accumulated_offset};
 
-                return operand::mem(
-                    reg_offset.base_register(), reg_idx.base_register(),
-                    static_cast<uint8_t>(type_size_bytes), offset, *value_type);
+                return operand::mem(reg_offset.base_register(),
+                                    reg_idx.base_register(), type_size_bytes,
+                                    offset, *value_type);
             }
 
             // prepare a writable base for index arithmetic

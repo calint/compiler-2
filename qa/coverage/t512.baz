@@ -1,0 +1,30 @@
+# structured address scales include non-powers of two and values above 255
+type triple { bytes[3] i8 }
+type wide { bytes[300] i8 }
+type page { bytes[256] i8 }
+func assert(ok bool) { if not ok exit(1) }
+func update(values[] wide, index) { values[index].bytes[299] = 42 }
+func noinline read_wide(value wide) result i8 { result = value.bytes[299] }
+func main() {
+    var triples[3] triple
+    var pages[3] page
+    var values[10] wide
+    var index = 1
+    triples[index].bytes[2] = 7
+    triples[2] = triples[index]
+    assert(triples[2].bytes[2] == 7)
+    pages[index].bytes[255] = 9
+    pages[2] = pages[index]
+    assert(pages[2].bytes[255] == 9)
+    update(values, index)
+    var result i8 = read_wide(values[index])
+    assert(result == 42)
+    values[2] = values[index]
+    assert(values[2].bytes[299] == 42)
+    array_copy(values[index], values[3], 1)
+    assert(arrays_equal(values[index], values[3], 1))
+    index = 9
+    update(values, index)
+    result = read_wide(values[index])
+    assert(result == 42)
+}

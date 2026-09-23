@@ -4,6 +4,8 @@
 // between 'expr_any', 'expr_type_value', 'stmt_block', 'stmt_call',
 // 'unary_ops' and 'toc'.
 
+#include <bit>
+#include <cassert>
 #include <memory>
 #include <ostream>
 #include <ranges>
@@ -72,8 +74,10 @@ auto operand::reg(const std::string_view name, const type& value_type)
 
 // declared in 'decouple.hpp'
 auto operand::mem(const std::string_view base, const std::string_view index,
-                  const uint8_t index_scale, const int64_t offset,
+                  const uint64_t index_scale, const int64_t offset,
                   const type& value_type) -> operand {
+
+    assert(std::has_single_bit(index_scale));
 
     if (base.empty() and index.empty() and offset == 0) {
         throw std::invalid_argument{"operand address must not be empty"};

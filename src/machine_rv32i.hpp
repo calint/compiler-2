@@ -3,7 +3,6 @@
 #include <array>
 #include <bit>
 #include <charconv>
-#include <cstdio>
 #include <iostream>
 #include <limits>
 #include <optional>
@@ -13,7 +12,6 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "machine.hpp"
-#include "panic_exception.hpp"
 #include "type.hpp"
 
 class machine_rv32i final : public machine {
@@ -97,6 +95,10 @@ class machine_rv32i final : public machine {
         return register_names_.size();
     }
 
+    [[nodiscard]] static auto is_register(const std::string_view name) -> bool {
+        return register_index(name) != register_names_.size();
+    }
+
     [[nodiscard]] static auto register_mask(const std::string_view name)
         -> uint32_t {
         const size_t index{register_index(name)};
@@ -116,25 +118,32 @@ class machine_rv32i final : public machine {
 
     static auto validate_address(const token& src_loc_tk,
                                  const operand& address) -> void {
+
         if (not address.is_memory()) {
             throw compiler_exception{src_loc_tk,
                                      "RV32I requires a memory address"};
         }
+
         constexpr int64_t limit{std::numeric_limits<uint32_t>::max()};
         if (address.displacement() < -limit or address.displacement() > limit) {
             throw compiler_exception{
                 src_loc_tk, "address offset exceeds RV32I address range"};
         }
+
+        if (not is_register(address.base_register())) {
+            throw compiler_exception{src_loc_tk, "invalid RV32I base register"};
+        }
+
         if (not address.index_register().empty() and
-            register_index(address.index_register()) ==
-                register_names_.size()) {
+            not is_register(address.index_register())) {
             throw compiler_exception{src_loc_tk,
                                      "invalid RV32I index register"};
         }
+
         if (not address.index_register().empty() and
-            not std::has_single_bit(address.scale())) {
+            address.scale() > UINT32_MAX) {
             throw compiler_exception{src_loc_tk,
-                                     "index scale must be a power of two"};
+                                     "index scale exceeds RV32I address range"};
         }
     }
 
@@ -197,6 +206,160 @@ class machine_rv32i final : public machine {
         }
     };
 
+    struct address_offset_parts {
+        uint32_t upper;
+        int32_t low;
+    };
+
+    [[nodiscard]] static auto split_address_offset(const int64_t offset)
+        -> address_offset_parts {
+
+        constexpr unsigned low_bits{12};
+        constexpr uint32_t low_mask{0xfff};
+        constexpr int32_t low_range{4096};
+
+        // keep the signed low 12 bits in the memory operand; subtracting
+        // them from the offset leaves the upper part to load with lui
+        int32_t low{
+            static_cast<int32_t>(static_cast<uint32_t>(offset) & low_mask)};
+
+        if (low > immediate_max) {
+            low -= low_range;
+        }
+
+        return {
+            .upper{static_cast<uint32_t>(offset - low) >> low_bits},
+            .low{low},
+        };
+    }
+
+    [[nodiscard]] auto lower_address_offset(const token& src_loc_tk,
+                                            const size_t indent,
+                                            const operand& address,
+                                            const operand& result) -> operand {
+
+        const int64_t offset{address.displacement()};
+
+        const std::string& result_name{result.base_register()};
+
+        const address_offset_parts parts{split_address_offset(offset)};
+
+        // no upper part: the memory instruction handles the entire offset
+        if (parts.upper == 0) {
+            return operand::mem(result_name, {}, 1, parts.low,
+                                address.type_ref());
+        }
+
+        const operand displacement{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        asm_line(indent, "lui {}, {}", displacement.base_register(),
+                 parts.upper);
+
+        asm_line(indent, "add {}, {}, {}", result_name, result_name,
+                 displacement.base_register());
+
+        free_scratch_register(src_loc_tk, indent, displacement);
+
+        return operand::mem(result_name, {}, 1, parts.low, address.type_ref());
+    }
+
+    [[nodiscard]] static auto
+    can_reuse_address_destination(const operand& address,
+                                  const operand& destination) -> bool {
+
+        // no destination register is available to reuse
+        if (not destination.is_register()) {
+            return false;
+        }
+
+        const size_t dst_index{register_index(destination.base_register())};
+
+        // zero discards writes, so it cannot hold the computed address
+        if (dst_index == 0) {
+            return false;
+        }
+
+        const size_t base_index{register_index(address.base_register())};
+
+        // if the destination is the base register, loading the offset would
+        // erase the base value before the add
+        if (address.index_register().empty()) {
+            return dst_index != base_index;
+        }
+
+        // if the destination is the base register, shifting the index into it
+        // would erase the base value before the add
+        if (dst_index == base_index and address.scale() != 1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    [[nodiscard]] auto lower_address_without_index(const token& src_loc_tk,
+                                                   const size_t indent,
+                                                   const operand& address,
+                                                   const operand& destination)
+        -> operand {
+
+        const std::string& base{address.base_register()};
+        const int64_t offset{address.displacement()};
+
+        const address_offset_parts parts{split_address_offset(offset)};
+
+        // no upper part: the memory instruction handles the entire offset
+        if (parts.upper == 0) {
+            return operand::mem(base, {}, 1, parts.low, address.type_ref());
+        }
+
+        const operand result{
+            can_reuse_address_destination(address, destination)
+                ? destination
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const std::string& result_name{result.base_register()};
+
+        // only the upper part; the memory instruction adds the low
+
+        asm_line(indent, "lui {}, {}", result_name, parts.upper);
+
+        asm_line(indent, "add {}, {}, {}", result_name, result_name, base);
+
+        return operand::mem(result_name, {}, 1, parts.low, address.type_ref());
+    }
+
+    [[nodiscard]] auto
+    lower_address_unscaled_index(const token& src_loc_tk, const size_t indent,
+                                 const operand& address, const operand& result)
+        -> operand {
+
+        const std::string& base{address.base_register()};
+        const std::string& index{address.index_register()};
+        const std::string& result_name{result.base_register()};
+
+        // one add combines register inputs, even when result aliases either
+        asm_line(indent, "add {}, {}, {}", result_name, base, index);
+
+        return lower_address_offset(src_loc_tk, indent, address, result);
+    }
+
+    [[nodiscard]] auto
+    lower_address_scaled_index(const token& src_loc_tk, const size_t indent,
+                               const operand& address, const operand& result)
+        -> operand {
+        const std::string& base{address.base_register()};
+        const std::string& result_name{result.base_register()};
+
+        asm_line(indent, "slli {}, {}, {}", result_name,
+                 address.index_register(), std::countr_zero(address.scale()));
+
+        // the preserved base can now be added to the scaled index
+        asm_line(indent, "add {}, {}, {}", result_name, result_name, base);
+
+        return lower_address_offset(src_loc_tk, indent, address, result);
+    }
+
     // lower base + index * scale + displacement to register + signed 12-bit
     // offset
     [[nodiscard]] auto
@@ -206,131 +369,27 @@ class machine_rv32i final : public machine {
 
         validate_address(src_loc_tk, address);
 
-        const std::string& base{address.base_register()};
-        const std::string& index{address.index_register()};
-        const int64_t offset{address.displacement()};
-
-        // without an index, a small displacement already fits the memory
-        // instruction
-        if (index.empty() and offset >= immediate_min and
-            offset <= immediate_max and
-            (base.empty() or register_index(base) != register_names_.size())) {
-
-            return operand::mem(base.empty() ? "zero" : std::string_view{base},
-                                {}, 1, offset, address.type_ref());
+        // no index: encode the offset directly or materialize base + offset
+        if (address.index_register().empty()) {
+            return lower_address_without_index(src_loc_tk, indent, address,
+                                               destination);
         }
 
-        // an unscaled index alone is already a usable base register
-        if (base.empty() and not index.empty() and address.scale() == 1 and
-            offset >= immediate_min and offset <= immediate_max) {
-
-            return operand::mem(index, {}, 1, offset, address.type_ref());
-        }
-
-        const bool base_is_register{register_index(base) !=
-                                    register_names_.size()};
-
-        // add reads both inputs before writing but li and slli can destroy a
-        // base still needed by the next instruction
-        const bool reuse_destination{
-            destination.is_register() and
-            register_index(destination.base_register()) != 0 and
-            (register_index(destination.base_register()) !=
-                 register_index(base) or
-             (not index.empty() and address.scale() == 1)) and
-            (register_index(destination.base_register()) !=
-                 register_index(index) or
-             base.empty() or base_is_register or address.scale() != 1)};
-
+        // indexed memory operand: [base + index * scale + displacement];
+        // combine the register terms before applying the displacement
         const operand result{
-            reuse_destination
+            can_reuse_address_destination(address, destination)
                 ? destination
                 : alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        const std::string& result_name{result.base_register()};
-
-        if (index.empty()) {
-            if (not base.empty() and not base_is_register) {
-                // symbolic bases need relocation before an offset can be used
-                asm_line(indent, "la {}, {}", result_name, base);
-            } else {
-
-                // the earlier fast path already handled encodable offsets
-                const int32_t bits{
-                    std::bit_cast<int32_t>(static_cast<uint32_t>(offset))};
-
-                asm_line(indent, "li {}, {}", result_name, bits);
-                if (not base.empty()) {
-
-                    asm_line(indent, "add {}, {}, {}", result_name, result_name,
-                             base);
-                }
-
-                return operand::mem(result_name, {}, 1, 0, address.type_ref());
-            }
-        } else if (address.scale() == 1) {
-            if (base.empty()) {
-                // the large offset needs a writable base to fold into
-                asm_line(indent, "addi {}, {}, 0", result_name, index);
-            } else if (base_is_register) {
-                // loads and stores cannot encode a second address register
-                asm_line(indent, "add {}, {}, {}", result_name, base, index);
-            } else {
-                // the reuse check keeps the index alive across la
-                asm_line(indent, "la {}, {}", result_name, base);
-
-                asm_line(indent, "add {}, {}, {}", result_name, result_name,
-                         index);
-            }
-        } else {
-
-            // power-of-two scaling needs only a shift on rv32i
-            asm_line(indent, "slli {}, {}, {}", result_name, index,
-                     std::countr_zero(address.scale()));
-
-            if (base_is_register) {
-
-                asm_line(indent, "add {}, {}, {}", result_name, result_name,
-                         base);
-
-            } else if (not base.empty()) {
-
-                // loading the symbol must not overwrite the scaled index
-                const operand symbol{
-                    alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-                asm_line(indent, "la {}, {}", symbol.base_register(), base);
-
-                asm_line(indent, "add {}, {}, {}", result_name, result_name,
-                         symbol.base_register());
-
-                free_scratch_register(src_loc_tk, indent, symbol);
-            }
+        // unit scale: combine the base and index without multiplication
+        if (address.scale() == 1) {
+            return lower_address_unscaled_index(src_loc_tk, indent, address,
+                                                result);
         }
 
-        // keep a small displacement in the final load/store instead of adding
-        // it here
-        if (offset >= immediate_min and offset <= immediate_max) {
-            return operand::mem(result_name, {}, 1, offset, address.type_ref());
-        }
-
-        const operand displacement{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        // preserve the validated offset's low 32 bits for RV32 address
-        // arithmetic
-        const int32_t bits{
-            std::bit_cast<int32_t>(static_cast<uint32_t>(offset))};
-
-        // li expands to instructions that load the full 32-bit offset
-        asm_line(indent, "li {}, {}", displacement.base_register(), bits);
-        // fold the offset into the base so the memory instruction can use zero
-        asm_line(indent, "add {}, {}, {}", result_name, result_name,
-                 displacement.base_register());
-
-        free_scratch_register(src_loc_tk, indent, displacement);
-
-        return operand::mem(result_name, {}, 1, 0, address.type_ref());
+        // scaled index: form the product before adding the base and offset
+        return lower_address_scaled_index(src_loc_tk, indent, address, result);
     }
 
     auto io_syscall(const token& src_loc_tk, const size_t indent,
@@ -392,7 +451,7 @@ class machine_rv32i final : public machine {
         const auto same_register = [](const std::string_view first,
                                       const std::string_view second) -> bool {
             return first == second or
-                   (register_index(first) != register_names_.size() and
+                   (is_register(first) and
                     register_index(first) == register_index(second));
         };
 
@@ -942,11 +1001,6 @@ class machine_rv32i final : public machine {
                 copy_value(src_loc_tk, indent, result, left);
             }
         }
-    }
-
-    [[noreturn]] static auto todo() -> void {
-        std::println(stderr, "todo");
-        throw panic_exception{"RV32I backend not implemented"};
     }
 
   public:
@@ -1942,62 +1996,73 @@ class machine_rv32i final : public machine {
 
         validate_scalar(src_loc_tk, product.type_ref());
         validate_scalar(src_loc_tk, factor.type_ref());
+
         // the product must be writable storage
         if (not(product.is_register() or product.is_memory())) {
             throw compiler_exception{src_loc_tk,
                                      "invalid RV32I multiply destination"};
         }
+
         // validate memory operands even when a constant eliminates the
         // operation
+
         if (product.is_memory()) {
             validate_address(src_loc_tk, product);
         }
+
         if (factor.is_memory()) {
             validate_address(src_loc_tk, factor);
         }
+
         const std::optional<int32_t> constant{immediate_value(factor)};
+
+        // variable factors use the shared runtime helper
+        if (not constant.has_value()) {
+            multiply_helper_used_ = true;
+            call_arithmetic_helper(src_loc_tk, indent, product, factor, false);
+            return;
+        }
+
+        // the factor is now a known constant; keep only the bits that fit
+        // in the product's type before choosing how to multiply
+
         constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
+
         const size_t bits{product.type_ref().size_bytes() * 8};
 
         const uint32_t mask{std::numeric_limits<uint32_t>::max() >>
                             (register_bits - bits)};
 
-        const uint32_t multiplier{static_cast<uint32_t>(constant.value_or(0)) &
-                                  mask};
-        // variable factors use the shared runtime helper
-        if (not constant.has_value()) {
-            multiply_helper_used_ = true;
-            call_arithmetic_helper(src_loc_tk, indent, product, factor, false);
+        const uint32_t multiplier{static_cast<uint32_t>(*constant) & mask};
+
+        // constant zero and one need no multiplication machinery
+        if (multiplier == 0) {
+            store_constant_result(src_loc_tk, indent, product, 0);
+            return;
+        }
+
+        if (multiplier == 1) {
+            return;
+        }
+
+        // all low bits set is multiplication by minus one at this width
+        if (multiplier == mask) {
+            unary(indent, '-', product);
+            return;
+        }
+
+        // a power of two requires only a shift
+        if (std::has_single_bit(multiplier)) {
+            shift(src_loc_tk, indent, '<', product,
+                  operand::imm(std::format("{}", std::countr_zero(multiplier)),
+                               default_type()));
 
             return;
         }
-        // constant zero and one need no multiplication machinery
-        if (constant.has_value()) {
-            if (multiplier == 0) {
-                store_constant_result(src_loc_tk, indent, product, 0);
 
-                return;
-            }
-            if (multiplier == 1) {
-                return;
-            }
-            // all low bits set is multiplication by minus one at this width
-            if (multiplier == mask) {
-                unary(indent, '-', product);
+        // the remaining constant needs shifts and adds; keep the original
+        // value for the additions while the result changes
 
-                return;
-            }
-            // a power of two requires only a shift
-            if (std::has_single_bit(multiplier)) {
-
-                shift(src_loc_tk, indent, '<', product,
-                      operand::imm(
-                          std::format("{}", std::countr_zero(multiplier)),
-                          default_type()));
-
-                return;
-            }
-        }
         const address_scope scope{*this, product, factor};
 
         const operand address{product.is_memory()
@@ -2014,17 +2079,21 @@ class machine_rv32i final : public machine {
 
         copy_value(src_loc_tk, indent, left,
                    product.is_memory() ? address : product);
+
         // known multipliers use an unrolled sequence of shifts and adds
+
         bool initialized{};
         int pending_shift{};
+
         for (unsigned bit{static_cast<unsigned>(std::bit_width(multiplier)) -
                           1};
              bit != 0;) {
+
             --bit;
             ++pending_shift;
+
             // emit a shift when the next set bit needs an addition
             if ((multiplier & (uint32_t{1} << bit)) != 0) {
-
                 asm_line(indent, "slli {}, {}, {}", result.base_register(),
                          initialized ? result.base_register()
                                      : left.base_register(),
@@ -2037,12 +2106,13 @@ class machine_rv32i final : public machine {
                 initialized = true;
             }
         }
+
         // trailing zero bits require only a final shift
         if (pending_shift != 0) {
-
             asm_line(indent, "slli {}, {}, {}", result.base_register(),
                      result.base_register(), pending_shift);
         }
+
         store_operation_result(indent, product, address, result, true);
     }
 
@@ -2245,10 +2315,9 @@ class machine_rv32i final : public machine {
                                operation == '-');
     }
 
-    [[nodiscard]] auto
-    can_encode_index_scale([[maybe_unused]] const size_t size_bytes) const
+    [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool override {
-        return false;
+        return std::has_single_bit(size_bytes) and size_bytes <= UINT32_MAX;
     }
 
     auto scale_index(const token& src_loc_tk, const size_t indent,
@@ -2730,7 +2799,7 @@ class machine_rv32i final : public machine {
 
     [[nodiscard]] auto register_size_bytes(const std::string_view name) const
         -> size_t override {
-        return register_index(name) == register_names_.size() ? 0 : 4;
+        return is_register(name) ? 4 : 0;
     }
 
     [[nodiscard]] auto

@@ -120,6 +120,27 @@ auto main(const int argc, const char* argv[]) -> int {
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
+    if (argc > 1 and std::string_view{argv[1]} == "x86-scales") {
+        machine_x86 backend{std::cout, {}};
+        backend.set_builtin_types(integer64, integer, half, byte, boolean,
+                                  empty);
+        std::println("bits 64\nsection .text\nglobal _start\n_start:");
+        for (const uint64_t scale :
+             {UINT64_C(256), UINT64_C(4294967296),
+              UINT64_C(9223372036854775808)}) {
+            std::println("mov rax, 5\nmov rbx, 100\ncmp rax, rax");
+            backend.address_of(
+                token{}, 0, operand::reg("rcx", integer64),
+                operand::mem("rbx", "rax", scale, 40, integer64));
+            std::println("jnz failure\nmov rdx, {}\ncmp rcx, rdx\njne failure",
+                         uint64_t{140} + 5 * scale);
+        }
+        std::println("mov rax, 60\nxor rdi, rdi\nsyscall\nfailure:\nmov rax, "
+                     "60\nmov rdi, 1\nsyscall");
+        backend.finish();
+
+        return 0;
+    }
     {
         machine_rv32i backend;
         std::ostringstream output;
@@ -384,8 +405,10 @@ func main() {
         std::ostringstream output;
         prg.build(output);
         // reserved pointers must hold the address throughout index arithmetic
-        assert(output.str().contains("add t0, t0, t3\n"));
-        assert(output.str().contains("add t1, t1, t3\n"));
+        assert(output.str().contains("slli t0, t3, 2\n"));
+        assert(output.str().contains("add t0, t0, s0\n"));
+        assert(output.str().contains("slli t1, t3, 2\n"));
+        assert(output.str().contains("add t1, t1, s0\n"));
         assert(not output.str().contains("addi t0, t3, 0\n"));
         assert(not output.str().contains("addi t1, t3, 0\n"));
     }
@@ -402,8 +425,10 @@ func main() {
         program prg{compiler, source, 4096, false, false, false};
         std::ostringstream output;
         prg.build(output);
-        assert(output.str().contains("add t1, t1, t4\n"));
-        assert(output.str().contains("add t2, t2, t4\n"));
+        assert(output.str().contains("slli t1, t4, 2\n"));
+        assert(output.str().contains("add t1, t1, s0\n"));
+        assert(output.str().contains("slli t2, t4, 2\n"));
+        assert(output.str().contains("add t2, t2, s0\n"));
         assert(not output.str().contains("addi t1, t4, 0\n"));
         assert(not output.str().contains("addi t2, t4, 0\n"));
         assert(not output.str().contains("sltu t0, zero, t0\n"));
@@ -710,7 +735,13 @@ func main() {
     backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
     assert(&backend.default_type() == &integer);
     assert(backend.address_size_bytes() == 4);
-    assert(not backend.can_encode_index_scale(1));
+    assert(backend.can_lower_index_scale(1));
+    assert(not backend.can_lower_index_scale(3));
+    assert(backend.can_lower_index_scale(256));
+    assert(backend.can_lower_index_scale(UINT64_C(2147483648)));
+    assert(not backend.can_lower_index_scale(UINT32_MAX));
+    assert(not backend.can_lower_index_scale(0));
+    assert(not backend.can_lower_index_scale(UINT64_C(4294967296)));
 
     assembly_output shift_output;
     backend.use_stream(shift_output);
@@ -722,8 +753,9 @@ func main() {
         const operand result{held.front()};
         const operand count{backend.begin_memory_equal(token{}, 0)};
         backend.copy_value(token{}, 0, count, operand::imm("7", integer));
-        backend.set_memory_equal_left(0, operand::mem("buffer", {}, 1, 0, byte));
-        backend.set_memory_equal_right(0, operand::mem("buffer", {}, 1, 0, byte));
+        std::println(shift_output, "la {}, buffer", held.back().base_register());
+        backend.set_memory_equal_left(0, operand::mem(held.back(), byte));
+        backend.set_memory_equal_right(0, operand::mem(held.back(), byte));
         shift_output.str({});
         if (counted) {
             backend.end_arrays_equal(token{}, 0, 1, result);
@@ -1007,6 +1039,21 @@ func main() {
 
     assembly_output address_output;
     backend.use_stream(address_output);
+        backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                  operand::mem("a2", "a3", 1, 8196, integer));
+
+        assert(address_output.str() ==
+            "add a1, a2, a3\nlui t0, 2\nadd a1, a1, t0\nlw a1, 4(a1)\n");
+        address_output.str({});
+
+    for (const uint64_t scale : {UINT64_C(2), UINT64_C(256), UINT64_C(2147483648)}) {
+        backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                           operand::mem("a2", "a3", scale, 40, integer));
+        assert(address_output.str() == std::format(
+            "slli a1, a3, {}\nadd a1, a1, a2\nlw a1, 40(a1)\n",
+            std::countr_zero(scale)));
+        address_output.str({});
+    }
     std::vector<operand> address_registers;
     for (size_t count{}; count < 30; ++count) {
         address_registers.push_back(backend.alloc_scratch_register(token{}, 0, integer));
@@ -1016,8 +1063,9 @@ func main() {
     address_registers.pop_back();
     address_output.str({});
 
+    std::println(address_output, "la a1, buffer");
     backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("buffer", {}, 1, 4, integer));
+                       operand::mem("a1", {}, 1, 4, integer));
 
     assert(address_output.str() == "la a1, buffer\nlw a1, 4(a1)\n");
     address_output.str({});
@@ -1031,11 +1079,37 @@ func main() {
     backend.copy_value(token{}, 0, operand::reg("a1", integer),
                        operand::mem("a2", {}, 1, 8196, integer));
 
-    assert(address_output.str() == "li a1, 8196\nadd a1, a1, a2\nlw a1, 0(a1)\n");
+    assert(address_output.str() == "lui a1, 2\nadd a1, a1, a2\nlw a1, 4(a1)\n");
     address_output.str({});
 
     backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("buffer", "a3", 1, 4, integer));
+                       operand::mem("a2", {}, 1, -2049, integer));
+
+    assert(address_output.str() ==
+           "lui a1, 1048575\nadd a1, a1, a2\nlw a1, 2047(a1)\n");
+    address_output.str({});
+
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("zero", {}, 1, 8196, integer));
+
+    assert(address_output.str() == "lui a1, 2\nadd a1, a1, zero\nlw a1, 4(a1)\n");
+    address_output.str({});
+
+    for (const int64_t offset : {INT64_C(-4294967295), INT64_C(4294967295)}) {
+        const int32_t low{offset < 0 ? 1 : -1};
+        for (const std::string_view base : {"x11", "zero", "x0"}) {
+            backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                               operand::mem(base, {}, 1, offset, integer));
+
+            assert(address_output.str() ==
+                   std::format("lw a1, {}({})\n", low, base));
+            address_output.str({});
+        }
+    }
+
+    std::println(address_output, "la a1, buffer");
+    backend.copy_value(token{}, 0, operand::reg("a1", integer),
+                       operand::mem("a1", "a3", 1, 4, integer));
 
     assert(address_output.str() == "la a1, buffer\nadd a1, a1, a3\nlw a1, 4(a1)\n");
     address_registers.push_back(backend.alloc_scratch_register(token{}, 0, integer));
@@ -1058,16 +1132,17 @@ func main() {
            "slli a1, x11, 2\nadd a1, a1, a2\nlw a1, 4(a1)\n");
     address_output.str({});
 
+    std::println(address_output, "la a1, buffer");
     backend.address_of(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("buffer", {}, 1, 0, integer));
+                       operand::mem("a1", {}, 1, 0, integer));
 
     assert(address_output.str() == "la a1, buffer\n");
     address_output.str({});
 
     backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem({}, "a2", 1, 4, integer));
+                       operand::mem("zero", "a2", 1, 4, integer));
 
-    assert(address_output.str() == "lw a1, 4(a2)\n");
+    assert(address_output.str() == "add a1, zero, a2\nlw a1, 4(a1)\n");
     address_output.str({});
 
     backend.copy_value(token{}, 0, operand::mem("a2", {}, 1, 0, integer),
@@ -1210,6 +1285,37 @@ func main() {
 
     std::ostringstream rejected_output;
     backend.use_stream(rejected_output);
+    for (const std::string_view base : {"buffer", "x32", "not_a_register", ""}) {
+        for (const std::string_view index : {"", "a2"}) {
+            const operand address{operand::mem(base, index, 1, 4, integer)};
+            for (const int operation : {0, 1, 2, 3}) {
+                bool rejected{};
+                try {
+                    switch (operation) {
+                    case 0:
+                        backend.address_of(token{}, 0, operand::reg("a0", integer), address);
+                        break;
+
+                    case 1:
+                        backend.copy_value(token{}, 0, operand::reg("a0", integer), address);
+                        break;
+
+                    case 2:
+                        backend.copy_value(token{}, 0, address, operand::reg("a0", integer));
+                        break;
+
+                    default:
+                        backend.copy_value(token{}, 0, address, address);
+                        break;
+                    }
+                } catch (const compiler_exception& error) {
+                    rejected = std::string_view{error.what()}.contains("invalid RV32I base register");
+                }
+                assert(rejected);
+                backend.finish();
+            }
+        }
+    }
     for (const int64_t offset : {INT64_MIN, INT64_C(-4294967296), INT64_C(4294967296), INT64_MAX}) {
         bool rejected{};
         try {
@@ -1221,13 +1327,15 @@ func main() {
         assert(rejected);
         backend.finish();
     }
-    for (const uint8_t scale : std::array<uint8_t, 3>{0, 3, 255}) {
+    for (const uint64_t scale :
+            {UINT64_C(4294967296), UINT64_C(9223372036854775808)}) {
+        assert(not backend.can_lower_index_scale(scale));
         bool rejected{};
         try {
             backend.address_of(token{}, 1, operand::reg("a0", integer),
                                operand::mem("a1", "a2", scale, 0, integer));
-        } catch (const compiler_exception&) {
-            rejected = true;
+        } catch (const compiler_exception& error) {
+            rejected = std::string_view{error.what()}.contains("index scale exceeds RV32I address range");
         }
         assert(rejected);
         backend.finish();
@@ -1816,27 +1924,82 @@ func main() {
                     backend.address_of(token{}, 1, operand::reg("t6", integer), direct);
                     std::println("    la a3, buffer\n    bne t6, a3, failure");
                     backend.finish();
-        for (const uint8_t scale : std::array<uint8_t, 8>{1, 2, 4, 8, 16, 32, 64, 128}) {
-            std::println("    la t6, buffer\n    li a3, {}\n    sub t6, t6, a3\n    li t5, 5\n    li a3, {}\n    sub t6, t6, a3\n    li t4, 42", static_cast<uint32_t>(offset), 5 * scale);
-            const operand address{operand::mem("x31", "x30", scale, offset, integer)};
-            backend.copy_value(token{}, 1, address, operand::reg("x29", integer));
-            backend.copy_value(token{}, 1, operand::reg("t3", integer), address);
-            std::println("    li a3, 42\n    bne t3, a3, failure");
-            backend.address_of(token{}, 1, operand::reg("t3", integer), address);
-            std::println("    la a3, buffer\n    bne t3, a3, failure");
-            backend.copy_value(token{}, 1, operand::mem("buffer_copy", {}, 1, 0, integer), address);
-            backend.copy_value(token{}, 1, operand::reg("t3", integer), operand::mem("buffer_copy", {}, 1, 0, integer));
-            std::println("    li a3, 42\n    bne t3, a3, failure");
-            std::println("    la t6, buffer\n    li a3, {}\n    sub t6, t6, a3\n    li t5, 5\n    li a3, {}\n    sub t6, t6, a3", static_cast<uint32_t>(offset), 5 * scale);
-            backend.address_of(token{}, 1, operand::mem("pointer", {}, 1, 0, integer), address);
-            backend.copy_value(token{}, 1, operand::reg("t3", integer), operand::mem("pointer", {}, 1, 0, integer));
-            std::println("    la a3, buffer\n    bne t3, a3, failure");
-            backend.finish();
+                    for (const uint64_t scale : std::array<uint64_t, 11>{
+                             1, 2, 4, 8, 16, 32, 64, 128, 256, 65536,
+                             UINT64_C(2147483648)}) {
+                        std::println("    la t6, buffer\n    li a3, {}\n    "
+                                     "sub t6, t6, a3\n    li t5, 5\n    li a3, "
+                                     "{}\n    sub t6, t6, a3\n    li t4, 42",
+                                     static_cast<uint32_t>(offset),
+                                     static_cast<uint32_t>(5 * scale));
+                        const operand address{
+                            operand::mem("x31", "x30", scale, offset, integer)};
+                        backend.copy_value(token{}, 1, address,
+                                           operand::reg("x29", integer));
+                        backend.copy_value(
+                            token{}, 1, operand::reg("t3", integer), address);
+                        std::println("    li a3, 42\n    bne t3, a3, failure");
+                        backend.address_of(
+                            token{}, 1, operand::reg("t3", integer), address);
+                        std::println(
+                            "    la a3, buffer\n    bne t3, a3, failure");
+                        std::println("    la a4, buffer_copy");
+                        backend.copy_value(
+                            token{}, 1,
+                            operand::mem("a4", {}, 1, 0, integer),
+                            address);
+                        backend.copy_value(
+                            token{}, 1, operand::reg("t3", integer),
+                            operand::mem("a4", {}, 1, 0, integer));
+                        std::println("    li a3, 42\n    bne t3, a3, failure");
+                        std::println("    la t6, buffer\n    li a3, {}\n    "
+                                     "sub t6, t6, a3\n    li t5, 5\n    li a3, "
+                                     "{}\n    sub t6, t6, a3",
+                                     static_cast<uint32_t>(offset),
+                                     static_cast<uint32_t>(5 * scale));
+                        std::println("    la a4, pointer");
+                        backend.address_of(
+                            token{}, 1,
+                            operand::mem("a4", {}, 1, 0, integer),
+                            address);
+                        backend.copy_value(
+                            token{}, 1, operand::reg("t3", integer),
+                            operand::mem("a4", {}, 1, 0, integer));
+                        std::println(
+                            "    la a3, buffer\n    bne t3, a3, failure");
+                        backend.finish();
+                    }
+    }
+    for (const uint64_t scale :
+           {UINT64_C(1), UINT64_C(2), UINT64_C(4), UINT64_C(256),
+            UINT64_C(65536), UINT64_C(2147483648)}) {
+        for (const std::string_view base : {"a2", "x13", "a4", "zero", "x0"}) {
+            for (const std::string_view destination : {"a2", "a3", "a4"}) {
+            std::println("    li a2, 100\n    li a3, 5\n    la a4, buffer");
+                backend.address_of(
+                    token{}, 1, operand::reg(destination, integer),
+                    operand::mem(base, "a3", scale, 40, integer));
+                const uint32_t offset{static_cast<uint32_t>(5 * scale + 40)};
+                if (base == "a4") {
+                    std::println(
+                        "    la a5, buffer\n    li a6, {}\n    add a5, a5, a6",
+                        offset);
+                } else {
+                    const uint32_t base_value{base == "a2"    ? 100U
+                                              : base == "x13" ? 5U
+                                                              : 0U};
+                    std::println("    li a5, {}", offset + base_value);
+                }
+                std::println("    beq {}, a5, 1f\n    j failure\n1:",
+                             destination);
+                backend.finish();
+            }
         }
     }
     for (const type* value_type : {&byte, &half, &boolean}) {
-        backend.copy_value(token{}, 1, operand::mem("buffer", {}, 1, 0, *value_type), operand::imm("-1", integer));
-        backend.copy_value(token{}, 1, operand::reg("a0", integer), operand::mem("buffer", {}, 1, 0, *value_type));
+        std::println("    la a2, buffer");
+        backend.copy_value(token{}, 1, operand::mem("a2", {}, 1, 0, *value_type), operand::imm("-1", integer));
+        backend.copy_value(token{}, 1, operand::reg("a0", integer), operand::mem("a2", {}, 1, 0, *value_type));
         std::println("    li a1, {}\n    bne a0, a1, failure", value_type == &boolean ? 255 : -1);
     }
     backend.address_of(token{}, 1, operand::reg("t6", integer), operand::mem("sp", "sp", 4, 2048, integer));

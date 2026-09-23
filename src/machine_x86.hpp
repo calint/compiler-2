@@ -862,7 +862,7 @@ class machine_x86 final : public machine {
         }
     }
 
-    [[nodiscard]] auto can_encode_index_scale(const size_t size_bytes) const
+    [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool override {
 
         return std::ranges::contains(index_register_scalings, size_bytes);
@@ -1007,7 +1007,7 @@ class machine_x86 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
         lea(indent, start, frame_address, true);
-        lea(indent, remaining, operand::mem("vars", {}, 1, 0, *default_type_));
+        asm_line(indent, "lea {}, [vars]", format_operand(remaining));
         cmp(indent, start, remaining);
         jcc(indent, "b", failure_label);
         asm_line(indent, "mov {}, strict qword vars.end",
@@ -1405,8 +1405,8 @@ class machine_x86 final : public machine {
         return lhs.type_ref().size_bytes() == rhs.type_ref().size_bytes() and
                lhs_base == rhs_base and lhs_index == rhs_index and
                lhs.displacement() == rhs.displacement() and
-               (lhs_index.empty() or std::max(lhs.scale(), uint8_t{1}) ==
-                                         std::max(rhs.scale(), uint8_t{1}));
+               (lhs_index.empty() or std::max(lhs.scale(), uint64_t{1}) ==
+                                         std::max(rhs.scale(), uint64_t{1}));
     }
 
     [[nodiscard]] static auto size_specifier(const size_t size_bytes)
@@ -1749,7 +1749,7 @@ class machine_x86 final : public machine {
                (std::in_range<int32_t>(value.displacement()) and
                 (value.index_register().empty() or
                  (value.index_register() != "rsp" and
-                  can_encode_index_scale(value.scale()))));
+                  can_lower_index_scale(value.scale()))));
     }
 
     [[nodiscard]] auto lower_address(const token& src_loc_tk,
@@ -1773,7 +1773,7 @@ class machine_x86 final : public machine {
 
         if (not value.index_register().empty()) {
             if (value.index_register() != "rsp" and
-                can_encode_index_scale(value.scale())) {
+                can_lower_index_scale(value.scale())) {
                 asm_line(indent, "lea {}, [{} + {} * {}]",
                          format_operand(address), address.base_register(),
                          value.index_register(), value.scale());
@@ -1784,14 +1784,15 @@ class machine_x86 final : public machine {
                 asm_line(indent, "mov {}, {}", format_operand(scaled),
                          value.index_register());
 
-                for (unsigned bit{1}; bit <= value.scale(); bit <<= 1U) {
-                    if ((value.scale() & bit) != 0) {
+                for (uint64_t remaining{value.scale()}; remaining != 0;
+                     remaining >>= 1U) {
+                    if ((remaining & 1U) != 0) {
                         asm_line(indent, "lea {}, [{} + {}]",
                                  format_operand(address),
                                  address.base_register(),
                                  scaled.base_register());
                     }
-                    if (bit <= static_cast<unsigned>(value.scale()) / 2) {
+                    if (remaining > 1) {
                         asm_line(indent, "lea {}, [{} + {}]",
                                  format_operand(scaled), scaled.base_register(),
                                  scaled.base_register());
