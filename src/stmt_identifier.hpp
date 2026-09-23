@@ -455,11 +455,10 @@ class stmt_identifier : public statement {
         return 0;
     }
 
-    // NOLINTBEGIN(performance-unnecessary-value-param)
     [[nodiscard]] static auto
     load_pointer(toc& tc, const size_t indent, const token& src_loc_tk,
                  std::vector<operand>& allocated_registers,
-                 const operand pointer_slot) -> operand {
+                 const operand& pointer_slot) -> operand {
 
         machine& x{tc.machine()};
 
@@ -476,8 +475,8 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] static auto
     add_index_to_base(toc& tc, const size_t indent, const token& src_loc_tk,
-                      operand base_register, const expr_any& index_expr,
-                      const ident_info& array_info, const operand range_count)
+                      const operand& base_register, const expr_any& index_expr,
+                      const ident_info& array_info, const operand& range_count)
         -> operand {
 
         machine& x{tc.machine()};
@@ -501,7 +500,7 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] static auto compute_address_in_register(
         toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const operand address,
+        std::vector<operand>& allocated_registers, const operand& address,
         operand destination_register) -> operand {
 
         machine& x{tc.machine()};
@@ -522,7 +521,7 @@ class stmt_identifier : public statement {
     [[nodiscard]] static auto
     compile_checked_index(toc& tc, const size_t indent,
                           const expr_any& index_expr, operand index_register,
-                          const size_t array_length, const operand range_count)
+                          const size_t array_length, const operand& range_count)
         -> operand {
 
         machine& x{tc.machine()};
@@ -541,8 +540,8 @@ class stmt_identifier : public statement {
 
     static auto
     check_array_bounds(toc& tc, const size_t indent, const token& src_loc_tk,
-                       const operand index_or_count, const size_t array_length,
-                       const bool allow_end, const operand range_count = {})
+                       const operand& index_or_count, const size_t array_length,
+                       const bool allow_end, const operand& range_count = {})
         -> void {
 
         machine& x{tc.machine()};
@@ -560,7 +559,7 @@ class stmt_identifier : public statement {
     copy_address_to_register(toc& tc, const size_t indent,
                              const token& src_loc_tk,
                              std::vector<operand>& allocated_registers,
-                             const operand address) -> operand {
+                             const operand& address) -> operand {
 
         machine& x{tc.machine()};
 
@@ -583,5 +582,4 @@ class stmt_identifier : public statement {
 
         return address_register;
     }
-    // NOLINTEND(performance-unnecessary-value-param)
 };
