@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -994,26 +995,21 @@ class toc final {
         }
 
         int64_t value{};
-// pragma below for clang++ to not generate warning stemming from
-// 'std::from_chars' requiring pointers
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-        const std::from_chars_result result{std::from_chars(
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            digits.data(), digits.data() + digits.size(), value, base)};
+
+        const char* const begin{std::to_address(digits.begin())};
+        const char* const end{std::to_address(digits.end())};
+
+        const std::from_chars_result result{
+            std::from_chars(begin, end, value, base)};
 
         if (result.ec == std::errc::result_out_of_range) {
             throw compiler_exception{
                 src_loc_tk, std::format("constant '{}' is out of range", str)};
         }
 
-        if (result.ec == std::errc{} and
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            result.ptr == digits.data() + digits.size()) {
-
+        if (result.ec == std::errc{} and result.ptr == end) {
             return value;
         }
-#pragma clang diagnostic pop
 
         return std::nullopt;
     }
