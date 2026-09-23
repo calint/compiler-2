@@ -254,7 +254,6 @@ func main() {
     # index 0 in an array can be accessed without array index
 
     assert(o3[0].pos.y == 73)
-
     o3[1] = object_init()
     assert(o3[1].pos.y == 74)
 
@@ -275,7 +274,6 @@ func main() {
              worlds[1].locations,
              array_size_of(worlds.locations)
           ))
-
     var arr2[] = { -1, 2 }
     assert(array_size_of(arr2) == 2)
     assert(arr2[0] == -1)

@@ -183,99 +183,23 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
-    // walk the identifier from a known address and collect field offsets
-    // keep the final index in the operand when the backend supports its scale
-    // otherwise compute a base register and leave its encoding to the backend
-    //
     // compile_lea
-    //   find_start_element -> start_index
-    //   tc.make_ident_info -> starting storage and type
-    //   initialize base, base_is_writable, field_offset, storage_offset_pending
-    //   no known address and storage holds a pointer
-    //     load_pointer -> base
-    //     mark base writable
-    //   base still empty
-    //     x.make_register_operand -> shared storage base
-    //
+    //   find_start_element -> deepest known address, or root
+    //   initialize base from that address, a loaded pointer, or storage
     //   for each element from start_index
-    //     not the starting element
-    //       toc::field_offset_in_type -> add to field_offset
-    //       append field name to path
-    //     tc.make_ident_info -> cur_info; update value_type
-    //
+    //     append field name and add its offset to the operand displacement
+    //     tc.make_ident_info -> current element type and array length
     //     no index expression
-    //       final element is an array and reg_count is present
-    //         check_array_bounds(count, allow_end=true) -> back here
+    //       check the range count for a final array, when supplied
     //       continue to next element
-    //
-    //     final element and x.can_lower_index_scale accepts its element size
-    //       allocate index register; keep it in allocated_registers
-    //       compile_checked_index -> checked_index
-    //       base has an index or displacement
-    //         copy_address_to_register -> plain base register
-    //       combine field_offset with storage offset if still pending
-    //       RETURN from compile_lea: [base + checked_index * size + offset]
-    //
-    //     earlier index or unsupported final scale
-    //       storage offset is NOT pending
-    //         base is not writable
-    //           copy_address_to_register -> base
-    //         resulting base is still the shared storage register
-    //           compute_address_in_register(no destination) -> new base
-    //       storage offset IS pending
-    //         compute_address_in_register(storage, address_register) -> base
-    //         clear storage_offset_pending
-    //       mark base writable
-    //       add_index_to_base -> base with scaled index added
-    //         pass reg_count only for the final element
-    //       loop back to next element
-    //
-    //   after the loop
-    //     operand::mem -> memory view of base, preserving index/displacement
-    //     add field_offset and any pending storage offset to that view
-    //     RETURN from compile_lea: completed memory operand
-    //
-    // helper calls below return to their caller, not out of compile_lea
-    //
-    // find_start_element
-    //   scan known addresses backwards
-    //     nonempty address found -> RETURN its element index
-    //   none found -> RETURN 0 (root)
-    //
-    // load_pointer
-    //   allocate and retain pointer register
-    //   x.copy_value -> load pointer from its memory slot
-    //   RETURN pointer register
-    //
-    // copy_address_to_register
-    //   allocate and retain address register
-    //   source has an index or displacement
-    //     x.address_of -> compute full address, without loading memory
-    //     RETURN address register
-    //   x.copy_value -> copy the plain base register
-    //   RETURN address register
-    //
-    // compute_address_in_register
-    //   no destination supplied -> allocate and retain one
-    //   x.address_of -> compute address into destination, without loading
-    //   memory RETURN destination register
-    //
-    // add_index_to_base
-    //   allocate temporary index register
-    //   compile_checked_index -> checked_index
-    //   x.scale_index -> multiply index by element size
-    //   x.add_subtract -> add scaled index to the runtime base register
-    //   free temporary index register
-    //   RETURN base register
-    //
-    // compile_checked_index
-    //   index_expr.compile -> evaluate expression into supplied index register
-    //   check_array_bounds -> check index, or range when range_count is present
-    //   RETURN index register
-    //
-    // check_array_bounds
-    //   x.check_bounds -> emit checks selected by compiler options
-    //   return to caller (void)
+    //     base already has an index
+    //       use the writable base or promote the owned index register
+    //       compute_address_in_register -> free the operand's index slot
+    //     extend_with_index
+    //       compile_checked_index -> evaluate into a reusable index register
+    //       attach index with a supported operand scale
+    //         unsupported scale -> multiply index explicitly, use scale 1
+    //   return memory operand with the final element type
     //
     // retained registers stay live after compile_lea returns
     // its caller frees allocated_registers after consuming the memory operand
@@ -288,7 +212,7 @@ class stmt_identifier : public statement {
                                    const operand& address_register) const
         -> operand override {
 
-        // align the full lea path with this identifier's elements
+        // view the last n elements of lea_path
         const std::span<const operand> known_addresses{
             lea_path.last(elems_.size())};
 
@@ -299,33 +223,24 @@ class stmt_identifier : public statement {
 
         const ident_info storage{tc.make_ident_info(src_loc_tk, path)};
 
-        const type* value_type{&storage.type_ref()};
+        const operand& lea{known_addresses[start_index]};
 
-        machine& x{tc.machine()};
-
-        operand base{known_addresses[start_index]};
-
-        const bool has_known_address{not base.is_empty()};
-
-        bool base_is_writable{};
-
-        int64_t field_offset{};
-
-        bool storage_offset_pending{not has_known_address and
-                                    not storage.is_pointer};
-
-        if (not has_known_address and storage.is_pointer) {
-
+        operand working_base{address_register};
+        operand index_register;
+        operand base;
+        if (not lea.is_empty()) {
+            base = lea;
+        } else if (storage.is_pointer) {
             base = load_pointer(tc, indent, src_loc_tk, allocated_registers,
                                 storage.operand);
-
-            base_is_writable = true;
+            if (working_base.is_empty()) {
+                working_base = allocated_registers.back();
+            }
+        } else {
+            base = storage.operand;
         }
 
-        if (base.is_empty()) {
-            base = x.make_register_operand(storage.operand.base_register(),
-                                           tc.get_type_address());
-        }
+        const type* prev_type{};
 
         for (size_t elem_index{start_index}; elem_index < elems_.size();
              ++elem_index) {
@@ -336,19 +251,20 @@ class stmt_identifier : public statement {
 
             if (elem_index != start_index) {
 
-                field_offset = add_address_offset(
-                    field_offset, address_offset(toc::field_offset_in_type(
-                                      *value_type, cur_elem.name_tk.text())));
-
                 path.push_back('.');
                 path += cur_elem.name_tk.text();
+
+                const size_t offset{prev_type->field_offset(
+                    cur_elem.name_tk, cur_elem.name_tk.text())};
+
+                base.increment_offset(static_cast<int64_t>(offset));
             }
 
             const ident_info cur_info{tc.make_ident_info(src_loc_tk, path)};
 
-            const bool is_last_elem{elem_index == elems_.size() - 1};
+            prev_type = &cur_info.type_ref();
 
-            value_type = &cur_info.type_ref();
+            const bool is_last_elem{elem_index == elems_.size() - 1};
 
             // an unindexed element only needs a possible range bounds check
             if (not cur_elem.array_index_expr) {
@@ -363,84 +279,65 @@ class stmt_identifier : public statement {
                 continue;
             }
 
-            // try to do the last part of the address calculation as a scaled
-            // index register
+            // indexed element
 
-            if (is_last_elem and
-                x.can_lower_index_scale(cur_info.type_ref().size_bytes())) {
+            if (not base.index_register().empty()) {
 
-                const operand index_register{x.alloc_scratch_register(
-                    src_loc_tk, indent, tc.get_type_default())};
-
-                allocated_registers.push_back(index_register);
-
-                const operand checked_index{compile_checked_index(
-                    tc, indent, *cur_elem.array_index_expr, index_register,
-                    cur_info.array_len, reg_count)};
-
-                if (not base.index_register().empty() or
-                    base.displacement() != 0) {
-                    base = copy_address_to_register(tc, indent, src_loc_tk,
-                                                    allocated_registers, base);
+                if (working_base.is_empty() and not index_register.is_empty()) {
+                    working_base = index_register;
+                    index_register = {};
                 }
 
-                const int64_t displacement{
-                    storage_offset_pending
-                        ? add_address_offset(storage.offset, field_offset)
-                        : field_offset};
+                working_base = compute_address_in_register(
+                    tc, indent, src_loc_tk, allocated_registers, base,
+                    working_base);
 
-                return operand::mem(base.base_register(),
-                                    checked_index.base_register(),
-                                    cur_info.type_ref().size_bytes(),
-                                    displacement, cur_info.type_ref());
+                base = operand::mem(working_base, cur_info.type_ref());
             }
 
-            // earlier indices and unsupported scales need a computed base
-
-            if (not storage_offset_pending) {
-                if (not base_is_writable) {
-                    base = copy_address_to_register(tc, indent, src_loc_tk,
-                                                    allocated_registers, base);
-                }
-
-                if (base.base_register() == storage.operand.base_register()) {
-
-                    base = compute_address_in_register(
-                        tc, indent, src_loc_tk, allocated_registers,
-                        operand::mem(storage.operand.base_register(), "", 1, 0,
-                                     storage.type_ref()),
-                        {});
-                }
-            }
-
-            if (storage_offset_pending) {
-
-                base = compute_address_in_register(
-                    tc, indent, src_loc_tk, allocated_registers,
-                    storage.operand, address_register);
-
-                storage_offset_pending = false;
-            }
-
-            base_is_writable = true;
-
-            base = add_index_to_base(tc, indent, src_loc_tk, base,
-                                     *cur_elem.array_index_expr, cur_info,
-                                     is_last_elem ? reg_count : operand{});
+            base = extend_with_index(
+                tc, cur_elem.array_index_expr->tok(), indent,
+                allocated_registers, cur_elem, cur_info,
+                is_last_elem ? reg_count : operand{}, base, index_register);
         }
 
-        operand result{operand::mem(base, *value_type)};
-
-        result.increment_offset(field_offset);
-
-        if (storage_offset_pending) {
-            result.increment_offset(storage.offset);
-        }
-
-        return result;
+        return operand::mem(base, *prev_type);
     }
 
   private:
+    [[nodiscard]] auto static extend_with_index(
+        toc& tc, const token& src_loc_tk, const size_t indent,
+        std::vector<operand>& allocated_registers, const ident_elem& cur_elem,
+        const ident_info& cur_info, const operand& reg_count,
+        const operand& base, operand& index_register) -> operand {
+
+        machine& x{tc.machine()};
+
+        if (index_register.is_empty()) {
+            index_register = x.alloc_scratch_register(src_loc_tk, indent,
+                                                      tc.get_type_default());
+
+            allocated_registers.push_back(index_register);
+        }
+
+        const operand checked_index{compile_checked_index(
+            tc, indent, *cur_elem.array_index_expr, index_register,
+            cur_info.array_len, reg_count)};
+
+        const size_t type_size{cur_info.type_ref().size_bytes()};
+
+        uint64_t scale{1};
+
+        if (x.can_lower_index_scale(type_size)) {
+            scale = type_size;
+        } else {
+            x.scale_index(src_loc_tk, indent, checked_index, type_size);
+        }
+
+        return operand::mem(base.base_register(), checked_index.base_register(),
+                            scale, base.displacement(), cur_info.type_ref());
+    }
+
     [[nodiscard]] static auto
     find_start_element(const std::span<const operand> known_addresses)
         -> size_t {
@@ -470,32 +367,7 @@ class stmt_identifier : public statement {
         x.copy_value(src_loc_tk, indent, pointer_register,
                      operand::mem(pointer_slot, tc.get_type_address()));
 
-        return pointer_register;
-    }
-
-    [[nodiscard]] static auto
-    add_index_to_base(toc& tc, const size_t indent, const token& src_loc_tk,
-                      const operand& base_register, const expr_any& index_expr,
-                      const ident_info& array_info, const operand& range_count)
-        -> operand {
-
-        machine& x{tc.machine()};
-
-        const operand index_register{x.alloc_scratch_register(
-            src_loc_tk, indent, tc.get_type_default())};
-
-        const operand checked_index{
-            compile_checked_index(tc, indent, index_expr, index_register,
-                                  array_info.array_len, range_count)};
-
-        x.scale_index(index_expr.tok(), indent, checked_index,
-                      array_info.type_ref().size_bytes());
-
-        x.add_subtract(src_loc_tk, indent, '+', base_register, checked_index);
-
-        x.free_scratch_register(src_loc_tk, indent, index_register);
-
-        return base_register;
+        return operand::mem(pointer_register, tc.get_type_address());
     }
 
     [[nodiscard]] static auto compute_address_in_register(
@@ -553,33 +425,5 @@ class stmt_identifier : public statement {
                            .lower{tc.is_bounds_check_lower()},
                            .with_line{tc.is_bounds_check_with_line()},
                        });
-    }
-
-    [[nodiscard]] static auto
-    copy_address_to_register(toc& tc, const size_t indent,
-                             const token& src_loc_tk,
-                             std::vector<operand>& allocated_registers,
-                             const operand& address) -> operand {
-
-        machine& x{tc.machine()};
-
-        const operand address_register{x.alloc_scratch_register(
-            src_loc_tk, indent, tc.get_type_address())};
-
-        allocated_registers.push_back(address_register);
-
-        if (not address.index_register().empty() or
-            address.displacement() != 0) {
-
-            x.address_of(src_loc_tk, indent, address_register, address);
-
-            return address_register;
-        }
-
-        x.copy_value(src_loc_tk, indent, address_register,
-                     x.make_register_operand(address.base_register(),
-                                             tc.get_type_address()));
-
-        return address_register;
     }
 };

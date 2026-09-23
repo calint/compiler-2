@@ -840,6 +840,7 @@ class machine_x86 final : public machine {
 
         lea(indent, reg, address);
         mov(src_loc_tk, indent, dst, reg);
+
         free_scratch_register(src_loc_tk, indent, reg);
     }
 

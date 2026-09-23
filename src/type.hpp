@@ -102,6 +102,11 @@ class type final {
         const std::string_view storage_base{
             var.base_register.empty() ? base_register : var.base_register};
 
+        // find first field so operand gets a valid built-in
+        while (not tp->is_builtin()) {
+            tp = tp->fields_[0].type_ptr;
+        }
+
         const operand op{operand::mem(
             var.reg.is_empty() ? storage_base : var.reg.base_register(), "", 1,
             idx, *tp)};
@@ -128,6 +133,24 @@ class type final {
         }
 
         return offset;
+    }
+
+    [[nodiscard]] auto field_offset(const token& src_loc_tk,
+                                    const std::string_view field_name) const
+        -> size_t {
+
+        size_t offset{};
+
+        for (const type_field& tf : fields_) {
+            if (tf.name == field_name) {
+                return offset;
+            }
+            offset += tf.size_bytes;
+        }
+
+        throw compiler_exception(
+            src_loc_tk, std::format("field '{}' not found in type '{}'",
+                                    field_name, name_));
     }
 
     [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }

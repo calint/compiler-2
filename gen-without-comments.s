@@ -851,18 +851,16 @@ main:
     rep stosb
     mov qword [rbp + 473], 73
     cmp_256_12:
-    lea r14, [rbp + 465]
-    mov r13, 0
-    mov r12, 256
-    test r13, r13
-    cmovs rbp, r12
+    mov r14, 0
+    mov r13, 256
+    test r14, r14
+    cmovs rbp, r13
     js baz_bounds_panic
-    cmp r13, 2
-    cmovge rbp, r12
+    cmp r14, 2
+    cmovge rbp, r13
     jge baz_bounds_panic
-    imul r13, 20
-    add r14, r13
-    cmp qword [r14 + 8], 73
+    imul r14, 20
+    cmp qword [rbp + r14 + 473], 73
     sete r15b
     bool_end_256_12:
     assert_256_5:
@@ -876,7 +874,19 @@ main:
             syscall
         if_32_23_256_5_end:
     assert_256_5_end:
-    lea r15, [rbp + 465]
+    mov r15, 1
+    mov r14, 257
+    test r15, r15
+    cmovs rbp, r14
+    js baz_bounds_panic
+    cmp r15, 2
+    cmovge rbp, r14
+    jge baz_bounds_panic
+    imul r15, 20
+    object_init_257_13:
+        mov qword [rbp + r15 + 473], 74
+    object_init_257_13_end:
+    cmp_258_12:
     mov r14, 1
     mov r13, 258
     test r14, r14
@@ -886,53 +896,36 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
     imul r14, 20
-    add r15, r14
-    object_init_258_13:
-        mov qword [r15 + 8], 74
-    object_init_258_13_end:
-    cmp_259_12:
-    lea r14, [rbp + 465]
-    mov r13, 1
-    mov r12, 259
-    test r13, r13
-    cmovs rbp, r12
-    js baz_bounds_panic
-    cmp r13, 2
-    cmovge rbp, r12
-    jge baz_bounds_panic
-    imul r13, 20
-    add r14, r13
-    cmp qword [r14 + 8], 74
+    cmp qword [rbp + r14 + 473], 74
     sete r15b
-    bool_end_259_12:
-    assert_259_5:
-        if_32_26_259_5:
-        cmp_32_26_259_5:
+    bool_end_258_12:
+    assert_258_5:
+        if_32_26_258_5:
+        cmp_32_26_258_5:
         cmp r15b, 0
-        jne if_32_23_259_5_end
-        if_32_26_259_5_code:
+        jne if_32_23_258_5_end
+        if_32_26_258_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_23_259_5_end:
-    assert_259_5_end:
+        if_32_23_258_5_end:
+    assert_258_5_end:
     xor al, al
     lea rdi, [rbp + 505]
     mov rcx, 512
     rep stosb
-    lea r15, [rbp + 505]
-    mov r14, 1
-    mov r13, 262
-    test r14, r14
-    cmovs rbp, r13
+    mov r15, 1
+    mov r14, 261
+    test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-    cmp r14, 8
-    cmovge rbp, r13
+    cmp r15, 8
+    cmovge rbp, r14
     jge baz_bounds_panic
-    shl r14, 6
-    add r15, r14
+    shl r15, 6
+    lea r15, [rbp + r15 + 505]
     mov r14, 1
-    mov r13, 262
+    mov r13, 261
     test r14, r14
     cmovs rbp, r13
     js baz_bounds_panic
@@ -940,20 +933,19 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
     mov qword [r15 + r14 * 8], 65518
-    cmp_263_12:
-    lea r14, [rbp + 505]
-    mov r13, 1
-    mov r12, 263
-    test r13, r13
-    cmovs rbp, r12
+    cmp_262_12:
+    mov r14, 1
+    mov r13, 262
+    test r14, r14
+    cmovs rbp, r13
     js baz_bounds_panic
-    cmp r13, 8
-    cmovge rbp, r12
+    cmp r14, 8
+    cmovge rbp, r13
     jge baz_bounds_panic
-    shl r13, 6
-    add r14, r13
+    shl r14, 6
+    lea r14, [rbp + r14 + 505]
     mov r13, 1
-    mov r12, 263
+    mov r12, 262
     test r13, r13
     cmovs rbp, r12
     js baz_bounds_panic
@@ -962,30 +954,45 @@ main:
     jge baz_bounds_panic
     cmp qword [r14 + r13 * 8], 65518
     sete r15b
-    bool_end_263_12:
-    assert_263_5:
-        if_32_26_263_5:
-        cmp_32_26_263_5:
+    bool_end_262_12:
+    assert_262_5:
+        if_32_26_262_5:
+        cmp_32_26_262_5:
         cmp r15b, 0
-        jne if_32_23_263_5_end
-        if_32_26_263_5_code:
+        jne if_32_23_262_5_end
+        if_32_26_262_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_23_263_5_end:
-    assert_263_5_end:
+        if_32_23_262_5_end:
+    assert_262_5_end:
     mov rcx, 8
-    lea r15, [rbp + 505]
-    mov r14, 1
-    mov r13, 266
-    test r14, r14
-    cmovs rbp, r13
+    mov r15, 1
+    mov r14, 265
+    test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-    cmp r14, 8
-    cmovge rbp, r13
+    cmp r15, 8
+    cmovge rbp, r14
     jge baz_bounds_panic
-    shl r14, 6
-    add r15, r14
+    shl r15, 6
+    mov r14, 265
+    test rcx, rcx
+    cmovs rbp, r14
+    js baz_bounds_panic
+    cmp rcx, 8
+    cmovg rbp, r14
+    jg baz_bounds_panic
+    lea rsi, [rbp + r15 + 505]
+    mov r15, 0
+    mov r14, 266
+    test r15, r15
+    cmovs rbp, r14
+    js baz_bounds_panic
+    cmp r15, 8
+    cmovge rbp, r14
+    jge baz_bounds_panic
+    shl r15, 6
     mov r14, 266
     test rcx, rcx
     cmovs rbp, r14
@@ -993,10 +1000,12 @@ main:
     cmp rcx, 8
     cmovg rbp, r14
     jg baz_bounds_panic
-    lea rsi, [r15]
-    lea r15, [rbp + 505]
+    lea rdi, [rbp + r15 + 505]
+    shl rcx, 3
+    rep movsb
+    cmp_271_12:
     mov r14, 0
-    mov r13, 267
+    mov r13, 271
     test r14, r14
     cmovs rbp, r13
     js baz_bounds_panic
@@ -1004,31 +1013,9 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
     shl r14, 6
-    add r15, r14
-    mov r14, 267
-    test rcx, rcx
-    cmovs rbp, r14
-    js baz_bounds_panic
-    cmp rcx, 8
-    cmovg rbp, r14
-    jg baz_bounds_panic
-    lea rdi, [r15]
-    shl rcx, 3
-    rep movsb
-    cmp_272_12:
-    lea r14, [rbp + 505]
-    mov r13, 0
-    mov r12, 272
-    test r13, r13
-    cmovs rbp, r12
-    js baz_bounds_panic
-    cmp r13, 8
-    cmovge rbp, r12
-    jge baz_bounds_panic
-    shl r13, 6
-    add r14, r13
+    lea r14, [rbp + r14 + 505]
     mov r13, 1
-    mov r12, 272
+    mov r12, 271
     test r13, r13
     cmovs rbp, r12
     js baz_bounds_panic
@@ -1037,6 +1024,58 @@ main:
     jge baz_bounds_panic
     cmp qword [r14 + r13 * 8], 65518
     sete r15b
+    bool_end_271_12:
+    assert_271_5:
+        if_32_26_271_5:
+        cmp_32_26_271_5:
+        cmp r15b, 0
+        jne if_32_23_271_5_end
+        if_32_26_271_5_code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if_32_23_271_5_end:
+    assert_271_5_end:
+    cmp_272_12:
+        mov rcx, 8
+        mov r14, 0
+        mov r13, 273
+        test r14, r14
+        cmovs rbp, r13
+        js baz_bounds_panic
+        cmp r14, 8
+        cmovge rbp, r13
+        jge baz_bounds_panic
+        shl r14, 6
+        mov r13, 273
+        test rcx, rcx
+        cmovs rbp, r13
+        js baz_bounds_panic
+        cmp rcx, 8
+        cmovg rbp, r13
+        jg baz_bounds_panic
+        lea rsi, [rbp + r14 + 505]
+        mov r14, 1
+        mov r13, 274
+        test r14, r14
+        cmovs rbp, r13
+        js baz_bounds_panic
+        cmp r14, 8
+        cmovge rbp, r13
+        jge baz_bounds_panic
+        shl r14, 6
+        mov r13, 274
+        test rcx, rcx
+        cmovs rbp, r13
+        js baz_bounds_panic
+        cmp rcx, 8
+        cmovg rbp, r13
+        jg baz_bounds_panic
+        lea rdi, [rbp + r14 + 505]
+        shl rcx, 3
+        test rcx, rcx
+        repe cmpsb
+        sete r15b
     bool_end_272_12:
     assert_272_5:
         if_32_26_272_5:
@@ -1049,67 +1088,57 @@ main:
             syscall
         if_32_23_272_5_end:
     assert_272_5_end:
-    cmp_273_12:
-        mov rcx, 8
-        lea r14, [rbp + 505]
-        mov r13, 0
-        mov r12, 274
-        test r13, r13
-        cmovs rbp, r12
-        js baz_bounds_panic
-        cmp r13, 8
-        cmovge rbp, r12
-        jge baz_bounds_panic
-        shl r13, 6
-        add r14, r13
-        mov r13, 274
-        test rcx, rcx
-        cmovs rbp, r13
-        js baz_bounds_panic
-        cmp rcx, 8
-        cmovg rbp, r13
-        jg baz_bounds_panic
-        lea rsi, [r14]
-        lea r14, [rbp + 505]
-        mov r13, 1
-        mov r12, 275
-        test r13, r13
-        cmovs rbp, r12
-        js baz_bounds_panic
-        cmp r13, 8
-        cmovge rbp, r12
-        jge baz_bounds_panic
-        shl r13, 6
-        add r14, r13
-        mov r13, 275
-        test rcx, rcx
-        cmovs rbp, r13
-        js baz_bounds_panic
-        cmp rcx, 8
-        cmovg rbp, r13
-        jg baz_bounds_panic
-        lea rdi, [r14]
-        shl rcx, 3
-        test rcx, rcx
-        repe cmpsb
-        sete r15b
-    bool_end_273_12:
-    assert_273_5:
-        if_32_26_273_5:
-        cmp_32_26_273_5:
+    mov qword [rbp + 1017], -1
+    mov qword [rbp + 1025], 2
+    cmp_278_12:
+        mov r14, 2
+    cmp r14, 2
+    sete r15b
+    bool_end_278_12:
+    assert_278_5:
+        if_32_26_278_5:
+        cmp_32_26_278_5:
         cmp r15b, 0
-        jne if_32_23_273_5_end
-        if_32_26_273_5_code:
+        jne if_32_23_278_5_end
+        if_32_26_278_5_code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if_32_23_273_5_end:
-    assert_273_5_end:
-    mov qword [rbp + 1017], -1
-    mov qword [rbp + 1025], 2
-    cmp_280_12:
-        mov r14, 2
+        if_32_23_278_5_end:
+    assert_278_5_end:
+    cmp_279_12:
+    mov r14, 0
+    mov r13, 279
+    test r14, r14
+    cmovs rbp, r13
+    js baz_bounds_panic
     cmp r14, 2
+    cmovge rbp, r13
+    jge baz_bounds_panic
+    cmp qword [rbp + r14 * 8 + 1017], -1
+    sete r15b
+    bool_end_279_12:
+    assert_279_5:
+        if_32_26_279_5:
+        cmp_32_26_279_5:
+        cmp r15b, 0
+        jne if_32_23_279_5_end
+        if_32_26_279_5_code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if_32_23_279_5_end:
+    assert_279_5_end:
+    cmp_280_12:
+    mov r14, 1
+    mov r13, 280
+    test r14, r14
+    cmovs rbp, r13
+    js baz_bounds_panic
+    cmp r14, 2
+    cmovge rbp, r13
+    jge baz_bounds_panic
+    cmp qword [rbp + r14 * 8 + 1017], 2
     sete r15b
     bool_end_280_12:
     assert_280_5:
@@ -1123,65 +1152,19 @@ main:
             syscall
         if_32_23_280_5_end:
     assert_280_5_end:
-    cmp_281_12:
-    mov r14, 0
-    mov r13, 281
-    test r14, r14
-    cmovs rbp, r13
-    js baz_bounds_panic
-    cmp r14, 2
-    cmovge rbp, r13
-    jge baz_bounds_panic
-    cmp qword [rbp + r14 * 8 + 1017], -1
-    sete r15b
-    bool_end_281_12:
-    assert_281_5:
-        if_32_26_281_5:
-        cmp_32_26_281_5:
-        cmp r15b, 0
-        jne if_32_23_281_5_end
-        if_32_26_281_5_code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if_32_23_281_5_end:
-    assert_281_5_end:
-    cmp_282_12:
-    mov r14, 1
-    mov r13, 282
-    test r14, r14
-    cmovs rbp, r13
-    js baz_bounds_panic
-    cmp r14, 2
-    cmovge rbp, r13
-    jge baz_bounds_panic
-    cmp qword [rbp + r14 * 8 + 1017], 2
-    sete r15b
-    bool_end_282_12:
-    assert_282_5:
-        if_32_26_282_5:
-        cmp_32_26_282_5:
-        cmp r15b, 0
-        jne if_32_23_282_5_end
-        if_32_26_282_5_code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if_32_23_282_5_end:
-    assert_282_5_end:
     mov qword [rbp + 1033], 0
     xor al, al
     lea rdi, [rbp + 1041]
     mov rcx, 128
     rep stosb
-    print_286_5:
+    print_284_5:
         mov rdi, 1
         lea rsi, [rbp]
         mov rdx, 21
         mov rax, 1
         syscall
-    print_286_5_end:
-    loop_287_5:
+    print_284_5_end:
+    loop_285_5:
         add qword [rbp + 1033], 1
         lea r15, [rbp + 1033]
         mov qword [rbp + 1169], r15
@@ -1189,21 +1172,21 @@ main:
         lea rbx, [rbp + 1169]
         call print_num
         POP_REGS
-        print_290_9:
+        print_288_9:
             mov rdi, 1
             lea rsi, [rbp + 61]
             mov rdx, 2
             mov rax, 1
             syscall
-        print_290_9_end:
-        print_291_9:
+        print_288_9_end:
+        print_289_9:
             mov rdi, 1
             lea rsi, [rbp + 21]
             mov rdx, 12
             mov rax, 1
             syscall
-        print_291_9_end:
-        str_in_292_9:
+        print_289_9_end:
+        str_in_290_9:
             mov rdi, 0
             lea rsi, [rbp + 1042]
             mov rdx, 127
@@ -1213,60 +1196,60 @@ main:
             mov r15b, byte [rbp + 1169]
             mov byte [rbp + 1041], r15b
             sub byte [rbp + 1041], 1
-        str_in_292_9_end:
-        if_293_12:
-        cmp_293_12:
+        str_in_290_9_end:
+        if_291_12:
+        cmp_291_12:
         cmp byte [rbp + 1041], 0
-        jne if_295_19
-        if_293_12_code:
-            jmp loop_287_5_end
-        jmp if_293_9_end
-        if_295_19:
-        cmp_295_19:
+        jne if_293_19
+        if_291_12_code:
+            jmp loop_285_5_end
+        jmp if_291_9_end
+        if_293_19:
+        cmp_293_19:
         cmp byte [rbp + 1041], 4
-        jg if_else_293_9
-        if_295_19_code:
-            print_296_13:
+        jg if_else_291_9
+        if_293_19_code:
+            print_294_13:
                 mov rdi, 1
                 lea rsi, [rbp + 33]
                 mov rdx, 20
                 mov rax, 1
                 syscall
-            print_296_13_end:
-            jmp loop_287_5
-        jmp if_293_9_end
-        if_else_293_9:
-            print_299_13:
+            print_294_13_end:
+            jmp loop_285_5
+        jmp if_291_9_end
+        if_else_291_9:
+            print_297_13:
                 mov rdi, 1
                 lea rsi, [rbp + 53]
                 mov rdx, 6
                 mov rax, 1
                 syscall
-            print_299_13_end:
-            str_out_300_13:
+            print_297_13_end:
+            str_out_298_13:
                 mov rdi, 1
                 lea rsi, [rbp + 1042]
                 movsx rdx, byte [rbp + 1041]
                 mov rax, 1
                 syscall
-            str_out_300_13_end:
-            print_301_13:
+            str_out_298_13_end:
+            print_299_13:
                 mov rdi, 1
                 lea rsi, [rbp + 59]
                 mov rdx, 1
                 mov rax, 1
                 syscall
-            print_301_13_end:
-            print_302_13:
+            print_299_13_end:
+            print_300_13:
                 mov rdi, 1
                 lea rsi, [rbp + 60]
                 mov rdx, 1
                 mov rax, 1
                 syscall
-            print_302_13_end:
-        if_293_9_end:
-    jmp loop_287_5
-    loop_287_5_end:
+            print_300_13_end:
+        if_291_9_end:
+    jmp loop_285_5
+    loop_285_5_end:
     mov rax, 60
     mov rdi, 0
     syscall
