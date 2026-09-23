@@ -183,27 +183,6 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
-    // compile_lea
-    //   find_start_element -> deepest known address, or root
-    //   initialize base from that address, a loaded pointer, or storage
-    //   for each element from start_index
-    //     append field name and add its offset to the operand displacement
-    //     tc.make_ident_info -> current element type and array length
-    //     no index expression
-    //       check the range count for a final array, when supplied
-    //       continue to next element
-    //     base already has an index
-    //       use the writable base or promote the owned index register
-    //       compute_address_in_register -> free the operand's index slot
-    //     extend_with_index
-    //       compile_checked_index -> evaluate into a reusable index register
-    //       attach index with a supported operand scale
-    //         unsupported scale -> multiply index explicitly, use scale 1
-    //   return memory operand with the final element type
-    //
-    // retained registers stay live after compile_lea returns
-    // its caller frees allocated_registers after consuming the memory operand
-    //
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
