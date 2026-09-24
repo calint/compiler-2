@@ -1174,6 +1174,25 @@ class machine_x86 final : public machine {
         return data_alignment_;
     }
 
+    auto emit_frame_overflow_handler() -> void override {
+        println("baz_frame_overflow:");
+        println(";   print message to stderr");
+        println("    mov rax, 1");
+        println("    mov rdi, 2");
+        println("    lea rsi, [msg_frame_overflow]");
+        println("    mov rdx, msg_frame_overflow_len");
+        println("    syscall");
+        println(";   exit with error code 255");
+        println("    mov rax, 60");
+        println("    mov rdi, 255");
+        println("    syscall");
+        println("section .rodata");
+        println("    msg_frame_overflow: db 'panic: frame overflow', 10");
+        println("    msg_frame_overflow_len equ $ - msg_frame_overflow");
+        // the bounds handler may follow and must stay in the code section
+        println("section .text");
+    }
+
     auto begin_data(const size_t alignment) -> void override {
         println("\nsection .data\nalign {}\ndat:", alignment);
     }

@@ -434,7 +434,7 @@ SRC=t464 && EXP=0 && RUN
 SRC=t465 && DIFF
 SRC=t466 && EXP=0 && RUN
 SRC=t466 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
-SRC=t466 && EXP=255 && OPTS="--vars=64 --checks=frame --reproduce-source" RUN
+SRC=t466 && EXP=255 && RUN_ERR_OPTS "--vars=64 --checks=frame"
 SRC=t467 && EXP=0 && RUN
 SRC=t467 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
 SRC=t468 && COMPERR
@@ -461,7 +461,7 @@ SRC=t488 && COMPERR
 SRC=t489 && EXP=0 && RUN
 SRC=t490 && EXP=0 && RUN
 SRC=t490 && EXP=0 && OPTS="--vars=262144 --checks=upper,lower,line,frame --reproduce-source" RUN
-SRC=t490 && EXP=255 && OPTS="--vars=4128 --checks=frame --reproduce-source" RUN
+SRC=t490 && EXP=255 && RUN_ERR_OPTS "--vars=4128 --checks=frame"
 SRC=t491 && EXP=0 && RUN
 SRC=t492 && EXP=0 && RUN
 SRC=t494 && EXP=0 && RUN

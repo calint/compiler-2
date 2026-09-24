@@ -160,13 +160,8 @@ class program final {
         tc.exit_block();
 
         if (tc.is_frame_check()) {
-            constexpr int32_t vars_overrun_by_frame_variables = 255;
             x.comment({}, 0, "");
-            x.label(indent, "baz_frame_overflow");
-            x.exit(
-                token{}, indent,
-                operand::imm(std::format("{}", vars_overrun_by_frame_variables),
-                             tc.get_type_default()));
+            x.emit_frame_overflow_handler();
         }
 
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {

@@ -321,6 +321,9 @@ class machine {
 
     virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
 
+    // prints 'panic: frame overflow' to stderr and exits with 255
+    virtual auto emit_frame_overflow_handler() -> void = 0;
+
     [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
 
     virtual auto begin_data(const size_t alignment) -> void = 0;

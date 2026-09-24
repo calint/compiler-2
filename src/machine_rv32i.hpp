@@ -2621,6 +2621,24 @@ class machine_rv32i final : public machine {
         return data_alignment_;
     }
 
+    auto emit_frame_overflow_handler() -> void override {
+        constexpr std::string_view message{"panic: frame overflow"};
+        asm_line(0, "baz_frame_overflow:");
+        asm_line(1, "li a0, 2");
+        asm_line(1, "la a1, .Lbaz_frame_message");
+        // the newline follows the message text
+        asm_line(1, "li a2, {}", message.size() + 1);
+        asm_line(1, "li a7, 64");
+        asm_line(1, "ecall");
+        exit(token{}, 1, operand::imm("255", default_type()));
+        asm_line(0, ".section .rodata");
+        asm_line(0, ".Lbaz_frame_message:");
+        asm_line(0, ".ascii \"{}\"", message);
+        asm_line(0, ".byte 10");
+        // the bounds handler may follow and must stay in the code section
+        asm_line(0, ".text");
+    }
+
     auto begin_data(const size_t alignment) -> void override {
         emit_arithmetic_helpers();
         asm_line(0, ".data");

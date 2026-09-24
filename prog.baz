@@ -29,7 +29,7 @@ dat    str1 str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
 
-func assert(x bool) { if not x exit(1) }
+func assert(ok bool) { if not ok exit(1) }
 # exit is a built-in function
 
 func print(str[] i8) {
