@@ -1,7 +1,6 @@
 #!/bin/sh
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$(dirname "$0")"
 
-python3 "$SCRIPT_DIR/test-arena.py"
+python3 test-arena.py

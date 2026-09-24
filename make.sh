@@ -104,9 +104,7 @@ fi
 
 SANITIZERS="$ASAN$MSAN$TSAN"
 
-SEP="--------------------------------------------------------------------------------"
 CMD="$CC src/main.cpp -o baz $DBG $OPT $CF $CW $SANITIZERS $PROF"
-echo $SEP
 echo "$CMD"
 $CMD
 

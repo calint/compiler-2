@@ -1,9 +1,3 @@
-MACHINE="${MACHINE:-x86_64}"
-case "$MACHINE" in
-	x86_64|rv32i) ;;
-	*) echo "Unknown machine: $MACHINE" >&2; exit 1 ;;
-esac
-
 SRC=t1 && EXP=58 && RUN
 SRC=t2 && EXP=1 && RUN
 SRC=t3 && EXP=7 && RUN

@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] qa/coverage: run-tests-coverage.sh [build|run|report]
 [ ] x86 register utilization: t110, t83, t105
 [x] don't allow function declarations without { }
 [ ] move the coverage tests into a subdirectory

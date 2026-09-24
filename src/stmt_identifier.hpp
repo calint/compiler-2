@@ -124,10 +124,6 @@ class stmt_identifier : public statement {
         return path_as_string_;
     }
 
-    [[nodiscard]] auto elems() const -> std::span<const ident_elem> {
-        return elems_;
-    }
-
     [[nodiscard]] auto is_indexed() const -> bool override {
         return is_indexed_;
     }
