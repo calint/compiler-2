@@ -2,7 +2,30 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [x] opus 5.5 ai review and bug-hunt
-[ ] detect overlapping array copy at run-time --checks=overlap
+[ ] --checks=noub: a program either behaves as defined or panics with a line
+    => viable: no heap, no pointer type, no casts, no raw registers
+    [x] array index bounds: --checks=upper,lower
+    [x] non-inline frame arena: --checks=frame
+    [x] narrowing is a compile error, 'i8(...)' etc. acknowledges it
+    [x] unset results rejected at compile time, variables are zeroed
+    [x] compiler constant folding free of ub (ubsan scan of all tests)
+    [x] raw register access removed ('mov', 'syscall', 'reg_...', names)
+    [ ] 'read'/'write' take any 'address_of' integer and length: a 2 byte
+        buffer read with length 8 overwrites the next variable. take an
+        array and a checked count instead
+    [ ] system stack overflow in deep non-inline recursion segfaults before
+        the frame check. check 'rsp'/'sp' or depth at each call
+    [ ] division by zero traps and MIN / -1 wraps or traps by width. check
+        and panic with the line
+    [ ] shift count < 0 or >= width is masked by hardware differently per
+        width ('i8 1 << 9' is 0, 'i32 1 << 33' is 2). check or define
+    [ ] signed overflow wraps. define wrapping as the semantics or add
+        --checks=overflow (x86 'jo', rv32i several instructions)
+    [ ] overlapping 'array_copy': check ranges at run-time or define as
+        memmove
+    [ ] aliasing of results and by-reference arguments, see 'UB detection'
+        below. reject or check addresses at the call
+    [ ] --checks=noub enables all of the above
 [ ] comments are not reproduced exactly by --reproduce-source
     => a comment at the end of a file without a final newline gets one
        added, e.g. 'func main() {\n    exit(0)\n}\n# c4' because
@@ -22,8 +45,6 @@
     => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
        compile on rv32i. a target-neutral conversion such as 'int(...)' is
        needed to widen to the default type portably
-[ ] ponder whether a compiler flag to check for overflow in arithmetics
-    => a --checks=ub adds code to check overflows etc
 [ ] re-look at stmt_identifier::compile_lea and make a nicer implementation
 [ ] consider not allowing single statement blocks
 [ ] rv32i emit_most_efficient should know the instruction count on synthesized
@@ -42,7 +63,7 @@
         the same caller variable are not detected
     [ ] conservative rejections: a write through a runtime index covers
         nothing, 'array_copy' into a result is not an assignment, 'foo'
-        bodies and loops without 'break' do not count as assigning
+        bodies do not count as assigning
     [ ] writes through 'address_of' are not tracked
     [ ] prog.baz 'object_init' sets only 'res.pos.y' and is rejected
     [ ] consider accepting partial results when the caller's destination is
