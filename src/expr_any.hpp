@@ -372,20 +372,9 @@ class expr_any final : public statement {
                                   const token& src_loc_tk, const expr_bool& e,
                                   const operand& dst) -> void {
 
-        // make unique labels considering inlined functions
-        const std::string_view call_path{tc.get_call_path()};
-
-        const std::string src_loc{
-            tc.source_location_for_use_in_label(src_loc_tk)};
-
-        // unique partial label for this assembler location
-        const std::string postfix{
-            std::format("{}{}", src_loc,
-                        (call_path.empty() ? std::string{}
-                                           : std::format("_{}", call_path)))};
-
         // labels to jump to depending on the evaluation
-        const std::string jmp_to_end{std::format("bool_end_{}", postfix)};
+        const std::string jmp_to_end{
+            std::format("{}.end", tc.create_unique_label(src_loc_tk, "bool"))};
 
         // compile and possibly evaluate constant expression
         const std::optional<bool> const_eval{

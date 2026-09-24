@@ -175,8 +175,9 @@ class stmt_def_func final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {}
 
+    // 'func' is a keyword so no user name or internal label starts with 'func.'
     [[nodiscard]] auto body_label() const -> std::string {
-        return std::string{name()};
+        return std::format("func.{}", name());
     }
 
     [[nodiscard]] auto frame_size_label() const -> std::string {

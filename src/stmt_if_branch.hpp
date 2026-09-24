@@ -33,7 +33,7 @@ class stmt_if_branch final : public statement {
 
         const std::string if_bgn_lbl{if_bgn_label(tc)};
         const std::string jmp_to_if_true_lbl{
-            std::format("{}_code", if_bgn_lbl)};
+            std::format("{}.code", if_bgn_lbl)};
 
         // the beginning of this branch
 
@@ -68,12 +68,7 @@ class stmt_if_branch final : public statement {
     // Returns the label where the if branch begins evaluating the boolean
     // expression
     [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
-        // construct a unique label considering inlined functions
-        const std::string_view call_path{tc.get_call_path()};
-        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
-
-        return call_path.empty() ? std::format("if_{}", src_loc)
-                                 : std::format("if_{}_{}", src_loc, call_path);
+        return tc.create_unique_label(tok(), "if");
     }
 
     // the condition is read before the branch code runs

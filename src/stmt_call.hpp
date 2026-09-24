@@ -524,14 +524,16 @@ class stmt_call : public expression {
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string new_call_path{
             call_path.empty() ? src_loc
-                              : std::format("{}_{}", src_loc, call_path)};
+                              : std::format("{}.{}", src_loc, call_path)};
 
-        const std::string ret_jmp_label{
-            std::format("{}_{}_end", func.name(), new_call_path)};
+        const std::string call_label{
+            std::format("{}.{}", func.body_label(), new_call_path)};
+
+        const std::string ret_jmp_label{std::format("{}.end", call_label)};
 
         func.source_def_comment_to(x, indent);
 
-        x.label(indent, std::format("{}_{}", func.name(), new_call_path));
+        x.label(indent, call_label);
 
         // enter function scope
 

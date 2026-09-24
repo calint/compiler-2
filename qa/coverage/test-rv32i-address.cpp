@@ -46,9 +46,9 @@ auto main(const int argc, const char* argv[]) -> int {
 
             return output.str();
         };
-        assert(optimize("    j bool_end_139_12\n    1:\n    j "
-                        "bool_end_139_12\n    bool_end_139_12:\n") ==
-               "    1:\n    bool_end_139_12:\n");
+        assert(optimize("    j bool.139.12.end\n    1:\n    j "
+                        "bool.139.12.end\n    bool.139.12.end:\n") ==
+               "    1:\n    bool.139.12.end:\n");
         assert(optimize("beq a0, a1, 1f\nj end\n1:\naddi a0, a0, 1\nend:\n") ==
                "bne a0, a1, end\n1:\naddi a0, a0, 1\nend:\n");
         assert(
@@ -567,19 +567,11 @@ func main() {
         const std::string_view source{R"baz(
 dat text[] i8 = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
 func main() {
-    mov(a0, 1)
-    mov(a1, address_of(text))
-    mov(a2, array_size_of(text))
-    mov(a7, 64)
-    syscall()
-    if a0 != 20 exit(1)
-    mov(a0, -1)
-    mov(a7, 64)
-    syscall()
-    if a0 != -9 exit(2)
-    mov(a0, 0)
-    mov(a7, 93)
-    syscall()
+    var count = write(1, address_of(text), array_size_of(text))
+    if count != 20 exit(1)
+    var bad = write(-1, address_of(text), 1)
+    if bad != -9 exit(2)
+    exit(0)
 }
 )baz"};
         machine_rv32i compiler;

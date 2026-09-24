@@ -1,0 +1,4 @@
+# a non-inline result cannot be an operand in an expression
+
+func noinline one() res { res = 1 }
+func main() { var x = one() + 1 }

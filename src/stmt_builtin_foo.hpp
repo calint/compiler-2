@@ -77,7 +77,7 @@ class stmt_builtin_foo final : public statement {
 
         x.comment(tok(), indent, "foo {}", statement::trimmed_source(ident_));
 
-        const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
+        const std::string loop_label{tc.create_unique_label(tok(), "foo")};
         tc.enter_foo(loop_label);
 
         const operand reg_iter{x.alloc_scratch_register(ident_.tok(), indent,
@@ -132,12 +132,12 @@ class stmt_builtin_foo final : public statement {
                      operand::imm("0", tc.get_type_default()));
         x.label(indent, loop_label);
         code_.compile(tc, indent, ident_info::make_empty());
-        x.label(indent + 1, loop_label + "_continue");
+        x.label(indent + 1, loop_label + ".continue");
         x.advance_array_iteration(indent + 2, reg_iter, var_i_info.operand,
                                   ii.type_ref().size_bytes(), ii.array_len,
                                   loop_label);
 
-        x.label(indent, loop_label + "_end");
+        x.label(indent, loop_label + ".end");
 
         x.free_scratch_register(tok(), indent, reg_iter);
 

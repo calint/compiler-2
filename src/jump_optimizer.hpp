@@ -114,7 +114,9 @@ struct jump_info {
     }
 
     ++i;
-    while (i < line.size() and (is_ascii_alnum(line[i]) or line[i] == '_')) {
+    // function labels are dot-separated, e.g. 'func.f.12.45.end'
+    while (i < line.size() and
+           (is_ascii_alnum(line[i]) or line[i] == '_' or line[i] == '.')) {
         ++i;
     }
 

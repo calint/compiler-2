@@ -310,12 +310,7 @@ class expr_bool_op final : public statement {
     [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
         -> std::string {
 
-        const std::string_view call_path{tc.get_call_path()};
-
-        return std::format("cmp_{}{}",
-                           tc.source_location_for_use_in_label(tok()),
-                           (call_path.empty() ? std::string{}
-                                              : std::format("_{}", call_path)));
+        return tc.create_unique_label(tok(), "cmp");
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
@@ -953,11 +948,7 @@ class expr_bool final : public statement {
     [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
         -> std::string {
 
-        const std::string_view call_path{tc.get_call_path()};
-
-        return std::format(
-            "cmp_{}{}", tc.source_location_for_use_in_label(tok()),
-            (call_path.empty() ? "" : std::format("_{}", call_path)));
+        return tc.create_unique_label(tok(), "cmp");
     }
 
     [[nodiscard]] static auto

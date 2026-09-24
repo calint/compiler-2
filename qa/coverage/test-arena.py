@@ -303,7 +303,7 @@ probe_entry:
     mov rdx, {offset}
     sub rax, rdx
     mov [rbx], rax
-    call probe
+    call func.probe
     mov eax, 60
     xor edi, edi
     syscall

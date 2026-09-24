@@ -503,9 +503,9 @@ class toc final {
         const std::string_view call_path{get_call_path()};
         const std::string src_loc{source_location_for_use_in_label(src_loc_tk)};
         const std::string lbl{
-            std::format("{}_{}{}", prefix, src_loc,
+            std::format("{}.{}{}", prefix, src_loc,
                         (call_path.empty() ? std::string{}
-                                           : std::format("_{}", call_path)))};
+                                           : std::format(".{}", call_path)))};
 
         return lbl;
     }
@@ -676,18 +676,6 @@ class toc final {
         }
 
         std::unreachable();
-    }
-
-    [[nodiscard]] auto get_call_path_extend(const token& src_loc_tk,
-                                            const std::string& name) const
-        -> std::string {
-
-        const std::string_view call_path{get_call_path()};
-
-        return std::format("{}_{}{}", name,
-                           source_location_for_use_in_label(src_loc_tk),
-                           (call_path.empty() ? std::string{}
-                                              : std::format("_{}", call_path)));
     }
 
     [[nodiscard]] auto get_const(const std::string_view name) const -> int64_t {
@@ -939,7 +927,7 @@ class toc final {
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
-        return std::format("{}_{}", line, col);
+        return std::format("{}.{}", line, col);
     }
 
     // human-readable source location

@@ -31,7 +31,7 @@ class stmt_continue final : public statement {
         }
 
         // is in foo block
-        x.branch(indent, std::string{loop_label} + "_continue");
+        x.branch(indent, std::string{loop_label} + ".continue");
     }
 
     // the next iteration starts with at least the loop entry coverage
