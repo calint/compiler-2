@@ -258,10 +258,15 @@ class machine_x86 final : public machine {
 
     using machine::comment;
 
-    auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
-                             const std::string_view without_scratch,
-                             const std::string_view with_scratch)
+    auto
+    emit_most_efficient(const token& src_loc_tk, const size_t indent,
+                        const std::function_ref<void()> emit_without_scratch,
+                        const std::function_ref<void()> emit_with_scratch)
         -> void override {
+
+        const std::string without_scratch{capture_output(emit_without_scratch)};
+
+        const std::string with_scratch{capture_output(emit_with_scratch)};
 
         const size_t without_count{count_instructions(without_scratch)};
         const size_t with_count{count_instructions(with_scratch)};

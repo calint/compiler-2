@@ -9,13 +9,19 @@
 #include <print>
 #include <utility>
 
+#include "almost_assembler_rv32i.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "jump_optimizer.hpp"
 #include "machine.hpp"
 #include "type.hpp"
 
 class machine_rv32i final : public machine {
+  public:
+    // buffered modes hold output from 'program_start' to 'finish' so jumps can
+    // be optimized and grown to reach their targets
+    enum class jump_mode : uint8_t { as_emitted, resolved, optimized };
+
+  private:
     static constexpr size_t s0_register_index{8};
     static constexpr size_t data_alignment_{16};
     static constexpr size_t copy_unroll_threshold_bytes_{16};
@@ -46,6 +52,10 @@ class machine_rv32i final : public machine {
 
     std::reference_wrapper<std::ostream> os_{std::cout};
     std::string_view source_;
+    jump_mode jump_mode_{};
+    // buffering output is no more logical state than writing to 'os_'
+    mutable almost_assembler_rv32i assembler_;
+    bool assembling_{};
     const type* type_i32_{};
     uint32_t unavailable_registers_{};
     bool variables_base_reserved_{};
@@ -148,24 +158,70 @@ class machine_rv32i final : public machine {
         }
     }
 
+    [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
+        std::string text;
+        text.resize(indent * 4, ' ');
+
+        return text;
+    }
+
+    auto write_line(std::string text) const -> void {
+        if (not assembling_) {
+            std::println(os_.get(), "{}", text);
+
+            return;
+        }
+
+        assembler_.add_text(std::move(text));
+    }
+
     template <typename... args_t>
     auto asm_line(const size_t indent,
                   const std::format_string<args_t...> format,
                   args_t&&... args) const -> void {
-        std::print(os_.get(), "{}", std::string(indent * 4, ' '));
-        std::println(os_.get(), format, std::forward<args_t>(args)...);
+
+        write_line(indentation(indent) +
+                   std::format(format, std::forward<args_t>(args)...));
     }
 
-    // 'resolve_jumps' may grow a jump beyond 1 MiB and then needs a register
-    // that holds no live value at the jump
-    [[nodiscard]] auto far_jump_register_comment() const -> std::string {
+    // a jump grown beyond 1 MiB needs a register without a live value
+    [[nodiscard]] auto far_jump_register() const -> std::string_view {
         for (const size_t index : scratch_registers_) {
             if ((unavailable_registers_ & (uint32_t{1} << index)) == 0) {
-                return std::format(" # baz: {}", register_names_.at(index));
+                return register_names_.at(index);
             }
         }
 
         return {};
+    }
+
+    // 'mnemonic' is 'j' or a conditional branch taking 'operands'
+    auto emit_jump(const size_t indent, const std::string_view mnemonic,
+                   const std::string_view operands,
+                   const std::string_view target) -> void {
+
+        std::string text{
+            indentation(indent) +
+            (operands.empty()
+                 ? std::format("{} {}", mnemonic, target)
+                 : std::format("{} {}, {}", mnemonic, operands, target))};
+
+        if (not assembling_) {
+            write_line(std::move(text));
+
+            return;
+        }
+
+        assembler_.add_jump(std::move(text), mnemonic, operands, target,
+                            far_jump_register());
+    }
+
+    // sizes only count in code, so the assembler must know the section
+    auto switch_section(const std::string_view directive,
+                        const bool code_section) const -> void {
+
+        assembler_.set_code_section(code_section);
+        asm_line(0, "{}", directive);
     }
 
     // 'address_scope' protects operand registers and memory base/index
@@ -1024,8 +1080,9 @@ class machine_rv32i final : public machine {
     }
 
   public:
-    explicit machine_rv32i(const std::string_view source = {})
-        : source_{source} {}
+    explicit machine_rv32i(const std::string_view source = {},
+                           const jump_mode jumps = jump_mode::as_emitted)
+        : source_{source}, jump_mode_{jumps} {}
 
     using machine::comment;
     using machine::emit_data_array;
@@ -1072,6 +1129,7 @@ class machine_rv32i final : public machine {
     auto use_stream(std::ostream& new_stream) -> std::ostream& override {
         std::ostream& previous{os_.get()};
         os_ = new_stream;
+
         return previous;
     }
 
@@ -1088,37 +1146,30 @@ class machine_rv32i final : public machine {
         }
     }
 
-    auto emit_most_efficient([[maybe_unused]] const token& src_loc_tk,
-                             [[maybe_unused]] const size_t indent,
-                             const std::string_view without_scratch,
-                             const std::string_view with_scratch)
+    auto
+    emit_most_efficient([[maybe_unused]] const token& src_loc_tk,
+                        [[maybe_unused]] const size_t indent,
+                        const std::function_ref<void()> emit_without_scratch,
+                        const std::function_ref<void()> emit_with_scratch)
         -> void override {
+
+        // buffered versions keep their labels and jumps for resolution
+        if (assembling_) {
+            assembler_.emit_smaller(emit_without_scratch, emit_with_scratch);
+
+            return;
+        }
+
+        const std::string without_scratch{capture_output(emit_without_scratch)};
+
+        const std::string with_scratch{capture_output(emit_with_scratch)};
 
         const auto code_size_bytes{[](const std::string_view text) -> size_t {
             size_t size_bytes{};
             for (const auto line : text | std::views::split('\n')) {
-                std::string_view value{line};
-                value = value.substr(0, value.find('#'));
-                const size_t start{value.find_first_not_of(" \t\r")};
-                if (start == std::string_view::npos) {
-                    continue;
-                }
-                value = value.substr(start, value.find_last_not_of(" \t\r") -
-                                                start + 1);
-                // emitted labels and directives occupy no instruction slots
-                if (value.front() == '.' or value.back() == ':') {
-                    continue;
-                }
-                const size_t split{value.find_first_of(" \t")};
-                const std::string_view instruction{value.substr(0, split)};
-
-                const std::string_view arguments{split == std::string_view::npos
-                                                     ? std::string_view{}
-                                                     : value.substr(split)};
-
                 // unknown instructions count as one word
-                size_bytes += jump_optimizer::rv32i::instruction_size_bytes(
-                                  instruction, arguments)
+                size_bytes += almost_assembler_rv32i::line_size_bytes(
+                                  std::string_view{line})
                                   .value_or(4);
             }
 
@@ -1221,6 +1272,16 @@ class machine_rv32i final : public machine {
         assert(unavailable_registers_ == 0);
         assert(not variables_base_reserved_);
         assert(not frame_base_reserved_);
+        if (not assembling_) {
+            return;
+        }
+
+        // later output such as usage statistics is written directly
+        assembling_ = false;
+        if (jump_mode_ == jump_mode::optimized) {
+            assembler_.optimize_jumps();
+        }
+        assembler_.resolve_and_write(os_.get());
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
@@ -1497,9 +1558,9 @@ class machine_rv32i final : public machine {
                         instruction = inverted ? "bge" : "blt";
                     }
 
-                    asm_line(indent, "{} {}, {}, {}{}", instruction, first,
-                             second, action.target,
-                             far_jump_register_comment());
+                    emit_jump(indent, instruction,
+                              std::format("{}, {}", first, second),
+                              action.target);
                 }
             } else {
                 // a boolean is required; prefer its output register or an owned
@@ -1602,9 +1663,8 @@ class machine_rv32i final : public machine {
                 // some callers request both a stored boolean and a branch
                 if (not action.target.empty()) {
 
-                    asm_line(indent, "{} {}, zero, {}{}",
-                             action.branch_on_true ? "bne" : "beq", result,
-                             action.target, far_jump_register_comment());
+                    emit_jump(indent, action.branch_on_true ? "bne" : "beq",
+                              std::format("{}, zero", result), action.target);
                 }
             }
         }
@@ -1614,7 +1674,7 @@ class machine_rv32i final : public machine {
     auto branch(const size_t indent, const std::string_view target)
         -> void override {
 
-        asm_line(indent, "j {}{}", target, far_jump_register_comment());
+        emit_jump(indent, "j", {}, target);
     }
 
     auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -1675,9 +1735,10 @@ class machine_rv32i final : public machine {
 
         asm_line(indent, "li {}, {}", limit.base_register(), array_count);
 
-        asm_line(indent, "bne {}, {}, {}{}", value.base_register(),
-                 limit.base_register(), loop_label,
-                 far_jump_register_comment());
+        emit_jump(
+            indent, "bne",
+            std::format("{}, {}", value.base_register(), limit.base_register()),
+            loop_label);
     }
 
     auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
@@ -2250,7 +2311,15 @@ class machine_rv32i final : public machine {
 
     auto label(const size_t indent, const std::string_view label)
         -> void override {
-        asm_line(indent, "{}:", label);
+
+        std::string text{std::format("{}{}:", indentation(indent), label)};
+        if (not assembling_) {
+            write_line(std::move(text));
+
+            return;
+        }
+
+        assembler_.add_label(std::string{label}, std::move(text));
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
@@ -2501,9 +2570,10 @@ class machine_rv32i final : public machine {
     auto program_start() -> void override {
         multiply_helper_used_ = false;
         divide_helper_used_ = false;
+        assembling_ = jump_mode_ != jump_mode::as_emitted;
         asm_line(0, ".option norvc");
         asm_line(0, ".option norelax");
-        asm_line(0, ".text");
+        switch_section(".text", true);
         asm_line(0, ".globl _start");
         label(0, "_start");
         asm_line(1, "la s0, dat");
@@ -2533,13 +2603,23 @@ class machine_rv32i final : public machine {
         const std::string_view index{reg_to_check.base_register()};
 
         comment(src_loc_tk, indent, "bounds check");
+
+        // the last check branches past the handler on success so failures
+        // fall through to it
+        const auto check_negative = [&](const std::string_view reg,
+                                        const bool last) -> void {
+            asm_line(indent, "{} {}, {}", last ? "bgez" : "bltz", reg,
+                     last ? "2f" : "1f");
+        };
+
         if (options.lower) {
-            asm_line(indent, "bltz {}, 1f", index);
+            const bool count_checked{not reg_count.is_empty()};
+            check_negative(index, not options.upper and not count_checked);
 
             // a negative count passes 'start + count' but spans the address
             // space
-            if (not reg_count.is_empty()) {
-                asm_line(indent, "bltz {}, 1f", reg_count.base_register());
+            if (count_checked) {
+                check_negative(reg_count.base_register(), not options.upper);
             }
         }
 
@@ -2575,12 +2655,12 @@ class machine_rv32i final : public machine {
             }
             asm_line(indent, "li {}, {}", limit.base_register(), array_count);
             if (allow_end) {
-                asm_line(indent, "bltu {}, {}, 1f", limit.base_register(), top);
-            } else {
-                asm_line(indent, "bgeu {}, {}, 1f", top, limit.base_register());
+                asm_line(indent, "bgeu {}, {}, 2f", limit.base_register(), top);
+            }
+            if (not allow_end) {
+                asm_line(indent, "bltu {}, {}, 2f", top, limit.base_register());
             }
         }
-        asm_line(indent, "j 2f");
         asm_line(indent, "1:");
         if (options.with_line) {
             asm_line(indent, "li a0, {}", src_loc_tk.at_line());
@@ -2591,7 +2671,7 @@ class machine_rv32i final : public machine {
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
         constexpr std::string_view message{"panic: bounds at line "};
-        asm_line(0, "baz_bounds_panic:");
+        label(0, "baz_bounds_panic");
         if (with_line) {
             asm_line(1, "mv s2, a0");
             asm_line(1, "li a0, 2");
@@ -2635,14 +2715,14 @@ class machine_rv32i final : public machine {
         }
         exit(token{}, 1, operand::imm("255", default_type()));
         if (with_line) {
-            asm_line(0, ".section .rodata");
+            switch_section(".section .rodata", false);
             asm_line(0, ".Lbaz_bounds_message:");
             asm_line(0, ".ascii \"{}\"", message);
             asm_line(0, ".balign 4");
             asm_line(0, ".Lbaz_decimal_places:");
             asm_line(0, ".word 1000000000, 100000000, 10000000, 1000000, "
                         "100000, 10000, 1000, 100, 10, 1");
-            asm_line(0, ".text");
+            switch_section(".text", true);
         }
     }
 
@@ -2652,7 +2732,7 @@ class machine_rv32i final : public machine {
 
     auto emit_frame_overflow_handler() -> void override {
         constexpr std::string_view message{"panic: frame overflow"};
-        asm_line(0, "baz_frame_overflow:");
+        label(0, "baz_frame_overflow");
         asm_line(1, "li a0, 2");
         asm_line(1, "la a1, .Lbaz_frame_message");
         // the newline follows the message text
@@ -2660,17 +2740,17 @@ class machine_rv32i final : public machine {
         asm_line(1, "li a7, 64");
         asm_line(1, "ecall");
         exit(token{}, 1, operand::imm("255", default_type()));
-        asm_line(0, ".section .rodata");
+        switch_section(".section .rodata", false);
         asm_line(0, ".Lbaz_frame_message:");
         asm_line(0, ".ascii \"{}\"", message);
         asm_line(0, ".byte 10");
         // the bounds handler may follow and must stay in the code section
-        asm_line(0, ".text");
+        switch_section(".text", true);
     }
 
     auto begin_data(const size_t alignment) -> void override {
         emit_arithmetic_helpers();
-        asm_line(0, ".data");
+        switch_section(".data", false);
         asm_line(0, ".balign {}", alignment);
         label(0, "dat");
     }

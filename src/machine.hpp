@@ -10,6 +10,7 @@
 #include <ostream>
 #include <ranges>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -82,10 +83,11 @@ class machine {
     virtual auto comment(const token& src_loc_tk, const size_t indent,
                          const std::string_view text) -> void = 0;
 
-    virtual auto emit_most_efficient(const token& src_loc_tk,
-                                     const size_t indent,
-                                     const std::string_view without_scratch,
-                                     const std::string_view with_scratch)
+    // emits both versions and keeps the one with less code, the first on ties
+    virtual auto
+    emit_most_efficient(const token& src_loc_tk, const size_t indent,
+                        const std::function_ref<void()> emit_without_scratch,
+                        const std::function_ref<void()> emit_with_scratch)
         -> void = 0;
 
     [[nodiscard]] virtual auto alloc_scratch_register(const token& src_loc_tk,
@@ -383,6 +385,17 @@ class machine {
     }
 
   protected:
+    [[nodiscard]] auto capture_output(const std::function_ref<void()> emit)
+        -> std::string {
+
+        std::stringstream buffer;
+        std::ostream& previous{use_stream(buffer)};
+        emit();
+        use_stream(previous);
+
+        return std::move(buffer).str();
+    }
+
     // immediates are decimal numbers prefixed by unary '-' and '~' operators
     // returns two's complement bits or empty for symbolic expressions
     [[nodiscard]] static auto immediate_bits(const operand& value)

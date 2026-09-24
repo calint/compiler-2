@@ -4,7 +4,6 @@
 #include <memory>
 #include <ostream>
 #include <span>
-#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -280,20 +279,9 @@ class expr_arith final : public expression {
 
         // compile with and without the scratch register to find the best
         // compilation
-
-        // without scratch register
-        std::stringstream ss1;
-        std::ostream& prev1{x.use_stream(ss1)};
-        do_compile(tc, indent, dst_info);
-        x.use_stream(prev1);
-
-        // with scratch register
-        std::stringstream ss2;
-        std::ostream& prev2{x.use_stream(ss2)};
-        compile_through_scratch(tc, indent, dst_info);
-        x.use_stream(prev2);
-
-        x.emit_most_efficient(tok(), indent, ss1.view(), ss2.view());
+        x.emit_most_efficient(
+            tok(), indent, [&] -> void { do_compile(tc, indent, dst_info); },
+            [&] -> void { compile_through_scratch(tc, indent, dst_info); });
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {

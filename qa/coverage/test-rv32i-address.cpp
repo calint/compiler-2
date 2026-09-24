@@ -1,8 +1,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "../../src/almost_assembler_rv32i.hpp"
 #include "../../src/decouple_impl.hpp" // IWYU pragma: keep
-#include "../../src/jump_optimizer.hpp"
 #include "../../src/machine_rv32i.hpp"
 #include "../../src/machine_x86.hpp"
 #include "../../src/program.hpp"
@@ -33,43 +33,82 @@ class assembly_output : public std::ostringstream {
 };
 
 auto main(const int argc, const char* argv[]) -> int {
-    if (argc > 1 and std::string_view{argv[1]} == "optimize-jumps") {
-        jump_optimizer::rv32i::optimize(std::cin, std::cout);
-
-        return 0;
-    }
-    if (argc > 1 and std::string_view{argv[1]} == "resolve-jumps") {
-        jump_optimizer::rv32i::resolve_jumps(std::cin, std::cout);
-
-        return 0;
-    }
     {
-        const auto optimize = [](const std::string& assembly) -> std::string {
-            std::istringstream input{assembly};
+        // 'name:' lines are labels and 'j' or branch lines jump to named
+        // labels, everything else is plain text
+        const auto optimize = [](const std::string_view assembly)
+            -> std::string {
+            almost_assembler_rv32i assembler;
+            for (const auto part : assembly | std::views::split('\n')) {
+                const std::string_view text{part};
+                const size_t start{text.find_first_not_of(' ')};
+                if (start == std::string_view::npos) {
+                    continue;
+                }
+                const std::string_view code{text.substr(start)};
+
+                const bool named{code.front() < '0' or code.front() > '9'};
+                if (code.back() == ':' and named) {
+                    assembler.add_label(
+                        std::string{code.substr(0, code.size() - 1)},
+                        std::string{text});
+                    continue;
+                }
+
+                const std::string_view mnemonic{
+                    code.substr(0, code.find(' '))};
+
+                if (mnemonic != "j" and
+                    not almost_assembler_rv32i::inverse(mnemonic)) {
+                    assembler.add_text(std::string{text});
+                    continue;
+                }
+
+                const size_t target{code.find_last_of(" ,") + 1};
+                const size_t operands{mnemonic.size() + 1};
+
+                const std::string_view operand_text{
+                    target > operands + 2
+                        ? code.substr(operands, target - operands - 2)
+                        : std::string_view{}};
+
+                assembler.add_jump(std::string{text}, mnemonic, operand_text,
+                                   code.substr(target), "t0");
+            }
+            assembler.optimize_jumps();
             std::ostringstream output;
-            jump_optimizer::rv32i::optimize(input, output);
+            assembler.resolve_and_write(output);
 
             return output.str();
         };
-        assert(optimize("    j bool.139.12.end\n    1:\n    j "
-                        "bool.139.12.end\n    bool.139.12.end:\n") ==
-               "    1:\n    bool.139.12.end:\n");
-        assert(optimize("beq a0, a1, 1f\nj end\n1:\naddi a0, a0, 1\nend:\n") ==
-               "bne a0, a1, end\n1:\naddi a0, a0, 1\nend:\n");
-        assert(
-            optimize("1:\naddi a0, a0, 1\nbnez a0, 1b\nj 1f\n# next\n1:\n") ==
-            "1:\naddi a0, a0, 1\nbnez a0, 1b\n# next\n1:\n");
-        const std::string barrier{
-            "beqz a0, 1f\nj end\n1:\n.space 8192\nend:\n"};
-        assert(optimize(barrier) == barrier);
-        std::string distant{"beqz a0, 1f\nj end\n1:\n"};
-        for (size_t count{}; count < 1024; ++count) {
-            distant += "addi a0, a0, 1\n";
-        }
-        distant += "end:\n";
-        assert(optimize(distant) == distant);
+
+        // the patterns 'jump_optimizer::x86' documents, in rv32i form
+        assert(optimize("    j cmp_13_26\n    cmp_13_26:\n") ==
+               "    cmp_13_26:\n");
+
+        assert(optimize("    bne a0, a1, bool_end_15_9\n    j bool_end_15_9\n"
+                        "    bool_end_15_9:\n") == "    bool_end_15_9:\n");
+
+        assert(optimize("    bne a0, a1, cmp_14_26\n    j if_14_8_code\n"
+                        "    cmp_14_26:\n    ecall\n    if_14_8_code:\n") ==
+               "    beq a0, a1, if_14_8_code\n    cmp_14_26:\n    ecall\n"
+               "    if_14_8_code:\n");
+
+        // numeric labels are entries and jumps to the next instruction go
+        assert(optimize("    j done\n    1:\n    j done\n    done:\n") ==
+               "    1:\n    done:\n");
+
+        assert(optimize("beq a0, a1, skip\nj end\nskip:\naddi a0, a0, 1\n"
+                        "end:\n") ==
+               "bne a0, a1, end\nskip:\naddi a0, a0, 1\nend:\n");
+
+        // comments between a jump and its target do not keep the jump
+        assert(optimize("top:\naddi a0, a0, 1\nbnez a0, top\nj next\n# next\n"
+                        "next:\n") ==
+               "top:\naddi a0, a0, 1\nbnez a0, top\n# next\nnext:\n");
+
         // every supported inverse must preserve operand order in both
-        // directions
+        // directions, also with a comment between the branch and the jump
         for (const auto& [first, second] :
              std::array<std::pair<std::string_view, std::string_view>, 8>{{
                  {"beq", "bne"},
@@ -85,49 +124,73 @@ auto main(const int argc, const char* argv[]) -> int {
                 const std::string_view mnemonic{reverse ? second : first};
                 const std::string_view inverted{reverse ? first : second};
                 const std::string_view operands{
-                    first.ends_with('z') ? "a0," : "a0, a1,"};
+                    first.ends_with('z') ? "a0" : "a0, a1"};
+
                 const std::string input{std::format(
-                    "{} {} 1f\n# keep\nj 2f\n1:\naddi a0, a0, 1\n2:\n",
+                    "{} {}, skip\n# keep\nj done\nskip:\naddi a0, a0, 1\n"
+                    "done:\n",
                     mnemonic, operands)};
-                const std::string expected{
-                    std::format("{} {} 2f\n# keep\n1:\naddi a0, a0, 1\n2:\n",
-                                inverted, operands)};
+
+                const std::string expected{std::format(
+                    "{} {}, done\n# keep\nskip:\naddi a0, a0, 1\ndone:\n",
+                    inverted, operands)};
+
                 assert(optimize(input) == expected);
                 assert(optimize(expected) == expected);
             }
         }
+
+        // both outcomes continue at the same place
         assert(optimize("beqz a0, end\nj end\naddi a0, a0, 1\nend:\n") ==
                "j end\naddi a0, a0, 1\nend:\n");
+
+        // nothing reaches a jump right after another
         assert(
             optimize("j end\nj other\naddi a0, a0, 1\nother:\necall\nend:\n") ==
             "j end\naddi a0, a0, 1\nother:\necall\nend:\n");
-        assert(optimize("1:\naddi a0, a0, 1\nbeqz a0, 2f\nj 1b\n2:\n") ==
-               "1:\naddi a0, a0, 1\nbnez a0, 1b\n2:\n");
-        for (const std::string unchanged :
-             {"1:\nj 1b\n", "call end\nend:\n", "jal ra, end\nend:\n",
-              "beqz a0, 1f\nentry:\nj end\n1:\necall\nend:\n",
-              "beqz a0, 1f\nj end\n1:\nunknown_instruction\nend:\n",
-              "j end\n.balign 16\nend:\n", "j missing\n"}) {
+
+        assert(optimize("top:\naddi a0, a0, 1\nbeqz a0, done\nj top\ndone:\n") ==
+               "top:\naddi a0, a0, 1\nbnez a0, top\ndone:\n");
+
+        // labels between the jumps let execution enter
+        for (const std::string_view unchanged :
+             {"top:\nj top\n", "call end\nend:\n",
+              "beqz a0, skip\nentry:\nj end\nskip:\necall\nend:\n",
+              "beqz a0, skip\n1:\nj end\nskip:\necall\nend:\n"}) {
             assert(optimize(unchanged) == unchanged);
         }
-        // pseudo-instructions can exceed branch reach with fewer than 1024
-        // lines
-        std::string expanded{"beqz a0, 1f\nj end\n1:\n"};
-        for (size_t count{}; count < 512; ++count) {
-            expanded += "li a0, 1234567\n";
+
+        // folding ignores reach because resolving grows the branch again
+        std::string distant{"beqz a0, skip\nj end\nskip:\n"};
+        for (size_t count{}; count < 1024; ++count) {
+            distant += "addi a0, a0, 1\n";
         }
-        expanded += "end:\n";
-        assert(optimize(expanded) == expanded);
+        distant += "end:\n";
+
+        assert(optimize(distant) ==
+               "beqz a0, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
+                   distant.substr(distant.find("skip:")));
+
+        {
+            // code continues across data placed in another section
+            almost_assembler_rv32i assembler;
+            assembler.add_jump("beq a0, a1, skip", "beq", "a0, a1", "skip",
+                               "t0");
+            assembler.set_code_section(false);
+            assembler.add_text(".word 1");
+            assembler.set_code_section(true);
+            assembler.add_jump("j end", "j", {}, "end", "t0");
+            assembler.add_label("skip", "skip:");
+            assembler.add_text("ecall");
+            assembler.add_label("end", "end:");
+            assembler.optimize_jumps();
+            std::ostringstream output;
+            assembler.resolve_and_write(output);
+            assert(output.str() == "bne a0, a1, end\n.word 1\nskip:\necall\n"
+                                   "end:\n");
+        }
     }
     {
-        const auto resolve = [](const std::string& assembly) -> std::string {
-            std::istringstream input{assembly};
-            std::ostringstream output;
-            jump_optimizer::rv32i::resolve_jumps(input, output);
-
-            return output.str();
-        };
-
         const auto padding = [](const size_t count) -> std::string {
             std::string text;
             for (size_t i{}; i < count; ++i) {
@@ -137,9 +200,62 @@ auto main(const int argc, const char* argv[]) -> int {
             return text;
         };
 
-        const auto rejects = [&](const std::string& assembly) -> bool {
+        const auto add_nops = [](almost_assembler_rv32i& assembler,
+                                 const size_t count) -> void {
+            for (size_t i{}; i < count; ++i) {
+                assembler.add_text("nop");
+            }
+        };
+
+        const auto add_jump = [](almost_assembler_rv32i& assembler,
+                                 const std::string_view mnemonic,
+                                 const std::string_view operands,
+                                 const std::string_view target,
+                                 const std::string_view scratch) -> void {
+            std::string text{
+                operands.empty()
+                    ? std::format("{} {}", mnemonic, target)
+                    : std::format("{} {}, {}", mnemonic, operands, target)};
+
+            assembler.add_jump(std::move(text), mnemonic, operands, target,
+                               scratch);
+        };
+
+        const auto written =
+            [](almost_assembler_rv32i& assembler) -> std::string {
+            std::ostringstream output;
+            assembler.resolve_and_write(output);
+
+            return output.str();
+        };
+
+        const auto forward = [&](const std::string_view mnemonic,
+                                 const std::string_view operands,
+                                 const size_t count,
+                                 const std::string_view scratch)
+            -> std::string {
+            almost_assembler_rv32i assembler;
+            add_jump(assembler, mnemonic, operands, "end", scratch);
+            add_nops(assembler, count);
+            assembler.add_label("end", "end:");
+
+            return written(assembler);
+        };
+
+        const auto backward = [&](const std::string_view mnemonic,
+                                  const std::string_view operands,
+                                  const size_t count) -> std::string {
+            almost_assembler_rv32i assembler;
+            assembler.add_label("end", "end:");
+            add_nops(assembler, count);
+            add_jump(assembler, mnemonic, operands, "end", "t0");
+
+            return written(assembler);
+        };
+
+        const auto rejects = [](const auto& action) -> bool {
             try {
-                static_cast<void>(resolve(assembly));
+                action();
             } catch (const panic_exception&) {
                 return true;
             }
@@ -148,72 +264,115 @@ auto main(const int argc, const char* argv[]) -> int {
         };
 
         // branches reach 4094 bytes forward and 4096 bytes backward
-        const std::string branch_forward{"beq a0, a1, end # baz: t0\n" +
-                                         padding(1022) + "end:\n"};
+        assert(forward("beq", "a0, a1", 1022, "t0") ==
+               "beq a0, a1, end\n" + padding(1022) + "end:\n");
 
-        assert(resolve(branch_forward) == branch_forward);
-
-        assert(resolve("beq a0, a1, end # baz: t0\n" + padding(1023) +
-                       "end:\n") ==
+        assert(forward("beq", "a0, a1", 1023, "t0") ==
                "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
                    padding(1023) + "end:\n");
 
-        const std::string branch_backward{"end:\n" + padding(1024) +
-                                          "beq a0, a1, end # baz: t0\n"};
+        assert(backward("beq", "a0, a1", 1024) ==
+               "end:\n" + padding(1024) + "beq a0, a1, end\n");
 
-        assert(resolve(branch_backward) == branch_backward);
-
-        assert(resolve("end:\n" + padding(1025) +
-                       "beq a0, a1, end # baz: t0\n") ==
+        assert(backward("beq", "a0, a1", 1025) ==
                "end:\n" + padding(1025) +
                    "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n");
 
         // 'jal' reaches 1048574 bytes forward and 1048576 bytes backward
-        const std::string jal_forward{"j end # baz: t0\n" + padding(262142) +
-                                      "end:\n"};
+        assert(forward("j", {}, 262142, "t0") ==
+               "j end\n" + padding(262142) + "end:\n");
 
-        assert(resolve(jal_forward) == jal_forward);
-
-        assert(resolve("j end # baz: t0\n" + padding(262143) + "end:\n") ==
+        assert(forward("j", {}, 262143, "t0") ==
                "jump end, t0\n" + padding(262143) + "end:\n");
 
-        const std::string jal_backward{"end:\n" + padding(262144) +
-                                       "j end # baz: t0\n"};
+        assert(backward("j", {}, 262144) ==
+               "end:\n" + padding(262144) + "j end\n");
 
-        assert(resolve(jal_backward) == jal_backward);
-
-        assert(resolve("end:\n" + padding(262145) + "j end # baz: t0\n") ==
+        assert(backward("j", {}, 262145) ==
                "end:\n" + padding(262145) + "jump end, t0\n");
 
-        assert(resolve("    bnez a0, end # baz: t1\n" + padding(262143) +
-                       "end:\n") ==
-               "    beqz a0, .Lbaz_jump.0\n    jump end, t1\n.Lbaz_jump.0:\n" +
+        assert(forward("bnez", "a0", 262143, "t1") ==
+               "beqz a0, .Lbaz_jump.0\njump end, t1\n.Lbaz_jump.0:\n" +
                    padding(262143) + "end:\n");
 
-        // growing the inner branch pushes the outer one out of reach
-        const std::string chained{resolve(
-            "beq a0, a1, end # baz: t0\n" + padding(1021) +
-            "beq a0, a1, far # baz: t0\nend:\n" + padding(1100) + "far:\n")};
+        {
+            // growing the inner branch pushes the outer one out of reach
+            almost_assembler_rv32i assembler;
+            add_jump(assembler, "beq", "a0, a1", "end", "t0");
+            add_nops(assembler, 1021);
+            add_jump(assembler, "beq", "a0, a1", "far", "t0");
+            assembler.add_label("end", "end:");
+            add_nops(assembler, 1100);
+            assembler.add_label("far", "far:");
+            const std::string chained{written(assembler)};
+            assert(chained.starts_with("bne a0, a1, .Lbaz_jump.0\nj end\n"));
+            assert(chained.contains("bne a0, a1, .Lbaz_jump.1\nj far\n"));
+        }
+        {
+            // other sections do not count towards code offsets
+            almost_assembler_rv32i assembler;
+            add_jump(assembler, "beq", "a0, a1", "end", "t0");
+            assembler.set_code_section(false);
+            add_nops(assembler, 2000);
+            assembler.set_code_section(true);
+            assembler.add_label("end", "end:");
+            assert(written(assembler) ==
+                   "beq a0, a1, end\n" + padding(2000) + "end:\n");
+        }
+        {
+            // the smaller version is kept and ties keep the first
+            almost_assembler_rv32i assembler;
 
-        assert(chained.starts_with("bne a0, a1, .Lbaz_jump.0\nj end\n"));
-        assert(chained.contains("bne a0, a1, .Lbaz_jump.1\nj far\n"));
+            assembler.emit_smaller([&] { add_nops(assembler, 2); },
+                                   [&] { assembler.add_text("addi a0, a0, 1"); });
 
-        // a named skip label keeps numeric references pointing at the same line
-        assert(resolve("1:\nbnez a0, 1b\nbeq a0, a1, 1f # baz: t0\n" +
-                       padding(1100) + "1:\n")
-                   .starts_with("1:\nbnez a0, 1b\nbne a0, a1, .Lbaz_jump.0\n"
-                                "j 1f\n.Lbaz_jump.0:\n"));
+            assembler.emit_smaller([&] { assembler.add_text("sw a0, 0(sp)"); },
+                                   [&] { add_nops(assembler, 1); });
 
-        // other sections do not count towards code offsets
-        const std::string other_section{
-            "beq a0, a1, end # baz: t0\n.section .rodata\n.zero 8192\n"
-            ".text\nend:\n"};
+            assert(written(assembler) == "addi a0, a0, 1\nsw a0, 0(sp)\n");
+        }
+        {
+            // a nested choice lands inside the version that contains it
+            almost_assembler_rv32i assembler;
 
-        assert(resolve(other_section) == other_section);
+            assembler.emit_smaller(
+                [&] {
+                    assembler.add_text("lw a0, 0(sp)");
+                    assembler.emit_smaller(
+                        [&] { add_nops(assembler, 2); },
+                        [&] { assembler.add_text("addi a0, a0, 1"); });
+                },
+                [&] { add_nops(assembler, 3); });
 
-        assert(rejects("j end\n" + padding(262143) + "end:\n"));
-        assert(rejects("j end\n.zero 8192\nend:\n"));
-        assert(rejects("j end\nunknown_instruction\nend:\n"));
+            assert(written(assembler) == "lw a0, 0(sp)\naddi a0, a0, 1\n");
+        }
+        {
+            // a jump inside a kept version still grows
+            almost_assembler_rv32i assembler;
+
+            assembler.emit_smaller(
+                [&] { add_jump(assembler, "beq", "a0, a1", "end", "t0"); },
+                [&] { add_nops(assembler, 2); });
+
+            add_nops(assembler, 1100);
+            assembler.add_label("end", "end:");
+            assert(written(assembler) ==
+                   "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
+                       padding(1100) + "end:\n");
+        }
+
+        assert(rejects([&] { static_cast<void>(forward("j", {}, 262143, {})); }));
+
+        assert(rejects([] {
+            almost_assembler_rv32i assembler;
+            assembler.add_text("unknown_instruction");
+        }));
+
+        assert(rejects([&] {
+            almost_assembler_rv32i assembler;
+            add_jump(assembler, "j", {}, "missing", "t0");
+            static_cast<void>(written(assembler));
+        }));
     }
     const type integer64{"i64", 8, true};
     const type integer{"i32", 4, true};
@@ -242,10 +401,6 @@ auto main(const int argc, const char* argv[]) -> int {
         return 0;
     }
     {
-        machine_rv32i backend;
-        std::ostringstream output;
-        backend.use_stream(output);
-        // equal expanded costs must retain the version without scratch
         for (const auto [instruction, cost] :
              std::array<std::pair<std::string_view, size_t>, 13>{
                  {{"li a0, 2047", 1},
@@ -261,22 +416,90 @@ auto main(const int argc, const char* argv[]) -> int {
                   {"la a0, buffer", 2},
                   {"call function", 2},
                   {"mv a0, a1", 1}}}) {
-            const std::string candidate{
-                std::format("  # comment\n\t.option norelax\n.Lcandidate: \t# "
-                            "label\n\t{}  # instruction\n",
-                            instruction)};
-            const std::string alternative{
-                cost == 1 ? "addi a0, a1, 0\n"
-                          : "addi a0, a1, 0\naddi a0, a0, 1\n"};
-            backend.emit_most_efficient(token{}, 0, candidate, alternative);
-            assert(output.str() == candidate);
-            output.str({});
-            backend.emit_most_efficient(token{}, 0, candidate,
-                                        "addi a0, a1, 0\n");
-            assert(output.str() ==
-                   (cost == 1 ? candidate : "addi a0, a1, 0\n"));
-            output.str({});
+            assert(almost_assembler_rv32i::line_size_bytes(
+                       std::format("\t{}  # instruction", instruction)) ==
+                   cost * 4);
         }
+
+        for (const std::string_view sizeless :
+             {"  # comment", "\t.option norelax", ".Lcandidate: \t# label"}) {
+            assert(almost_assembler_rv32i::line_size_bytes(sizeless) == 0);
+        }
+
+        // equal sizes keep the version without scratch in direct and buffered
+        // output
+        for (const machine_rv32i::jump_mode jumps :
+             {machine_rv32i::jump_mode::as_emitted,
+              machine_rv32i::jump_mode::resolved,
+              machine_rv32i::jump_mode::optimized}) {
+            machine_rv32i backend{{}, jumps};
+            backend.set_builtin_types(integer64, integer, half, byte, boolean,
+                                      empty);
+            std::ostringstream output;
+            backend.use_stream(output);
+            backend.program_start();
+
+            const operand result{operand::reg("a0", integer)};
+
+            const auto load = [&](const std::string_view value) -> void {
+                backend.copy_value(token{}, 0, result,
+                                   operand::imm(std::string{value}, integer));
+            };
+
+            const auto copy = [&] {
+                backend.copy_value(token{}, 0, result,
+                                   operand::reg("a1", integer));
+            };
+
+            backend.emit_most_efficient(token{}, 0, [&] { load("2047"); },
+                                        copy);
+
+            backend.emit_most_efficient(token{}, 0, [&] { load("2048"); },
+                                        copy);
+
+            backend.finish();
+            assert(output.str().ends_with("li a0, 2047\naddi a0, a1, 0\n"));
+        }
+    }
+    {
+        // the backend's jumps and labels reach the optimizer
+        machine_rv32i backend{{}, machine_rv32i::jump_mode::optimized};
+        backend.set_builtin_types(integer64, integer, half, byte, boolean,
+                                  empty);
+        std::ostringstream output;
+        backend.use_stream(output);
+        backend.program_start();
+
+        const operand left{operand::reg("a0", integer)};
+        const operand right{operand::reg("a1", integer)};
+
+        const auto branch_if_different =
+            [&](const std::string_view target) -> void {
+            backend.compare_and_branch(token{}, 0, left, right,
+                                       {
+                                           .operation{"!="},
+                                           .target{target},
+                                           .branch_on_true{true},
+                                       },
+                                       {});
+        };
+
+        backend.branch(0, "cmp_13_26");
+        backend.label(0, "cmp_13_26");
+        branch_if_different("bool_end_15_9");
+        backend.branch(0, "bool_end_15_9");
+        backend.label(0, "bool_end_15_9");
+        branch_if_different("cmp_14_26");
+        backend.branch(0, "if_14_8_code");
+        backend.label(0, "cmp_14_26");
+        backend.invoke_syscall(0);
+        backend.label(0, "if_14_8_code");
+        backend.finish();
+
+        assert(output.str().contains("la s0, dat\ncmp_13_26:\n"
+                                     "bool_end_15_9:\n"
+                                     "beq a0, a1, if_14_8_code\n"
+                                     "cmp_14_26:\necall\nif_14_8_code:\n"));
     }
     {
         machine_rv32i backend;
@@ -514,31 +737,46 @@ auto main(const int argc, const char* argv[]) -> int {
 
         return 0;
     }
-    if (argc > 1 and std::string_view{argv[1]} == "far-jumps") {
-        machine_rv32i backend;
+    const std::string_view mode{argc > 1 ? argv[1] : ""};
+    if (mode == "far-jumps" or mode == "far-jumps-optimized") {
+        machine_rv32i backend{{},
+                              mode == "far-jumps"
+                                  ? machine_rv32i::jump_mode::resolved
+                                  : machine_rv32i::jump_mode::optimized};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.use_stream(std::cout);
         backend.program_start();
 
-        const auto padding = [](const size_t count) -> void {
+        // buffered output must come from the backend, so pad with 'xori' on a
+        // register nothing reads
+        const auto padding = [&](const size_t count) -> void {
             for (size_t i{}; i < count; ++i) {
-                std::println("    nop");
+                backend.unary(1, '~', operand::reg("s4", integer));
             }
         };
 
+        const operand stack{operand::reg("sp", integer)};
+        const operand iterator{operand::reg("s2", integer)};
+        const operand counter{operand::mem("sp", {}, 1, 0, integer)};
+
         // 8 KiB needs 'j' and 1.08 MiB needs 'jump' in every direction
-        std::println("    addi sp, sp, -16");
+        backend.add_subtract(token{}, 1, '-', stack,
+                             operand::imm("16", integer));
+
         for (const size_t count : {2048U, 270000U}) {
             const std::string loop_label{std::format("far_loop_{}", count)};
-            std::println("    sw zero, 0(sp)\n    li s2, 0");
+            backend.copy_value(token{}, 1, counter, operand::imm("0", integer));
+            backend.copy_value(token{}, 1, iterator,
+                               operand::imm("0", integer));
+
             backend.label(0, loop_label);
             padding(count);
-            std::println("    addi s2, s2, 1");
+            backend.add_subtract(token{}, 1, '+', iterator,
+                                 operand::imm("1", integer));
 
-            backend.advance_array_iteration(
-                1, operand::reg("s2", integer),
-                operand::mem("sp", {}, 1, 0, integer), 4, 3, loop_label);
+            backend.advance_array_iteration(1, iterator, counter, 4, 3,
+                                            loop_label);
 
             backend.compare_and_branch(token{}, 1, operand::reg("s2", integer),
                                        operand::imm("15", integer),
@@ -570,7 +808,9 @@ auto main(const int argc, const char* argv[]) -> int {
             backend.exit(token{}, 1, operand::imm("3", integer));
             backend.label(0, skipped_label);
         }
-        std::println("    addi sp, sp, 16");
+        backend.add_subtract(token{}, 1, '+', stack,
+                             operand::imm("16", integer));
+
         backend.program_end();
         padding(270000);
         backend.label(0, "far_failure");

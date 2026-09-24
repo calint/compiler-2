@@ -23,13 +23,6 @@ ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
 printf 'rv32i address lowering: executing with QEMU\n'
 qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/434.in" > "$TEST_DIR/output"
 cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/434.out"
-printf 'rv32i jumps: assembling and executing optimized backend cases\n'
-"$TEST_DIR/generate" optimize-jumps < "$TEST_DIR/test.s" > "$TEST_DIR/optimized.s"
-llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
-    "$TEST_DIR/optimized.s" -o "$TEST_DIR/test.o"
-ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
-qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/434.in" > "$TEST_DIR/output"
-cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/434.out"
 printf 'rv32i arithmetic: checking division by zero trap\n'
 ld.lld -m elf32lriscv -e divide_by_zero -o "$TEST_DIR/divide-by-zero" "$TEST_DIR/test.o"
 ulimit -c 0
@@ -88,23 +81,13 @@ llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/long-loop.s" -o "$TEST_DIR/long-loop.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/long-loop" "$TEST_DIR/long-loop.o"
 timeout -k 1s 5s qemu-riscv32 "$TEST_DIR/long-loop"
-"$TEST_DIR/generate" optimize-jumps < "$TEST_DIR/long-loop.s" > "$TEST_DIR/optimized.s"
-llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
-    "$TEST_DIR/optimized.s" -o "$TEST_DIR/long-loop.o"
-ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/long-loop" "$TEST_DIR/long-loop.o"
-timeout -k 1s 5s qemu-riscv32 "$TEST_DIR/long-loop"
 printf 'rv32i array iteration: long loop: ok\n'
 printf 'rv32i jumps: resolving and executing jumps beyond 4 KiB and 1 MiB\n'
-"$TEST_DIR/generate" far-jumps > "$TEST_DIR/far-jumps-raw.s"
-"$TEST_DIR/generate" resolve-jumps < "$TEST_DIR/far-jumps-raw.s" > "$TEST_DIR/far-jumps.s"
-grep -q '^    jump far_loop_270000, ' "$TEST_DIR/far-jumps.s"
-grep -q '^    jump far_skipped_270000, ' "$TEST_DIR/far-jumps.s"
-grep -q '^    j far_loop_2048$' "$TEST_DIR/far-jumps.s"
-for stage in resolved optimized; do
-    if [ "$stage" = optimized ]; then
-        "$TEST_DIR/generate" optimize-jumps < "$TEST_DIR/far-jumps.s" > "$TEST_DIR/far-jumps-optimized.s"
-        mv "$TEST_DIR/far-jumps-optimized.s" "$TEST_DIR/far-jumps.s"
-    fi
+for mode in far-jumps far-jumps-optimized; do
+    "$TEST_DIR/generate" "$mode" > "$TEST_DIR/far-jumps.s"
+    grep -q '^    jump far_loop_270000, ' "$TEST_DIR/far-jumps.s"
+    grep -q '^    jump far_skipped_270000, ' "$TEST_DIR/far-jumps.s"
+    grep -q '^    j far_loop_2048$' "$TEST_DIR/far-jumps.s"
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
         "$TEST_DIR/far-jumps.s" -o "$TEST_DIR/far-jumps.o"
     ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/far-jumps" "$TEST_DIR/far-jumps.o"
