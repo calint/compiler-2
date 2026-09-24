@@ -4,7 +4,7 @@
 [x] qa/coverage: run-tests-coverage.sh [build|run|report]
 [ ] x86 register utilization: t110, t83, t105
 [x] don't allow function declarations without { }
-[ ] move the coverage tests into a subdirectory
+[x] move the coverage tests into a subdirectory
 [ ] syntax change: 
     func noinline factorial(value i32) result i32 {
     func noinline factorial(value) result { # default type
