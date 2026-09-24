@@ -237,9 +237,6 @@ SRC=t245 && EXP=0 && RUN
 SRC=t246 && EXP=0 && RUN
 SRC=t249 && EXP=0 && RUN
 SRC=t248 && COMPERR
-# SRC=t250 && COMPERR # x86 shift-count register
-# SRC=t251 && COMPERR # x86 division registers
-# SRC=t252 && COMPERR # x86 division registers
 SRC=t253 && COMPERR
 SRC=t254 && COMPERR
 SRC=t255 && COMPERR
@@ -417,11 +414,7 @@ SRC=t452 && EXP=0 && RUN
 SRC=t453 && EXP=0 && RUN
 SRC=t454 && EXP=0 && RUN
 SRC=t455 && EXP=0 && RUN
-# SRC=t456 && EXP=0 && RUN # x86 register-width aliases
-# SRC=t457 && EXP=0 && RUN # x86 arena and syscall registers
-# SRC=t459 && COMPERR # x86 register name
-# SRC=t460 && COMPERR # x86 register name
-# SRC=t461 && COMPERR # x86 register name
+SRC=t459 && EXP=0 && RUN
 SRC=t462 && EXP=0 && RUN
 SRC=t463 && EXP=0 && RUN
 SRC=t464 && EXP=0 && RUN
@@ -434,13 +427,11 @@ SRC=t467 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
 SRC=t468 && COMPERR
 SRC=t469 && COMPERR
 SRC=t470 && COMPERR
-# SRC=t471 && COMPERR # x86 register result destination
 SRC=t472 && COMPERR
 SRC=t473 && COMPERR
 SRC=t474 && COMPERR
 SRC=t475 && COMPERR
 SRC=t476 && COMPERR
-# SRC=t477 && COMPERR # x86 register argument
 SRC=t478 && COMPERR
 SRC=t480 && COMPERR
 SRC=t481 && COMPERR
@@ -518,4 +509,5 @@ SRC=t552 && COMPERR
 SRC=t553 && COMPERR
 SRC=t554 && COMPERR
 SRC=t555 && EXP=0 && RUN
+SRC=t556 && EXP=0 && RUN
 if [[ $MACHINE == x86_64 ]]; then SRC=t522 && EXP=0 && RUN; fi

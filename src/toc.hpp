@@ -408,13 +408,6 @@ class toc final {
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  const bool is_dat) -> void {
 
-        if (machine_.get().register_size_bytes(var.name) != 0) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("cannot use register name '{}' as a variable name",
-                            var.name)};
-        }
-
         // check if the variable is already declared in this scope
         if (frames_.back().has_var(var.name)) {
             const var_info& decl_var{
@@ -1140,13 +1133,6 @@ class toc final {
             }
         }
 
-        if (const ident_info reg_info{
-                make_ident_info_register_or_empty(ident, id)};
-            not reg_info.is_empty()) {
-
-            return reg_info;
-        }
-
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);
     }
 
@@ -1167,14 +1153,6 @@ class toc final {
             return make_ident_info_from_var_info(
                 src_loc_tk, ident, id,
                 frames_.front().get_var_const_ref(id.base()), lea_path);
-        }
-
-        // try register
-        if (const ident_info reg_info{
-                make_ident_info_register_or_empty(ident, id)};
-            not reg_info.is_empty()) {
-
-            return reg_info;
         }
 
         // try constant
@@ -1256,32 +1234,6 @@ class toc final {
         }
 
         return ii;
-    }
-
-    [[nodiscard]] auto
-    make_ident_info_register_or_empty(const std::string_view ident,
-                                      const ident_path& id) const
-        -> ident_info {
-
-        // is it a register?
-        if (const size_t reg_size_bytes{
-                machine_.get().register_size_bytes(id.str())};
-            reg_size_bytes != 0) {
-
-            const type* type_ptr{
-                machine_.get().allocated_register_type(id.str())};
-            if (not type_ptr) {
-                type_ptr = &builtin_type_for_size_bytes(reg_size_bytes);
-            }
-
-            const operand reg{
-                machine_.get().make_register_operand(id.str(), *type_ptr)};
-
-            return ident_info::make_register(ident, reg);
-        }
-
-        // not resolved, return empty info
-        return ident_info::make_empty();
     }
 
     [[nodiscard]] auto

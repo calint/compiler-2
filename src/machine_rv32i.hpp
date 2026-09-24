@@ -2799,14 +2799,8 @@ class machine_rv32i final : public machine {
         asm_line(0, ".endr");
     }
 
-    [[nodiscard]] auto register_size_bytes(const std::string_view name) const
-        -> size_t override {
-        return is_register(name) ? 4 : 0;
-    }
-
     [[nodiscard]] auto
-    allocated_register_type(const std::string_view name) const
-        -> const type* override {
+    allocated_register_type(const std::string_view name) const -> const type* {
         const size_t index{register_index(name)};
         for (const allocation& entry : allocations_) {
             if (entry.register_index == index) {

@@ -1,3 +1,16 @@
+# register names are ordinary identifiers on every target
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func sum(rbp, t1) rax { rax = rbp + t1 }
+
+dat a0 = 3
+
 func main() {
     var eax = 1
+    var r11b = sum(eax, 2)
+    var sp = r11b + a0
+    assert(1, eax == 1)
+    assert(2, r11b == 3)
+    assert(3, sp == 6)
 }

@@ -1,4 +1,0 @@
-# non-inline result cannot be placed in a register
-
-func noinline target() result { result = 1 }
-func main() { rax = target() }

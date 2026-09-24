@@ -1,3 +1,0 @@
-# division requires a valid divisor expression
-
-func main() { var x = 1 / rax }

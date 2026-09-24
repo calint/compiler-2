@@ -1,0 +1,15 @@
+# constant arguments with unary operators are folded before aliasing
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func pass(x) res { res = x }
+
+const c = 5
+
+func main() {
+    assert(1, pass(~1) == -2)
+    assert(2, pass(~-1) == 0)
+    assert(3, pass(-~1) == 2)
+    assert(4, pass(~c) == -6)
+    assert(5, pass(-c) == -5)
+}

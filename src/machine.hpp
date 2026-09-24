@@ -344,13 +344,6 @@ class machine {
         -> void = 0;
 
     [[nodiscard]] virtual auto
-    register_size_bytes(const std::string_view name) const -> size_t = 0;
-
-    [[nodiscard]] virtual auto
-    allocated_register_type(const std::string_view name) const
-        -> const type* = 0;
-
-    [[nodiscard]] virtual auto
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
 

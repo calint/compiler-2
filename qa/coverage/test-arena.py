@@ -19,9 +19,8 @@ func bump(value item) { value.values[2] = value.values[2] + 1 }
 """
 # Runtime checks: the first local is aligned and zeroed; sibling blocks reuse
 # and re-zero storage; nested indexing and mutation through a function argument
-# work without corrupting neighbors; the machine stack pointer stays unchanged.
+# work without corrupting neighbors.
 BODY = """    var first_local[3] i8
-    var original_stack = rsp
     var first_address = address_of(first_local)
     assert(1, first_address % 16 == 0)
     assert(2, first_local[0] == 0)
@@ -45,7 +44,6 @@ BODY = """    var first_local[3] i8
     assert(5, items[index].values[2] == 42)
     assert(6, items[index].tag == 9)
     assert(7, first_local[2] == 23)
-    assert(8, rsp == original_stack)
 """
 
 
@@ -250,37 +248,6 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             assert measurements[0][:2] == measurements[1][:2], measurements
             assert measurements[1][2] - measurements[0][2] == 1048576 - 4096
             print(f"arena {name} {mode}: ok", flush=True)
-
-    for register, value_type in (("rbp", "i64"), ("ebp", "i32"), ("bp", "i16"), ("bpl", "i8")):
-        source = COMMON + f"""func main() {{
-    var original {value_type} = {register}
-    rbx = rbp
-    {register} = 42
-    rax = {register}
-    rbp = rbx
-    var moved = rax
-    assert(1, moved == 42)
-    {register} = 43
-    rax = {register}
-    rbp = rbx
-    var assigned = rax
-    assert(2, assigned == 43)
-    assert(3, {register} == original)
-}}
-"""
-        for mode, options in modes.items():
-            result = compile_source(directory, source, 4096, options)
-            assert result.returncode == 0, (register, mode, result.stderr)
-            assembly = directory / "arena.s"
-            assembly.write_text(result.stdout)
-            subprocess.run(["nasm", "-f", "elf64", "arena.s"], cwd=directory, check=True)
-            subprocess.run(
-                ["ld", "-s", "-T", str(ROOT / "baz.ld"), "-o", "arena", "arena.o"],
-                cwd=directory, check=True,
-            )
-            run = subprocess.run([str(directory / "arena")], capture_output=True)
-            assert run.returncode == 0, (register, mode, run.returncode, run.stderr)
-        print(f"arena access {register}: ok", flush=True)
 
     for offset in (2047, 2048, 8196, 2147483647, 2147483648, 2147483656):
         source = f"""type large {{ padding[{offset}] i8, value i32, next i32 }}

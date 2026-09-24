@@ -1269,8 +1269,8 @@ class machine_x86 final : public machine {
     }
 
     // returns 0 if name is not a register
-    [[nodiscard]] auto register_size_bytes(const std::string_view name) const
-        -> size_t override {
+    [[nodiscard]] static auto register_size_bytes(const std::string_view name)
+        -> size_t {
 
         for (const register_names& names : register_names_) {
             if (name == names.qword) {
@@ -1295,8 +1295,7 @@ class machine_x86 final : public machine {
     }
 
     [[nodiscard]] auto
-    allocated_register_type(const std::string_view name) const
-        -> const type* override {
+    allocated_register_type(const std::string_view name) const -> const type* {
 
         const size_t size_bytes{register_size_bytes(name)};
         if (size_bytes == 0) {
