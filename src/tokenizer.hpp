@@ -33,7 +33,7 @@ class tokenizer final {
     size_t at_line_{1};
 
     static constexpr std::string_view delimiters_{
-        " \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
+        " \t\r\n(){}[]=,.:+-*/%&|^<>!#\0"};
 
     static constexpr std::string_view structurals_{"={}[],:"};
 
@@ -163,20 +163,6 @@ class tokenizer final {
         return is_eos() ? '\0' : src_[char_ix_];
     }
 
-    [[nodiscard]] auto read_rest_of_line() -> std::string_view {
-        const size_t bgn{char_ix_};
-        const size_t newline{src_.find('\n', char_ix_)};
-        char_ix_ = newline == std::string_view::npos ? src_.size() : newline;
-        const size_t len{char_ix_ - bgn};
-        if (not is_eos()) {
-            ++char_ix_; // skip the '\n'
-            ++at_line_;
-        }
-        pos_ = src_str_.substr(char_ix_);
-
-        return src_.substr(bgn, len);
-    }
-
     [[nodiscard]] auto next_char() -> char {
         assert(not is_eos());
 
@@ -198,6 +184,8 @@ class tokenizer final {
     [[nodiscard]] auto cur_line() const -> size_t { return at_line_; }
 
   private:
+    // comments are part of the whitespace so parsers never see them and
+    // 'source_to' reproduces them with the surrounding tokens
     [[nodiscard]] auto next_whitespace() -> std::string_view {
         if (is_eos()) {
             return "";
@@ -205,6 +193,10 @@ class tokenizer final {
         const size_t bgn_ix{char_ix_};
         while (not is_eos()) {
             const char ch{src_[char_ix_]};
+            if (ch == '#') {
+                skip_to_end_of_line();
+                continue;
+            }
             if (not std::string_view{" \t\r\n"}.contains(ch)) {
                 break;
             }
@@ -217,6 +209,12 @@ class tokenizer final {
         const size_t len{char_ix_ - bgn_ix};
 
         return src_.substr(bgn_ix, len);
+    }
+
+    // the newline is left for 'next_whitespace' so it counts the line
+    auto skip_to_end_of_line() -> void {
+        const size_t newline{src_.find('\n', char_ix_)};
+        char_ix_ = newline == std::string_view::npos ? src_.size() : newline;
     }
 
     [[nodiscard]] auto next_token_str() -> std::string_view {

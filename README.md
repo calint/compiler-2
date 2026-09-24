@@ -65,10 +65,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           3536           1081          12613
+C/C++ Header                    51           3524           1086          12577
 C++                              1             47              7            242
 -------------------------------------------------------------------------------
-SUM:                            53           3583           1088          12855
+SUM:                            52           3571           1093          12819
 -------------------------------------------------------------------------------
 ```
 
@@ -1884,9 +1884,6 @@ lea rbp, [dat]
 ; program
 ;
 
-;[1:1] # user types are defined using keyword `type`
-;[3:1] # built-in types are `i63`, `i32`, `i16`, `i8` and `bool`
-;[5:1] # default type is used if ommitted (`i64` on x86_64 and 'i32' on rv32i)
 ;[7:1] point : 16 B    fields:
 ;[7:1]       name :  offset :    size :  array? : array size
 ;[7:1]          x :       0 :       8 :      no :           
@@ -1906,7 +1903,6 @@ lea rbp, [dat]
 ;[13:1]        len :       0 :       1 :      no :           
 ;[13:1]       data :       1 :     127 :     yes :        127
 ; 
-;[18:1] # initial data is initialized before variables
 ;[20:1] dat hello[] i8 = "hello world from baz\n"
 ;[20:7] hello: i8[21] (21 B @ [rbp])
 ;[21:1] dat prompt1[] i8 = "enter name:\n"
@@ -1923,25 +1919,11 @@ lea rbp, [dat]
 ;[26:7] colon: i8[2] (2 B @ [rbp + 61])
 ;[27:1] dat nums[4] = { 1 }
 ;[27:8] nums: i64[4] (32 B @ [rbp + 63])
-;[27:24] # remaining elements are zeroed
 ;[28:1] dat str1 str = { 3 }
 ;[28:8] str1: str (128 B @ [rbp + 95])
-;[28:25] # remaining fields are zeroed
-;[30:1] # default is to inline functions
-;[33:1] # exit is a built-in function
-;[41:1] # function arguments and return are equivalent to mutable references
-;[48:1] # default argument type is i64 on x86_64 and i32 on rv32i
-;[49:1] # arguments are references to memory locations
-;[56:1] # return is a reference to the target with optional type
-;[57:1] # it is accessed as a variable, in this case `res`
-;[67:1] # array arguments are declared with [] and optional type
 ;[95:7] const yes = 1
 ;[96:7] const no = 0
 ;[97:7] const maybe = -1
-;[99:1] # constants can be declared in any scope and shadow outer declarations
-;[102:1] # limited support for non-inlined functions
-;[103:1] # arguments and return are references to memory locations
-;[104:1] # arrays not supported
 ; 
 main:
 ;   [144:5] var arr[4] i32
@@ -1950,7 +1932,6 @@ main:
 ;   [144:5] size <= 32 B, use mov
     mov qword [rbp + 224], 0
     mov qword [rbp + 232], 0
-;   [145:5] # arrays are initialized to 0
 ;   [147:5] var answer
 ;   [147:9] answer: i64 (8 B @ [rbp + 240])
 ;   [147:9] zero 1 * 8 B = 8 B
@@ -1984,7 +1965,6 @@ main:
         if.32.24.148.5.end:
 ;       [148:5] free scratch register r15
     func.assert.148.5.end:
-;   [149:5] # variables without initializer are zeroed
 ;   [151:5] answer = maybe
 ;   [151:14] maybe
     mov qword [rbp + 240], -1
@@ -2016,8 +1996,6 @@ main:
         if.32.24.152.5.end:
 ;       [152:5] free scratch register r15
     func.assert.152.5.end:
-;       [155:9] # a code block opens a new scope
-;       [156:9] # constants and variables shadow outer scope
 ;       [157:15] const maybe = 33
 ;       [158:9] assert(maybe == 33)
 ;       [158:16] allocate scratch register -> r15
@@ -2080,7 +2058,6 @@ main:
 ;   [163:9] ix = 1
 ;   [163:14] 1
     mov qword [rbp + 248], 1
-;   [164:5] # variables can have an initial value that can be an expression
 ;   [166:5] arr[ix] = 2
 ;   [166:9] allocate scratch register -> r15
 ;   [166:9] set array index
@@ -2322,7 +2299,6 @@ main:
         if.32.24.172.5.end:
 ;       [172:5] free scratch register r15
     func.assert.172.5.end:
-;   [173:5] # `array_copy` is a built-in function: copy from, to, number of elements
 ;   [175:5] var arr1[8] i32
 ;   [175:9] arr1: i32[8] (32 B @ [rbp + 256])
 ;   [175:9] zero 8 * 4 B = 32 B
@@ -2440,8 +2416,6 @@ main:
 ;       [177:19] free named register rsi
         sete byte [rbp + 288]
     bool.177.19.end:
-;   [178:5] # type `bool` is built-in
-;   [179:5] # `arrays_equal` is built-in function comparing source and destination
 ;   [180:5] assert(eq)
 ;   [180:12] allocate scratch register -> r15
 ;   [180:12] ? eq
@@ -2861,10 +2835,6 @@ main:
         if.32.24.197.5.end:
 ;       [197:5] free scratch register r15
     func.assert.197.5.end:
-;   [198:5] # `foo` is a language construct that iterates over an array injecting:
-;   [199:5] # `e`: current element
-;   [200:5] # `i`: index starting at 0
-;   [201:5] # `n`: constant array size
 ;   [203:5] var p point = {0, 0}
 ;   [203:9] p: point (16 B @ [rbp + 305])
 ;   [203:9] p = {0, 0}
@@ -2879,11 +2849,9 @@ main:
 ;       [44:5] pt.x = 0b10
 ;       [44:12] 0b10
         mov qword [rbp + 305], 2
-;       [44:20] # binary value 2
 ;       [45:5] pt.y = 0xb
 ;       [45:12] 0xb
         mov qword [rbp + 313], 11
-;       [45:20] # hex value 11
     func.fooz.204.5.end:
 ;   [205:5] assert(p.x == 2)
 ;   [205:12] allocate scratch register -> r15
@@ -2991,8 +2959,6 @@ main:
         if.32.24.209.5.end:
 ;       [209:5] free scratch register r15
     func.assert.209.5.end:
-;   [210:5] # `equal` is built-in function to compare user types for equality or same
-;   [211:5] # size arrays
 ;   [213:5] q.x = 3
 ;   [213:11] 3
     mov qword [rbp + 321], 3
@@ -3660,7 +3626,6 @@ main:
 ;   [257:5] o3.pos.y = 73
 ;   [257:16] 73
     mov qword [rbp + 473], 73
-;   [258:5] # index 0 in an array can be accessed without array index
 ;   [260:5] assert(o3[0].pos.y == 73)
 ;   [260:12] allocate scratch register -> r15
 ;   [260:12] ? o3[0].pos.y == 73
@@ -3969,7 +3934,6 @@ main:
 ;   [268:5] free named register rcx
 ;   [268:5] free named register rdi
 ;   [268:5] free named register rsi
-;   [273:5] # `array_length` is built-in
 ;   [275:5] assert(worlds[0].locations[1] == 0xffee)
 ;   [275:12] allocate scratch register -> r15
 ;   [275:12] ? worlds[0].locations[1] == 0xffee
@@ -4302,8 +4266,6 @@ main:
 ;       [36:5] free named register rdx
 ;       [36:5] free named register rsi
 ;       [36:5] free named register rdi
-;       [37:5] # write is a built-in functions writes to a file descriptor
-;       [38:5] # it has 2 more optional arguments: count and start index
     func.print.288.5.end:
 ;   [289:5] label
     loop.289.5:
@@ -4341,8 +4303,6 @@ main:
 ;           [36:5] free named register rdx
 ;           [36:5] free named register rsi
 ;           [36:5] free named register rdi
-;           [37:5] # write is a built-in functions writes to a file descriptor
-;           [38:5] # it has 2 more optional arguments: count and start index
         func.print.292.9.end:
 ;       [293:9] print(prompt1)
 ;       [35:6] print(str[] i8)
@@ -4363,8 +4323,6 @@ main:
 ;           [36:5] free named register rdx
 ;           [36:5] free named register rsi
 ;           [36:5] free named register rdi
-;           [37:5] # write is a built-in functions writes to a file descriptor
-;           [38:5] # it has 2 more optional arguments: count and start index
         func.print.293.9.end:
 ;       [294:9] str_in(nm)
 ;       [73:6] str_in(s str)
@@ -4391,8 +4349,6 @@ main:
 ;           [74:18] free named register rdx
 ;           [74:18] free named register rsi
 ;           [74:18] free named register rdi
-;           [75:5] # read is built-in function that operates on file descriptors
-;           [76:5] # it has 2 more optional arguments: count and start index
 ;           [77:5] s.len = i8(nbytes - 1)
 ;           [77:13] s.len = i8(nbytes - 1)
 ;           [77:13] = expression
@@ -4441,8 +4397,6 @@ main:
 ;               [36:5] free named register rdx
 ;               [36:5] free named register rsi
 ;               [36:5] free named register rdi
-;               [37:5] # write is a built-in functions writes to a file descriptor
-;               [38:5] # it has 2 more optional arguments: count and start index
             func.print.298.13.end:
 ;           [299:13] continue
             jmp loop.289.5
@@ -4467,8 +4421,6 @@ main:
 ;               [36:5] free named register rdx
 ;               [36:5] free named register rsi
 ;               [36:5] free named register rdi
-;               [37:5] # write is a built-in functions writes to a file descriptor
-;               [38:5] # it has 2 more optional arguments: count and start index
             func.print.301.13.end:
 ;           [302:13] str_out(nm)
 ;           [80:6] str_out(s str)
@@ -4521,8 +4473,6 @@ main:
 ;               [36:5] free named register rdx
 ;               [36:5] free named register rsi
 ;               [36:5] free named register rdi
-;               [37:5] # write is a built-in functions writes to a file descriptor
-;               [38:5] # it has 2 more optional arguments: count and start index
             func.print.303.13.end:
 ;           [304:13] print(nl)
 ;           [35:6] print(str[] i8)
@@ -4543,8 +4493,6 @@ main:
 ;               [36:5] free named register rdx
 ;               [36:5] free named register rsi
 ;               [36:5] free named register rdi
-;               [37:5] # write is a built-in functions writes to a file descriptor
-;               [38:5] # it has 2 more optional arguments: count and start index
             func.print.304.13.end:
         if.295.9.end:
     jmp loop.289.5
@@ -4630,8 +4578,6 @@ func.print_num:
 ;       [119:31] free named register rax
         add qword [rbx + 45], r15
 ;       [119:27] free scratch register r15
-;       [120:9] # note: not buf[i] = 48 + ... because expression will be executed as
-;       [121:9] # byte sized and n overflows
 ;       [122:9] buf[i] = i8(ascii)
 ;       [122:13] allocate scratch register -> r15
 ;       [122:13] set array index

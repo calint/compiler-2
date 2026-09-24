@@ -1,0 +1,6 @@
+# a comment at the end of the file without a final newline
+
+func main() {
+    exit(0)
+}
+# last line

@@ -1,0 +1,24 @@
+# comments in single statement blocks and boolean expressions
+
+func hex_digit(nibble) res {
+    if nibble > 9 res = nibble + 0x37 # 'A' through 'F'
+    else res = nibble + 0x30 # '0' through '9'
+}
+
+func main() {
+    if hex_digit(10) != 0x41 exit(1)
+    if hex_digit(3) != 0x33 exit(2)
+
+    var a = 1
+    var b = 2
+    if a == 1 and # first condition
+       b == 2 {   # second condition
+        a = 3
+    }
+    if a != 3 exit(3)
+
+    loop { # loop body
+        break
+    }
+    exit(0)
+}

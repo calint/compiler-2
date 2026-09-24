@@ -91,9 +91,6 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         throw compiler_exception{
             tk, "expected constant, identifier, or function call"};
     }
-    if (tk.text().starts_with("#")) {
-        throw compiler_exception{tk, "unexpected comment in expression"};
-    }
     if (tk.is_text("read") or tk.is_text("write")) {
         return std::make_unique<stmt_builtin_io>(tc, std::move(uops), tk, tz);
     }

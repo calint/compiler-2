@@ -1,0 +1,9 @@
+# a '#' inside a string is not a comment and a comment needs no space
+
+dat msg[] i8 = "a # b\n"
+
+func main() {
+    var n = 1#comment directly after a token
+    write(1, msg)
+    exit(n - 1)
+}

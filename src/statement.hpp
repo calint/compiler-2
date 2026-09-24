@@ -31,42 +31,52 @@ class statement {
                ch == '\f' or ch == '\v';
     }
 
+    // one line for an assembler comment: whitespace and source comments
+    // become single spaces, string literals are kept as written
     [[nodiscard]] static auto collapse_whitespace(const std::string_view text)
         -> std::string {
 
-        if (text.empty()) {
-            return {};
-        }
-
-        size_t start{};
-        while (start < text.size() and is_ascii_space(text[start])) {
-            ++start;
-        }
-        if (start == text.size()) {
-            return {};
-        }
-
         std::string out;
-        out.reserve(text.size() - start);
+        out.reserve(text.size());
 
-        bool in_whitespace{};
+        bool pending_space{};
+        bool in_comment{};
+        bool in_string{};
+        bool escaped{};
 
-        for (const char ch : text | std::views::drop(start)) {
-            if (is_ascii_space(ch)) {
-                if (in_whitespace) {
-                    continue;
-                }
-                out.push_back(' ');
-                in_whitespace = true;
+        for (const char ch : text) {
+            if (in_comment) {
+                in_comment = ch != '\n';
                 continue;
             }
 
-            out.push_back(ch);
-            in_whitespace = false;
-        }
+            // a '#' inside a string literal does not start a comment
+            if (in_string) {
+                out.push_back(ch);
+                in_string = escaped or ch != '"';
+                escaped = not escaped and ch == '\\';
+                continue;
+            }
 
-        if (not out.empty() and out.back() == ' ') {
-            out.pop_back();
+            if (ch == '#') {
+                in_comment = true;
+                pending_space = true;
+                continue;
+            }
+
+            if (is_ascii_space(ch)) {
+                pending_space = true;
+                continue;
+            }
+
+            // leading and trailing whitespace is dropped
+            if (pending_space and not out.empty()) {
+                out.push_back(' ');
+            }
+            pending_space = false;
+
+            out.push_back(ch);
+            in_string = ch == '"';
         }
 
         return out;

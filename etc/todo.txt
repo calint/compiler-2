@@ -71,11 +71,6 @@
             record and non-inline results with runtime indexes
         [ ] re-enable 485.baz
     [ ] --checks=noub enables all of the above
-[ ] comments are not reproduced exactly by --reproduce-source
-    => a comment at the end of a file without a final newline gets one
-       added, e.g. 'func main() {\n    exit(0)\n}\n# c4' because
-       'stmt_comment::source_to' always uses 'println'
-    => review comment handling in general before fixing
 [ ] allow record literals and record call results as arguments, e.g.
     'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
     caller's frame. rejected today with "argument 1 cannot be a temporary"
@@ -97,7 +92,6 @@
 [ ] rv32i constant multiply by a negative constant ends with 'sub r, zero, r'.
     when the last digit is a subtract with no trailing shift, fold the
     negation into it: 'x * -7' as 'slli t0, t1, 3' + 'sub t0, t1, t0'
-[x] re-number the tests to be a sequence without gaps
 [ ] UB detection, what remains:
     [ ] result aliases a by-reference argument: 'x = f(x)', 'p = swap(p)'
         (485.baz, inline and noinline). reject when the callee reads that
@@ -154,16 +148,6 @@
 [ ] consider a var type that can be viewed from enclosing functions
 [ ] consider padding to natural bounds: dat, var and type fields
 [ ] consider refactoring it into a 1 pass compiler
-[ ] resolve issues with comments in expressions etc
-    var x = 1 + # comment
-            2
-    dat s : str = { 
-        3 # comment 
-    }
-    => remarkably difficult 
-[ ] parsing comments in single statement block fails:
-        if nibble > 9 nibble = nibble + 0x41 # 0 through 9
-        else nibble = nibble + 0x30
 [ ] a way to specify a range in the array: foo arr(bgn_index, len, i_start)
 [ ] foo arr1, arr2, ... {
       # injected variable 'e1', 'e2', 'e...': current array elements
@@ -288,6 +272,28 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] comments are not reproduced exactly by --reproduce-source
+    => a comment at the end of a file without a final newline gets one
+       added, e.g. 'func main() {\n    exit(0)\n}\n# c4' because
+       'stmt_comment::source_to' always uses 'println'
+    => review comment handling in general before fixing
+    => done: the tokenizer reads a comment as whitespace, so tokens keep it
+       in their surrounding whitespace and parsers never see it.
+       'stmt_comment' is removed and assembler comment lines drop source
+       comments (533.baz-537.baz)
+[x] re-number the tests to be a sequence without gaps
+[x] resolve issues with comments in expressions etc
+    var x = 1 + # comment
+            2
+    dat s : str = { 
+        3 # comment 
+    }
+    => remarkably difficult 
+    => done: comments are whitespace, see 533.baz, 534.baz
+[x] parsing comments in single statement block fails:
+        if nibble > 9 nibble = nibble + 0x41 # 0 through 9
+        else nibble = nibble + 0x30
+    => done: see 535.baz
 [x] function names used as assembly labels can clash (505.baz, 506.baz)
     => non-inline label is the bare name: 'rax', 'qword', 'byte', 'rel', 'sp'
        fail in nasm and '_start', 'dat', 'vars', 'baz_bounds_panic' redefine

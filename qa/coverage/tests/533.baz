@@ -1,0 +1,24 @@
+# comments inside arithmetic expressions and call arguments
+
+func add(a, b) res {
+    res = a + # left operand
+          b   # right operand
+}
+
+func main() {
+    var x = 1 + # first term
+            2 * # second term
+            3
+    if x != 7 exit(1)
+
+    var y = add(x, # first argument
+                5)
+    if y != 12 exit(2)
+
+    y = ( # opening parenthesis
+        y - 2 # inside parentheses
+    ) * 2
+    if y != 20 exit(3)
+
+    exit(0)
+}

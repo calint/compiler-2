@@ -99,9 +99,6 @@ class program final {
             } else if (tk.is_text("var")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_var>(tc_, tk, tz));
-            } else if (tk.text().starts_with("#")) {
-                statements_.emplace_back(
-                    std::make_unique<stmt_comment>(tc_, unary_ops{}, tk, tz));
             } else {
                 throw compiler_exception{
                     tk, std::format("unexpected keyword '{}'", tk.text())};

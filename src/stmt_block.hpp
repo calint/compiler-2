@@ -12,7 +12,6 @@
 #include "decouple.hpp"
 #include "stmt_break.hpp"
 #include "stmt_builtin_array_copy.hpp"
-#include "stmt_comment.hpp"
 #include "stmt_continue.hpp"
 #include "stmt_def_const.hpp"
 #include "stmt_def_dat.hpp"
@@ -46,9 +45,6 @@ class stmt_block final : public statement {
 
         tc.enter_block();
         while (true) {
-            // comments, semi-colon not considered a statement
-            bool last_statement_considered_no_statement{};
-
             // is it the end of the block?
             close_brace_tk_ = tz.is_next_char_token('}');
             if (not close_brace_tk_.is_empty()) {
@@ -77,12 +73,7 @@ class stmt_block final : public statement {
                 break;
             }
 
-            if (tk.text().starts_with("#")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_comment>(tc, unary_ops{}, tk, tz));
-
-                last_statement_considered_no_statement = true;
-            } else if (tk.is_text("var")) {
+            if (tk.is_text("var")) {
                 stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));
             } else if (tk.is_text("const")) {
                 stms_.emplace_back(
@@ -129,9 +120,7 @@ class stmt_block final : public statement {
                             "or '(' for function call"};
                 }
             }
-            if (is_one_statement_ and
-                not last_statement_considered_no_statement) {
-
+            if (is_one_statement_) {
                 break;
             }
         }
