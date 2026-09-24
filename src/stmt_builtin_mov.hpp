@@ -35,11 +35,10 @@ class stmt_builtin_mov final : public stmt_call {
         src_arg.compile(tc, indent + 1, dst_arg_info);
     }
 
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
-        argument(1).assert_var_not_used(var, assigned);
+        argument(1).visit_reads(var, reader);
     }
 
     // a register destination is written whole

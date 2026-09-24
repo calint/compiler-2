@@ -321,6 +321,11 @@ struct ident_info {
 
     [[nodiscard]] auto is_empty() const -> bool { return kind == kind::EMPTY; }
 
+    // variable name without the field path
+    [[nodiscard]] auto root_id() const -> std::string_view {
+        return std::string_view{id}.substr(0, id.find('.'));
+    }
+
     [[nodiscard]] auto has_lea() const -> bool {
         return std::ranges::any_of(lea_path, [](const ::operand& lea) -> bool {
             return not lea.is_empty();

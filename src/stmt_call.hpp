@@ -574,12 +574,11 @@ class stmt_call : public expression {
 
     [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
 
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
         for (const expr_any& e : args_) {
-            e.assert_var_not_used(var, assigned);
+            e.visit_reads(var, reader);
         }
     }
 };

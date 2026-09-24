@@ -6,7 +6,9 @@
 
 #include <bit>
 #include <cassert>
+#include <format>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <ranges>
 #include <span>
@@ -320,6 +322,94 @@ auto expr_type_value::compile(toc& tc, const size_t indent,
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
+auto expr_type_value::assert_not_reading(const record_destination& dst) const
+    -> void {
+
+    // same-type copies are either the same bytes or separate bytes
+    if (stmt_ident_) {
+        return;
+    }
+
+    // todo: a call may write its result into an argument, see etc/todo.txt
+    if (stmt_call_) {
+        return;
+    }
+
+    assert_items_not_reading(dst, 0);
+}
+
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
+auto expr_type_value::assert_items_not_reading(const record_destination& dst,
+                                               const size_t record_offset) const
+    -> void {
+
+    for (const auto [expr, field] :
+         std::views::zip(exprs_, get_type().fields())) {
+
+        const size_t field_offset{record_offset + field.offset};
+
+        if (not field.type().is_builtin() and
+            not expr->as_expr_type_value().is_identifier()) {
+
+            expr->as_expr_type_value().assert_items_not_reading(dst,
+                                                                field_offset);
+            continue;
+        }
+
+        // array items are written element by element
+        const size_t written_size_bytes{
+            field.is_array ? field_offset + field.size_bytes : field_offset};
+
+        assert_item_not_reading(*expr, dst, written_size_bytes);
+    }
+}
+
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
+auto expr_type_value::assert_item_not_reading(const statement& item,
+                                              const record_destination& dst,
+                                              const size_t written_size_bytes)
+    -> void {
+
+    if (written_size_bytes == 0) {
+        return;
+    }
+
+    // with a runtime index any element of the array may already be written
+    const field_coverage::range written{
+        dst.is_exact ? field_coverage::range{.offset{dst.range.offset},
+                                             .size_bytes{written_size_bytes}}
+                     : dst.range};
+
+    item.visit_reads(
+        dst.root,
+        [&dst, &written](
+            const token& use_tk, const std::string_view read_text,
+            const std::optional<field_coverage::range>& accessed) -> void {
+            if (accessed and not accessed->overlaps(written)) {
+                return;
+            }
+
+            // a runtime index may or may not refer to the written element
+            if (not dst.is_exact) {
+                throw compiler_exception{
+                    use_tk,
+                    std::format("'{}' may have been overwritten in the same "
+                                "statement",
+                                read_text)};
+            }
+
+            throw compiler_exception{
+                use_tk,
+                std::format("'{}' is read but has been overwritten in the "
+                            "same statement",
+                            read_text)};
+        });
+}
+
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 auto expr_type_value::compile_assign(toc& tc, const size_t indent,
                                      const type& dst_type,
                                      const ident_info& dst_info,
@@ -489,21 +579,20 @@ auto expr_type_value::validate_array_assignment(const token& src_loc_tk,
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::assert_var_not_used(const std::string_view var,
-                                          const field_coverage& assigned) const
-    -> void {
+auto expr_type_value::visit_reads(const std::string_view var,
+                                  const read_visitor reader) const -> void {
 
     // a copy or a call reads its source instead of the '{...}' items
     if (stmt_ident_) {
-        stmt_ident_->assert_var_not_used(var, assigned);
+        stmt_ident_->visit_reads(var, reader);
     }
 
     if (stmt_call_) {
-        stmt_call_->assert_var_not_used(var, assigned);
+        stmt_call_->visit_reads(var, reader);
     }
 
     for (const std::unique_ptr<expr_any>& e : exprs_) {
-        e->assert_var_not_used(var, assigned);
+        e->visit_reads(var, reader);
     }
 }
 

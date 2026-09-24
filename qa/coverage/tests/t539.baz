@@ -1,0 +1,6 @@
+# a record value reads the destination it assigns
+type point {x, y}
+func main() {
+    var p point = {1, 2}
+    p = {p.y, p.x}
+}

@@ -506,4 +506,9 @@ SRC=t533 && COMPERR
 SRC=t534 && COMPERR
 SRC=t535 && COMPERR
 SRC=t536 && COMPERR
+# SRC=t537 && EXP=0 && RUN # result aliases argument, see etc/todo.txt
+SRC=t538 && EXP=0 && RUN
+SRC=t539 && COMPERR
+SRC=t540 && EXP=0 && RUN
+SRC=t541 && COMPERR
 if [[ $MACHINE == x86_64 ]]; then SRC=t522 && EXP=0 && RUN; fi

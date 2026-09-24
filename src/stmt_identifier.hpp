@@ -8,6 +8,7 @@
 #include <ostream>
 #include <ranges>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -139,25 +140,32 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto is_identifier() const -> bool override { return true; }
 
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    [[nodiscard]] auto access_range() const -> field_coverage::range {
+        return access_range_;
+    }
+
+    [[nodiscard]] auto is_exact_access() const -> bool {
+        return is_exact_access_;
+    }
+
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
         // a path such as 'p.y' reads its root variable
-        if (first_token().is_text(var) and not assigned.covers(access_range_)) {
-            throw_uninitialized(first_token(), var);
+        if (first_token().is_text(var)) {
+            reader(first_token(), path_text(), access_range_);
         }
 
-        assert_indexes_not_used(var, assigned);
+        visit_index_reads(var, reader);
     }
 
     // index expressions are read even when the path is written
-    auto assert_indexes_not_used(const std::string_view var,
-                                 const field_coverage& assigned) const -> void {
+    auto visit_index_reads(const std::string_view var,
+                           const read_visitor reader) const -> void {
 
         for (const ident_elem& e : elems_) {
             if (e.array_index_expr) {
-                e.array_index_expr->assert_var_not_used(var, assigned);
+                e.array_index_expr->visit_reads(var, reader);
             }
         }
     }
@@ -173,14 +181,28 @@ class stmt_identifier : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
-        if (not elems_.empty()) {
-            elems_.front().source_to(os);
-            for (const auto [d, e] : std::views::zip(
-                     elem_delims_tk_, elems_ | std::views::drop(1))) {
+        path_source_to(os);
+    }
 
-                d.source_to(os);
-                e.source_to(os);
-            }
+    // the path as written, with indexes but without unary operators
+    [[nodiscard]] auto path_text() const -> std::string {
+        std::stringstream ss;
+        path_source_to(ss);
+
+        return statement::trimmed_source(ss.view());
+    }
+
+    auto path_source_to(std::ostream& os) const -> void {
+        if (elems_.empty()) {
+            return;
+        }
+
+        elems_.front().source_to(os);
+        for (const auto [d, e] :
+             std::views::zip(elem_delims_tk_, elems_ | std::views::drop(1))) {
+
+            d.source_to(os);
+            e.source_to(os);
         }
     }
 

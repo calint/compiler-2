@@ -1,0 +1,31 @@
+# a result written before an argument is read must not change the argument
+func assert(ok bool) { if not ok exit(1) }
+type point {x, y}
+func add_one(a) res {
+    res = 1
+    res = res + a
+}
+func noinline add_one_noinline(a) res {
+    res = 1
+    res = res + a
+}
+func swap(p point) res point {
+    res.x = p.y
+    res.y = p.x
+}
+func main() {
+    var x = 5
+    x = add_one(x)
+    assert(x == 6)
+    x = add_one_noinline(x)
+    assert(x == 7)
+    var p point = {1, 2}
+    p = swap(p)
+    assert(p.x == 2)
+    assert(p.y == 1)
+    var ps[2] point
+    ps[1] = {3, 4}
+    ps[1] = swap(ps[1])
+    assert(ps[1].x == 4)
+    assert(ps[1].y == 3)
+}

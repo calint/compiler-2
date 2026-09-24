@@ -165,12 +165,11 @@ class stmt_def_var final : public statement {
         x.zero(tok(), indent, var_dst_info.operand, size_bytes);
     }
 
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
         if (assign_var_) {
-            assign_var_->assert_var_not_used(var, assigned);
+            assign_var_->visit_reads(var, reader);
         }
     }
 };

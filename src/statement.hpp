@@ -196,15 +196,49 @@ class statement {
         std::unreachable();
     }
 
+    // reports every read of 'var' in this statement
+    virtual auto visit_reads(const std::string_view var,
+                             const read_visitor reader) const -> void {
+
+        if (identifier() == var) {
+            reader(token_, identifier(), std::nullopt);
+        }
+    }
+
     // used in UB check
     // throws if 'var' is read outside of the 'assigned' bytes
-    virtual auto assert_var_not_used(const std::string_view var,
-                                     const field_coverage& assigned) const
-        -> void {
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const -> void {
 
-        if (identifier() == var and not assigned.is_full()) {
-            throw_uninitialized(token_, var);
-        }
+        visit_reads(
+            var,
+            [&var, &assigned](
+                const token& use_tk,
+                [[maybe_unused]] const std::string_view read_text,
+                const std::optional<field_coverage::range>& accessed) -> void {
+                const bool is_assigned{accessed ? assigned.covers(*accessed)
+                                                : assigned.is_full()};
+
+                if (is_assigned) {
+                    return;
+                }
+
+                throw_uninitialized(use_tk, var);
+            });
+    }
+
+    [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
+        bool is_read{};
+
+        visit_reads(
+            var,
+            [&is_read](
+                [[maybe_unused]] const token& use_tk,
+                [[maybe_unused]] const std::string_view read_text,
+                [[maybe_unused]] const std::optional<field_coverage::range>&
+                    accessed) -> void { is_read = true; });
+
+        return is_read;
     }
 
     // used in UB check

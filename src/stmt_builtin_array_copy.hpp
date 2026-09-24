@@ -126,12 +126,11 @@ class stmt_builtin_array_copy final : public statement {
     }
 
     // the copied elements are not tracked, so the destination stays unassigned
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
-        src_.assert_var_not_used(var, assigned);
-        dst_.assert_indexes_not_used(var, assigned);
-        count_.assert_var_not_used(var, assigned);
+        src_.visit_reads(var, reader);
+        dst_.visit_index_reads(var, reader);
+        count_.visit_reads(var, reader);
     }
 };

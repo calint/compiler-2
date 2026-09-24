@@ -1,0 +1,11 @@
+# a boolean list reads the destination it assigns
+func assert(ok bool) { if not ok exit(1) }
+func main() {
+    var a = 1
+    var r bool = false
+    r = a == 1 and not r
+    assert(r)
+    var s bool = true
+    s = a == 2 or s
+    assert(s)
+}

@@ -1,19 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] rename expr_ops_list to expr_arithmetic
+[ ] rename expr_bool_ops_list to expr_bool
+[ ] move expr_bool_op into expr_bool
+[ ] rename expr_type_value to expr_type
+[ ] consider not allowing single statement blocks
+[ ] rv32i emit_most_efficient should know the instruction count on synthesized
+    instructions such as "li"
 [ ] re-number the tests to be a sequence without gaps
-[-] t158 is ub
-    => removed cause the test case is covered by other tests
-[x] ub? mp[1] = { mp[2].msg } see t155.baz:44
-[x] a return reference might be used as an argument to a function that set it.
-    current ub detection does not allow that
-[x] ub detection:
-    [-] a tree of possible paths for code labeled as "maybe" or "always"
-        make sure that each possible path results in all fields of type
-        initialized
-    [x] data that is about to be assigned is not allowed to be read while
-        initiating it
-[x] when "returning" a user defined type all fields have to be set or UB
+[ ] UB detection, what remains:
+    [ ] result aliases a by-reference argument: 'x = f(x)', 'p = swap(p)'
+        (t537, inline and noinline). reject when the callee reads that
+        parameter after writing its result: per-function summary of such
+        parameters plus a call-site overlap check using identifier byte
+        ranges (runtime indexes may overlap). valid today: t137, t139-t142,
+        t438 read before writing
+    [ ] two by-reference parameters bound to the same variable, e.g. 'g(q, q)'
+        where 'g' writes one and reads the other. inside inline functions the
+        destination-read checks compare names, so 'res' and 'p' referring to
+        the same caller variable are not detected
+    [ ] conservative rejections: a write through a runtime index covers
+        nothing, 'array_copy' into a result is not an assignment, 'foo'
+        bodies and loops without 'break' do not count as assigning
+    [ ] writes through 'address_of' are not tracked
+    [ ] prog.baz 'object_init' sets only 'res.pos.y' and is rejected
+    [ ] consider accepting partial results when the caller's destination is
+        already initialized (call-site coverage summary)
 [ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
     sign-extends loads
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
@@ -97,7 +110,6 @@
         source: src/tokenizer.hpp:126
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
     handle it
-[ ] UB analysis and path-sensitive initialization checks
 [x] syntax change: 
     func noinline factorial(value i32) result i32 {
     func noinline factorial(value) result { # default type
@@ -196,6 +208,18 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[-] t158 is ub
+    => removed cause the test case is covered by other tests
+[x] ub? mp[1] = { mp[2].msg } see t155.baz:44
+[x] a return reference might be used as an argument to a function that set it.
+    current ub detection does not allow that
+[x] ub detection:
+    [-] a tree of possible paths for code labeled as "maybe" or "always"
+        make sure that each possible path results in all fields of type
+        initialized
+    [x] data that is about to be assigned is not allowed to be read while
+        initiating it
+[x] when "returning" a user defined type all fields have to be set or UB
 [x] support canonical equality results directly in memory destinations
 [x] skip normalization for proven canonical boolean results (equal, arrays_equal)
     => matching register or memory destinations; preserve not/branches on both targets

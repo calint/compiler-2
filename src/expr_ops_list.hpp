@@ -272,6 +272,13 @@ class expr_ops_list final : public expression {
 
         machine& x{tc.machine()};
 
+        // writing the destination early would change what later elements read
+        if (reads_destination_early(dst_info)) {
+            compile_through_scratch(tc, indent, dst_info);
+
+            return;
+        }
+
         // compile with and without the scratch register to find the best
         // compilation
 
@@ -284,15 +291,7 @@ class expr_ops_list final : public expression {
         // with scratch register
         std::stringstream ss2;
         std::ostream& prev2{x.use_stream(ss2)};
-
-        const operand reg{
-            x.alloc_scratch_register(tok(), indent, dst_info.type_ref())};
-
-        const ident_info dst_reg_info{toc::make_ident_info_from_register(reg)};
-
-        do_compile(tc, indent, dst_reg_info);
-        x.copy_value(tok(), indent, dst_info.operand, reg);
-        x.free_scratch_register(tok(), indent, reg);
+        compile_through_scratch(tc, indent, dst_info);
         x.use_stream(prev2);
 
         x.emit_most_efficient(tok(), indent, ss1.view(), ss2.view());
@@ -355,12 +354,11 @@ class expr_ops_list final : public expression {
         return exprs_[0]->is_indexed();
     }
 
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
         for (const std::unique_ptr<statement>& e : exprs_) {
-            e->assert_var_not_used(var, assigned);
+            e->visit_reads(var, reader);
         }
     }
 
@@ -384,6 +382,39 @@ class expr_ops_list final : public expression {
     }
 
   private:
+    // a plain first element is copied before anything writes the destination
+    [[nodiscard]] auto reads_destination_early(const ident_info& dst_info) const
+        -> bool {
+
+        const std::string_view root{dst_info.root_id()};
+
+        if (not exprs_.front()->is_identifier() and
+            exprs_.front()->reads_var(root)) {
+
+            return true;
+        }
+
+        return std::ranges::any_of(
+            exprs_ | std::views::drop(1),
+            [root](const std::unique_ptr<statement>& e) -> bool {
+                return e->reads_var(root);
+            });
+    }
+
+    // the destination keeps its value until the whole expression is computed
+    auto compile_through_scratch(toc& tc, const size_t indent,
+                                 const ident_info& dst_info) const -> void {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(tok(), indent, dst_info.type_ref())};
+
+        do_compile(tc, indent, toc::make_ident_info_from_register(reg));
+        x.copy_value(tok(), indent, dst_info.operand, reg);
+        x.free_scratch_register(tok(), indent, reg);
+    }
+
     auto validate_arithmetic_operands(const toc& tc) const -> void {
         if (ops_.empty()) {
             return;

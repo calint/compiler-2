@@ -187,13 +187,12 @@ class expr_bool_ops_list final : public statement {
             [](const auto& e) -> std::string_view { return e.identifier(); });
     }
 
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
         for (const auto& e : bools_) {
-            e.visit([&var, &assigned](const auto& item) -> void {
-                item.assert_var_not_used(var, assigned);
+            e.visit([&var, &reader](const auto& item) -> void {
+                item.visit_reads(var, reader);
             });
         }
     }

@@ -1,0 +1,7 @@
+# a runtime index may already have written the element a record value reads
+type point {x, y}
+func main() {
+    var ps[2] point
+    var i = 0
+    ps[i] = {1, ps[1].x}
+}

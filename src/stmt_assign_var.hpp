@@ -55,6 +55,12 @@ class stmt_assign_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
+        expr_.assert_record_value_not_reading({
+            .root{stmt_ident_.first_token().text()},
+            .range{stmt_ident_.access_range()},
+            .is_exact{stmt_ident_.is_exact_access()},
+        });
+
         // get information about the destination of the compilation
         ident_info var_dst_info{tc.make_ident_info(stmt_ident_)};
 
@@ -93,12 +99,11 @@ class stmt_assign_var final : public statement {
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
-        expr_.assert_var_not_used(var, assigned);
-        stmt_ident_.assert_indexes_not_used(var, assigned);
+        expr_.visit_reads(var, reader);
+        stmt_ident_.visit_index_reads(var, reader);
     }
 
     // the value is read before the destination is written

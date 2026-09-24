@@ -193,22 +193,21 @@ class expr_any final : public statement {
         });
     }
 
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
         if (is_array_) {
             for (const expr_variant& e : vars_) {
-                e.visit([&var, &assigned](const auto& expression) -> void {
-                    expression.assert_var_not_used(var, assigned);
+                e.visit([&var, &reader](const auto& expression) -> void {
+                    expression.visit_reads(var, reader);
                 });
             }
 
             return;
         }
 
-        vars_[0].visit([&var, &assigned](const auto& expression) -> void {
-            expression.assert_var_not_used(var, assigned);
+        vars_[0].visit([&var, &reader](const auto& expression) -> void {
+            expression.visit_reads(var, reader);
         });
     }
 
@@ -252,6 +251,17 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {
         return get<expr_type_value>(vars_[0]);
+    }
+
+    auto assert_record_value_not_reading(
+        const expr_type_value::record_destination& dst) const -> void {
+
+        if (is_array_ or
+            not std::holds_alternative<expr_type_value>(vars_[0])) {
+            return;
+        }
+
+        as_expr_type_value().assert_not_reading(dst);
     }
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
@@ -314,36 +324,57 @@ class expr_any final : public statement {
                     return;
                 }
 
-                // expression - make unique labels considering inlined
-                // functions
-                const std::string_view call_path{tc.get_call_path()};
-                const std::string src_loc{
-                    tc.source_location_for_use_in_label(src_loc_tk)};
+                // stored comparisons would change what later elements read
+                if (dst_info.is_register() or
+                    not e.reads_var(dst_info.root_id())) {
 
-                // unique partial label for this assembler location
-                const std::string postfix{std::format(
-                    "{}{}", src_loc,
-                    (call_path.empty() ? std::string{}
-                                       : std::format("_{}", call_path)))};
+                    compile_bool_list(tc, indent, src_loc_tk, e,
+                                      dst_info.operand);
 
-                // labels to jump to depending on the evaluation
-                const std::string jmp_to_end{
-                    std::format("bool_end_{}", postfix)};
-
-                // compile and possibly evaluate constant expression
-                const operand& dst{dst_info.operand};
-
-                const std::optional<bool> const_eval{
-                    e.compile(tc, indent, jmp_to_end, jmp_to_end, dst)};
-
-                // not constant evaluation
-                x.label(indent, jmp_to_end);
-
-                // did the evaluation result in a constant?
-                if (const_eval) {
-                    x.store_boolean(src_loc_tk, indent, dst_info.operand,
-                                    *const_eval);
+                    return;
                 }
+
+                const operand reg{x.alloc_scratch_register(
+                    src_loc_tk, indent, dst_info.type_ref())};
+
+                compile_bool_list(tc, indent, src_loc_tk, e, reg);
+                x.copy_value(src_loc_tk, indent, dst_info.operand, reg);
+                x.free_scratch_register(src_loc_tk, indent, reg);
             }});
+    }
+
+    static auto compile_bool_list(toc& tc, const size_t indent,
+                                  const token& src_loc_tk,
+                                  const expr_bool_ops_list& e,
+                                  const operand& dst) -> void {
+
+        // make unique labels considering inlined functions
+        const std::string_view call_path{tc.get_call_path()};
+
+        const std::string src_loc{
+            tc.source_location_for_use_in_label(src_loc_tk)};
+
+        // unique partial label for this assembler location
+        const std::string postfix{
+            std::format("{}{}", src_loc,
+                        (call_path.empty() ? std::string{}
+                                           : std::format("_{}", call_path)))};
+
+        // labels to jump to depending on the evaluation
+        const std::string jmp_to_end{std::format("bool_end_{}", postfix)};
+
+        // compile and possibly evaluate constant expression
+        const std::optional<bool> const_eval{
+            e.compile(tc, indent, jmp_to_end, jmp_to_end, dst)};
+
+        machine& x{tc.machine()};
+
+        // not constant evaluation
+        x.label(indent, jmp_to_end);
+
+        // did the evaluation result in a constant?
+        if (const_eval) {
+            x.store_boolean(src_loc_tk, indent, dst, *const_eval);
+        }
     }
 };

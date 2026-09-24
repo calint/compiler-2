@@ -1,11 +1,17 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <string_view>
 
 #include "compiler_exception.hpp"
 #include "field_coverage.hpp"
 #include "token.hpp"
+
+// receives each read of a variable, an empty range reads the whole variable
+using read_visitor = std::function_ref<void(
+    const token& use_tk, std::string_view read_text,
+    const std::optional<field_coverage::range>& accessed)>;
 
 // definite-assignment walk of one variable through a function body
 struct assignment_flow {

@@ -11,6 +11,11 @@ class field_coverage final {
     struct range {
         size_t offset{};
         size_t size_bytes{};
+
+        [[nodiscard]] auto overlaps(const range& other) const -> bool {
+            return offset < other.offset + other.size_bytes and
+                   other.offset < offset + size_bytes;
+        }
     };
 
   private:

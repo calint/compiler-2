@@ -46,9 +46,8 @@ class expr_type_value final : public statement {
 
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override;
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override;
 
     [[nodiscard]] auto is_identifier() const -> bool override {
         return stmt_ident_ != nullptr;
@@ -71,7 +70,31 @@ class expr_type_value final : public statement {
                                    const operand& address_register) const
         -> operand override;
 
+    // bytes of the variable a record value is written into
+    struct record_destination {
+        std::string_view root;
+        field_coverage::range range;
+
+        // false when a runtime index leaves the element unknown
+        bool is_exact{};
+    };
+
+    // implemented in 'decouple_impl.hpp'
+    // the fields are written in order so later items must not read earlier
+    // fields of the destination
+    auto assert_not_reading(const record_destination& dst) const -> void;
+
   private:
+    // implemented in 'decouple_impl.hpp'
+    auto assert_items_not_reading(const record_destination& dst,
+                                  const size_t record_offset) const -> void;
+
+    // implemented in 'decouple_impl.hpp'
+    static auto assert_item_not_reading(const statement& item,
+                                        const record_destination& dst,
+                                        const size_t written_size_bytes)
+        -> void;
+
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
     auto compile_assign(toc& tc, const size_t indent, const type& dst_type,

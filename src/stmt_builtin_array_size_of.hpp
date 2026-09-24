@@ -82,10 +82,9 @@ class stmt_builtin_array_size_of final : public expression {
     }
 
     // the size is known at compile time so the value is not read
-    auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const
-        -> void override {
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
-        stmt_ident_.assert_indexes_not_used(var, assigned);
+        stmt_ident_.visit_index_reads(var, reader);
     }
 };
