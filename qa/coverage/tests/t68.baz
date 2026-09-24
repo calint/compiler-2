@@ -1,15 +1,15 @@
-# register-bound arguments with unary values
+# arguments with unary values
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
-func foozi(x reg_rsi, y reg_rcx) {
+func foozi(x, y) {
     assert(x == -2)    # ~1 == 0xfffffffe
     assert(y == -2)
 }
 
-func fow(x reg_rsi, y reg_rcx) {
+func fow(x, y) {
     assert(x == 0)
     assert(y == 0)
 }

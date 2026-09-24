@@ -1,6 +1,5 @@
 # all functions are inlined
 
-# arguments can be placed in specified register using `reg_...` syntax
 func assert(expr bool) {
     if not expr exit(1)
 }

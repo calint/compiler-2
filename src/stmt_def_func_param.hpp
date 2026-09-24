@@ -41,12 +41,6 @@ class stmt_def_func_param final : public statement {
         }
 
         type_tk_ = tz.next_token();
-        if (type_tk_.text().starts_with("reg_")) {
-            // register parameter, set default type
-            set_type(tc.get_type_default());
-
-            return;
-        }
 
         set_type(type_tk_.is_empty()
                      ? tc.get_type_default()
@@ -67,16 +61,6 @@ class stmt_def_func_param final : public statement {
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
-
-    [[nodiscard]] auto get_register_name_or_empty() const -> std::string_view {
-        const std::string_view type_name{type_tk_.text()};
-        if (type_name.starts_with("reg_")) {
-            return type_name.substr(4);
-            // note: 4 is the length of "reg_"
-        }
-
-        return "";
-    }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 };

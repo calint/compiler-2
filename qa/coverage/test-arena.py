@@ -280,10 +280,6 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             )
             run = subprocess.run([str(directory / "arena")], capture_output=True)
             assert run.returncode == 0, (register, mode, run.returncode, run.stderr)
-        source = f"func consume(value reg_{register}) {{}}\nfunc main() {{ consume(1) }}\n"
-        result = compile_source(directory, source, 4096, [])
-        assert result.returncode == 1, (register, result.returncode, result.stderr)
-        assert f"cannot allocate register {register}" in result.stderr, result.stderr
         print(f"arena access {register}: ok", flush=True)
 
     for offset in (2047, 2048, 8196, 2147483647, 2147483648, 2147483656):

@@ -249,15 +249,6 @@ class stmt_call : public expression {
                                          "array parameters are unsupported"};
             }
 
-            if (not param.get_register_name_or_empty().empty()) {
-                throw compiler_exception{
-                    arg.tok(),
-                    std::format("register-bound parameter '{}' is unsupported "
-                                "(register '{}')",
-                                param.name(),
-                                param.get_register_name_or_empty())};
-            }
-
             if (&info.type_ref() != &param.get_type()) {
                 throw_parameter_type_mismatch(arg, param, info);
             }
@@ -414,13 +405,8 @@ class stmt_call : public expression {
                 dst_info.is_register() ? dst_info.operand : operand{});
         }
 
-        // track allocated registers
-        struct allocated_register {
-            operand reg;
-            bool is_named{};
-        };
-
-        std::vector<allocated_register> allocated_registers;
+        // scratch registers stay allocated until the inlined body is compiled
+        std::vector<operand> allocated_registers;
 
         // process each argument
         for (const auto [arg, param] : std::views::zip(args_, func.params())) {
@@ -434,26 +420,8 @@ class stmt_call : public expression {
                     "unary operators on reference arguments are unsupported"};
             }
 
-            // allocate named register if parameter requires it
-
-            const std::string_view register_name{
-                param.get_register_name_or_empty()};
-
-            operand arg_reg;
-
-            if (not register_name.empty()) {
-                arg_reg = x.alloc_named_register(
-                    arg.tok(), indent, register_name, param.get_type());
-
-                allocated_registers.push_back({
-                    .reg{arg_reg},
-                    .is_named{true},
-                });
-            }
-
             // an alias uses the argument's storage so its type must match
-            if (not arg.is_expression() and arg_reg.is_empty() and
-                arg.get_unary_ops().is_empty()) {
+            if (not arg.is_expression() and arg.get_unary_ops().is_empty()) {
 
                 assert_alias_type(tc, arg, param);
             }
@@ -473,10 +441,7 @@ class stmt_call : public expression {
                                                   arg_info.lea_path, {})};
 
                 for (const operand& r : regs_lea) {
-                    allocated_registers.push_back({
-                        .reg{r},
-                        .is_named{},
-                    });
+                    allocated_registers.push_back(r);
                 }
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
@@ -489,16 +454,10 @@ class stmt_call : public expression {
             // handle expression arguments
 
             if (arg.is_expression()) {
-                if (arg_reg.is_empty()) {
-                    // no particular register requested
-                    arg_reg = x.alloc_scratch_register(arg.tok(), indent,
-                                                       param.get_type());
+                const operand arg_reg{x.alloc_scratch_register(
+                    arg.tok(), indent, param.get_type())};
 
-                    allocated_registers.push_back({
-                        .reg{arg_reg},
-                        .is_named{},
-                    });
-                }
+                allocated_registers.push_back(arg_reg);
 
                 arg.compile(tc, indent,
                             toc::make_ident_info_from_register(arg_reg));
@@ -509,9 +468,8 @@ class stmt_call : public expression {
                 continue;
             }
 
-            // handle non-expression without the register and without unary
-            // ops
-            if (arg_reg.is_empty() and arg.get_unary_ops().is_empty()) {
+            // handle non-expression without unary ops
+            if (arg.get_unary_ops().is_empty()) {
                 const ident_info arg_info{tc.make_ident_info(arg)};
 
                 // a name is resolved in the callee where its own constants
@@ -528,57 +486,33 @@ class stmt_call : public expression {
                 continue;
             }
 
-            // handle non-expression with unary ops but no register
+            // handle non-expression with unary ops
 
-            if (arg_reg.is_empty()) {
-                const ident_info& arg_info{tc.make_ident_info(arg)};
+            const ident_info& arg_info{tc.make_ident_info(arg)};
 
-                if (arg_info.is_const()) {
-                    // identifier is constant
-
-                    aliases_to_add.emplace_back(
-                        std::string{param.identifier()},
-                        arg.make_constant_operand(arg_info).immediate(),
-                        operand{}, &param.get_type());
-
-                } else {
-                    // identifier with unary ops
-
-                    const operand scratch_reg{x.alloc_scratch_register(
-                        arg.tok(), indent, param.get_type())};
-
-                    allocated_registers.push_back({
-                        .reg{scratch_reg},
-                        .is_named{},
-                    });
-
-                    x.copy_value(param.tok(), indent, scratch_reg,
-                                 arg_info.operand);
-
-                    // apply unary ops
-                    arg.get_unary_ops().compile(tc, indent, scratch_reg);
-
-                    aliases_to_add.push_back(alias_info::make_register(
-                        param.identifier(), param.get_type(), scratch_reg));
-                }
+            // the alias target must be a plain integer, e.g. '~1' is not
+            if (arg_info.is_const()) {
+                aliases_to_add.emplace_back(
+                    std::string{param.identifier()},
+                    std::format("{}", arg.get_unary_ops().evaluate_constant(
+                                          arg_info.const_value)),
+                    operand{}, &param.get_type());
 
                 continue;
             }
 
-            // handle non-expression with register
+            const operand scratch_reg{
+                x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
+
+            allocated_registers.push_back(scratch_reg);
+
+            x.copy_value(param.tok(), indent, scratch_reg, arg_info.operand);
+
+            // apply unary ops
+            arg.get_unary_ops().compile(tc, indent, scratch_reg);
 
             aliases_to_add.push_back(alias_info::make_register(
-                param.identifier(), param.get_type(), arg_reg));
-
-            const ident_info& arg_info{tc.make_ident_info(arg)};
-
-            if (arg_info.is_const()) {
-                x.copy_value(param.tok(), indent, arg_reg,
-                             arg.make_constant_operand(arg_info));
-            } else {
-                x.copy_value(param.tok(), indent, arg_reg, arg_info.operand);
-                arg.get_unary_ops().compile(tc, indent + 1, arg_reg);
-            }
+                param.identifier(), param.get_type(), scratch_reg));
         }
 
         // create unique labels for inlined functions
@@ -610,14 +544,8 @@ class stmt_call : public expression {
         func.code().compile(tc, indent, dst_info);
 
         // free allocated registers in reverse order
-        for (const allocated_register& allocation :
-             allocated_registers | std::views::reverse) {
-
-            if (allocation.is_named) {
-                x.free_named_register(tok(), indent + 1, allocation.reg);
-            } else {
-                x.free_scratch_register(tok(), indent + 1, allocation.reg);
-            }
+        for (const operand& r : allocated_registers | std::views::reverse) {
+            x.free_scratch_register(tok(), indent + 1, r);
         }
 
         // provide the exit label for 'return' to jump to

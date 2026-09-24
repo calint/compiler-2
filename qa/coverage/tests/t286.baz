@@ -1,7 +1,7 @@
-# function shift uses a register-bound parameter
+# function shift by a parameter expression
 
 func assert(x bool) { if not x exit(1) }
-func f(x reg_rcx, y) res {
+func f(x, y) res {
     res = x << (y + 1)
 }
 func main() {

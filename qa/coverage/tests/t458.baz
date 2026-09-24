@@ -1,7 +1,0 @@
-# rbp is already allocated at program startup
-
-func consume(value reg_rbp) {}
-
-func main() {
-    consume(1)
-}

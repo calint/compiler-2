@@ -27,7 +27,7 @@ SRC=t26 && EXP=0 && RUN
 SRC=t27 && EXP=0 && RUN
 SRC=t28 && EXP=0 && RUN
 SRC=t29 && EXP=0 && RUN
-# SRC=t30 && EXP=0 && RUN # target-specific register parameters
+SRC=t30 && EXP=0 && RUN
 SRC=t31 && EXP=0 && RUN
 SRC=t32 && EXP=0 && RUN
 SRC=t33 && EXP=0 && RUN
@@ -39,7 +39,7 @@ SRC=t38 && EXP=0 && RUN
 SRC=t39 && EXP=0 && RUN
 SRC=t40 && EXP=0 && RUN
 SRC=t41 && EXP=0 && RUN
-# SRC=t42 && EXP=0 && RUN # target-specific register parameters
+SRC=t42 && EXP=0 && RUN
 SRC=t43 && EXP=0 && RUN
 SRC=t44 && EXP=0 && RUN
 SRC=t45 && EXP=0 && RUN
@@ -65,7 +65,7 @@ SRC=t64 && EXP=0 && RUN
 SRC=t65 && EXP=0 && RUN
 SRC=t66 && EXP=0 && RUN
 SRC=t67 && EXP=0 && RUN
-# SRC=t68 && EXP=0 && RUN # target-specific register parameters
+SRC=t68 && EXP=0 && RUN
 SRC=t69 && EXP=0 && RUN
 SRC=t70 && EXP=0 && RUN
 SRC=t71 && EXP=0 && RUN
@@ -265,7 +265,7 @@ SRC=t278 && EXP=0 && RUN
 SRC=t279 && EXP=0 && RUN
 SRC=t299 && COMPERR
 SRC=t280 && COMPERR
-# SRC=t286 && COMPERR # target-specific register parameters
+SRC=t286 && EXP=0 && RUN
 SRC=t287 && COMPERR
 SRC=t289 && EXP=0 && RUN
 SRC=t290 && EXP=0 && RUN
@@ -419,7 +419,6 @@ SRC=t454 && EXP=0 && RUN
 SRC=t455 && EXP=0 && RUN
 # SRC=t456 && EXP=0 && RUN # x86 register-width aliases
 # SRC=t457 && EXP=0 && RUN # x86 arena and syscall registers
-# SRC=t458 && COMPERR # target-specific register parameters
 # SRC=t459 && COMPERR # x86 register name
 # SRC=t460 && COMPERR # x86 register name
 # SRC=t461 && COMPERR # x86 register name
@@ -443,7 +442,6 @@ SRC=t475 && COMPERR
 SRC=t476 && COMPERR
 # SRC=t477 && COMPERR # x86 register argument
 SRC=t478 && COMPERR
-# SRC=t479 && COMPERR # target-specific register parameters
 SRC=t480 && COMPERR
 SRC=t481 && COMPERR
 SRC=t482 && EXP=42 && RUN

@@ -1,2 +1,0 @@
-
-t479.baz:4:36: register-bound parameter 'parameter' is unsupported (register 'rax')

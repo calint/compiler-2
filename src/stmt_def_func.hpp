@@ -189,12 +189,10 @@ class stmt_def_func final : public statement {
         assert(not is_inlined());
 
         for (const stmt_def_func_param& param : params_) {
-            if (param.is_array() or
-                not param.get_register_name_or_empty().empty()) {
-
+            if (param.is_array()) {
                 throw compiler_exception{
                     param.tok(),
-                    "non-inline functions require non-array memory parameters"};
+                    "non-inline functions require non-array parameters"};
             }
         }
 
