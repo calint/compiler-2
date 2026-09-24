@@ -1,0 +1,17 @@
+# --checks=alias: a non-inline parameter may point to a global it also names
+
+var total = 3
+
+func add_one(a) res {
+    res = 1
+    res = res + a
+}
+
+func noinline bump(value) {
+    total = add_one(value)
+}
+
+func main() {
+    bump(total)
+    exit(total)
+}

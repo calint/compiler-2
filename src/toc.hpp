@@ -301,17 +301,19 @@ class toc final {
     bool bounds_check_with_line_{};
     bool bounds_check_lower_{};
     bool frame_check_{};
+    bool alias_check_{};
 
   public:
     toc(::machine& backend, const std::string_view source,
         const size_t vars_capacity_bytes, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line,
-        const bool frame_check = {})
+        const bool frame_check = {}, const bool alias_check = {})
         : machine_{backend}, source_{source},
           vars_capacity_bytes_{vars_capacity_bytes},
           bounds_check_upper_{bounds_check_upper},
           bounds_check_with_line_{bounds_check_with_line},
-          bounds_check_lower_{bounds_check_lower}, frame_check_{frame_check} {}
+          bounds_check_lower_{bounds_check_lower}, frame_check_{frame_check},
+          alias_check_{alias_check} {}
 
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
@@ -884,6 +886,15 @@ class toc final {
     }
 
     [[nodiscard]] auto is_frame_check() const -> bool { return frame_check_; }
+
+    [[nodiscard]] auto is_alias_check() const -> bool { return alias_check_; }
+
+    // a local with the same name shadows it, so this may report a local
+    [[nodiscard]] auto is_global_var(const std::string_view name) const
+        -> bool {
+
+        return frames_.front().has_var(name);
+    }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name);

@@ -1,0 +1,2 @@
+
+527.baz:12:18: argument 1 may share storage with the result destination, use a separate variable

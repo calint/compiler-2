@@ -1,0 +1,51 @@
+# --checks=alias: calls whose references cannot share storage are accepted
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type point {x, y}
+
+func add_one(a) res {
+    res = 1
+    res = res + a
+}
+
+func noinline add_two(a) res {
+    res = 2
+    res = res + a
+}
+
+func swap(p point) res point {
+    res.x = p.y
+    res.y = p.x
+}
+
+func add_into(dst, src) {
+    dst = dst + src
+}
+
+func main() {
+    var x = 5
+    var y = add_one(x)
+    assert(1, y == 6)
+
+    # expressions and unary operators pass a copied value
+    x = add_one(x + 0)
+    assert(2, x == 6)
+    x = add_one(-x)
+    assert(3, x == -5)
+
+    # constants pass their value
+    x = add_one(7)
+    assert(4, x == 8)
+
+    var z = add_two(y)
+    assert(5, z == 8)
+
+    var p point = {1, 2}
+    var q point = swap(p)
+    assert(6, q.x == 2)
+    assert(7, q.y == 1)
+
+    add_into(x, y)
+    assert(8, x == 14)
+}

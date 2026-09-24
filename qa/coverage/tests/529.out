@@ -1,0 +1,2 @@
+
+529.baz:10:17: argument 2 may share storage with argument 1, use a separate variable

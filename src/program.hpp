@@ -36,14 +36,15 @@ class program final {
     program(machine& backend, const std::string_view source,
             const size_t vars_size_bytes, const bool bounds_check_upper,
             const bool bounds_check_lower, const bool bounds_check_with_line,
-            const bool frame_check = {})
+            const bool frame_check = {}, const bool alias_check = {})
         : tc_{backend,
               source,
               vars_size_bytes,
               bounds_check_upper,
               bounds_check_lower,
               bounds_check_with_line,
-              frame_check},
+              frame_check,
+              alias_check},
           vars_size_bytes_{vars_size_bytes} {
 
         // create a placeholder token to use with 'toc' functions

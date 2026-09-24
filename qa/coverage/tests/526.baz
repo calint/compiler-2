@@ -1,0 +1,12 @@
+# --checks=alias: an inline result may share storage with an argument
+
+func add_one(a) res {
+    res = 1
+    res = res + a
+}
+
+func main() {
+    var x = 5
+    x = add_one(x)
+    exit(x)
+}

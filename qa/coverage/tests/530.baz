@@ -1,0 +1,17 @@
+# --checks=alias: an inline parameter resolves to the global it aliases
+
+var total = 3
+
+func add_one(a) res {
+    res = 1
+    res = res + a
+}
+
+func bump(value) {
+    value = add_one(total)
+}
+
+func main() {
+    bump(total)
+    exit(total)
+}

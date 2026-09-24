@@ -4,8 +4,9 @@
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments
 [x] opus 5.5 ai review and bug-hunt
-[ ] jump_optimizer return the number of optimizations that have been done and
+[-] jump_optimizer return the number of optimizations that have been done and
     add them as comment at the end of the gen.s
+    => already
 [o] --checks=noub: a program either behaves as defined or panics with a line
     => viable: no heap, no pointer type, no casts, no raw registers
     [x] array index bounds: --checks=upper,lower
@@ -52,8 +53,23 @@
         --checks=overflow (x86 'jo', rv32i several instructions)
     [ ] overlapping 'array_copy': check ranges at run-time or define as
         memmove
-    [ ] aliasing of results and by-reference arguments, see 'UB detection'
+    [o] aliasing of results and by-reference arguments, see 'UB detection'
         below. reject or check addresses at the call
+        [x] --checks=alias rejects a call when the result destination or a
+            by-reference argument shares its resolved root variable with
+            another by-reference argument, or a non-inline parameter meets a
+            global (526.baz-532.baz)
+            => conservative: rejects 26 tests and prog.baz, e.g.
+               'values[3] = faz(values[2], values[1])', 'g(q, q)'
+        [ ] accept disjoint constant paths by comparing byte ranges
+            (137.baz-140.baz, 294.baz, 418.baz)
+        [ ] route inline builtin results through a scratch register instead
+            of rejecting (077.baz, 135.baz, 394.baz, 397.baz, 485.baz)
+        [ ] accept shared arguments when the callee assigns neither
+            parameter (128.baz-133.baz, 414.baz)
+        [ ] runtime address check or a frame temporary for the remaining
+            record and non-inline results with runtime indexes
+        [ ] re-enable 485.baz
     [ ] --checks=noub enables all of the above
 [ ] comments are not reproduced exactly by --reproduce-source
     => a comment at the end of a file without a final newline gets one

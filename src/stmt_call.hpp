@@ -194,6 +194,77 @@ class stmt_call : public expression {
         throw_parameter_type_mismatch(arg, param, info);
     }
 
+    // compares resolved variable roots, so any overlap of fields or elements
+    // counts as shared
+    [[nodiscard]] static auto may_share_storage(const toc& tc,
+                                                const ident_info& lhs,
+                                                const ident_info& rhs) -> bool {
+
+        const std::string_view lhs_root{lhs.elem_path.front()};
+        const std::string_view rhs_root{rhs.elem_path.front()};
+
+        if (lhs_root == rhs_root) {
+            return true;
+        }
+
+        // a non-inline parameter points into its caller's storage, which can
+        // be a global the callee also names directly. two parameters cannot
+        // share storage because their own call site was checked
+        if (lhs.is_pointer and tc.is_global_var(rhs_root)) {
+            return true;
+        }
+
+        return rhs.is_pointer and tc.is_global_var(lhs_root);
+    }
+
+    // the callee writes a result or by-reference parameter in place, so
+    // storage shared with another reference could be read after it changed
+    auto assert_no_shared_storage(const toc& tc,
+                                  const ident_info& dst_info) const -> void {
+
+        if (not tc.is_alias_check()) {
+            return;
+        }
+
+        std::vector<std::pair<size_t, ident_info>> references;
+
+        for (const auto [arg_number, arg] :
+             std::views::zip(std::views::iota(size_t{1}), args_)) {
+
+            // expressions and unary operators pass a copied value
+            if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
+                continue;
+            }
+
+            ident_info info{tc.make_ident_info(arg)};
+
+            // constants pass their value
+            if (not info.is_var()) {
+                continue;
+            }
+
+            if (dst_info.is_var() and may_share_storage(tc, dst_info, info)) {
+                throw compiler_exception{
+                    arg.tok(),
+                    std::format("argument {} may share storage with the "
+                                "result destination, use a separate variable",
+                                arg_number)};
+            }
+
+            for (const auto& [other_number, other] : references) {
+                if (may_share_storage(tc, other, info)) {
+                    throw compiler_exception{
+                        arg.tok(),
+                        std::format("argument {} may share storage with "
+                                    "argument {}, use a separate variable",
+                                    arg_number, other_number)};
+                }
+            }
+
+            references.emplace_back(arg_number, std::move(info));
+        }
+    }
+
     auto compile_noninline(toc& tc, const size_t indent,
                            const ident_info& dst_info,
                            const stmt_def_func& func) const -> void {
@@ -371,6 +442,8 @@ class stmt_call : public expression {
 
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};
+
+        assert_no_shared_storage(tc, dst_info);
 
         if (not func.is_inlined()) {
             compile_noninline(tc, indent, dst_info, func);

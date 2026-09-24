@@ -1,0 +1,12 @@
+# --checks=alias: two by-reference arguments may share storage
+
+func add_into(dst, src) {
+    dst = dst + src
+    dst = dst + src
+}
+
+func main() {
+    var q = 1
+    add_into(q, q)
+    exit(q)
+}

@@ -103,7 +103,8 @@ CLI --vars=18446744073709551616 1 --help
 CLI --stack=65536 1 --help
 CLI --no-reproduce 1 --help
 CLI --checks=frame 0 015.baz
-CLI --checks=upper,lower,line,frame 0 015.baz
+CLI --checks=alias 0 015.baz
+CLI --checks=upper,lower,line,frame,alias 0 015.baz
 CLI --checks=unknown 1 --help
 CLI --target=x86_64 0 --help
 CLI --target=rv32i 0 --help

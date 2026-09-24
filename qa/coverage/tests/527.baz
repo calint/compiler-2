@@ -1,0 +1,14 @@
+# --checks=alias: a record result may share storage with another element
+
+type point {x, y}
+
+func swap(p point) res point {
+    res.x = p.y
+    res.y = p.x
+}
+
+func main() {
+    var ps[2] point = {{1, 2}, {3, 4}}
+    ps[1] = swap(ps[0])
+    exit(ps[1].x)
+}

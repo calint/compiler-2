@@ -53,6 +53,7 @@ auto main(const int argc, const char** const argv) -> int {
     bool checks_show_line{};
     bool checks_lower{};
     bool checks_frame{};
+    bool checks_alias{};
     bool optimize_jumps{true};
     bool reproduce_source{};
 
@@ -87,7 +88,10 @@ auto main(const int argc, const char** const argv) -> int {
             std::println("                         line - report line number");
             std::println("                        frame - check function frame "
                          "capacity");
-            std::println("       upper,lower,line,frame - all");
+            std::println("                        alias - reject calls where a "
+                         "result or argument may share storage");
+
+            std::println(" upper,lower,line,frame,alias - all");
             std::println("  --nopt              No jump optimizations");
             std::println("  --reproduce-source  Write reproduced source to "
                          "diff.baz and check it matches the input");
@@ -166,6 +170,7 @@ auto main(const int argc, const char** const argv) -> int {
             checks_lower = false;
             checks_show_line = false;
             checks_frame = false;
+            checks_alias = false;
 
             for (const auto part : checks | std::views::split(',')) {
                 const std::string_view option{part};
@@ -177,10 +182,13 @@ auto main(const int argc, const char** const argv) -> int {
                     checks_show_line = true;
                 } else if (option == "frame") {
                     checks_frame = true;
+                } else if (option == "alias") {
+                    checks_alias = true;
                 } else if (not option.empty()) {
                     std::println(std::cerr,
                                  "Invalid --checks option: '{}'. Supported "
-                                 "options are: upper, lower, line, frame.",
+                                 "options are: upper, lower, line, frame, "
+                                 "alias.",
                                  option);
 
                     std::println(stderr, "Use --help for usage information");
@@ -216,7 +224,7 @@ auto main(const int argc, const char** const argv) -> int {
 
         program prg{*backend,     src,          vars_size_bytes,
                     checks_upper, checks_lower, checks_show_line,
-                    checks_frame};
+                    checks_frame, checks_alias};
 
         if (reproduce_source) {
             std::ofstream reproduced_source{"diff.baz"};
