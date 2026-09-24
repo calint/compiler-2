@@ -1,2 +1,0 @@
-
-t390.baz:9:10: destination type must be 'bool', not 'i16'

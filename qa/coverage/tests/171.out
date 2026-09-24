@@ -1,0 +1,2 @@
+
+171.baz:6:13: source type 'i8' does not match compare type 'i16'

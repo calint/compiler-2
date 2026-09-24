@@ -1,2 +1,0 @@
-
-t549.baz:5:17: result type mismatch: function returns 'i8', destination is 'i32', use 'i32(...)'

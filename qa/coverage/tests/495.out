@@ -1,0 +1,2 @@
+
+495.baz:4:20: 'wide' of type 'i32' is narrowed to 'i8', use 'i8(...)'

@@ -1,2 +1,0 @@
-
-t559.baz:4:17: constant '200' does not fit 'i8', use 'i8(...)'

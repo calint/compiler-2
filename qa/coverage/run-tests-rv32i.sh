@@ -21,15 +21,15 @@ llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/test.s" -o "$TEST_DIR/test.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
 printf 'rv32i address lowering: executing with QEMU\n'
-qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/t486.in" > "$TEST_DIR/output"
-cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/t486.out"
+qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/434.in" > "$TEST_DIR/output"
+cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/434.out"
 printf 'rv32i jumps: assembling and executing optimized backend cases\n'
 "$TEST_DIR/generate" optimize-jumps < "$TEST_DIR/test.s" > "$TEST_DIR/optimized.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/optimized.s" -o "$TEST_DIR/test.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
-qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/t486.in" > "$TEST_DIR/output"
-cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/t486.out"
+qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/434.in" > "$TEST_DIR/output"
+cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/434.out"
 printf 'rv32i arithmetic: checking division by zero trap\n'
 ld.lld -m elf32lriscv -e divide_by_zero -o "$TEST_DIR/divide-by-zero" "$TEST_DIR/test.o"
 ulimit -c 0

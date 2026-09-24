@@ -1,0 +1,2 @@
+
+475.baz:4:12: use of uninitialized variable 'res'

@@ -11,7 +11,7 @@
     [x] array index bounds: --checks=upper,lower
         => a negative count with a start passed 'start + count', fixed:
            --checks=lower also rejects it ('read'/'write', 'array_copy',
-           'arrays_equal', t571-t576)
+           'arrays_equal', 519.baz-524.baz)
     [x] non-inline frame arena: --checks=frame
     [x] narrowing is a compile error, 'i8(...)' etc. acknowledges it
     [x] unset results rejected at compile time, variables are zeroed
@@ -24,12 +24,12 @@
             elements, count defaults to the array length, 'start + count'
             bounds checked, the result stays in bytes. 'buf[start]' is
             rejected, 'array_copy'/'arrays_equal' keep the element form
-            since they have two arrays (t565-t567, t569, t570)
+            since they have two arrays (513.baz-515.baz, 517.baz, 518.baz)
         [x] an element passed to an array parameter is rejected, it would
             carry the whole array's length. pass the array and a start
-            index instead: 'print(buf, i, 20 - i)' (t568, t481)
+            index instead: 'print(buf, i, 20 - i)' (516.baz, 429.baz)
         [x] tests and prog.baz migrated, a non-array buffer is rejected with
-            "argument 2 must be an array" (t487, t488)
+            "argument 2 must be an array" (435.baz, 436.baz)
         [ ] a partial 'read'/'write' can end inside a record and the start
             argument cannot resume there. for elements larger than 1 byte,
             repeat the syscall until the current record is complete, not
@@ -63,7 +63,7 @@
 [ ] allow record literals and record call results as arguments, e.g.
     'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
     caller's frame. rejected today with "argument 1 cannot be a temporary"
-    (t553, t554)
+    (501.baz, 502.baz)
 [ ] consider making widening explicit too, today only narrowing needs
     'i8(...)' etc. e.g. 'var y i32 = 1 + low(x)' with 'low' returning i8 is
     rejected as a result type mismatch, 'i32(low(x))' is required
@@ -78,14 +78,14 @@
 [ ] consider not allowing single statement blocks
 [ ] rv32i emit_most_efficient should know the instruction count on synthesized
     instructions such as "li"
-[ ] re-number the tests to be a sequence without gaps
+[x] re-number the tests to be a sequence without gaps
 [ ] UB detection, what remains:
     [ ] result aliases a by-reference argument: 'x = f(x)', 'p = swap(p)'
-        (t537, inline and noinline). reject when the callee reads that
+        (485.baz, inline and noinline). reject when the callee reads that
         parameter after writing its result: per-function summary of such
         parameters plus a call-site overlap check using identifier byte
-        ranges (runtime indexes may overlap). valid today: t137, t139-t142,
-        t438 read before writing
+        ranges (runtime indexes may overlap). valid today: 135.baz, 137.baz-140.baz,
+        394.baz read before writing
     [ ] two by-reference parameters bound to the same variable, e.g. 'g(q, q)'
         where 'g' writes one and reads the other. inside inline functions the
         destination-read checks compare names, so 'res' and 'p' referring to
@@ -103,7 +103,7 @@
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
     to unspecified register size with sign extension
     => 255 is outside the range of i8: -128 -> 127
-[ ] x86 register utilization: t110, t83, t105
+[ ] x86 register utilization: 109.baz, 082.baz, 104.baz
 [ ] rv32i alignment issues
     => works in qemu for now that does not require alignment
 [ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
@@ -189,7 +189,7 @@
     }
 [ ] add rbp, rbx to scratch registers
     => rax, rcx, rdx, rsi, rdi, rsp are used by the compiler
-    [ ] update t321
+    [ ] update 285.baz
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
 [ ] does not work: var s1: i8[]  = "hello world"
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
@@ -269,7 +269,7 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
-[x] function names used as assembly labels can clash (t557, t558)
+[x] function names used as assembly labels can clash (505.baz, 506.baz)
     => non-inline label is the bare name: 'rax', 'qword', 'byte', 'rel', 'sp'
        fail in nasm and '_start', 'dat', 'vars', 'baz_bounds_panic' redefine
        internal labels
@@ -286,7 +286,7 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
     => it is no longer an error
     => implement i8(...) i16(...) etc to tell compiler value has new type and 
        user to make the decision to truncate
-    => done: silent narrowing is rejected, see t546-t548
+    => done: silent narrowing is rejected, see 494.baz-496.baz
 [x]  consider a language construct where user must specify that truncation is
      allowed
 [x] syntax change: 
@@ -302,7 +302,7 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 [x] rename expr_type_value to expr_type
 [-] t158 is ub
     => removed cause the test case is covered by other tests
-[x] ub? mp[1] = { mp[2].msg } see t155.baz:44
+[x] ub? mp[1] = { mp[2].msg } see 153.baz:44
 [x] a return reference might be used as an argument to a function that set it.
     current ub detection does not allow that
 [x] ub detection:
@@ -381,15 +381,15 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 [x] const should be allowed on top level and in scoped blocks
 [x] consider allowing globals by inserting a base frame and when looking for
     vars or consts traverse to first frame
-[x] t389 bools should not be used in arithmetics
+[x] 351.baz bools should not be used in arithmetics
 [x] unspecified array size var with empty string not supported
-[x] t178 should fail because var is not bool
+[x] 171.baz should fail because var is not bool
     => fixed but should be better
     [x] when allocating register specify the type that becomes dst_info
-[x] t390 bool argument from expression that allocates scratch register should
+[x] 352.baz bool argument from expression that allocates scratch register should
     not compile for other parameter type than bool
-[x] t294 should pass
-[x] t160 set the value and assert it
+[x] 265.baz should pass
+[x] 156.baz set the value and assert it
 [x] stmt_def_type_field: array size specifier to be able to be a const value
     or numerical
 [x] token: source_to can remove the escape because the string is already escaped
@@ -422,10 +422,10 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
     => major overhaul with now only expr_bool_op that reads whitespaces
 [x] review bool_ops_list + bool_op parsing considering the whitespaces handling
     => done in major overhaul of whitespace handling
-[x] stmt_assign_var: validate array sizes (t167)
-[x] expr_type_value: validate array sizes (t168)
-[x] expr_ops_list: remove rsp-changing register save fallback (t286)
-[x] fix empty-array initializer crashes (t275, t277, t278, t279)
+[x] stmt_assign_var: validate array sizes (163.baz)
+[x] expr_type_value: validate array sizes (164.baz)
+[x] expr_ops_list: remove rsp-changing register save fallback (259.baz)
+[x] fix empty-array initializer crashes (254.baz, 255.baz, 256.baz, 257.baz)
 [x] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
     => remove regex construction from hot paths; constructed once and the reused
@@ -546,9 +546,9 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 [x] expr_bool_ops_list: understand why the last element const eval works
     look at coverage and notice is never returns const eval unless only 1
     element
-    => t145: isolates the case where last element in a bool ops list is
+    => 143.baz: isolates the case where last element in a bool ops list is
        const evaluated
-[x] expr_ops_list::asm_shf: t142
+[x] expr_ops_list::asm_shf: 140.baz
     shf: expr
     shf: not const, no uops
     shf: not const,    uops
@@ -557,7 +557,7 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 [x] expr_ops_list::asm_div: compile expression case 
 [x] expr_ops_list::asm_mul: compile expression case 
 [x] expr_ops_list::asm_div: test 140.baz op size dword
-[x] expr_ops_list::asm_div: test t139.baz
+[x] expr_ops_list::asm_div: test 137.baz
     div not const, no uops
     div not const,    uops
     div const
@@ -567,7 +567,7 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 [x] stmt_call:: argument register is not sized to parameter
 [x] expr_ops_list::asm_mul: special byte sized operation handling with imul
 [x] expr_ops_list::asm_mul: rewrite cleaner
-    => quirky code because of imul format, t137 tests code paths:
+    => quirky code because of imul format, 135.baz tests code paths:
     imul: dst is not reg, src is not const, no uops
     imul: dst is not reg, src is not const,    uops
     imul: dst is not reg, src is     const
@@ -578,7 +578,7 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 
     remains: special byte sized operations and sub-expressions
 
-[x] t134: not optimal due to movsx from dword to qword
+[x] 132.baz: not optimal due to movsx from dword to qword
 [x] expr_ops_list: handling of non-expression but indexed or lea sources
     => allocates scratch register although when indexed or lea only operand
        change is needed
@@ -587,7 +587,7 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
           [x] asm_mul
           [x] asm_div
           [x] asm_shift
-[x] t78: lea r13 is unnecessary
+[x] 077.baz: lea r13 is unnecessary
     inv_28_17:
 ;       [28:17] alias res -> dword [rsp + r15 * 4 - 16]  (lea: , len: 0)
 ;       [28:17] alias i -> arr  (lea: rsp + r14 * 4 - 16, len: 4)
@@ -667,20 +667,20 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
     possible positive numbers. compiler flag
     => use option "upper"
 [x] bounds checking does not catch negative array indexes
-[x] t56: fails with negative numbers because they are not sign extended when
+[x] 055.baz: fails with negative numbers because they are not sign extended when
     using scratch register in expr_ops_list
-[x] see edge case t116 'c' should not be 2
+[x] see edge case 115.baz 'c' should not be 2
     => it should be 2 because the returned value is not a reference to the
        argument
 [x] find where displacement in generated assembler is 0 and fix it:
     e.g. r15 + r14 * 4 - 0
     => in stmt_assign_var: fixed
-[x] t79 generates asm: mov dword [rsp + r15 * 4 - 16 + 0], r13d
+[x] 078.baz generates asm: mov dword [rsp + r15 * 4 - 16 + 0], r13d
 [x] stmt_call: 176: see comment, is that correct? 
     => was a bug
 [x] ident_info: the stack of "lea" might not be necessary: lea is set when base
     identifier address is in a register
-[x] t112: optimize:
+[x] 111.baz: optimize:
             mov r11, r15
             movsx r12, byte [r11 + 128]
           to
@@ -968,7 +968,7 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
        at compile time
        => the if does the constant evaluation never reaching cmp assembler command
 [x] expr_ops_list: does calculate e*b/a + (b % (-a)) 
-    fix t47.baz:
+    fix 046.baz:
     c = a - e*b/a + (b % (-a))
     if not c==4 exit(17)
     => c = (a - e*b/a) + (b % (-a))  ok
@@ -986,7 +986,7 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 [x] find out why toc.source_comment does not remove trailing spaces
 [x] var u : bool = not ( (false or true) and not (true and false) ) or (x > 10)
                  => false
-[x] t69.baz has commented samples that break baz
+[x] 068.baz has commented samples that break baz
 [x] refactor parsing of bool_ops_list and check compilation:
     => don't allow mixing of 'or's and 'and's without parenthesis greatly
        reduces the complexity. (same like in C++)
@@ -1076,9 +1076,9 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 [x] var o:object={{1,2},{0,0},1}
 [x] o.pos = v
 [x] expr_ops_list: more coverage
-    => t65
-[x] qa/t63 sometimes fails when run in batch. examine t63.py
-    => error in t63.py
+    => 064.baz
+[x] qa/062.baz sometimes fails when run in batch. examine 062.py
+    => error in 062.py
 [x] f(a==1) where argument is a boolean
 [x] type size{value}, var s:size=1, s.value=2 == s=2 
 [x] type point{x,y}

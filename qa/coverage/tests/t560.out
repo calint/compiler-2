@@ -1,2 +1,0 @@
-
-t560.baz:5:18: constant '-c' does not fit 'i8', use 'i8(...)'

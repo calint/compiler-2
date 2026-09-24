@@ -1,2 +1,0 @@
-
-t480.baz:4:40: parameter 'parameter': required 'i16', got 'i32'

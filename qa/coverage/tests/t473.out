@@ -1,2 +1,0 @@
-
-t473.baz:4:32: result type mismatch: function returns 'i16', destination is 'i32'

@@ -1,0 +1,2 @@
+
+199.baz:3:28: boolean field 'bool' must be 'true' or 'false'

@@ -1,0 +1,2 @@
+
+467.baz:3:25: use of uninitialized variable 'res'

@@ -1,2 +1,0 @@
-
-t548.baz:3:20: constant '0xfe' does not fit 'i8', use 'i8(...)'

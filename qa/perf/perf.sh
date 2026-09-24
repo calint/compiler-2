@@ -13,7 +13,7 @@ Usage: ./perf.sh [nobuild|build|report] [full|compile-only] [--reproduce-source]
   build           Build with -O3 and debug symbols, then record.
   report          Regenerate all reports from the existing recording.
   full            Run the test suite with live output (default).
-  compile-only    Compile every t*.baz; do not assemble/link/execute.
+  compile-only    Compile every [0-9]*.baz; do not assemble/link/execute.
     --reproduce-source  Enable source reproduction and verification (compile-only only).
 
 Environment: PERF_FREQ=400, PERF_REPEATS=1 (compile-only sweeps).
@@ -42,7 +42,7 @@ if [[ "${1:-}" == --compile-workload ]]; then
     shift
     cd ../coverage
     for ((repeat = 1; repeat <= PERF_REPEATS; ++repeat)); do
-        for src in t*.baz; do
+        for src in [0-9]*.baz; do
             status=0
             ../../baz "$src" --vars=262144 --checks=upper,lower,line "$@" \
                 >/dev/null 2>../perf/compile-last-error.txt || status=$?

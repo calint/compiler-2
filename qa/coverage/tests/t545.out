@@ -1,2 +1,0 @@
-
-t545.baz:5:25: parameter 'value': required 'i8', got 'i32'

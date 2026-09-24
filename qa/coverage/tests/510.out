@@ -1,0 +1,2 @@
+
+510.baz:4:34: '-a' of type 'i16' is narrowed to 'i8', use 'i8(...)'

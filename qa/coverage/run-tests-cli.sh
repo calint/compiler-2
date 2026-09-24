@@ -25,33 +25,33 @@ CLI() {
 CLI_REPRODUCE_SOURCE() {
     echo -n "cli --reproduce-source: "
     rm -f diff.baz
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-default.profraw" "$BIN" t15.baz >gen.s 2>err
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-default.profraw" "$BIN" 015.baz >gen.s 2>err
     [[ ! -e diff.baz ]]
-    cp t1.baz diff.baz
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-default-nopt.profraw" "$BIN" t15.baz --nopt >out 2>err
-    cmp -s diff.baz t1.baz
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-reproduce.profraw" "$BIN" t15.baz --reproduce-source >out 2>err
-    cmp -s diff.baz t15.baz
+    cp 001.baz diff.baz
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-default-nopt.profraw" "$BIN" 015.baz --nopt >out 2>err
+    cmp -s diff.baz 001.baz
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-reproduce.profraw" "$BIN" 015.baz --reproduce-source >out 2>err
+    cmp -s diff.baz 015.baz
     cmp -s gen.s out
     rm -f diff.baz
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-reproduce-nopt.profraw" "$BIN" --reproduce-source t15.baz --nopt >out 2>err
-    cmp -s diff.baz t15.baz
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-reproduce-nopt.profraw" "$BIN" --reproduce-source 015.baz --nopt >out 2>err
+    cmp -s diff.baz 015.baz
     echo ok
 }
 
 CLI_TARGETS() {
     echo -n "cli target selection: "
-    "$BIN" t15.baz >gen.s 2>err
-    "$BIN" --target=x86_64 t15.baz >out 2>err
+    "$BIN" 015.baz >gen.s 2>err
+    "$BIN" --target=x86_64 015.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --nopt t15.baz >gen.s 2>err
-    "$BIN" --target=x86_64 --nopt t15.baz >out 2>err
+    "$BIN" --nopt 015.baz >gen.s 2>err
+    "$BIN" --target=x86_64 --nopt 015.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --target=rv32i t482.baz >gen.s 2>err
+    "$BIN" --target=rv32i 430.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Fxq ".option norvc" gen.s
     grep -Eq '^[[:space:]]*ecall$' gen.s
-    "$BIN" --target=rv32i --nopt t482.baz >out 2>err
+    "$BIN" --target=rv32i --nopt 430.baz >out 2>err
     [[ ! -s err ]]
     [[ $(wc -l <gen.s) -le $(wc -l <out) ]]
     echo ok
@@ -59,9 +59,9 @@ CLI_TARGETS() {
 
 CLI_JUMP_OPTIMIZATIONS() {
     echo -n "cli x86 jump optimizations: "
-    "$BIN" --target=x86_64 --nopt t493.baz >gen.s 2>err
+    "$BIN" --target=x86_64 --nopt 441.baz >gen.s 2>err
     [[ ! -s err ]]
-    "$BIN" --target=x86_64 t493.baz >out 2>err
+    "$BIN" --target=x86_64 441.baz >out 2>err
     [[ ! -s err ]]
     local raw optimized
     raw=$(sed 's/^[[:space:]]*//' gen.s)
@@ -102,8 +102,8 @@ CLI --vars=16junk 1 --help
 CLI --vars=18446744073709551616 1 --help
 CLI --stack=65536 1 --help
 CLI --no-reproduce 1 --help
-CLI --checks=frame 0 t15.baz
-CLI --checks=upper,lower,line,frame 0 t15.baz
+CLI --checks=frame 0 015.baz
+CLI --checks=upper,lower,line,frame 0 015.baz
 CLI --checks=unknown 1 --help
 CLI --target=x86_64 0 --help
 CLI --target=rv32i 0 --help
