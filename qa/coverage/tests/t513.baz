@@ -1,0 +1,34 @@
+# constant last elements after non-constant elements decide the list only when they short-circuit it
+func assert(ok bool) { if not ok exit(1) }
+func main() {
+    var x = 1
+    var a bool = x == 2 and true
+    assert(not a)
+    var b bool = x == 1 and true
+    assert(b)
+    var c bool = x == 1 or false
+    assert(c)
+    var d bool = x == 2 or false
+    assert(not d)
+    var e bool = not (x == 2 and true)
+    assert(e)
+    var f bool = not (x == 1 or false)
+    assert(not f)
+    var g bool = x == 2 or true
+    assert(g)
+    var h bool = x == 1 and false
+    assert(not h)
+    var taken = 0
+    if x == 2 and true { taken = 1 } else { taken = 2 }
+    assert(taken == 2)
+    if x == 1 or false { taken = 3 } else { taken = 4 }
+    assert(taken == 3)
+    if not (x == 1 and true) { taken = 5 } else { taken = 6 }
+    assert(taken == 6)
+    if not (x == 2 or false) { taken = 7 } else { taken = 8 }
+    assert(taken == 7)
+    if x == 2 or true { taken = 9 } else { taken = 10 }
+    assert(taken == 9)
+    if x == 1 and false { taken = 11 } else { taken = 12 }
+    assert(taken == 12)
+}

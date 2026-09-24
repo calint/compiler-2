@@ -167,6 +167,11 @@ class expr_bool_ops_list final : public statement {
             return true;
         }
 
+        // 'identifier' cannot carry the negation
+        if (not_tk_.is_text("not")) {
+            return true;
+        }
+
         assert(not bools_.empty());
 
         // 1 expression in the list
@@ -210,6 +215,10 @@ class expr_bool_ops_list final : public statement {
         const bool invert{inverted ? not not_tk_.is_text("not")
                                    : not_tk_.is_text("not")};
 
+        // a constant last element decides the list only if all earlier
+        // elements were constants or it short-circuits the list
+        bool has_runtime_element{};
+
         const size_t expr_count{bools_.size()};
         for (size_t expr_index{}; expr_index < expr_count; ++expr_index) {
             if (std::holds_alternative<expr_bool_ops_list>(
@@ -240,25 +249,26 @@ class expr_bool_ops_list final : public statement {
                             std::unreachable();
                         }
 
-                        if (const std::optional<bool> const_eval{
-                                nested_expr.compile_rec(tc, indent, jmp_false,
-                                                        jmp_true, invert, dst)};
-                            const_eval) {
+                        const std::optional<bool> const_eval{
+                            nested_expr.compile_rec(tc, indent, jmp_false,
+                                                    jmp_true, invert, dst)};
+                        if (not const_eval) {
+                            has_runtime_element = true;
+                            continue;
+                        }
 
-                            // expression evaluated to a constant
+                        // expression evaluated to a constant
 
-                            // if false and in an 'and' list short-circuit
-                            // and return evaluation
-                            if (not *const_eval and
-                                ops_[expr_index].is_text("and")) {
-                                return *const_eval;
-                            }
-                            // if true and in an 'or' list short-circuit and
-                            // return result
-                            if (*const_eval and
-                                ops_[expr_index].is_text("or")) {
-                                return *const_eval;
-                            }
+                        // if false and in an 'and' list short-circuit
+                        // and return evaluation
+                        if (not *const_eval and
+                            ops_[expr_index].is_text("and")) {
+                            return *const_eval;
+                        }
+                        // if true and in an 'or' list short-circuit and
+                        // return result
+                        if (*const_eval and ops_[expr_index].is_text("or")) {
+                            return *const_eval;
                         }
                     } else {
                         // invert, according to De Morgan's laws,
@@ -283,71 +293,46 @@ class expr_bool_ops_list final : public statement {
                         }
 
                         // does expression evaluate to a constant?
-                        if (const std::optional<bool> const_eval{
-                                nested_expr.compile_rec(tc, indent, jmp_false,
-                                                        jmp_true, invert, dst)};
-                            const_eval) {
+                        const std::optional<bool> const_eval{
+                            nested_expr.compile_rec(tc, indent, jmp_false,
+                                                    jmp_true, invert, dst)};
+                        if (not const_eval) {
+                            has_runtime_element = true;
+                            continue;
+                        }
 
-                            // yes, short-circuit
+                        // yes, short-circuit
 
-                            // if 'false' and in an 'and' (inverted 'or')
-                            // list short-circuit and return evaluation
-                            if (not *const_eval and
-                                ops_[expr_index].is_text("or")) {
-                                return *const_eval;
-                            }
-                            // if 'true' and in an 'or' (inverted 'and')
-                            // list short-circuit and return evaluation
-                            if (*const_eval and
-                                ops_[expr_index].is_text("and")) {
-                                return *const_eval;
-                            }
+                        // if 'false' and in an 'and' (inverted 'or')
+                        // list short-circuit and return evaluation
+                        if (not *const_eval and
+                            ops_[expr_index].is_text("or")) {
+                            return *const_eval;
+                        }
+                        // if 'true' and in an 'or' (inverted 'and')
+                        // list short-circuit and return evaluation
+                        if (*const_eval and ops_[expr_index].is_text("and")) {
+                            return *const_eval;
                         }
                     }
                 } else {
                     // the last bool op in the list
-                    // 'jmp_false' is the next bool ops list
-                    // did expression evaluate to a constant?
-                    // single-element case: result is definitively true/false
-                    if (const std::optional<bool> const_eval{
-                            nested_expr.compile_rec(tc, indent, jmp_to_if_false,
-                                                    jmp_to_if_true, invert,
-                                                    dst)};
-                        const_eval) {
+                    const std::optional<bool> const_eval{
+                        nested_expr.compile_rec(tc, indent, jmp_to_if_false,
+                                                jmp_to_if_true, invert, dst)};
+                    if (not const_eval) {
+                        continue;
+                    }
 
-                        // if only element return evaluation
-                        if (expr_index == 0) {
-                            return *const_eval;
-                        }
-                        if (not invert) {
-                            // if false and in an 'and' list short-circuit and
-                            // return evaluation if false
-                            if (not *const_eval and
-                                ops_[expr_index - 1].is_text("and")) {
+                    if (not has_runtime_element or
+                        is_short_circuit(*const_eval, expr_index - 1, invert)) {
+                        return *const_eval;
+                    }
 
-                                return *const_eval;
-                            }
-                            // if true and in an 'or' list short-circuit and
-                            // return result
-                            if (*const_eval and
-                                ops_[expr_index - 1].is_text("or")) {
-                                return *const_eval;
-                            }
-                        } else {
-                            // in invert mode according to De Morgan's law
-                            // if 'false' and in an 'and' (inverted 'or') list
-                            // short-circuit and return evaluation
-                            if (not *const_eval and
-                                ops_[expr_index - 1].is_text("or")) {
-                                return *const_eval;
-                            }
-                            // if 'true' and in an 'or' (inverted 'and')
-                            // list short-circuit and return evaluation
-                            if (*const_eval and
-                                ops_[expr_index - 1].is_text("and")) {
-                                return *const_eval;
-                            }
-                        }
+                    // a constant false has already branched to false, a
+                    // constant true falls through
+                    if (*const_eval) {
+                        x.branch(indent, jmp_to_if_true);
                     }
                 }
                 continue;
@@ -361,34 +346,43 @@ class expr_bool_ops_list final : public statement {
                 if (expr_index < expr_count - 1) {
                     // not last element
                     if (ops_[expr_index].is_text("or")) {
-                        if (const std::optional<bool> const_eval{
-                                expr.compile_or(tc, indent, jmp_to_if_true,
-                                                invert, dst)};
-                            const_eval and *const_eval) {
-
+                        const std::optional<bool> const_eval{expr.compile_or(
+                            tc, indent, jmp_to_if_true, invert, dst)};
+                        if (const_eval == true) {
                             // constant evaluated to true, short-circuit
                             return true;
                         }
+                        if (not const_eval) {
+                            has_runtime_element = true;
+                        }
                     } else if (ops_[expr_index].is_text("and")) {
-                        if (const std::optional<bool> const_eval{
-                                expr.compile_and(tc, indent, jmp_to_if_false,
-                                                 invert, dst)};
-                            const_eval and not *const_eval) {
-
+                        const std::optional<bool> const_eval{expr.compile_and(
+                            tc, indent, jmp_to_if_false, invert, dst)};
+                        if (const_eval == false) {
                             // constant evaluated to false, short-circuit
                             return false;
+                        }
+                        if (not const_eval) {
+                            has_runtime_element = true;
                         }
                     } else {
                         std::unreachable();
                     }
                 } else {
                     // last element
-                    if (const std::optional<bool> const_eval{expr.compile_and(
-                            tc, indent, jmp_to_if_false, invert, dst,
-                            jmp_to_if_false != jmp_to_if_true)};
-                        const_eval) {
-
-                        return *const_eval;
+                    const std::optional<bool> const_eval{expr.compile_and(
+                        tc, indent, jmp_to_if_false, invert, dst,
+                        jmp_to_if_false != jmp_to_if_true)};
+                    if (const_eval) {
+                        if (not has_runtime_element or
+                            is_short_circuit(*const_eval, expr_index - 1,
+                                             invert)) {
+                            return *const_eval;
+                        }
+                        // a constant false has already branched to false
+                        if (not *const_eval) {
+                            return std::nullopt;
+                        }
                     }
                     // if not yet jumped to false, then jump to true
                     x.branch(indent, jmp_to_if_true);
@@ -400,34 +394,43 @@ class expr_bool_ops_list final : public statement {
                 if (expr_index < expr_count - 1) {
                     // not last element
                     if (ops_[expr_index].is_text("and")) {
-                        if (const std::optional<bool> const_eval{
-                                expr.compile_or(tc, indent, jmp_to_if_true,
-                                                invert, dst)};
-                            const_eval and *const_eval) {
-
+                        const std::optional<bool> const_eval{expr.compile_or(
+                            tc, indent, jmp_to_if_true, invert, dst)};
+                        if (const_eval == true) {
                             // constant evaluated to true, short-circuit
                             return true;
                         }
+                        if (not const_eval) {
+                            has_runtime_element = true;
+                        }
                     } else if (ops_[expr_index].is_text("or")) {
-                        if (const std::optional<bool> const_eval{
-                                expr.compile_and(tc, indent, jmp_to_if_false,
-                                                 invert, dst)};
-                            const_eval and not *const_eval) {
-
+                        const std::optional<bool> const_eval{expr.compile_and(
+                            tc, indent, jmp_to_if_false, invert, dst)};
+                        if (const_eval == false) {
                             // constant evaluated to false, short-circuit
                             return false;
+                        }
+                        if (not const_eval) {
+                            has_runtime_element = true;
                         }
                     } else {
                         std::unreachable();
                     }
                 } else {
                     // last element
-                    if (const std::optional<bool> const_eval{expr.compile_and(
-                            tc, indent, jmp_to_if_false, invert, dst,
-                            jmp_to_if_false != jmp_to_if_true)};
-                        const_eval) {
-
-                        return *const_eval;
+                    const std::optional<bool> const_eval{expr.compile_and(
+                        tc, indent, jmp_to_if_false, invert, dst,
+                        jmp_to_if_false != jmp_to_if_true)};
+                    if (const_eval) {
+                        if (not has_runtime_element or
+                            is_short_circuit(*const_eval, expr_index - 1,
+                                             invert)) {
+                            return *const_eval;
+                        }
+                        // a constant false has already branched to false
+                        if (not *const_eval) {
+                            return std::nullopt;
+                        }
                     }
                     // if not yet jumped to false, then jump to true
                     x.branch(indent, jmp_to_if_true);
@@ -436,6 +439,16 @@ class expr_bool_ops_list final : public statement {
         }
 
         return std::nullopt;
+    }
+
+    // inversion swaps 'and' and 'or' according to De Morgan's laws
+    [[nodiscard]] auto is_short_circuit(const bool const_eval,
+                                        const size_t op_index,
+                                        const bool invert) const -> bool {
+
+        const bool is_or{ops_[op_index].is_text("or") != invert};
+
+        return const_eval == is_or;
     }
 
     [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const

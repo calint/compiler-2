@@ -1,0 +1,12 @@
+# negated parenthesized constants are expressions
+func assert(ok bool) { if not ok exit(1) }
+func main() {
+    var a bool = not (true)
+    assert(not a)
+    var b bool = not (false)
+    assert(b)
+    var c bool = not ((true))
+    assert(not c)
+    var d bool = not (not (true))
+    assert(d)
+}

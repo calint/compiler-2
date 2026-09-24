@@ -1,0 +1,22 @@
+# constant nested lists as last elements branch to the enclosing true target
+func assert(ok bool) { if not ok exit(1) }
+func main() {
+    var x = 1
+    var a bool = (x == 1 and (true)) or x == 5
+    assert(a)
+    var b bool = (x == 2 or (false)) and x == 1
+    assert(not b)
+    var c bool = not ((x == 1 and (true)) or x == 5)
+    assert(not c)
+    var d bool = (not (x == 2 or (false))) or x == 5
+    assert(d)
+    var taken = 0
+    if (x == 1 and (true)) or x == 5 { taken = 1 } else { taken = 2 }
+    assert(taken == 1)
+    if (x == 2 or (false)) and x == 1 { taken = 3 } else { taken = 4 }
+    assert(taken == 4)
+    if not ((x == 1 and (true)) or x == 5) { taken = 5 } else { taken = 6 }
+    assert(taken == 6)
+    if (not (x == 2 or (false))) or x == 5 { taken = 7 } else { taken = 8 }
+    assert(taken == 7)
+}
