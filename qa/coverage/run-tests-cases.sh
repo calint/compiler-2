@@ -16,7 +16,6 @@ SRC=t15 && DIFF
 SRC=t16 && DIFF
 SRC=t17 && DIFF
 SRC=t18 && DIFF
-#SRC=t19 && EXP=120 && RUN
 SRC=t20 && EXP=7 && RUN
 SRC=t21 && EXP=12 && RUN
 SRC=t22 && EXP=16 && RUN
@@ -282,7 +281,7 @@ SRC=t317 && EXP=0 && RUN
 SRC=t318 && COMPERR
 SRC=t319 && COMPERR
 SRC=t320 && COMPERR
-# SRC=t321 && COMPERR # target-specific scratch-register capacity
+if [[ $MACHINE == x86_64 ]]; then SRC=t321 && COMPERR; fi
 SRC=t322 && COMPERR
 SRC=t323 && COMPERR
 SRC=t324 && EXP=0 && RUN
