@@ -478,6 +478,8 @@ class stmt_identifier : public statement {
                                      info.array_len);
     }
 
+    // adds the element index of 'cur_elem' to 'address', which has no index
+    // yet, keeping its base and displacement
     [[nodiscard]] auto static add_index(
         toc& tc, const token& src_loc_tk, const size_t indent,
         std::vector<operand>& allocated_registers, const ident_elem& cur_elem,
@@ -486,7 +488,10 @@ class stmt_identifier : public statement {
 
         machine& x{tc.machine()};
 
+        // a register kept by an earlier fold is reused since the fold already
+        // consumed its value
         if (index_register.is_empty()) {
+            // index expressions are parsed with the default type
             index_register = x.alloc_scratch_register(src_loc_tk, indent,
                                                       tc.get_type_default());
 
@@ -501,6 +506,8 @@ class stmt_identifier : public statement {
 
         uint64_t scale{1};
 
+        // a scale the addressing mode cannot encode is applied to the index
+        // register instead, leaving scale 1 in the operand
         if (x.can_lower_index_scale(type_size)) {
             scale = type_size;
         } else {
