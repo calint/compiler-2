@@ -11,11 +11,9 @@
 #include <cassert>
 #include <format>
 #include <memory>
-#include <optional>
 #include <ostream>
 #include <ranges>
 #include <span>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>

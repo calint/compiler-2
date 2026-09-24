@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] detect overlapping array copy at run-time --checks=overlap
+[ ] allow record literals and record call results as arguments, e.g.
+    'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
+    caller's frame. rejected today with "argument 1 cannot be a temporary"
+    (t553, t554)
 [o] opus 5.5 ai review and bug-hunt
 [x] move anything that can be moved from decouple_impl.hpp to corresponding
     class file

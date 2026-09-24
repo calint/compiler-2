@@ -65,6 +65,17 @@ class stmt_call : public expression {
             for (const auto [arg_number, arg, param] :
                  std::views::zip(std::views::iota(1), args_, func.params())) {
 
+                // todo: literals and call results need a temporary to be
+                //       passed, see etc/todo.txt
+                if (not param.get_type().is_builtin() and
+                    not arg.is_identifier()) {
+
+                    throw compiler_exception{
+                        arg.tok(),
+                        std::format("argument {} cannot be a temporary",
+                                    arg_number)};
+                }
+
                 if (param.is_array()) {
                     const ident_info arg_info{tc.make_ident_info(arg)};
                     if (not arg_info.is_array) {
