@@ -444,6 +444,32 @@ class machine_rv32i final : public machine {
                left.displacement() == right.displacement();
     }
 
+    // a 32-bit multiplier can need one digit above bit 31 in non-adjacent form
+    static constexpr size_t multiplier_digit_count{33};
+
+    // non-adjacent form turns a run of set bits into one subtraction, e.g. 7
+    // as 8 - 1, so each run costs one shift and add instead of one per bit
+    [[nodiscard]] static auto multiplier_digits(const uint32_t multiplier)
+        -> std::array<int, multiplier_digit_count> {
+
+        std::array<int, multiplier_digit_count> digits{};
+        uint64_t remaining{multiplier};
+        for (size_t i{}; remaining != 0; ++i) {
+            if ((remaining & 1U) == 0) {
+                remaining >>= 1U;
+                continue;
+            }
+
+            // remainder 3 modulo 4 is inside a run of set bits
+            const bool in_run{(remaining & 3U) == 3};
+            digits.at(i) = in_run ? -1 : 1;
+            remaining = in_run ? remaining + 1 : remaining - 1;
+            remaining >>= 1U;
+        }
+
+        return digits;
+    }
+
     auto store_operation_result(const size_t indent, const operand& destination,
                                 const operand& address, const operand& value,
                                 const bool normalize) const -> void {
@@ -2064,27 +2090,46 @@ class machine_rv32i final : public machine {
         copy_value(src_loc_tk, indent, left,
                    product.is_memory() ? address : product);
 
-        // known multipliers use an unrolled sequence of shifts and adds
+        // known multipliers use an unrolled sequence of shifts with adds or
+        // subtracts
+
+        std::array<int, multiplier_digit_count> digits{
+            multiplier_digits(multiplier)};
+
+        // a digit at the product width vanishes modulo the width, leaving a
+        // negative multiplier that is cheaper to build positive then negate
+        const bool negate{digits.at(bits) != 0};
+        if (negate) {
+            digits.at(bits) = 0;
+            for (int& digit : digits) {
+                digit = -digit;
+            }
+        }
+
+        // the leading nonzero digit is now plus one and starts the result
+        size_t top{digits.size() - 1};
+        while (digits.at(top) == 0) {
+            --top;
+        }
 
         bool initialized{};
         int pending_shift{};
 
-        for (unsigned bit{static_cast<unsigned>(std::bit_width(multiplier)) -
-                          1};
-             bit != 0;) {
-
+        for (size_t bit{top}; bit != 0;) {
             --bit;
             ++pending_shift;
 
-            // emit a shift when the next set bit needs an addition
-            if ((multiplier & (uint32_t{1} << bit)) != 0) {
+            // emit a shift when the next nonzero digit needs an add or sub
+            if (digits.at(bit) != 0) {
                 asm_line(indent, "slli {}, {}, {}", result.base_register(),
                          initialized ? result.base_register()
                                      : left.base_register(),
                          pending_shift);
 
-                asm_line(indent, "add {}, {}, {}", result.base_register(),
-                         result.base_register(), left.base_register());
+                asm_line(indent, "{} {}, {}, {}",
+                         digits.at(bit) < 0 ? "sub" : "add",
+                         result.base_register(), result.base_register(),
+                         left.base_register());
 
                 pending_shift = 0;
                 initialized = true;
@@ -2095,6 +2140,11 @@ class machine_rv32i final : public machine {
         if (pending_shift != 0) {
             asm_line(indent, "slli {}, {}, {}", result.base_register(),
                      result.base_register(), pending_shift);
+        }
+
+        if (negate) {
+            asm_line(indent, "sub {}, zero, {}", result.base_register(),
+                     result.base_register());
         }
 
         store_operation_result(indent, product, address, result, true);

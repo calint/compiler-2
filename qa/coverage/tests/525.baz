@@ -1,0 +1,1935 @@
+# constant multiplication with shifts and adds or subtracts matches the
+# runtime multiply for many constants, operands and widths
+
+func main() {
+    var xi32[8] i32 = {0, 1, -1, 13, -13, 12345, 2147483647, -2147483648}
+    var xi16[8] i16 = {0, 1, -1, 13, -13, 1234, 32767, -32768}
+    var xi8[8] i8 = {0, 1, -1, 13, -13, 100, 127, -128}
+    var i = 0
+    var mi32 i32 = 0
+    var vi32 i32 = 0
+    var pi32 i32 = 0
+    var qi32 i32 = 0
+    var ri32 i32 = 0
+    var si32 i32 = 0
+    var mi16 i16 = 0
+    var vi16 i16 = 0
+    var pi16 i16 = 0
+    var qi16 i16 = 0
+    var ri16 i16 = 0
+    var si16 i16 = 0
+    var mi8 i8 = 0
+    var vi8 i8 = 0
+    var pi8 i8 = 0
+    var qi8 i8 = 0
+    var ri8 i8 = 0
+    var si8 i8 = 0
+
+    # i32 * 0
+    mi32 = 0
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 0
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(1)
+        pi32 = vi32
+        pi32 = pi32 * 0
+        if pi32 != qi32 exit(1)
+        ri32 = (vi32 + 1) * 0
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(1)
+        i = i + 1
+    }
+
+    # i32 * 1
+    mi32 = 1
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 1
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(2)
+        pi32 = vi32
+        pi32 = pi32 * 1
+        if pi32 != qi32 exit(2)
+        ri32 = (vi32 + 1) * 1
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(2)
+        i = i + 1
+    }
+
+    # i32 * -1
+    mi32 = -1
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -1
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(3)
+        pi32 = vi32
+        pi32 = pi32 * -1
+        if pi32 != qi32 exit(3)
+        ri32 = (vi32 + 1) * -1
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(3)
+        i = i + 1
+    }
+
+    # i32 * 2
+    mi32 = 2
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 2
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(4)
+        pi32 = vi32
+        pi32 = pi32 * 2
+        if pi32 != qi32 exit(4)
+        ri32 = (vi32 + 1) * 2
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(4)
+        i = i + 1
+    }
+
+    # i32 * 3
+    mi32 = 3
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 3
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(5)
+        pi32 = vi32
+        pi32 = pi32 * 3
+        if pi32 != qi32 exit(5)
+        ri32 = (vi32 + 1) * 3
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(5)
+        i = i + 1
+    }
+
+    # i32 * 5
+    mi32 = 5
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 5
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(6)
+        pi32 = vi32
+        pi32 = pi32 * 5
+        if pi32 != qi32 exit(6)
+        ri32 = (vi32 + 1) * 5
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(6)
+        i = i + 1
+    }
+
+    # i32 * 6
+    mi32 = 6
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 6
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(7)
+        pi32 = vi32
+        pi32 = pi32 * 6
+        if pi32 != qi32 exit(7)
+        ri32 = (vi32 + 1) * 6
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(7)
+        i = i + 1
+    }
+
+    # i32 * 7
+    mi32 = 7
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 7
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(8)
+        pi32 = vi32
+        pi32 = pi32 * 7
+        if pi32 != qi32 exit(8)
+        ri32 = (vi32 + 1) * 7
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(8)
+        i = i + 1
+    }
+
+    # i32 * 9
+    mi32 = 9
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 9
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(9)
+        pi32 = vi32
+        pi32 = pi32 * 9
+        if pi32 != qi32 exit(9)
+        ri32 = (vi32 + 1) * 9
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(9)
+        i = i + 1
+    }
+
+    # i32 * 10
+    mi32 = 10
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 10
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(10)
+        pi32 = vi32
+        pi32 = pi32 * 10
+        if pi32 != qi32 exit(10)
+        ri32 = (vi32 + 1) * 10
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(10)
+        i = i + 1
+    }
+
+    # i32 * 11
+    mi32 = 11
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 11
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(11)
+        pi32 = vi32
+        pi32 = pi32 * 11
+        if pi32 != qi32 exit(11)
+        ri32 = (vi32 + 1) * 11
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(11)
+        i = i + 1
+    }
+
+    # i32 * 15
+    mi32 = 15
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 15
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(12)
+        pi32 = vi32
+        pi32 = pi32 * 15
+        if pi32 != qi32 exit(12)
+        ri32 = (vi32 + 1) * 15
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(12)
+        i = i + 1
+    }
+
+    # i32 * 17
+    mi32 = 17
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 17
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(13)
+        pi32 = vi32
+        pi32 = pi32 * 17
+        if pi32 != qi32 exit(13)
+        ri32 = (vi32 + 1) * 17
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(13)
+        i = i + 1
+    }
+
+    # i32 * 23
+    mi32 = 23
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 23
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(14)
+        pi32 = vi32
+        pi32 = pi32 * 23
+        if pi32 != qi32 exit(14)
+        ri32 = (vi32 + 1) * 23
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(14)
+        i = i + 1
+    }
+
+    # i32 * 31
+    mi32 = 31
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 31
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(15)
+        pi32 = vi32
+        pi32 = pi32 * 31
+        if pi32 != qi32 exit(15)
+        ri32 = (vi32 + 1) * 31
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(15)
+        i = i + 1
+    }
+
+    # i32 * 33
+    mi32 = 33
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 33
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(16)
+        pi32 = vi32
+        pi32 = pi32 * 33
+        if pi32 != qi32 exit(16)
+        ri32 = (vi32 + 1) * 33
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(16)
+        i = i + 1
+    }
+
+    # i32 * 45
+    mi32 = 45
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 45
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(17)
+        pi32 = vi32
+        pi32 = pi32 * 45
+        if pi32 != qi32 exit(17)
+        ri32 = (vi32 + 1) * 45
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(17)
+        i = i + 1
+    }
+
+    # i32 * 63
+    mi32 = 63
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 63
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(18)
+        pi32 = vi32
+        pi32 = pi32 * 63
+        if pi32 != qi32 exit(18)
+        ri32 = (vi32 + 1) * 63
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(18)
+        i = i + 1
+    }
+
+    # i32 * 65
+    mi32 = 65
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 65
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(19)
+        pi32 = vi32
+        pi32 = pi32 * 65
+        if pi32 != qi32 exit(19)
+        ri32 = (vi32 + 1) * 65
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(19)
+        i = i + 1
+    }
+
+    # i32 * 85
+    mi32 = 85
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 85
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(20)
+        pi32 = vi32
+        pi32 = pi32 * 85
+        if pi32 != qi32 exit(20)
+        ri32 = (vi32 + 1) * 85
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(20)
+        i = i + 1
+    }
+
+    # i32 * 100
+    mi32 = 100
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 100
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(21)
+        pi32 = vi32
+        pi32 = pi32 * 100
+        if pi32 != qi32 exit(21)
+        ri32 = (vi32 + 1) * 100
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(21)
+        i = i + 1
+    }
+
+    # i32 * 127
+    mi32 = 127
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 127
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(22)
+        pi32 = vi32
+        pi32 = pi32 * 127
+        if pi32 != qi32 exit(22)
+        ri32 = (vi32 + 1) * 127
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(22)
+        i = i + 1
+    }
+
+    # i32 * 170
+    mi32 = 170
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 170
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(23)
+        pi32 = vi32
+        pi32 = pi32 * 170
+        if pi32 != qi32 exit(23)
+        ri32 = (vi32 + 1) * 170
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(23)
+        i = i + 1
+    }
+
+    # i32 * 255
+    mi32 = 255
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 255
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(24)
+        pi32 = vi32
+        pi32 = pi32 * 255
+        if pi32 != qi32 exit(24)
+        ri32 = (vi32 + 1) * 255
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(24)
+        i = i + 1
+    }
+
+    # i32 * 1000
+    mi32 = 1000
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 1000
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(25)
+        pi32 = vi32
+        pi32 = pi32 * 1000
+        if pi32 != qi32 exit(25)
+        ri32 = (vi32 + 1) * 1000
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(25)
+        i = i + 1
+    }
+
+    # i32 * 4095
+    mi32 = 4095
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 4095
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(26)
+        pi32 = vi32
+        pi32 = pi32 * 4095
+        if pi32 != qi32 exit(26)
+        ri32 = (vi32 + 1) * 4095
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(26)
+        i = i + 1
+    }
+
+    # i32 * 21845
+    mi32 = 21845
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 21845
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(27)
+        pi32 = vi32
+        pi32 = pi32 * 21845
+        if pi32 != qi32 exit(27)
+        ri32 = (vi32 + 1) * 21845
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(27)
+        i = i + 1
+    }
+
+    # i32 * 65535
+    mi32 = 65535
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 65535
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(28)
+        pi32 = vi32
+        pi32 = pi32 * 65535
+        if pi32 != qi32 exit(28)
+        ri32 = (vi32 + 1) * 65535
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(28)
+        i = i + 1
+    }
+
+    # i32 * 1000000
+    mi32 = 1000000
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 1000000
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(29)
+        pi32 = vi32
+        pi32 = pi32 * 1000000
+        if pi32 != qi32 exit(29)
+        ri32 = (vi32 + 1) * 1000000
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(29)
+        i = i + 1
+    }
+
+    # i32 * 858993459
+    mi32 = 858993459
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 858993459
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(30)
+        pi32 = vi32
+        pi32 = pi32 * 858993459
+        if pi32 != qi32 exit(30)
+        ri32 = (vi32 + 1) * 858993459
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(30)
+        i = i + 1
+    }
+
+    # i32 * 1073741824
+    mi32 = 1073741824
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 1073741824
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(31)
+        pi32 = vi32
+        pi32 = pi32 * 1073741824
+        if pi32 != qi32 exit(31)
+        ri32 = (vi32 + 1) * 1073741824
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(31)
+        i = i + 1
+    }
+
+    # i32 * 1431655765
+    mi32 = 1431655765
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 1431655765
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(32)
+        pi32 = vi32
+        pi32 = pi32 * 1431655765
+        if pi32 != qi32 exit(32)
+        ri32 = (vi32 + 1) * 1431655765
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(32)
+        i = i + 1
+    }
+
+    # i32 * 1717986918
+    mi32 = 1717986918
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 1717986918
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(33)
+        pi32 = vi32
+        pi32 = pi32 * 1717986918
+        if pi32 != qi32 exit(33)
+        ri32 = (vi32 + 1) * 1717986918
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(33)
+        i = i + 1
+    }
+
+    # i32 * 2004318071
+    mi32 = 2004318071
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 2004318071
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(34)
+        pi32 = vi32
+        pi32 = pi32 * 2004318071
+        if pi32 != qi32 exit(34)
+        ri32 = (vi32 + 1) * 2004318071
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(34)
+        i = i + 1
+    }
+
+    # i32 * 2147483639
+    mi32 = 2147483639
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 2147483639
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(35)
+        pi32 = vi32
+        pi32 = pi32 * 2147483639
+        if pi32 != qi32 exit(35)
+        ri32 = (vi32 + 1) * 2147483639
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(35)
+        i = i + 1
+    }
+
+    # i32 * 2147483647
+    mi32 = 2147483647
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * 2147483647
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(36)
+        pi32 = vi32
+        pi32 = pi32 * 2147483647
+        if pi32 != qi32 exit(36)
+        ri32 = (vi32 + 1) * 2147483647
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(36)
+        i = i + 1
+    }
+
+    # i32 * -2
+    mi32 = -2
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -2
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(37)
+        pi32 = vi32
+        pi32 = pi32 * -2
+        if pi32 != qi32 exit(37)
+        ri32 = (vi32 + 1) * -2
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(37)
+        i = i + 1
+    }
+
+    # i32 * -3
+    mi32 = -3
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -3
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(38)
+        pi32 = vi32
+        pi32 = pi32 * -3
+        if pi32 != qi32 exit(38)
+        ri32 = (vi32 + 1) * -3
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(38)
+        i = i + 1
+    }
+
+    # i32 * -5
+    mi32 = -5
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -5
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(39)
+        pi32 = vi32
+        pi32 = pi32 * -5
+        if pi32 != qi32 exit(39)
+        ri32 = (vi32 + 1) * -5
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(39)
+        i = i + 1
+    }
+
+    # i32 * -6
+    mi32 = -6
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -6
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(40)
+        pi32 = vi32
+        pi32 = pi32 * -6
+        if pi32 != qi32 exit(40)
+        ri32 = (vi32 + 1) * -6
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(40)
+        i = i + 1
+    }
+
+    # i32 * -7
+    mi32 = -7
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -7
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(41)
+        pi32 = vi32
+        pi32 = pi32 * -7
+        if pi32 != qi32 exit(41)
+        ri32 = (vi32 + 1) * -7
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(41)
+        i = i + 1
+    }
+
+    # i32 * -9
+    mi32 = -9
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -9
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(42)
+        pi32 = vi32
+        pi32 = pi32 * -9
+        if pi32 != qi32 exit(42)
+        ri32 = (vi32 + 1) * -9
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(42)
+        i = i + 1
+    }
+
+    # i32 * -15
+    mi32 = -15
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -15
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(43)
+        pi32 = vi32
+        pi32 = pi32 * -15
+        if pi32 != qi32 exit(43)
+        ri32 = (vi32 + 1) * -15
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(43)
+        i = i + 1
+    }
+
+    # i32 * -100
+    mi32 = -100
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -100
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(44)
+        pi32 = vi32
+        pi32 = pi32 * -100
+        if pi32 != qi32 exit(44)
+        ri32 = (vi32 + 1) * -100
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(44)
+        i = i + 1
+    }
+
+    # i32 * -1000000
+    mi32 = -1000000
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -1000000
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(45)
+        pi32 = vi32
+        pi32 = pi32 * -1000000
+        if pi32 != qi32 exit(45)
+        ri32 = (vi32 + 1) * -1000000
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(45)
+        i = i + 1
+    }
+
+    # i32 * -1073741824
+    mi32 = -1073741824
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -1073741824
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(46)
+        pi32 = vi32
+        pi32 = pi32 * -1073741824
+        if pi32 != qi32 exit(46)
+        ri32 = (vi32 + 1) * -1073741824
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(46)
+        i = i + 1
+    }
+
+    # i32 * -1431655766
+    mi32 = -1431655766
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -1431655766
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(47)
+        pi32 = vi32
+        pi32 = pi32 * -1431655766
+        if pi32 != qi32 exit(47)
+        ri32 = (vi32 + 1) * -1431655766
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(47)
+        i = i + 1
+    }
+
+    # i32 * -2147483639
+    mi32 = -2147483639
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -2147483639
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(48)
+        pi32 = vi32
+        pi32 = pi32 * -2147483639
+        if pi32 != qi32 exit(48)
+        ri32 = (vi32 + 1) * -2147483639
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(48)
+        i = i + 1
+    }
+
+    # i32 * -2147483647
+    mi32 = -2147483647
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -2147483647
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(49)
+        pi32 = vi32
+        pi32 = pi32 * -2147483647
+        if pi32 != qi32 exit(49)
+        ri32 = (vi32 + 1) * -2147483647
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(49)
+        i = i + 1
+    }
+
+    # i32 * -2147483648
+    mi32 = -2147483648
+    i = 0
+    loop {
+        if i == array_length(xi32) break
+        vi32 = xi32[i]
+        pi32 = vi32 * -2147483648
+        qi32 = vi32 * mi32
+        if pi32 != qi32 exit(50)
+        pi32 = vi32
+        pi32 = pi32 * -2147483648
+        if pi32 != qi32 exit(50)
+        ri32 = (vi32 + 1) * -2147483648
+        si32 = qi32 + mi32
+        if ri32 != si32 exit(50)
+        i = i + 1
+    }
+
+    # i16 * 0
+    mi16 = 0
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 0
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(51)
+        pi16 = vi16
+        pi16 = pi16 * 0
+        if pi16 != qi16 exit(51)
+        ri16 = (vi16 + 1) * 0
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(51)
+        i = i + 1
+    }
+
+    # i16 * 1
+    mi16 = 1
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 1
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(52)
+        pi16 = vi16
+        pi16 = pi16 * 1
+        if pi16 != qi16 exit(52)
+        ri16 = (vi16 + 1) * 1
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(52)
+        i = i + 1
+    }
+
+    # i16 * -1
+    mi16 = -1
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -1
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(53)
+        pi16 = vi16
+        pi16 = pi16 * -1
+        if pi16 != qi16 exit(53)
+        ri16 = (vi16 + 1) * -1
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(53)
+        i = i + 1
+    }
+
+    # i16 * 2
+    mi16 = 2
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 2
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(54)
+        pi16 = vi16
+        pi16 = pi16 * 2
+        if pi16 != qi16 exit(54)
+        ri16 = (vi16 + 1) * 2
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(54)
+        i = i + 1
+    }
+
+    # i16 * 3
+    mi16 = 3
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 3
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(55)
+        pi16 = vi16
+        pi16 = pi16 * 3
+        if pi16 != qi16 exit(55)
+        ri16 = (vi16 + 1) * 3
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(55)
+        i = i + 1
+    }
+
+    # i16 * 5
+    mi16 = 5
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 5
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(56)
+        pi16 = vi16
+        pi16 = pi16 * 5
+        if pi16 != qi16 exit(56)
+        ri16 = (vi16 + 1) * 5
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(56)
+        i = i + 1
+    }
+
+    # i16 * 7
+    mi16 = 7
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 7
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(57)
+        pi16 = vi16
+        pi16 = pi16 * 7
+        if pi16 != qi16 exit(57)
+        ri16 = (vi16 + 1) * 7
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(57)
+        i = i + 1
+    }
+
+    # i16 * 9
+    mi16 = 9
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 9
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(58)
+        pi16 = vi16
+        pi16 = pi16 * 9
+        if pi16 != qi16 exit(58)
+        ri16 = (vi16 + 1) * 9
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(58)
+        i = i + 1
+    }
+
+    # i16 * 15
+    mi16 = 15
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 15
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(59)
+        pi16 = vi16
+        pi16 = pi16 * 15
+        if pi16 != qi16 exit(59)
+        ri16 = (vi16 + 1) * 15
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(59)
+        i = i + 1
+    }
+
+    # i16 * 23
+    mi16 = 23
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 23
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(60)
+        pi16 = vi16
+        pi16 = pi16 * 23
+        if pi16 != qi16 exit(60)
+        ri16 = (vi16 + 1) * 23
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(60)
+        i = i + 1
+    }
+
+    # i16 * 45
+    mi16 = 45
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 45
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(61)
+        pi16 = vi16
+        pi16 = pi16 * 45
+        if pi16 != qi16 exit(61)
+        ri16 = (vi16 + 1) * 45
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(61)
+        i = i + 1
+    }
+
+    # i16 * 100
+    mi16 = 100
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 100
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(62)
+        pi16 = vi16
+        pi16 = pi16 * 100
+        if pi16 != qi16 exit(62)
+        ri16 = (vi16 + 1) * 100
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(62)
+        i = i + 1
+    }
+
+    # i16 * 255
+    mi16 = 255
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 255
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(63)
+        pi16 = vi16
+        pi16 = pi16 * 255
+        if pi16 != qi16 exit(63)
+        ri16 = (vi16 + 1) * 255
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(63)
+        i = i + 1
+    }
+
+    # i16 * 1000
+    mi16 = 1000
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 1000
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(64)
+        pi16 = vi16
+        pi16 = pi16 * 1000
+        if pi16 != qi16 exit(64)
+        ri16 = (vi16 + 1) * 1000
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(64)
+        i = i + 1
+    }
+
+    # i16 * 4095
+    mi16 = 4095
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 4095
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(65)
+        pi16 = vi16
+        pi16 = pi16 * 4095
+        if pi16 != qi16 exit(65)
+        ri16 = (vi16 + 1) * 4095
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(65)
+        i = i + 1
+    }
+
+    # i16 * 16384
+    mi16 = 16384
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 16384
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(66)
+        pi16 = vi16
+        pi16 = pi16 * 16384
+        if pi16 != qi16 exit(66)
+        ri16 = (vi16 + 1) * 16384
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(66)
+        i = i + 1
+    }
+
+    # i16 * 21845
+    mi16 = 21845
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 21845
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(67)
+        pi16 = vi16
+        pi16 = pi16 * 21845
+        if pi16 != qi16 exit(67)
+        ri16 = (vi16 + 1) * 21845
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(67)
+        i = i + 1
+    }
+
+    # i16 * 32765
+    mi16 = 32765
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 32765
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(68)
+        pi16 = vi16
+        pi16 = pi16 * 32765
+        if pi16 != qi16 exit(68)
+        ri16 = (vi16 + 1) * 32765
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(68)
+        i = i + 1
+    }
+
+    # i16 * 32767
+    mi16 = 32767
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * 32767
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(69)
+        pi16 = vi16
+        pi16 = pi16 * 32767
+        if pi16 != qi16 exit(69)
+        ri16 = (vi16 + 1) * 32767
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(69)
+        i = i + 1
+    }
+
+    # i16 * -2
+    mi16 = -2
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -2
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(70)
+        pi16 = vi16
+        pi16 = pi16 * -2
+        if pi16 != qi16 exit(70)
+        ri16 = (vi16 + 1) * -2
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(70)
+        i = i + 1
+    }
+
+    # i16 * -3
+    mi16 = -3
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -3
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(71)
+        pi16 = vi16
+        pi16 = pi16 * -3
+        if pi16 != qi16 exit(71)
+        ri16 = (vi16 + 1) * -3
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(71)
+        i = i + 1
+    }
+
+    # i16 * -7
+    mi16 = -7
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -7
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(72)
+        pi16 = vi16
+        pi16 = pi16 * -7
+        if pi16 != qi16 exit(72)
+        ri16 = (vi16 + 1) * -7
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(72)
+        i = i + 1
+    }
+
+    # i16 * -9
+    mi16 = -9
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -9
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(73)
+        pi16 = vi16
+        pi16 = pi16 * -9
+        if pi16 != qi16 exit(73)
+        ri16 = (vi16 + 1) * -9
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(73)
+        i = i + 1
+    }
+
+    # i16 * -100
+    mi16 = -100
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -100
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(74)
+        pi16 = vi16
+        pi16 = pi16 * -100
+        if pi16 != qi16 exit(74)
+        ri16 = (vi16 + 1) * -100
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(74)
+        i = i + 1
+    }
+
+    # i16 * -1000
+    mi16 = -1000
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -1000
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(75)
+        pi16 = vi16
+        pi16 = pi16 * -1000
+        if pi16 != qi16 exit(75)
+        ri16 = (vi16 + 1) * -1000
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(75)
+        i = i + 1
+    }
+
+    # i16 * -16384
+    mi16 = -16384
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -16384
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(76)
+        pi16 = vi16
+        pi16 = pi16 * -16384
+        if pi16 != qi16 exit(76)
+        ri16 = (vi16 + 1) * -16384
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(76)
+        i = i + 1
+    }
+
+    # i16 * -21846
+    mi16 = -21846
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -21846
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(77)
+        pi16 = vi16
+        pi16 = pi16 * -21846
+        if pi16 != qi16 exit(77)
+        ri16 = (vi16 + 1) * -21846
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(77)
+        i = i + 1
+    }
+
+    # i16 * -32767
+    mi16 = -32767
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -32767
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(78)
+        pi16 = vi16
+        pi16 = pi16 * -32767
+        if pi16 != qi16 exit(78)
+        ri16 = (vi16 + 1) * -32767
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(78)
+        i = i + 1
+    }
+
+    # i16 * -32768
+    mi16 = -32768
+    i = 0
+    loop {
+        if i == array_length(xi16) break
+        vi16 = xi16[i]
+        pi16 = vi16 * -32768
+        qi16 = vi16 * mi16
+        if pi16 != qi16 exit(79)
+        pi16 = vi16
+        pi16 = pi16 * -32768
+        if pi16 != qi16 exit(79)
+        ri16 = (vi16 + 1) * -32768
+        si16 = qi16 + mi16
+        if ri16 != si16 exit(79)
+        i = i + 1
+    }
+
+    # i8 * 0
+    mi8 = 0
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 0
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(80)
+        pi8 = vi8
+        pi8 = pi8 * 0
+        if pi8 != qi8 exit(80)
+        ri8 = (vi8 + 1) * 0
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(80)
+        i = i + 1
+    }
+
+    # i8 * 1
+    mi8 = 1
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 1
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(81)
+        pi8 = vi8
+        pi8 = pi8 * 1
+        if pi8 != qi8 exit(81)
+        ri8 = (vi8 + 1) * 1
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(81)
+        i = i + 1
+    }
+
+    # i8 * -1
+    mi8 = -1
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -1
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(82)
+        pi8 = vi8
+        pi8 = pi8 * -1
+        if pi8 != qi8 exit(82)
+        ri8 = (vi8 + 1) * -1
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(82)
+        i = i + 1
+    }
+
+    # i8 * 2
+    mi8 = 2
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 2
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(83)
+        pi8 = vi8
+        pi8 = pi8 * 2
+        if pi8 != qi8 exit(83)
+        ri8 = (vi8 + 1) * 2
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(83)
+        i = i + 1
+    }
+
+    # i8 * 3
+    mi8 = 3
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 3
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(84)
+        pi8 = vi8
+        pi8 = pi8 * 3
+        if pi8 != qi8 exit(84)
+        ri8 = (vi8 + 1) * 3
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(84)
+        i = i + 1
+    }
+
+    # i8 * 5
+    mi8 = 5
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 5
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(85)
+        pi8 = vi8
+        pi8 = pi8 * 5
+        if pi8 != qi8 exit(85)
+        ri8 = (vi8 + 1) * 5
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(85)
+        i = i + 1
+    }
+
+    # i8 * 7
+    mi8 = 7
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 7
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(86)
+        pi8 = vi8
+        pi8 = pi8 * 7
+        if pi8 != qi8 exit(86)
+        ri8 = (vi8 + 1) * 7
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(86)
+        i = i + 1
+    }
+
+    # i8 * 9
+    mi8 = 9
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 9
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(87)
+        pi8 = vi8
+        pi8 = pi8 * 9
+        if pi8 != qi8 exit(87)
+        ri8 = (vi8 + 1) * 9
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(87)
+        i = i + 1
+    }
+
+    # i8 * 15
+    mi8 = 15
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 15
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(88)
+        pi8 = vi8
+        pi8 = pi8 * 15
+        if pi8 != qi8 exit(88)
+        ri8 = (vi8 + 1) * 15
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(88)
+        i = i + 1
+    }
+
+    # i8 * 23
+    mi8 = 23
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 23
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(89)
+        pi8 = vi8
+        pi8 = pi8 * 23
+        if pi8 != qi8 exit(89)
+        ri8 = (vi8 + 1) * 23
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(89)
+        i = i + 1
+    }
+
+    # i8 * 45
+    mi8 = 45
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 45
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(90)
+        pi8 = vi8
+        pi8 = pi8 * 45
+        if pi8 != qi8 exit(90)
+        ri8 = (vi8 + 1) * 45
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(90)
+        i = i + 1
+    }
+
+    # i8 * 64
+    mi8 = 64
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 64
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(91)
+        pi8 = vi8
+        pi8 = pi8 * 64
+        if pi8 != qi8 exit(91)
+        ri8 = (vi8 + 1) * 64
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(91)
+        i = i + 1
+    }
+
+    # i8 * 85
+    mi8 = 85
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 85
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(92)
+        pi8 = vi8
+        pi8 = pi8 * 85
+        if pi8 != qi8 exit(92)
+        ri8 = (vi8 + 1) * 85
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(92)
+        i = i + 1
+    }
+
+    # i8 * 100
+    mi8 = 100
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 100
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(93)
+        pi8 = vi8
+        pi8 = pi8 * 100
+        if pi8 != qi8 exit(93)
+        ri8 = (vi8 + 1) * 100
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(93)
+        i = i + 1
+    }
+
+    # i8 * 125
+    mi8 = 125
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 125
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(94)
+        pi8 = vi8
+        pi8 = pi8 * 125
+        if pi8 != qi8 exit(94)
+        ri8 = (vi8 + 1) * 125
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(94)
+        i = i + 1
+    }
+
+    # i8 * 127
+    mi8 = 127
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * 127
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(95)
+        pi8 = vi8
+        pi8 = pi8 * 127
+        if pi8 != qi8 exit(95)
+        ri8 = (vi8 + 1) * 127
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(95)
+        i = i + 1
+    }
+
+    # i8 * -2
+    mi8 = -2
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -2
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(96)
+        pi8 = vi8
+        pi8 = pi8 * -2
+        if pi8 != qi8 exit(96)
+        ri8 = (vi8 + 1) * -2
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(96)
+        i = i + 1
+    }
+
+    # i8 * -3
+    mi8 = -3
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -3
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(97)
+        pi8 = vi8
+        pi8 = pi8 * -3
+        if pi8 != qi8 exit(97)
+        ri8 = (vi8 + 1) * -3
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(97)
+        i = i + 1
+    }
+
+    # i8 * -7
+    mi8 = -7
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -7
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(98)
+        pi8 = vi8
+        pi8 = pi8 * -7
+        if pi8 != qi8 exit(98)
+        ri8 = (vi8 + 1) * -7
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(98)
+        i = i + 1
+    }
+
+    # i8 * -9
+    mi8 = -9
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -9
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(99)
+        pi8 = vi8
+        pi8 = pi8 * -9
+        if pi8 != qi8 exit(99)
+        ri8 = (vi8 + 1) * -9
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(99)
+        i = i + 1
+    }
+
+    # i8 * -64
+    mi8 = -64
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -64
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(100)
+        pi8 = vi8
+        pi8 = pi8 * -64
+        if pi8 != qi8 exit(100)
+        ri8 = (vi8 + 1) * -64
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(100)
+        i = i + 1
+    }
+
+    # i8 * -85
+    mi8 = -85
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -85
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(101)
+        pi8 = vi8
+        pi8 = pi8 * -85
+        if pi8 != qi8 exit(101)
+        ri8 = (vi8 + 1) * -85
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(101)
+        i = i + 1
+    }
+
+    # i8 * -86
+    mi8 = -86
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -86
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(102)
+        pi8 = vi8
+        pi8 = pi8 * -86
+        if pi8 != qi8 exit(102)
+        ri8 = (vi8 + 1) * -86
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(102)
+        i = i + 1
+    }
+
+    # i8 * -100
+    mi8 = -100
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -100
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(103)
+        pi8 = vi8
+        pi8 = pi8 * -100
+        if pi8 != qi8 exit(103)
+        ri8 = (vi8 + 1) * -100
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(103)
+        i = i + 1
+    }
+
+    # i8 * -127
+    mi8 = -127
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -127
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(104)
+        pi8 = vi8
+        pi8 = pi8 * -127
+        if pi8 != qi8 exit(104)
+        ri8 = (vi8 + 1) * -127
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(104)
+        i = i + 1
+    }
+
+    # i8 * -128
+    mi8 = -128
+    i = 0
+    loop {
+        if i == array_length(xi8) break
+        vi8 = xi8[i]
+        pi8 = vi8 * -128
+        qi8 = vi8 * mi8
+        if pi8 != qi8 exit(105)
+        pi8 = vi8
+        pi8 = pi8 * -128
+        if pi8 != qi8 exit(105)
+        ri8 = (vi8 + 1) * -128
+        si8 = qi8 + mi8
+        if ri8 != si8 exit(105)
+        i = i + 1
+    }
+
+    # known products guard against both paths agreeing on a wrong value
+    var t i32 = 13
+    t = t * 7
+    if t != 91 exit(106)
+    t = t * -7
+    if t != -637 exit(107)
+    t = t * 1000000
+    if t != -637000000 exit(108)
+    var u i16 = 13
+    u = u * -9
+    if u != -117 exit(109)
+    var w i8 = 13
+    w = w * 23
+    if w != 43 exit(110)
+    w = w * -3
+    if w != 127 exit(111)
+    exit(0)
+}

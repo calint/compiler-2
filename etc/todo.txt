@@ -78,6 +78,9 @@
 [ ] consider not allowing single statement blocks
 [ ] rv32i emit_most_efficient should know the instruction count on synthesized
     instructions such as "li"
+[ ] rv32i constant multiply by a negative constant ends with 'sub r, zero, r'.
+    when the last digit is a subtract with no trailing shift, fold the
+    negation into it: 'x * -7' as 'slli t0, t1, 3' + 'sub t0, t1, t0'
 [x] re-number the tests to be a sequence without gaps
 [ ] UB detection, what remains:
     [ ] result aliases a by-reference argument: 'x = f(x)', 'p = swap(p)'
