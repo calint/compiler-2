@@ -515,6 +515,7 @@ SRC=t556 && EXP=0 && RUN
 SRC=t559 && COMPERR
 SRC=t560 && COMPERR
 SRC=t562 && COMPERR
+SRC=t563 && EXP=0 && RUN
 if [[ $MACHINE == x86_64 ]]; then SRC=t522 && EXP=0 && RUN; fi
 # the minimum 64-bit constant does not fit rv32i's default 'i32'
 if [[ $MACHINE == x86_64 ]]; then SRC=t561 && EXP=0 && RUN; fi

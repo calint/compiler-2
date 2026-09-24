@@ -1,0 +1,37 @@
+# a loop without 'break' is left only by 'return', so the result is set
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func first_at_least(n) res {
+    var i = 0
+    loop {
+        if i >= n {
+            res = i
+            return
+        }
+        i = i + 1
+    }
+}
+
+func noinline ten() res {
+    loop {
+        res = 10
+        return
+    }
+}
+
+# the inner 'break' leaves only the inner loop
+func twenty() res {
+    loop {
+        loop { break }
+        res = 20
+        return
+    }
+}
+
+func main() {
+    assert(1, first_at_least(3) == 3)
+    var r = ten()
+    assert(2, r == 10)
+    assert(3, twenty() == 20)
+}

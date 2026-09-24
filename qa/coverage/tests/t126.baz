@@ -1,8 +1,9 @@
-# continue skips the required result assignment
+# continue does not leave the loop, the later break still skips the result
 
 func foozi(i) res {
     loop {
-        continue
+        if i == 3 continue
+        break
         res = i * 2
     }
 }

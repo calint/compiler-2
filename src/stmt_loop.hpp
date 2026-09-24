@@ -45,9 +45,13 @@ class stmt_loop final : public statement {
     auto trace_assignment(assignment_flow& flow) const -> void override {
         const std::optional<field_coverage> breaks{code_.trace_loop_body(flow)};
 
-        // without a 'break' the entry coverage is kept conservatively
-        if (breaks) {
-            flow.assigned = *breaks;
+        // without a 'break' only 'return' or 'exit' leave the loop
+        if (not breaks) {
+            flow.end_path();
+
+            return;
         }
+
+        flow.assigned = *breaks;
     }
 };
