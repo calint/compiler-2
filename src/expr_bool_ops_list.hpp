@@ -215,240 +215,162 @@ class expr_bool_ops_list final : public statement {
         const bool invert{inverted ? not not_tk_.is_text("not")
                                    : not_tk_.is_text("not")};
 
-        // a constant last element decides the list only if all earlier
-        // elements were constants or it short-circuits the list
         bool has_runtime_element{};
 
-        const size_t expr_count{bools_.size()};
-        for (size_t expr_index{}; expr_index < expr_count; ++expr_index) {
-            if (std::holds_alternative<expr_bool_ops_list>(
-                    bools_[expr_index])) {
-                const expr_bool_ops_list& nested_expr{
-                    get<expr_bool_ops_list>(bools_[expr_index])};
+        const size_t last_index{bools_.size() - 1};
+        for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
+            const std::optional<bool> const_eval{
+                compile_inner_element(tc, indent, expr_index, jmp_to_if_false,
+                                      jmp_to_if_true, invert, dst)};
 
-                x.label(indent, nested_expr.create_cmp_bgn_label(tc));
-                std::string jmp_false{jmp_to_if_false};
-                std::string jmp_true{jmp_to_if_true};
-                if (expr_index < expr_count - 1) {
-                    if (not invert) {
-                        // if not last element check if it is an 'or' or
-                        // 'and' list
-                        if (ops_[expr_index].is_text("or")) {
-                            // if evaluation is false and the next op is 'or',
-                            // then 'jump_false' goes to the next bool op in
-                            // the list
-                            jmp_false = create_cmp_label_from(
-                                tc, bools_[expr_index + 1]);
-                        } else if (ops_[expr_index].is_text("and")) {
-                            // if evaluation is true and next op is 'and'
-                            // then 'jump_true' goes to the next bool op in the
-                            // list
-                            jmp_true = create_cmp_label_from(
-                                tc, bools_[expr_index + 1]);
-                        } else {
-                            std::unreachable();
-                        }
-
-                        const std::optional<bool> const_eval{
-                            nested_expr.compile_rec(tc, indent, jmp_false,
-                                                    jmp_true, invert, dst)};
-                        if (not const_eval) {
-                            has_runtime_element = true;
-                            continue;
-                        }
-
-                        // expression evaluated to a constant
-
-                        // if false and in an 'and' list short-circuit
-                        // and return evaluation
-                        if (not *const_eval and
-                            ops_[expr_index].is_text("and")) {
-                            return *const_eval;
-                        }
-                        // if true and in an 'or' list short-circuit and
-                        // return result
-                        if (*const_eval and ops_[expr_index].is_text("or")) {
-                            return *const_eval;
-                        }
-                    } else {
-                        // invert, according to De Morgan's laws,
-                        // if not the last element check if it is an 'or' or
-                        // 'and' list
-                        if (ops_[expr_index].is_text("and")) {
-                            // 'and' list inverted
-                            // if evaluation is false and the next op is 'or'
-                            // (inverted from 'and'), then 'jump_false' is
-                            // the next bool op in the list
-                            jmp_false = create_cmp_label_from(
-                                tc, bools_[expr_index + 1]);
-                        } else if (ops_[expr_index].is_text("or")) {
-                            // 'or' list inverted
-                            // if evaluation is true and the next op is 'and'
-                            // (inverted from 'or'), then 'jump_true' is the
-                            // next bool op in the list
-                            jmp_true = create_cmp_label_from(
-                                tc, bools_[expr_index + 1]);
-                        } else {
-                            std::unreachable();
-                        }
-
-                        // does expression evaluate to a constant?
-                        const std::optional<bool> const_eval{
-                            nested_expr.compile_rec(tc, indent, jmp_false,
-                                                    jmp_true, invert, dst)};
-                        if (not const_eval) {
-                            has_runtime_element = true;
-                            continue;
-                        }
-
-                        // yes, short-circuit
-
-                        // if 'false' and in an 'and' (inverted 'or')
-                        // list short-circuit and return evaluation
-                        if (not *const_eval and
-                            ops_[expr_index].is_text("or")) {
-                            return *const_eval;
-                        }
-                        // if 'true' and in an 'or' (inverted 'and')
-                        // list short-circuit and return evaluation
-                        if (*const_eval and ops_[expr_index].is_text("and")) {
-                            return *const_eval;
-                        }
-                    }
-                } else {
-                    // the last bool op in the list
-                    const std::optional<bool> const_eval{
-                        nested_expr.compile_rec(tc, indent, jmp_to_if_false,
-                                                jmp_to_if_true, invert, dst)};
-                    if (not const_eval) {
-                        continue;
-                    }
-
-                    if (not has_runtime_element or
-                        is_short_circuit(*const_eval, expr_index - 1, invert)) {
-                        return *const_eval;
-                    }
-
-                    // a constant false has already branched to false, a
-                    // constant true falls through
-                    if (*const_eval) {
-                        x.branch(indent, jmp_to_if_true);
-                    }
-                }
+            if (not const_eval) {
+                has_runtime_element = true;
                 continue;
             }
 
-            // expr_bool_op
-
-            if (not invert) {
-                // a == 1 and b == 2 vs. a == 1 or b == 2
-                const expr_bool_op& expr{get<expr_bool_op>(bools_[expr_index])};
-                if (expr_index < expr_count - 1) {
-                    // not last element
-                    if (ops_[expr_index].is_text("or")) {
-                        const std::optional<bool> const_eval{expr.compile_or(
-                            tc, indent, jmp_to_if_true, invert, dst)};
-                        if (const_eval == true) {
-                            // constant evaluated to true, short-circuit
-                            return true;
-                        }
-                        if (not const_eval) {
-                            has_runtime_element = true;
-                        }
-                    } else if (ops_[expr_index].is_text("and")) {
-                        const std::optional<bool> const_eval{expr.compile_and(
-                            tc, indent, jmp_to_if_false, invert, dst)};
-                        if (const_eval == false) {
-                            // constant evaluated to false, short-circuit
-                            return false;
-                        }
-                        if (not const_eval) {
-                            has_runtime_element = true;
-                        }
-                    } else {
-                        std::unreachable();
-                    }
-                } else {
-                    // last element
-                    const std::optional<bool> const_eval{expr.compile_and(
-                        tc, indent, jmp_to_if_false, invert, dst,
-                        jmp_to_if_false != jmp_to_if_true)};
-                    if (const_eval) {
-                        if (not has_runtime_element or
-                            is_short_circuit(*const_eval, expr_index - 1,
-                                             invert)) {
-                            return *const_eval;
-                        }
-                        // a constant false has already branched to false
-                        if (not *const_eval) {
-                            return std::nullopt;
-                        }
-                    }
-                    // if not yet jumped to false, then jump to true
-                    x.branch(indent, jmp_to_if_true);
-                }
-            } else {
-                // inverted according to De Morgan's laws
-                // a=1 and b=2 vs. a=1 or b=2
-                const expr_bool_op& expr{get<expr_bool_op>(bools_[expr_index])};
-                if (expr_index < expr_count - 1) {
-                    // not last element
-                    if (ops_[expr_index].is_text("and")) {
-                        const std::optional<bool> const_eval{expr.compile_or(
-                            tc, indent, jmp_to_if_true, invert, dst)};
-                        if (const_eval == true) {
-                            // constant evaluated to true, short-circuit
-                            return true;
-                        }
-                        if (not const_eval) {
-                            has_runtime_element = true;
-                        }
-                    } else if (ops_[expr_index].is_text("or")) {
-                        const std::optional<bool> const_eval{expr.compile_and(
-                            tc, indent, jmp_to_if_false, invert, dst)};
-                        if (const_eval == false) {
-                            // constant evaluated to false, short-circuit
-                            return false;
-                        }
-                        if (not const_eval) {
-                            has_runtime_element = true;
-                        }
-                    } else {
-                        std::unreachable();
-                    }
-                } else {
-                    // last element
-                    const std::optional<bool> const_eval{expr.compile_and(
-                        tc, indent, jmp_to_if_false, invert, dst,
-                        jmp_to_if_false != jmp_to_if_true)};
-                    if (const_eval) {
-                        if (not has_runtime_element or
-                            is_short_circuit(*const_eval, expr_index - 1,
-                                             invert)) {
-                            return *const_eval;
-                        }
-                        // a constant false has already branched to false
-                        if (not *const_eval) {
-                            return std::nullopt;
-                        }
-                    }
-                    // if not yet jumped to false, then jump to true
-                    x.branch(indent, jmp_to_if_true);
-                }
+            if (is_short_circuit(*const_eval, expr_index, invert)) {
+                return *const_eval;
             }
         }
+
+        return compile_last_element(tc, indent, jmp_to_if_false, jmp_to_if_true,
+                                    invert, dst, has_runtime_element);
+    }
+
+    // an element that does not decide the list continues at the next element
+    [[nodiscard]] auto
+    compile_inner_element(toc& tc, const size_t indent, const size_t expr_index,
+                          const std::string_view jmp_to_if_false,
+                          const std::string_view jmp_to_if_true,
+                          const bool invert, const operand& dst) const
+        -> std::optional<bool> {
+
+        const bool is_or{is_effective_or(expr_index, invert)};
+
+        if (std::holds_alternative<expr_bool_ops_list>(bools_[expr_index])) {
+            const expr_bool_ops_list& nested_expr{
+                std::get<expr_bool_ops_list>(bools_[expr_index])};
+
+            const std::string next_label{
+                create_cmp_label_from(tc, bools_[expr_index + 1])};
+
+            // an 'or' continues when false and an 'and' continues when true
+            const std::string_view jmp_false{
+                is_or ? std::string_view{next_label} : jmp_to_if_false};
+            const std::string_view jmp_true{
+                is_or ? jmp_to_if_true : std::string_view{next_label}};
+
+            return nested_expr.compile_with_label(tc, indent, jmp_false,
+                                                  jmp_true, invert, dst);
+        }
+
+        const expr_bool_op& expr{std::get<expr_bool_op>(bools_[expr_index])};
+
+        if (is_or) {
+            return expr.compile_or(tc, indent, jmp_to_if_true, invert, dst);
+        }
+
+        return expr.compile_and(tc, indent, jmp_to_if_false, invert, dst);
+    }
+
+    [[nodiscard]] auto compile_last_element(
+        toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
+        const std::string_view jmp_to_if_true, const bool invert,
+        const operand& dst, const bool has_runtime_element) const
+        -> std::optional<bool> {
+
+        if (std::holds_alternative<expr_bool_ops_list>(bools_.back())) {
+            const expr_bool_ops_list& nested_expr{
+                std::get<expr_bool_ops_list>(bools_.back())};
+
+            const std::optional<bool> const_eval{nested_expr.compile_with_label(
+                tc, indent, jmp_to_if_false, jmp_to_if_true, invert, dst)};
+
+            // the nested list already emitted its final branch
+            if (not const_eval) {
+                return std::nullopt;
+            }
+
+            return resolve_last_constant(tc, indent, *const_eval,
+                                         jmp_to_if_true, invert,
+                                         has_runtime_element);
+        }
+
+        const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
+
+        const std::optional<bool> const_eval{
+            expr.compile_and(tc, indent, jmp_to_if_false, invert, dst,
+                             jmp_to_if_false != jmp_to_if_true)};
+
+        if (const_eval) {
+            return resolve_last_constant(tc, indent, *const_eval,
+                                         jmp_to_if_true, invert,
+                                         has_runtime_element);
+        }
+
+        machine& x{tc.machine()};
+
+        // if not yet jumped to false, then jump to true
+        x.branch(indent, jmp_to_if_true);
 
         return std::nullopt;
     }
 
+    // a constant last element decides the list only if all earlier elements
+    // were constants or it short-circuits the list
+    [[nodiscard]] auto resolve_last_constant(
+        toc& tc, const size_t indent, const bool const_eval,
+        const std::string_view jmp_to_if_true, const bool invert,
+        const bool has_runtime_element) const -> std::optional<bool> {
+
+        if (not has_runtime_element) {
+            return const_eval;
+        }
+
+        if (is_short_circuit(const_eval, ops_.size() - 1, invert)) {
+            return const_eval;
+        }
+
+        // a constant false has already branched to false
+        if (not const_eval) {
+            return std::nullopt;
+        }
+
+        machine& x{tc.machine()};
+
+        // a constant true emits no branch of its own
+        x.branch(indent, jmp_to_if_true);
+
+        return std::nullopt;
+    }
+
+    // earlier elements jump to the label that begins a nested list
+    [[nodiscard]] auto compile_with_label(
+        toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
+        const std::string_view jmp_to_if_true, const bool inverted,
+        const operand& dst) const -> std::optional<bool> {
+
+        machine& x{tc.machine()};
+
+        x.label(indent, create_cmp_bgn_label(tc));
+
+        return compile_rec(tc, indent, jmp_to_if_false, jmp_to_if_true,
+                           inverted, dst);
+    }
+
     // inversion swaps 'and' and 'or' according to De Morgan's laws
+    [[nodiscard]] auto is_effective_or(const size_t op_index,
+                                       const bool invert) const -> bool {
+
+        return ops_[op_index].is_text("or") != invert;
+    }
+
+    // a constant false ends an 'and' list and a constant true ends an 'or' list
     [[nodiscard]] auto is_short_circuit(const bool const_eval,
                                         const size_t op_index,
                                         const bool invert) const -> bool {
 
-        const bool is_or{ops_[op_index].is_text("or") != invert};
-
-        return const_eval == is_or;
+        return const_eval == is_effective_or(op_index, invert);
     }
 
     [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
