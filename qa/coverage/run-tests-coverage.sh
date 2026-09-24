@@ -8,7 +8,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-BIN="../../baz"
+BIN="$SCRIPT_DIR/../../baz"
 MACHINE="${MACHINE:-x86_64}"
 OPTS="--vars=262144 --checks=upper,lower,line --reproduce-source"
 SEP="--------------------------------------------------------------------------------"
@@ -52,6 +52,7 @@ case "$ACTION" in
 clean)
     echo $SEP
     rm -f -- *.profraw baz.profdata gen gen.o gen.s diff.baz out err
+    rm -f -- tests/gen tests/gen.o tests/gen.s tests/diff.baz tests/out tests/err
     rm -rf -- report/
     echo removed reports
     echo $SEP
@@ -85,6 +86,7 @@ run) ;;
 esac
 
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/$MACHINE-%p.profraw"
+cd "$SCRIPT_DIR/tests"
 
 rm -f gen.s out err
 
@@ -102,7 +104,7 @@ assemble_and_link() {
     case "$MACHINE" in
     x86_64)
         nasm -f elf64 gen.s
-        ld -s -T ../../baz.ld -o gen gen.o
+        ld -s -T "$SCRIPT_DIR/../../baz.ld" -o gen gen.o
         ;;
     rv32i)
         llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
@@ -119,7 +121,7 @@ execute_program() {
 }
 
 compile_and_build() {
-    $BIN "$SRC.baz" --target="$MACHINE" $OPTS 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" $OPTS 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -128,7 +130,7 @@ compile_and_build() {
 }
 
 compile_and_build_no_checks() {
-    $BIN "$SRC.baz" --target="$MACHINE" --reproduce-source 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -138,7 +140,7 @@ compile_and_build_no_checks() {
 
 compile_and_build_with_opts() {
     local opts="$1"
-    $BIN "$SRC.baz" --target="$MACHINE" $opts --reproduce-source 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" $opts --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -149,7 +151,7 @@ compile_and_build_with_opts() {
 # Common: compile and assemble
 compile_expect_error() {
     set +e
-    $BIN "$SRC.baz" --target="$MACHINE" $OPTS >gen.s 2>out
+    "$BIN" "$SRC.baz" --target="$MACHINE" $OPTS >gen.s 2>out
     local exit_code=$?
     set -e
     if [[ $exit_code -ne 1 ]]; then

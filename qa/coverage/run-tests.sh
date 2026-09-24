@@ -15,9 +15,10 @@ if [ "$1" != "nobuild" ]; then
     ../../make.sh build prof asan
 fi
 
-BIN="../../baz"
+BIN="$SCRIPT_DIR/../../baz"
 MACHINE="${MACHINE:-x86_64}"
 OPTS="--vars=262144 --checks=upper,lower,line --reproduce-source"
+cd "$SCRIPT_DIR/tests"
 
 rm -f gen.s out err
 
@@ -36,7 +37,7 @@ assemble_and_link() {
     case "$MACHINE" in
         x86_64)
             nasm -f elf64 gen.s
-            ld -s -T ../../baz.ld -o gen gen.o
+            ld -s -T "$SCRIPT_DIR/../../baz.ld" -o gen gen.o
             ;;
         rv32i)
             llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
@@ -53,7 +54,7 @@ execute_program() {
 }
 
 compile_and_build() {
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" $OPTS 2>err >gen.s
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" $OPTS 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -62,7 +63,7 @@ compile_and_build() {
 }
 
 compile_and_build_no_checks() {
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" --reproduce-source 2>err >gen.s
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -72,7 +73,7 @@ compile_and_build_no_checks() {
 
 compile_and_build_with_opts() {
     local opts="$1"
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" $opts --reproduce-source 2>err >gen.s
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" $opts --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -83,7 +84,7 @@ compile_and_build_with_opts() {
 # Common: compile and assemble
 compile_expect_error() {
     set +e
-    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" --target="$MACHINE" $OPTS >gen.s 2>out
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" $OPTS >gen.s 2>out
     local exit_code=$?
     set -e
     if [[ $exit_code -ne 1 ]]; then
@@ -230,8 +231,9 @@ if [[ "$1" == "nobuild" ]]; then
 fi
 
 # Process coverage data
+cd "$SCRIPT_DIR"
 llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw)
-llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata -object=$BIN
+llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata -object="$BIN"
 
 echo "coverage report generated in $(realpath "report/")"
 echo $SEP
