@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] clean up ai generated code in jump_optimizer
+[x] clean up ai generated code in jump_optimizer
 [ ] why is test 098 so slow
 [ ] when reading trailing whitespace stop at newline
 [ ] variable argument count in read/write might be confusing. consider requiring
