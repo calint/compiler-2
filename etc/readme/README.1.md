@@ -8,7 +8,8 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 
 * minimalistic language
 * gain experience writing compilers
-* generate handwritten-like assembler compiled by NASM for x86_64
+* generate handwritten-like assembler compiled by NASM for x86_64 and GCC
+  assembler for RV32I
 * super-loop program with non-reentrant inlined functions
 * limited support for non-inline functions
 * opt-in checks that make the language ub-free
