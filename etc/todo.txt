@@ -2,7 +2,9 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [x] opus 5.5 ai review and bug-hunt
-[ ] --checks=noub: a program either behaves as defined or panics with a line
+[ ] jump_optimizer return the number of optimizations that have been done and
+    add them as comment at the end of the gen.s
+[o] --checks=noub: a program either behaves as defined or panics with a line
     => viable: no heap, no pointer type, no casts, no raw registers
     [x] array index bounds: --checks=upper,lower
     [x] non-inline frame arena: --checks=frame
@@ -10,9 +12,16 @@
     [x] unset results rejected at compile time, variables are zeroed
     [x] compiler constant folding free of ub (ubsan scan of all tests)
     [x] raw register access removed ('mov', 'syscall', 'reg_...', names)
-    [ ] 'read'/'write' take any 'address_of' integer and length: a 2 byte
+    [o] 'read'/'write' take any 'address_of' integer and length: a 2 byte
         buffer read with length 8 overwrites the next variable. take an
         array and a checked count instead
+        [x] 'read(fd, buf, count)' and 'read(fd, buf[start], count)' with
+            the count in elements and 'start + count' bounds checked like
+            'array_copy', the result stays in bytes (t565-t567)
+        [ ] inline array parameters alias a view: start element and the
+            remaining length, e.g. 'print(buf[i], 20 - i)'
+        [ ] migrate tests and prog.baz, then reject integer addresses
+        [ ] decide whether to keep 'address_of' for layout tests
     [ ] system stack overflow in deep non-inline recursion segfaults before
         the frame check. check 'rsp'/'sp' or depth at each call
     [ ] division by zero traps and MIN / -1 wraps or traps by width. check

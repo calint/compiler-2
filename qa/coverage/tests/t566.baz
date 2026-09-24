@@ -1,0 +1,7 @@
+# a run-time element count beyond the array panics
+
+func main() {
+    var buf[2] i8
+    var n = 3
+    var r = write(1, buf, n)
+}
