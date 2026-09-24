@@ -1,7 +1,7 @@
 # compiler-2: baz
 
 Experimental compiler for a minimalistic, specialized language that targets NASM
-x86_64 assembly on Linux.
+x86_64 assembly on Linux and GCC assembler for rv32i
 
 ## Intention
 
