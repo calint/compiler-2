@@ -54,6 +54,10 @@ func main() {
     assert(local.values[2] == 2)
     assert(local.last == 9)
     assert(record.values[1] == 20)
-    assert(address_of(data[1]) - address_of(data[0]) == address_of(array[1]) - address_of(array[0]))
-    assert(address_of(local.values[1]) - address_of(local.values[0]) == address_of(array[1]) - address_of(array[0]))
+    # a default element holds values beyond 16 bits without touching its
+    # neighbor
+    data[0] = 100000
+    assert(data[0] == 100000 and data[1] == 2)
+    local.values[0] = -100000
+    assert(local.values[0] == -100000 and local.values[1] == 21)
 }

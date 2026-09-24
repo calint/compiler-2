@@ -1,6 +1,6 @@
-# address calculation must reject an empty-array element
+# an empty array cannot be declared, so its element cannot be accessed
 
 func main() {
     var values[] i8 = {}
-    var address = address_of(values[0])
+    var value = values[0]
 }

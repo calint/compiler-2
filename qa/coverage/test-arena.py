@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # Run from any directory with: python3 qa/coverage/test-arena.py
 # Requires an already-built baz compiler, nasm, and ld.
-# Tests three things: reported variable usage, actual ELF/runtime layout,
-# and direct access to the arena register without changing allocation policy.
+# Tests two things: reported variable usage and actual ELF/runtime layout.
 import os
+import re
 import struct
 import subprocess
 import tempfile
@@ -17,23 +17,18 @@ COMMON = """func assert(err, condition bool) { if not condition exit(err) }
 type item { tag i8, values[3] i32 }
 func bump(value item) { value.values[2] = value.values[2] + 1 }
 """
-# Runtime checks: the first local is aligned and zeroed; sibling blocks reuse
-# and re-zero storage; nested indexing and mutation through a function argument
-# work without corrupting neighbors.
+# Runtime checks: the first local is zeroed; sibling blocks re-zero storage;
+# nested indexing and mutation through a function argument work without
+# corrupting neighbors. Placement is checked from the compiler's comments.
 BODY = """    var first_local[3] i8
-    var first_address = address_of(first_local)
-    assert(1, first_address % 16 == 0)
     assert(2, first_local[0] == 0)
     first_local[2] = 23
-    var block_address
     {
         var temporary[5] i8
-        block_address = address_of(temporary)
         temporary[0] = 99
     }
     {
         var temporary[5] i8
-        assert(3, address_of(temporary) == block_address)
         assert(4, temporary[0] == 0)
     }
     var items[2] item
@@ -82,6 +77,16 @@ def elf_layout(path):
     return by_name, writable[0]
 
 
+def placement_offsets(assembly):
+    # Declarations are commented as '; [5:9] name: i8[3] (3 B @ [rbp + 16])';
+    # returns each name's offsets from rbp in declaration order.
+    offsets = {}
+    pattern = r";\s*\[\d+:\d+\] (\w+): \S+ \(\d+ B @ \[rbp(?: \+ (\d+))?\]\)"
+    for name, offset in re.findall(pattern, assembly):
+        offsets.setdefault(name, []).append(int(offset or 0))
+    return offsets
+
+
 def compile_source(directory, source, vars_size, options):
     # Reuse a temporary source filename. stdout is assembly; stderr is diagnostics.
     # --vars is the CLI option for the reserved variable-storage size.
@@ -103,25 +108,22 @@ def compile_source(directory, source, vars_size, options):
 # Generated source, assembly, objects, and executables are deleted on exit.
 with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     directory = Path(temporary)
-    # Each layout is (global data source, extra runtime assertions, data bytes).
+    # Each layout is (global data source, extra runtime assertions, data bytes,
+    # expected data offsets from 'rbp').
     # Seven bytes need nine bytes of alignment padding; sixteen need none.
     layouts = {
-        "no-data": ("", "", 0),
+        "no-data": ("", "", 0, {}),
         "odd-data": (
             "dat first i8 = 7\ndat second i32 = 123456\ndat third[2] i8 = {11, 22}\n",
-            """    assert(9, address_of(second) == address_of(first) + 1)
-    assert(10, address_of(third) == address_of(first) + 5)
-    assert(11, first_address == address_of(first) + 16)
-    assert(12, first == 7)
+            """    assert(12, first == 7)
     assert(13, second == 123456)
     assert(14, third[1] == 22)
-""", 7),
+""", 7, {"first": 0, "second": 1, "third": 5}),
         "aligned-data": (
             "dat first[2] i64 = {7, 9}\n",
-            """    assert(9, first_address == address_of(first) + 16)
-    assert(10, first[0] == 7)
+            """    assert(10, first[0] == 7)
     assert(11, first[1] == 9)
-""", 16),
+""", 16, {"first": 0}),
     }
     # Exercise bounds checks, no runtime checks, and
     # disabled assembly optimization. All must agree on storage requirements.
@@ -200,7 +202,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         print(f"arena capacity {count}: ok", flush=True)
 
     # 2. Assemble, link, and execute programs, then inspect their ELF layout.
-    for name, (data_source, checks, data_size) in layouts.items():
+    for name, (data_source, checks, data_size, data_offsets) in layouts.items():
         source = data_source + COMMON + "func main() {\n" + BODY + checks + "}\n"
         for mode, options in modes.items():
             measurements = []
@@ -208,6 +210,13 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             for vars_size in (4096, 1048576):
                 result = compile_source(directory, source, vars_size, options)
                 assert result.returncode == 0, result.stderr
+                offsets = placement_offsets(result.stdout)
+                # vars start at the data end rounded up to 16 bytes
+                assert offsets["first_local"] == [(data_size + 15) // 16 * 16], offsets
+                # sibling blocks reuse the same storage
+                assert len(set(offsets["temporary"])) == 1, offsets
+                for data_name, data_offset in data_offsets.items():
+                    assert offsets[data_name] == [data_offset], offsets
                 assembly = directory / "arena.s"
                 assembly.write_text(result.stdout)
                 subprocess.run(["nasm", "-f", "elf64", "arena.s"], cwd=directory, check=True)
@@ -256,7 +265,6 @@ func main() {{
     var data large
     data.value = 7
     data.next = data.value
-    var address = address_of(data.value)
     var equal bool = data.value == data.next
     data.value = -data.value
     update(data.next)
@@ -289,7 +297,6 @@ func noinline probe(data large) {{
     var index = 2
     data.values[index] = 42
     assert(24, data.values[index] == 42)
-    assert(25, address_of(data.next) == address_of(data.value) + 4)
 }}
 func main() {{}}
 """

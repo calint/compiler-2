@@ -1,12 +1,12 @@
-# address_of on an indexed array parameter
+# indexing a record element of an array parameter
 
 type point { x, y }
 
 func assert(expr bool) { if not expr exit(1) }
 
 func inspect(points[] point) {
-    var addr = address_of(points[1])
-    assert(addr != 0)
+    points[1].y = 3
+    assert(points[1].y == 3 and points[0].y == 0)
 }
 
 func main() {

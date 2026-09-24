@@ -1,4 +1,4 @@
-# nested struct fields and address calculations
+# nested struct fields
 
 dat fld=42
 dat str[] i8="hello world"
@@ -12,14 +12,14 @@ func f(str[] i8,fld){
     obj.pos.x=1
     obj.pos.y=2
     obj.vel.x=4
-    obj.vel.y=address_of(str)
+    obj.vel.y=8
     obj.color=array_size_of(str)
     
     if not fld==42 exit(2)
     if not obj.pos.x==1 exit(3)
     if not obj.pos.y==2 exit(4)
     if not obj.vel.x==4 exit(5)
-    if not obj.vel.y==address_of(str) exit(6)
+    if not obj.vel.y==8 exit(6)
     if not obj.color==array_size_of(str) exit(7)
 }
 
@@ -29,14 +29,14 @@ func main(){
     obj.pos.x=1
     obj.pos.y=2
     obj.vel.x=4
-    obj.vel.y=address_of(str)
+    obj.vel.y=8
     obj.color=array_size_of(str)
     
     if not fld==42 exit(2)
     if not obj.pos.x==1 exit(3)
     if not obj.pos.y==2 exit(4)
     if not obj.vel.x==4 exit(5)
-    if not obj.vel.y==address_of(str) exit(6)
+    if not obj.vel.y==8 exit(6)
     if not obj.color==array_size_of(str) exit(7)
     
     f(str,fld)

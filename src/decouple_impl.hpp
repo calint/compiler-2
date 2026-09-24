@@ -23,7 +23,6 @@
 #include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expr_type.hpp"
-#include "stmt_builtin_address_of.hpp"
 #include "stmt_builtin_array_size_of.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_equal.hpp"
@@ -94,10 +93,6 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     }
     if (tk.text().starts_with("#")) {
         throw compiler_exception{tk, "unexpected comment in expression"};
-    }
-    if (tk.is_text("address_of")) {
-        return std::make_unique<stmt_builtin_address_of>(tc, std::move(uops),
-                                                         tk, tz);
     }
     if (tk.is_text("read") or tk.is_text("write")) {
         return std::make_unique<stmt_builtin_io>(tc, std::move(uops), tk, tz);

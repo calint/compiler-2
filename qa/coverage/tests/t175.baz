@@ -1,6 +1,0 @@
-# address_of requires an address-sized destination
-
-func main() {
-    var x i8
-    var p i8 = address_of(x)
-}

@@ -30,7 +30,18 @@
             index instead: 'print(buf, i, 20 - i)' (t568, t481)
         [x] tests and prog.baz migrated, a non-array buffer is rejected with
             "argument 2 must be an array" (t487, t488)
-        [ ] decide whether to keep 'address_of' for layout tests
+        [ ] a partial 'read'/'write' can end inside a record and the start
+            argument cannot resume there. for elements larger than 1 byte,
+            repeat the syscall until the current record is complete, not
+            the whole count, so line input still returns
+            => result stays in bytes, always a multiple of the element size
+            => end of file or an error inside a record returns the error
+            => remainder is an 'and' for power of 2 sizes, other sizes need
+               a division that conflicts with the syscall registers on x86
+               and uses the helper on rv32i
+            => test with 'DIFFINP2' input split inside a record
+        [x] 'address_of' removed, layout tests check the compiler's placement
+            comments instead
     [ ] system stack overflow in deep non-inline recursion segfaults before
         the frame check. check 'rsp'/'sp' or depth at each call
     [ ] division by zero traps and MIN / -1 wraps or traps by width. check
@@ -82,7 +93,8 @@
     [ ] conservative rejections: a write through a runtime index covers
         nothing, 'array_copy' into a result is not an assignment, 'foo'
         bodies do not count as assigning
-    [ ] writes through 'address_of' are not tracked
+    [-] writes through 'address_of' are not tracked
+        => 'address_of' was removed
     [ ] prog.baz 'object_init' sets only 'res.pos.y' and is rejected
     [ ] consider accepting partial results when the caller's destination is
         already initialized (call-site coverage summary)

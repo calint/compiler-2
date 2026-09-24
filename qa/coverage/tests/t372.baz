@@ -1,9 +1,10 @@
-# valid upper boundary through address_of
+# valid upper boundary through a computed index
 
 func assert(expr bool) { if not expr exit(1) }
 
 func main() {
     var values[8] i8
-    var address = address_of(values[7])
-    assert(address != 0)
+    var index = 7
+    values[index] = 5
+    assert(values[7] == 5)
 }
