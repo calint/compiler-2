@@ -1,0 +1,7 @@
+# an 'else' assignment does not cover an 'if' branch that skips the result
+func pick(i) res {
+    if i == 3 { } else { res = 2 }
+}
+func main() {
+    var y = pick(3)
+}

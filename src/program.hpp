@@ -205,12 +205,15 @@ class program final {
             if (not ret_info) {
                 continue;
             }
-            if (not f->code().is_var_set(ret_info->ident_tk.text())) {
+            const std::string_view result_name{ret_info->ident_tk.text()};
+            if (not f->code().is_var_set(result_name) or
+                f->code().may_return_unset(result_name)) {
+
                 throw compiler_exception{
                     f->tok(),
                     "function may return without setting its return value"};
             }
-            f->code().assert_no_ub_for_var(ret_info->ident_tk.text());
+            f->code().assert_no_ub_for_var(result_name);
         }
     }
 };

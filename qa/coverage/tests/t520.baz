@@ -1,0 +1,11 @@
+# the result is read inside a loop before it is set
+func pick(i) res {
+    loop {
+        var y = res
+        break
+    }
+    res = 2
+}
+func main() {
+    var y = pick(3)
+}

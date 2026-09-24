@@ -34,4 +34,12 @@ class stmt_break final : public statement {
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {
         return true;
     }
+
+    // blocks stop the search at the first assignment of 'var'
+    [[nodiscard]] auto
+    may_break_unset([[maybe_unused]] const std::string_view var) const
+        -> bool override {
+
+        return true;
+    }
 };

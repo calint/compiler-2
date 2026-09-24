@@ -1,0 +1,26 @@
+# results set on every path stay accepted, including early returns and loops
+func early(i) res {
+    if i == 3 { res = 1 return }
+    res = 2
+}
+func branches(i) res {
+    if i == 3 { res = 1 } else if i == 4 { res = 2 } else { res = 3 }
+}
+func looped(i) res {
+    loop {
+        res = i
+        break
+    }
+}
+func main() {
+    var a = early(3)
+    if a != 1 exit(1)
+    a = early(4)
+    if a != 2 exit(2)
+    a = branches(4)
+    if a != 2 exit(3)
+    a = branches(5)
+    if a != 3 exit(4)
+    a = looped(7)
+    if a != 7 exit(5)
+}

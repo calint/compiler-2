@@ -177,6 +177,25 @@ class stmt_block final : public statement {
         return false;
     }
 
+    [[nodiscard]] auto may_return_unset(const std::string_view var) const
+        -> bool override {
+
+        return may_exit_unset(var, &statement::may_return_unset);
+    }
+
+    [[nodiscard]] auto may_break_unset(const std::string_view var) const
+        -> bool override {
+
+        return may_exit_unset(var, &statement::may_break_unset);
+    }
+
+    // nested blocks and bodies are checked in statement order
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
+
+        assert_no_ub_for_var(var);
+    }
+
     auto assert_no_ub_for_var(const std::string_view var) const -> void {
         for (const std::unique_ptr<statement>& s : stms_) {
             s->assert_var_not_used(var);
@@ -187,4 +206,27 @@ class stmt_block final : public statement {
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
+
+  private:
+    // statements after an assignment or an unconditional exit cannot exit
+    // with 'var' unset
+    [[nodiscard]] auto
+    may_exit_unset(const std::string_view var,
+                   bool (statement::*may_exit)(std::string_view) const) const
+        -> bool {
+
+        for (const std::unique_ptr<statement>& s : stms_) {
+            if (((*s).*may_exit)(var)) {
+                return true;
+            }
+            if (s->is_var_set(var)) {
+                return false;
+            }
+            if (s->is_code_after_this_unreachable()) {
+                return false;
+            }
+        }
+
+        return false;
+    }
 };

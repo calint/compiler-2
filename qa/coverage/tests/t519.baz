@@ -1,0 +1,8 @@
+# the result is read inside an 'if' branch before it is set
+func pick(i) res {
+    if i == 3 { var y = res }
+    res = 2
+}
+func main() {
+    var y = pick(3)
+}

@@ -80,5 +80,24 @@ class stmt_if_branch final : public statement {
         -> void override {
 
         bol_.assert_var_not_used(var);
+        code_.assert_var_not_used(var);
+    }
+
+    [[nodiscard]] auto is_var_set(const std::string_view var) const
+        -> bool override {
+
+        return code_.is_var_set(var);
+    }
+
+    [[nodiscard]] auto may_return_unset(const std::string_view var) const
+        -> bool override {
+
+        return code_.may_return_unset(var);
+    }
+
+    [[nodiscard]] auto may_break_unset(const std::string_view var) const
+        -> bool override {
+
+        return code_.may_break_unset(var);
     }
 };

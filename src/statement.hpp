@@ -203,6 +203,24 @@ class statement {
     }
 
     // used in UB check
+    // returns true if a 'return' may be reached before 'var' is set
+    [[nodiscard]] virtual auto
+    may_return_unset([[maybe_unused]] const std::string_view var) const
+        -> bool {
+
+        return false;
+    }
+
+    // used in UB check
+    // returns true if a 'break' of the enclosing loop may be reached before
+    // 'var' is set
+    [[nodiscard]] virtual auto
+    may_break_unset([[maybe_unused]] const std::string_view var) const -> bool {
+
+        return false;
+    }
+
+    // used in UB check
     // throws if 'var' is used in this statement
     virtual auto assert_var_not_used(const std::string_view var) const -> void {
         if (identifier() == var) {

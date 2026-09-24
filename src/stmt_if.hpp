@@ -143,15 +143,53 @@ class stmt_if final : public statement {
         for (const stmt_if_branch& e : branches_) {
             e.assert_var_not_used(var);
         }
+        else_code_.assert_var_not_used(var);
     }
 
     [[nodiscard]] auto is_var_set(const std::string_view var) const
         -> bool override {
 
-        return else_block().is_var_set(var);
+        // without 'else' every branch may be skipped
+        if (else_code_.is_empty()) {
+            return false;
+        }
+
+        for (const stmt_if_branch& e : branches_) {
+            if (not e.is_var_set(var)) {
+                return false;
+            }
+        }
+
+        return else_code_.is_var_set(var);
+    }
+
+    [[nodiscard]] auto may_return_unset(const std::string_view var) const
+        -> bool override {
+
+        return any_path_may_exit_unset(var, &statement::may_return_unset);
+    }
+
+    [[nodiscard]] auto may_break_unset(const std::string_view var) const
+        -> bool override {
+
+        return any_path_may_exit_unset(var, &statement::may_break_unset);
     }
 
   private:
+    [[nodiscard]] auto
+    any_path_may_exit_unset(const std::string_view var,
+                            bool (statement::*may_exit)(std::string_view)
+                                const) const -> bool {
+
+        for (const stmt_if_branch& e : branches_) {
+            if ((e.*may_exit)(var)) {
+                return true;
+            }
+        }
+
+        return (else_code_.*may_exit)(var);
+    }
+
     [[nodiscard]] static auto create_label_else_branch(
         const stmt_block& else_code, const std::string_view call_path,
         const std::string_view src_loc, const std::string_view label_after_if)

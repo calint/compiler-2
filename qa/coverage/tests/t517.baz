@@ -1,0 +1,8 @@
+# a conditional return skips the result assignment
+func pick(i) res {
+    if i == 3 return
+    res = 2
+}
+func main() {
+    var y = pick(3)
+}

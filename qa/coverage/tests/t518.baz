@@ -1,0 +1,11 @@
+# a conditional break skips the result assignment
+func pick(i) res {
+    loop {
+        if i == 3 break
+        res = 2
+        break
+    }
+}
+func main() {
+    var y = pick(3)
+}
