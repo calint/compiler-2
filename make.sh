@@ -4,6 +4,7 @@
 #       g++: 16.2.1
 #      nasm: 3.02
 #        ld: 2.47
+
 set -e
 cd "$(dirname "$0")"
 

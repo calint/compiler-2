@@ -702,8 +702,8 @@ class machine_x86 final : public machine {
                   const operand& product, const operand& factor,
                   const bool reuse_source = false) -> void override {
 
-        // a constant factor is resolved at compile time: one needs no code
-        // and a power of two is a shift
+        // a constant factor is resolved at compile time: zero clears, one
+        // needs no code, minus one negates and a power of two is a shift
         if (const std::optional<uint64_t> bits{immediate_bits(factor)}) {
             const size_t width_bits{product.type_ref().size_bytes() * 8};
             const uint64_t mask{width_bits >= 64
@@ -711,7 +711,25 @@ class machine_x86 final : public machine {
                                     : (uint64_t{1} << width_bits) - 1};
             const uint64_t multiplier{*bits & mask};
 
+            if (multiplier == 0) {
+                // 'xor' is the shorter idiom but cannot target memory
+                if (product.is_register()) {
+                    xor_op(indent, product, product);
+                    return;
+                }
+
+                mov(src_loc_tk, indent, product, immediate(0));
+
+                return;
+            }
+
             if (multiplier == 1) {
+                return;
+            }
+
+            // all low bits set is multiplication by minus one at this width
+            if (multiplier == mask) {
+                neg(indent, product);
                 return;
             }
 

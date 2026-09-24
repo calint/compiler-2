@@ -11,6 +11,7 @@
 #      qemu-riscv32: 11.1.1
 #            script: 2.42.4
 #           python3: 3.14.7
+
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -43,21 +44,21 @@ export ASAN_SYMBOLIZE=1
 # Common: compile and assemble
 assemble_and_link() {
     case "$MACHINE" in
-        x86_64)
-            nasm -f elf64 gen.s
-            ld -s -T "$SCRIPT_DIR/../../baz.ld" -o gen gen.o
-            ;;
-        rv32i)
-            llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
-            ld.lld -m elf32lriscv -e _start -o gen gen.o
-            ;;
+    x86_64)
+        nasm -f elf64 gen.s
+        ld -s -T "$SCRIPT_DIR/../../baz.ld" -o gen gen.o
+        ;;
+    rv32i)
+        llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
+        ld.lld -m elf32lriscv -e _start -o gen gen.o
+        ;;
     esac
 }
 
 execute_program() {
     case "$MACHINE" in
-        x86_64) ./gen ;;
-        rv32i) qemu-riscv32 ./gen ;;
+    x86_64) ./gen ;;
+    rv32i) qemu-riscv32 ./gen ;;
     esac
 }
 

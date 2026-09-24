@@ -11,6 +11,7 @@
 #      qemu-riscv32: 11.1.1
 #            script: 2.42.4
 #           python3: 3.14.7
+
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
