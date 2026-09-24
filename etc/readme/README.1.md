@@ -28,8 +28,8 @@ x86_64 assembly on Linux.
 * limited support for non-inline functions
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`
-* built-in functions: `array_copy`, `array_size_of`, `arrays_equal`, `equal`,
-  `read`, `write`, `exit`, `i8`, `i16`, `i32`, `i64`
+* built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
+  `write`, `exit`, `i8`, `i16`, `i32`, `i64`
 
 ## Howto
 

@@ -81,7 +81,7 @@ class stmt_builtin_array_length final : public expression {
         get_unary_ops().compile(tc, indent, dst_info.operand);
     }
 
-    // the size is known at compile time so the value is not read
+    // the length is known at compile time so the value is not read
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override {
 

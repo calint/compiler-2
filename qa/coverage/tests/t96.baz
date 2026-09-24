@@ -11,5 +11,5 @@ func print(str[] i8, len) {
 dat hello[] i8 = "hello \"world\" \n from 'baz'\n  "
 
 func main() {
-    print(hello, array_size_of(hello))
+    print(hello, array_length(hello))
 }

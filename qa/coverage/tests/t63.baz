@@ -17,20 +17,20 @@ dat      nl[] i8 = "\n"
 
 func main(){
 
-    print(hello, array_size_of(hello))
+    print(hello, array_length(hello))
     loop {
-        print(prompt1, array_size_of(prompt1))
-        var len = input(input, array_size_of(input)) - 1    # -1 don't include the '\n'
+        print(prompt1, array_length(prompt1))
+        var len = input(input, array_length(input)) - 1    # -1 don't include the '\n'
         if len == 0 {
             break
         }
         if len <= 4 {
-            print(prompt2, array_size_of(prompt2))
+            print(prompt2, array_length(prompt2))
             continue
         }
-        print(prompt3, array_size_of(prompt3))
+        print(prompt3, array_length(prompt3))
         print(input, len)
-        print(dot, array_size_of(dot))
-        print(nl, array_size_of(nl))
+        print(dot, array_length(dot))
+        print(nl, array_length(nl))
     }
 }

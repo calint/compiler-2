@@ -16,6 +16,6 @@ func main() {
     assert(points[0].tags[1] == 0)
     var defaults[2] = { 7, 8 }
     assert(default_sum(defaults) == 15)
-    assert(array_size_of(colon) == 2)
+    assert(array_length(colon) == 2)
     assert(colon[0] == 58)
 }

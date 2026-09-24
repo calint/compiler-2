@@ -1,4 +1,4 @@
-# array_size_of follows nested array fields
+# array_length follows nested array fields
 
 func assert(expr bool) {
     if not expr exit(1)
@@ -14,11 +14,11 @@ type world {
 }
 
 func foozi(data[] i8) {
-    assert(array_size_of(data) == 8)
+    assert(array_length(data) == 8)
 }
 
 func bar(flg flags) {
-    assert(array_size_of(flg) == 4)
+    assert(array_length(flg) == 4)
 }
 
 func main() {

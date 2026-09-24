@@ -268,18 +268,18 @@ func main() {
     array_copy(
         worlds[1].locations,
         worlds[0].locations,
-        array_size_of(worlds.locations)
+        array_length(worlds.locations)
     )
-    # `array_size_of` is built-in
+    # `array_length` is built-in
 
     assert(worlds[0].locations[1] == 0xffee)
     assert(arrays_equal(
              worlds[0].locations,
              worlds[1].locations,
-             array_size_of(worlds.locations)
+             array_length(worlds.locations)
           ))
     var arr2[] = { -1, 2 }
-    assert(array_size_of(arr2) == 2)
+    assert(array_length(arr2) == 2)
     assert(arr2[0] == -1)
     assert(arr2[1] == 2)
 

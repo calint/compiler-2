@@ -18,7 +18,7 @@ type location {
 dat nl_str[] i8 = "\n"
 
 func nl() {
-    print(nl_str, array_size_of(nl_str))
+    print(nl_str, array_length(nl_str))
 }
 
 func pn(num) {
@@ -55,7 +55,7 @@ func main() {
 
     var i = 0
     loop {
-      locations[i].name_len = input(locations[i].name, array_size_of(locations[i].name))
+      locations[i].name_len = input(locations[i].name, array_length(locations[i].name))
       pn(locations[i].name_len)
       nl()
       print(locations[i].name, locations[i].name_len)

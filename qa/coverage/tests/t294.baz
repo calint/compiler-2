@@ -1,9 +1,9 @@
-# unary operation on array_size_of is rejected
+# unary operation on array_length is rejected
 
 func assert(x bool) { if not x exit(1) }
 
 func main() {
     var a[2] i8
-    var n = -array_size_of(a)
+    var n = -array_length(a)
     assert(n == -2)
 }

@@ -12,6 +12,6 @@ func input(str[] i8, len) nbytes {
 
 func main() {
     var input_buffer[80] i8
-    var len = input(input_buffer, array_size_of(input_buffer))
+    var len = input(input_buffer, array_length(input_buffer))
     print(input_buffer, len)
 }

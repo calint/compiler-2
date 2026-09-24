@@ -23,7 +23,7 @@
 #include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expr_type.hpp"
-#include "stmt_builtin_array_size_of.hpp"
+#include "stmt_builtin_array_length.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_equal.hpp"
 #include "stmt_builtin_exit.hpp"
@@ -97,9 +97,9 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     if (tk.is_text("read") or tk.is_text("write")) {
         return std::make_unique<stmt_builtin_io>(tc, std::move(uops), tk, tz);
     }
-    if (tk.is_text("array_size_of")) {
-        return std::make_unique<stmt_builtin_array_size_of>(tc, std::move(uops),
-                                                            tk, tz);
+    if (tk.is_text("array_length")) {
+        return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
+                                                           tk, tz);
     }
     if (tk.is_text("arrays_equal")) {
         return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),

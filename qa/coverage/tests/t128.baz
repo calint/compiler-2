@@ -20,7 +20,7 @@ type str {
 }
 
 func str_in(s str) {
-    var nbytes = read(0, s.data, array_size_of(s.data))
+    var nbytes = read(0, s.data, array_length(s.data))
     s.len = i8(nbytes - 1)
 } 
 

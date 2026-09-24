@@ -85,11 +85,11 @@ func main() {
     data_i[127] = i8(0xfe)
     assert(data_i[127] == -2)
 
-    assert(array_size_of(data_l) == 12)
+    assert(array_length(data_l) == 12)
     assert(data_l[0] == 104) # 'h'
     assert(data_l[11] == 10) # '\n'
 
-    assert(array_size_of(data_m) == 10)
+    assert(array_length(data_m) == 10)
     assert(data_m[0] == 97) # 'a'
     assert(data_m[9] == 0) # '\0'
 

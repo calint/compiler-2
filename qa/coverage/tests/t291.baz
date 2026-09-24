@@ -8,5 +8,5 @@ dat escapes[] i8 = "\t\r\v\f`"
 dat output[] i8 = "token escapes\n"
 
 func main() {
-    print(output, array_size_of(output))
+    print(output, array_length(output))
 }

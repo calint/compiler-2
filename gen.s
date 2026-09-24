@@ -2062,14 +2062,14 @@ main:
         if.32.24.266.5.end:
 ;       [266:5] free scratch register r15
     func.assert.266.5.end:
-;   [268:5] array_copy( worlds[1].locations, worlds[0].locations, array_size_of(worlds.locations) )
+;   [268:5] array_copy( worlds[1].locations, worlds[0].locations, array_length(worlds.locations) )
 ;   [268:5] allocate named register rsi
 ;   [268:5] allocate named register rdi
 ;   [268:5] allocate named register rcx
-;   [271:9] array_size_of(worlds.locations)
-;   [271:9] rcx = array_size_of(worlds.locations)
+;   [271:9] array_length(worlds.locations)
+;   [271:9] rcx = array_length(worlds.locations)
 ;   [271:9] = expression
-;   [271:9] array_size_of(worlds.locations)
+;   [271:9] array_length(worlds.locations)
     mov rcx, 8
 ;   [269:9] worlds[1].locations
 ;   [269:16] allocate scratch register -> r15
@@ -2136,7 +2136,7 @@ main:
 ;   [268:5] free named register rcx
 ;   [268:5] free named register rdi
 ;   [268:5] free named register rsi
-;   [273:5] # `array_size_of` is built-in
+;   [273:5] # `array_length` is built-in
 ;   [275:5] assert(worlds[0].locations[1] == 0xffee)
 ;   [275:12] allocate scratch register -> r15
 ;   [275:12] ? worlds[0].locations[1] == 0xffee
@@ -2199,19 +2199,19 @@ main:
         if.32.24.275.5.end:
 ;       [275:5] free scratch register r15
     func.assert.275.5.end:
-;   [276:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) ))
+;   [276:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) ))
 ;   [276:12] allocate scratch register -> r15
-;   [276:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
-;   [276:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;   [276:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) )
+;   [276:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) )
     cmp.276.12:
-;       [276:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;       [276:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) )
 ;       [276:12] allocate named register rsi
 ;       [276:12] allocate named register rdi
 ;       [276:12] allocate named register rcx
-;       [279:14] array_size_of(worlds.locations)
-;       [279:14] rcx = array_size_of(worlds.locations)
+;       [279:14] array_length(worlds.locations)
+;       [279:14] rcx = array_length(worlds.locations)
 ;       [279:14] = expression
-;       [279:14] array_size_of(worlds.locations)
+;       [279:14] array_length(worlds.locations)
         mov rcx, 8
 ;       [277:14] worlds[0].locations
 ;       [277:21] allocate scratch register -> r14
@@ -2310,15 +2310,15 @@ main:
 ;   [281:20] [1]
 ;   [281:24] 2
     mov qword [rbp + 1025], 2
-;   [282:5] assert(array_size_of(arr2) == 2)
+;   [282:5] assert(array_length(arr2) == 2)
 ;   [282:12] allocate scratch register -> r15
-;   [282:12] ? array_size_of(arr2) == 2
-;   [282:12] ? array_size_of(arr2) == 2
+;   [282:12] ? array_length(arr2) == 2
+;   [282:12] ? array_length(arr2) == 2
     cmp.282.12:
 ;   [282:12] allocate scratch register -> r14
-;       [282:12] r14 = array_size_of(arr2)
+;       [282:12] r14 = array_length(arr2)
 ;       [282:12] = expression
-;       [282:12] array_size_of(arr2)
+;       [282:12] array_length(arr2)
         mov r14, 2
     cmp r14, 2
 ;   [282:12] free scratch register r14

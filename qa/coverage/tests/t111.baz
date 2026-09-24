@@ -162,7 +162,7 @@ func main() {
     array_copy(
         w[0].scenes[0].meshes,
         w[1].scenes[2].meshes,
-        array_size_of(w[0].scenes[0].meshes)
+        array_length(w[0].scenes[0].meshes)
     )
     
     # Verify copy
@@ -173,7 +173,7 @@ func main() {
     var eq1 bool = arrays_equal(
         w[0].scenes[0].meshes[2].vertices,
         w[1].scenes[2].meshes[2].vertices,
-        array_size_of(w[0].scenes[0].meshes[2].vertices)
+        array_length(w[0].scenes[0].meshes[2].vertices)
     )
     assert(eq1)
     
@@ -219,7 +219,7 @@ func main() {
     array_copy(
         w[1].scenes[1].meshes,
         w[0].scenes[2].meshes,
-        array_size_of(w[1].scenes[1].meshes)
+        array_length(w[1].scenes[1].meshes)
     )
     
     # Verify colors were shifted and copied
@@ -239,7 +239,7 @@ func main() {
     array_copy(
         standalone_meshes,
         w[1].scenes[2].meshes,
-        array_size_of(standalone_meshes)
+        array_length(standalone_meshes)
     )
     
     verify_mesh(w[1].scenes[2].meshes[0], 1000)
@@ -250,19 +250,19 @@ func main() {
     array_copy(
         w[0].scenes[0].meshes[1].indices,
         temp_mesh_indices,
-        array_size_of(temp_mesh_indices)
+        array_length(temp_mesh_indices)
     )
     
     array_copy(
         w[0].scenes[1].meshes[2].indices,
         w[0].scenes[0].meshes[1].indices,
-        array_size_of(w[0].scenes[0].meshes[1].indices)
+        array_length(w[0].scenes[0].meshes[1].indices)
     )
     
     array_copy(
         temp_mesh_indices,
         w[0].scenes[1].meshes[2].indices,
-        array_size_of(temp_mesh_indices)
+        array_length(temp_mesh_indices)
     )
     
     # Verify swap: meshes[1] of scene[0] should now have scene[1]'s indices

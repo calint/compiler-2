@@ -8,13 +8,13 @@ func print(str[] i8, len) {
 func bar(a,b,hello[] i8){
     loop{
         if b==0 return
-        print(hello,array_size_of(hello))
+        print(hello,array_length(hello))
         b=b-1
     }
 }
 
 func foozi(world[] i8){
-    print(world,array_size_of(world))
+    print(world,array_length(world))
 }
 
 func main(){

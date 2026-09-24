@@ -1,6 +1,6 @@
-# array_size_of result requires a wide destination
+# array_length result requires a wide destination
 
 func main() {
     var a[2] i8
-    var n i8 = array_size_of(a)
+    var n i8 = array_length(a)
 }

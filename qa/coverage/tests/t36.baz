@@ -9,7 +9,7 @@ func input(str[] i8, len) nbytes_read {
 }
 
 func main(){
-    var len=input(name,array_size_of(name))-1 # remove the \n
+    var len=input(name,array_length(name))-1 # remove the \n
     print(name,len)
     exit(0)
 }

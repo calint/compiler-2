@@ -5,7 +5,7 @@ func print(str[] i8, len) {
 }
 
 func bar(hello[] i8){
-    print(hello,array_size_of(hello))
+    print(hello,array_length(hello))
 }
 
 func main(){

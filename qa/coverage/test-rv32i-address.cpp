@@ -567,7 +567,7 @@ func main() {
         const std::string_view source{R"baz(
 dat text[] i8 = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
 func main() {
-    var count = write(1, text, array_size_of(text))
+    var count = write(1, text, array_length(text))
     if count != 20 exit(1)
     var bad = write(-1, text, 1)
     if bad != -9 exit(2)

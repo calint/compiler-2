@@ -14,7 +14,7 @@ func input(str[] i8, len) nbytes {
 
 func main() {
     var inp[80] i8
-    var len = input(inp, array_size_of(inp))
+    var len = input(inp, array_length(inp))
     len = len - 3
     array_copy (  inp[3]   ,    inp     ,      len       ) 
     print(inp, len)

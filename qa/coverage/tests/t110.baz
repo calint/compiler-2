@@ -101,7 +101,7 @@ func main() {
     array_copy(
         w[0].scenes[0].meshes,
         w[1].scenes[2].meshes,
-        array_size_of(w[0].scenes[0].meshes)
+        array_length(w[0].scenes[0].meshes)
     )
     
     # verify copy succeeded
@@ -116,7 +116,7 @@ func main() {
     var ok bool = arrays_equal(
         w[0].scenes[0].meshes[1].vertices,
         w[1].scenes[2].meshes[1].vertices,
-        array_size_of(w[0].scenes[0].meshes[1].vertices)
+        array_length(w[0].scenes[0].meshes[1].vertices)
     )
     assert(ok)
     
