@@ -1,7 +1,7 @@
 # non-inline print_num: repeated calls, local arrays and inline syscall helpers
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
 func noinline print_num(num) {
@@ -31,7 +31,7 @@ func noinline print_num(num) {
         i = i + 1
         if i == 20 break
     }
-    print(count, address_of(buf))
+    print(buf, count)
 }
 
 func main() {
@@ -42,11 +42,11 @@ func main() {
     var third = 0
 
     print_num(first)
-    print(1, address_of(newline))
+    print(newline, 1)
     print_num(second)
-    print(1, address_of(newline))
+    print(newline, 1)
     print_num(third)
-    print(1, address_of(newline))
+    print(newline, 1)
     print_num(first)
-    print(1, address_of(newline))
+    print(newline, 1)
 }

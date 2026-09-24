@@ -2,12 +2,12 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes {
-    nbytes = read(0, ptr, len)
+func input(str[] i8, len) nbytes {
+    nbytes = read(0, str, len)
 }
 
 type location {
@@ -18,7 +18,7 @@ type location {
 dat nl_str[] i8 = "\n"
 
 func nl() {
-    print(array_size_of(nl_str), address_of(nl_str))
+    print(nl_str, array_size_of(nl_str))
 }
 
 func pn(num) {
@@ -47,7 +47,7 @@ func pn(num) {
         buf[i] = 45  # '-'
     }
 
-    print(20 - i, address_of(buf[i]))
+    write(1, buf, 20 - i, i)
 }
 
 func main() {
@@ -55,10 +55,10 @@ func main() {
 
     var i = 0
     loop {
-      locations[i].name_len = input(array_size_of(locations[i].name), address_of(locations[i].name))
+      locations[i].name_len = input(locations[i].name, array_size_of(locations[i].name))
       pn(locations[i].name_len)
       nl()
-      print(locations[i].name_len, address_of(locations[i].name))
+      print(locations[i].name, locations[i].name_len)
       nl()
       i = i + 1
       if i == 4 break
@@ -68,7 +68,7 @@ func main() {
     loop {
       pn(locations[i].name_len)
       nl()
-      print(locations[i].name_len, address_of(locations[i].name))
+      print(locations[i].name, locations[i].name_len)
       nl()
       i = i + 1
       if i == 4 break

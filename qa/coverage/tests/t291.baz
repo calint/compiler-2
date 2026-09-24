@@ -1,12 +1,12 @@
 # string escape decoding
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
 dat escapes[] i8 = "\t\r\v\f`"
 dat output[] i8 = "token escapes\n"
 
 func main() {
-    print(array_size_of(output), address_of(output))
+    print(output, array_size_of(output))
 }

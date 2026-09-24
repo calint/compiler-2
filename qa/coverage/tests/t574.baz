@@ -1,0 +1,9 @@
+# a negative count with a start panics
+
+func main() {
+    var buf[4] i8
+    var a[4] i8
+    var k = 0
+    var n = -1
+    var r = write(1, buf, n, k)
+}

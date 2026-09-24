@@ -1,12 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] variable argument count in read/write might be confusing. consider requiring
+    all arguments
 [x] opus 5.5 ai review and bug-hunt
 [ ] jump_optimizer return the number of optimizations that have been done and
     add them as comment at the end of the gen.s
 [o] --checks=noub: a program either behaves as defined or panics with a line
     => viable: no heap, no pointer type, no casts, no raw registers
     [x] array index bounds: --checks=upper,lower
+        => a negative count with a start passed 'start + count', fixed:
+           --checks=lower also rejects it ('read'/'write', 'array_copy',
+           'arrays_equal', t571-t576)
     [x] non-inline frame arena: --checks=frame
     [x] narrowing is a compile error, 'i8(...)' etc. acknowledges it
     [x] unset results rejected at compile time, variables are zeroed
@@ -23,8 +28,8 @@
         [x] an element passed to an array parameter is rejected, it would
             carry the whole array's length. pass the array and a start
             index instead: 'print(buf, i, 20 - i)' (t568, t481)
-        [ ] migrate tests and prog.baz, then reject integer addresses. t87,
-            t112, t113 use 'print(20 - i, address_of(buf[i]))'
+        [x] tests and prog.baz migrated, a non-array buffer is rejected with
+            "argument 2 must be an array" (t487, t488)
         [ ] decide whether to keep 'address_of' for layout tests
     [ ] system stack overflow in deep non-inline recursion segfaults before
         the frame check. check 'rsp'/'sp' or depth at each call

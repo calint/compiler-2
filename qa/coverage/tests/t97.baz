@@ -4,18 +4,18 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes {
-    nbytes = read(0, ptr, len)
+func input(str[] i8, len) nbytes {
+    nbytes = read(0, str, len)
 }
 
 func main() {
     var inp[80] i8
-    var len = input(array_size_of(inp), address_of(inp))
+    var len = input(inp, array_size_of(inp))
     len = len - 3
     array_copy (  inp[3]   ,    inp     ,      len       ) 
-    print(len, address_of(inp))
+    print(inp, len)
 }

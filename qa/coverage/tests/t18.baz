@@ -1,20 +1,20 @@
 dat hello[] i8="hello\n"
 dat world[] i8="world\n"
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
 func foozi(world[] i8){
     var len=array_size_of(world)
-    print(len-1,address_of(world))
+    print(world,len-1)
 }
 
 func bar(n,x,hello[] i8){
     var i=x
     loop{
         var b=2
-        print(array_size_of(hello)-n,address_of(hello))
+        print(hello,array_size_of(hello)-n)
         if n==0 break
         n=n-1
         i=i-1
@@ -27,7 +27,7 @@ func f(x) res{
 }
 
 func main(){
-    print(array_size_of(hello),address_of(hello))
+    print(hello,array_size_of(hello))
     var a=2
     foozi(world)
     var b=3

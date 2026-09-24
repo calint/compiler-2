@@ -4,12 +4,12 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
 dat hello[] i8 = "hello \"world\" \n from 'baz'\n  "
 
 func main() {
-    print(array_size_of(hello), address_of(hello))
+    print(hello, array_size_of(hello))
 }

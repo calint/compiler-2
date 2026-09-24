@@ -1,0 +1,9 @@
+# a start past the array end panics
+
+func main() {
+    var buf[4] i8
+    var a[4] i8
+    var k = 5
+    var n = 0
+    var r = read(0, buf, n, k)
+}

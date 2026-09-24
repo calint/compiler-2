@@ -31,9 +31,7 @@ class stmt_builtin_io final : public stmt_call {
         const machine::builtin_function_registers registers{
             x.registers_for_builtin_function(function)};
         const std::vector<operand> args{
-            is_array_buffer(tc)
-                ? compile_array_arguments(tc, indent, registers.arguments)
-                : compile_address_arguments(tc, indent, registers.arguments)};
+            compile_array_arguments(tc, indent, registers.arguments)};
 
         const bool result_is_argument{
             std::ranges::contains(registers.arguments, registers.result)};
@@ -61,14 +59,9 @@ class stmt_builtin_io final : public stmt_call {
     }
 
   private:
-    // an array selects '(fd, buf[, count[, start]])', any other value is an
-    // address with '(fd, address, count)'
-    [[nodiscard]] auto is_array_buffer(const toc& tc) const -> bool {
+    // an address would bypass the bounds check, so only arrays are accepted
+    auto assert_array_buffer(const toc& tc) const -> void {
         const statement& buffer{argument(1)};
-
-        if (not buffer.is_identifier()) {
-            return false;
-        }
 
         // the start has one spelling, the 4th argument
         if (buffer.is_array_element()) {
@@ -79,21 +72,14 @@ class stmt_builtin_io final : public stmt_call {
                             tok().text())};
         }
 
-        const ident_info info{tc.make_ident_info(buffer)};
-
-        return info.is_var() and info.is_array;
-    }
-
-    [[nodiscard]] auto compile_address_arguments(
-        toc& tc, const size_t indent,
-        const std::span<const std::string_view> registers) const
-        -> std::vector<operand> {
-
-        if (argument_count() != 3) {
-            throw compiler_exception{tok(), "expected 3 arguments"};
+        if (buffer.is_identifier()) {
+            const ident_info info{tc.make_ident_info(buffer)};
+            if (info.is_var() and info.is_array) {
+                return;
+            }
         }
 
-        return compile_builtin_arguments(tc, indent, registers);
+        throw compiler_exception{buffer.tok(), "argument 2 must be an array"};
     }
 
     // the count and start are in elements, the byte count is computed last
@@ -101,6 +87,8 @@ class stmt_builtin_io final : public stmt_call {
         toc& tc, const size_t indent,
         const std::span<const std::string_view> registers) const
         -> std::vector<operand> {
+
+        assert_array_buffer(tc);
 
         machine& x{tc.machine()};
 

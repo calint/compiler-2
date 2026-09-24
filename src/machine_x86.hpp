@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <limits>
+#include <optional>
 #include <ostream>
 #include <print>
 #include <ranges>
@@ -700,6 +702,27 @@ class machine_x86 final : public machine {
                   const operand& product, const operand& factor,
                   const bool reuse_source = false) -> void override {
 
+        // a constant factor is resolved at compile time: one needs no code
+        // and a power of two is a shift
+        if (const std::optional<uint64_t> bits{immediate_bits(factor)}) {
+            const size_t width_bits{product.type_ref().size_bytes() * 8};
+            const uint64_t mask{width_bits >= 64
+                                    ? std::numeric_limits<uint64_t>::max()
+                                    : (uint64_t{1} << width_bits) - 1};
+            const uint64_t multiplier{*bits & mask};
+
+            if (multiplier == 1) {
+                return;
+            }
+
+            if (std::has_single_bit(multiplier)) {
+                op(src_loc_tk, indent, "sal", product,
+                   immediate(std::countr_zero(multiplier)));
+
+                return;
+            }
+        }
+
         if (product.type_ref().size_bytes() == size_byte) {
             const operand left{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
@@ -1085,13 +1108,21 @@ class machine_x86 final : public machine {
         }
 
         if (options.lower) {
-            test(indent, reg_to_check, reg_to_check);
-            if (options.with_line) {
-                cmovs(indent,
-                      machine_x86::make_register_operand("rbp", *type_i64_),
-                      reg_line_num);
+            // a negative count passes 'start + count' but spans the address
+            // space
+            for (const operand* value : {&reg_to_check, &reg_count}) {
+                if (value->is_empty()) {
+                    continue;
+                }
+
+                test(indent, *value, *value);
+                if (options.with_line) {
+                    cmovs(indent,
+                          machine_x86::make_register_operand("rbp", *type_i64_),
+                          reg_line_num);
+                }
+                jcc(indent, "s", "baz_bounds_panic");
             }
-            jcc(indent, "s", "baz_bounds_panic");
         }
 
         if (options.upper) {

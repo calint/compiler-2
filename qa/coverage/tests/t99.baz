@@ -2,12 +2,12 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes {
-    nbytes = read(0, ptr, len)
+func input(str[] i8, len) nbytes {
+    nbytes = read(0, str, len)
 }
 
 dat ok[] i8 = "ok\n"
@@ -16,31 +16,31 @@ func main() {
     var word1[64] i8
     var word2[64] i8
 
-    print(array_size_of(ok), address_of(ok))
+    print(ok, array_size_of(ok))
 
     # expect same word input for both
-    var len1 = input(array_size_of(word1), address_of(word1))
-    print(len1, address_of(word1))
+    var len1 = input(word1, array_size_of(word1))
+    print(word1, len1)
 
-    print(array_size_of(ok), address_of(ok))
+    print(ok, array_size_of(ok))
 
-    var len2 = input(array_size_of(word2), address_of(word2))
-    print(len2, address_of(word2))
+    var len2 = input(word2, array_size_of(word2))
+    print(word2, len2)
   
     assert(arrays_equal(word1, word2, len1))
 
-    print(array_size_of(ok), address_of(ok))
+    print(ok, array_size_of(ok))
 
     # expect not same word input for both
-    len1 = input(array_size_of(word1), address_of(word1))
-    print(len1, address_of(word1))
+    len1 = input(word1, array_size_of(word1))
+    print(word1, len1)
 
-    print(array_size_of(ok), address_of(ok))
+    print(ok, array_size_of(ok))
  
-    len2 = input(array_size_of(word2), address_of(word2))
-    print(len2, address_of(word2))
+    len2 = input(word2, array_size_of(word2))
+    print(word2, len2)
  
     assert(not arrays_equal(word1, word2, len1))
 
-    print(array_size_of(ok), address_of(ok))
+    print(ok, array_size_of(ok))
 }

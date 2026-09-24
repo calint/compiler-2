@@ -33,8 +33,9 @@ func assert(ok bool) { if not ok exit(1) }
 # exit is a built-in function
 
 func print(str[] i8) {
-    write(1, address_of(str), array_size_of(str))
+    write(1, str)
     # write is a built-in functions writes to a file descriptor
+    # it has 2 more optional arguments: count and start index
 }
 
 # function arguments and return are equivalent to mutable references
@@ -70,13 +71,14 @@ func faz(arg[] i32) {
 }
 
 func str_in(s str) {
-    var nbytes = read(0, address_of(s.data), array_size_of(s.data))
+    var nbytes = read(0, s.data)
     # read is built-in function that operates on file descriptors
+    # it has 2 more optional arguments: count and start index
     s.len = i8(nbytes - 1)
 } 
 
 func str_out(s str) {
-    write(1, address_of(s.data), s.len)
+    write(1, s.data, s.len)
 } 
 
 func point_init() res point {
@@ -135,7 +137,7 @@ func noinline print_num(num) {
         if i == 20 break
     }
  
-    write(1, address_of(buf), write_pos)
+    write(1, buf, write_pos)
 }
 
 func main() {

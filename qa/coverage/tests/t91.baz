@@ -2,12 +2,12 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes {
-    nbytes = read(0, ptr, len)
+func input(str[] i8, len) nbytes {
+    nbytes = read(0, str, len)
 }
 
 func print_num(num) {
@@ -43,7 +43,7 @@ func print_num(num) {
         if i == 20 break
     }
     
-    print(write_pos, address_of(buf))
+    print(buf, write_pos)
 }
 
 func main() {
@@ -61,17 +61,17 @@ func main() {
   var i3_wide = i3
 
   print_num(i1)
-  print(1, address_of(nl))
+  print(nl, 1)
   print_num(i2_wide)
-  print(1, address_of(nl))
+  print(nl, 1)
   print_num(i3_wide)
-  print(1, address_of(nl))
+  print(nl, 1)
   print_num(i4)
-  print(1, address_of(nl))
+  print(nl, 1)
   print_num(i5)
-  print(1, address_of(nl))
+  print(nl, 1)
   print_num(i6)
-  print(1, address_of(nl))
+  print(nl, 1)
   print_num(i7)
-  print(1, address_of(nl))
+  print(nl, 1)
 }

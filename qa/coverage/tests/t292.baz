@@ -1,11 +1,11 @@
 # hexadecimal string escape decoding
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
 dat letter[] i8 = "\x41"
 
 func main() {
-    print(array_size_of(letter), address_of(letter))
+    print(letter, array_size_of(letter))
 }

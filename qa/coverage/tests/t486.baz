@@ -2,27 +2,27 @@
 
 func main() {
     var buffer[16] i8
-    var count = read(0, address_of(buffer), 16)
+    var count = read(0, buffer, 16)
     if count != 6 exit(1)
-    var written = write(1, address_of(buffer), count)
+    var written = write(1, buffer, count)
     if written != count exit(2)
-    var empty = write(1, address_of(buffer), 0)
+    var empty = write(1, buffer, 0)
     if empty != 0 exit(3)
-    var error = read(-1, address_of(buffer), 1)
+    var error = read(-1, buffer, 1)
     if error != -9 exit(4)
-    error = write(-1, address_of(buffer), 1)
+    error = write(-1, buffer, 1)
     if error != -9 exit(5)
-    var eof = read(0, address_of(buffer), 16)
+    var eof = read(0, buffer, 16)
     if eof != 0 exit(6)
-    write(1, address_of(buffer), 0)
-    read(0, address_of(buffer), 0)
-    var sum = 7 + write(1, address_of(buffer), 0)
+    write(1, buffer, 0)
+    read(0, buffer, 0)
+    var sum = 7 + write(1, buffer, 0)
     if sum != 7 exit(7)
     var one = 1
     var zero_byte = 0
-    var calculated = write(one + zero_byte, address_of(buffer) + zero_byte, one * zero_byte)
+    var calculated = write(one + zero_byte, buffer, one * zero_byte, zero_byte)
     if calculated != 0 exit(8)
-    var negated = -write(-one, address_of(buffer), one)
+    var negated = -write(-one, buffer, one)
     if negated != 9 exit(9)
     exit(0)
 }

@@ -1,11 +1,11 @@
 dat hello[] i8="hello\n"
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
 func bar(hello[] i8){
-    print(array_size_of(hello),address_of(hello))
+    print(hello,array_size_of(hello))
 }
 
 func main(){

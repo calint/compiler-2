@@ -1,0 +1,9 @@
+# a negative 'arrays_equal' count with start elements panics
+
+func main() {
+    var buf[4] i8
+    var a[4] i8
+    var k = 1
+    var n = -1
+    var e bool = arrays_equal(a[k], buf[k], n)
+}

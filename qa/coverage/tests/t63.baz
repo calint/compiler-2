@@ -1,10 +1,10 @@
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes {
-    nbytes = read(0, ptr, len)
+func input(str[] i8, len) nbytes {
+    nbytes = read(0, str, len)
 }
 
 dat   hello[] i8 = "hello world from baz\n"
@@ -17,20 +17,20 @@ dat      nl[] i8 = "\n"
 
 func main(){
 
-    print(array_size_of(hello), address_of(hello))
+    print(hello, array_size_of(hello))
     loop {
-        print(array_size_of(prompt1), address_of(prompt1))
-        var len = input(array_size_of(input), address_of(input)) - 1    # -1 don't include the '\n'
+        print(prompt1, array_size_of(prompt1))
+        var len = input(input, array_size_of(input)) - 1    # -1 don't include the '\n'
         if len == 0 {
             break
         }
         if len <= 4 {
-            print(array_size_of(prompt2), address_of(prompt2))
+            print(prompt2, array_size_of(prompt2))
             continue
         }
-        print(array_size_of(prompt3), address_of(prompt3))
-        print(len, address_of(input))
-        print(array_size_of(dot), address_of(dot))
-        print(array_size_of(nl), address_of(nl))
+        print(prompt3, array_size_of(prompt3))
+        print(input, len)
+        print(dot, array_size_of(dot))
+        print(nl, array_size_of(nl))
     }
 }

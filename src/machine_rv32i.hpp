@@ -2512,6 +2512,12 @@ class machine_rv32i final : public machine {
         comment(src_loc_tk, indent, "bounds check");
         if (options.lower) {
             asm_line(indent, "bltz {}, 1f", index);
+
+            // a negative count passes 'start + count' but spans the address
+            // space
+            if (not reg_count.is_empty()) {
+                asm_line(indent, "bltz {}, 1f", reg_count.base_register());
+            }
         }
 
         if (options.upper) {

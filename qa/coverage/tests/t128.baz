@@ -6,12 +6,12 @@ func assert(expr bool) { if not expr exit(1) }
 
 # built-in 'read' and 'write' interface with the OS
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes {
-    nbytes = read(0, ptr, len)
+func input(str[] i8, len) nbytes {
+    nbytes = read(0, str, len)
 }
 
 type str {
@@ -20,12 +20,12 @@ type str {
 }
 
 func str_in(s str) {
-    var nbytes = read(0, address_of(s.data), array_size_of(s.data))
+    var nbytes = read(0, s.data, array_size_of(s.data))
     s.len = i8(nbytes - 1)
 } 
 
 func str_out(s str) {
-    write(1, address_of(s.data), s.len)
+    write(1, s.data, s.len)
 } 
 
 type list {

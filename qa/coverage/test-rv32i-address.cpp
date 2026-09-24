@@ -567,9 +567,9 @@ func main() {
         const std::string_view source{R"baz(
 dat text[] i8 = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
 func main() {
-    var count = write(1, address_of(text), array_size_of(text))
+    var count = write(1, text, array_size_of(text))
     if count != 20 exit(1)
-    var bad = write(-1, address_of(text), 1)
+    var bad = write(-1, text, 1)
     if bad != -9 exit(2)
     exit(0)
 }
@@ -611,7 +611,9 @@ func main() {
                                         const int64_t top{int64_t{index} +
                                                           (slice ? count : 0)};
                                         const bool expected{
-                                            (lower and index < 0) or
+                                            (lower and
+                                             (index < 0 or
+                                              (slice and count < 0))) or
                                             (upper and
                                              (allow_end ? top > size
                                                         : top >= size))};
@@ -759,7 +761,8 @@ func main() {
     }
     {
         const std::string_view source{
-            "func main() { var value = write(1, 0, 0) exit(value) }"};
+            "func main() { var b[1] i8 var value = write(1, b, 0) "
+            "exit(value) }"};
 
         std::ostringstream output;
         machine_x86 compiler{output, source};
@@ -775,8 +778,8 @@ func main() {
         assert(not main_body.contains("allocate scratch register"));
     }
     for (const std::string_view source :
-         {"func main() { write(1, 0, write(1, 0, 0)) }",
-          "func main() { exit(write(1, 0, 0)) }"}) {
+         {"func main() { var b[1] i8 write(1, b, write(1, b, 0)) }",
+          "func main() { var b[1] i8 exit(write(1, b, 0)) }"}) {
         std::ostringstream output;
         machine_x86 compiler{output, source};
         program prg{compiler, source, 4096, false, false, false};
@@ -2279,7 +2282,7 @@ func main() {
                  "add a0, a0, a1\n    bne t6, a0, failure");
     std::vector<operand> io_args;
     for (const std::string_view name :
-            backend.registers_for_builtin_function(machine::builtin_function::read)
+         backend.registers_for_builtin_function(machine::builtin_function::read)
              .arguments) {
         io_args.push_back(
             backend.alloc_named_register(token{}, 0, name, integer));

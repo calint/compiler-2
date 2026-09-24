@@ -1,0 +1,9 @@
+# a negative start panics
+
+func main() {
+    var buf[4] i8
+    var a[4] i8
+    var k = -1
+    var n = 1
+    var r = read(0, buf, n, k)
+}

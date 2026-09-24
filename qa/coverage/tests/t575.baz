@@ -1,0 +1,9 @@
+# a negative 'array_copy' count with start elements panics
+
+func main() {
+    var buf[4] i8
+    var a[4] i8
+    var k = 1
+    var n = -1
+    array_copy(a[k], buf[k], n)
+}

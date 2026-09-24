@@ -2,12 +2,12 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes {
-    nbytes = read(0, ptr, len)
+func input(str[] i8, len) nbytes {
+    nbytes = read(0, str, len)
 }
 
 func print_hex_32b(num i32) {
@@ -30,20 +30,20 @@ func print_hex_32b(num i32) {
         }
     }
     
-    print(9, address_of(buf))
+    print(buf, 9)
 }
 
 func main() {
     var nl[1] i8
     nl[0] = 0x0a
     print_hex_32b(0x1234abcd)
-    print(1, address_of(nl))
+    print(nl, 1)
     print_hex_32b(1)
-    print(1, address_of(nl))
+    print(nl, 1)
     print_hex_32b(i32(0xfedc1234))
-    print(1, address_of(nl))
+    print(nl, 1)
     print_hex_32b(-1)
-    print(1, address_of(nl))
+    print(nl, 1)
     print_hex_32b(0x10a0b0c0)
-    print(1, address_of(nl))
+    print(nl, 1)
 }

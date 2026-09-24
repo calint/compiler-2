@@ -1,15 +1,15 @@
 dat name[] i8="............................................................"
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes_read {
-    nbytes_read = read(0, ptr, len)
+func input(str[] i8, len) nbytes_read {
+    nbytes_read = read(0, str, len)
 }
 
 func main(){
-    var len=input(array_size_of(name),address_of(name))-1 # remove the \n
-    print(len,address_of(name))
+    var len=input(name,array_size_of(name))-1 # remove the \n
+    print(name,len)
     exit(0)
 }

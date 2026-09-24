@@ -2,12 +2,12 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(len, ptr) {
-    write(1, ptr, len)
+func print(str[] i8, len) {
+    write(1, str, len)
 }
 
-func input(len, ptr) nbytes {
-    nbytes = read(0, ptr, len)
+func input(str[] i8, len) nbytes {
+    nbytes = read(0, str, len)
 }
 
 type str_s {
@@ -41,8 +41,8 @@ func main() {
     loop {
         var len = 
             input(
-                array_size_of(locations[i].name.data),
-                address_of(locations[i].name.data)
+                locations[i].name.data,
+                array_size_of(locations[i].name.data)
             )
         locations[i].name.size = i8(len)
         i = i + 1
@@ -53,7 +53,7 @@ func main() {
     loop {
         if j == i break
         var size = locations[j].name.size
-        print(size, address_of(locations[j].name.data))
+        print(locations[j].name.data, size)
         j = j + 1
     }
 }
