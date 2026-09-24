@@ -3,7 +3,7 @@
 func assert(err, expr bool) { if not expr exit(err) }
 
 func main() {
-    mov(rax, 0x0000000012345678)
+    rax = 0x0000000012345678
 
     var q i64 = rax
     var d i32 = i32(rax)

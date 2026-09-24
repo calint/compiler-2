@@ -254,14 +254,14 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     for register, value_type in (("rbp", "i64"), ("ebp", "i32"), ("bp", "i16"), ("bpl", "i8")):
         source = COMMON + f"""func main() {{
     var original {value_type} = {register}
-    mov(rbx, rbp)
-    mov({register}, 42)
-    mov(rax, {register})
-    mov(rbp, rbx)
+    rbx = rbp
+    {register} = 42
+    rax = {register}
+    rbp = rbx
     var moved = rax
     assert(1, moved == 42)
     {register} = 43
-    mov(rax, {register})
+    rax = {register}
     rbp = rbx
     var assigned = rax
     assert(2, assigned == 43)

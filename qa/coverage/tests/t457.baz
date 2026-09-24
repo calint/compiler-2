@@ -1,14 +1,12 @@
 # direct rbp access can save and restore the variable arena base
 
 func main() {
-    mov(rbx, rbp)
-    mov(rbp, 0)
-    mov(rax, rbp)
+    rbx = rbp
+    rbp = 0
+    rax = rbp
     rbp = rbx
     var observed = rax
     if observed != 0 {
-        mov(rax, 60)
-        mov(rdi, 1)
-        syscall()
+        exit(1)
     }
 }

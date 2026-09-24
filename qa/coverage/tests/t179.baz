@@ -1,3 +1,0 @@
-# mov requires a complete argument list
-
-func main() { mov(1) }

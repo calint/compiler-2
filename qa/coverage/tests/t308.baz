@@ -1,8 +1,8 @@
-# mov applies unary negation before assignment
+# assignment applies unary negation before storing
 
 func assert(x bool) { if not x exit(1) }
 func main() {
     var destination = 0
-    mov(destination, ~-7)
+    destination = ~-7
     assert(destination == 6)
 }

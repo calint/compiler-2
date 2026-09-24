@@ -30,9 +30,7 @@
 #include "stmt_builtin_exit.hpp"
 #include "stmt_builtin_foo.hpp"
 #include "stmt_builtin_io.hpp"
-#include "stmt_builtin_mov.hpp"
 #include "stmt_builtin_narrow.hpp"
-#include "stmt_builtin_syscall.hpp"
 #include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
@@ -58,12 +56,6 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
     }
     if (tk.is_text("if")) {
         return std::make_unique<stmt_if>(tc, tk, tz);
-    }
-    if (tk.is_text("mov")) {
-        return std::make_unique<stmt_builtin_mov>(tc, tk, tz);
-    }
-    if (tk.is_text("syscall")) {
-        return std::make_unique<stmt_builtin_syscall>(tc, tk, tz);
     }
     if (tk.is_text("exit")) {
         return std::make_unique<stmt_builtin_exit>(tc, tk, tz);

@@ -29,7 +29,7 @@ x86_64 assembly on Linux.
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`
 * built-in functions: `array_copy`, `array_size_of`, `arrays_equal`,
-  `address_of`, `equal`, `mov`, `syscall`, `exit`, `read`, `write`
+  `address_of`, `equal`, `read`, `write`, `exit`, `i8`, `i16`, `i32`, `i64`
 
 ## Howto
 

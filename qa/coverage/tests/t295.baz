@@ -1,7 +1,0 @@
-# array_size_of cannot write to a constant
-
-const n = 1
-func main() {
-    var a[2] i8
-    mov(n, array_size_of(a))
-}

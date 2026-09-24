@@ -49,9 +49,7 @@ class program final {
         // create a placeholder token to use with 'toc' functions
         const token src_loc_tk{};
 
-        // add built-in assembler calls
-        tc_.add_func(src_loc_tk, "mov", type_void, nullptr);
-        tc_.add_func(src_loc_tk, "syscall", type_void, nullptr);
+        // add built-in calls
         tc_.add_func(src_loc_tk, "exit", type_void, nullptr);
 
         // add built-in types

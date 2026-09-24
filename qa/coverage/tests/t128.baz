@@ -6,7 +6,7 @@
 
 func assert(expr bool) { if not expr exit(1) }
 
-# limited built-in assembler just enough to interface with OS
+# built-in 'read' and 'write' interface with the OS
 
 func print(len, ptr) {
     write(1, ptr, len)
@@ -22,20 +22,12 @@ type str {
 }
 
 func str_in(s str) {
-    mov(rax, 0)   # read system call
-    mov(rdi, 0)   # file descriptor for standard input
-    mov(rsi, address_of(s.data)) # buffer address
-    mov(rdx, array_size_of(s.data)) # buffer size
-    syscall()
-    mov(s.len, rax - 1) # return value
+    var nbytes = read(0, address_of(s.data), array_size_of(s.data))
+    s.len = i8(nbytes - 1)
 } 
 
 func str_out(s str) {
-    mov(rax, 1)   # write system call
-    mov(rdi, 0)   # file descriptor for standard out
-    mov(rsi, address_of(s.data)) # buffer address 
-    mov(rdx, s.len) # buffer size
-    syscall()
+    write(1, address_of(s.data), s.len)
 } 
 
 type list {
