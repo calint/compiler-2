@@ -2026,8 +2026,11 @@ class machine_x86 final : public machine {
 
                 return;
             }
-            const operand reg_sx{
-                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            // the scratch register must match 'dst' so the op has equal-size
+            // operands
+            const operand reg_sx{alloc_scratch_register(
+                src_loc_tk, indent,
+                builtin_type_for_size_bytes(dst_size_bytes))};
 
             asm_line(indent, "movsx {}, {}", format_operand(reg_sx),
                      format_operand(src_op));

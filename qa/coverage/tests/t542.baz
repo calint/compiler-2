@@ -1,0 +1,17 @@
+# a narrower operand widens to the destination size in arithmetic
+func assert(ok bool, code) { if not ok exit(code) }
+func main() {
+    var c i8 = 100
+    var d i8 = 27
+    var f i16 = c * d
+    assert(f == 2700, 1)
+    var g i16 = 1000
+    g = g + d
+    assert(g == 1027, 2)
+    var h i32 = 70000
+    h = h - c
+    assert(h == 69900, 3)
+    var k i16 = 3
+    var m i32 = k * g
+    assert(m == 3081, 4)
+}

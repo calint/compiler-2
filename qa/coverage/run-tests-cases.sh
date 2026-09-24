@@ -511,4 +511,5 @@ SRC=t538 && EXP=0 && RUN
 SRC=t539 && COMPERR
 SRC=t540 && EXP=0 && RUN
 SRC=t541 && COMPERR
+SRC=t542 && EXP=0 && RUN
 if [[ $MACHINE == x86_64 ]]; then SRC=t522 && EXP=0 && RUN; fi
