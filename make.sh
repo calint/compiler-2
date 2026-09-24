@@ -1,9 +1,9 @@
 #!/bin/sh
 # tools:
-#   clang++: 20.1.8
-#       g++: 15.2.1
-#      nasm: 3.01
-#        ld: 2.45
+#   clang++: 22.1.8
+#       g++: 16.2.1
+#      nasm: 3.02
+#        ld: 2.47
 set -e
 cd "$(dirname "$0")"
 

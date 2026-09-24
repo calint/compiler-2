@@ -1,8 +1,16 @@
 #!/bin/bash
 # tools:
-#   llvm-profdata: 21.1.4
-#        llvm-cov: 21.1.4
-#         genhtml: 1.16
+#     llvm-profdata: 22.1.8
+#          llvm-cov: 22.1.8
+#           genhtml: 2.5
+#   llvm-symbolizer: 22.1.8
+#              nasm: 3.02
+#                ld: 2.47
+#           llvm-mc: 22.1.8
+#            ld.lld: 22.1.8
+#      qemu-riscv32: 11.1.1
+#            script: 2.42.4
+#           python3: 3.14.7
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
