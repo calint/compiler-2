@@ -78,7 +78,10 @@ class stmt_call : public expression {
 
                 if (param.is_array()) {
                     const ident_info arg_info{tc.make_ident_info(arg)};
-                    if (not arg_info.is_array) {
+
+                    // an element would give the parameter the whole array's
+                    // length, pass the array and a start index instead
+                    if (not arg_info.is_array or arg.is_array_element()) {
                         throw compiler_exception{
                             arg.tok(),
                             std::format("parameter {} requires an array",

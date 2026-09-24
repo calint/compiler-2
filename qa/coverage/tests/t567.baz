@@ -3,5 +3,5 @@
 func main() {
     var buf[4] i8
     var s = 3
-    var r = read(0, buf[s], 2)
+    var r = read(0, buf, 2, s)
 }

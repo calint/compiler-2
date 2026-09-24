@@ -1,4 +1,4 @@
-# non-inline array parameter cannot accept an indexed argument
+# an element cannot be passed to a non-inline array parameter
 
 func noinline target(parameter[]) {}
 func main() { var items[2] target(items[0]) }

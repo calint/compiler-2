@@ -1,0 +1,6 @@
+# the start is the 4th argument, not an element
+
+func main() {
+    var buf[4] i8
+    var r = write(1, buf[1], 2)
+}

@@ -1,0 +1,12 @@
+# without a count the whole array is transferred, a record array field too
+
+type line { len i8, text[3] i8 }
+
+func main() {
+    var l line = {3, {0x6f, 0x6b, 10}}
+    var n = write(1, l.text)
+    if n != 3 exit(1)
+    var none[1] i8
+    n = read(0, none)
+    if n != 0 exit(2)
+}

@@ -1,4 +1,5 @@
-# 'read' and 'write' take an array, or a start element, and an element count
+# 'read' and 'write' take an array, an optional element count and an optional
+# start element, like 'pread'/'pwrite'
 
 func assert(err, expr bool) { if not expr exit(err) }
 
@@ -6,11 +7,11 @@ type pair { lo i8, hi i8 }
 
 func main() {
     var buf[8] i8
-    var got = read(0, buf[2], 6)
+    var got = read(0, buf, 6, 2)
     assert(1, got == 4)
     assert(2, buf[1] == 0 and buf[2] == 0x61 and buf[5] == 0x64)
 
-    var n = write(1, buf[2], 4)
+    var n = write(1, buf, 4, 2)
     assert(3, n == 4)
 
     var words[2] i16 = {0x4241, 0x4443}
@@ -19,10 +20,10 @@ func main() {
 
     var pairs[2] pair = {{0x45, 0x46}, {0x47, 0x48}}
     var k = 1
-    n = write(1, pairs[k], k)
+    n = write(1, pairs, k, k)
     assert(5, n == 2)
 
     var nl[] i8 = {10}
-    n = write(1, nl, 1)
+    n = write(1, nl)
     assert(6, n == 1)
 }

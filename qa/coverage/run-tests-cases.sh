@@ -520,6 +520,9 @@ SRC=t564 && COMPERR
 SRC=t565 && DIFFINP
 SRC=t566 && EXP=255 && RUN_ERR
 SRC=t567 && EXP=255 && RUN_ERR
+SRC=t568 && COMPERR
+SRC=t569 && COMPERR
+SRC=t570 && DIFFINP
 if [[ $MACHINE == x86_64 ]]; then SRC=t522 && EXP=0 && RUN; fi
 # the minimum 64-bit constant does not fit rv32i's default 'i32'
 if [[ $MACHINE == x86_64 ]]; then SRC=t561 && EXP=0 && RUN; fi

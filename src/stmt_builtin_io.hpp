@@ -14,8 +14,8 @@ class stmt_builtin_io final : public stmt_call {
   public:
     stmt_builtin_io(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
         : stmt_call{tc, std::move(uops), tk, tz.is_next_char_token('('), tz} {
-        if (argument_count() != 3) {
-            throw compiler_exception{tok(), "expected 3 arguments"};
+        if (argument_count() < 2 or argument_count() > 4) {
+            throw compiler_exception{tok(), "expected 2 to 4 arguments"};
         }
     }
 
@@ -33,7 +33,7 @@ class stmt_builtin_io final : public stmt_call {
         const std::vector<operand> args{
             is_array_buffer(tc)
                 ? compile_array_arguments(tc, indent, registers.arguments)
-                : compile_builtin_arguments(tc, indent, registers.arguments)};
+                : compile_address_arguments(tc, indent, registers.arguments)};
 
         const bool result_is_argument{
             std::ranges::contains(registers.arguments, registers.result)};
@@ -61,7 +61,8 @@ class stmt_builtin_io final : public stmt_call {
     }
 
   private:
-    // 'buf' or 'buf[start]' names elements, any other value is an address
+    // an array selects '(fd, buf[, count[, start]])', any other value is an
+    // address with '(fd, address, count)'
     [[nodiscard]] auto is_array_buffer(const toc& tc) const -> bool {
         const statement& buffer{argument(1)};
 
@@ -69,8 +70,13 @@ class stmt_builtin_io final : public stmt_call {
             return false;
         }
 
+        // the start has one spelling, the 4th argument
         if (buffer.is_array_element()) {
-            return true;
+            throw compiler_exception{
+                buffer.tok(),
+                std::format("pass the array and the start as 4th argument, "
+                            "e.g. '{}(fd, buf, count, start)'",
+                            tok().text())};
         }
 
         const ident_info info{tc.make_ident_info(buffer)};
@@ -78,8 +84,19 @@ class stmt_builtin_io final : public stmt_call {
         return info.is_var() and info.is_array;
     }
 
-    // the count is in elements and is compiled before the address so the
-    // address computation can check that 'start + count' fits the array
+    [[nodiscard]] auto compile_address_arguments(
+        toc& tc, const size_t indent,
+        const std::span<const std::string_view> registers) const
+        -> std::vector<operand> {
+
+        if (argument_count() != 3) {
+            throw compiler_exception{tok(), "expected 3 arguments"};
+        }
+
+        return compile_builtin_arguments(tc, indent, registers);
+    }
+
+    // the count and start are in elements, the byte count is computed last
     [[nodiscard]] auto compile_array_arguments(
         toc& tc, const size_t indent,
         const std::span<const std::string_view> registers) const
@@ -102,23 +119,62 @@ class stmt_builtin_io final : public stmt_call {
 
         argument(0).compile(tc, indent,
                             toc::make_ident_info_from_register(descriptor));
-        argument(2).compile(tc, indent,
-                            toc::make_ident_info_from_register(count));
 
         const statement& buffer{argument(1)};
         const ident_info buffer_info{tc.make_ident_info(buffer)};
 
+        const bool has_count{argument_count() >= 3};
+        const bool has_start{argument_count() == 4};
+
+        if (has_count) {
+            argument(2).compile(tc, indent,
+                                toc::make_ident_info_from_register(count));
+        }
+
+        // without a count the whole array is transferred
+        if (not has_count) {
+            x.copy_value(tok(), indent, count,
+                         operand::imm(std::format("{}", buffer_info.array_len),
+                                      type_default));
+        }
+
+        // a start is checked here, a bare count is checked by 'compile_lea'
+        operand start;
+        if (has_start) {
+            const statement& start_arg{argument(3)};
+            start =
+                x.alloc_scratch_register(start_arg.tok(), indent, type_default);
+            start_arg.compile(tc, indent,
+                              toc::make_ident_info_from_register(start));
+            x.check_bounds(start_arg.tok(), indent, start,
+                           buffer_info.array_len, true, count,
+                           {
+                               .upper{tc.is_bounds_check_upper()},
+                               .lower{tc.is_bounds_check_lower()},
+                               .with_line{tc.is_bounds_check_with_line()},
+                           });
+        }
+
+        const operand range{has_count and not has_start ? count : operand{}};
+
         std::vector<operand> lea_registers;
         const operand buffer_lea{buffer.compile_lea(tc, indent, buffer.tok(),
-                                                    lea_registers, count,
+                                                    lea_registers, range,
                                                     buffer_info.lea_path, {})};
         x.address_of(tok(), indent, buffer_reg, buffer_lea);
         x.free_scratch_registers(tok(), indent, lea_registers);
 
-        const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
-        x.multiply(
-            tok(), indent, count,
-            operand::imm(std::format("{}", element_size_bytes), type_default));
+        const operand element_size_bytes{
+            operand::imm(std::format("{}", buffer_info.type_ref().size_bytes()),
+                         type_default)};
+
+        if (has_start) {
+            x.multiply(tok(), indent, start, element_size_bytes);
+            x.add_subtract(tok(), indent, '+', buffer_reg, start);
+            x.free_scratch_register(tok(), indent, start);
+        }
+
+        x.multiply(tok(), indent, count, element_size_bytes);
 
         return args;
     }

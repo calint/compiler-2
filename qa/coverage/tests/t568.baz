@@ -1,0 +1,8 @@
+# an element is not an array, the parameter would see the whole array's length
+
+func put(s[] i8, n) res { res = write(1, s, n) }
+func main() {
+    var buf[6] i8
+    var i = 2
+    var r = put(buf[i], 5)
+}

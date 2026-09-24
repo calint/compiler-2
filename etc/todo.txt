@@ -15,12 +15,16 @@
     [o] 'read'/'write' take any 'address_of' integer and length: a 2 byte
         buffer read with length 8 overwrites the next variable. take an
         array and a checked count instead
-        [x] 'read(fd, buf, count)' and 'read(fd, buf[start], count)' with
-            the count in elements and 'start + count' bounds checked like
-            'array_copy', the result stays in bytes (t565-t567)
-        [ ] inline array parameters alias a view: start element and the
-            remaining length, e.g. 'print(buf[i], 20 - i)'
-        [ ] migrate tests and prog.baz, then reject integer addresses
+        [x] posix-like 'read(fd, buf[, count[, start]])': count and start in
+            elements, count defaults to the array length, 'start + count'
+            bounds checked, the result stays in bytes. 'buf[start]' is
+            rejected, 'array_copy'/'arrays_equal' keep the element form
+            since they have two arrays (t565-t567, t569, t570)
+        [x] an element passed to an array parameter is rejected, it would
+            carry the whole array's length. pass the array and a start
+            index instead: 'print(buf, i, 20 - i)' (t568, t481)
+        [ ] migrate tests and prog.baz, then reject integer addresses. t87,
+            t112, t113 use 'print(20 - i, address_of(buf[i]))'
         [ ] decide whether to keep 'address_of' for layout tests
     [ ] system stack overflow in deep non-inline recursion segfaults before
         the frame check. check 'rsp'/'sp' or depth at each call

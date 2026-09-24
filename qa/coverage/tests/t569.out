@@ -1,0 +1,2 @@
+
+t569.baz:5:22: pass the array and the start as 4th argument, e.g. 'write(fd, buf, count, start)'

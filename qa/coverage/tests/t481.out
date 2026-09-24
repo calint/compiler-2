@@ -1,2 +1,2 @@
 
-t481.baz:4:35: array parameters are unsupported
+t481.baz:4:35: parameter 1 requires an array
