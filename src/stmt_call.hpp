@@ -109,12 +109,16 @@ class stmt_call : public expression {
         toc& tc, const size_t indent,
         const std::span<const std::string_view> registers) const
         -> std::vector<operand> {
-        machine& x{tc.machine()};
 
         assert(registers.size() == args_.size());
+
+        machine& x{tc.machine()};
+
         std::vector<operand> args;
         args.reserve(registers.size());
+
         for (size_t index{}; index < registers.size(); ++index) {
+
             args.push_back(x.alloc_named_register(
                 tok(), indent, registers[index], tc.get_type_default()));
 

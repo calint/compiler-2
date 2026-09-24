@@ -1011,11 +1011,14 @@ class machine_rv32i final : public machine {
     using machine::emit_data_array;
 
     [[nodiscard]] auto
-    registers_for_builtin(const builtin_function function) const
-        -> builtin_registers override {
+    registers_for_builtin_function(const builtin_function function) const
+        -> builtin_function_registers override {
+
         static constexpr std::array<std::string_view, 3> io_args{"a0", "a1",
                                                                  "a2"};
+
         static constexpr std::array<std::string_view, 1> exit_args{"a0"};
+
         if (function == builtin_function::exit) {
             return {
                 .arguments{exit_args},

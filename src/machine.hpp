@@ -26,10 +26,19 @@ class machine {
     virtual ~machine() = default;
 
     struct comparison_action {
+        // '==', '!=', '<', '<=', '>' or '>='
         std::string_view operation;
+
+        // negate the comparison before storing or branching
         bool inverted{};
+
+        // receives 0 or 1, empty skips storing
         operand destination;
+
+        // branch label, empty skips branching
         std::string_view target;
+
+        // branch on true after 'inverted', otherwise on false
         bool branch_on_true{};
     };
 
@@ -46,14 +55,17 @@ class machine {
 
     enum class builtin_function : uint8_t { read, write, exit };
 
-    struct builtin_registers {
+    struct builtin_function_registers {
+        // argument register names in parameter order
         std::span<const std::string_view> arguments;
+
+        // result register name, empty for 'exit'
         std::string_view result;
     };
 
     [[nodiscard]] virtual auto
-    registers_for_builtin(const builtin_function function) const
-        -> builtin_registers = 0;
+    registers_for_builtin_function(const builtin_function function) const
+        -> builtin_function_registers = 0;
 
     [[nodiscard]] virtual auto default_type() const -> const type& = 0;
 

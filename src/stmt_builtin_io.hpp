@@ -25,8 +25,8 @@ class stmt_builtin_io final : public stmt_call {
             tok().is_text("read") ? machine::builtin_function::read
                                   : machine::builtin_function::write};
 
-        const machine::builtin_registers registers{
-            x.registers_for_builtin(function)};
+        const machine::builtin_function_registers registers{
+            x.registers_for_builtin_function(function)};
         const std::vector<operand> args{
             compile_builtin_arguments(tc, indent, registers.arguments)};
 

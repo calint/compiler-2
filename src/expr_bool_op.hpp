@@ -418,6 +418,7 @@ class expr_bool_op final : public statement {
 
         if (lhs.produces_boolean() and not action.destination.is_empty() and
             lhs.get_type().name() == action.destination.type_ref().name()) {
+
             lhs.compile_boolean(tc, indent + 1, action.destination,
                                 action.inverted);
 
@@ -425,8 +426,14 @@ class expr_bool_op final : public statement {
 
             if (not action.target.empty()) {
                 machine::comparison_action branch_action{action};
+                // branch on the stored result using 'action.branch_on_true'
+
                 branch_action.destination = {};
+                // 'compile_boolean' already stored the result and applied
+                // inversion
+
                 branch_action.inverted = false;
+
                 x.compare_and_branch(tok(), indent, action.destination,
                                      operand::imm("0", tc.get_type_default()),
                                      branch_action, {});

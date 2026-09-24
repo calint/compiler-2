@@ -196,11 +196,14 @@ class machine_x86 final : public machine {
         : source_{source}, os_{os_ref} {}
 
     [[nodiscard]] auto
-    registers_for_builtin(const builtin_function function) const
-        -> builtin_registers override {
+    registers_for_builtin_function(const builtin_function function) const
+        -> builtin_function_registers override {
+
         static constexpr std::array<std::string_view, 3> io_args{"rdi", "rsi",
                                                                  "rdx"};
+
         static constexpr std::array<std::string_view, 1> exit_args{"rdi"};
+
         if (function == builtin_function::exit) {
             return {
                 .arguments{exit_args},

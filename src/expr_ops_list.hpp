@@ -307,6 +307,7 @@ class expr_ops_list final : public expression {
                          const bool inverted) const -> void override {
 
         assert(produces_boolean());
+
         exprs_.front()->compile_boolean(tc, indent, dst, inverted);
     }
 
