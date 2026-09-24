@@ -1,7 +1,8 @@
 # compiler-2: baz
 
 Experimental compiler for a minimalistic, specialized language targeting x86_64
-(Linux) via NASM assembly and RV32I via the GCC assembler running in QEMU.
+(Linux) via NASM assembly and RV32I via the GCC assembler running in QEMU
+(Linux).
 
 ## Intention
 
