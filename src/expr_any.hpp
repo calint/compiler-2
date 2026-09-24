@@ -201,6 +201,18 @@ class expr_any final : public statement {
         });
     }
 
+    auto assert_not_narrowed(const toc& tc, const type& dst_type) const
+        -> void override {
+
+        if (is_array_) {
+            return;
+        }
+
+        vars_[0].visit([&](const auto& expression) -> void {
+            expression.assert_not_narrowed(tc, dst_type);
+        });
+    }
+
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override {
 

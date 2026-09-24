@@ -468,6 +468,10 @@ class stmt_call : public expression {
                 continue;
             }
 
+            // constants and unary ops pass a value, not storage, so the value
+            // must fit the parameter
+            arg.assert_not_narrowed(tc, param.get_type());
+
             // handle non-expression without unary ops
             if (arg.get_unary_ops().is_empty()) {
                 const ident_info arg_info{tc.make_ident_info(arg)};

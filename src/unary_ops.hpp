@@ -71,7 +71,8 @@ class unary_ops final {
         for (const char op : ops_ | std::views::reverse) {
             switch (op) {
             case '-':
-                v = -v;
+                // unsigned negation wraps like the run-time instruction
+                v = static_cast<int64_t>(-static_cast<uint64_t>(v));
                 break;
 
             case '~':

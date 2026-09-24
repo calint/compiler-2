@@ -1,0 +1,13 @@
+# folding negation of the minimum constant wraps like the run-time negation
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+const c = -9223372036854775808
+const d = -c
+
+func main() {
+    var x = c
+    x = -x
+    assert(1, x == c)
+    assert(2, d == c)
+}

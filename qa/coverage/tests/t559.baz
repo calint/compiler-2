@@ -1,0 +1,4 @@
+# constant argument must fit the parameter type
+
+func f(p i8) { exit(p) }
+func main() { f(200) }

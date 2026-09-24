@@ -1,0 +1,35 @@
+# function names do not clash with registers, assembler keywords or
+# internal labels
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func noinline rax() res { res = 1 }
+func noinline qword() res { res = 2 }
+func noinline byte() res { res = 3 }
+func noinline rel() res { res = 4 }
+func noinline sp() res { res = 5 }
+func noinline dat() res { res = 6 }
+func noinline vars() res { res = 7 }
+func noinline _start() res { res = 8 }
+func noinline baz_bounds_panic() res { res = 9 }
+
+func main() {
+    var r = rax()
+    assert(1, r == 1)
+    r = qword()
+    assert(2, r == 2)
+    r = byte()
+    assert(3, r == 3)
+    r = rel()
+    assert(4, r == 4)
+    r = sp()
+    assert(5, r == 5)
+    r = dat()
+    assert(6, r == 6)
+    r = vars()
+    assert(7, r == 7)
+    r = _start()
+    assert(8, r == 8)
+    r = baz_bounds_panic()
+    assert(9, r == 9)
+}

@@ -1,7 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[o] opus 5.5 ai review and bug-hunt
 [ ] detect overlapping array copy at run-time --checks=overlap
+[ ] function names used as assembly labels can clash (t557, t558)
+    => non-inline label is the bare name: 'rax', 'qword', 'byte', 'rel', 'sp'
+       fail in nasm and '_start', 'dat', 'vars', 'baz_bounds_panic' redefine
+       internal labels
+    => inline label '{name}_{line}_{col}[_{path}]' is ambiguous: inline
+       'cmp()' at 14:8 gives 'cmp_14_8' like the comparison, and 'f()' at
+       10:11 inside 'f_10_11()' duplicates the outer call's label
+    => fix: separate with '.', identifiers and internal labels contain none,
+       e.g. '{name}.body', '{name}.body.size', '{name}.{path}[_end]'. the x86
+       'parse_label_strict' in jump_optimizer.hpp must accept '.' or jumps to
+       the next line stop being removed. verify with stripped binaries of
+       all tests before and after
 [ ] allow record literals and record call results as arguments, e.g.
     'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
     caller's frame. rejected today with "argument 1 cannot be a temporary"
@@ -16,7 +29,6 @@
     => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
        compile on rv32i. a target-neutral conversion such as 'int(...)' is
        needed to widen to the default type portably
-[o] opus 5.5 ai review and bug-hunt
 [x] move anything that can be moved from decouple_impl.hpp to corresponding
     class file
 [ ] ponder whether a compiler flag to check for overflow in arithmetics

@@ -1,0 +1,5 @@
+# constant argument with unary operators must fit the parameter type
+
+const c = -128
+func f(p i8) { exit(p) }
+func main() { f(-c) }
