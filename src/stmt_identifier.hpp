@@ -179,6 +179,16 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
+    // * using 'lea_path' which depends on the call-stack builds and
+    //    accessor operand to this identifier
+    // * scratch registers used to build the indexing are added to
+    //   'allocated_registers'
+    // * preferred starting point to operand building is specified in
+    //   'address_register'
+    // * if identifier is a reference to an array and a span operation is
+    //   constructed then the range is specified in 'reg_count'
+    // * the operand has the form: e.g. rbp + 4 * r15 + 248
+    // * the 'machine' interface describes what scalings are supported
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
