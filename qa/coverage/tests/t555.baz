@@ -1,0 +1,18 @@
+# a named constant argument is the caller's constant even when the callee
+# declares a constant with the same name
+const size = 4
+const neg = -3
+func assert(ok bool, code) { if not ok exit(code) }
+func scale(v) res {
+    const size = 10
+    const neg = 100
+    res = v * size + neg
+}
+func main() {
+    assert(scale(size) == 140, 1)
+    assert(scale(neg) == 70, 2)
+    {
+        const size = 7
+        assert(scale(size) == 170, 3)
+    }
+}

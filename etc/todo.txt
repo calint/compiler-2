@@ -6,6 +6,16 @@
     'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
     caller's frame. rejected today with "argument 1 cannot be a temporary"
     (t553, t554)
+[ ] consider making widening explicit too, today only narrowing needs
+    'i8(...)' etc. e.g. 'var y i32 = 1 + low(x)' with 'low' returning i8 is
+    rejected as a result type mismatch, 'i32(low(x))' is required
+    => prototype: requiring equal widths in the 3 width checks rejects 40+
+       tests (first error per file)
+    => exempt array indexes (most rejections), fitting constants and 'void'
+       calls ('void' counts as a 0 byte builtin)
+    => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
+       compile on rv32i. a target-neutral conversion such as 'int(...)' is
+       needed to widen to the default type portably
 [o] opus 5.5 ai review and bug-hunt
 [x] move anything that can be moved from decouple_impl.hpp to corresponding
     class file

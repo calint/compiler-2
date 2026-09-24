@@ -512,9 +512,18 @@ class stmt_call : public expression {
             // handle non-expression without the register and without unary
             // ops
             if (arg_reg.is_empty() and arg.get_unary_ops().is_empty()) {
+                const ident_info arg_info{tc.make_ident_info(arg)};
+
+                // a name is resolved in the callee where its own constants
+                // would shadow the caller's, so constants pass their value
+                const std::string alias_to{
+                    arg_info.is_const()
+                        ? arg.make_constant_operand(arg_info).immediate()
+                        : std::string{arg.identifier()}};
+
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            std::string{arg.identifier()},
-                                            operand{}, &param.get_type());
+                                            alias_to, operand{},
+                                            &param.get_type());
 
                 continue;
             }
