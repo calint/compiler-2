@@ -10,7 +10,7 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 * generate handwritten-like assembler compiled by NASM for x86_64
 * super-loop program with non-reentrant inlined functions
 * limited support for non-inline functions
-* target x86_64 and rv32i (running in QEMU)
+* opt-in checks that make the language ub-free
 
 ## Supports
 
@@ -26,6 +26,7 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
   * optional line number
 * inlined functions
 * limited support for non-inline functions
+* partial ub-free support
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
