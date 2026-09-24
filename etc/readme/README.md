@@ -1,15 +1,14 @@
 # compiler-2: baz
 
 Experimental compiler for a minimalistic, specialized language targeting x86_64
-(Linux) via NASM assembly and RV32I via the LLVM assembler running in QEMU
+(Linux) via NASM assembler and RV32I via the LLVM assembler running in QEMU
 (Linux).
 
 ## Intention
 
 * minimalistic language
 * gain experience writing compilers
-* generate handwritten-like assembler compiled by nasm for x86_64 and llvm
-  assembler for rv32i
+* generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
 * limited support for non-inline functions
 * opt-in checks that make the language ub-free
