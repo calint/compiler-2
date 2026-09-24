@@ -2014,6 +2014,18 @@ class machine_x86 final : public machine {
         }
 
         if (dst_size_bytes > src_size_bytes) {
+            // 'movsx' needs a register destination, so the source register is
+            // extended in place, its low bits keep the value
+            if (op == "mov" and dst_op.is_memory()) {
+                const operand wide{sized_register(src_op, dst_size_bytes)};
+
+                asm_line(indent, "movsx {}, {}", format_operand(wide),
+                         format_operand(src_op));
+                asm_line(indent, "mov {}, {}", format_operand(dst_op),
+                         format_operand(wide));
+
+                return;
+            }
             if (op == "mov") {
                 asm_line(indent, "movsx {}, {}", format_operand(dst_op),
                          format_operand(src_op));

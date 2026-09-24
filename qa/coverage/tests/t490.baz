@@ -12,7 +12,7 @@ func noinline factorial(value i32) result i32 {
     partial = factorial(next)
     assert(saved == value)
     assert(next == value - 1)
-    result = saved * partial
+    result = i32(saved * partial)
 }
 
 func noinline shift(value point) result point {

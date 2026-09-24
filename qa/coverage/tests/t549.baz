@@ -1,0 +1,6 @@
+# an inline result names the destination so the types must match
+func narrow(v i32) res i8 { res = i8(v) }
+func main() {
+    var big i32 = 0x1234
+    var x i32 = narrow(big)
+}

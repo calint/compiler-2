@@ -24,16 +24,16 @@ func init_mesh(m mesh, id_val i32) {
 
     var i = 0
     loop {
-        m.vertices[i].x = i * 10
-        m.vertices[i].y = i * 20
-        m.vertices[i].z = i * 30
+        m.vertices[i].x = i32(i * 10)
+        m.vertices[i].y = i32(i * 20)
+        m.vertices[i].z = i32(i * 30)
         i = i + 1
         if i == 8 break
     }
     
     i = 0
     loop {
-        m.indices[i] = i
+        m.indices[i] = i32(i)
         i = i + 1
         if i == 12 break
     }
@@ -138,7 +138,7 @@ func main() {
     # Initialize w[1].scenes[0] first
     var ii = 0
     loop {
-        init_mesh(w[1].scenes[0].meshes[ii], ii + 100)
+        init_mesh(w[1].scenes[0].meshes[ii], i32(ii + 100))
         ii = ii + 1
         if ii == 4 break
     }
@@ -152,7 +152,7 @@ func main() {
     var mesh_array[4] mesh
     var m = 0
     loop {
-        init_mesh(mesh_array[m], m * 100)
+        init_mesh(mesh_array[m], i32(m * 100))
         m = m + 1
         if m == 4 break
     }

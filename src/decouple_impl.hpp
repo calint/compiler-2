@@ -30,6 +30,7 @@
 #include "stmt_builtin_foo.hpp"
 #include "stmt_builtin_io.hpp"
 #include "stmt_builtin_mov.hpp"
+#include "stmt_builtin_narrow.hpp"
 #include "stmt_builtin_syscall.hpp"
 #include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
@@ -172,6 +173,12 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         return std::make_unique<stmt_builtin_equal>(tc, std::move(uops), tk,
                                                     tz);
     }
+    if (stmt_builtin_narrow::is_builtin_name(tk.text()) and
+        tz.is_peek_char('(')) {
+
+        return std::make_unique<stmt_builtin_narrow>(tc, std::move(uops), tk,
+                                                     tz);
+    }
 
     if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
         // e.g.  foo(...)
@@ -180,6 +187,31 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 
     // e.g. 0x80, rax, identifiers, constants
     return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
+}
+
+// declared in 'statement.hpp'
+auto statement::throw_narrowed(const token& src_loc_tk,
+                               const std::string_view source,
+                               const type& src_type, const type& dst_type)
+    -> void {
+
+    throw compiler_exception{
+        src_loc_tk,
+        std::format("'{}' of type '{}' is narrowed to '{}', use '{}(...)'",
+                    source, src_type.name(), dst_type.name(), dst_type.name())};
+}
+
+// declared in 'statement.hpp'
+auto statement::assert_own_type_not_narrowed(const type& dst_type) const
+    -> void {
+
+    if (not dst_type.is_builtin() or not get_type().is_builtin() or
+        get_type().size_bytes() <= dst_type.size_bytes()) {
+
+        return;
+    }
+
+    throw_narrowed(tok(), trimmed_source(*this), get_type(), dst_type);
 }
 
 // declared in 'expr_type.hpp'

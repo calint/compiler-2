@@ -247,7 +247,44 @@ class statement {
         assert_var_not_used(flow.var, flow.assigned);
     }
 
+    // throws if the value would silently lose bits when stored as 'dst_type'
+    virtual auto
+    assert_not_narrowed([[maybe_unused]] const toc& tc,
+                        [[maybe_unused]] const type& dst_type) const -> void {}
+
+    // true when computing at a narrower width gives the same low bits
+    [[nodiscard]] virtual auto keeps_low_bits_when_narrowed() const -> bool {
+        return false;
+    }
+
   protected:
+    [[nodiscard]] static auto fits_size_bytes(const int64_t value,
+                                              const size_t size_bytes) -> bool {
+
+        switch (size_bytes) {
+        case sizeof(int8_t):
+            return std::in_range<int8_t>(value);
+
+        case sizeof(int16_t):
+            return std::in_range<int16_t>(value);
+
+        case sizeof(int32_t):
+            return std::in_range<int32_t>(value);
+
+        default:
+            return true;
+        }
+    }
+
+    // defined in 'decouple_impl.hpp' where 'type' is complete
+    [[noreturn]] static auto throw_narrowed(const token& src_loc_tk,
+                                            std::string_view source,
+                                            const type& src_type,
+                                            const type& dst_type) -> void;
+
+    // for statements whose value has the statement's own type
+    auto assert_own_type_not_narrowed(const type& dst_type) const -> void;
+
     [[noreturn]] static auto throw_uninitialized(const token& use_tk,
                                                  const std::string_view var)
         -> void {

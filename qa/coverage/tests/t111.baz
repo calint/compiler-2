@@ -130,7 +130,7 @@ func main() {
         loop {
             var k = 0
             loop {
-                init_mesh(w[0].scenes[j].meshes[k], j * 100 + k)
+                init_mesh(w[0].scenes[j].meshes[k], i32(j * 100 + k))
                 k = k + 1
                 if k == 4 break
             }
@@ -231,7 +231,7 @@ func main() {
     var standalone_meshes[4] mesh
     var m = 0
     loop {
-        init_mesh(standalone_meshes[m], 1000 + m)
+        init_mesh(standalone_meshes[m], i32(1000 + m))
         m = m + 1
         if m == 4 break
     }

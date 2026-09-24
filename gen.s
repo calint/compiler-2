@@ -2577,14 +2577,16 @@ main:
 ;           [73:18] free named register rsi
 ;           [73:18] free named register rdi
 ;           [74:5] # read is built-in function that operates on file descriptors
-;           [75:5] s.len = nbytes - 1
-;           [75:13] instructions without scratch register 3, with 3
-;           [75:13] nbytes
-;           [75:13] allocate scratch register -> r15
+;           [75:5] s.len = i8(nbytes - 1)
+;           [75:13] s.len = i8(nbytes - 1)
+;           [75:13] = expression
+;           [75:16] instructions without scratch register 3, with 3
+;           [75:16] nbytes
+;           [75:16] allocate scratch register -> r15
             mov r15b, byte [rbp + 1169]
             mov byte [rbp + 1041], r15b
-;           [75:13] free scratch register r15
-;           [75:22] s.len - 1
+;           [75:16] free scratch register r15
+;           [75:25] s.len - 1
             sub byte [rbp + 1041], 1
         str_in_292_9_end:
         if_293_12:
@@ -2826,7 +2828,7 @@ print_num:
 ;       [117:27] free scratch register r15
 ;       [118:9] # note: not buf[i] = 48 + ... because expression will be executed as
 ;       [119:9] # byte sized and n overflows
-;       [120:9] buf[i] = ascii
+;       [120:9] buf[i] = i8(ascii)
 ;       [120:13] allocate scratch register -> r15
 ;       [120:13] set array index
 ;       [120:13] i
@@ -2842,11 +2844,13 @@ print_num:
         cmovge rbp, r14
         jge baz_bounds_panic
 ;       [120:13] free scratch register r14
-;       [120:18] ascii
-;       [120:18] allocate scratch register -> r14
+;       [120:18] buf = i8(ascii)
+;       [120:18] = expression
+;       [120:21] ascii
+;       [120:21] allocate scratch register -> r14
         mov r14b, byte [rbx + 45]
         mov byte [rbx + r15 + 8], r14b
-;       [120:18] free scratch register r14
+;       [120:21] free scratch register r14
 ;       [120:9] free scratch register r15
 ;       [121:9] n = n / 10
 ;       [121:13] instructions without scratch register 5, with 7

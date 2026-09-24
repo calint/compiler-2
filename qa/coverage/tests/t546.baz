@@ -1,0 +1,34 @@
+# 'i8(...)' 'i16(...)' 'i32(...)' narrow on purpose and the store truncates
+func assert(ok bool, code) { if not ok exit(code) }
+func take(value i8) res i8 { res = value }
+func twice(value i32) res i32 { res = value * 2 }
+func low(value i32) res i8 { res = i8(value) }
+func main() {
+    var big i32 = 0x1234
+    var b i8 = i8(big)
+    assert(b == 0x34, 1)
+    var w i16 = i16(big * 16)
+    assert(w == 0x2340, 2)
+    b = i8(big + 1)
+    assert(b == 0x35, 3)
+    var c i8 = i8(0x1f0)
+    assert(c == -16, 4)
+    var m i8 = -i8(0x1ff)
+    assert(m == 1, 5)
+    var arr[2] i32 = {0x1ff, 0x2fe}
+    var i = 1
+    b = i8(arr[i])
+    assert(b == -2, 6)
+    b = take(i8(big))
+    assert(b == 0x34, 7)
+    var small i16 = 300
+    assert(i8(small) == 44, 8)
+    # computed at 'i32' width, 0x34 / 0x10 would give 3
+    b = i8(big / 0x10)
+    assert(b == 0x23, 9)
+    b = i8(twice(big))
+    assert(b == 0x68, 10)
+    # a narrower result is converted after the call at its own width
+    var wide i32 = i32(low(big + 0x4c))
+    assert(wide == -128, 11)
+}

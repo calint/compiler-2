@@ -129,6 +129,29 @@ class stmt_call : public expression {
         return args;
     }
 
+    auto assert_result_type(const ident_info& dst_info,
+                            const stmt_def_func& func) const -> void {
+
+        if (&dst_info.type_ref() == &func.get_type()) {
+            return;
+        }
+
+        const std::string message{
+            std::format("result type mismatch: function returns '{}', "
+                        "destination is '{}'",
+                        func.get_type().name(), dst_info.type_ref().name())};
+
+        // a non-inline result needs a memory destination, not the register
+        // the conversion computes into
+        if (not func.is_inlined()) {
+            throw compiler_exception{tok(), message};
+        }
+
+        throw compiler_exception{tok(),
+                                 std::format("{}, use '{}(...)'", message,
+                                             dst_info.type_ref().name())};
+    }
+
     [[noreturn]] static auto
     throw_parameter_type_mismatch(const expr_any& arg,
                                   const stmt_def_func_param& param,
@@ -185,13 +208,7 @@ class stmt_call : public expression {
                     tok(), "array result destinations are unsupported"};
             }
 
-            if (&dst_info.type_ref() != &func.get_type()) {
-                throw compiler_exception{
-                    tok(), std::format("result type mismatch: function returns "
-                                       "'{}', destination is '{}'",
-                                       func.get_type().name(),
-                                       dst_info.type_ref().name())};
-            }
+            assert_result_type(dst_info, func);
         }
 
         for (const auto [arg, param] : std::views::zip(args_, func.params())) {
@@ -368,6 +385,11 @@ class stmt_call : public expression {
 
         if (not ret and not dst_info.is_empty()) {
             throw compiler_exception{tok(), "function does not return a value"};
+        }
+
+        // the result names the destination, so the widths must agree
+        if (ret) {
+            assert_result_type(dst_info, func);
         }
 
         if (ret) {
@@ -611,5 +633,12 @@ class stmt_call : public expression {
         for (const expr_any& e : args_) {
             e.visit_reads(var, reader);
         }
+    }
+
+    // reported at the call because an inlined result aliases the destination
+    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
+                             const type& dst_type) const -> void override {
+
+        assert_own_type_not_narrowed(dst_type);
     }
 };

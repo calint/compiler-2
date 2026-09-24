@@ -139,7 +139,7 @@ func main() {
     # multiply(square(5), 2) / halve(10) = multiply(25, 2) / 5 = 50 / 5 = 10
     var x = 5
     var y = 3
-    var o2 object = {{double(x) + triple(y) - increment(2), multiply(square(x), 2) / halve(10)}, compute_color(increment(0xfe), 0, 0)}
+    var o2 object = {{double(x) + triple(y) - increment(2), multiply(square(x), 2) / halve(10)}, compute_color(i32(increment(0xfe)), 0, 0)}
     assert(o2.pos.x == 16)
     assert(o2.pos.y == 10)
     assert(o2.color == 0xff0000)
@@ -179,7 +179,7 @@ func main() {
     var r = 128
     var g = 64
     var b = 32
-    var o4 object = {{add(r, g), subtract(r, b)}, compute_color(halve(r), double(g), triple(b))}
+    var o4 object = {{add(r, g), subtract(r, b)}, compute_color(i32(halve(r)), i32(double(g)), i32(triple(b)))}
     assert(o4.pos.x == 192)
     assert(o4.pos.y == 96)
     assert(o4.color == 0x408060)

@@ -6,9 +6,9 @@ func main() {
     mov(rax, 0x0000000012345678)
 
     var q i64 = rax
-    var d i32 = rax
-    var w i16 = rax
-    var b i8 = rax
+    var d i32 = i32(rax)
+    var w i16 = i16(rax)
+    var b i8 = i8(rax)
 
     var d2 i32 = eax
     var w2 i16 = ax

@@ -476,24 +476,6 @@ class expr_bool_op final : public statement {
         return op;
     }
 
-    [[nodiscard]] static auto fits_size_bytes(const int64_t value,
-                                              const size_t size_bytes) -> bool {
-
-        switch (size_bytes) {
-        case sizeof(int8_t):
-            return std::in_range<int8_t>(value);
-
-        case sizeof(int16_t):
-            return std::in_range<int16_t>(value);
-
-        case sizeof(int32_t):
-            return std::in_range<int32_t>(value);
-
-        default:
-            return true;
-        }
-    }
-
     auto resolve_cmp_shorthand(toc& tc, const size_t indent,
                                const expr_arith& lhs,
                                const machine::comparison_action& action) const

@@ -1,0 +1,4 @@
+# a constant outside the signed range must be stated with the builtin
+func main() {
+    var small i8 = 0xfe
+}

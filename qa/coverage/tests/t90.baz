@@ -14,11 +14,11 @@ func main() {
 
   b = b2
   assert(b == 11)
-  b = w
+  b = i8(w)
   assert(b == 2)
-  b = dw
+  b = i8(dw)
   assert(b == 3)
-  b = q
+  b = i8(q)
   assert(b == 4)
   b = 1
 
@@ -26,9 +26,9 @@ func main() {
   assert(w == 1)
   w = w2
   assert(w == 22)
-  w = dw
+  w = i16(dw)
   assert(w == 3)
-  w = q
+  w = i16(q)
   assert(w == 4)
   w = 2
 
@@ -36,7 +36,7 @@ func main() {
   assert(dw == 1)
   dw = dw2
   assert(dw == 33)
-  dw = q
+  dw = i32(q)
   assert(dw == 4)
   dw = 3
 

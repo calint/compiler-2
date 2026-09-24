@@ -16,7 +16,7 @@ func print_hex_32b(num i32) {
     
     var i = 8
     loop {
-        var nibble i8 = n & 0xf
+        var nibble i8 = i8(n & 0xf)
         if nibble > 9 buf[i] = nibble + 55
         else buf[i] = nibble + 48
         # note: 55 is ascii for 'A' - 10
@@ -40,7 +40,7 @@ func main() {
     print(1, address_of(nl))
     print_hex_32b(1)
     print(1, address_of(nl))
-    print_hex_32b(0xfedc1234)
+    print_hex_32b(i32(0xfedc1234))
     print(1, address_of(nl))
     print_hex_32b(-1)
     print(1, address_of(nl))

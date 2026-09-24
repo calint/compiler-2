@@ -9,7 +9,7 @@ func foz(x i32, y i32) res i32 {
     res = x << y 
 }
 
-func fuz(x i32) res {
+func fuz(x i32) res i32 {
     res = x << 3
 }
 

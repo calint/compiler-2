@@ -72,7 +72,7 @@ func faz(arg[] i32) {
 func str_in(s str) {
     var nbytes = read(0, address_of(s.data), array_size_of(s.data))
     # read is built-in function that operates on file descriptors
-    s.len = nbytes - 1
+    s.len = i8(nbytes - 1)
 } 
 
 func str_out(s str) {
@@ -117,7 +117,7 @@ func noinline print_num(num) {
         var ascii = 48 + (n % 10)
         # note: not buf[i] = 48 + ... because expression will be executed as
         #       byte sized and n overflows
-        buf[i] = ascii 
+        buf[i] = i8(ascii) 
         n = n / 10
         if n == 0 break
     }

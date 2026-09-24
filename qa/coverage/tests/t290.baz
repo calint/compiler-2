@@ -40,8 +40,8 @@ func main() {
 
     var wide = 259
     x = 7
-    z = x / wide
+    z = i8(x / wide)
     assert(z == 0)
-    z = x % wide
+    z = i8(x % wide)
     assert(z == 7)
 }

@@ -1,12 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ]  consider a language construct where user must specify that truncation is
+[ ] re-look at stmt_identifier::compile_lea and make a nicer implementation
+[x] specify whether ok for an op to truncate value instead of error
+    => it is no longer an error
+    => implement i8(...) i16(...) etc to tell compiler value has new type and 
+       user to make the decision to truncate
+    => done: silent narrowing is rejected, see t546-t548
+[x]  consider a language construct where user must specify that truncation is
      allowed
-[x] rename expr_ops_list to expr_arith
-[x] rename expr_bool_ops_list to expr_bool
-[x] move expr_bool_op into expr_bool
-[x] rename expr_type_value to expr_type
 [ ] consider not allowing single statement blocks
 [ ] rv32i emit_most_efficient should know the instruction count on synthesized
     instructions such as "li"
@@ -112,13 +114,6 @@
         source: src/tokenizer.hpp:126
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
     handle it
-[x] syntax change: 
-    func noinline factorial(value i32) result i32 {
-    func noinline factorial(value) result { # default type
-    func noinline factorial(value[]) result { # default type
-    var array[128] = { ... } # default type
-    var array[128] i32 = { ... } 
-    var x i32 = 2
 [ ] handle case where x86_64 cannot load immediate 64 bit value to memory
 [ ] allow trailing comma at type definition. e.g.,
     type object {
@@ -171,8 +166,6 @@
 [ ] limited integration with some C functions from stdlib
 [ ] declare external C functions
 [ ] rename compiler_exception
-[ ] specify whether ok for an op to truncate value instead of error
-    => it is no longer an error
 [ ] handle constant array index case
 [ ] break: exit current block instead of just loop?
 [ ] ponder representing nasm instructions in classes to have better opportunity
@@ -210,6 +203,17 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] syntax change: 
+    func noinline factorial(value i32) result i32 {
+    func noinline factorial(value) result { # default type
+    func noinline factorial(value[]) result { # default type
+    var array[128] = { ... } # default type
+    var array[128] i32 = { ... } 
+    var x i32 = 2
+[x] rename expr_ops_list to expr_arith
+[x] rename expr_bool_ops_list to expr_bool
+[x] move expr_bool_op into expr_bool
+[x] rename expr_type_value to expr_type
 [-] t158 is ub
     => removed cause the test case is covered by other tests
 [x] ub? mp[1] = { mp[2].msg } see t155.baz:44

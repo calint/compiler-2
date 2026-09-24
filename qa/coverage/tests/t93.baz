@@ -44,7 +44,7 @@ func main() {
                 array_size_of(locations[i].name.data),
                 address_of(locations[i].name.data)
             )
-        locations[i].name.size = len
+        locations[i].name.size = i8(len)
         i = i + 1
         if len <= 1 or i == array_size_of(locations) break
     }

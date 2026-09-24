@@ -140,6 +140,39 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto is_identifier() const -> bool override { return true; }
 
+    // the low bytes are at the start address of the storage
+    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
+        return true;
+    }
+
+    auto assert_not_narrowed(const toc& tc, const type& dst_type) const
+        -> void override {
+
+        // records are copied whole and cannot narrow
+        if (not dst_type.is_builtin()) {
+            return;
+        }
+
+        const ident_info info{tc.make_ident_info(*this)};
+
+        if (info.is_const()) {
+            assert_constant_fits(info, dst_type);
+
+            return;
+        }
+
+        const type& src_type{info.type_ref()};
+
+        if (not src_type.is_builtin() or
+            src_type.size_bytes() <= dst_type.size_bytes()) {
+
+            return;
+        }
+
+        throw_narrowed(first_token(), trimmed_source(*this), src_type,
+                       dst_type);
+    }
+
     [[nodiscard]] auto access_range() const -> field_coverage::range {
         return access_range_;
     }
@@ -360,6 +393,24 @@ class stmt_identifier : public statement {
     }
 
   private:
+    // only signed types exist so a constant must fit the signed range
+    auto assert_constant_fits(const ident_info& info,
+                              const type& dst_type) const -> void {
+
+        const int64_t value{
+            get_unary_ops().evaluate_constant(info.const_value)};
+
+        if (fits_size_bytes(value, dst_type.size_bytes())) {
+            return;
+        }
+
+        throw compiler_exception{
+            first_token(),
+            std::format("constant '{}' does not fit '{}', use '{}(...)'",
+                        trimmed_source(*this), dst_type.name(),
+                        dst_type.name())};
+    }
+
     auto resolve_access_range(toc& tc) -> void {
         if (tc.is_func(path_as_string_)) {
             return;

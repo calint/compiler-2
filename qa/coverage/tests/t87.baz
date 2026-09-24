@@ -35,7 +35,7 @@ func pn(num) {
     loop {
         i = i - 1
         var ascii = 48 + (n % 10)
-        buf[i] = ascii
+        buf[i] = i8(ascii)
         # note: not buf[i] = 48 + ... because operation is done in byte sized
         #       with n overflows
         n = n / 10

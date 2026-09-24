@@ -301,6 +301,8 @@ class expr_any final : public statement {
 
         exp.visit(overloaded{
             [&](const expr_arith& e) -> void {
+                // the value boundary is where a wider source loses bits
+                e.assert_not_narrowed(tc, dst_info.type_ref());
                 e.compile(tc, indent, dst_info);
             },
             [&](const expr_type& e) -> void {

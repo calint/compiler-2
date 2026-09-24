@@ -365,6 +365,41 @@ class expr_arith final : public expression {
         return exprs_.size() == 1 and exprs_[0]->is_identifier();
     }
 
+    // '/', '%' and '>>' read the high bits of their operands
+    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
+        for (const char o : ops_) {
+            if (o == '/' or o == '%' or o == '>') {
+                return false;
+            }
+        }
+
+        for (const std::unique_ptr<statement>& e : exprs_) {
+            if (not e->keeps_low_bits_when_narrowed()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // each element is computed at the width of the destination
+    auto assert_not_narrowed(const toc& tc, const type& dst_type) const
+        -> void override {
+
+        exprs_.front()->assert_not_narrowed(tc, dst_type);
+
+        for (const auto [o, e] :
+             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
+
+            // a shift count is not stored in the destination
+            if (o == '<' or o == '>') {
+                continue;
+            }
+
+            e->assert_not_narrowed(tc, dst_type);
+        }
+    }
+
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,

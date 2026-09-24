@@ -8,12 +8,12 @@ func take(value i8) result i8 {
 
 func main() {
     var bigger = 0x123
-    var low i8 = bigger
+    var low i8 = i8(bigger)
     var smaller i8 = take(low)
     assert(smaller == 0x23)
 
     var bigger_again = 0x1234
-    var low_again i8 = bigger_again
+    var low_again i8 = i8(bigger_again)
     var smaller_again i8 = take(low_again)
     assert(smaller_again == 0x34)
 }
