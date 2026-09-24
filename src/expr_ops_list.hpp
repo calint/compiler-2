@@ -298,15 +298,15 @@ class expr_ops_list final : public expression {
         x.emit_most_efficient(tok(), indent, ss1.view(), ss2.view());
     }
 
-    [[nodiscard]] auto produces_canonical_boolean() const -> bool override {
+    [[nodiscard]] auto produces_boolean() const -> bool override {
         return uops_.is_empty() and exprs_.size() == 1 and
-               exprs_.front()->produces_canonical_boolean();
+               exprs_.front()->produces_boolean();
     }
 
     auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
                          const bool inverted) const -> void override {
 
-        assert(produces_canonical_boolean());
+        assert(produces_boolean());
         exprs_.front()->compile_boolean(tc, indent, dst, inverted);
     }
 

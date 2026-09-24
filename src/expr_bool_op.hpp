@@ -416,8 +416,7 @@ class expr_bool_op final : public statement {
                                const machine::comparison_action& action) const
         -> void {
 
-        if (lhs.produces_canonical_boolean() and
-            not action.destination.is_empty() and
+        if (lhs.produces_boolean() and not action.destination.is_empty() and
             lhs.get_type().name() == action.destination.type_ref().name()) {
             lhs.compile_boolean(tc, indent + 1, action.destination,
                                 action.inverted);

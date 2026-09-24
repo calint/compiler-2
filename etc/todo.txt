@@ -1,10 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[x] qa/coverage: run-tests-coverage.sh [build|run|report]
 [ ] x86 register utilization: t110, t83, t105
-[x] don't allow function declarations without { }
-[x] move the coverage tests into a subdirectory
 [ ] syntax change: 
     func noinline factorial(value i32) result i32 {
     func noinline factorial(value) result { # default type
@@ -200,6 +197,9 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] qa/coverage: run-tests-coverage.sh [build|run|report]
+[x] don't allow function declarations without { }
+[x] move the coverage tests into a subdirectory
 [x] jump optimizer for rv32i
 [x] var array : [128] = { 1, 2 } # default type
 [x] dat array : [128] = { 1, 2 } # default type
