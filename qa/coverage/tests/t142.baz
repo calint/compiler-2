@@ -9,7 +9,7 @@ func foz(x i32, y i32) res i32 {
     res = x << y 
 }
 
-func fuz(x) res {
+func fuz(x i32) res {
     res = x << 3
 }
 
@@ -31,7 +31,7 @@ func main() {
     values[0] = fuz(values[1])
     assert(values[0] == 32)
 
-    var a = -2
+    var a i32 = -2
     values[0] = faz(values[1], a)
     assert(values[0] == 8)
 }

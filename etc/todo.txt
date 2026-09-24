@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ]  consider a language construct where user must specify that truncation is
+     allowed
 [x] rename expr_ops_list to expr_arith
 [x] rename expr_bool_ops_list to expr_bool
 [x] move expr_bool_op into expr_bool

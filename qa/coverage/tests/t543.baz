@@ -1,0 +1,6 @@
+# a comparison may not truncate a wider right-hand side
+func main() {
+    var a i8 = -5
+    var b i16 = 1000
+    if a < b { exit(1) }
+}

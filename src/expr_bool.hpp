@@ -410,10 +410,88 @@ class expr_bool_op final : public statement {
         const operand src{
             resolve_expr(tc, indent, rhs, false, allocated_registers)};
 
+        assert_rhs_fits_lhs(tc, lhs, rhs, op_, dst, src);
+
         machine& x{tc.machine()};
 
         x.compare_and_branch(tok(), indent, dst, src, action,
                              allocated_registers);
+    }
+
+    // the backends compare at the width of 'lhs' which would truncate 'rhs'
+    static auto assert_rhs_fits_lhs(toc& tc, const expr_arith& lhs,
+                                    const expr_arith& rhs,
+                                    const std::string_view op,
+                                    const operand& lhs_op,
+                                    const operand& rhs_op) -> void {
+
+        const type& lhs_type{lhs_op.type_ref()};
+
+        if (not rhs_op.is_immediate()) {
+            const type& rhs_type{rhs_op.type_ref()};
+            if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
+                return;
+            }
+
+            throw compiler_exception{
+                rhs.tok(),
+                std::format(
+                    "'{}' of type '{}' is wider than '{}' of type '{}', "
+                    "swap the operands: '{} {} {}'",
+                    trimmed_source(rhs), rhs_type.name(), trimmed_source(lhs),
+                    lhs_type.name(), trimmed_source(rhs),
+                    mirrored_operation(op), trimmed_source(lhs))};
+        }
+
+        const int64_t value{rhs.get_unary_ops().evaluate_constant(
+            tc.make_ident_info(rhs).const_value)};
+
+        if (fits_size_bytes(value, lhs_type.size_bytes())) {
+            return;
+        }
+
+        throw compiler_exception{
+            rhs.tok(),
+            std::format("constant '{}' does not fit '{}' of type '{}'", value,
+                        trimmed_source(lhs), lhs_type.name())};
+    }
+
+    // the operation that gives the same result with the operands swapped
+    [[nodiscard]] static auto mirrored_operation(const std::string_view op)
+        -> std::string_view {
+
+        if (op == "<") {
+            return ">";
+        }
+        if (op == "<=") {
+            return ">=";
+        }
+        if (op == ">") {
+            return "<";
+        }
+        if (op == ">=") {
+            return "<=";
+        }
+
+        return op;
+    }
+
+    [[nodiscard]] static auto fits_size_bytes(const int64_t value,
+                                              const size_t size_bytes) -> bool {
+
+        switch (size_bytes) {
+        case sizeof(int8_t):
+            return std::in_range<int8_t>(value);
+
+        case sizeof(int16_t):
+            return std::in_range<int16_t>(value);
+
+        case sizeof(int32_t):
+            return std::in_range<int32_t>(value);
+
+        default:
+            return true;
+        }
     }
 
     auto resolve_cmp_shorthand(toc& tc, const size_t indent,

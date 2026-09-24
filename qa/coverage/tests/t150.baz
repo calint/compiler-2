@@ -83,7 +83,7 @@ func main() {
     assert(data_h[4] == 0)
 
     data_i[127] = 0xfe
-    assert(data_i[127] == 0xfe)
+    assert(data_i[127] == -2)
 
     assert(array_size_of(data_l) == 12)
     assert(data_l[0] == 104) # 'h'

@@ -57,12 +57,14 @@ func main() {
   var i5 = -1
   var i6 = 2147483647  
   var i7 = -2147483648
+  var i2_wide = i2
+  var i3_wide = i3
 
   print_num(i1)
   print(1, address_of(nl))
-  print_num(i2)
+  print_num(i2_wide)
   print(1, address_of(nl))
-  print_num(i3)
+  print_num(i3_wide)
   print(1, address_of(nl))
   print_num(i4)
   print(1, address_of(nl))

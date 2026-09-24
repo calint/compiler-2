@@ -48,14 +48,14 @@ func verify_vertex(v vertex, idx i32) {
     assert(v.col.g == idx * 3)
     assert(v.col.b == idx * 4)
     assert(v.col.a == idx * 5)
-    assert(v.uv_x == idx)
+    assert(idx == v.uv_x)
     assert(v.uv_y == idx * 2)
 }
 
 func init_mesh(m mesh, id_val i32) {
     m.id = id_val
     
-    var i = 0
+    var i i32 = 0
     loop {
         init_vertex(m.vertices[i], i)
         i = i + 1
@@ -73,7 +73,7 @@ func init_mesh(m mesh, id_val i32) {
 func verify_mesh(m mesh, id_val i32) {
     assert(m.id == id_val)
     
-    var i = 0
+    var i i32 = 0
     loop {
         verify_vertex(m.vertices[i], i)
         i = i + 1
@@ -82,7 +82,7 @@ func verify_mesh(m mesh, id_val i32) {
     
     i = 0
     loop {
-        assert(m.indices[i] == i * 2)
+        assert(i * 2 == m.indices[i])
         i = i + 1
         if i == 24 break
     }
@@ -186,7 +186,7 @@ func main() {
     
     var idx = 0
     loop {
-        assert(w[0].scenes[2].meshes[0].indices[idx] == idx * 2)
+        assert(idx * 2 == w[0].scenes[2].meshes[0].indices[idx])
         idx = idx + 1
         if idx == 12 break
     }
@@ -268,7 +268,7 @@ func main() {
     # Verify swap: meshes[1] of scene[0] should now have scene[1]'s indices
     var verify_swap = 0
     loop {
-        assert(w[0].scenes[0].meshes[1].indices[verify_swap] == verify_swap * 2)
+        assert(verify_swap * 2 == w[0].scenes[0].meshes[1].indices[verify_swap])
         verify_swap = verify_swap + 1
         if verify_swap == 24 break
     }

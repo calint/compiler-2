@@ -1,0 +1,5 @@
+# a comparison may not truncate a constant
+func main() {
+    var n i8 = 1
+    if n == 257 { exit(1) }
+}

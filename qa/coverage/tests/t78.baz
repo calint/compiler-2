@@ -4,7 +4,7 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func inv(i) res i32 {
+func inv(i i32) res i32 {
     res = ~i
 }
 

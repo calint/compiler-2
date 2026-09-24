@@ -129,6 +129,34 @@ class stmt_call : public expression {
         return args;
     }
 
+    [[noreturn]] static auto
+    throw_parameter_type_mismatch(const expr_any& arg,
+                                  const stmt_def_func_param& param,
+                                  const ident_info& info) -> void {
+
+        throw compiler_exception{
+            arg.tok(),
+            std::format("parameter '{}': required '{}', got '{}'", param.name(),
+                        param.get_type().name(), info.type_ref().name())};
+    }
+
+    static auto assert_alias_type(const toc& tc, const expr_any& arg,
+                                  const stmt_def_func_param& param) -> void {
+
+        const ident_info info{tc.make_ident_info(arg)};
+
+        // constants and registers are values, not storage
+        if (not info.is_var()) {
+            return;
+        }
+
+        if (&info.type_ref() == &param.get_type()) {
+            return;
+        }
+
+        throw_parameter_type_mismatch(arg, param, info);
+    }
+
     auto compile_noninline(toc& tc, const size_t indent,
                            const ident_info& dst_info,
                            const stmt_def_func& func) const -> void {
@@ -203,11 +231,7 @@ class stmt_call : public expression {
             }
 
             if (&info.type_ref() != &param.get_type()) {
-                throw compiler_exception{
-                    arg.tok(),
-                    std::format("parameter '{}': required '{}', got '{}'",
-                                param.name(), param.get_type().name(),
-                                info.type_ref().name())};
+                throw_parameter_type_mismatch(arg, param, info);
             }
         }
 
@@ -392,6 +416,13 @@ class stmt_call : public expression {
                     .reg{arg_reg},
                     .is_named{true},
                 });
+            }
+
+            // an alias uses the argument's storage so its type must match
+            if (not arg.is_expression() and arg_reg.is_empty() and
+                arg.get_unary_ops().is_empty()) {
+
+                assert_alias_type(tc, arg, param);
             }
 
             // if the argument is an identifier containing indexing, then save

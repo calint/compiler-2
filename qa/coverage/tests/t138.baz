@@ -9,8 +9,8 @@ func fez(x i8, y i8) res i8 {
 }
 
 func main() {
-    var arr[4] i32
-    var ix i32 = 2
+    var arr[4] i8
+    var ix i8 = 2
     arr[ix] = 3
     var a i8 = faz(arr[ix], ix)
     assert(a == 6)

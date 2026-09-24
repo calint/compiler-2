@@ -45,10 +45,10 @@ func main() {
     assert(msg1.len == 8)
     msg1.subject[0] = 1
     msg1.subject[1] = 2
-    msg1.subject[127] = 128
+    msg1.subject[127] = -128
     assert(msg1.subject[0] == 1)
     assert(msg1.subject[1] == 2)
-    assert(msg1.subject[127] == 128)
+    assert(msg1.subject[127] == -128)
 
  #   var msg2 : message
  #   msg2.subject = msg1.subject

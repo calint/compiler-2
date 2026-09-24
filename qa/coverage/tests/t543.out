@@ -1,0 +1,2 @@
+
+t543.baz:5:12: 'b' of type 'i16' is wider than 'a' of type 'i8', swap the operands: 'b > a'

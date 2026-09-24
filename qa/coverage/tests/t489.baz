@@ -17,8 +17,8 @@ func main() {
     foo values {
         assert(n == 3)
         assert(i == visits)
-        assert(e.first == 10 + i)
-        assert(e.last == 20 + i)
+        assert(10 + i == e.first)
+        assert(20 + i == e.last)
         e.first = e.first + 100
         e.last = e.last + 200
         e.padding[0] = 7

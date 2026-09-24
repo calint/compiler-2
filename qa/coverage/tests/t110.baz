@@ -43,9 +43,9 @@ func verify_mesh(m mesh, id_val i32) {
     assert(m.id == id_val)
     var i = 0
     loop {
-        assert(m.vertices[i].x == i * 10)
-        assert(m.vertices[i].y == i * 20)
-        assert(m.vertices[i].z == i * 30)
+        assert(i * 10 == m.vertices[i].x)
+        assert(i * 20 == m.vertices[i].y)
+        assert(i * 30 == m.vertices[i].z)
         i = i + 1
         if i == 8 break
     }
@@ -75,7 +75,7 @@ func main() {
     
     var i = 0
     loop {
-        var j = 0
+        var j i32 = 0
         loop {
             init_mesh(w[0].scenes[0].meshes[j], j)
             j = j + 1
@@ -107,7 +107,7 @@ func main() {
     # verify copy succeeded
     var k = 0
     loop {
-        assert(w[1].scenes[2].meshes[k].id == k)
+        assert(k == w[1].scenes[2].meshes[k].id)
         k = k + 1
         if k == 4 break
     }
@@ -129,7 +129,7 @@ func main() {
     
     var idx = 0
     loop {
-        assert(w[0].scenes[1].meshes[1].indices[idx] == idx)
+        assert(idx == w[0].scenes[1].meshes[1].indices[idx])
         idx = idx + 1
         if idx == 6 break
     }
@@ -144,9 +144,9 @@ func main() {
     }
 
     transform_vertices(w[1].scenes[0], offset)
-    assert(w[1].scenes[0].meshes[0].vertices[0].x == 0 + 5)      # 0 + offset.x
-    assert(w[1].scenes[0].meshes[1].vertices[3].y == 60 + 10)    # (3*20) + offset.y = 70
-    assert(w[1].scenes[0].meshes[2].vertices[7].z == 210 + 15)   # (7*30) + offset.z = 225   
+    assert(0 + 5 == w[1].scenes[0].meshes[0].vertices[0].x)      # 0 + offset.x
+    assert(60 + 10 == w[1].scenes[0].meshes[1].vertices[3].y)    # (3*20) + offset.y = 70
+    assert(210 + 15 == w[1].scenes[0].meshes[2].vertices[7].z)   # (7*30) + offset.z = 225   
     
     # test 8: struct array initialization
     var mesh_array[4] mesh
@@ -160,7 +160,7 @@ func main() {
     # test 9: verify struct array
     var verify_idx = 0
     loop {
-        assert(mesh_array[verify_idx].id == verify_idx * 100)
+        assert(verify_idx * 100 == mesh_array[verify_idx].id)
         verify_idx = verify_idx + 1
         if verify_idx == 4 break
     }

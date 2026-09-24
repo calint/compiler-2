@@ -1,0 +1,6 @@
+# an inline argument must have the declared parameter type
+func take(value i8) res i8 { res = value }
+func main() {
+    var big i32 = 300
+    var small i8 = take(big)
+}

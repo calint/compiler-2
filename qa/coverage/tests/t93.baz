@@ -52,7 +52,8 @@ func main() {
     var j = 0
     loop {
         if j == i break
-        print(locations[j].name.size, address_of(locations[j].name.data))
+        var size = locations[j].name.size
+        print(size, address_of(locations[j].name.data))
         j = j + 1
     }
 }
