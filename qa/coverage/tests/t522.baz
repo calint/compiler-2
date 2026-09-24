@@ -1,0 +1,33 @@
+# 64-bit constants outside the sign-extended 32-bit immediate range
+func assert(ok bool) { if not ok exit(1) }
+func main() {
+    var one i64 = 1
+    var big i64 = one << 32
+    var x i64 = 4294967296
+    assert(x == big)
+    x = 0
+    x = 4294967296
+    assert(x == big)
+    assert(x == 4294967296)
+    assert(not (x != 4294967296))
+    var sum i64 = x + 4294967296
+    assert(sum == big << 1)
+    sum = sum - 4294967296
+    assert(sum == big)
+    var masked i64 = x & 4294967296
+    assert(masked == big)
+    var product i64 = one * 4294967296
+    assert(product == big)
+    var half i64 = one << 31
+    var unsigned32 i64 = 2147483648
+    assert(unsigned32 == half)
+    var negative i64 = -2147483649
+    assert(negative == -half - 1)
+    var values[2] i64
+    values[1] = 4294967296
+    assert(values[1] == big)
+    var flag bool = x == 4294967296
+    assert(flag)
+    var total i64 = x + big + 4294967296
+    assert(total == big * 3)
+}

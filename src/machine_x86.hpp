@@ -1963,6 +1963,19 @@ class machine_x86 final : public machine {
         const size_t src_size_bytes{src_op.type_ref().size_bytes()};
 
         if (src_op.is_immediate()) {
+            if (needs_immediate_register(op, dst_op, src_op)) {
+                const operand reg{
+                    alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
+
+                asm_line(indent, "mov {}, {}", format_operand(reg),
+                         format_operand(src_op));
+                asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
+                         format_operand(reg));
+                free_scratch_register(src_loc_tk, indent, reg);
+
+                return;
+            }
+
             asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
                      format_operand(src_op));
 
@@ -2043,6 +2056,30 @@ class machine_x86 final : public machine {
         -> void {
 
         emit_binary(indent, "cmovs", dst, src);
+    }
+
+    // x86 sign-extends 32-bit immediates and only 'mov' to a register takes 64
+    // bits
+    [[nodiscard]] static auto
+    needs_immediate_register(const std::string_view op, const operand& dst,
+                             const operand& src) -> bool {
+
+        if (dst.type_ref().size_bytes() != size_qword) {
+            return false;
+        }
+
+        if (op == "mov" and dst.is_register()) {
+            return false;
+        }
+
+        const std::optional<uint64_t> bits{immediate_bits(src)};
+
+        // symbolic immediates such as frame sizes are left to the assembler
+        if (not bits) {
+            return false;
+        }
+
+        return not std::in_range<int32_t>(std::bit_cast<int64_t>(*bits));
     }
 
     auto idiv(const size_t indent, const operand& value) -> void {

@@ -418,31 +418,12 @@ class machine_rv32i final : public machine {
     [[nodiscard]] static auto immediate_value(const operand& value)
         -> std::optional<int32_t> {
 
-        if (not value.is_immediate()) {
-            return {};
-        }
-        const std::string_view text{value.immediate()};
-        const size_t digits{text.find_first_not_of("-~")};
-        if (digits == std::string_view::npos) {
-            return {};
-        }
-        const std::string_view number{text.substr(digits)};
-        uint64_t magnitude{};
-        const char* const end{std::to_address(number.end())};
-
-        const std::from_chars_result parsed{
-            std::from_chars(std::to_address(number.begin()), end, magnitude)};
-
-        if (parsed.ec != std::errc{} or parsed.ptr != end) {
-            return {};
-        }
-        uint32_t bits{static_cast<uint32_t>(magnitude)};
-        for (const char operation :
-             text.substr(0, digits) | std::views::reverse) {
-            bits = operation == '-' ? uint32_t{} - bits : ~bits;
+        const std::optional<uint64_t> bits{immediate_bits(value)};
+        if (not bits) {
+            return std::nullopt;
         }
 
-        return std::bit_cast<int32_t>(bits);
+        return std::bit_cast<int32_t>(static_cast<uint32_t>(*bits));
     }
 
     [[nodiscard]] static auto same_memory(const operand& left,

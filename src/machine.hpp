@@ -1,9 +1,12 @@
 #pragma once
 
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <memory>
+#include <optional>
 #include <ostream>
 #include <ranges>
 #include <span>
@@ -381,5 +384,45 @@ class machine {
 
         emit_data_array(element_size_bytes,
                         std::function_ref<bool(data_initializer&)>{next});
+    }
+
+  protected:
+    // immediates are decimal numbers prefixed by unary '-' and '~' operators
+    // returns two's complement bits or empty for symbolic expressions
+    [[nodiscard]] static auto immediate_bits(const operand& value)
+        -> std::optional<uint64_t> {
+
+        if (not value.is_immediate()) {
+            return std::nullopt;
+        }
+
+        const std::string_view text{value.immediate()};
+        const size_t digits{text.find_first_not_of("-~")};
+        if (digits == std::string_view::npos) {
+            return std::nullopt;
+        }
+
+        const std::string_view number{text.substr(digits)};
+        const char* const end{std::to_address(number.end())};
+        uint64_t bits{};
+        const std::from_chars_result parsed{
+            std::from_chars(std::to_address(number.begin()), end, bits)};
+
+        if (parsed.ec != std::errc{} or parsed.ptr != end) {
+            return std::nullopt;
+        }
+
+        for (const char operation :
+             text.substr(0, digits) | std::views::reverse) {
+            // unsigned negation wraps instead of overflowing
+            if (operation == '-') {
+                bits = uint64_t{} - bits;
+                continue;
+            }
+
+            bits = ~bits;
+        }
+
+        return bits;
     }
 };

@@ -493,3 +493,4 @@ SRC=t518 && COMPERR
 SRC=t519 && COMPERR
 SRC=t520 && COMPERR
 SRC=t521 && EXP=0 && RUN
+if [[ $MACHINE == x86_64 ]]; then SRC=t522 && EXP=0 && RUN; fi

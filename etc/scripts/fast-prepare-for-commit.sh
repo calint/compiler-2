@@ -7,5 +7,6 @@ cd ../..
 clang-format -i --style=file src/*
 qa/lint/clang-tidy.sh
 ./make.sh build
-qa/coverage/run-tests-coverage.sh run
+qa/coverage/run-tests-coverage.sh --target=x86 run
+qa/coverage/run-tests-coverage.sh --target=rv32i run
 ./run-baz.sh prog.baz --vars=131072 --checks=upper,lower,line
