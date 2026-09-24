@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] ponder whether a compiler flag to check for overflow in arithmetics
+    => a --checks=ub adds code to check overflows etc
 [ ] re-look at stmt_identifier::compile_lea and make a nicer implementation
 [x] specify whether ok for an op to truncate value instead of error
     => it is no longer an error
@@ -174,7 +176,6 @@
     => issue warning when that can be detected at compile-time
 [ ] lea_path may not be necessary since only most recent lea relevant
     => also index of where in elems path lea was found
-[ ] ponder whether a compiler flag to check for overflow in arithmetics
 [ ] C++ brace initializers offer no performance advantage and the narrowing
     issues do not exist in this project. they are ugly. ponder switching to =
 [ ] consider refactoring to 1 pass compiler making compiling in constructor

@@ -302,30 +302,16 @@ class stmt_identifier : public statement {
 
         std::string path{elems_[start_index].name_tk.text()};
 
-        const ident_info storage{tc.make_ident_info(src_loc_tk, path)};
+        // registers appended from here on belong to this path and may be
+        // overwritten, earlier entries are the caller's
+        const size_t owned_from{allocated_registers.size()};
 
-        const operand& known_address{known_addresses[start_index]};
+        operand address{start_address(tc, indent, src_loc_tk,
+                                      allocated_registers,
+                                      known_addresses[start_index],
+                                      tc.make_ident_info(src_loc_tk, path))};
 
-        operand writable_base{address_register};
         operand index_register;
-        operand address;
-
-        if (not known_address.is_empty()) {
-            address = known_address;
-        } else if (storage.is_pointer) {
-
-            address = load_pointer(tc, indent, src_loc_tk, allocated_registers,
-                                   storage.operand);
-
-            if (writable_base.is_empty()) {
-                // 'load_pointer' just appended its scratch register; nothing
-                // has been appended since; reuse that private pointer copy
-                // as a writable base; it stays allocated until caller cleanup
-                writable_base = allocated_registers.back();
-            }
-        } else {
-            address = storage.operand;
-        }
 
         const type* parent_type{};
 
@@ -366,21 +352,13 @@ class stmt_identifier : public statement {
                 continue;
             }
 
-            // indexed element
-
+            // an operand holds one index, so an earlier one is folded first
             if (not address.index_register().empty()) {
-
-                if (writable_base.is_empty() and
-                    not index_register.is_empty()) {
-                    writable_base = index_register;
-                    index_register = {};
-                }
-
-                writable_base =
-                    fold_address(tc, indent, src_loc_tk, allocated_registers,
-                                 address, writable_base);
-
-                address = operand::mem(writable_base, cur_info.type_ref());
+                address = operand::mem(
+                    fold_indexed_address(
+                        tc, indent, src_loc_tk, allocated_registers, owned_from,
+                        address, address_register, index_register),
+                    cur_info.type_ref());
             }
 
             address = add_index(tc, cur_elem.array_index_expr->tok(), indent,
@@ -566,25 +544,88 @@ class stmt_identifier : public statement {
         return operand::mem(pointer_register, tc.get_type_address());
     }
 
+    // an inlined argument's known address, a loaded pointer or the storage
     [[nodiscard]] static auto
-    fold_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                 std::vector<operand>& allocated_registers,
-                 const operand& address, operand destination_register)
+    start_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                  std::vector<operand>& allocated_registers,
+                  const operand& known_address, const ident_info& storage)
         -> operand {
+
+        if (not known_address.is_empty()) {
+            return known_address;
+        }
+
+        if (storage.is_pointer) {
+            return load_pointer(tc, indent, src_loc_tk, allocated_registers,
+                                storage.operand);
+        }
+
+        return storage.operand;
+    }
+
+    // computes 'address' into a register so another index can be added
+    [[nodiscard]] static auto
+    fold_indexed_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                         std::vector<operand>& allocated_registers,
+                         const size_t owned_from, const operand& address,
+                         const operand& address_register,
+                         operand& index_register) -> operand {
 
         machine& x{tc.machine()};
 
-        if (destination_register.is_empty()) {
+        operand target{
+            fold_register(std::span{allocated_registers}.subspan(owned_from),
+                          address, address_register, index_register)};
 
-            destination_register = x.alloc_scratch_register(
-                src_loc_tk, indent, tc.get_type_address());
+        if (target.is_empty()) {
+            target = x.alloc_scratch_register(src_loc_tk, indent,
+                                              tc.get_type_address());
 
-            allocated_registers.push_back(destination_register);
+            allocated_registers.push_back(target);
         }
 
-        x.address_of(src_loc_tk, indent, destination_register, address);
+        x.address_of(src_loc_tk, indent, target, address);
 
-        return destination_register;
+        return target;
+    }
+
+    // picks a register that 'lea target, [address]' may overwrite, or empty
+    // when a new one must be allocated
+    // note: only 'address' refers to an owned register and the fold replaces
+    //       'address', so an owned base is dead once 'lea' has read it
+    [[nodiscard]] static auto
+    fold_register(const std::span<const operand> owned, const operand& address,
+                  const operand& address_register, operand& index_register)
+        -> operand {
+
+        // the caller loads the final address into it anyway, so it is free
+        // until then and folding there may save the final move
+        if (not address_register.is_empty()) {
+            return address_register;
+        }
+
+        // an owned base is a loaded pointer or an earlier fold target, reusing
+        // it keeps 'index_register' for the next index
+        for (const operand& r : owned) {
+            // the frame register and the caller's registers are never owned,
+            // so a match proves the base is private to this path
+            if (r.base_register() == address.base_register()) {
+                return r;
+            }
+        }
+
+        // the base must survive, so without an index register a new one is
+        // needed
+        if (index_register.is_empty()) {
+            return {};
+        }
+
+        // 'lea' may write the index register it reads, the next index then
+        // gets its own register so it never overwrites the new base
+        const operand folded_into{index_register};
+        index_register = {};
+
+        return folded_into;
     }
 
     [[nodiscard]] static auto
