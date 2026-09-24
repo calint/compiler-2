@@ -282,7 +282,7 @@ SRC=281 && EXP=0 && RUN
 SRC=282 && COMPERR
 SRC=283 && COMPERR
 SRC=284 && COMPERR
-if [[ $MACHINE == x86_64 ]]; then SRC=285 && COMPERR; fi
+SRC=285 && EXP=0 && RUN
 SRC=286 && COMPERR
 SRC=287 && COMPERR
 SRC=288 && EXP=0 && RUN
@@ -540,3 +540,7 @@ SRC=534 && EXP=0 && RUN
 SRC=535 && EXP=0 && RUN
 SRC=536 && DIFF
 SRC=537 && EXP=0 && RUN
+SRC=538 && EXP=0 && RUN
+if [[ $MACHINE == x86_64 ]]; then SRC=539 && COMPERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=540 && COMPERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=541 && COMPERR; fi

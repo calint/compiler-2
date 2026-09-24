@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <bit>
-#include <bitset>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -155,30 +154,27 @@ class machine_x86 final : public machine {
         },
     }};
 
-    struct allocated_register {
-        std::string source_location;
-        std::string name;
+    // named and scratch allocations share one stack so frees can be checked
+    // to happen in reverse order of allocation
+    struct allocation {
+        std::string_view name; // qword register name
         const type* type_ptr{};
+        std::string source_location;
+        bool named{};
     };
 
-    std::vector<std::string> all_registers_{
-        "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
-        "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
+    static constexpr std::array<std::string_view, 14> scratch_registers_{
+        "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
+        "r11", "rbx", "rsi", "rdi", "rcx", "rdx", "rax"};
+    // note: in order of likelihood they are not used by name
+    //       'r11' and 'rcx' are saved around syscalls if they are allocated
+    //       because 'syscall' clobbers them
 
-    size_t all_registers_initial_count_{all_registers_.size()};
-    std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
-                                              "rsi", "rdi", "rbp", "rsp"};
-
-    size_t named_registers_initial_count_{named_registers_.size()};
-    static constexpr std::array<std::string_view, 8> scratch_registers_{
-        "r15", "r14", "r13", "r12", "r10", "r9", "r8", "r11"};
-    // note: r11 is allocated last to avoid save/restore overhead around
-    //       syscalls
-
-    std::bitset<scratch_registers_.size()> unavailable_scratch_registers_;
+    // bit per 'register_names_' entry, set while allocated or while an
+    // operation protects the registers of its operands
+    uint16_t unavailable_registers_{};
     bool frame_base_reserved_{};
-    size_t frame_base_pool_index_{};
-    std::vector<allocated_register> allocated_registers_;
+    std::vector<allocation> allocations_;
     size_t usage_max_scratch_regs_{};
 
     std::string_view source_;
@@ -286,25 +282,18 @@ class machine_x86 final : public machine {
                                               const type& type_ref)
         -> operand override {
 
-        for (size_t index{}; index < scratch_registers_.size(); ++index) {
-            if (unavailable_scratch_registers_.test(index)) {
+        for (const std::string_view register_name : scratch_registers_) {
+            if ((unavailable_registers_ & register_bit(register_name)) != 0) {
                 continue;
             }
-
-            const std::string_view register_name{scratch_registers_.at(index)};
-
-            unavailable_scratch_registers_.set(index);
 
             comment(src_loc_tk, indent, "allocate scratch register -> {}",
                     register_name);
 
-            usage_max_scratch_regs_ =
-                std::max(unavailable_scratch_registers_.count(),
-                         usage_max_scratch_regs_);
+            push_allocation(src_loc_tk, register_name, type_ref, false);
 
-            allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
-                                              std::string{register_name},
-                                              &type_ref);
+            usage_max_scratch_regs_ =
+                std::max(scratch_count(), usage_max_scratch_regs_);
 
             operand result{make_register_operand(register_name, type_ref)};
 
@@ -348,17 +337,9 @@ class machine_x86 final : public machine {
         comment(src_loc_tk, indent, "free scratch register {}",
                 reg.allocation_register());
 
-        assert(allocated_registers_.back().name == reg.allocation_register());
+        assert(not allocations_.back().named);
 
-        for (size_t index{}; index < scratch_registers_.size(); ++index) {
-            if (scratch_registers_.at(index) == reg.allocation_register()) {
-                assert(unavailable_scratch_registers_.test(index));
-                unavailable_scratch_registers_.reset(index);
-                break;
-            }
-        }
-
-        allocated_registers_.pop_back();
+        pop_allocation(reg.allocation_register());
     }
 
     // asserts register pools are balanced and prints usage stats; called
@@ -367,10 +348,8 @@ class machine_x86 final : public machine {
         println("\n; max scratch registers in use: {}",
                 usage_max_scratch_regs_);
 
-        assert(all_registers_.size() == all_registers_initial_count_);
-        assert(allocated_registers_.empty());
-        assert(named_registers_.size() == named_registers_initial_count_);
-        assert(unavailable_scratch_registers_.none());
+        assert(allocations_.empty());
+        assert(unavailable_registers_ == 0);
         assert(not frame_base_reserved_);
 
         usage_max_scratch_regs_ = 0;
@@ -980,36 +959,19 @@ class machine_x86 final : public machine {
 
     auto reserve_frame_base() -> void override {
         assert(not frame_base_reserved_);
-        assert(unavailable_scratch_registers_.none());
+        assert(scratch_count() == 0);
 
-        const auto position{
-            std::ranges::find(named_registers_, frame_base_register())};
-
-        assert(position != named_registers_.end());
-        frame_base_pool_index_ =
-            static_cast<size_t>(position - named_registers_.begin());
-
-        named_registers_.erase(position);
-        allocated_registers_.emplace_back(
-            "", std::string{frame_base_register()}, default_type_);
+        push_allocation(token{}, frame_base_register(), *default_type_, true);
 
         frame_base_reserved_ = true;
     }
 
     auto release_frame_base() -> void override {
         assert(frame_base_reserved_);
-        assert(unavailable_scratch_registers_.none());
+        assert(scratch_count() == 0);
 
-        assert(not allocated_registers_.empty());
-        assert(allocated_registers_.back().name == frame_base_register());
+        pop_allocation(frame_base_register());
 
-        named_registers_.insert(
-            named_registers_.begin() +
-                static_cast<std::vector<std::string>::difference_type>(
-                    frame_base_pool_index_),
-            std::move(allocated_registers_.back().name));
-
-        allocated_registers_.pop_back();
         frame_base_reserved_ = false;
     }
 
@@ -1353,7 +1315,7 @@ class machine_x86 final : public machine {
 
         const std::string canonical_name{sized_register_name(name, size_qword)};
 
-        for (const allocated_register& allocated : allocated_registers_) {
+        for (const allocation& allocated : allocations_) {
             if (canonical_name == allocated.name) {
                 return allocated.type_ptr->size_bytes() == size_bytes
                            ? allocated.type_ptr
@@ -1579,27 +1541,46 @@ class machine_x86 final : public machine {
 
         comment(src_loc_tk, indent, "allocate named register {}", reg);
 
-        auto reg_iter{std::ranges::find(named_registers_, reg)};
-        if (reg_iter == named_registers_.end()) {
+        if ((unavailable_registers_ & register_bit(reg)) == 0) {
+            push_allocation(src_loc_tk, reg, type_ref, true);
 
-            std::string loc;
-            for (const allocated_register& allocated : allocated_registers_) {
-                if (allocated.name == reg) {
-                    loc = allocated.source_location;
-                    break;
-                }
-            }
-
-            throw compiler_exception{
-                src_loc_tk, std::format("cannot allocate register {} because "
-                                        "it was allocated at {}",
-                                        reg, loc)};
+            return;
         }
 
-        allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
-                                          std::move(*reg_iter), &type_ref);
+        throw_register_in_use(src_loc_tk, reg);
+    }
 
-        named_registers_.erase(reg_iter);
+    [[noreturn]] auto throw_register_in_use(const token& src_loc_tk,
+                                            const std::string_view reg) const
+        -> void {
+
+        const auto holder{std::ranges::find(
+            allocations_, sized_register_name(reg, size_qword),
+            &allocation::name)};
+
+        // an operation protecting its operands blocks it without an allocation
+        if (holder == allocations_.end()) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("cannot allocate register {} because an operand "
+                            "uses it",
+                            reg)};
+        }
+
+        // the last resort scratch registers are also needed by instructions
+        if (not holder->named) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("cannot allocate register {} because it holds a "
+                            "scratch value allocated at {}. try to reduce "
+                            "expression complexity",
+                            reg, holder->source_location)};
+        }
+
+        throw compiler_exception{
+            src_loc_tk, std::format("cannot allocate register {} because it "
+                                    "was allocated at {}",
+                                    reg, holder->source_location)};
     }
 
     auto release_named_register(const token& src_loc_tk, const size_t indent,
@@ -1607,12 +1588,71 @@ class machine_x86 final : public machine {
 
         comment(src_loc_tk, indent, "free named register {}", reg);
 
-        assert(allocated_registers_.back().name == reg);
+        assert(allocations_.back().named);
 
-        named_registers_.emplace_back(
-            std::move(allocated_registers_.back().name));
+        pop_allocation(reg);
+    }
 
-        allocated_registers_.pop_back();
+    // bit in 'unavailable_registers_' for any size alias of a register, 0 for
+    // other text such as labels
+    [[nodiscard]] static auto register_bit(const std::string_view name)
+        -> uint16_t {
+
+        if (register_size_bytes(name) == 0) {
+            return 0;
+        }
+
+        const std::string qword{sized_register_name(name, size_qword)};
+
+        for (const auto [index, names] :
+             std::views::enumerate(register_names_)) {
+
+            if (names.qword == qword) {
+                return static_cast<uint16_t>(1U << static_cast<size_t>(index));
+            }
+        }
+
+        std::unreachable();
+    }
+
+    // the stored name refers to 'register_names_' so it outlives the caller's
+    // text
+    auto push_allocation(const token& src_loc_tk, const std::string_view reg,
+                         const type& type_ref, const bool named) -> void {
+
+        const uint16_t bit{register_bit(reg)};
+
+        assert(bit != 0 and (unavailable_registers_ & bit) == 0);
+
+        const size_t index{static_cast<size_t>(std::countr_zero(bit))};
+
+        allocations_.push_back({
+            .name{register_names_.at(index).qword},
+            .type_ptr{&type_ref},
+            .source_location{src_loc_tk.at_line() == 0
+                                 ? std::string{}
+                                 : source_location_hr(src_loc_tk)},
+            .named{named},
+        });
+
+        unavailable_registers_ |= bit;
+    }
+
+    [[nodiscard]] auto scratch_count() const -> size_t {
+        return static_cast<size_t>(
+            std::ranges::count(allocations_, false, &allocation::named));
+    }
+
+    // registers are released in reverse order of allocation
+    auto pop_allocation(const std::string_view reg) -> void {
+        assert(not allocations_.empty());
+        assert(allocations_.back().name ==
+               sized_register_name(reg, size_qword));
+
+        unavailable_registers_ &=
+            static_cast<uint16_t>(~register_bit(allocations_.back().name));
+
+        allocations_.pop_back();
     }
 
     [[nodiscard]] auto alloc_bulk_registers(const token& src_loc_tk,
@@ -1888,25 +1928,15 @@ class machine_x86 final : public machine {
             return;
         }
 
-        const std::bitset<scratch_registers_.size()> saved_pool{
-            unavailable_scratch_registers_};
+        const uint16_t saved_unavailable{unavailable_registers_};
 
-        const std::array<const operand*, 2> operands{&dst, &src};
-        for (size_t index{}; index < scratch_registers_.size(); ++index) {
-            const std::string_view name{scratch_registers_.at(index)};
-            if (std::ranges::any_of(
-                    operands, [&](const operand* value) -> bool {
-                        if (value->is_register() and
-                            sized_register_name(value->base_register(),
-                                                size_qword) == name) {
-                            return true;
-                        }
-
-                        return value->is_memory() and
-                               (value->base_register() == name or
-                                value->index_register() == name);
-                    })) {
-                unavailable_scratch_registers_.set(index);
+        // registers the operands refer to must not be picked for lowering
+        for (const operand* value : {&dst, &src}) {
+            if (value->is_register() or value->is_memory()) {
+                unavailable_registers_ |= register_bit(value->base_register());
+            }
+            if (value->is_memory()) {
+                unavailable_registers_ |= register_bit(value->index_register());
             }
         }
 
@@ -1917,7 +1947,7 @@ class machine_x86 final : public machine {
             lower_address(src_loc_tk, indent, src, registers)};
         emit(lowered_dst, lowered_src);
         free_scratch_registers(src_loc_tk, indent, registers);
-        unavailable_scratch_registers_ = saved_pool;
+        unavailable_registers_ = saved_unavailable;
     }
 
     auto emit_binary(const size_t indent, const std::string_view instruction,

@@ -662,12 +662,16 @@ func main() {
     machine_x86 x86_backend{x86_output, {}};
     x86_backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
+    constexpr std::array<std::string_view, 14> x86_scratch_order{
+        "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
+        "r11", "rbx", "rsi", "rdi", "rcx", "rdx", "rax"};
+
     for (size_t pass{}; pass < 2; ++pass) {
         std::vector<operand> registers;
-        for (size_t count{}; count < 8; ++count) {
+        for (const std::string_view expected : x86_scratch_order) {
             const operand reg{
                 x86_backend.alloc_scratch_register(token{}, 0, integer64)};
-            assert((reg.base_register() == "r11") == (count == 7));
+            assert(reg.base_register() == expected);
             registers.push_back(reg);
         }
         bool x86_exhausted{};
@@ -678,17 +682,29 @@ func main() {
             x86_exhausted = true;
         }
         assert(x86_exhausted);
+
+        // a register needed by an instruction is rejected, not overwritten
+        bool x86_conflict{};
+        try {
+            static_cast<void>(
+                x86_backend.alloc_named_register(token{}, 0, "rcx", integer64));
+        } catch (const compiler_exception& error) {
+            x86_conflict =
+                std::string_view{error.what()}.contains("holds a scratch value");
+        }
+        assert(x86_conflict);
+
         for (size_t count{}; count < 2; ++count) {
             x86_backend.free_scratch_register(token{}, 0, registers.back());
             registers.pop_back();
         }
         const operand ordinary{
             x86_backend.alloc_scratch_register(token{}, 0, integer64)};
-        assert(ordinary.base_register() == "r8");
+        assert(ordinary.base_register() == "rdx");
         registers.push_back(ordinary);
         const operand special{
             x86_backend.alloc_scratch_register(token{}, 0, integer64)};
-        assert(special.base_register() == "r11");
+        assert(special.base_register() == "rax");
         registers.push_back(special);
         x86_backend.free_scratch_registers(token{}, 0, registers);
         x86_backend.finish();

@@ -1,0 +1,2 @@
+
+540.baz:16:78: cannot allocate register rcx because it holds a scratch value allocated at 16:73. try to reduce expression complexity

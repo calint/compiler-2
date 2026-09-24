@@ -1,0 +1,33 @@
+# nested expressions deeper than the eight x86 scratch registers r8-r15
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+func main() {
+    var a = 1
+    var b = 2
+    var c = 3
+    var d = 4
+    var e = 5
+    var f = 6
+    var g = 7
+    var h = 8
+    var i = 9
+    var j = 10
+    var k = 11
+    var l = 12
+    var m = 13
+    var n = 14
+    var o = 15
+
+    # the last resort registers rbx, rsi, rdi, rcx, rdx and rax
+    var sum = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n + o)))))))))))))
+    assert(1, sum == 120)
+
+    # division reserves rax and rdx below the live scratch values
+    var quotient = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k / 2))))))))))
+    assert(2, quotient == 60)
+
+    # a variable shift count reserves rcx below the live scratch values
+    var shifted = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k << a))))))))))
+    assert(3, shifted == 77)
+}

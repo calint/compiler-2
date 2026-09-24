@@ -1,3 +1,5 @@
+# nested expression deeper than the eight x86 scratch registers r8-r15
+
 func main() {
     var a = 1
     var b = 2
@@ -10,4 +12,5 @@ func main() {
     var i = 9
     var j = 10
     var result = a + (b + (c + (d + (e + (f + (g + (h + (i + j))))))))
+    if result != 55 exit(1)
 }
