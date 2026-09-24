@@ -1,0 +1,8 @@
+# a field of the result is read before the result is set
+type point {x, y}
+func origin() res point {
+    res = {res.y, 0}
+}
+func main() {
+    var p point = origin()
+}

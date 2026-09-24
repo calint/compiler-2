@@ -36,7 +36,9 @@ class stmt_builtin_exit final : public stmt_call {
         x.free_named_registers(tok(), indent, args);
     }
 
-    [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {
-        return true;
+    // ending the program conservatively does not count as an assignment
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        assert_var_not_used(flow.var, flow.assigned);
+        flow.is_reachable = false;
     }
 };

@@ -1,0 +1,23 @@
+# fields set on every path through 'if', 'else' and early returns
+func assert(ok bool) { if not ok exit(1) }
+type point {x, y}
+func pick(c) res point {
+    res.x = c
+    if c == 1 {
+        res.y = 10
+        return
+    }
+    if c == 2 {
+        res = {20, 21}
+    } else {
+        res.y = 30
+    }
+}
+func main() {
+    var p point = pick(1)
+    assert(p.x == 1 and p.y == 10)
+    p = pick(2)
+    assert(p.x == 20 and p.y == 21)
+    p = pick(3)
+    assert(p.x == 3 and p.y == 30)
+}

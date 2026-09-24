@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <string_view>
+#include <tuple>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -141,5 +142,11 @@ class stmt_builtin_foo final : public statement {
         x.free_scratch_register(tok(), indent, reg_iter);
 
         tc.exit_foo(loop_label);
+    }
+
+    // the body may run zero times so its assignments do not count
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        ident_.assert_var_not_used(flow.var, flow.assigned);
+        std::ignore = code_.trace_loop_body(flow);
     }
 };

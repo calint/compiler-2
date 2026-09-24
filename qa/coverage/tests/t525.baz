@@ -1,0 +1,9 @@
+# the variable is passed to the function that initializes it
+type point {x, y}
+func twice(pt point) res point {
+    res.x = pt.x * 2
+    res.y = pt.y * 2
+}
+func main() {
+    var p point = twice(p)
+}

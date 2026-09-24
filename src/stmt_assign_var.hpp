@@ -93,16 +93,18 @@ class stmt_assign_var final : public statement {
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
-    [[nodiscard]] auto is_var_set(const std::string_view var) const
-        -> bool override {
-
-        return identifier() == var;
-    }
-
-    auto assert_var_not_used(const std::string_view var) const
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
         -> void override {
 
-        expr_.assert_var_not_used(var);
+        expr_.assert_var_not_used(var, assigned);
+        stmt_ident_.assert_indexes_not_used(var, assigned);
+    }
+
+    // the value is read before the destination is written
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        assert_var_not_used(flow.var, flow.assigned);
+        stmt_ident_.record_assignment(flow);
     }
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }

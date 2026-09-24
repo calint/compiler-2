@@ -1,0 +1,13 @@
+# a field set in only one branch is not set after the 'if'
+type point {x, y}
+func pick(c) res point {
+    if c == 1 {
+        res.x = 1
+        res.y = 2
+    } else {
+        res.x = 3
+    }
+}
+func main() {
+    var p point = pick(1)
+}

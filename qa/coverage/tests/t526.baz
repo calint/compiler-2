@@ -1,0 +1,5 @@
+# the variable is read in an index of its own initializer
+func main() {
+    var values[4] i64
+    var i = values[i]
+}

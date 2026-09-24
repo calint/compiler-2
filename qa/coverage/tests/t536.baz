@@ -1,0 +1,11 @@
+# a return inside 'foo' skips the result assignment
+func first(values[] i32) res {
+    foo values {
+        return
+    }
+    res = 1
+}
+func main() {
+    var values[2] i32
+    var r = first(values)
+}

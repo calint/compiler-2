@@ -1,0 +1,5 @@
+# a field of the variable is read in its own initializer
+type point {x, y}
+func main() {
+    var p point = {p.y, 2}
+}

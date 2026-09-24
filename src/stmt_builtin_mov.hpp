@@ -35,15 +35,21 @@ class stmt_builtin_mov final : public stmt_call {
         src_arg.compile(tc, indent + 1, dst_arg_info);
     }
 
-    auto assert_var_not_used(const std::string_view var) const
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
         -> void override {
 
-        argument(1).assert_var_not_used(var);
+        argument(1).assert_var_not_used(var, assigned);
     }
 
-    [[nodiscard]] auto is_var_set(const std::string_view var) const
-        -> bool override {
+    // a register destination is written whole
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        assert_var_not_used(flow.var, flow.assigned);
 
-        return argument(0).identifier() == var;
+        if (argument(0).identifier() != flow.var) {
+            return;
+        }
+
+        flow.assigned = field_coverage::full(flow.assigned.size_bytes());
     }
 };

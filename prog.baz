@@ -85,7 +85,9 @@ func point_init() res point {
 }
 
 func object_init() res object {
+    res.pos.x = 2
     res.pos.y = 74
+    res.color = 0xffffff
 }
 
 const yes = 1

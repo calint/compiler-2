@@ -87,4 +87,12 @@ class stmt_builtin_address_of final : public expression {
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
+
+    // taking an address does not read the value
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
+        -> void override {
+
+        stmt_ident_.assert_indexes_not_used(var, assigned);
+    }
 };

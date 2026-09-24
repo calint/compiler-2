@@ -46,7 +46,9 @@ class expr_type_value final : public statement {
 
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
-    auto assert_var_not_used(const std::string_view var) const -> void override;
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
+        -> void override;
 
     [[nodiscard]] auto is_identifier() const -> bool override {
         return stmt_ident_ != nullptr;

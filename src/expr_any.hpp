@@ -193,21 +193,22 @@ class expr_any final : public statement {
         });
     }
 
-    auto assert_var_not_used(const std::string_view var) const
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
         -> void override {
 
         if (is_array_) {
             for (const expr_variant& e : vars_) {
-                e.visit([&var](const auto& expression) -> void {
-                    expression.assert_var_not_used(var);
+                e.visit([&var, &assigned](const auto& expression) -> void {
+                    expression.assert_var_not_used(var, assigned);
                 });
             }
 
             return;
         }
 
-        vars_[0].visit([&var](const auto& expression) -> void {
-            expression.assert_var_not_used(var);
+        vars_[0].visit([&var, &assigned](const auto& expression) -> void {
+            expression.assert_var_not_used(var, assigned);
         });
     }
 

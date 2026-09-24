@@ -1,0 +1,9 @@
+# a field of the result is read before it is set
+type point {x, y}
+func grow() res point {
+    res.x = 1
+    res.y = res.y + res.x
+}
+func main() {
+    var p point = grow()
+}

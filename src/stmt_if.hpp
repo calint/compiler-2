@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <ranges>
+#include <utility>
 
 #include "decouple.hpp"
 #include "stmt_block.hpp"
@@ -137,57 +138,34 @@ class stmt_if final : public statement {
         return else_code_;
     }
 
-    auto assert_var_not_used(const std::string_view var) const
-        -> void override {
+    // every path starts at the 'if' and afterwards only what all paths
+    // assigned remains
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        const field_coverage entry{flow.assigned};
+        field_coverage merged{field_coverage::full(entry.size_bytes())};
+        bool is_reachable{};
 
         for (const stmt_if_branch& e : branches_) {
-            e.assert_var_not_used(var);
-        }
-        else_code_.assert_var_not_used(var);
-    }
-
-    [[nodiscard]] auto is_var_set(const std::string_view var) const
-        -> bool override {
-
-        // without 'else' every branch may be skipped
-        if (else_code_.is_empty()) {
-            return false;
+            trace_path(e, entry, flow, merged, is_reachable);
         }
 
-        for (const stmt_if_branch& e : branches_) {
-            if (not e.is_var_set(var)) {
-                return false;
-            }
-        }
+        // an empty 'else' is the path that skips every branch
+        trace_path(else_code_, entry, flow, merged, is_reachable);
 
-        return else_code_.is_var_set(var);
-    }
-
-    [[nodiscard]] auto may_return_unset(const std::string_view var) const
-        -> bool override {
-
-        return any_path_may_exit_unset(var, &statement::may_return_unset);
-    }
-
-    [[nodiscard]] auto may_break_unset(const std::string_view var) const
-        -> bool override {
-
-        return any_path_may_exit_unset(var, &statement::may_break_unset);
+        flow.assigned = std::move(merged);
+        flow.is_reachable = is_reachable;
     }
 
   private:
-    [[nodiscard]] auto
-    any_path_may_exit_unset(const std::string_view var,
-                            bool (statement::*may_exit)(std::string_view)
-                                const) const -> bool {
+    static auto trace_path(const statement& path, const field_coverage& entry,
+                           assignment_flow& flow, field_coverage& merged,
+                           bool& is_reachable) -> void {
 
-        for (const stmt_if_branch& e : branches_) {
-            if ((e.*may_exit)(var)) {
-                return true;
-            }
-        }
-
-        return (else_code_.*may_exit)(var);
+        flow.assigned = entry;
+        flow.is_reachable = true;
+        path.trace_assignment(flow);
+        merged.intersect(flow.assigned);
+        is_reachable = is_reachable or flow.is_reachable;
     }
 
     [[nodiscard]] static auto create_label_else_branch(

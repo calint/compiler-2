@@ -1,0 +1,8 @@
+# assigning one field does not set the whole result
+type point {x, y}
+func half() res point {
+    res.x = 1
+}
+func main() {
+    var p point = half()
+}

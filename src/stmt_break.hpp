@@ -31,15 +31,7 @@ class stmt_break final : public statement {
         x.branch(indent, std::format("{}_end", loop_label));
     }
 
-    [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {
-        return true;
-    }
-
-    // blocks stop the search at the first assignment of 'var'
-    [[nodiscard]] auto
-    may_break_unset([[maybe_unused]] const std::string_view var) const
-        -> bool override {
-
-        return true;
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        flow.record_break();
     }
 };

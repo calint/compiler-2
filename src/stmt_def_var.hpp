@@ -98,9 +98,11 @@ class stmt_def_var final : public statement {
             }
         }
 
-        assert_var_not_used(name_tk_.text());
-        // note: asserts that the newly defined variable isn't used in the
-        //       initialization
+        // the newly defined variable is not yet assigned in its initialization
+        assert_var_not_used(
+            name_tk_.text(),
+            field_coverage{multiply_storage_size(
+                tp.size_bytes(), is_array_ ? array_count_ : 1)});
     }
 
     stmt_def_var() = default;
@@ -163,11 +165,12 @@ class stmt_def_var final : public statement {
         x.zero(tok(), indent, var_dst_info.operand, size_bytes);
     }
 
-    auto assert_var_not_used(const std::string_view var) const
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
         -> void override {
 
         if (assign_var_) {
-            assign_var_->assert_var_not_used(var);
+            assign_var_->assert_var_not_used(var, assigned);
         }
     }
 };

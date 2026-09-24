@@ -1,0 +1,19 @@
+# nested result fields set one at a time and read after they are set
+func assert(ok bool) { if not ok exit(1) }
+type point {x, y}
+type rectangle {top_left point, bottom_right point}
+func make_point() res point {
+    res = {3, 4}
+}
+func make_rectangle() res rectangle {
+    res.top_left = make_point()
+    res.bottom_right.x = res.top_left.x * 2
+    res.bottom_right.y = res.top_left.y * 3
+}
+func main() {
+    var r rectangle = make_rectangle()
+    assert(r.top_left.x == 3)
+    assert(r.top_left.y == 4)
+    assert(r.bottom_right.x == 6)
+    assert(r.bottom_right.y == 12)
+}

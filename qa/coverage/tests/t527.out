@@ -1,0 +1,2 @@
+
+t527.baz:4:12: use of uninitialized variable 'res'

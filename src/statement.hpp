@@ -10,8 +10,10 @@
 #include <utility>
 #include <vector>
 
+#include "assignment_flow.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "field_coverage.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
 
@@ -195,45 +197,28 @@ class statement {
     }
 
     // used in UB check
-    // returns true if 'var' is set in this statement
-    [[nodiscard]] virtual auto
-    is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
+    // throws if 'var' is read outside of the 'assigned' bytes
+    virtual auto assert_var_not_used(const std::string_view var,
+                                     const field_coverage& assigned) const
+        -> void {
 
-        return false;
-    }
-
-    // used in UB check
-    // returns true if a 'return' may be reached before 'var' is set
-    [[nodiscard]] virtual auto
-    may_return_unset([[maybe_unused]] const std::string_view var) const
-        -> bool {
-
-        return false;
-    }
-
-    // used in UB check
-    // returns true if a 'break' of the enclosing loop may be reached before
-    // 'var' is set
-    [[nodiscard]] virtual auto
-    may_break_unset([[maybe_unused]] const std::string_view var) const -> bool {
-
-        return false;
-    }
-
-    // used in UB check
-    // throws if 'var' is used in this statement
-    virtual auto assert_var_not_used(const std::string_view var) const -> void {
-        if (identifier() == var) {
-            throw compiler_exception{
-                token_, std::format("use of uninitialized variable '{}'",
-                                    identifier())};
+        if (identifier() == var and not assigned.is_full()) {
+            throw_uninitialized(token_, var);
         }
     }
 
     // used in UB check
-    // returns true if code after this statement is considered "dead code"
-    // applies to: 'return', 'break', 'continue'
-    [[nodiscard]] virtual auto is_code_after_this_unreachable() const -> bool {
-        return false;
+    // checks the reads of 'flow.var' and records its assignments
+    virtual auto trace_assignment(assignment_flow& flow) const -> void {
+        assert_var_not_used(flow.var, flow.assigned);
+    }
+
+  protected:
+    [[noreturn]] static auto throw_uninitialized(const token& use_tk,
+                                                 const std::string_view var)
+        -> void {
+
+        throw compiler_exception{
+            use_tk, std::format("use of uninitialized variable '{}'", var)};
     }
 };

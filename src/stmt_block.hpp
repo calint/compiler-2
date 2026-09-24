@@ -2,8 +2,10 @@
 // reviewed: 2025-09-28
 
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -162,71 +164,37 @@ class stmt_block final : public statement {
         tc.exit_block();
     }
 
-    [[nodiscard]] auto is_var_set(const std::string_view var) const
-        -> bool override {
-
+    auto trace_assignment(assignment_flow& flow) const -> void override {
         for (const std::unique_ptr<statement>& s : stms_) {
-            if (s->is_var_set(var)) {
-                return true;
-            }
-            if (s->is_code_after_this_unreachable()) {
-                break;
-            }
-        }
+            s->trace_assignment(flow);
 
-        return false;
-    }
-
-    [[nodiscard]] auto may_return_unset(const std::string_view var) const
-        -> bool override {
-
-        return may_exit_unset(var, &statement::may_return_unset);
-    }
-
-    [[nodiscard]] auto may_break_unset(const std::string_view var) const
-        -> bool override {
-
-        return may_exit_unset(var, &statement::may_break_unset);
-    }
-
-    // nested blocks and bodies are checked in statement order
-    auto assert_var_not_used(const std::string_view var) const
-        -> void override {
-
-        assert_no_ub_for_var(var);
-    }
-
-    auto assert_no_ub_for_var(const std::string_view var) const -> void {
-        for (const std::unique_ptr<statement>& s : stms_) {
-            s->assert_var_not_used(var);
-            if (s->is_var_set(var)) {
+            // statements after 'return', 'break', 'continue' or 'exit' never
+            // run
+            if (not flow.is_reachable) {
                 return;
             }
         }
     }
 
-    [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
+    // every iteration starts with at least the coverage at loop entry
+    // returns the coverage common to every 'break' of this loop body
+    [[nodiscard]] auto trace_loop_body(assignment_flow& flow) const
+        -> std::optional<field_coverage> {
 
-  private:
-    // statements after an assignment or an unconditional exit cannot exit
-    // with 'var' unset
-    [[nodiscard]] auto
-    may_exit_unset(const std::string_view var,
-                   bool (statement::*may_exit)(std::string_view) const) const
-        -> bool {
+        const field_coverage entry{flow.assigned};
+        std::optional<field_coverage> outer_breaks{
+            std::exchange(flow.at_breaks, std::nullopt)};
 
-        for (const std::unique_ptr<statement>& s : stms_) {
-            if (((*s).*may_exit)(var)) {
-                return true;
-            }
-            if (s->is_var_set(var)) {
-                return false;
-            }
-            if (s->is_code_after_this_unreachable()) {
-                return false;
-            }
-        }
+        trace_assignment(flow);
 
-        return false;
+        std::optional<field_coverage> breaks{
+            std::exchange(flow.at_breaks, std::move(outer_breaks))};
+
+        flow.assigned = entry;
+        flow.is_reachable = true;
+
+        return breaks;
     }
+
+    [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
 };

@@ -154,7 +154,6 @@ SRC=t154 && EXP=0 && RUN
 SRC=t155 && EXP=0 && RUN
 SRC=t156 && EXP=0 && RUN
 SRC=t157 && EXP=0 && RUN
-# SRC=t158 && EXP=0 && RUN  # UB: reads uninitialized value; UB detection is not implemented yet
 SRC=t161 && COMPERR
 SRC=t162 && COMPERR
 SRC=t163 && COMPERR
@@ -226,9 +225,9 @@ SRC=t230 && COMPERR
 SRC=t231 && COMPERR
 SRC=t232 && COMPERR
 SRC=t233 && COMPERR
-# SRC=t234 && COMPERR # i64 decimal limit
-# SRC=t235 && COMPERR # i64 hexadecimal limit
-# SRC=t236 && COMPERR # i64 binary limit
+SRC=t234 && COMPERR
+SRC=t235 && COMPERR
+SRC=t236 && COMPERR
 SRC=t237 && COMPERR
 SRC=t238 && COMPERR
 SRC=t239 && COMPERR
@@ -329,7 +328,7 @@ SRC=t350 && EXP=255 && RUN_ERR
 SRC=t351 && EXP=0 && RUN
 SRC=t352 && EXP=255 && RUN_ERR
 SRC=t353 && EXP=255 && RUN_ERR
-# SRC=t354 && EXP=255 && RUN_ERR  # extreme index generates nasm number-overflow warning
+SRC=t354 && EXP=255 && RUN_ERR
 SRC=t355 && EXP=255 && RUN_ERR
 SRC=t356 && EXP=0 && RUN
 SRC=t357 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower"
@@ -376,7 +375,7 @@ SRC=t399 && COMPERR
 SRC=t400 && EXP=0 && RUN
 SRC=t401 && EXP=0 && RUN
 SRC=t402 && COMPERR
-# SRC=t403 && EXP=0 && RUN # requires a 64-bit truncation source
+if [[ $MACHINE == x86_64 ]]; then SRC=t403 && EXP=0 && RUN; fi
 SRC=t404 && COMPERR
 SRC=t405 && COMPERR
 SRC=t406 && EXP=0 && RUN
@@ -493,4 +492,18 @@ SRC=t518 && COMPERR
 SRC=t519 && COMPERR
 SRC=t520 && COMPERR
 SRC=t521 && EXP=0 && RUN
+SRC=t523 && COMPERR
+SRC=t524 && COMPERR
+SRC=t525 && COMPERR
+SRC=t526 && COMPERR
+SRC=t527 && COMPERR
+SRC=t528 && COMPERR
+SRC=t529 && EXP=0 && RUN
+SRC=t530 && COMPERR
+SRC=t531 && EXP=0 && RUN
+SRC=t532 && EXP=0 && RUN
+SRC=t533 && COMPERR
+SRC=t534 && COMPERR
+SRC=t535 && COMPERR
+SRC=t536 && COMPERR
 if [[ $MACHINE == x86_64 ]]; then SRC=t522 && EXP=0 && RUN; fi

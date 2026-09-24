@@ -139,4 +139,12 @@ class stmt_builtin_equal final : public expression {
 
         x.end_memory_equal(tok(), indent, size_bytes, dst, inverted);
     }
+
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
+        -> void override {
+
+        lhs_.assert_var_not_used(var, assigned);
+        rhs_.assert_var_not_used(var, assigned);
+    }
 };

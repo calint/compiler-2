@@ -489,11 +489,21 @@ auto expr_type_value::validate_array_assignment(const token& src_loc_tk,
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::assert_var_not_used(const std::string_view var) const
+auto expr_type_value::assert_var_not_used(const std::string_view var,
+                                          const field_coverage& assigned) const
     -> void {
 
+    // a copy or a call reads its source instead of the '{...}' items
+    if (stmt_ident_) {
+        stmt_ident_->assert_var_not_used(var, assigned);
+    }
+
+    if (stmt_call_) {
+        stmt_call_->assert_var_not_used(var, assigned);
+    }
+
     for (const std::unique_ptr<expr_any>& e : exprs_) {
-        e->assert_var_not_used(var);
+        e->assert_var_not_used(var, assigned);
     }
 }
 

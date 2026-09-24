@@ -323,11 +323,12 @@ class expr_bool_op final : public statement {
         return is_expression_;
     }
 
-    auto assert_var_not_used(const std::string_view var) const
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
         -> void override {
 
-        lhs_.assert_var_not_used(var);
-        rhs_.assert_var_not_used(var);
+        lhs_.assert_var_not_used(var, assigned);
+        rhs_.assert_var_not_used(var, assigned);
     }
 
   private:

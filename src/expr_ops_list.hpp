@@ -355,11 +355,12 @@ class expr_ops_list final : public expression {
         return exprs_[0]->is_indexed();
     }
 
-    auto assert_var_not_used(const std::string_view var) const
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
         -> void override {
 
         for (const std::unique_ptr<statement>& e : exprs_) {
-            e->assert_var_not_used(var);
+            e->assert_var_not_used(var, assigned);
         }
     }
 

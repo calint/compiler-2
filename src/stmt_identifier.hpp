@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <format>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <ranges>
 #include <span>
@@ -42,6 +43,12 @@ class stmt_identifier : public statement {
     size_t array_count_{};
     bool is_array_{};
     bool is_indexed_{};
+
+    // bytes of the root variable accessed by this path
+    field_coverage::range access_range_;
+
+    // false when a runtime index leaves the element unknown
+    bool is_exact_access_{};
 
   public:
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
@@ -112,6 +119,8 @@ class stmt_identifier : public statement {
 
             break;
         }
+
+        resolve_access_range(tc);
     }
 
     stmt_identifier() = default;
@@ -129,6 +138,38 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override { return true; }
+
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
+        -> void override {
+
+        // a path such as 'p.y' reads its root variable
+        if (first_token().is_text(var) and not assigned.covers(access_range_)) {
+            throw_uninitialized(first_token(), var);
+        }
+
+        assert_indexes_not_used(var, assigned);
+    }
+
+    // index expressions are read even when the path is written
+    auto assert_indexes_not_used(const std::string_view var,
+                                 const field_coverage& assigned) const -> void {
+
+        for (const ident_elem& e : elems_) {
+            if (e.array_index_expr) {
+                e.array_index_expr->assert_var_not_used(var, assigned);
+            }
+        }
+    }
+
+    // a runtime index does not prove which element is written
+    auto record_assignment(assignment_flow& flow) const -> void {
+        if (not first_token().is_text(flow.var) or not is_exact_access_) {
+            return;
+        }
+
+        flow.assigned.add(access_range_);
+    }
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
@@ -297,6 +338,95 @@ class stmt_identifier : public statement {
     }
 
   private:
+    auto resolve_access_range(toc& tc) -> void {
+        if (tc.is_func(path_as_string_)) {
+            return;
+        }
+
+        is_exact_access_ = true;
+
+        std::string path;
+        const type* parent_type{};
+
+        for (const ident_elem& elem : elems_) {
+            const bool is_root{path.empty()};
+            if (not is_root) {
+                path.push_back('.');
+            }
+            path += elem.name_tk.text();
+
+            const ident_info info{tc.make_ident_info(elem.name_tk, path)};
+
+            // inside an unknown element only the types are followed
+            if (is_exact_access_) {
+                const size_t field_offset{
+                    is_root ? 0
+                            : parent_type->field_offset(elem.name_tk,
+                                                        elem.name_tk.text())};
+
+                access_range_ = {
+                    .offset{access_range_.offset + field_offset},
+                    .size_bytes{storage_size_bytes(info)},
+                };
+            }
+
+            parent_type = &info.type_ref();
+
+            if (elem.array_index_expr and is_exact_access_) {
+                narrow_to_element(tc, *elem.array_index_expr, info);
+            }
+        }
+    }
+
+    // an unknown element leaves the whole array as the accessed range
+    auto narrow_to_element(toc& tc, const expr_any& index_expr,
+                           const ident_info& array_info) -> void {
+
+        const std::optional<int64_t> index{constant_index(tc, index_expr)};
+        if (not index or *index < 0 or
+            std::cmp_greater_equal(*index, array_info.array_len)) {
+
+            is_exact_access_ = false;
+
+            return;
+        }
+
+        const size_t element_size_bytes{array_info.type_ref().size_bytes()};
+
+        access_range_ = {
+            .offset{access_range_.offset +
+                    (static_cast<size_t>(*index) * element_size_bytes)},
+            .size_bytes{element_size_bytes},
+        };
+    }
+
+    [[nodiscard]] static auto constant_index(toc& tc,
+                                             const expr_any& index_expr)
+        -> std::optional<int64_t> {
+
+        if (index_expr.is_expression()) {
+            return std::nullopt;
+        }
+
+        const ident_info info{tc.make_ident_info(index_expr)};
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        return index_expr.get_unary_ops().evaluate_constant(info.const_value);
+    }
+
+    [[nodiscard]] static auto storage_size_bytes(const ident_info& info)
+        -> size_t {
+
+        if (not info.is_array) {
+            return info.type_ref().size_bytes();
+        }
+
+        return multiply_storage_size(info.type_ref().size_bytes(),
+                                     info.array_len);
+    }
+
     [[nodiscard]] auto static add_index(
         toc& tc, const token& src_loc_tk, const size_t indent,
         std::vector<operand>& allocated_registers, const ident_elem& cur_elem,

@@ -80,4 +80,12 @@ class stmt_builtin_array_size_of final : public expression {
 
         get_unary_ops().compile(tc, indent, dst_info.operand);
     }
+
+    // the size is known at compile time so the value is not read
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
+        -> void override {
+
+        stmt_ident_.assert_indexes_not_used(var, assigned);
+    }
 };

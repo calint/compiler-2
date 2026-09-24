@@ -34,7 +34,8 @@ class stmt_continue final : public statement {
         x.branch(indent, std::string{loop_label} + "_continue");
     }
 
-    [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {
-        return true;
+    // the next iteration starts with at least the loop entry coverage
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        flow.end_path();
     }
 };

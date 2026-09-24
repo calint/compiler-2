@@ -1,0 +1,9 @@
+# a runtime index does not prove which element is set
+type pair {cells[2]}
+func make_pair(i) res pair {
+    res.cells[i] = 5
+    res.cells[1] = 6
+}
+func main() {
+    var p pair = make_pair(0)
+}

@@ -205,15 +205,19 @@ class program final {
             if (not ret_info) {
                 continue;
             }
-            const std::string_view result_name{ret_info->ident_tk.text()};
-            if (not f->code().is_var_set(result_name) or
-                f->code().may_return_unset(result_name)) {
 
-                throw compiler_exception{
-                    f->tok(),
-                    "function may return without setting its return value"};
-            }
-            f->code().assert_no_ub_for_var(result_name);
+            assignment_flow flow{
+                .var{ret_info->ident_tk.text()},
+                .func_tk{f->tok()},
+                .assigned{field_coverage{ret_info->type_ptr->size_bytes()}},
+                .at_breaks{},
+                .is_reachable{true},
+            };
+
+            f->code().trace_assignment(flow);
+
+            // the end of the body returns like a 'return' statement
+            flow.assert_set_at_return();
         }
     }
 };

@@ -1,0 +1,5 @@
+# the variable is copied from itself in its own initializer
+type point {x, y}
+func main() {
+    var p point = p
+}

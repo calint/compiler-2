@@ -41,15 +41,8 @@ class stmt_return final : public statement {
         x.branch(indent, ret_lbl);
     }
 
-    [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {
-        return true;
-    }
-
-    // blocks stop the search at the first assignment of 'var'
-    [[nodiscard]] auto
-    may_return_unset([[maybe_unused]] const std::string_view var) const
-        -> bool override {
-
-        return true;
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        flow.assert_set_at_return();
+        flow.end_path();
     }
 };

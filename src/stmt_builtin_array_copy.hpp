@@ -124,4 +124,14 @@ class stmt_builtin_array_copy final : public statement {
 
         x.end_array_copy(tok(), indent, array_src_info.type_ref().size_bytes());
     }
+
+    // the copied elements are not tracked, so the destination stays unassigned
+    auto assert_var_not_used(const std::string_view var,
+                             const field_coverage& assigned) const
+        -> void override {
+
+        src_.assert_var_not_used(var, assigned);
+        dst_.assert_indexes_not_used(var, assigned);
+        count_.assert_var_not_used(var, assigned);
+    }
 };
