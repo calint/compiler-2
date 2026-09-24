@@ -2,11 +2,11 @@
 // reviewed: 2025-09-28
 
 #include "decouple.hpp"
-#include "expr_bool_ops_list.hpp"
+#include "expr_bool.hpp"
 #include "stmt_block.hpp"
 
 class stmt_if_branch final : public statement {
-    expr_bool_ops_list bol_;
+    expr_bool bol_;
     stmt_block code_;
 
   public:
@@ -40,7 +40,7 @@ class stmt_if_branch final : public statement {
         machine& x{tc.machine()};
 
         x.label(indent, if_bgn_lbl);
-        // compile the boolean ops list
+        // compile the boolean expression
         const std::optional<bool> const_eval{bol_.compile(
             tc, indent, jmp_to_if_false_label, jmp_to_if_true_lbl, {})};
 

@@ -32,7 +32,7 @@ class expr_type final : public statement {
     // note: copy and assignment constructor will not compile if used
 
     // implemented in 'decouple_impl.hpp' due to circular reference:
-    // expr_type_value -> expr_any -> expr_type_value
+    // expr_type -> expr_any -> expr_type
     auto source_to(std::ostream& os) const -> void override;
 
     [[nodiscard]] auto is_make_copy() const -> bool {
@@ -45,7 +45,7 @@ class expr_type final : public statement {
         -> void override;
 
     // implemented in 'decouple_impl.hpp' due to circular reference:
-    // expr_type_value -> expr_any -> expr_type_value
+    // expr_type -> expr_any -> expr_type
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override;
 
@@ -96,7 +96,7 @@ class expr_type final : public statement {
         -> void;
 
     // implemented in 'decouple_impl.hpp' due to circular reference:
-    // expr_type_value -> expr_any -> expr_type_value
+    // expr_type -> expr_any -> expr_type
     auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
                         const ident_info& dst_info, operand& dst_op) const
         -> void;

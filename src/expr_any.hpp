@@ -11,13 +11,12 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "expr_bool_ops_list.hpp"
-#include "expr_ops_list.hpp"
-#include "expr_type_value.hpp"
+#include "expr_arith.hpp"
+#include "expr_bool.hpp"
+#include "expr_type.hpp"
 
 class expr_any final : public statement {
-    using expr_variant =
-        std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value>;
+    using expr_variant = std::variant<expr_arith, expr_bool, expr_type>;
 
     // helper template for nicer handling of variants using overloaded lambdas
     template <class... Ts> struct overloaded : Ts... {
@@ -53,7 +52,7 @@ class expr_any final : public statement {
 
         open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty()) {
-            vars_.emplace_back(expr_type_value{tc, tz, tp});
+            vars_.emplace_back(expr_type{tc, tz, tp});
             is_identifier_ = true;
 
             return;
@@ -220,7 +219,7 @@ class expr_any final : public statement {
             return expression.get_unary_ops();
         });
 
-        // note: 'expr_type_value' does not have 'unary_ops' and cannot be
+        // note: 'expr_type' does not have 'unary_ops' and cannot be
         //       an argument in call
     }
 
@@ -249,19 +248,18 @@ class expr_any final : public statement {
         });
     }
 
-    [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {
-        return get<expr_type_value>(vars_[0]);
+    [[nodiscard]] auto as_expr_type() const -> const expr_type& {
+        return get<expr_type>(vars_[0]);
     }
 
     auto assert_record_value_not_reading(
-        const expr_type_value::record_destination& dst) const -> void {
+        const expr_type::record_destination& dst) const -> void {
 
-        if (is_array_ or
-            not std::holds_alternative<expr_type_value>(vars_[0])) {
+        if (is_array_ or not std::holds_alternative<expr_type>(vars_[0])) {
             return;
         }
 
-        as_expr_type_value().assert_not_reading(dst);
+        as_expr_type().assert_not_reading(dst);
     }
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
@@ -284,16 +282,16 @@ class expr_any final : public statement {
         if (not tp.is_builtin()) {
             // destination is not a built-in (register) value
             // assume assign type value
-            return expr_type_value{tc, tz, tp};
+            return expr_type{tc, tz, tp};
         }
 
         if (tp.name() == tc.get_type_bool().name()) {
             // destination is boolean
-            return expr_bool_ops_list{tc, tz.next_whitespace_token(), tz};
+            return expr_bool{tc, tz.next_whitespace_token(), tz};
         }
 
         // destination is a built-in (register) value
-        return expr_ops_list{tc, tz, in_args};
+        return expr_arith{tc, tz, in_args};
     }
 
     static auto compile_variant(toc& tc, const size_t indent,
@@ -302,13 +300,13 @@ class expr_any final : public statement {
         -> void {
 
         exp.visit(overloaded{
-            [&](const expr_ops_list& e) -> void {
+            [&](const expr_arith& e) -> void {
                 e.compile(tc, indent, dst_info);
             },
-            [&](const expr_type_value& e) -> void {
+            [&](const expr_type& e) -> void {
                 e.compile(tc, indent, dst_info);
             },
-            [&](const expr_bool_ops_list& e) -> void {
+            [&](const expr_bool& e) -> void {
                 machine& x{tc.machine()};
 
                 // if not expression assign to destination
@@ -344,8 +342,7 @@ class expr_any final : public statement {
     }
 
     static auto compile_bool_list(toc& tc, const size_t indent,
-                                  const token& src_loc_tk,
-                                  const expr_bool_ops_list& e,
+                                  const token& src_loc_tk, const expr_bool& e,
                                   const operand& dst) -> void {
 
         // make unique labels considering inlined functions

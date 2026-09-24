@@ -25,7 +25,7 @@
 //
 // note: a bit quirky parsing but compilation is trivial and register efficient
 //
-class expr_ops_list final : public expression {
+class expr_arith final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     std::vector<char> ops_; // operators between elements in the vector
     unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
@@ -38,12 +38,11 @@ class expr_ops_list final : public expression {
     bool is_implied_subexpression_{};
 
   public:
-    expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
-                  const bool enclosed = false, const token open_paren_tk = {},
-                  const bool is_implied_subexpression = false,
-                  unary_ops uops = {},
-                  const uint8_t first_op_precedence = initial_precedence,
-                  std::unique_ptr<statement> first_expression = {})
+    expr_arith(toc& tc, tokenizer& tz, const bool in_args = false,
+               const bool enclosed = false, const token open_paren_tk = {},
+               const bool is_implied_subexpression = false, unary_ops uops = {},
+               const uint8_t first_op_precedence = initial_precedence,
+               std::unique_ptr<statement> first_expression = {})
         : expression{tz.cur_position_token()}, uops_{std::move(uops)},
           open_paren_tk_{open_paren_tk}, enclosed_{enclosed},
           is_implied_subexpression_{is_implied_subexpression} {
@@ -66,13 +65,13 @@ class expr_ops_list final : public expression {
             // parenthesized expressions become nested lists
             if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
                 // move the unary ops to be applied on the whole sub-expression
-                exprs_.emplace_back(std::make_unique<expr_ops_list>(
+                exprs_.emplace_back(std::make_unique<expr_arith>(
                     tc, tz, in_args, true, t, false, std::move(uo)));
             } else {
                 // non-parenthesized unary ops belong to the next expression
                 // push back for so the element attaches it as its own
                 uo.put_back(tz);
-                exprs_.emplace_back(create_statement_in_expr_ops_list(tc, tz));
+                exprs_.emplace_back(create_statement_in_expr_arith(tc, tz));
             }
         }
 
@@ -165,7 +164,7 @@ class expr_ops_list final : public expression {
                 exprs_.pop_back();
 
                 // forward it to the sub-expression including its precedence
-                exprs_.emplace_back(make_unique<expr_ops_list>(
+                exprs_.emplace_back(make_unique<expr_arith>(
                     tc, tz, in_args, false, token{}, true, unary_ops{},
                     next_precedence, std::move(last_elem_in_list)));
 
@@ -216,7 +215,7 @@ class expr_ops_list final : public expression {
             if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
                 // yes, recurse and forward the unary ops to be applied on the
                 // whole sub-expression
-                exprs_.emplace_back(std::make_unique<expr_ops_list>(
+                exprs_.emplace_back(std::make_unique<expr_arith>(
                     tc, tz, in_args, true, t, false, std::move(uo)));
 
                 continue;
@@ -228,13 +227,13 @@ class expr_ops_list final : public expression {
             uo.put_back(tz);
 
             // read the next element
-            exprs_.emplace_back(create_statement_in_expr_ops_list(tc, tz));
+            exprs_.emplace_back(create_statement_in_expr_arith(tc, tz));
 
             // continue to next arithmetic op + element
         }
     }
 
-    expr_ops_list() = default;
+    expr_arith() = default;
 
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);

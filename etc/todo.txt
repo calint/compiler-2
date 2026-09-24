@@ -1,10 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] rename expr_ops_list to expr_arithmetic
-[ ] rename expr_bool_ops_list to expr_bool
-[ ] move expr_bool_op into expr_bool
-[ ] rename expr_type_value to expr_type
+[x] rename expr_ops_list to expr_arith
+[x] rename expr_bool_ops_list to expr_bool
+[x] move expr_bool_op into expr_bool
+[x] rename expr_type_value to expr_type
 [ ] consider not allowing single statement blocks
 [ ] rv32i emit_most_efficient should know the instruction count on synthesized
     instructions such as "li"

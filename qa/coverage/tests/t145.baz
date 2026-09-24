@@ -1,7 +1,7 @@
 func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    # test last element in a expr_bool_ops_list when constant evaluated
+    # test last element in a expr_bool when constant evaluated
     
     if (false and true) or (true) assert(true) else assert(false)
     if (false or true) and (false) assert(false) else assert(true)

@@ -378,7 +378,7 @@ struct ident_info {
 // 'decouple_impl.hpp'
 //
 
-[[nodiscard]] auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
+[[nodiscard]] auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,

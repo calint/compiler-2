@@ -1,7 +1,7 @@
 #pragma once
 // out-of-line definitions for functions/methods declared in 'decouple.hpp',
-// 'expr_type_value.hpp' and 'unary_ops.hpp' to break circular includes
-// between 'expr_any', 'expr_type_value', 'stmt_block', 'stmt_call',
+// 'expr_type.hpp' and 'unary_ops.hpp' to break circular includes
+// between 'expr_any', 'expr_type', 'stmt_block', 'stmt_call',
 // 'unary_ops' and 'toc'.
 
 #include <bit>
@@ -21,7 +21,7 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
-#include "expr_type_value.hpp"
+#include "expr_type.hpp"
 #include "stmt_builtin_address_of.hpp"
 #include "stmt_builtin_array_size_of.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
@@ -138,9 +138,9 @@ auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si,
 }
 
 // declared in 'decouple.hpp'
-// called from 'expr_ops_list' to solve circular dependencies with function
+// called from 'expr_arith' to solve circular dependencies with function
 // calls
-auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
+auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     // note: no 'std::move' on 'tk' because it is trivially copyable
@@ -182,11 +182,11 @@ auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
 }
 
-// declared in 'expr_type_value.hpp'
+// declared in 'expr_type.hpp'
 // note: constructor is implemented here (rather than in the header) because
 //       it needs the 'expr_any' definition, which would otherwise create a
-//       circular include between 'expr_type_value.hpp' and 'expr_any.hpp'
-expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
+//       circular include between 'expr_type.hpp' and 'expr_any.hpp'
+expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp)
     : statement{tz.next_token()} {
 
     set_type(tp);
@@ -260,15 +260,15 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             expr_delims_tk_.emplace_back(t);
         }
         // create an expression that assigns to field
-        // might recurse creating 'expr_type_value'
+        // might recurse creating 'expr_type'
         exprs_.emplace_back(std::make_unique<expr_any>(
             tc, tz, tf.type(), true, tf.is_array, tf.array_count));
     }
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::source_to(std::ostream& os) const -> void {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::source_to(std::ostream& os) const -> void {
     if (stmt_call_) {
         stmt_call_->source_to(os);
 
@@ -298,16 +298,16 @@ auto expr_type_value::source_to(std::ostream& os) const -> void {
     close_brace_tk_.source_to(os);
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::is_array_element() const -> bool {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::is_array_element() const -> bool {
     return stmt_ident_ and stmt_ident_->is_array_element();
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile(toc& tc, const size_t indent,
-                              const ident_info& dst_info) const -> void {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::compile(toc& tc, const size_t indent,
+                        const ident_info& dst_info) const -> void {
 
     if (stmt_call_) {
         stmt_call_->compile(tc, indent, dst_info);
@@ -320,9 +320,9 @@ auto expr_type_value::compile(toc& tc, const size_t indent,
     compile_assign(tc, indent, tp, dst_info, op);
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::assert_not_reading(const record_destination& dst) const
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::assert_not_reading(const record_destination& dst) const
     -> void {
 
     // same-type copies are either the same bytes or separate bytes
@@ -338,10 +338,10 @@ auto expr_type_value::assert_not_reading(const record_destination& dst) const
     assert_items_not_reading(dst, 0);
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::assert_items_not_reading(const record_destination& dst,
-                                               const size_t record_offset) const
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::assert_items_not_reading(const record_destination& dst,
+                                         const size_t record_offset) const
     -> void {
 
     for (const auto [expr, field] :
@@ -350,10 +350,9 @@ auto expr_type_value::assert_items_not_reading(const record_destination& dst,
         const size_t field_offset{record_offset + field.offset};
 
         if (not field.type().is_builtin() and
-            not expr->as_expr_type_value().is_identifier()) {
+            not expr->as_expr_type().is_identifier()) {
 
-            expr->as_expr_type_value().assert_items_not_reading(dst,
-                                                                field_offset);
+            expr->as_expr_type().assert_items_not_reading(dst, field_offset);
             continue;
         }
 
@@ -365,11 +364,11 @@ auto expr_type_value::assert_items_not_reading(const record_destination& dst,
     }
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::assert_item_not_reading(const statement& item,
-                                              const record_destination& dst,
-                                              const size_t written_size_bytes)
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::assert_item_not_reading(const statement& item,
+                                        const record_destination& dst,
+                                        const size_t written_size_bytes)
     -> void {
 
     if (written_size_bytes == 0) {
@@ -408,18 +407,17 @@ auto expr_type_value::assert_item_not_reading(const statement& item,
         });
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile_assign(toc& tc, const size_t indent,
-                                     const type& dst_type,
-                                     const ident_info& dst_info,
-                                     operand& dst_op) const -> void {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::compile_assign(toc& tc, const size_t indent,
+                               const type& dst_type, const ident_info& dst_info,
+                               operand& dst_op) const -> void {
 
     // is it e.g. pt1 = pt2, or pt1 = f()?
     if (is_identifier()) {
         const ident_info src_info{tc.make_ident_info(*this)};
 
-        // 'expr_type_value' validates the source type before entering here
+        // 'expr_type' validates the source type before entering here
 
         assert(dst_type.name() == src_info.type_ref().name());
 
@@ -461,8 +459,8 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
 
         if (not field.type().is_builtin()) {
             // the field has a user-defined type, so the expression is
-            // 'expr_type_value'
-            const expr_type_value& type_value{expr->as_expr_type_value()};
+            // 'expr_type'
+            const expr_type& type_value{expr->as_expr_type()};
             type_value.compile_assign(tc, indent, field.type(), cur_dst_info,
                                       dst_op);
             // note: dst_op was mutated in the recursive call
@@ -554,12 +552,11 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
     dst_op.increment_offset(address_offset(size_bytes));
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::validate_array_assignment(const token& src_loc_tk,
-                                                const type_field& fld,
-                                                const ident_info& src_info)
-    -> void {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::validate_array_assignment(const token& src_loc_tk,
+                                          const type_field& fld,
+                                          const ident_info& src_info) -> void {
 
     if (not src_info.is_array) {
         throw compiler_exception{src_loc_tk, "source must be an array"};
@@ -577,10 +574,10 @@ auto expr_type_value::validate_array_assignment(const token& src_loc_tk,
     }
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::visit_reads(const std::string_view var,
-                                  const read_visitor reader) const -> void {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::visit_reads(const std::string_view var,
+                            const read_visitor reader) const -> void {
 
     // a copy or a call reads its source instead of the '{...}' items
     if (stmt_ident_) {
@@ -596,23 +593,22 @@ auto expr_type_value::visit_reads(const std::string_view var,
     }
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile_lea(toc& tc, const size_t indent,
-                                  const token& src_loc_tk,
-                                  std::vector<operand>& allocated_registers,
-                                  const operand& reg_count,
-                                  const std::span<const operand> lea_path,
-                                  const operand& address_register) const
-    -> operand {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::compile_lea(toc& tc, const size_t indent,
+                            const token& src_loc_tk,
+                            std::vector<operand>& allocated_registers,
+                            const operand& reg_count,
+                            const std::span<const operand> lea_path,
+                            const operand& address_register) const -> operand {
 
     return stmt_ident_->compile_lea(tc, indent, src_loc_tk, allocated_registers,
                                     reg_count, lea_path, address_register);
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::identifier() const -> std::string_view {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::identifier() const -> std::string_view {
     if (stmt_ident_) {
         return stmt_ident_->identifier();
     }
@@ -620,9 +616,9 @@ auto expr_type_value::identifier() const -> std::string_view {
     return statement::identifier();
 }
 
-// declared in 'expr_type_value.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::is_indexed() const -> bool {
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::is_indexed() const -> bool {
     return stmt_ident_ and stmt_ident_->is_indexed();
 }
 
