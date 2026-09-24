@@ -15,10 +15,10 @@
 #include "decouple.hpp"
 #include "field_coverage.hpp"
 #include "token.hpp"
+#include "type.hpp"
 #include "unary_ops.hpp"
 
 class toc;
-class type;
 class machine;
 
 class statement {
@@ -276,14 +276,28 @@ class statement {
         }
     }
 
-    // defined in 'decouple_impl.hpp' where 'type' is complete
     [[noreturn]] static auto throw_narrowed(const token& src_loc_tk,
-                                            std::string_view source,
+                                            const std::string_view source,
                                             const type& src_type,
-                                            const type& dst_type) -> void;
+                                            const type& dst_type) -> void {
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("'{}' of type '{}' is narrowed to '{}', use '{}(...)'",
+                        source, src_type.name(), dst_type.name(),
+                        dst_type.name())};
+    }
 
     // for statements whose value has the statement's own type
-    auto assert_own_type_not_narrowed(const type& dst_type) const -> void;
+    auto assert_own_type_not_narrowed(const type& dst_type) const -> void {
+        if (not dst_type.is_builtin() or not get_type().is_builtin() or
+            get_type().size_bytes() <= dst_type.size_bytes()) {
+
+            return;
+        }
+
+        throw_narrowed(tok(), trimmed_source(*this), get_type(), dst_type);
+    }
 
     [[noreturn]] static auto throw_uninitialized(const token& use_tk,
                                                  const std::string_view var)

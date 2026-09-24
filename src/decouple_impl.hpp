@@ -1,10 +1,13 @@
 #pragma once
-// out-of-line definitions for functions/methods declared in 'decouple.hpp',
-// 'expr_type.hpp' and 'unary_ops.hpp' to break circular includes
-// between 'expr_any', 'expr_type', 'stmt_block', 'stmt_call',
-// 'unary_ops' and 'toc'.
+// out-of-line definitions that need classes whose headers include the
+// declaring header:
+//   - statement factories declared in 'decouple.hpp' create every statement
+//     class, and every statement header includes 'decouple.hpp'
+//   - 'expr_type' members use 'expr_any', 'stmt_identifier' and 'stmt_call',
+//     whose headers include 'expr_type.hpp' through 'expr_any.hpp'
+//   - 'unary_ops::compile' uses 'toc', which includes 'unary_ops.hpp' through
+//     'statement.hpp'
 
-#include <bit>
 #include <cassert>
 #include <format>
 #include <memory>
@@ -44,58 +47,6 @@
 
 // definitions are intentionally not 'inline': single translation unit build
 // NOLINTBEGIN(misc-definitions-in-headers)
-
-// declared in 'decouple.hpp'
-auto operand::imm(std::string value, const type& value_type) -> operand {
-    if (value.empty()) {
-        throw std::invalid_argument{"operand text must not be empty"};
-    }
-
-    operand result;
-    result.kind_ = kind::immediate;
-    result.type_ptr_ = &value_type;
-    result.immediate_ = std::move(value);
-
-    return result;
-}
-
-// declared in 'decouple.hpp'
-auto operand::reg(const std::string_view name, const type& value_type)
-    -> operand {
-
-    if (name.empty()) {
-        throw std::invalid_argument{"operand text must not be empty"};
-    }
-
-    operand result;
-    result.kind_ = kind::reg;
-    result.type_ptr_ = &value_type;
-    result.base_register_ = name;
-
-    return result;
-}
-
-// declared in 'decouple.hpp'
-auto operand::mem(const std::string_view base, const std::string_view index,
-                  const uint64_t index_scale, const int64_t offset,
-                  const type& value_type) -> operand {
-
-    assert(std::has_single_bit(index_scale));
-
-    if (base.empty() and index.empty() and offset == 0) {
-        throw std::invalid_argument{"operand address must not be empty"};
-    }
-
-    operand result;
-    result.kind_ = kind::memory;
-    result.type_ptr_ = &value_type;
-    result.base_register_ = base;
-    result.index_register_ = index;
-    result.scale_ = index_scale;
-    result.displacement_ = offset;
-
-    return result;
-}
 
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop',
@@ -187,31 +138,6 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 
     // e.g. 0x80, rax, identifiers, constants
     return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
-}
-
-// declared in 'statement.hpp'
-auto statement::throw_narrowed(const token& src_loc_tk,
-                               const std::string_view source,
-                               const type& src_type, const type& dst_type)
-    -> void {
-
-    throw compiler_exception{
-        src_loc_tk,
-        std::format("'{}' of type '{}' is narrowed to '{}', use '{}(...)'",
-                    source, src_type.name(), dst_type.name(), dst_type.name())};
-}
-
-// declared in 'statement.hpp'
-auto statement::assert_own_type_not_narrowed(const type& dst_type) const
-    -> void {
-
-    if (not dst_type.is_builtin() or not get_type().is_builtin() or
-        get_type().size_bytes() <= dst_type.size_bytes()) {
-
-        return;
-    }
-
-    throw_narrowed(tok(), trimmed_source(*this), get_type(), dst_type);
 }
 
 // declared in 'expr_type.hpp'
@@ -354,24 +280,6 @@ auto expr_type::compile(toc& tc, const size_t indent,
 
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::assert_not_reading(const record_destination& dst) const
-    -> void {
-
-    // same-type copies are either the same bytes or separate bytes
-    if (stmt_ident_) {
-        return;
-    }
-
-    // todo: a call may write its result into an argument, see etc/todo.txt
-    if (stmt_call_) {
-        return;
-    }
-
-    assert_items_not_reading(dst, 0);
-}
-
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::assert_items_not_reading(const record_destination& dst,
                                          const size_t record_offset) const
     -> void {
@@ -417,49 +325,6 @@ auto expr_type::assert_record_field_not_reading(const expr_any& src,
 
         element.assert_items_not_reading(dst, element_offset);
     }
-}
-
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::assert_item_not_reading(const statement& item,
-                                        const record_destination& dst,
-                                        const size_t written_size_bytes)
-    -> void {
-
-    if (written_size_bytes == 0) {
-        return;
-    }
-
-    // with a runtime index any element of the array may already be written
-    const field_coverage::range written{
-        dst.is_exact ? field_coverage::range{.offset{dst.range.offset},
-                                             .size_bytes{written_size_bytes}}
-                     : dst.range};
-
-    item.visit_reads(
-        dst.root,
-        [&dst, &written](
-            const token& use_tk, const std::string_view read_text,
-            const std::optional<field_coverage::range>& accessed) -> void {
-            if (accessed and not accessed->overlaps(written)) {
-                return;
-            }
-
-            // a runtime index may or may not refer to the written element
-            if (not dst.is_exact) {
-                throw compiler_exception{
-                    use_tk,
-                    std::format("'{}' may have been overwritten in the same "
-                                "statement",
-                                read_text)};
-            }
-
-            throw compiler_exception{
-                use_tk,
-                std::format("'{}' is read but has been overwritten in the "
-                            "same statement",
-                            read_text)};
-        });
 }
 
 // declared in 'expr_type.hpp'
@@ -640,28 +505,6 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
               remaining_count, field.type().size_bytes(), size_bytes);
     x.zero(src.tok(), indent, dst_op, size_bytes);
     dst_op.increment_offset(address_offset(size_bytes));
-}
-
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::validate_array_assignment(const token& src_loc_tk,
-                                          const type_field& fld,
-                                          const ident_info& src_info) -> void {
-
-    if (not src_info.is_array) {
-        throw compiler_exception{src_loc_tk, "source must be an array"};
-    }
-
-    // 'expr_any' validates the source element type before entering here
-
-    assert(fld.type().name() == src_info.type_ref().name());
-
-    if (fld.array_count != src_info.array_len) {
-        throw compiler_exception{
-            src_loc_tk, std::format("destination array size {} does not match "
-                                    "source size {}",
-                                    fld.array_count, src_info.array_len)};
-    }
 }
 
 // declared in 'expr_type.hpp'

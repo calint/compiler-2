@@ -2,9 +2,10 @@
 // reviewed: 2025-09-28
 
 // solves circular references
-// implemented in 'decouple_impl.hpp'
+// the statement factories at the end are implemented in 'decouple_impl.hpp'
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -106,16 +107,57 @@ class operand {
     operand() = default;
 
     [[nodiscard]] static auto imm(std::string value, const type& value_type)
-        -> operand;
+        -> operand {
+
+        if (value.empty()) {
+            throw std::invalid_argument{"operand text must not be empty"};
+        }
+
+        operand result;
+        result.kind_ = kind::immediate;
+        result.type_ptr_ = &value_type;
+        result.immediate_ = std::move(value);
+
+        return result;
+    }
 
     [[nodiscard]] static auto reg(const std::string_view name,
-                                  const type& value_type) -> operand;
+                                  const type& value_type) -> operand {
+
+        if (name.empty()) {
+            throw std::invalid_argument{"operand text must not be empty"};
+        }
+
+        operand result;
+        result.kind_ = kind::reg;
+        result.type_ptr_ = &value_type;
+        result.base_register_ = name;
+
+        return result;
+    }
 
     [[nodiscard]] static auto mem(const std::string_view base,
                                   const std::string_view index,
                                   const uint64_t index_scale,
                                   const int64_t offset, const type& value_type)
-        -> operand;
+        -> operand {
+
+        assert(std::has_single_bit(index_scale));
+
+        if (base.empty() and index.empty() and offset == 0) {
+            throw std::invalid_argument{"operand address must not be empty"};
+        }
+
+        operand result;
+        result.kind_ = kind::memory;
+        result.type_ptr_ = &value_type;
+        result.base_register_ = base;
+        result.index_register_ = index;
+        result.scale_ = index_scale;
+        result.displacement_ = offset;
+
+        return result;
+    }
 
     [[nodiscard]] static auto mem(const operand& address,
                                   const type& value_type) -> operand {
@@ -374,8 +416,8 @@ struct ident_info {
 };
 
 //
-// functions necessary to solve circular references, implemented in
-// 'decouple_impl.hpp'
+// statement factories implemented in 'decouple_impl.hpp' because they create
+// every statement class, while every statement header includes this file
 //
 
 [[nodiscard]] auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
