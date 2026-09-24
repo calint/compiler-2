@@ -18,7 +18,7 @@
         },
         {
             "label": "baz: run tests",
-            "command": "run-tests-coverage.sh",
+            "command": "test-coverage.sh",
             "options": {
                 "cwd": "${workspaceFolder}/qa/coverage/"
             },

@@ -55,7 +55,7 @@ x86_64 assembly on Linux.
     * option `--reproduce-source` writes reproduced source to `diff.baz`
       and checks that it matches the input
     * to compile for rv32i and run in QEMU use `--target=rv32i`
-* to run the tests `qa/coverage/run-tests-all.sh` and see coverage report in
+* to run the tests `qa/coverage/test-all.sh` and see coverage report in
   `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
 * todo list of planned fixes and features in `etc/todo.txt`

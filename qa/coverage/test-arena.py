@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Run from any directory with: python3 qa/coverage/test-arena.py
+# Run from any directory with: qa/coverage/test-arena.py
 # Requires an already-built baz compiler, nasm, and ld.
 # Tests two things: reported variable usage and actual ELF/runtime layout.
 import os
