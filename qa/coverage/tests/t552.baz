@@ -1,0 +1,5 @@
+# an array field literal may not have more elements than the field
+type rec { a[3], b }
+func main() {
+    var r rec = { {1, 2, 3, 4}, 5 }
+}

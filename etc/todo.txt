@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] move anything that can be moved from decouple_impl.hpp to corresponding
+    class file
 [ ] ponder whether a compiler flag to check for overflow in arithmetics
     => a --checks=ub adds code to check overflows etc
 [ ] re-look at stmt_identifier::compile_lea and make a nicer implementation

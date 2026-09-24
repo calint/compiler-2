@@ -1,0 +1,4 @@
+# an array literal may not have more elements than the array
+func main() {
+    var a[3] = {1, 2, 3, 4}
+}

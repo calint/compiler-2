@@ -1,0 +1,23 @@
+# a record literal assigns every element of an array-of-records field
+func assert(ok bool, code) { if not ok exit(code) }
+type point { x, y }
+type box { corners[2] point, tag }
+func main() {
+    var b box = { { {1, 2}, {3, 4} }, 5 }
+    assert(b.corners[0].y == 2, 1)
+    assert(b.corners[1].x == 3, 2)
+    assert(b.corners[1].y == 4, 3)
+    assert(b.tag == 5, 4)
+    var bs[2] box
+    var i = 1
+    bs[i] = { { {6, 7} }, 8 }
+    assert(bs[1].corners[0].y == 7, 5)
+    assert(bs[1].corners[1].x == 0, 6)
+    assert(bs[1].tag == 8, 7)
+    var e box = { {}, 9 }
+    assert(e.corners[1].y == 0, 8)
+    assert(e.tag == 9, 9)
+    var c box = { b.corners, 10 }
+    assert(c.corners[1].y == 4, 10)
+    assert(c.tag == 10, 11)
+}

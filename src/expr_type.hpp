@@ -95,11 +95,25 @@ class expr_type final : public statement {
                                         const size_t written_size_bytes)
         -> void;
 
+    // implemented in 'decouple_impl.hpp'
+    static auto assert_record_field_not_reading(const expr_any& src,
+                                                const type_field& field,
+                                                const record_destination& dst,
+                                                const size_t field_offset)
+        -> void;
+
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type -> expr_any -> expr_type
     auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
                         const ident_info& dst_info, operand& dst_op) const
         -> void;
+
+    // implemented in 'decouple_impl.hpp'
+    static auto compile_record_field(toc& tc, const size_t indent,
+                                     const expr_any& src,
+                                     const type_field& field,
+                                     const ident_info& dst_info,
+                                     operand& dst_op) -> void;
 
     // implemented in 'decouple_impl.hpp'
     static auto validate_array_assignment(const token& src_loc_tk,

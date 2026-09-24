@@ -381,10 +381,8 @@ auto expr_type::assert_items_not_reading(const record_destination& dst,
 
         const size_t field_offset{record_offset + field.offset};
 
-        if (not field.type().is_builtin() and
-            not expr->as_expr_type().is_identifier()) {
-
-            expr->as_expr_type().assert_items_not_reading(dst, field_offset);
+        if (not field.type().is_builtin() and not expr->is_array_identifier()) {
+            assert_record_field_not_reading(*expr, field, dst, field_offset);
             continue;
         }
 
@@ -393,6 +391,31 @@ auto expr_type::assert_items_not_reading(const record_destination& dst,
             field.is_array ? field_offset + field.size_bytes : field_offset};
 
         assert_item_not_reading(*expr, dst, written_size_bytes);
+    }
+}
+
+// declared in 'expr_type.hpp'
+// each element of a record array field is an item of its own, a plain record
+// field is the single element
+auto expr_type::assert_record_field_not_reading(const expr_any& src,
+                                                const type_field& field,
+                                                const record_destination& dst,
+                                                const size_t field_offset)
+    -> void {
+
+    const size_t element_size_bytes{field.type().size_bytes()};
+
+    for (size_t i{}; i < src.element_count(); ++i) {
+        const expr_type& element{src.as_expr_type(i)};
+        const size_t element_offset{
+            field_offset + multiply_storage_size(element_size_bytes, i)};
+
+        if (element.is_identifier()) {
+            assert_item_not_reading(element, dst, element_offset);
+            continue;
+        }
+
+        element.assert_items_not_reading(dst, element_offset);
     }
 }
 
@@ -490,11 +513,8 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
         cur_dst_info.push(field.name, field.type_ptr, {});
 
         if (not field.type().is_builtin()) {
-            // the field has a user-defined type, so the expression is
-            // 'expr_type'
-            const expr_type& type_value{expr->as_expr_type()};
-            type_value.compile_assign(tc, indent, field.type(), cur_dst_info,
-                                      dst_op);
+            compile_record_field(tc, indent, *expr, field, cur_dst_info,
+                                 dst_op);
             // note: dst_op was mutated in the recursive call
             cur_dst_info.increment_offset(address_offset(field.size_bytes));
             cur_dst_info.pop();
@@ -581,6 +601,44 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
 
     x.comment(tok(), indent, "zero remaining fields: {} B", size_bytes);
     x.zero(tok(), indent, dst_op, size_bytes);
+    dst_op.increment_offset(address_offset(size_bytes));
+}
+
+// declared in 'expr_type.hpp'
+// a record field, or each element of a record array field in turn
+auto expr_type::compile_record_field(toc& tc, const size_t indent,
+                                     const expr_any& src,
+                                     const type_field& field,
+                                     const ident_info& dst_info,
+                                     operand& dst_op) -> void {
+
+    // one assignment fills a record or copies a whole array identifier
+    if (not field.is_array or src.is_array_identifier()) {
+        src.as_expr_type().compile_assign(tc, indent, field.type(), dst_info,
+                                          dst_op);
+
+        return;
+    }
+
+    for (size_t i{}; i < src.element_count(); ++i) {
+        src.as_expr_type(i).compile_assign(tc, indent, field.type(), dst_info,
+                                           dst_op);
+    }
+
+    // unlisted elements are zero like unlisted fields
+    const size_t remaining_count{field.array_count - src.element_count()};
+    if (remaining_count == 0) {
+        return;
+    }
+
+    const size_t size_bytes{
+        multiply_storage_size(field.type().size_bytes(), remaining_count)};
+
+    machine& x{tc.machine()};
+
+    x.comment(src.tok(), indent, "zero remaining elements: {} * {} B = {} B",
+              remaining_count, field.type().size_bytes(), size_bytes);
+    x.zero(src.tok(), indent, dst_op, size_bytes);
     dst_op.increment_offset(address_offset(size_bytes));
 }
 

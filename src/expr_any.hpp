@@ -74,6 +74,15 @@ class expr_any final : public statement {
                 }
                 var_delims_tk_.emplace_back(t);
             }
+
+            // the remaining count would wrap around past the array size
+            if (array_count_ != 0 and vars_.size() == array_count_) {
+                throw compiler_exception{
+                    tz, std::format("too many elements specified for array of "
+                                    "size {}",
+                                    array_count_)};
+            }
+
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
         }
 
@@ -248,9 +257,13 @@ class expr_any final : public statement {
         });
     }
 
-    [[nodiscard]] auto as_expr_type() const -> const expr_type& {
-        return get<expr_type>(vars_[0]);
+    [[nodiscard]] auto as_expr_type(const size_t index = 0) const
+        -> const expr_type& {
+
+        return get<expr_type>(vars_[index]);
     }
+
+    [[nodiscard]] auto element_count() const -> size_t { return vars_.size(); }
 
     auto assert_record_value_not_reading(
         const expr_type::record_destination& dst) const -> void {
