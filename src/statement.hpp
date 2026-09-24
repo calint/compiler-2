@@ -2,7 +2,6 @@
 // reviewed: 2025-09-28
 
 #include <format>
-#include <ranges>
 #include <span>
 #include <sstream>
 #include <string>

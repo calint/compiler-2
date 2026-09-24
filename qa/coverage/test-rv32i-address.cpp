@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "../../src/decouple_impl.hpp"
+#include "../../src/decouple_impl.hpp" // IWYU pragma: keep
 #include "../../src/jump_optimizer.hpp"
 #include "../../src/machine_rv32i.hpp"
 #include "../../src/machine_x86.hpp"
