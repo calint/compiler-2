@@ -458,7 +458,8 @@ auto main(const int argc, const char* argv[]) -> int {
                                         copy);
 
             backend.finish();
-            assert(output.str().ends_with("li a0, 2047\naddi a0, a1, 0\n"));
+            // buffered output is followed by the optimization counts
+            assert(output.str().contains("li a0, 2047\naddi a0, a1, 0\n"));
         }
     }
     {

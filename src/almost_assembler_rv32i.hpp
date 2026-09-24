@@ -68,10 +68,19 @@ class almost_assembler_rv32i final {
         "snez", "sltz", "sgtz",  "beq",    "bne",   "blt",
     };
 
+    // changes made by 'optimize_jumps', printed by 'finish'
+    struct optimization_counts {
+        size_t jumps_to_next{};
+        size_t unreachable_jumps{};
+        size_t same_outcome_branches{};
+        size_t inverted_branches{};
+    };
+
     std::vector<line> lines_;
     // versions being emitted by 'emit_smaller', innermost last
     std::vector<std::vector<line>> captures_;
     bool code_section_{true};
+    optimization_counts optimizations_;
 
     [[nodiscard]] auto current_lines() -> std::vector<line>& {
         if (captures_.empty()) {
@@ -342,6 +351,7 @@ class almost_assembler_rv32i final {
         // execution continues at the target anyway
         if (target_code == next_instruction(index + 1)) {
             remove(branch);
+            ++optimizations_.jumps_to_next;
 
             return true;
         }
@@ -358,6 +368,7 @@ class almost_assembler_rv32i final {
         // nothing reaches a jump right after an unconditional jump
         if (not is_conditional(*branch.jump)) {
             remove(jump);
+            ++optimizations_.unreachable_jumps;
 
             return true;
         }
@@ -372,6 +383,7 @@ class almost_assembler_rv32i final {
         // both outcomes continue at the same place
         if (target_code == next_instruction(*jump_target)) {
             remove(branch);
+            ++optimizations_.same_outcome_branches;
 
             return true;
         }
@@ -380,6 +392,7 @@ class almost_assembler_rv32i final {
         if (target_code == next_instruction(*jump_index + 1)) {
             invert(branch, jump.jump->target);
             remove(jump);
+            ++optimizations_.inverted_branches;
 
             return true;
         }
@@ -680,5 +693,25 @@ class almost_assembler_rv32i final {
             write_line(os, l, skip_count);
         }
         lines_.clear();
+    }
+
+    // prints the optimization counts as comments, aligned with the usage
+    // statistics that follow
+    auto finish(std::ostream& os) -> void {
+        std::println(os);
+
+        std::println(os, "# {:>28}: {}", "removed jumps to next code",
+                     optimizations_.jumps_to_next);
+
+        std::println(os, "# {:>28}: {}", "removed unreachable jumps",
+                     optimizations_.unreachable_jumps);
+
+        std::println(os, "# {:>28}: {}", "removed same target branches",
+                     optimizations_.same_outcome_branches);
+
+        std::println(os, "# {:>28}: {}", "inverted branches over jumps",
+                     optimizations_.inverted_branches);
+
+        optimizations_ = {};
     }
 };

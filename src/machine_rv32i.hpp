@@ -1282,6 +1282,7 @@ class machine_rv32i final : public machine {
             assembler_.optimize_jumps();
         }
         assembler_.resolve_and_write(os_.get());
+        assembler_.finish(os_.get());
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
