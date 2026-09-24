@@ -237,20 +237,34 @@ auto main(const int argc, const char** const argv) -> int {
             }
         }
 
-        if (optimize_jumps) {
-            // each target has different branch syntax and displacement limits
-            std::stringstream ss1;
-            prg.build(ss1);
-            if (target == "rv32i") {
-                jump_optimizer::rv32i::optimize(ss1, std::cout);
-            } else {
-                std::stringstream ss2;
-                jump_optimizer::x86::pass1(ss1, ss2);
-                jump_optimizer::x86::pass2(ss2, std::cout);
+        if (target == "rv32i") {
+            // jump reach is only known once every label has an offset
+            std::stringstream built;
+            prg.build(built);
+            if (not optimize_jumps) {
+                jump_optimizer::rv32i::resolve_jumps(built, std::cout);
+
+                return 0;
             }
-        } else {
-            prg.build(std::cout);
+
+            std::stringstream resolved;
+            jump_optimizer::rv32i::resolve_jumps(built, resolved);
+            jump_optimizer::rv32i::optimize(resolved, std::cout);
+
+            return 0;
         }
+
+        if (not optimize_jumps) {
+            prg.build(std::cout);
+
+            return 0;
+        }
+
+        std::stringstream ss1;
+        prg.build(ss1);
+        std::stringstream ss2;
+        jump_optimizer::x86::pass1(ss1, ss2);
+        jump_optimizer::x86::pass2(ss2, std::cout);
 
     } catch (const compiler_exception& e) {
         const auto [line, col]{

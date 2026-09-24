@@ -38,6 +38,11 @@ auto main(const int argc, const char* argv[]) -> int {
 
         return 0;
     }
+    if (argc > 1 and std::string_view{argv[1]} == "resolve-jumps") {
+        jump_optimizer::rv32i::resolve_jumps(std::cin, std::cout);
+
+        return 0;
+    }
     {
         const auto optimize = [](const std::string& assembly) -> std::string {
             std::istringstream input{assembly};
@@ -113,6 +118,102 @@ auto main(const int argc, const char* argv[]) -> int {
         }
         expanded += "end:\n";
         assert(optimize(expanded) == expanded);
+    }
+    {
+        const auto resolve = [](const std::string& assembly) -> std::string {
+            std::istringstream input{assembly};
+            std::ostringstream output;
+            jump_optimizer::rv32i::resolve_jumps(input, output);
+
+            return output.str();
+        };
+
+        const auto padding = [](const size_t count) -> std::string {
+            std::string text;
+            for (size_t i{}; i < count; ++i) {
+                text += "nop\n";
+            }
+
+            return text;
+        };
+
+        const auto rejects = [&](const std::string& assembly) -> bool {
+            try {
+                static_cast<void>(resolve(assembly));
+            } catch (const panic_exception&) {
+                return true;
+            }
+
+            return false;
+        };
+
+        // branches reach 4094 bytes forward and 4096 bytes backward
+        const std::string branch_forward{"beq a0, a1, end # baz: t0\n" +
+                                         padding(1022) + "end:\n"};
+
+        assert(resolve(branch_forward) == branch_forward);
+
+        assert(resolve("beq a0, a1, end # baz: t0\n" + padding(1023) +
+                       "end:\n") ==
+               "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
+                   padding(1023) + "end:\n");
+
+        const std::string branch_backward{"end:\n" + padding(1024) +
+                                          "beq a0, a1, end # baz: t0\n"};
+
+        assert(resolve(branch_backward) == branch_backward);
+
+        assert(resolve("end:\n" + padding(1025) +
+                       "beq a0, a1, end # baz: t0\n") ==
+               "end:\n" + padding(1025) +
+                   "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n");
+
+        // 'jal' reaches 1048574 bytes forward and 1048576 bytes backward
+        const std::string jal_forward{"j end # baz: t0\n" + padding(262142) +
+                                      "end:\n"};
+
+        assert(resolve(jal_forward) == jal_forward);
+
+        assert(resolve("j end # baz: t0\n" + padding(262143) + "end:\n") ==
+               "jump end, t0\n" + padding(262143) + "end:\n");
+
+        const std::string jal_backward{"end:\n" + padding(262144) +
+                                       "j end # baz: t0\n"};
+
+        assert(resolve(jal_backward) == jal_backward);
+
+        assert(resolve("end:\n" + padding(262145) + "j end # baz: t0\n") ==
+               "end:\n" + padding(262145) + "jump end, t0\n");
+
+        assert(resolve("    bnez a0, end # baz: t1\n" + padding(262143) +
+                       "end:\n") ==
+               "    beqz a0, .Lbaz_jump.0\n    jump end, t1\n.Lbaz_jump.0:\n" +
+                   padding(262143) + "end:\n");
+
+        // growing the inner branch pushes the outer one out of reach
+        const std::string chained{resolve(
+            "beq a0, a1, end # baz: t0\n" + padding(1021) +
+            "beq a0, a1, far # baz: t0\nend:\n" + padding(1100) + "far:\n")};
+
+        assert(chained.starts_with("bne a0, a1, .Lbaz_jump.0\nj end\n"));
+        assert(chained.contains("bne a0, a1, .Lbaz_jump.1\nj far\n"));
+
+        // a named skip label keeps numeric references pointing at the same line
+        assert(resolve("1:\nbnez a0, 1b\nbeq a0, a1, 1f # baz: t0\n" +
+                       padding(1100) + "1:\n")
+                   .starts_with("1:\nbnez a0, 1b\nbne a0, a1, .Lbaz_jump.0\n"
+                                "j 1f\n.Lbaz_jump.0:\n"));
+
+        // other sections do not count towards code offsets
+        const std::string other_section{
+            "beq a0, a1, end # baz: t0\n.section .rodata\n.zero 8192\n"
+            ".text\nend:\n"};
+
+        assert(resolve(other_section) == other_section);
+
+        assert(rejects("j end\n" + padding(262143) + "end:\n"));
+        assert(rejects("j end\n.zero 8192\nend:\n"));
+        assert(rejects("j end\nunknown_instruction\nend:\n"));
     }
     const type integer64{"i64", 8, true};
     const type integer{"i32", 4, true};
@@ -407,6 +508,72 @@ auto main(const int argc, const char* argv[]) -> int {
         std::println("    addi sp, sp, 16");
         backend.program_end();
         backend.label(0, "long_loop_failure");
+        backend.exit(token{}, 1, operand::imm("1", integer));
+        backend.finish();
+        std::println(".data\ndat:\n    .word 0");
+
+        return 0;
+    }
+    if (argc > 1 and std::string_view{argv[1]} == "far-jumps") {
+        machine_rv32i backend;
+        backend.set_builtin_types(integer64, integer, half, byte, boolean,
+                                  empty);
+        backend.use_stream(std::cout);
+        backend.program_start();
+
+        const auto padding = [](const size_t count) -> void {
+            for (size_t i{}; i < count; ++i) {
+                std::println("    nop");
+            }
+        };
+
+        // 8 KiB needs 'j' and 1.08 MiB needs 'jump' in every direction
+        std::println("    addi sp, sp, -16");
+        for (const size_t count : {2048U, 270000U}) {
+            const std::string loop_label{std::format("far_loop_{}", count)};
+            std::println("    sw zero, 0(sp)\n    li s2, 0");
+            backend.label(0, loop_label);
+            padding(count);
+            std::println("    addi s2, s2, 1");
+
+            backend.advance_array_iteration(
+                1, operand::reg("s2", integer),
+                operand::mem("sp", {}, 1, 0, integer), 4, 3, loop_label);
+
+            backend.compare_and_branch(token{}, 1, operand::reg("s2", integer),
+                                       operand::imm("15", integer),
+                                       {
+                                           .operation{"!="},
+                                           .target{"far_failure"},
+                                           .branch_on_true{true},
+                                       },
+                                       {});
+
+            const std::string taken_label{std::format("far_taken_{}", count)};
+
+            backend.compare_and_branch(token{}, 1, operand::reg("s2", integer),
+                                       operand::imm("15", integer),
+                                       {
+                                           .operation{"=="},
+                                           .target{taken_label},
+                                           .branch_on_true{true},
+                                       },
+                                       {});
+
+            padding(count);
+            backend.exit(token{}, 1, operand::imm("2", integer));
+            backend.label(0, taken_label);
+            const std::string skipped_label{
+                std::format("far_skipped_{}", count)};
+            backend.branch(1, skipped_label);
+            padding(count);
+            backend.exit(token{}, 1, operand::imm("3", integer));
+            backend.label(0, skipped_label);
+        }
+        std::println("    addi sp, sp, 16");
+        backend.program_end();
+        padding(270000);
+        backend.label(0, "far_failure");
         backend.exit(token{}, 1, operand::imm("1", integer));
         backend.finish();
         std::println(".data\ndat:\n    .word 0");
@@ -1347,7 +1514,8 @@ func main() {
                                },
                                {});
 
-    assert(address_output.str() == "bne a0, a1, 1f\nj comparison_target\n1:\n");
+    // every scratch register is held here, so no far jump register is named
+    assert(address_output.str() == "beq a0, a1, comparison_target\n");
     for (const std::string_view operation : {"<", "==", "!="}) {
         address_output.str({});
 

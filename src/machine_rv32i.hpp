@@ -11,6 +11,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "jump_optimizer.hpp"
 #include "machine.hpp"
 #include "type.hpp"
 
@@ -153,6 +154,18 @@ class machine_rv32i final : public machine {
                   args_t&&... args) const -> void {
         std::print(os_.get(), "{}", std::string(indent * 4, ' '));
         std::println(os_.get(), format, std::forward<args_t>(args)...);
+    }
+
+    // 'resolve_jumps' may grow a jump beyond 1 MiB and then needs a register
+    // that holds no live value at the jump
+    [[nodiscard]] auto far_jump_register_comment() const -> std::string {
+        for (const size_t index : scratch_registers_) {
+            if ((unavailable_registers_ & (uint32_t{1} << index)) == 0) {
+                return std::format(" # baz: {}", register_names_.at(index));
+            }
+        }
+
+        return {};
     }
 
     // 'address_scope' protects operand registers and memory base/index
@@ -1081,81 +1094,40 @@ class machine_rv32i final : public machine {
                              const std::string_view with_scratch)
         -> void override {
 
-        const auto count_instructions{
-            [](const std::string_view text) -> size_t {
-                size_t count{};
-                for (const auto line : text | std::views::split('\n')) {
-                    std::string_view value{line};
-                    value = value.substr(0, value.find('#'));
-                    const size_t start{value.find_first_not_of(" \t\r")};
-                    if (start == std::string_view::npos) {
-                        continue;
-                    }
-                    value = value.substr(
-                        start, value.find_last_not_of(" \t\r") - start + 1);
-                    // emitted labels and directives occupy no instruction slots
-                    if (value.front() == '.' or value.back() == ':') {
-                        continue;
-                    }
-                    const std::string_view instruction{
-                        value.substr(0, value.find_first_of(" \t"))};
-                    // norelax keeps address and call sequences at two
-                    // instructions
-                    if (instruction == "la" or instruction == "call") {
-                        count += 2;
-                    } else if (instruction == "li") {
-                        size_t cost{2};
-                        const size_t comma{value.find(',')};
-                        if (comma != std::string_view::npos) {
-                            std::string_view literal{value.substr(comma + 1)};
-                            const size_t digits{
-                                literal.find_first_not_of(" \t")};
-                            if (digits != std::string_view::npos) {
-                                literal.remove_prefix(digits);
-                                int64_t parsed{};
-                                const char* const end{
-                                    std::to_address(literal.end())};
-                                const std::from_chars_result conversion{
-                                    std::from_chars(
-                                        std::to_address(literal.begin()), end,
-                                        parsed)};
-
-                                // unresolved expressions retain the
-                                // conservative cost
-                                if (conversion.ec == std::errc{} and
-                                    conversion.ptr == end and
-                                    parsed >=
-                                        std::numeric_limits<int32_t>::min() and
-                                    std::cmp_less_equal(
-                                        parsed,
-                                        std::numeric_limits<uint32_t>::max())) {
-                                    const uint32_t bits{
-                                        static_cast<uint32_t>(parsed)};
-                                    const int32_t immediate{
-                                        std::bit_cast<int32_t>(bits)};
-                                    constexpr uint32_t low_mask{0xfff};
-                                    // addi handles signed 12 bits and lui needs
-                                    // no low-part add
-                                    if ((immediate >= immediate_min and
-                                         immediate <= immediate_max) or
-                                        (bits & low_mask) == 0) {
-                                        cost = 1;
-                                    }
-                                }
-                            }
-                        }
-                        count += cost;
-                    } else {
-                        ++count;
-                    }
+        const auto code_size_bytes{[](const std::string_view text) -> size_t {
+            size_t size_bytes{};
+            for (const auto line : text | std::views::split('\n')) {
+                std::string_view value{line};
+                value = value.substr(0, value.find('#'));
+                const size_t start{value.find_first_not_of(" \t\r")};
+                if (start == std::string_view::npos) {
+                    continue;
                 }
+                value = value.substr(start, value.find_last_not_of(" \t\r") -
+                                                start + 1);
+                // emitted labels and directives occupy no instruction slots
+                if (value.front() == '.' or value.back() == ':') {
+                    continue;
+                }
+                const size_t split{value.find_first_of(" \t")};
+                const std::string_view instruction{value.substr(0, split)};
 
-                return count;
-            }};
+                const std::string_view arguments{split == std::string_view::npos
+                                                     ? std::string_view{}
+                                                     : value.substr(split)};
+
+                // unknown instructions count as one word
+                size_bytes += jump_optimizer::rv32i::instruction_size_bytes(
+                                  instruction, arguments)
+                                  .value_or(4);
+            }
+
+            return size_bytes;
+        }};
 
         std::print(os_.get(), "{}",
-                   count_instructions(without_scratch) <=
-                           count_instructions(with_scratch)
+                   code_size_bytes(without_scratch) <=
+                           code_size_bytes(with_scratch)
                        ? without_scratch
                        : with_scratch);
     }
@@ -1511,7 +1483,7 @@ class machine_rv32i final : public machine {
                     // equality and inequality share one branch pair
                     if (operation == "==" or operation == "!=") {
                         inverted = inverted != (operation == "!=");
-                        instruction = inverted ? "beq" : "bne";
+                        instruction = inverted ? "bne" : "beq";
                     } else {
                         // ordered comparisons use signed blt/bge, swapping for
                         // > and <=
@@ -1522,14 +1494,12 @@ class machine_rv32i final : public machine {
                         inverted = inverted !=
                                    (operation == ">=" or operation == "<=");
 
-                        instruction = inverted ? "blt" : "bge";
+                        instruction = inverted ? "bge" : "blt";
                     }
 
-                    asm_line(indent, "{} {}, {}, 1f", instruction, first,
-                             second);
-
-                    branch(indent, action.target);
-                    asm_line(indent, "1:");
+                    asm_line(indent, "{} {}, {}, {}{}", instruction, first,
+                             second, action.target,
+                             far_jump_register_comment());
                 }
             } else {
                 // a boolean is required; prefer its output register or an owned
@@ -1632,11 +1602,9 @@ class machine_rv32i final : public machine {
                 // some callers request both a stored boolean and a branch
                 if (not action.target.empty()) {
 
-                    asm_line(indent, "{} {}, zero, 1f",
-                             action.branch_on_true ? "beq" : "bne", result);
-
-                    branch(indent, action.target);
-                    asm_line(indent, "1:");
+                    asm_line(indent, "{} {}, zero, {}{}",
+                             action.branch_on_true ? "bne" : "beq", result,
+                             action.target, far_jump_register_comment());
                 }
             }
         }
@@ -1646,12 +1614,13 @@ class machine_rv32i final : public machine {
     auto branch(const size_t indent, const std::string_view target)
         -> void override {
 
-        asm_line(indent, "j {}", target);
+        asm_line(indent, "j {}{}", target, far_jump_register_comment());
     }
 
     auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
               const operand& descriptor, const operand& address,
               const operand& count) -> void override {
+
         constexpr int syscall_read{63};
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
                    syscall_read);
@@ -1660,6 +1629,7 @@ class machine_rv32i final : public machine {
     auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
                const operand& descriptor, const operand& address,
                const operand& count) -> void override {
+
         constexpr int syscall_write{64};
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
                    syscall_write);
@@ -1683,6 +1653,7 @@ class machine_rv32i final : public machine {
         }
 
         const address_scope scope{*this, iterator, counter};
+
         add_subtract(token{}, indent, '+', iterator,
                      operand::imm(std::format("{}", element_size_bytes),
                                   default_type()));
@@ -1693,18 +1664,20 @@ class machine_rv32i final : public machine {
                 : alloc_scratch_register(token{}, indent, default_type())};
 
         copy_value(token{}, indent, value, counter);
+
         add_subtract(token{}, indent, '+', value,
                      operand::imm("1", default_type()));
+
         copy_value(token{}, indent, counter, value);
 
         const operand limit{
             alloc_scratch_register(token{}, indent, default_type())};
 
         asm_line(indent, "li {}, {}", limit.base_register(), array_count);
-        asm_line(indent, "beq {}, {}, 1f", value.base_register(),
-                 limit.base_register());
-        branch(indent, loop_label);
-        asm_line(indent, "1:");
+
+        asm_line(indent, "bne {}, {}, {}{}", value.base_register(),
+                 limit.base_register(), loop_label,
+                 far_jump_register_comment());
     }
 
     auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
@@ -2612,7 +2585,7 @@ class machine_rv32i final : public machine {
         if (options.with_line) {
             asm_line(indent, "li a0, {}", src_loc_tk.at_line());
         }
-        asm_line(indent, "j baz_bounds_panic");
+        branch(indent, "baz_bounds_panic");
         asm_line(indent, "2:");
     }
 
