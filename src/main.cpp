@@ -226,8 +226,8 @@ auto main(const int argc, const char** const argv) -> int {
         if (target == "x86_64") {
             backend = std::make_unique<machine_x86>(parser_output, src, jumps);
         } else if (target == "rv32i") {
-            backend =
-                std::make_unique<machine_rv32i>(parser_output, src, jumps);
+            backend = std::make_unique<machine_rv32i>(parser_output, src, jumps,
+                                                      "gen-rv32i.bin");
         } else {
             throw panic_exception{std::format("unknown target '{}'", target)};
         }

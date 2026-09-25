@@ -3,6 +3,7 @@
 #include <array>
 #include <bit>
 #include <charconv>
+#include <fstream>
 #include <limits>
 #include <optional>
 #include <ostream>
@@ -22,18 +23,27 @@ class machine_rv32i final : public machine {
     using jump_mode = almost_assembler::jump_mode;
 
   private:
+    using op = almost_assembler_rv32i::op;
+    using section = almost_assembler_rv32i::section;
+
     static constexpr size_t s0_register_index{8};
     static constexpr std::string_view variables_base_register_{"s0"};
     static constexpr size_t data_alignment_{16};
     static constexpr size_t copy_unroll_threshold_bytes_{16};
     static constexpr int64_t immediate_min{-2048};
     static constexpr int64_t immediate_max{2047};
+    static constexpr int syscall_read_{63};
+    static constexpr int syscall_write_{64};
+    static constexpr int syscall_exit_{93};
+    // shifting a word right by this spreads its sign bit over all bits
+    static constexpr int sign_shift_{31};
+    // the return address slot keeps sp 16-byte aligned
+    static constexpr int64_t frame_save_bytes_{16};
+    // a word for each of x1 to x31, rounded up to keep sp 16-byte aligned
+    static constexpr int64_t register_save_bytes_{128};
 
-    static constexpr std::array<std::string_view, 32> register_names_{
-        "zero", "ra", "sp", "gp", "tp",  "t0",  "t1", "t2", "s0", "s1", "a0",
-        "a1",   "a2", "a3", "a4", "a5",  "a6",  "a7", "s2", "s3", "s4", "s5",
-        "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
-    };
+    static constexpr const decltype(almost_assembler_rv32i::register_names)&
+        register_names_{almost_assembler_rv32i::register_names};
 
     static constexpr std::array<size_t, 30> scratch_registers_{
         5,  6,  7,  28, 29, 30, 31, 8,  9,  18, 19, 20, 21, 22, 23,
@@ -54,9 +64,10 @@ class machine_rv32i final : public machine {
     std::reference_wrapper<std::ostream> os_;
     std::string_view source_;
     jump_mode jump_mode_{};
+    // empty when no binary image is written
+    std::string binary_file_name_;
     // buffering output is no more logical state than writing to 'os_'
     mutable almost_assembler_rv32i assembler_;
-    bool assembling_{};
     const type* type_i32_{};
     uint32_t unavailable_registers_{};
     bool variables_base_reserved_{};
@@ -96,15 +107,9 @@ class machine_rv32i final : public machine {
 
     [[nodiscard]] static auto register_index(const std::string_view name)
         -> size_t {
-        for (const auto [index, alias] :
-             std::views::enumerate(register_names_)) {
-            if (name == alias or name == std::format("x{}", index) or
-                (std::cmp_equal(index, s0_register_index) and name == "fp")) {
-                return static_cast<size_t>(index);
-            }
-        }
 
-        return register_names_.size();
+        return almost_assembler_rv32i::register_number(name).value_or(
+            register_names_.size());
     }
 
     [[nodiscard]] static auto is_register(const std::string_view name) -> bool {
@@ -159,29 +164,17 @@ class machine_rv32i final : public machine {
         }
     }
 
-    [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
-        std::string text;
-        text.resize(indent * 4, ' ');
-
-        return text;
-    }
-
     auto write_line(std::string text) const -> void {
-        if (not assembling_) {
-            std::println(os_.get(), "{}", text);
-
-            return;
-        }
-
         assembler_.add_text(std::move(text));
     }
 
+    // comments and directives without a binary form
     template <typename... args_t>
     auto asm_line(const size_t indent,
                   const std::format_string<args_t...> format,
                   args_t&&... args) const -> void {
 
-        write_line(indentation(indent) +
+        write_line(almost_assembler_rv32i::indentation(indent) +
                    std::format(format, std::forward<args_t>(args)...));
     }
 
@@ -196,33 +189,19 @@ class machine_rv32i final : public machine {
         return {};
     }
 
-    // 'mnemonic' is 'j' or a conditional branch taking 'operands'
-    auto emit_jump(const size_t indent, const std::string_view mnemonic,
-                   const std::string_view operands,
+    // 'j' or a conditional branch comparing 'first' and 'second'
+    auto emit_jump(const size_t indent, const op code,
+                   const std::string_view first, const std::string_view second,
                    const std::string_view target) -> void {
 
-        std::string text{
-            indentation(indent) +
-            (operands.empty()
-                 ? std::format("{} {}", mnemonic, target)
-                 : std::format("{} {}, {}", mnemonic, operands, target))};
-
-        if (not assembling_) {
-            write_line(std::move(text));
+        if (code == op::j) {
+            assembler_.resolved_jump(indent, target, far_jump_register());
 
             return;
         }
 
-        assembler_.add_jump(std::move(text), mnemonic, operands, target,
-                            far_jump_register());
-    }
-
-    // sizes only count in code, so the assembler must know the section
-    auto switch_section(const std::string_view directive,
-                        const bool code_section) const -> void {
-
-        assembler_.set_code_section(code_section);
-        asm_line(0, "{}", directive);
+        assembler_.resolved_branch(indent, code, first, second, target,
+                                   far_jump_register());
     }
 
     // 'address_scope' protects operand registers and memory base/index
@@ -323,11 +302,10 @@ class machine_rv32i final : public machine {
         const operand displacement{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        asm_line(indent, "lui {}, {}", displacement.base_register(),
-                 parts.upper);
+        assembler_.lui(indent, displacement.base_register(), parts.upper);
 
-        asm_line(indent, "add {}, {}, {}", result_name, result_name,
-                 displacement.base_register());
+        assembler_.add(indent, result_name, result_name,
+                       displacement.base_register());
 
         free_scratch_register(src_loc_tk, indent, displacement);
 
@@ -392,9 +370,9 @@ class machine_rv32i final : public machine {
 
         // only the upper part; the memory instruction adds the low
 
-        asm_line(indent, "lui {}, {}", result_name, parts.upper);
+        assembler_.lui(indent, result_name, parts.upper);
 
-        asm_line(indent, "add {}, {}, {}", result_name, result_name, base);
+        assembler_.add(indent, result_name, result_name, base);
 
         return operand::mem(result_name, {}, 1, parts.low, address.type_ref());
     }
@@ -409,7 +387,7 @@ class machine_rv32i final : public machine {
         const std::string& result_name{result.base_register()};
 
         // one add combines register inputs, even when result aliases either
-        asm_line(indent, "add {}, {}, {}", result_name, base, index);
+        assembler_.add(indent, result_name, base, index);
 
         return lower_address_offset(src_loc_tk, indent, address, result);
     }
@@ -421,11 +399,11 @@ class machine_rv32i final : public machine {
         const std::string& base{address.base_register()};
         const std::string& result_name{result.base_register()};
 
-        asm_line(indent, "slli {}, {}, {}", result_name,
-                 address.index_register(), std::countr_zero(address.scale()));
+        assembler_.slli(indent, result_name, address.index_register(),
+                        std::countr_zero(address.scale()));
 
         // the preserved base can now be added to the scaled index
-        asm_line(indent, "add {}, {}, {}", result_name, result_name, base);
+        assembler_.add(indent, result_name, result_name, base);
 
         return lower_address_offset(src_loc_tk, indent, address, result);
     }
@@ -480,8 +458,8 @@ class machine_rv32i final : public machine {
         const operand syscall_register{
             alloc_named_register(src_loc_tk, indent, "a7", default_type())};
 
-        asm_line(indent, "li a7, {}", syscall_number);
-        asm_line(indent, "ecall");
+        assembler_.li(indent, "a7", syscall_number);
+        assembler_.ecall(indent);
         free_named_register(src_loc_tk, indent, syscall_register);
     }
 
@@ -540,32 +518,73 @@ class machine_rv32i final : public machine {
         return digits;
     }
 
+    // stores the low 8, 16 or 32 bits
+    [[nodiscard]] static auto store_op(const size_t width) -> op {
+        if (width == 4) {
+            return op::sw;
+        }
+
+        if (width == 2) {
+            return op::sh;
+        }
+
+        return op::sb;
+    }
+
+    // loads without sign extension, for copying bytes unchanged
+    [[nodiscard]] static auto unsigned_load_op(const size_t width) -> op {
+        if (width == 4) {
+            return op::lw;
+        }
+
+        if (width == 2) {
+            return op::lhu;
+        }
+
+        return op::lbu;
+    }
+
+    // the shift that extends the high bits of a narrow value, zero for bool
+    [[nodiscard]] static auto extend_shift_op(const type& value_type) -> op {
+        return value_type.name() == "bool" ? op::srli : op::srai;
+    }
+
+    // the register-immediate form of 'add', 'and', 'or' and 'xor', 'sub' adds
+    // the negated immediate
+    [[nodiscard]] static auto immediate_form(const op operation) -> op {
+        if (operation == op::and_op) {
+            return op::andi;
+        }
+
+        if (operation == op::or_op) {
+            return op::ori;
+        }
+
+        if (operation == op::xor_op) {
+            return op::xori;
+        }
+
+        return op::addi;
+    }
+
     auto store_operation_result(const size_t indent, const operand& destination,
                                 const operand& address, const operand& value,
                                 const bool normalize) const -> void {
 
         const size_t width{destination.type_ref().size_bytes()};
         if (destination.is_memory()) {
-            std::string_view instruction{"sb"};
-            if (width == 4) {
-                instruction = "sw";
-            } else if (width == 2) {
-                instruction = "sh";
-            }
-
-            asm_line(indent, "{} {}, {}({})", instruction,
-                     value.base_register(), address.displacement(),
-                     address.base_register());
+            assembler_.store(indent, store_op(width), value.base_register(),
+                             address.displacement(), address.base_register());
 
         } else if (width < 4 and normalize) {
             const size_t shift{32 - (width * 8)};
 
-            asm_line(indent, "slli {}, {}, {}", value.base_register(),
-                     value.base_register(), shift);
+            assembler_.slli(indent, value.base_register(),
+                            value.base_register(), shift);
 
-            asm_line(indent, "{} {}, {}, {}",
-                     destination.type_ref().name() == "bool" ? "srli" : "srai",
-                     value.base_register(), value.base_register(), shift);
+            assembler_.immediate_op(
+                indent, extend_shift_op(destination.type_ref()),
+                value.base_register(), value.base_register(), shift);
         }
     }
 
@@ -593,14 +612,13 @@ class machine_rv32i final : public machine {
                 ? destination
                 : alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        asm_line(indent, "li {}, {}", value.base_register(), constant);
+        assembler_.li(indent, value.base_register(), constant);
         store_operation_result(indent, destination, address, value, false);
     }
 
     auto binary_operation(const token& src_loc_tk, const size_t indent,
-                          const std::string_view instruction,
-                          const operand& destination, const operand& src)
-        -> void {
+                          const op instruction, const operand& destination,
+                          const operand& src) -> void {
 
         validate_scalar(src_loc_tk, destination.type_ref());
         validate_scalar(src_loc_tk, src.type_ref());
@@ -614,7 +632,7 @@ class machine_rv32i final : public machine {
         if (src.is_memory()) {
             validate_address(src_loc_tk, src);
         }
-        const bool arithmetic{instruction == "add" or instruction == "sub"};
+        const bool arithmetic{instruction == op::add or instruction == op::sub};
         const size_t width{destination.type_ref().size_bytes()};
         std::optional<int32_t> constant{immediate_value(src)};
         const uint32_t mask{std::numeric_limits<uint32_t>::max() >>
@@ -628,13 +646,13 @@ class machine_rv32i final : public machine {
             }
             constant = std::bit_cast<int32_t>(bits);
             const bool all_bits{(bits & mask) == mask};
-            if ((*constant == 0 and instruction != "and") or
-                (all_bits and instruction == "and")) {
+            if ((*constant == 0 and instruction != op::and_op) or
+                (all_bits and instruction == op::and_op)) {
 
                 return;
             }
-            if ((*constant == 0 and instruction == "and") or
-                (all_bits and instruction == "or")) {
+            if ((*constant == 0 and instruction == op::and_op) or
+                (all_bits and instruction == op::or_op)) {
 
                 store_constant_result(src_loc_tk, indent, destination,
                                       *constant);
@@ -651,10 +669,10 @@ class machine_rv32i final : public machine {
              destination.type_ref().name() == src.type_ref().name())};
 
         if (identical) {
-            if (instruction == "and" or instruction == "or") {
+            if (instruction == op::and_op or instruction == op::or_op) {
                 return;
             }
-            if (instruction == "sub" or instruction == "xor") {
+            if (instruction == op::sub or instruction == op::xor_op) {
                 store_constant_result(src_loc_tk, indent, destination, 0);
 
                 return;
@@ -695,15 +713,16 @@ class machine_rv32i final : public machine {
             }
         }
         int64_t immediate{constant.value_or(0)};
-        if (instruction == "sub") {
+        if (instruction == op::sub) {
             immediate = -immediate;
         }
 
         if (constant.has_value() and immediate >= immediate_min and
             immediate <= immediate_max) {
 
-            asm_line(indent, "{}i {}, {}, {}", arithmetic ? "add" : instruction,
-                     left.base_register(), left.base_register(), immediate);
+            assembler_.immediate_op(indent, immediate_form(instruction),
+                                    left.base_register(), left.base_register(),
+                                    immediate);
 
         } else if (constant.has_value() and arithmetic and
                    immediate >= 2 * immediate_min and
@@ -711,11 +730,11 @@ class machine_rv32i final : public machine {
 
             const int64_t first{immediate < 0 ? immediate_min : immediate_max};
 
-            asm_line(indent, "addi {}, {}, {}", left.base_register(),
-                     left.base_register(), first);
+            assembler_.addi(indent, left.base_register(), left.base_register(),
+                            first);
 
-            asm_line(indent, "addi {}, {}, {}", left.base_register(),
-                     left.base_register(), immediate - first);
+            assembler_.addi(indent, left.base_register(), left.base_register(),
+                            immediate - first);
 
         } else {
             const bool reuse_left{same_memory(destination, src)};
@@ -729,16 +748,15 @@ class machine_rv32i final : public machine {
 
                 if (not src.is_register()) {
                     if (constant.has_value()) {
-                        asm_line(indent, "li {}, {}", right.base_register(),
-                                 *constant);
+                        assembler_.li(indent, right.base_register(), *constant);
                     } else {
                         copy_value(src_loc_tk, indent, right, src);
                     }
                 }
             }
 
-            asm_line(indent, "{} {}, {}, {}", instruction, left.base_register(),
-                     left.base_register(), right.base_register());
+            assembler_.register_op(indent, instruction, left.base_register(),
+                                   left.base_register(), right.base_register());
         }
 
         store_operation_result(indent, destination, address, left, normalize);
@@ -804,12 +822,13 @@ class machine_rv32i final : public machine {
             stack_alignment};
         // allocate an aligned save area only when a clobbered register is live
         if (stack_bytes != 0) {
-            asm_line(indent, "addi sp, sp, -{}", stack_bytes);
+            assembler_.addi(indent, "sp", "sp",
+                            -static_cast<int64_t>(stack_bytes));
         }
         // save caller values before argument setup overwrites a0 or a1
         for (const auto [index, name] : std::views::enumerate(saved)) {
-            asm_line(indent, "sw {}, {}(sp)", name,
-                     static_cast<size_t>(index) * word_size);
+            assembler_.sw(indent, name, static_cast<size_t>(index) * word_size,
+                          "sp");
         }
         const operand first_argument{operand::reg("a0", default_type())};
         const operand second_argument{operand::reg("a1", default_type())};
@@ -835,8 +854,7 @@ class machine_rv32i final : public machine {
             copy_value(src_loc_tk, indent, first_argument, destination);
             copy_value(src_loc_tk, indent, second_argument, source);
         }
-        asm_line(indent, "call {}",
-                 division ? ".Lbaz_divide" : ".Lbaz_multiply");
+        assembler_.call(indent, division ? ".Lbaz_divide" : ".Lbaz_multiply");
         operand result{operand::reg(remainder ? "a1" : "a0", default_type())};
         const bool store_before_restore{destination.is_register() and
                                         not stack_operands};
@@ -855,12 +873,12 @@ class machine_rv32i final : public machine {
             result = left;
         }
         for (const auto [index, name] : std::views::enumerate(saved)) {
-            asm_line(indent, "lw {}, {}(sp)", name,
-                     static_cast<size_t>(index) * word_size);
+            assembler_.lw(indent, name, static_cast<size_t>(index) * word_size,
+                          "sp");
         }
         // restore sp before writing a possibly stack-relative destination
         if (stack_bytes != 0) {
-            asm_line(indent, "addi sp, sp, {}", stack_bytes);
+            assembler_.addi(indent, "sp", "sp", stack_bytes);
         }
         if (not store_before_restore) {
             // memory destinations need their original address registers back
@@ -871,53 +889,56 @@ class machine_rv32i final : public machine {
     auto emit_arithmetic_helpers() const -> void {
         // unused helpers contribute no code
         if (multiply_helper_used_) {
-            asm_line(0, ".Lbaz_multiply:");
-            asm_line(1, "mv t0, a0");
-            asm_line(1, "li a0, 0");
-            asm_line(1, "beqz a1, 3f");
-            asm_line(0, "1:");
-            asm_line(1, "andi t1, a1, 1");
-            asm_line(1, "beqz t1, 2f");
-            asm_line(1, "add a0, a0, t0");
-            asm_line(0, "2:");
-            asm_line(1, "slli t0, t0, 1");
-            asm_line(1, "srli a1, a1, 1");
-            asm_line(1, "bnez a1, 1b");
-            asm_line(0, "3:");
-            asm_line(1, "ret");
+            assembler_.label(0, ".Lbaz_multiply");
+            assembler_.mv(1, "t0", "a0");
+            assembler_.li(1, "a0", 0);
+            assembler_.beqz(1, "a1", "3f");
+            assembler_.label(0, "1");
+            assembler_.andi(1, "t1", "a1", 1);
+            assembler_.beqz(1, "t1", "2f");
+            assembler_.add(1, "a0", "a0", "t0");
+            assembler_.label(0, "2");
+            assembler_.slli(1, "t0", "t0", 1);
+            assembler_.srli(1, "a1", "a1", 1);
+            assembler_.bnez(1, "a1", "1b");
+            assembler_.label(0, "3");
+            assembler_.ret(1);
         }
         // divide and remainder share magnitude division and sign restoration
         if (divide_helper_used_) {
-            asm_line(0, ".Lbaz_divide:");
-            asm_line(1, "beqz a1, 5f");
-            asm_line(1, "srai t2, a0, 31");
-            asm_line(1, "srai t1, a1, 31");
-            asm_line(1, "xor a0, a0, t2");
-            asm_line(1, "sub a0, a0, t2");
-            asm_line(1, "xor a1, a1, t1");
-            asm_line(1, "sub a1, a1, t1");
-            asm_line(1, "xor t1, t1, t2");
-            asm_line(1, "li t0, 0");
-            asm_line(1, "li t3, 32");
-            asm_line(0, "1:");
-            asm_line(1, "srli t4, a0, 31");
-            asm_line(1, "slli t0, t0, 1");
-            asm_line(1, "or t0, t0, t4");
-            asm_line(1, "slli a0, a0, 1");
-            asm_line(1, "bltu t0, a1, 2f");
-            asm_line(1, "sub t0, t0, a1");
-            asm_line(1, "ori a0, a0, 1");
-            asm_line(0, "2:");
-            asm_line(1, "addi t3, t3, -1");
-            asm_line(1, "bnez t3, 1b");
-            asm_line(1, "xor a0, a0, t1");
-            asm_line(1, "sub a0, a0, t1");
-            asm_line(1, "xor a1, t0, t2");
-            asm_line(1, "sub a1, a1, t2");
-            asm_line(1, "ret");
-            asm_line(0, "5:");
-            asm_line(1, "ebreak");
-            asm_line(1, "j 5b");
+            // one quotient bit per step
+            constexpr int divide_steps{32};
+
+            assembler_.label(0, ".Lbaz_divide");
+            assembler_.beqz(1, "a1", "5f");
+            assembler_.srai(1, "t2", "a0", sign_shift_);
+            assembler_.srai(1, "t1", "a1", sign_shift_);
+            assembler_.xor_op(1, "a0", "a0", "t2");
+            assembler_.sub(1, "a0", "a0", "t2");
+            assembler_.xor_op(1, "a1", "a1", "t1");
+            assembler_.sub(1, "a1", "a1", "t1");
+            assembler_.xor_op(1, "t1", "t1", "t2");
+            assembler_.li(1, "t0", 0);
+            assembler_.li(1, "t3", divide_steps);
+            assembler_.label(0, "1");
+            assembler_.srli(1, "t4", "a0", sign_shift_);
+            assembler_.slli(1, "t0", "t0", 1);
+            assembler_.or_op(1, "t0", "t0", "t4");
+            assembler_.slli(1, "a0", "a0", 1);
+            assembler_.bltu(1, "t0", "a1", "2f");
+            assembler_.sub(1, "t0", "t0", "a1");
+            assembler_.ori(1, "a0", "a0", 1);
+            assembler_.label(0, "2");
+            assembler_.addi(1, "t3", "t3", -1);
+            assembler_.bnez(1, "t3", "1b");
+            assembler_.xor_op(1, "a0", "a0", "t1");
+            assembler_.sub(1, "a0", "a0", "t1");
+            assembler_.xor_op(1, "a1", "t0", "t2");
+            assembler_.sub(1, "a1", "a1", "t2");
+            assembler_.ret(1);
+            assembler_.label(0, "5");
+            assembler_.ebreak(1);
+            assembler_.j(1, "5b");
         }
     }
 
@@ -991,89 +1012,83 @@ class machine_rv32i final : public machine {
 
         comment(src_loc_tk, indent,
                 "split bytes into words and tail; skip word loop if none");
-        asm_line(indent, "srli {}, {}, 2", right.base_register(),
-                 count.base_register());
-        asm_line(indent, "andi {}, {}, 3", count.base_register(),
-                 count.base_register());
-        asm_line(indent, "beqz {}, 2f", right.base_register());
+        assembler_.srli(indent, right.base_register(), count.base_register(),
+                        2);
+        assembler_.andi(indent, count.base_register(), count.base_register(),
+                        3);
+        assembler_.beqz(indent, right.base_register(), "2f");
         // process four bytes per iteration and stop comparing at the first
         // mismatch
         comment(src_loc_tk, indent, "{} 4-byte words",
                 compare ? "compare" : "copy");
-        asm_line(indent, "1:");
-        asm_line(indent, "lw {}, 0({})", left.base_register(),
-                 source.base_register());
+        assembler_.label(indent, "1");
+        assembler_.lw(indent, left.base_register(), 0, source.base_register());
         if (compare) {
-            asm_line(indent, "lw {}, 0({})", compared.base_register(),
-                     destination.base_register());
-            asm_line(indent, "bne {}, {}, 5f", left.base_register(),
-                     compared.base_register());
+            assembler_.lw(indent, compared.base_register(), 0,
+                          destination.base_register());
+            assembler_.bne(indent, left.base_register(),
+                           compared.base_register(), "5f");
         } else {
-            asm_line(indent, "sw {}, 0({})", left.base_register(),
-                     destination.base_register());
+            assembler_.sw(indent, left.base_register(), 0,
+                          destination.base_register());
         }
-        asm_line(indent, "addi {}, {}, 4", source.base_register(),
-                 source.base_register());
-        asm_line(indent, "addi {}, {}, 4", destination.base_register(),
-                 destination.base_register());
-        asm_line(indent, "addi {}, {}, -1", right.base_register(),
-                 right.base_register());
-        asm_line(indent, "bnez {}, 1b", right.base_register());
-        asm_line(indent, "2:");
+        assembler_.addi(indent, source.base_register(), source.base_register(),
+                        4);
+        assembler_.addi(indent, destination.base_register(),
+                        destination.base_register(), 4);
+        assembler_.addi(indent, right.base_register(), right.base_register(),
+                        -1);
+        assembler_.bnez(indent, right.base_register(), "1b");
+        assembler_.label(indent, "2");
         // remainder bit 1 selects a halfword for tails of two or three bytes
         comment(src_loc_tk, indent, "{} optional 2-byte tail",
                 compare ? "compare" : "copy");
-        asm_line(indent, "andi {}, {}, 2", left.base_register(),
-                 count.base_register());
-        asm_line(indent, "beqz {}, 3f", left.base_register());
-        asm_line(indent, "lhu {}, 0({})", left.base_register(),
-                 source.base_register());
+        assembler_.andi(indent, left.base_register(), count.base_register(), 2);
+        assembler_.beqz(indent, left.base_register(), "3f");
+        assembler_.lhu(indent, left.base_register(), 0, source.base_register());
         if (compare) {
-            asm_line(indent, "lhu {}, 0({})", compared.base_register(),
-                     destination.base_register());
-            asm_line(indent, "bne {}, {}, 5f", left.base_register(),
-                     compared.base_register());
+            assembler_.lhu(indent, compared.base_register(), 0,
+                           destination.base_register());
+            assembler_.bne(indent, left.base_register(),
+                           compared.base_register(), "5f");
         } else {
-            asm_line(indent, "sh {}, 0({})", left.base_register(),
-                     destination.base_register());
+            assembler_.sh(indent, left.base_register(), 0,
+                          destination.base_register());
         }
-        asm_line(indent, "addi {}, {}, 2", source.base_register(),
-                 source.base_register());
-        asm_line(indent, "addi {}, {}, 2", destination.base_register(),
-                 destination.base_register());
-        asm_line(indent, "3:");
+        assembler_.addi(indent, source.base_register(), source.base_register(),
+                        2);
+        assembler_.addi(indent, destination.base_register(),
+                        destination.base_register(), 2);
+        assembler_.label(indent, "3");
         // remainder bit 0 selects the final byte for tails of one or three
         comment(src_loc_tk, indent, "{} optional final byte",
                 compare ? "compare" : "copy");
-        asm_line(indent, "andi {}, {}, 1", count.base_register(),
-                 count.base_register());
-        asm_line(indent, "beqz {}, 4f", count.base_register());
-        asm_line(indent, "lbu {}, 0({})", left.base_register(),
-                 source.base_register());
+        assembler_.andi(indent, count.base_register(), count.base_register(),
+                        1);
+        assembler_.beqz(indent, count.base_register(), "4f");
+        assembler_.lbu(indent, left.base_register(), 0, source.base_register());
         if (compare) {
-            asm_line(indent, "lbu {}, 0({})", compared.base_register(),
-                     destination.base_register());
-            asm_line(indent, "bne {}, {}, 5f", left.base_register(),
-                     compared.base_register());
+            assembler_.lbu(indent, compared.base_register(), 0,
+                           destination.base_register());
+            assembler_.bne(indent, left.base_register(),
+                           compared.base_register(), "5f");
         } else {
-            asm_line(indent, "sb {}, 0({})", left.base_register(),
-                     destination.base_register());
+            assembler_.sb(indent, left.base_register(), 0,
+                          destination.base_register());
         }
-        asm_line(indent, "4:");
+        assembler_.label(indent, "4");
         // every chunk matched or the range was empty unless a mismatch branched
         // here
         if (compare) {
             comment(src_loc_tk, indent, "all matched or empty: {}",
                     inverted ? "false" : "true");
-            asm_line(indent, "li {}, {}", left.base_register(),
-                     inverted ? 0 : 1);
-            asm_line(indent, "j 6f");
-            asm_line(indent, "5:");
+            assembler_.li(indent, left.base_register(), inverted ? 0 : 1);
+            assembler_.j(indent, "6f");
+            assembler_.label(indent, "5");
             comment(src_loc_tk, indent, "mismatch: {}",
                     inverted ? "true" : "false");
-            asm_line(indent, "li {}, {}", left.base_register(),
-                     inverted ? 1 : 0);
-            asm_line(indent, "6:");
+            assembler_.li(indent, left.base_register(), inverted ? 1 : 0);
+            assembler_.label(indent, "6");
             if (not reuse_result) {
                 copy_value(src_loc_tk, indent, result, left);
             }
@@ -1081,10 +1096,18 @@ class machine_rv32i final : public machine {
     }
 
   public:
+    // 'binary_file_name' receives the image of the resolved output, backend
+    // tests without complete programs leave it empty
     explicit machine_rv32i(std::ostream& os_ref,
                            const std::string_view source = {},
-                           const jump_mode jumps = jump_mode::resolved)
-        : os_{os_ref}, source_{source}, jump_mode_{jumps} {}
+                           const jump_mode jumps = jump_mode::resolved,
+                           const std::string_view binary_file_name = {})
+        : os_{os_ref}, source_{source}, jump_mode_{jumps},
+          binary_file_name_{binary_file_name} {
+
+        // output before 'start' is written as emitted in every mode
+        assembler_.set_direct_output(&os_.get());
+    }
 
     using machine::comment;
     using machine::emit_data_array;
@@ -1150,15 +1173,15 @@ class machine_rv32i final : public machine {
 
         // both versions are buffered to compare sizes, even when output is
         // otherwise written as emitted
-        const bool buffered{assembling_};
-        assembling_ = true;
+        std::ostream* const direct_output{assembler_.direct_output()};
+        assembler_.set_direct_output(nullptr);
         assembler_.emit_smaller(emit_without_scratch, emit_with_scratch);
-        if (buffered) {
+        if (direct_output == nullptr) {
             return;
         }
 
-        assembling_ = false;
-        assembler_.write(os_.get());
+        assembler_.set_direct_output(direct_output);
+        assembler_.write(*direct_output);
     }
 
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
@@ -1256,7 +1279,7 @@ class machine_rv32i final : public machine {
         assert(not variables_base_reserved_);
         assert(not frame_base_reserved_);
 
-        if (not assembling_) {
+        if (not assembler_.is_buffering()) {
             return;
         }
 
@@ -1267,9 +1290,29 @@ class machine_rv32i final : public machine {
         assembler_.add_optimization_counts();
     }
 
+    // a named binary image is written together with the assembly source
     auto write_assembly(std::ostream& os) -> void override {
-        assembling_ = false;
-        assembler_.resolve_and_write(os);
+        const bool buffered{assembler_.is_buffering()};
+        assembler_.set_direct_output(&os_.get());
+
+        // written output was not kept to assemble
+        if (not buffered) {
+            return;
+        }
+
+        if (binary_file_name_.empty()) {
+            assembler_.resolve_and_write(os);
+
+            return;
+        }
+
+        std::ofstream binary{binary_file_name_, std::ios::binary};
+        if (not binary) {
+            throw panic_exception{
+                std::format("cannot write '{}'", binary_file_name_)};
+        }
+
+        assembler_.resolve_and_write(os, binary);
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
@@ -1344,50 +1387,43 @@ class machine_rv32i final : public machine {
                 lower_address(src_loc_tk, indent, src, value)};
 
             const size_t width{src.type_ref().size_bytes()};
-            std::string_view instruction{"lb"};
+            op instruction{op::lb};
             if (width == 4) {
-                instruction = "lw";
+                instruction = op::lw;
             } else if (width == 2) {
-                instruction = "lh";
+                instruction = op::lh;
             } else if (src.type_ref().name() == "bool") {
-                instruction = "lbu";
+                instruction = op::lbu;
             }
 
             // load from base + displacement; lb/lh sign-extend, lbu
             // zero-extends
-            asm_line(indent, "{} {}, {}({})", instruction,
-                     value.base_register(), lowered.displacement(),
-                     lowered.base_register());
+            assembler_.load(indent, instruction, value.base_register(),
+                            lowered.displacement(), lowered.base_register());
         } else if (src.is_register()) {
             // adding zero copies a register without changing its bits
             if (register_index(value.base_register()) !=
                 register_index(src.base_register())) {
 
-                asm_line(indent, "addi {}, {}, 0", value.base_register(),
-                         src.base_register());
+                assembler_.addi(indent, value.base_register(),
+                                src.base_register(), 0);
             }
         } else if (src.is_immediate()) {
             // li materializes a constant using one or more RV32I instructions
-            asm_line(indent, "li {}, {}", value.base_register(),
-                     src.immediate());
+            assembler_.li(
+                indent, value.base_register(),
+                almost_assembler_rv32i::immediate::of_symbol(src.immediate()));
         } else {
             throw compiler_exception{src_loc_tk, "invalid RV32I copy source"};
         }
 
         if (dst.is_memory()) {
             const operand lowered{lower_address(src_loc_tk, indent, dst)};
-            const size_t width{dst.type_ref().size_bytes()};
-            std::string_view instruction{"sb"};
-            if (width == 4) {
-                instruction = "sw";
-            } else if (width == 2) {
-                instruction = "sh";
-            }
 
             // store the low 32, 16, or 8 bits at base + displacement
-            asm_line(indent, "{} {}, {}({})", instruction,
-                     value.base_register(), lowered.displacement(),
-                     lowered.base_register());
+            assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
+                             value.base_register(), lowered.displacement(),
+                             lowered.base_register());
         } else if (dst.type_ref().size_bytes() < 4 and
                    (src.is_immediate() or
                     src.type_ref().size_bytes() > dst.type_ref().size_bytes() or
@@ -1398,11 +1434,11 @@ class machine_rv32i final : public machine {
 
             const size_t shift{32 - (dst.type_ref().size_bytes() * 8)};
             // discard high bits, then sign-extend integers or zero-extend bool
-            asm_line(indent, "slli {}, {}, {}", value.base_register(),
-                     value.base_register(), shift);
-            asm_line(indent, "{} {}, {}, {}",
-                     dst.type_ref().name() == "bool" ? "srli" : "srai",
-                     value.base_register(), value.base_register(), shift);
+            assembler_.slli(indent, value.base_register(),
+                            value.base_register(), shift);
+            assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
+                                    value.base_register(),
+                                    value.base_register(), shift);
         }
     }
 
@@ -1525,14 +1561,14 @@ class machine_rv32i final : public machine {
             if (action.destination.is_empty()) {
                 // no target means the comparison result is discarded
                 if (not action.target.empty()) {
-                    std::string_view instruction;
+                    op instruction{};
                     std::string_view first{left.base_register()};
                     std::string_view second{right.base_register()};
                     bool inverted{action.inverted != not action.branch_on_true};
                     // equality and inequality share one branch pair
                     if (operation == "==" or operation == "!=") {
                         inverted = inverted != (operation == "!=");
-                        instruction = inverted ? "bne" : "beq";
+                        instruction = inverted ? op::bne : op::beq;
                     } else {
                         // ordered comparisons use signed blt/bge, swapping for
                         // > and <=
@@ -1543,11 +1579,10 @@ class machine_rv32i final : public machine {
                         inverted = inverted !=
                                    (operation == ">=" or operation == "<=");
 
-                        instruction = inverted ? "bge" : "blt";
+                        instruction = inverted ? op::bge : op::blt;
                     }
 
-                    emit_jump(indent, instruction,
-                              std::format("{}, {}", first, second),
+                    emit_jump(indent, instruction, first, second,
                               action.target);
                 }
             } else {
@@ -1584,8 +1619,8 @@ class machine_rv32i final : public machine {
                         // nonzero small constants fit directly in xori
                         if (immediate != 0) {
 
-                            asm_line(indent, "xori {}, {}, {}", result,
-                                     left.base_register(), immediate);
+                            assembler_.xori(indent, result,
+                                            left.base_register(), immediate);
 
                             tested = result;
                         }
@@ -1598,8 +1633,8 @@ class machine_rv32i final : public machine {
                     } else {
                         // neither operand is zero and the constant did not fit
 
-                        asm_line(indent, "xor {}, {}, {}", result,
-                                 left.base_register(), right.base_register());
+                        assembler_.xor_op(indent, result, left.base_register(),
+                                          right.base_register());
 
                         tested = result;
                     }
@@ -1608,18 +1643,18 @@ class machine_rv32i final : public machine {
                     // inverted equality is a nonzero test, not a second boolean
                     // inversion
                     if (inverted) {
-                        asm_line(indent, "sltu {}, zero, {}", result, tested);
+                        assembler_.sltu(indent, result, "zero", tested);
                     } else {
                         // plain equality tests whether the xor is zero
-                        asm_line(indent, "sltiu {}, {}, 1", result, tested);
+                        assembler_.sltiu(indent, result, tested, 1);
                     }
                 } else {
                     // encodable thresholds avoid materializing a constant
                     // register
                     if (use_immediate) {
 
-                        asm_line(indent, "slti {}, {}, {}", result,
-                                 left.base_register(), immediate);
+                        assembler_.slti(indent, result, left.base_register(),
+                                        immediate);
 
                         inverted =
                             inverted != (operation == ">=" or operation == ">");
@@ -1627,11 +1662,12 @@ class machine_rv32i final : public machine {
                         // other thresholds use register comparison and operand
                         // order
 
-                        asm_line(indent, "slt {}, {}, {}", result,
-                                 inclusive_threshold ? right.base_register()
-                                                     : left.base_register(),
-                                 inclusive_threshold ? left.base_register()
-                                                     : right.base_register());
+                        assembler_.slt(
+                            indent, result,
+                            inclusive_threshold ? right.base_register()
+                                                : left.base_register(),
+                            inclusive_threshold ? left.base_register()
+                                                : right.base_register());
 
                         inverted = inverted !=
                                    (operation == ">=" or operation == "<=");
@@ -1640,7 +1676,7 @@ class machine_rv32i final : public machine {
                     // inclusive comparisons or explicit inversion complement
                     // the result
                     if (inverted) {
-                        asm_line(indent, "xori {}, {}, 1", result, result);
+                        assembler_.xori(indent, result, result, 1);
                     }
                 }
                 // memory results require a store; register results are already
@@ -1651,8 +1687,8 @@ class machine_rv32i final : public machine {
                 // some callers request both a stored boolean and a branch
                 if (not action.target.empty()) {
 
-                    emit_jump(indent, action.branch_on_true ? "bne" : "beq",
-                              std::format("{}, zero", result), action.target);
+                    emit_jump(indent, action.branch_on_true ? op::bne : op::beq,
+                              result, "zero", action.target);
                 }
             }
         }
@@ -1662,29 +1698,27 @@ class machine_rv32i final : public machine {
     auto branch(const size_t indent, const std::string_view target)
         -> void override {
 
-        emit_jump(indent, "j", {}, target);
+        emit_jump(indent, op::j, {}, {}, target);
     }
 
     auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
               const operand& descriptor, const operand& address,
               const operand& count) -> void override {
 
-        constexpr int syscall_read{63};
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
-                   syscall_read);
+                   syscall_read_);
     }
 
     auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
                const operand& descriptor, const operand& address,
                const operand& count) -> void override {
 
-        constexpr int syscall_write{64};
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
-                   syscall_write);
+                   syscall_write_);
     }
 
     auto invoke_syscall(const size_t indent) -> void override {
-        asm_line(indent, "ecall");
+        assembler_.ecall(indent);
     }
 
     auto advance_array_iteration(const size_t indent, const operand& iterator,
@@ -1721,12 +1755,10 @@ class machine_rv32i final : public machine {
         const operand limit{
             alloc_scratch_register(token{}, indent, default_type())};
 
-        asm_line(indent, "li {}, {}", limit.base_register(), array_count);
+        assembler_.li(indent, limit.base_register(), array_count);
 
-        emit_jump(
-            indent, "bne",
-            std::format("{}, {}", value.base_register(), limit.base_register()),
-            loop_label);
+        emit_jump(indent, op::bne, value.base_register(), limit.base_register(),
+                  loop_label);
     }
 
     auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
@@ -1768,26 +1800,17 @@ class machine_rv32i final : public machine {
 
             size_t offset{};
             for (const size_t width : {size_t{4}, size_t{2}, size_t{1}}) {
-                std::string_view load{"lbu"};
-                std::string_view store{"sb"};
-                if (width == 4) {
-                    load = "lw";
-                    store = "sw";
-                } else if (width == 2) {
-                    load = "lhu";
-                    store = "sh";
-                }
                 while (size_bytes - offset >= width) {
-                    asm_line(indent, "{} {}, {}({})", load,
-                             value.base_register(),
-                             src_address.displacement() +
-                                 static_cast<int64_t>(offset),
-                             src_address.base_register());
-                    asm_line(indent, "{} {}, {}({})", store,
-                             value.base_register(),
-                             dst_address.displacement() +
-                                 static_cast<int64_t>(offset),
-                             dst_address.base_register());
+                    assembler_.load(indent, unsigned_load_op(width),
+                                    value.base_register(),
+                                    src_address.displacement() +
+                                        static_cast<int64_t>(offset),
+                                    src_address.base_register());
+                    assembler_.store(indent, store_op(width),
+                                     value.base_register(),
+                                     dst_address.displacement() +
+                                         static_cast<int64_t>(offset),
+                                     dst_address.base_register());
                     offset += width;
                 }
             }
@@ -1806,7 +1829,7 @@ class machine_rv32i final : public machine {
         const operand count{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        asm_line(indent, "li {}, {}", count.base_register(), size_bytes);
+        assembler_.li(indent, count.base_register(), size_bytes);
         emit_bulk_loop(src_loc_tk, indent, count, src_pointer, dst_pointer);
     }
 
@@ -1896,8 +1919,7 @@ class machine_rv32i final : public machine {
                 src_loc_tk, "comparison size exceeds RV32I address range"};
         }
         const std::array<operand, 3>& registers{bulk_registers_.back()};
-        asm_line(indent, "li {}, {}", registers.at(2).base_register(),
-                 size_bytes);
+        assembler_.li(indent, registers.at(2).base_register(), size_bytes);
         emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
                        registers.at(1), dst, inverted);
         release_bulk(src_loc_tk, indent);
@@ -1945,18 +1967,11 @@ class machine_rv32i final : public machine {
             }
             size_t offset{};
             for (const size_t width : {size_t{4}, size_t{2}, size_t{1}}) {
-                std::string_view instruction{"sb"};
-                if (width == 4) {
-                    instruction = "sw";
-                } else if (width == 2) {
-                    instruction = "sh";
-                }
-
                 while (size_bytes - offset >= width) {
-                    asm_line(indent, "{} zero, {}({})", instruction,
-                             address.displacement() +
-                                 static_cast<int64_t>(offset),
-                             address.base_register());
+                    assembler_.store(indent, store_op(width), "zero",
+                                     address.displacement() +
+                                         static_cast<int64_t>(offset),
+                                     address.base_register());
                     offset += width;
                 }
             }
@@ -1976,24 +1991,24 @@ class machine_rv32i final : public machine {
             src_loc_tk, indent, remaining,
             operand::imm(std::format("{}", size_bytes / 4), default_type()));
 
-        asm_line(indent, "1:");
-        asm_line(indent, "sw zero, 0({})", dst_pointer.base_register());
+        assembler_.label(indent, "1");
+        assembler_.sw(indent, "zero", 0, dst_pointer.base_register());
 
-        asm_line(indent, "addi {}, {}, 4", dst_pointer.base_register(),
-                 dst_pointer.base_register());
+        assembler_.addi(indent, dst_pointer.base_register(),
+                        dst_pointer.base_register(), 4);
 
-        asm_line(indent, "addi {}, {}, -1", remaining.base_register(),
-                 remaining.base_register());
+        assembler_.addi(indent, remaining.base_register(),
+                        remaining.base_register(), -1);
 
-        asm_line(indent, "bnez {}, 1b", remaining.base_register());
+        assembler_.bnez(indent, remaining.base_register(), "1b");
         // the known tail needs no runtime tests or additional scratch
         // registers
         if ((size_bytes & 2U) != 0) {
-            asm_line(indent, "sh zero, 0({})", dst_pointer.base_register());
+            assembler_.sh(indent, "zero", 0, dst_pointer.base_register());
         }
         if ((size_bytes & 1U) != 0) {
-            asm_line(indent, "sb zero, {}({})", size_bytes & 2U,
-                     dst_pointer.base_register());
+            assembler_.sb(indent, "zero", size_bytes & 2U,
+                          dst_pointer.base_register());
         }
     }
 
@@ -2003,8 +2018,8 @@ class machine_rv32i final : public machine {
 
         assert(operation == '+' or operation == '-');
 
-        binary_operation(src_loc_tk, indent, operation == '+' ? "add" : "sub",
-                         dst, src);
+        binary_operation(src_loc_tk, indent,
+                         operation == '+' ? op::add : op::sub, dst, src);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -2012,11 +2027,11 @@ class machine_rv32i final : public machine {
         -> void override {
 
         assert(operation == '&' or operation == '|' or operation == '^');
-        std::string_view instruction{"xor"};
+        op instruction{op::xor_op};
         if (operation == '&') {
-            instruction = "and";
+            instruction = op::and_op;
         } else if (operation == '|') {
-            instruction = "or";
+            instruction = op::or_op;
         }
         binary_operation(src_loc_tk, indent, instruction, dst, src);
     }
@@ -2143,15 +2158,15 @@ class machine_rv32i final : public machine {
 
             // emit a shift when the next nonzero digit needs an add or sub
             if (digits.at(bit) != 0) {
-                asm_line(indent, "slli {}, {}, {}", result.base_register(),
-                         initialized ? result.base_register()
-                                     : left.base_register(),
-                         pending_shift);
+                assembler_.slli(indent, result.base_register(),
+                                initialized ? result.base_register()
+                                            : left.base_register(),
+                                pending_shift);
 
-                asm_line(indent, "{} {}, {}, {}",
-                         digits.at(bit) < 0 ? "sub" : "add",
-                         result.base_register(), result.base_register(),
-                         left.base_register());
+                assembler_.register_op(
+                    indent, digits.at(bit) < 0 ? op::sub : op::add,
+                    result.base_register(), result.base_register(),
+                    left.base_register());
 
                 pending_shift = 0;
                 initialized = true;
@@ -2160,13 +2175,13 @@ class machine_rv32i final : public machine {
 
         // trailing zero bits require only a final shift
         if (pending_shift != 0) {
-            asm_line(indent, "slli {}, {}, {}", result.base_register(),
-                     result.base_register(), pending_shift);
+            assembler_.slli(indent, result.base_register(),
+                            result.base_register(), pending_shift);
         }
 
         if (negate) {
-            asm_line(indent, "sub {}, zero, {}", result.base_register(),
-                     result.base_register());
+            assembler_.sub(indent, result.base_register(), "zero",
+                           result.base_register());
         }
 
         store_operation_result(indent, product, address, result, true);
@@ -2230,20 +2245,20 @@ class machine_rv32i final : public machine {
         if (constant.has_value() and operation == '<' and
             bits < register_bits and dst.is_register()) {
 
-            asm_line(indent, "slli {}, {}, {}", value.base_register(),
-                     value.base_register(), register_bits - bits + shift_count);
+            assembler_.slli(indent, value.base_register(),
+                            value.base_register(),
+                            register_bits - bits + shift_count);
 
-            asm_line(indent, "{} {}, {}, {}",
-                     dst.type_ref().name() == "bool" ? "srli" : "srai",
-                     value.base_register(), value.base_register(),
-                     register_bits - bits);
+            assembler_.immediate_op(
+                indent, extend_shift_op(dst.type_ref()), value.base_register(),
+                value.base_register(), register_bits - bits);
 
             normalize = false;
         } else if (constant.has_value()) {
             // known counts already have rv32's five-bit shift semantics applied
-            asm_line(indent, "{} {}, {}, {}",
-                     operation == '<' ? "slli" : "srai", value.base_register(),
-                     value.base_register(), shift_count);
+            assembler_.immediate_op(
+                indent, operation == '<' ? op::slli : op::srai,
+                value.base_register(), value.base_register(), shift_count);
         } else {
 
             operand amount{value};
@@ -2259,9 +2274,9 @@ class machine_rv32i final : public machine {
                 }
             }
 
-            asm_line(indent, "{} {}, {}, {}", operation == '<' ? "sll" : "sra",
-                     value.base_register(), value.base_register(),
-                     amount.base_register());
+            assembler_.register_op(indent, operation == '<' ? op::sll : op::sra,
+                                   value.base_register(), value.base_register(),
+                                   amount.base_register());
         }
         store_operation_result(indent, dst, address, value, normalize);
     }
@@ -2300,14 +2315,7 @@ class machine_rv32i final : public machine {
     auto label(const size_t indent, const std::string_view label)
         -> void override {
 
-        std::string text{std::format("{}{}:", indentation(indent), label)};
-        if (not assembling_) {
-            write_line(std::move(text));
-
-            return;
-        }
-
-        assembler_.add_label(std::string{label}, std::move(text));
+        assembler_.label(indent, label);
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
@@ -2331,8 +2339,8 @@ class machine_rv32i final : public machine {
                 register_index(lowered.base_register()) or
             lowered.displacement() != 0) {
 
-            asm_line(indent, "addi {}, {}, {}", value.base_register(),
-                     lowered.base_register(), lowered.displacement());
+            assembler_.addi(indent, value.base_register(),
+                            lowered.base_register(), lowered.displacement());
         }
         if (dst.is_memory()) {
             copy_value(src_loc_tk, indent, dst, value);
@@ -2364,16 +2372,16 @@ class machine_rv32i final : public machine {
         }
         if (operation == '-') {
 
-            asm_line(indent, "sub {}, zero, {}", value.base_register(),
-                     value.base_register());
+            assembler_.sub(indent, value.base_register(), "zero",
+                           value.base_register());
 
         } else {
             const int mask{destination.type_ref().name() == "bool"
                                ? std::numeric_limits<uint8_t>::max()
                                : -1};
 
-            asm_line(indent, "xori {}, {}, {}", value.base_register(),
-                     value.base_register(), mask);
+            assembler_.xori(indent, value.base_register(),
+                            value.base_register(), mask);
         }
         store_operation_result(indent, destination, address, value,
                                operation == '-');
@@ -2405,8 +2413,8 @@ class machine_rv32i final : public machine {
               const operand& exit_code) -> void override {
         copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
                    exit_code);
-        asm_line(indent, "li a7, 93");
-        asm_line(indent, "ecall");
+        assembler_.li(indent, "a7", syscall_exit_);
+        assembler_.ecall(indent);
     }
 
     [[nodiscard]] auto variables_base_register() const
@@ -2464,8 +2472,8 @@ class machine_rv32i final : public machine {
 
         frame_base_reserved_ = true;
 
-        asm_line(1, "addi sp, sp, -16");
-        asm_line(1, "sw ra, 0(sp)");
+        assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
+        assembler_.sw(1, "ra", 0, "sp");
     }
 
     auto release_frame_base() -> void override {
@@ -2487,30 +2495,30 @@ class machine_rv32i final : public machine {
         assert(register_index(frame_address.base_register()) !=
                register_index("sp"));
 
-        asm_line(indent, "addi sp, sp, -128");
+        assembler_.addi(indent, "sp", "sp", -register_save_bytes_);
 
         for (const size_t index : scratch_registers_) {
-            asm_line(indent, "sw {}, {}(sp)", register_names_.at(index),
-                     (index - 1) * 4);
+            assembler_.sw(indent, register_names_.at(index), (index - 1) * 4,
+                          "sp");
         }
 
         address_of(token{}, indent,
                    make_register_operand(frame_base_register(), default_type()),
                    frame_address);
 
-        asm_line(indent, "call {}", label);
+        assembler_.call(indent, label);
         for (const size_t index : scratch_registers_) {
-            asm_line(indent, "lw {}, {}(sp)", register_names_.at(index),
-                     (index - 1) * 4);
+            assembler_.lw(indent, register_names_.at(index), (index - 1) * 4,
+                          "sp");
         }
 
-        asm_line(indent, "addi sp, sp, 128");
+        assembler_.addi(indent, "sp", "sp", register_save_bytes_);
     }
 
     auto return_function(const size_t indent) -> void override {
-        asm_line(indent, "lw ra, 0(sp)");
-        asm_line(indent, "addi sp, sp, 16");
-        asm_line(indent, "ret");
+        assembler_.lw(indent, "ra", 0, "sp");
+        assembler_.addi(indent, "sp", "sp", frame_save_bytes_);
+        assembler_.ret(indent);
     }
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
@@ -2535,27 +2543,31 @@ class machine_rv32i final : public machine {
         address_of(src_loc_tk, indent, start, frame_address);
         if (register_mask(frame_address.base_register()) != 0 and
             frame_address.displacement() != 0) {
-            asm_line(indent, "{} {}, {}, 1f",
-                     frame_address.displacement() > 0 ? "bltu" : "bgtu",
-                     start.base_register(), frame_address.base_register());
+            assembler_.branch(
+                indent, frame_address.displacement() > 0 ? op::bltu : op::bgtu,
+                start.base_register(), frame_address.base_register(), "1f");
         }
-        asm_line(indent, "la {}, vars", remaining.base_register());
-        asm_line(indent, "bltu {}, {}, 1f", start.base_register(),
-                 remaining.base_register());
-        asm_line(indent, "la {}, vars.end", remaining.base_register());
-        asm_line(indent, "bltu {}, {}, 1f", remaining.base_register(),
-                 start.base_register());
-        asm_line(indent, "sub {}, {}, {}", remaining.base_register(),
-                 remaining.base_register(), start.base_register());
-        asm_line(indent, "lui {}, %hi({})", start.base_register(),
-                 frame_size_bytes.immediate());
-        asm_line(indent, "addi {}, {}, %lo({})", start.base_register(),
-                 start.base_register(), frame_size_bytes.immediate());
-        asm_line(indent, "bgeu {}, {}, 2f", remaining.base_register(),
-                 start.base_register());
-        asm_line(indent, "1:");
+        assembler_.la(indent, remaining.base_register(), "vars");
+        assembler_.bltu(indent, start.base_register(),
+                        remaining.base_register(), "1f");
+        assembler_.la(indent, remaining.base_register(), "vars.end");
+        assembler_.bltu(indent, remaining.base_register(),
+                        start.base_register(), "1f");
+        assembler_.sub(indent, remaining.base_register(),
+                       remaining.base_register(), start.base_register());
+        assembler_.lui(indent, start.base_register(),
+                       almost_assembler_rv32i::immediate::of_symbol(
+                           frame_size_bytes.immediate(),
+                           almost_assembler_rv32i::immediate::part::high));
+        assembler_.addi(indent, start.base_register(), start.base_register(),
+                        almost_assembler_rv32i::immediate::of_symbol(
+                            frame_size_bytes.immediate(),
+                            almost_assembler_rv32i::immediate::part::low));
+        assembler_.bgeu(indent, remaining.base_register(),
+                        start.base_register(), "2f");
+        assembler_.label(indent, "1");
         branch(indent, failure_label);
-        asm_line(indent, "2:");
+        assembler_.label(indent, "2");
     }
 
     auto define_constant(const std::string_view name, const size_t value)
@@ -2563,13 +2575,16 @@ class machine_rv32i final : public machine {
         if (value > std::numeric_limits<uint32_t>::max()) {
             throw compiler_exception{token{}, "constant exceeds RV32I range"};
         }
-        asm_line(0, ".equ {}, {}", name, value);
+        assembler_.define_constant(name, static_cast<int64_t>(value));
     }
 
     auto start() -> void override {
         multiply_helper_used_ = false;
         divide_helper_used_ = false;
-        assembling_ = jump_mode_ != jump_mode::as_emitted;
+
+        // resolved and optimized jumps need every line before writing
+        assembler_.set_direct_output(
+            jump_mode_ == jump_mode::as_emitted ? &os_.get() : nullptr);
 
         write_line("#");
         write_line("# generated by baz");
@@ -2578,12 +2593,12 @@ class machine_rv32i final : public machine {
 
         asm_line(0, ".option norvc");
         asm_line(0, ".option norelax");
-        switch_section(".text", true);
+        assembler_.switch_section(section::text);
         asm_line(0, ".globl _start");
         label(0, "_start");
         write_line("");
         reserve_variables_base();
-        asm_line(0, "la {}, dat", variables_base_register_);
+        assembler_.la(0, variables_base_register_, "dat");
         write_line("");
     }
 
@@ -2616,8 +2631,8 @@ class machine_rv32i final : public machine {
         // fall through to it
         const auto check_negative = [&](const std::string_view reg,
                                         const bool last) -> void {
-            asm_line(indent, "{} {}, {}", last ? "bgez" : "bltz", reg,
-                     last ? "2f" : "1f");
+            assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
+                                   last ? "2f" : "1f");
         };
 
         if (options.lower) {
@@ -2644,93 +2659,100 @@ class machine_rv32i final : public machine {
                     alloc_scratch_register(src_loc_tk, indent, default_type())};
 
                 top = sum.base_register();
-                asm_line(indent, "srai {}, {}, 31", high.base_register(),
-                         index);
-                asm_line(indent, "srai {}, {}, 31", limit.base_register(),
-                         reg_count.base_register());
-                asm_line(indent, "add {}, {}, {}", high.base_register(),
-                         high.base_register(), limit.base_register());
-                asm_line(indent, "add {}, {}, {}", top, index,
-                         reg_count.base_register());
-                asm_line(indent, "sltu {}, {}, {}", limit.base_register(), top,
-                         index);
-                asm_line(indent, "add {}, {}, {}", high.base_register(),
-                         high.base_register(), limit.base_register());
-                asm_line(indent, "bltz {}, 2f", high.base_register());
-                asm_line(indent, "bgtz {}, 1f", high.base_register());
+                assembler_.srai(indent, high.base_register(), index,
+                                sign_shift_);
+                assembler_.srai(indent, limit.base_register(),
+                                reg_count.base_register(), sign_shift_);
+                assembler_.add(indent, high.base_register(),
+                               high.base_register(), limit.base_register());
+                assembler_.add(indent, top, index, reg_count.base_register());
+                assembler_.sltu(indent, limit.base_register(), top, index);
+                assembler_.add(indent, high.base_register(),
+                               high.base_register(), limit.base_register());
+                assembler_.bltz(indent, high.base_register(), "2f");
+                assembler_.bgtz(indent, high.base_register(), "1f");
             } else {
-                asm_line(indent, "bltz {}, 2f", index);
+                assembler_.bltz(indent, index, "2f");
             }
-            asm_line(indent, "li {}, {}", limit.base_register(), array_count);
+            assembler_.li(indent, limit.base_register(), array_count);
             if (allow_end) {
-                asm_line(indent, "bgeu {}, {}, 2f", limit.base_register(), top);
+                assembler_.bgeu(indent, limit.base_register(), top, "2f");
             }
             if (not allow_end) {
-                asm_line(indent, "bltu {}, {}, 2f", top, limit.base_register());
+                assembler_.bltu(indent, top, limit.base_register(), "2f");
             }
         }
-        asm_line(indent, "1:");
+        assembler_.label(indent, "1");
         if (options.with_line) {
-            asm_line(indent, "li a0, {}", src_loc_tk.at_line());
+            assembler_.li(indent, "a0", src_loc_tk.at_line());
         }
         branch(indent, "baz_bounds_panic");
-        asm_line(indent, "2:");
+        assembler_.label(indent, "2");
     }
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
         constexpr std::string_view message{"panic: bounds at line "};
+        // room for the ten digits of a 32-bit line number and a newline
+        constexpr int64_t digits_bytes{16};
+        constexpr int digit_zero{'0'};
+        constexpr int newline{'\n'};
+
         label(0, "baz_bounds_panic");
         if (with_line) {
-            asm_line(1, "mv s2, a0");
-            asm_line(1, "li a0, 2");
-            asm_line(1, "la a1, .Lbaz_bounds_message");
-            asm_line(1, "li a2, {}", message.size());
-            asm_line(1, "li a7, 64");
-            asm_line(1, "ecall");
-            asm_line(1, "addi sp, sp, -16");
-            asm_line(1, "mv a1, sp");
-            asm_line(1, "li a2, 0");
-            asm_line(1, "la t0, .Lbaz_decimal_places");
-            asm_line(0, "1:");
-            asm_line(1, "lw t1, 0(t0)");
-            asm_line(1, "li t2, 0");
-            asm_line(0, "2:");
-            asm_line(1, "bltu s2, t1, 3f");
-            asm_line(1, "sub s2, s2, t1");
-            asm_line(1, "addi t2, t2, 1");
-            asm_line(1, "j 2b");
-            asm_line(0, "3:");
-            asm_line(1, "or t3, a2, t2");
-            asm_line(1, "bnez t3, 4f");
-            asm_line(1, "li t3, 1");
-            asm_line(1, "bne t1, t3, 5f");
-            asm_line(0, "4:");
-            asm_line(1, "addi t2, t2, 48");
-            asm_line(1, "sb t2, 0(a1)");
-            asm_line(1, "addi a1, a1, 1");
-            asm_line(1, "addi a2, a2, 1");
-            asm_line(0, "5:");
-            asm_line(1, "addi t0, t0, 4");
-            asm_line(1, "li t3, 1");
-            asm_line(1, "bne t1, t3, 1b");
-            asm_line(1, "li t2, 10");
-            asm_line(1, "sb t2, 0(a1)");
-            asm_line(1, "addi a2, a2, 1");
-            asm_line(1, "mv a1, sp");
-            asm_line(1, "li a0, 2");
-            asm_line(1, "li a7, 64");
-            asm_line(1, "ecall");
+            assembler_.mv(1, "s2", "a0");
+            assembler_.li(1, "a0", 2);
+            assembler_.la(1, "a1", ".Lbaz_bounds_message");
+            assembler_.li(1, "a2", message.size());
+            assembler_.li(1, "a7", syscall_write_);
+            assembler_.ecall(1);
+            assembler_.addi(1, "sp", "sp", -digits_bytes);
+            assembler_.mv(1, "a1", "sp");
+            assembler_.li(1, "a2", 0);
+            assembler_.la(1, "t0", ".Lbaz_decimal_places");
+            assembler_.label(0, "1");
+            assembler_.lw(1, "t1", 0, "t0");
+            assembler_.li(1, "t2", 0);
+            assembler_.label(0, "2");
+            assembler_.bltu(1, "s2", "t1", "3f");
+            assembler_.sub(1, "s2", "s2", "t1");
+            assembler_.addi(1, "t2", "t2", 1);
+            assembler_.j(1, "2b");
+            assembler_.label(0, "3");
+            assembler_.or_op(1, "t3", "a2", "t2");
+            assembler_.bnez(1, "t3", "4f");
+            assembler_.li(1, "t3", 1);
+            assembler_.bne(1, "t1", "t3", "5f");
+            assembler_.label(0, "4");
+            assembler_.addi(1, "t2", "t2", digit_zero);
+            assembler_.sb(1, "t2", 0, "a1");
+            assembler_.addi(1, "a1", "a1", 1);
+            assembler_.addi(1, "a2", "a2", 1);
+            assembler_.label(0, "5");
+            assembler_.addi(1, "t0", "t0", 4);
+            assembler_.li(1, "t3", 1);
+            assembler_.bne(1, "t1", "t3", "1b");
+            assembler_.li(1, "t2", newline);
+            assembler_.sb(1, "t2", 0, "a1");
+            assembler_.addi(1, "a2", "a2", 1);
+            assembler_.mv(1, "a1", "sp");
+            assembler_.li(1, "a0", 2);
+            assembler_.li(1, "a7", syscall_write_);
+            assembler_.ecall(1);
         }
         exit(token{}, 1, operand::imm("255", default_type()));
         if (with_line) {
-            switch_section(".section .rodata", false);
-            asm_line(0, ".Lbaz_bounds_message:");
-            asm_line(0, ".ascii \"{}\"", message);
-            asm_line(0, ".balign 4");
-            asm_line(0, ".Lbaz_decimal_places:");
-            asm_line(0, ".word 1000000000, 100000000, 10000000, 1000000, "
-                        "100000, 10000, 1000, 100, 10, 1");
-            switch_section(".text", true);
+            constexpr std::array<int64_t, 10> decimal_places{
+                1000000000, 100000000, 10000000, 1000000, 100000,
+                10000,      1000,      100,      10,      1,
+            };
+
+            assembler_.switch_section(section::rodata);
+            assembler_.label(0, ".Lbaz_bounds_message");
+            assembler_.ascii(message);
+            assembler_.align(4);
+            assembler_.label(0, ".Lbaz_decimal_places");
+            assembler_.data(4, decimal_places);
+            assembler_.switch_section(section::text);
         }
     }
 
@@ -2740,35 +2762,37 @@ class machine_rv32i final : public machine {
 
     auto emit_frame_overflow_handler() -> void override {
         constexpr std::string_view message{"panic: frame overflow"};
+        constexpr std::array<int64_t, 1> newline{'\n'};
+
         label(0, "baz_frame_overflow");
-        asm_line(1, "li a0, 2");
-        asm_line(1, "la a1, .Lbaz_frame_message");
+        assembler_.li(1, "a0", 2);
+        assembler_.la(1, "a1", ".Lbaz_frame_message");
         // the newline follows the message text
-        asm_line(1, "li a2, {}", message.size() + 1);
-        asm_line(1, "li a7, 64");
-        asm_line(1, "ecall");
+        assembler_.li(1, "a2", message.size() + 1);
+        assembler_.li(1, "a7", syscall_write_);
+        assembler_.ecall(1);
         exit(token{}, 1, operand::imm("255", default_type()));
-        switch_section(".section .rodata", false);
-        asm_line(0, ".Lbaz_frame_message:");
-        asm_line(0, ".ascii \"{}\"", message);
-        asm_line(0, ".byte 10");
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, ".Lbaz_frame_message");
+        assembler_.ascii(message);
+        assembler_.data(1, newline);
         // the bounds handler may follow and must stay in the code section
-        switch_section(".text", true);
+        assembler_.switch_section(section::text);
     }
 
     auto begin_data(const size_t alignment) -> void override {
         emit_arithmetic_helpers();
-        switch_section(".data", false);
-        asm_line(0, ".balign {}", alignment);
+        assembler_.switch_section(section::data);
+        assembler_.align(alignment);
         label(0, "dat");
     }
 
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
         label(0, "dat.end");
-        asm_line(0, ".balign {}", alignment);
+        assembler_.align(alignment);
         label(0, "vars");
-        asm_line(0, ".zero {}", size_bytes);
+        assembler_.zero(size_bytes);
         label(0, "vars.end");
     }
 
@@ -2778,7 +2802,7 @@ class machine_rv32i final : public machine {
     }
 
     auto emit_string_data(const std::string_view value) -> void override {
-        std::string encoded;
+        std::string bytes;
         for (size_t offset{}; offset < value.size(); ++offset) {
             unsigned char byte{static_cast<unsigned char>(value[offset])};
             if (byte == '\\') {
@@ -2854,66 +2878,28 @@ class machine_rv32i final : public machine {
                                              "unsupported RV32I string escape"};
                 }
             }
-            switch (byte) {
-            case '\n':
-                encoded += "\\n";
-                break;
-
-            case '\r':
-                encoded += "\\r";
-                break;
-
-            case '\t':
-                encoded += "\\t";
-                break;
-
-            case '"':
-            case '\\':
-                encoded += '\\';
-                encoded += static_cast<char>(byte);
-                break;
-
-            default:
-                if (byte >= ' ' and byte <= '~') {
-                    encoded += static_cast<char>(byte);
-                } else {
-                    encoded += std::format("\\{:03o}",
-                                           static_cast<unsigned int>(byte));
-                }
-                break;
-            }
+            bytes += static_cast<char>(byte);
         }
-        asm_line(0, ".ascii \"{}\"", encoded);
+        assembler_.ascii(bytes);
     }
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {
-        asm_line(0, ".zero {}", size_bytes);
+        assembler_.zero(size_bytes);
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
                             const data_initializer& value) const
         -> void override {
-        std::string_view directive;
-        switch (element_size_bytes) {
-        case 1:
-            directive = ".byte";
-            break;
 
-        case 2:
-            directive = ".half";
-            break;
+        if (element_size_bytes != 1 and element_size_bytes != 2 and
+            element_size_bytes != 4) {
 
-        case 4:
-            directive = ".word";
-            break;
-
-        default:
             throw compiler_exception{
                 token{}, "RV32I data elements must be 1, 2, or 4 bytes"};
         }
-        asm_line(0, ".rept {}", count);
-        asm_line(0, "{} {}{}", directive, value.uops, value.value);
-        asm_line(0, ".endr");
+
+        assembler_.repeated_data(element_size_bytes, count, value.uops,
+                                 value.value);
     }
 
     [[nodiscard]] auto

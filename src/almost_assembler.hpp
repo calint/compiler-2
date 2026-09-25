@@ -78,6 +78,8 @@ class almost_assembler {
         // a label in code where execution can enter
         bool entry{};
         bool removed{};
+        // index of the target's structured form of the line
+        std::optional<size_t> record;
     };
 
     almost_assembler() = default;
@@ -92,7 +94,24 @@ class almost_assembler {
         code_section_ = code_section;
     }
 
+    // lines are written to 'os' as they are added, or buffered when null
+    auto set_direct_output(std::ostream* const os) -> void {
+        direct_output_ = os;
+    }
+
+    [[nodiscard]] auto direct_output() const -> std::ostream* {
+        return direct_output_;
+    }
+
+    [[nodiscard]] auto is_buffering() const -> bool {
+        return direct_output_ == nullptr;
+    }
+
     auto add_text(std::string text) -> void {
+        if (write_directly(text)) {
+            return;
+        }
+
         if (not code_section_) {
             current_lines().push_back({
                 .text{std::move(text)},
@@ -101,6 +120,7 @@ class almost_assembler {
                 .code_size{},
                 .entry{},
                 .removed{},
+                .record{},
             });
 
             return;
@@ -118,10 +138,15 @@ class almost_assembler {
             .code_size{code_size},
             .entry{entry},
             .removed{},
+            .record{},
         });
     }
 
     auto add_label(std::string name, std::string text) -> void {
+        if (write_directly(text)) {
+            return;
+        }
+
         current_lines().push_back({
             .text{std::move(text)},
             .label{std::move(name)},
@@ -129,14 +154,19 @@ class almost_assembler {
             .code_size{},
             .entry{code_section_},
             .removed{},
+            .record{},
         });
     }
 
     // 'mnemonic' is the unconditional jump or a branch taking 'operands'
     auto add_jump(std::string text, const std::string_view mnemonic,
                   const std::string_view operands,
-                  const std::string_view target, const std::string_view scratch)
-        -> void {
+                  const std::string_view target, const std::string_view scratch,
+                  const std::optional<size_t> record = std::nullopt) -> void {
+
+        if (write_directly(text)) {
+            return;
+        }
 
         const size_t code_size{text_code_size(text)};
 
@@ -152,6 +182,7 @@ class almost_assembler {
             .code_size{code_size},
             .entry{},
             .removed{},
+            .record{record},
         });
     }
 
@@ -227,6 +258,25 @@ class almost_assembler {
     }
 
   protected:
+    // a line whose size and structured form the target already knows
+    auto add_record_line(std::string text, const size_t code_size,
+                         const std::optional<size_t> record) -> void {
+
+        if (write_directly(text)) {
+            return;
+        }
+
+        current_lines().push_back({
+            .text{std::move(text)},
+            .label{},
+            .jump{},
+            .code_size{code_section_ ? code_size : 0},
+            .entry{},
+            .removed{},
+            .record{record},
+        });
+    }
+
     [[nodiscard]] auto lines() -> std::vector<line>& { return lines_; }
 
     [[nodiscard]] auto lines() const -> const std::vector<line>& {
@@ -266,6 +316,19 @@ class almost_assembler {
     std::vector<std::vector<line>> captures_;
     bool code_section_{true};
     optimization_counts optimizations_;
+    std::ostream* direct_output_{};
+
+    [[nodiscard]] auto write_directly(const std::string_view text) const
+        -> bool {
+
+        if (direct_output_ == nullptr) {
+            return false;
+        }
+
+        std::println(*direct_output_, "{}", text);
+
+        return true;
+    }
 
     // every other jump is a conditional branch
     [[nodiscard]] virtual auto unconditional_jump_mnemonic() const

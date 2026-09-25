@@ -6,6 +6,7 @@
 /baz
 /gen
 /gen.o
+gen-rv32i.bin
 /diff.baz
 /.idea/
 lcov.info
