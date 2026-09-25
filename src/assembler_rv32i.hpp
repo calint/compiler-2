@@ -97,7 +97,7 @@ class assembler_rv32i final : public assembler {
         ret,
     };
 
-    enum class section : uint8_t { text, rodata, data };
+    enum class section : uint8_t { text, rodata, data, bss };
 
     // a number, or a symbol resolved once addresses are known
     struct immediate {
@@ -283,7 +283,7 @@ class assembler_rv32i final : public assembler {
     using record = std::variant<instruction, jump_registers, data_values,
                                 alignment, section_start, constant>;
 
-    static constexpr size_t section_count{3};
+    static constexpr size_t section_count{4};
 
     struct line_position {
         section which{};
@@ -949,6 +949,7 @@ class assembler_rv32i final : public assembler {
             ".text",
             ".section .rodata",
             ".data",
+            ".bss",
         };
 
         return directives.at(section_index(which));
@@ -1423,12 +1424,12 @@ class assembler_rv32i final : public assembler {
         return data_size_bytes(*data);
     }
 
-    // sections follow each other in the order text, rodata, data from
+    // sections follow each other in the order text, rodata, data, bss from
     // address zero, like a linker script listing them in that order
     [[nodiscard]] auto layout_image() const -> image_layout {
         image_layout image;
         image.positions.reserve(lines().size());
-        image.alignments = {one_instruction_bytes, 1, 1};
+        image.alignments = {one_instruction_bytes, 1, 1, 1};
 
         section current{section::text};
         for (const line& l : lines()) {
@@ -1461,6 +1462,7 @@ class assembler_rv32i final : public assembler {
         const size_t text{section_index(section::text)};
         const size_t rodata{section_index(section::rodata)};
         const size_t data{section_index(section::data)};
+        const size_t bss{section_index(section::bss)};
 
         image.bases.at(rodata) =
             align_up(image.sizes.at(text), image.alignments.at(rodata));
@@ -1468,6 +1470,10 @@ class assembler_rv32i final : public assembler {
         image.bases.at(data) =
             align_up(image.bases.at(rodata) + image.sizes.at(rodata),
                      image.alignments.at(data));
+
+        image.bases.at(bss) =
+            align_up(image.bases.at(data) + image.sizes.at(data),
+                     image.alignments.at(bss));
 
         return image;
     }
@@ -1569,10 +1575,36 @@ class assembler_rv32i final : public assembler {
         }
     }
 
+    // bss is not part of the image, so it may only reserve zero bytes
+    auto assert_bss_uninitialized(const image_layout& image) const -> void {
+        for (size_t index{}; index < lines().size(); ++index) {
+            if (image.positions[index].which != section::bss) {
+                continue;
+            }
+
+            const line& l{lines()[index]};
+            const auto* const data{std::get_if<data_values>(record_of(l))};
+
+            const bool is_zero_fill{
+                data != nullptr and
+                std::ranges::all_of(data->values, [](const int64_t v) -> bool {
+                    return v == 0;
+                })};
+
+            if (l.code_size != 0 or (data != nullptr and not is_zero_fill)) {
+                throw panic_exception{
+                    std::format("initialized bss content '{}'", trim(l.text))};
+            }
+        }
+    }
+
     auto write_image(std::ostream& os) const -> void {
         const image_layout image{layout_image()};
         const symbol_table symbols{collect_symbols(image)};
 
+        assert_bss_uninitialized(image);
+
+        // bss follows the image in memory with unspecified content
         size_t written{};
         for (const section which :
              {section::text, section::rodata, section::data}) {

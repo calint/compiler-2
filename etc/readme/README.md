@@ -62,15 +62,24 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
 * todo list of planned fixes and features in `etc/todo.txt`
 
+## Related
+
+* rv32i soft core fpga implementation running `gen-rv32i.bin` compiled from
+  `prog-uart.baz`
+  * <https://github.com/calint/tang-nano-9k--riscv--cache-psram>
+  * <https://github.com/calint/tang-nano-20k--riscv--cache-sdram>
+  * to run in an emulator of fpga soft core rv32i compile `prog-uart.baz` using
+    `./run-baz.sh --target=rv32i-fpga prog-uart.baz`
+
 ## Source
 
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           4271           1310          14970
+C/C++ Header                    55           4277           1313          14995
 C++                              1             58             10            272
 -------------------------------------------------------------------------------
-SUM:                            56           4329           1320          15242
+SUM:                            56           4335           1323          15267
 -------------------------------------------------------------------------------
 ```
 

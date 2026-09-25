@@ -2858,6 +2858,8 @@ class machine_rv32i : public machine {
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
         label(0, "dat.end");
+        // variables are zeroed when defined, so the image does not hold them
+        assembler_.switch_section(section::bss);
         assembler_.align(alignment);
         label(0, "vars");
         assembler_.zero(size_bytes);
