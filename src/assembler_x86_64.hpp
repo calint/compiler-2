@@ -9,12 +9,12 @@
 #include <utility>
 #include <vector>
 
-#include "almost_assembler.hpp"
+#include "assembler.hpp"
 
 // buffers x86_64 output so its jumps can be optimized, nasm resolves the
 // distances
 
-class almost_assembler_x86_64 final : public almost_assembler {
+class assembler_x86_64 final : public assembler {
   public:
     // lines other than comments and blank lines, the measure for choosing
     // between versions of the same code

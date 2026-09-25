@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-#include "almost_assembler_x86_64.hpp"
+#include "assembler_x86_64.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "machine.hpp"
@@ -34,7 +34,7 @@ class machine_x86 final : public machine {
   public:
     // buffered modes hold output from 'start' to 'finish' so jumps can
     // be optimized
-    using jump_mode = almost_assembler::jump_mode;
+    using jump_mode = assembler::jump_mode;
 
   private:
     static constexpr size_t size_qword{8};
@@ -200,7 +200,7 @@ class machine_x86 final : public machine {
     std::reference_wrapper<std::ostream> os_;
     jump_mode jump_mode_{};
     // buffering output is no more logical state than writing to 'os_'
-    mutable almost_assembler_x86_64 assembler_;
+    mutable assembler_x86_64 assembler_;
     // the start of a line printed in parts
     mutable std::string pending_text_;
     bool assembling_{};
@@ -278,19 +278,19 @@ class machine_x86 final : public machine {
         assembling_ = true;
         assert(pending_text_.empty());
 
-        std::vector<almost_assembler::line> without_scratch{
+        std::vector<assembler::line> without_scratch{
             assembler_.capture(emit_without_scratch)};
 
-        std::vector<almost_assembler::line> with_scratch{
+        std::vector<assembler::line> with_scratch{
             assembler_.capture(emit_with_scratch)};
 
         assert(pending_text_.empty());
 
         const size_t without_count{
-            almost_assembler_x86_64::count_instructions(without_scratch)};
+            assembler_x86_64::count_instructions(without_scratch)};
 
         const size_t with_count{
-            almost_assembler_x86_64::count_instructions(with_scratch)};
+            assembler_x86_64::count_instructions(with_scratch)};
 
         comment(src_loc_tk, indent,
                 "instructions without scratch register {}, with {}",

@@ -5,7 +5,7 @@
 #include <ostream>
 #include <string_view>
 
-#include "almost_assembler_rv32i.hpp"
+#include "assembler_rv32i.hpp"
 #include "decouple.hpp"
 #include "machine_rv32i.hpp"
 
@@ -94,7 +94,7 @@ class machine_rv32i_fpga final : public machine_rv32i {
     // reads until a newline or the count is reached, a0 receives the count
     // and ctrl-d ends the read without being stored like at a terminal
     auto emit_read_routine() const -> void {
-        almost_assembler_rv32i& a{assembler()};
+        assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_read");
         a.li(1, "a3", uart_idle_);
@@ -124,7 +124,7 @@ class machine_rv32i_fpga final : public machine_rv32i {
 
     // writes the count of bytes, a0 receives the count
     auto emit_write_routine() const -> void {
-        almost_assembler_rv32i& a{assembler()};
+        assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_write");
         a.li(1, "a3", uart_idle_);
@@ -146,7 +146,7 @@ class machine_rv32i_fpga final : public machine_rv32i {
     }
 
     auto emit_exit_routine() const -> void {
-        almost_assembler_rv32i& a{assembler()};
+        assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_exit");
         a.j(1, ".Lbaz_exit");

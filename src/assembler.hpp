@@ -47,7 +47,7 @@
 //     je if.19.8.code                   beq t0, t1, if.19.8.code
 //     cmp.19.27:                        cmp.19.27:
 
-class almost_assembler {
+class assembler {
   public:
     // 'as_emitted' writes directly, 'resolved' buffers without optimizing
     enum class jump_mode : uint8_t { as_emitted, resolved, optimized };
@@ -82,12 +82,12 @@ class almost_assembler {
         std::optional<size_t> record;
     };
 
-    almost_assembler() = default;
-    almost_assembler(const almost_assembler&) = delete;
-    almost_assembler(almost_assembler&&) = delete;
-    auto operator=(const almost_assembler&) -> almost_assembler& = delete;
-    auto operator=(almost_assembler&&) -> almost_assembler& = delete;
-    virtual ~almost_assembler() = default;
+    assembler() = default;
+    assembler(const assembler&) = delete;
+    assembler(assembler&&) = delete;
+    auto operator=(const assembler&) -> assembler& = delete;
+    auto operator=(assembler&&) -> assembler& = delete;
+    virtual ~assembler() = default;
 
     // code sizes and entries only count in code
     auto set_code_section(const bool code_section) -> void {

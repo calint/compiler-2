@@ -25,14 +25,14 @@
 #include <variant>
 #include <vector>
 
-#include "almost_assembler.hpp"
+#include "assembler.hpp"
 #include "panic_exception.hpp"
 
 // buffers rv32i output until every label has an offset, then grows the jumps
 // that cannot reach their targets, writes the assembly source and, from the
 // same structured lines, a flat binary image
 
-class almost_assembler_rv32i final : public almost_assembler {
+class assembler_rv32i final : public assembler {
   public:
     static constexpr std::array<std::string_view, 32> register_names{
         "zero", "ra", "sp", "gp", "tp",  "t0",  "t1", "t2", "s0", "s1", "a0",

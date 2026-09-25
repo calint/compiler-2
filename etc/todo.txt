@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] consider expanding almost_assembler_rv32i to generate binary
+[ ] consider expanding assembler_rv32i to generate binary
 [ ] when reading trailing whitespace stop at newline
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments

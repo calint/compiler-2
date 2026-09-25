@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "../../src/almost_assembler_rv32i.hpp"
+#include "../../src/assembler_rv32i.hpp"
 #include "../../src/decouple_impl.hpp" // IWYU pragma: keep
 #include "../../src/machine_rv32i.hpp"
 #include "../../src/machine_x86.hpp"
@@ -36,9 +36,9 @@ auto main(const int argc, const char* argv[]) -> int {
     {
         // 'name:' lines are labels and 'j' or branch lines jump to named
         // labels, everything else is plain text
-        const auto optimize = [](const std::string_view assembly)
-            -> std::string {
-            almost_assembler_rv32i assembler;
+        const auto optimize =
+            [](const std::string_view assembly) -> std::string {
+            assembler_rv32i assembler;
             for (const auto part : assembly | std::views::split('\n')) {
                 const std::string_view text{part};
                 const size_t start{text.find_first_not_of(' ')};
@@ -55,11 +55,10 @@ auto main(const int argc, const char* argv[]) -> int {
                     continue;
                 }
 
-                const std::string_view mnemonic{
-                    code.substr(0, code.find(' '))};
+                const std::string_view mnemonic{code.substr(0, code.find(' '))};
 
                 if (mnemonic != "j" and
-                    not almost_assembler_rv32i::inverse(mnemonic)) {
+                    not assembler_rv32i::inverse(mnemonic)) {
                     assembler.add_text(std::string{text});
                     continue;
                 }
@@ -82,7 +81,7 @@ auto main(const int argc, const char* argv[]) -> int {
             return output.str();
         };
 
-        // the patterns 'almost_assembler' documents, in rv32i form
+        // the patterns 'assembler' documents, in rv32i form
         assert(optimize("    j cmp_13_26\n    cmp_13_26:\n") ==
                "    cmp_13_26:\n");
 
@@ -149,8 +148,9 @@ auto main(const int argc, const char* argv[]) -> int {
             optimize("j end\nj other\naddi a0, a0, 1\nother:\necall\nend:\n") ==
             "j end\naddi a0, a0, 1\nother:\necall\nend:\n");
 
-        assert(optimize("top:\naddi a0, a0, 1\nbeqz a0, done\nj top\ndone:\n") ==
-               "top:\naddi a0, a0, 1\nbnez a0, top\ndone:\n");
+        assert(
+            optimize("top:\naddi a0, a0, 1\nbeqz a0, done\nj top\ndone:\n") ==
+            "top:\naddi a0, a0, 1\nbnez a0, top\ndone:\n");
 
         // labels between the jumps let execution enter
         for (const std::string_view unchanged :
@@ -173,7 +173,7 @@ auto main(const int argc, const char* argv[]) -> int {
 
         {
             // code continues across data placed in another section
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
             assembler.add_jump("beq a0, a1, skip", "beq", "a0, a1", "skip",
                                "t0");
             assembler.set_code_section(false);
@@ -200,18 +200,17 @@ auto main(const int argc, const char* argv[]) -> int {
             return text;
         };
 
-        const auto add_nops = [](almost_assembler_rv32i& assembler,
+        const auto add_nops = [](assembler_rv32i& assembler,
                                  const size_t count) -> void {
             for (size_t i{}; i < count; ++i) {
                 assembler.add_text("nop");
             }
         };
 
-        const auto add_jump = [](almost_assembler_rv32i& assembler,
-                                 const std::string_view mnemonic,
-                                 const std::string_view operands,
-                                 const std::string_view target,
-                                 const std::string_view scratch) -> void {
+        const auto add_jump =
+            [](assembler_rv32i& assembler, const std::string_view mnemonic,
+               const std::string_view operands, const std::string_view target,
+               const std::string_view scratch) -> void {
             std::string text{
                 operands.empty()
                     ? std::format("{} {}", mnemonic, target)
@@ -221,20 +220,18 @@ auto main(const int argc, const char* argv[]) -> int {
                                scratch);
         };
 
-        const auto written =
-            [](almost_assembler_rv32i& assembler) -> std::string {
+        const auto written = [](assembler_rv32i& assembler) -> std::string {
             std::ostringstream output;
             assembler.resolve_and_write(output);
 
             return output.str();
         };
 
-        const auto forward = [&](const std::string_view mnemonic,
-                                 const std::string_view operands,
-                                 const size_t count,
-                                 const std::string_view scratch)
-            -> std::string {
-            almost_assembler_rv32i assembler;
+        const auto forward =
+            [&](const std::string_view mnemonic,
+                const std::string_view operands, const size_t count,
+                const std::string_view scratch) -> std::string {
+            assembler_rv32i assembler;
             add_jump(assembler, mnemonic, operands, "end", scratch);
             add_nops(assembler, count);
             assembler.add_label("end", "end:");
@@ -245,7 +242,7 @@ auto main(const int argc, const char* argv[]) -> int {
         const auto backward = [&](const std::string_view mnemonic,
                                   const std::string_view operands,
                                   const size_t count) -> std::string {
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
             assembler.add_label("end", "end:");
             add_nops(assembler, count);
             add_jump(assembler, mnemonic, operands, "end", "t0");
@@ -297,7 +294,7 @@ auto main(const int argc, const char* argv[]) -> int {
 
         {
             // growing the inner branch pushes the outer one out of reach
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
             add_jump(assembler, "beq", "a0, a1", "end", "t0");
             add_nops(assembler, 1021);
             add_jump(assembler, "beq", "a0, a1", "far", "t0");
@@ -310,7 +307,7 @@ auto main(const int argc, const char* argv[]) -> int {
         }
         {
             // other sections do not count towards code offsets
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
             add_jump(assembler, "beq", "a0, a1", "end", "t0");
             assembler.set_code_section(false);
             add_nops(assembler, 2000);
@@ -321,10 +318,11 @@ auto main(const int argc, const char* argv[]) -> int {
         }
         {
             // the smaller version is kept and ties keep the first
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
 
-            assembler.emit_smaller([&] { add_nops(assembler, 2); },
-                                   [&] { assembler.add_text("addi a0, a0, 1"); });
+            assembler.emit_smaller(
+                [&] { add_nops(assembler, 2); },
+                [&] { assembler.add_text("addi a0, a0, 1"); });
 
             assembler.emit_smaller([&] { assembler.add_text("sw a0, 0(sp)"); },
                                    [&] { add_nops(assembler, 1); });
@@ -333,7 +331,7 @@ auto main(const int argc, const char* argv[]) -> int {
         }
         {
             // a nested choice lands inside the version that contains it
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
 
             assembler.emit_smaller(
                 [&] {
@@ -348,7 +346,7 @@ auto main(const int argc, const char* argv[]) -> int {
         }
         {
             // a jump inside a kept version still grows
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
 
             assembler.emit_smaller(
                 [&] { add_jump(assembler, "beq", "a0, a1", "end", "t0"); },
@@ -361,15 +359,16 @@ auto main(const int argc, const char* argv[]) -> int {
                        padding(1100) + "end:\n");
         }
 
-        assert(rejects([&] { static_cast<void>(forward("j", {}, 262143, {})); }));
+        assert(
+            rejects([&] { static_cast<void>(forward("j", {}, 262143, {})); }));
 
         assert(rejects([] {
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
             assembler.add_text("unknown_instruction");
         }));
 
         assert(rejects([&] {
-            almost_assembler_rv32i assembler;
+            assembler_rv32i assembler;
             add_jump(assembler, "j", {}, "missing", "t0");
             static_cast<void>(written(assembler));
         }));
@@ -416,14 +415,13 @@ auto main(const int argc, const char* argv[]) -> int {
                   {"la a0, buffer", 2},
                   {"call function", 2},
                   {"mv a0, a1", 1}}}) {
-            assert(almost_assembler_rv32i::line_size_bytes(
-                       std::format("\t{}  # instruction", instruction)) ==
-                   cost * 4);
+            assert(assembler_rv32i::line_size_bytes(std::format(
+                       "\t{}  # instruction", instruction)) == cost * 4);
         }
 
         for (const std::string_view sizeless :
              {"  # comment", "\t.option norelax", ".Lcandidate: \t# label"}) {
-            assert(almost_assembler_rv32i::line_size_bytes(sizeless) == 0);
+            assert(assembler_rv32i::line_size_bytes(sizeless) == 0);
         }
 
         // equal sizes keep the version without scratch in direct and buffered
@@ -450,11 +448,11 @@ auto main(const int argc, const char* argv[]) -> int {
                                    operand::reg("a1", integer));
             };
 
-            backend.emit_most_efficient(token{}, 0, [&] { load("2047"); },
-                                        copy);
+            backend.emit_most_efficient(
+                token{}, 0, [&] { load("2047"); }, copy);
 
-            backend.emit_most_efficient(token{}, 0, [&] { load("2048"); },
-                                        copy);
+            backend.emit_most_efficient(
+                token{}, 0, [&] { load("2048"); }, copy);
 
             backend.finish();
             backend.write_assembly(output);
@@ -588,8 +586,8 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     if (argc > 1 and std::string_view{argv[1]} == "noninline") {
         // hand-written lines are interleaved with the backend's output
-        machine_rv32i backend{std::cout, {},
-                              machine_rv32i::jump_mode::as_emitted};
+        machine_rv32i backend{
+            std::cout, {}, machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -650,8 +648,8 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     if (argc > 1 and std::string_view{argv[1]} == "frame-checks") {
         // hand-written lines are interleaved with the backend's output
-        machine_rv32i backend{std::cout, {},
-                              machine_rv32i::jump_mode::as_emitted};
+        machine_rv32i backend{
+            std::cout, {}, machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -708,8 +706,8 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     if (argc > 1 and std::string_view{argv[1]} == "long-loop") {
         // hand-written lines are interleaved with the backend's output
-        machine_rv32i backend{std::cout, {},
-                              machine_rv32i::jump_mode::as_emitted};
+        machine_rv32i backend{
+            std::cout, {}, machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -740,7 +738,8 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     const std::string_view mode{argc > 1 ? argv[1] : ""};
     if (mode == "far-jumps" or mode == "far-jumps-optimized") {
-        machine_rv32i backend{std::cout, {},
+        machine_rv32i backend{std::cout,
+                              {},
                               mode == "far-jumps"
                                   ? machine_rv32i::jump_mode::resolved
                                   : machine_rv32i::jump_mode::optimized};
@@ -851,7 +850,8 @@ auto main(const int argc, const char* argv[]) -> int {
         }
         source += "}\n";
 
-        machine_rv32i compiler{std::cout, {},
+        machine_rv32i compiler{std::cout,
+                               {},
                                mode == "far-foo"
                                    ? machine_rv32i::jump_mode::resolved
                                    : machine_rv32i::jump_mode::optimized};
@@ -1136,8 +1136,8 @@ func main() {
             static_cast<void>(
                 x86_backend.alloc_named_register(token{}, 0, "rcx", integer64));
         } catch (const compiler_exception& error) {
-            x86_conflict =
-                std::string_view{error.what()}.contains("holds a scratch value");
+            x86_conflict = std::string_view{error.what()}.contains(
+                "holds a scratch value");
         }
         assert(x86_conflict);
 

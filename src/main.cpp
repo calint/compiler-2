@@ -16,7 +16,7 @@
 #include <string_view>
 #include <utility>
 
-#include "almost_assembler.hpp"
+#include "assembler.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "decouple_impl.hpp" // IWYU pragma: keep
@@ -218,9 +218,9 @@ auto main(const int argc, const char** const argv) -> int {
     try {
         src = read_file_to_string(src_file_name);
 
-        const almost_assembler::jump_mode jumps{
-            optimize_jumps ? almost_assembler::jump_mode::optimized
-                           : almost_assembler::jump_mode::resolved};
+        const assembler::jump_mode jumps{optimize_jumps
+                                             ? assembler::jump_mode::optimized
+                                             : assembler::jump_mode::resolved};
 
         // the output from the parse stage is discarded, compile receives the
         // output stream 'build' writes the complete assembly

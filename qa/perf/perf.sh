@@ -191,7 +191,7 @@ write_text("baz-callgraph", perf_output(compiler + ["--children", "--percent-lim
                                                    "--call-graph", "graph,0.5,caller"]))
 
 owner = re.compile(r"^(?:.*?\s)?(toc|frame|ident_path|token|tokenizer|type|statement|program|"
-                   r"x86|utils|almost_assembler\w*|machine_\w+|stmt_\w+|expr_\w+|lut<[^>]+>)::")
+                   r"x86|utils|assembler\w*|machine_\w+|stmt_\w+|expr_\w+|lut<[^>]+>)::")
 project = []
 groups = {}
 unresolved = 0.0

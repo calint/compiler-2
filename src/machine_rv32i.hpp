@@ -13,7 +13,7 @@
 #include <string_view>
 #include <utility>
 
-#include "almost_assembler_rv32i.hpp"
+#include "assembler_rv32i.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "machine.hpp"
@@ -23,11 +23,11 @@ class machine_rv32i : public machine {
   public:
     // buffered modes hold output from 'start' to 'finish' so jumps can
     // be optimized and grown to reach their targets
-    using jump_mode = almost_assembler::jump_mode;
+    using jump_mode = assembler::jump_mode;
 
   private:
-    using op = almost_assembler_rv32i::op;
-    using section = almost_assembler_rv32i::section;
+    using op = assembler_rv32i::op;
+    using section = assembler_rv32i::section;
 
     static constexpr size_t s0_register_index{8};
     static constexpr std::string_view variables_base_register_{"s0"};
@@ -48,8 +48,8 @@ class machine_rv32i : public machine {
     // the i/o call save area keeps sp 16-byte aligned
     static constexpr int io_save_size_bytes_{16};
 
-    static constexpr const decltype(almost_assembler_rv32i::register_names)&
-        register_names_{almost_assembler_rv32i::register_names};
+    static constexpr const decltype(assembler_rv32i::register_names)&
+        register_names_{assembler_rv32i::register_names};
 
     static constexpr std::array<size_t, 30> scratch_registers_{
         5,  6,  7,  28, 29, 30, 31, 8,  9,  18, 19, 20, 21, 22, 23,
@@ -73,7 +73,7 @@ class machine_rv32i : public machine {
     // empty when no binary image is written
     std::string binary_file_name_;
     // buffering output is no more logical state than writing to 'os_'
-    mutable almost_assembler_rv32i assembler_;
+    mutable assembler_rv32i assembler_;
     const type* type_i32_{};
     uint32_t unavailable_registers_{};
     bool variables_base_reserved_{};
@@ -114,7 +114,7 @@ class machine_rv32i : public machine {
     [[nodiscard]] static auto register_index(const std::string_view name)
         -> size_t {
 
-        return almost_assembler_rv32i::register_number(name).value_or(
+        return assembler_rv32i::register_number(name).value_or(
             register_names_.size());
     }
 
@@ -186,7 +186,7 @@ class machine_rv32i : public machine {
                   const std::format_string<args_t...> format,
                   args_t&&... args) const -> void {
 
-        write_line(almost_assembler_rv32i::indentation(indent) +
+        write_line(assembler_rv32i::indentation(indent) +
                    std::format(format, std::forward<args_t>(args)...));
     }
 
@@ -1105,7 +1105,7 @@ class machine_rv32i : public machine {
     }
 
   protected:
-    [[nodiscard]] auto assembler() const -> almost_assembler_rv32i& {
+    [[nodiscard]] auto assembler() const -> assembler_rv32i& {
         return assembler_;
     }
 
@@ -1477,7 +1477,7 @@ class machine_rv32i : public machine {
             // li materializes a constant using one or more RV32I instructions
             assembler_.li(
                 indent, value.base_register(),
-                almost_assembler_rv32i::immediate::of_symbol(src.immediate()));
+                assembler_rv32i::immediate::of_symbol(src.immediate()));
         } else {
             throw compiler_exception{src_loc_tk, "invalid RV32I copy source"};
         }
@@ -2627,13 +2627,13 @@ class machine_rv32i : public machine {
         assembler_.sub(indent, remaining.base_register(),
                        remaining.base_register(), start.base_register());
         assembler_.lui(indent, start.base_register(),
-                       almost_assembler_rv32i::immediate::of_symbol(
+                       assembler_rv32i::immediate::of_symbol(
                            frame_size_bytes.immediate(),
-                           almost_assembler_rv32i::immediate::part::high));
+                           assembler_rv32i::immediate::part::high));
         assembler_.addi(indent, start.base_register(), start.base_register(),
-                        almost_assembler_rv32i::immediate::of_symbol(
+                        assembler_rv32i::immediate::of_symbol(
                             frame_size_bytes.immediate(),
-                            almost_assembler_rv32i::immediate::part::low));
+                            assembler_rv32i::immediate::part::low));
         assembler_.bgeu(indent, remaining.base_register(),
                         start.base_register(), "2f");
         assembler_.label(indent, "1");

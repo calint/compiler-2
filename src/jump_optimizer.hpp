@@ -1,6 +1,6 @@
 #pragma once
 // x86 jump optimizations applied to the generated assembly as a
-// post-processing pass, rv32i optimizes in 'almost_assembler_rv32i'
+// post-processing pass, rv32i optimizes in 'assembler_rv32i'
 //
 // jumps_to_next:
 //     jmp if.16.8.code
@@ -63,7 +63,7 @@ namespace jump_optimizer {
 // keep target-specific parsing separate because branch syntax differs
 namespace x86 {
 
-// same output as 'almost_assembler_rv32i::optimization_counts'
+// same output as 'assembler_rv32i::optimization_counts'
 struct optimization_counts {
     size_t jumps_to_next{};
     size_t unreachable_jumps{};
@@ -338,7 +338,7 @@ static auto remove(line& l) -> void {
     l.removed = true;
 }
 
-// the same rules in the same order as 'almost_assembler_rv32i::optimize_jump'
+// the same rules in the same order as 'assembler_rv32i::optimize_jump'
 // so both targets count the same optimizations
 [[nodiscard]] static auto
 optimize_jump(std::vector<line>& lines, const size_t index,

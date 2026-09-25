@@ -7,7 +7,7 @@
 #include <ostream>
 #include <string_view>
 
-#include "almost_assembler_rv32i.hpp"
+#include "assembler_rv32i.hpp"
 #include "decouple.hpp"
 #include "machine_rv32i.hpp"
 #include "panic_exception.hpp"
@@ -63,7 +63,7 @@ class machine_rv32i_qemu final : public machine_rv32i {
         machine_rv32i::start();
 
         // no operating system sets up a stack, so it follows the variables
-        almost_assembler_rv32i& a{assembler()};
+        assembler_rv32i& a{assembler()};
 
         a.la(0, "sp", "vars.end");
         a.li(0, "t0", stack_size_bytes_);
@@ -113,7 +113,7 @@ class machine_rv32i_qemu final : public machine_rv32i {
     // reads until a newline or the count is reached, a0 receives the count
     // and ctrl-d ends the read without being stored like at a terminal
     auto emit_read_routine() const -> void {
-        almost_assembler_rv32i& a{assembler()};
+        assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_read");
         a.lui(1, "a3", uart_upper_);
@@ -145,7 +145,7 @@ class machine_rv32i_qemu final : public machine_rv32i {
 
     // writes the count of bytes, a0 receives the count
     auto emit_write_routine() const -> void {
-        almost_assembler_rv32i& a{assembler()};
+        assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_write");
         a.lui(1, "a3", uart_upper_);
@@ -169,7 +169,7 @@ class machine_rv32i_qemu final : public machine_rv32i {
 
     // ends qemu with the exit code a0 as its status
     auto emit_exit_routine() const -> void {
-        almost_assembler_rv32i& a{assembler()};
+        assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_exit");
         a.slli(1, "a0", "a0", finisher_code_shift_);
