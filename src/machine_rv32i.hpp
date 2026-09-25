@@ -19,7 +19,7 @@ class machine_rv32i final : public machine {
   public:
     // buffered modes hold output from 'program_start' to 'finish' so jumps can
     // be optimized and grown to reach their targets
-    enum class jump_mode : uint8_t { as_emitted, resolved, optimized };
+    using jump_mode = almost_assembler::jump_mode;
 
   private:
     static constexpr size_t s0_register_index{8};

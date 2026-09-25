@@ -67,10 +67,10 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           3734           1162          12974
-C++                              1             52              8            244
+C/C++ Header                    54           3821           1192          13243
+C++                              1             50              7            239
 -------------------------------------------------------------------------------
-SUM:                            53           3786           1170          13218
+SUM:                            55           3871           1199          13482
 -------------------------------------------------------------------------------
 ```
 
@@ -4842,13 +4842,13 @@ vars resb 131072
 vars.end:
 ; free named register rbp
 
-; max scratch registers in use: 4
-;            max frames in use: 8
-;              dat var padding: 1 B
-;                max vars size: 953 B
-
 ;   removed jumps to next code: 87
 ;    removed unreachable jumps: 2
 ; removed same target branches: 33
 ; inverted branches over jumps: 0
+
+; max scratch registers in use: 4
+;            max frames in use: 8
+;              dat var padding: 1 B
+;                max vars size: 953 B
 ```

@@ -3009,12 +3009,12 @@ vars resb 131072
 vars.end:
 ; free named register rbp
 
-; max scratch registers in use: 4
-;            max frames in use: 8
-;              dat var padding: 1 B
-;                max vars size: 953 B
-
 ;   removed jumps to next code: 87
 ;    removed unreachable jumps: 2
 ; removed same target branches: 33
 ; inverted branches over jumps: 0
+
+; max scratch registers in use: 4
+;            max frames in use: 8
+;              dat var padding: 1 B
+;                max vars size: 953 B

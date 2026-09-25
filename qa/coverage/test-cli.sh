@@ -74,7 +74,7 @@ CLI_JUMP_OPTIMIZATIONS() {
     [[ "$optimized" == *$'je if.5.8.code\ncmp.5.31:'* ]]
     [[ "$optimized" == *';   removed jumps to next code: 2'* ]]
     [[ "$optimized" == *'; inverted branches over jumps: 1'* ]]
-    [[ "$raw" != *'removed jumps to next code'* ]]
+    [[ "$raw" == *';   removed jumps to next code: 0'* ]]
     local raw_count optimized_count
     raw_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' gen.s)
     optimized_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' out)

@@ -16,10 +16,10 @@
 #include <string_view>
 #include <utility>
 
+#include "almost_assembler.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "decouple_impl.hpp" // IWYU pragma: keep
-#include "jump_optimizer.hpp"
 #include "machine.hpp"
 #include "machine_rv32i.hpp"
 #include "machine_x86.hpp"
@@ -215,13 +215,15 @@ auto main(const int argc, const char** const argv) -> int {
     try {
         src = read_file_to_string(src_file_name);
         null_stream initial_output;
+        const almost_assembler::jump_mode jumps{
+            optimize_jumps ? almost_assembler::jump_mode::optimized
+                           : almost_assembler::jump_mode::resolved};
+
         std::unique_ptr<machine> backend;
         if (target == "x86_64") {
-            backend = std::make_unique<machine_x86>(initial_output, src);
+            backend = std::make_unique<machine_x86>(initial_output, src, jumps);
         } else {
-            backend = std::make_unique<machine_rv32i>(
-                src, optimize_jumps ? machine_rv32i::jump_mode::optimized
-                                    : machine_rv32i::jump_mode::resolved);
+            backend = std::make_unique<machine_rv32i>(src, jumps);
         }
 
         program prg{*backend,     src,          vars_size_bytes,
@@ -245,20 +247,10 @@ auto main(const int argc, const char** const argv) -> int {
             return 0;
         }
 
-        // each target has different branch syntax and displacement limits
-        std::stringstream ss1;
-        prg.build(ss1);
-
-        // the rv32i backend already optimized its jumps while assembling
-        if (target == "rv32i") {
-            std::cout << ss1.rdbuf();
-
-            return 0;
-        }
-
-        jump_optimizer::x86::optimization_counts counts;
-        jump_optimizer::x86::optimize(ss1, std::cout, counts);
-        counts.print(std::cout);
+        // optimized output is written only when compiling succeeds
+        std::stringstream output;
+        prg.build(output);
+        std::cout << output.rdbuf();
 
     } catch (const compiler_exception& e) {
         const auto [line, col]{

@@ -82,7 +82,7 @@ auto main(const int argc, const char* argv[]) -> int {
             return output.str();
         };
 
-        // the patterns 'jump_optimizer::x86' documents, in rv32i form
+        // the patterns 'almost_assembler' documents, in rv32i form
         assert(optimize("    j cmp_13_26\n    cmp_13_26:\n") ==
                "    cmp_13_26:\n");
 

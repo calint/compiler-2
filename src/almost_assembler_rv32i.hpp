@@ -21,67 +21,13 @@
 #include <utility>
 #include <vector>
 
+#include "almost_assembler.hpp"
 #include "panic_exception.hpp"
 
 // buffers rv32i output until every label has an offset, then grows the jumps
 // that cannot reach their targets
-//
-// jump optimizations done by 'optimize_jumps':
-//
-// jumps_to_next:
-//     j if.16.8.code
-//     if.16.8.code:
-//   to
-//     if.16.8.code:
-//
-// unreachable_jumps:
-//     j loop.10.5.end
-//     j loop.10.5
-//   to
-//     j loop.10.5.end
-//
-// same_outcome_branches:
-//     beq t0, zero, bool.15.19.end
-//     j bool.15.19.end
-//   to
-//     j bool.15.19.end
-//
-// inverted_branches:
-//     bne t0, t1, cmp.19.27
-//     j if.19.8.code
-//     cmp.19.27:
-//   to
-//     beq t0, t1, if.19.8.code
-//     cmp.19.27:
 
-class almost_assembler_rv32i final {
-  public:
-    // same output as 'jump_optimizer::x86::optimization_counts'
-    struct optimization_counts {
-        size_t jumps_to_next{};
-        size_t unreachable_jumps{};
-        size_t same_outcome_branches{};
-        size_t inverted_branches{};
-
-        // aligned with the usage statistics
-        auto print(std::ostream& os) const -> void {
-            std::println(os);
-
-            std::println(os, "# {:>28}: {}", "removed jumps to next code",
-                         jumps_to_next);
-
-            std::println(os, "# {:>28}: {}", "removed unreachable jumps",
-                         unreachable_jumps);
-
-            std::println(os, "# {:>28}: {}", "removed same target branches",
-                         same_outcome_branches);
-
-            std::println(os, "# {:>28}: {}", "inverted branches over jumps",
-                         inverted_branches);
-        }
-    };
-
-  private:
+class almost_assembler_rv32i final : public almost_assembler {
     enum class jump_reach : uint8_t {
         // 'bcc target' within 4 KiB
         branch,
@@ -89,25 +35,6 @@ class almost_assembler_rv32i final {
         jal,
         // 'jump target, scratch' within 2 GiB
         far,
-    };
-
-    struct jump_info {
-        std::string mnemonic;
-        std::string inverted_mnemonic;
-        std::string operands;
-        std::string target;
-        std::string scratch;
-        jump_reach reach{};
-    };
-
-    struct line {
-        std::string text;
-        std::string label;
-        std::unique_ptr<jump_info> jump;
-        size_t size_bytes{};
-        // a label in code where execution can enter
-        bool entry{};
-        bool removed{};
     };
 
     static constexpr size_t one_instruction_bytes{4};
@@ -123,30 +50,52 @@ class almost_assembler_rv32i final {
         "snez", "sltz", "sgtz",  "beq",    "bne",   "blt",
     };
 
-    std::vector<line> lines_;
-    // versions being emitted by 'emit_smaller', innermost last
-    std::vector<std::vector<line>> captures_;
-    bool code_section_{true};
-    // changes made by 'optimize_jumps', printed by 'finish'
-    optimization_counts optimizations_;
+    [[nodiscard]] auto unconditional_jump_mnemonic() const
+        -> std::string_view override {
 
-    [[nodiscard]] auto current_lines() -> std::vector<line>& {
-        if (captures_.empty()) {
-            return lines_;
-        }
-
-        return captures_.back();
+        return "j";
     }
 
-    [[nodiscard]] auto capture(const std::function_ref<void()> emit)
-        -> std::vector<line> {
+    [[nodiscard]] auto
+    inverse_branch_mnemonic(const std::string_view mnemonic) const
+        -> std::optional<std::string_view> override {
 
-        captures_.emplace_back();
-        emit();
-        std::vector<line> captured{std::move(captures_.back())};
-        captures_.pop_back();
+        return inverse(mnemonic);
+    }
 
-        return captured;
+    [[nodiscard]] auto format_jump(const jump_info& jump) const
+        -> std::string override {
+
+        if (jump.operands.empty()) {
+            return std::format("{} {}", jump.mnemonic, jump.target);
+        }
+
+        return std::format("{} {}, {}", jump.mnemonic, jump.operands,
+                           jump.target);
+    }
+
+    [[nodiscard]] auto comment_prefix() const -> std::string_view override {
+        return "#";
+    }
+
+    // an unsized instruction would make every later offset unreliable
+    [[nodiscard]] auto text_code_size(const std::string_view text) const
+        -> size_t override {
+
+        const std::optional<size_t> size_bytes{line_size_bytes(text)};
+        if (not size_bytes) {
+            throw panic_exception{std::format("cannot size '{}'", text)};
+        }
+
+        return *size_bytes;
+    }
+
+    [[nodiscard]] auto is_label_text(const std::string_view text) const
+        -> bool override {
+
+        const std::string_view code{code_part(text)};
+
+        return not code.empty() and code.back() == ':';
     }
 
     [[nodiscard]] static auto total_size_bytes(const std::vector<line>& lines)
@@ -154,26 +103,39 @@ class almost_assembler_rv32i final {
 
         size_t size_bytes{};
         for (const line& l : lines) {
-            size_bytes += l.size_bytes;
+            size_bytes += l.code_size;
         }
 
         return size_bytes;
     }
 
-    // longer conditional forms start with an inverted branch around the jump
-    [[nodiscard]] static auto skip_size_bytes(const jump_info& jump) -> size_t {
+    // the form a jump has grown to follows from its size
+    [[nodiscard]] auto reach(const line& l) const -> jump_reach {
+        const bool conditional{is_conditional(*l.jump)};
+        if (conditional and l.code_size == one_instruction_bytes) {
+            return jump_reach::branch;
+        }
 
-        if (jump.inverted_mnemonic.empty() or
-            jump.reach == jump_reach::branch) {
+        // grown conditional forms start with an inverted branch around the
+        // jump
+        const size_t skip_bytes{conditional ? one_instruction_bytes : 0};
+        if (l.code_size == skip_bytes + one_instruction_bytes) {
+            return jump_reach::jal;
+        }
+
+        return jump_reach::far;
+    }
+
+    [[nodiscard]] auto skip_size_bytes(const line& l) const -> size_t {
+        if (not is_conditional(*l.jump) or reach(l) == jump_reach::branch) {
             return 0;
         }
 
         return one_instruction_bytes;
     }
 
-    [[nodiscard]] static auto reaches(const jump_info& jump,
-                                      const size_t source_offset,
-                                      const size_t target_offset) -> bool {
+    [[nodiscard]] auto reaches(const line& l, const size_t source_offset,
+                               const size_t target_offset) const -> bool {
 
         constexpr int64_t branch_min{-4096};
         constexpr int64_t branch_max{4094};
@@ -183,13 +145,14 @@ class almost_assembler_rv32i final {
         // distances count from the jumping instruction, which follows the skip
         const int64_t distance{
             static_cast<int64_t>(target_offset) -
-            static_cast<int64_t>(source_offset + skip_size_bytes(jump))};
+            static_cast<int64_t>(source_offset + skip_size_bytes(l))};
 
-        if (jump.reach == jump_reach::branch) {
+        const jump_reach form{reach(l)};
+        if (form == jump_reach::branch) {
             return distance >= branch_min and distance <= branch_max;
         }
 
-        if (jump.reach == jump_reach::jal) {
+        if (form == jump_reach::jal) {
             return distance >= jal_min and distance <= jal_max;
         }
 
@@ -198,44 +161,34 @@ class almost_assembler_rv32i final {
         return true;
     }
 
-    static auto grow(line& l) -> void {
-        jump_info& jump{*l.jump};
-        jump.reach = jump.reach == jump_reach::branch ? jump_reach::jal
-                                                      : jump_reach::far;
+    auto grow(line& l) const -> void {
+        const jump_info& jump{*l.jump};
+        const jump_reach grown{
+            reach(l) == jump_reach::branch ? jump_reach::jal : jump_reach::far};
 
-        if (jump.reach == jump_reach::far and jump.scratch.empty()) {
+        if (grown == jump_reach::far and jump.scratch.empty()) {
             throw panic_exception{std::format(
                 "jump to '{}' exceeds 1 MiB and no scratch register is free",
                 jump.target)};
         }
 
-        const size_t jump_bytes{jump.reach == jump_reach::far
+        const size_t skip_bytes{is_conditional(jump) ? one_instruction_bytes
+                                                     : 0};
+
+        const size_t jump_bytes{grown == jump_reach::far
                                     ? two_instructions_bytes
                                     : one_instruction_bytes};
 
-        l.size_bytes = skip_size_bytes(jump) + jump_bytes;
-    }
-
-    [[nodiscard]] auto label_lines() const
-        -> std::unordered_map<std::string_view, size_t> {
-
-        std::unordered_map<std::string_view, size_t> labels;
-        for (size_t index{}; index < lines_.size(); ++index) {
-            if (not lines_[index].label.empty()) {
-                labels.emplace(lines_[index].label, index);
-            }
-        }
-
-        return labels;
+        l.code_size = skip_bytes + jump_bytes;
     }
 
     [[nodiscard]] auto line_offsets() const -> std::vector<size_t> {
         std::vector<size_t> offsets;
-        offsets.reserve(lines_.size());
+        offsets.reserve(lines().size());
         size_t offset{};
-        for (const line& l : lines_) {
+        for (const line& l : lines()) {
             offsets.push_back(offset);
-            offset += l.size_bytes;
+            offset += l.code_size;
         }
 
         return offsets;
@@ -246,8 +199,8 @@ class almost_assembler_rv32i final {
 
         const std::vector<size_t> offsets{line_offsets()};
         bool grown{};
-        for (size_t index{}; index < lines_.size(); ++index) {
-            line& l{lines_[index]};
+        for (size_t index{}; index < lines().size(); ++index) {
+            line& l{lines()[index]};
             if (not l.jump) {
                 continue;
             }
@@ -259,7 +212,7 @@ class almost_assembler_rv32i final {
                     "jump to undefined label '{}'", l.jump->target)};
             }
 
-            if (reaches(*l.jump, offsets[index], offsets[target->second])) {
+            if (reaches(l, offsets[index], offsets[target->second])) {
                 continue;
             }
 
@@ -270,35 +223,35 @@ class almost_assembler_rv32i final {
         return grown;
     }
 
-    static auto write_long_jump(std::ostream& os, const std::string_view indent,
-                                const jump_info& jump) -> void {
+    auto write_long_jump(std::ostream& os, const std::string_view indent,
+                         const line& l) const -> void {
 
-        if (jump.reach == jump_reach::far) {
-            std::println(os, "{}jump {}, {}", indent, jump.target,
-                         jump.scratch);
+        if (reach(l) == jump_reach::far) {
+            std::println(os, "{}jump {}, {}", indent, l.jump->target,
+                         l.jump->scratch);
 
             return;
         }
 
-        std::println(os, "{}j {}", indent, jump.target);
+        std::println(os, "{}j {}", indent, l.jump->target);
     }
 
-    static auto write_line(std::ostream& os, const line& l, size_t& skip_count)
+    auto write_line(std::ostream& os, const line& l, size_t& skip_count) const
         -> void {
 
         if (l.removed) {
             return;
         }
 
-        if (not l.jump or l.size_bytes == one_instruction_bytes) {
+        if (not l.jump or l.code_size == one_instruction_bytes) {
             std::println(os, "{}", l.text);
 
             return;
         }
 
         const std::string_view indent{leading_whitespace(l.text)};
-        if (l.jump->inverted_mnemonic.empty()) {
-            write_long_jump(os, indent, *l.jump);
+        if (not is_conditional(*l.jump)) {
+            write_long_jump(os, indent, l);
 
             return;
         }
@@ -307,151 +260,12 @@ class almost_assembler_rv32i final {
         const std::string skip_label{
             std::format(".Lbaz_jump.{}", skip_count++)};
 
-        std::println(os, "{}{} {}, {}", indent, l.jump->inverted_mnemonic,
+        std::println(os, "{}{} {}, {}", indent,
+                     inverse(l.jump->mnemonic).value_or(std::string_view{}),
                      l.jump->operands, skip_label);
 
-        write_long_jump(os, indent, *l.jump);
+        write_long_jump(os, indent, l);
         std::println(os, "{}:", skip_label);
-    }
-
-    [[nodiscard]] static auto is_conditional(const jump_info& jump) -> bool {
-        return not jump.inverted_mnemonic.empty();
-    }
-
-    [[nodiscard]] static auto
-    destination(const std::unordered_map<std::string_view, size_t>& labels,
-                const jump_info& jump) -> std::optional<size_t> {
-
-        const auto found{labels.find(jump.target)};
-        if (found == labels.end()) {
-            return std::nullopt;
-        }
-
-        return found->second;
-    }
-
-    // labels, comments, other sections and removed lines emit no code
-    [[nodiscard]] auto next_instruction(size_t index) const -> size_t {
-        while (index < lines_.size() and lines_[index].size_bytes == 0) {
-            ++index;
-        }
-
-        return index;
-    }
-
-    // a label in between would let execution enter between the two jumps
-    [[nodiscard]] auto following_unconditional_jump(const size_t index) const
-        -> std::optional<size_t> {
-
-        for (size_t next{index + 1}; next < lines_.size(); ++next) {
-            const line& l{lines_[next]};
-            if (l.entry) {
-                return std::nullopt;
-            }
-
-            if (l.size_bytes == 0) {
-                continue;
-            }
-
-            if (not l.jump or is_conditional(*l.jump)) {
-                return std::nullopt;
-            }
-
-            return next;
-        }
-
-        return std::nullopt;
-    }
-
-    static auto remove(line& l) -> void {
-        l.jump.reset();
-        l.size_bytes = 0;
-        l.removed = true;
-    }
-
-    static auto invert(line& l, std::string target) -> void {
-        jump_info& jump{*l.jump};
-        std::swap(jump.mnemonic, jump.inverted_mnemonic);
-        jump.target = std::move(target);
-
-        l.text = std::format("{}{} {}, {}", leading_whitespace(l.text),
-                             jump.mnemonic, jump.operands, jump.target);
-    }
-
-    [[nodiscard]] auto
-    optimize_jump(const size_t index,
-                  const std::unordered_map<std::string_view, size_t>& labels)
-        -> bool {
-
-        line& branch{lines_[index]};
-        if (not branch.jump) {
-            return false;
-        }
-
-        // an undefined target is reported when resolving
-        const std::optional<size_t> target{destination(labels, *branch.jump)};
-        if (not target) {
-            return false;
-        }
-
-        const size_t target_code{next_instruction(*target)};
-
-        // execution continues at the target anyway
-        if (target_code == next_instruction(index + 1)) {
-            remove(branch);
-            ++optimizations_.jumps_to_next;
-
-            return true;
-        }
-
-        const std::optional<size_t> jump_index{
-            following_unconditional_jump(index)};
-
-        if (not jump_index) {
-            return false;
-        }
-
-        line& jump{lines_[*jump_index]};
-
-        // nothing reaches a jump right after an unconditional jump
-        if (not is_conditional(*branch.jump)) {
-            remove(jump);
-            ++optimizations_.unreachable_jumps;
-
-            return true;
-        }
-
-        const std::optional<size_t> jump_target{
-            destination(labels, *jump.jump)};
-
-        if (not jump_target) {
-            return false;
-        }
-
-        // both outcomes continue at the same place
-        if (target_code == next_instruction(*jump_target)) {
-            remove(branch);
-            ++optimizations_.same_outcome_branches;
-
-            return true;
-        }
-
-        // branching over the jump is the inverse branch to its target
-        if (target_code == next_instruction(*jump_index + 1)) {
-            invert(branch, jump.jump->target);
-            remove(jump);
-            ++optimizations_.inverted_branches;
-
-            return true;
-        }
-
-        return false;
-    }
-
-    [[nodiscard]] static auto leading_whitespace(const std::string_view text)
-        -> std::string_view {
-
-        return text.substr(0, text.find_first_not_of(" \t"));
     }
 
     [[nodiscard]] static auto trim(const std::string_view text)
@@ -469,14 +283,6 @@ class almost_assembler_rv32i final {
         -> std::string_view {
 
         return trim(text.substr(0, text.find('#')));
-    }
-
-    [[nodiscard]] static auto is_label_text(const std::string_view text)
-        -> bool {
-
-        const std::string_view code{code_part(text)};
-
-        return not code.empty() and code.back() == ':';
     }
 
     // directives that emit bytes would make offsets wrong, so only these are
@@ -616,83 +422,6 @@ class almost_assembler_rv32i final {
         return instruction_size_bytes(code.substr(0, split), arguments);
     }
 
-    auto set_code_section(const bool code_section) -> void {
-        code_section_ = code_section;
-    }
-
-    auto add_text(std::string text) -> void {
-        if (not code_section_) {
-            current_lines().push_back({
-                .text{std::move(text)},
-                .label{},
-                .jump{},
-                .size_bytes{},
-                .entry{},
-                .removed{},
-            });
-
-            return;
-        }
-
-        const std::optional<size_t> size_bytes{line_size_bytes(text)};
-
-        // an unsized instruction would make every later offset unreliable
-        if (not size_bytes) {
-            throw panic_exception{std::format("cannot size '{}'", text)};
-        }
-
-        // numeric labels are text but still let execution enter
-        const bool entry{is_label_text(text)};
-
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{},
-            .jump{},
-            .size_bytes{*size_bytes},
-            .entry{entry},
-            .removed{},
-        });
-    }
-
-    auto add_label(std::string name, std::string text) -> void {
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{std::move(name)},
-            .jump{},
-            .size_bytes{},
-            .entry{code_section_},
-            .removed{},
-        });
-    }
-
-    // 'mnemonic' is 'j' or a conditional branch taking 'operands'
-    auto add_jump(std::string text, const std::string_view mnemonic,
-                  const std::string_view operands,
-                  const std::string_view target, const std::string_view scratch)
-        -> void {
-
-        const std::optional<std::string_view> inverted{inverse(mnemonic)};
-
-        assert(inverted.has_value() or mnemonic == "j");
-
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{},
-            .jump{std::make_unique<jump_info>(jump_info{
-                .mnemonic{std::string{mnemonic}},
-                .inverted_mnemonic{
-                    std::string{inverted.value_or(std::string_view{})}},
-                .operands{std::string{operands}},
-                .target{std::string{target}},
-                .scratch{std::string{scratch}},
-                .reach{inverted ? jump_reach::branch : jump_reach::jal},
-            })},
-            .size_bytes{one_instruction_bytes},
-            .entry{},
-            .removed{},
-        });
-    }
-
     // keeps the version with less code, the first on ties
     auto emit_smaller(const std::function_ref<void()> emit_first,
                       const std::function_ref<void()> emit_second) -> void {
@@ -704,28 +433,11 @@ class almost_assembler_rv32i final {
             total_size_bytes(first) <= total_size_bytes(second) ? first
                                                                 : second};
 
-        std::ranges::move(kept, std::back_inserter(current_lines()));
-    }
-
-    // removes jumps that change nothing and turns a branch over a jump into
-    // the inverse branch, repeating because each change can enable another
-    auto optimize_jumps() -> void {
-        assert(captures_.empty());
-
-        const std::unordered_map<std::string_view, size_t> labels{
-            label_lines()};
-
-        bool changed{true};
-        while (changed) {
-            changed = false;
-            for (size_t index{}; index < lines_.size(); ++index) {
-                changed = optimize_jump(index, labels) or changed;
-            }
-        }
+        append(std::move(kept));
     }
 
     auto resolve_and_write(std::ostream& os) -> void {
-        assert(captures_.empty());
+        assert(not is_capturing());
 
         const std::unordered_map<std::string_view, size_t> labels{
             label_lines()};
@@ -737,15 +449,9 @@ class almost_assembler_rv32i final {
         }
 
         size_t skip_count{};
-        for (const line& l : lines_) {
+        for (const line& l : lines()) {
             write_line(os, l, skip_count);
         }
-        lines_.clear();
-    }
-
-    // prints the optimization counts as comments before the usage statistics
-    auto finish(std::ostream& os) -> void {
-        optimizations_.print(os);
-        optimizations_ = {};
+        lines().clear();
     }
 };

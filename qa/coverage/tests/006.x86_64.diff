@@ -13,8 +13,12 @@
 >     je if.19.8.code
 140d133
 <     jmp if.19.8.code
-218a212,216
-> 
+215,218c208,211
+< ;   removed jumps to next code: 0
+< ;    removed unreachable jumps: 0
+< ; removed same target branches: 0
+< ; inverted branches over jumps: 0
+---
 > ;   removed jumps to next code: 4
 > ;    removed unreachable jumps: 1
 > ; removed same target branches: 1
