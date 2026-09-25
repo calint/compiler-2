@@ -139,7 +139,7 @@ class program final {
         tc.enter_func("main", {});
         func_main.code().compile(tc, indent, ident_info::make_empty());
         tc.exit_func("main");
-        x.program_end();
+        x.end_main();
 
         for (const stmt_def_func* f : tc.get_func_defs()) {
             if (f->is_inlined()) {
@@ -177,13 +177,11 @@ class program final {
     auto build(std::ostream& os) -> void {
         machine& x{tc_.machine()};
 
-        // buffering starts here, so the variables base comment is included
-        x.program_start();
-        x.reserve_variables_base();
+        x.start();
         compile(tc_, 0);
-        x.release_variables_base();
         x.finish();
         tc_.finish();
+
         x.write_assembly(os);
     }
 

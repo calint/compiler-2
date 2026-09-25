@@ -1264,8 +1264,8 @@ main:
         if.295.9.end:
     jmp loop.289.5
     loop.289.5.end:
-    mov rax, 60
     mov rdi, 0
+    mov rax, 60
     syscall
 func.print_num:
     mov qword [rbx + 8], 0

@@ -311,9 +311,9 @@ class machine {
                                       const std::string_view failure_label,
                                       const bool enabled = {}) -> void = 0;
 
-    virtual auto program_start() -> void = 0;
+    virtual auto start() -> void = 0;
 
-    virtual auto program_end() -> void = 0;
+    virtual auto end_main() -> void = 0;
 
     virtual auto check_bounds(const token& src_loc_tk, const size_t indent,
                               const operand& reg_to_check,

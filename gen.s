@@ -44,13 +44,10 @@ section .text
 bits 64
 global _start
 _start:
-lea rbp, [dat]
-
-;
-; program
-;
 
 ; allocate named register rbp
+lea rbp, [dat]
+
 ;[7:1] point : 16 B    fields:
 ;[7:1]       name :  offset :    size :  array? : array size
 ;[7:1]          x :       0 :       8 :      no :           
@@ -2662,9 +2659,8 @@ main:
         if.295.9.end:
     jmp loop.289.5
     loop.289.5.end:
-    ; system call: exit 0
-    mov rax, 60
     mov rdi, 0
+    mov rax, 60
     syscall
 
 ; 

@@ -86,14 +86,32 @@ printf 'rv32i jumps: resolving and executing jumps beyond 4 KiB and 1 MiB\n'
 for mode in far-jumps far-jumps-optimized; do
     "$TEST_DIR/generate" "$mode" > "$TEST_DIR/far-jumps.s"
     grep -q '^    jump far_loop_270000, ' "$TEST_DIR/far-jumps.s"
+    grep -q '^    jump far_taken_270000, ' "$TEST_DIR/far-jumps.s"
+    grep -q '^    jump far_failure, ' "$TEST_DIR/far-jumps.s"
     grep -q '^    jump far_skipped_270000, ' "$TEST_DIR/far-jumps.s"
     grep -q '^    j far_loop_2048$' "$TEST_DIR/far-jumps.s"
+    grep -q '^    j far_taken_2048$' "$TEST_DIR/far-jumps.s"
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
         "$TEST_DIR/far-jumps.s" -o "$TEST_DIR/far-jumps.o"
     ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/far-jumps" "$TEST_DIR/far-jumps.o"
     timeout -k 1s 20s qemu-riscv32 "$TEST_DIR/far-jumps"
 done
 printf 'rv32i jumps: far jumps: ok\n'
+printf 'rv32i jumps: compiling and executing foo, if, break and continue beyond 4 KiB and 1 MiB\n'
+for mode in far-foo far-foo-optimized; do
+    "$TEST_DIR/generate" "$mode" > "$TEST_DIR/far-foo.s"
+    grep -qE '^ +j foo\.[0-9]+\.[0-9]+$' "$TEST_DIR/far-foo.s"
+    grep -qE '^ +jump foo\.[0-9]+\.[0-9]+, ' "$TEST_DIR/far-foo.s"
+    grep -qE '^ +jump foo\.[0-9]+\.[0-9]+\.continue, ' "$TEST_DIR/far-foo.s"
+    grep -qE '^ +jump foo\.[0-9]+\.[0-9]+\.end, ' "$TEST_DIR/far-foo.s"
+    grep -qE '^ +j if\.[0-9]+\.[0-9]+\.end$' "$TEST_DIR/far-foo.s"
+    grep -qE '^ +jump if\.[0-9]+\.[0-9]+\.end, ' "$TEST_DIR/far-foo.s"
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
+        "$TEST_DIR/far-foo.s" -o "$TEST_DIR/far-foo.o"
+    ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/far-foo" "$TEST_DIR/far-foo.o"
+    timeout -k 1s 20s qemu-riscv32 "$TEST_DIR/far-foo"
+done
+printf 'rv32i jumps: far foo: ok\n'
 for mode in noninline frame-checks; do
     printf 'rv32i functions: %s\n' "$mode"
     "$TEST_DIR/generate" "$mode" > "$TEST_DIR/functions.s"

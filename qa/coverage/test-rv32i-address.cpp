@@ -436,7 +436,7 @@ auto main(const int argc, const char* argv[]) -> int {
             machine_rv32i backend{output, {}, jumps};
             backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                       empty);
-            backend.program_start();
+            backend.start();
 
             const operand result{operand::reg("a0", integer)};
 
@@ -468,7 +468,7 @@ auto main(const int argc, const char* argv[]) -> int {
         machine_rv32i backend{output, {}, machine_rv32i::jump_mode::optimized};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.program_start();
+        backend.start();
 
         const operand left{operand::reg("a0", integer)};
         const operand right{operand::reg("a1", integer)};
@@ -497,7 +497,7 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.finish();
         backend.write_assembly(output);
 
-        assert(output.str().contains("la s0, dat\ncmp_13_26:\n"
+        assert(output.str().contains("la s0, dat\n\ncmp_13_26:\n"
                                      "bool_end_15_9:\n"
                                      "beq a0, a1, if_14_8_code\n"
                                      "cmp_14_26:\necall\nif_14_8_code:\n"));
@@ -592,7 +592,7 @@ auto main(const int argc, const char* argv[]) -> int {
                               machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.program_start();
+        backend.start();
         std::println("    addi sp, sp, -128\n    sw sp, 124(sp)");
         for (size_t index{1}; index < 32; ++index) {
             if (index != 2 and index != 8) {
@@ -621,7 +621,7 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("    beq t0, t1, 1f\n    j call_failure\n1:");
         }
         std::println("    addi sp, sp, 128");
-        backend.program_end();
+        backend.end_main();
         backend.label(0, "call_failure");
         backend.exit(token{}, 1, operand::imm("1", integer));
         backend.label(0, "outer");
@@ -654,7 +654,7 @@ auto main(const int argc, const char* argv[]) -> int {
                               machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.program_start();
+        backend.start();
         const operand continuation{
             backend.alloc_named_register(token{}, 0, "s3", integer)};
         size_t case_index{};
@@ -697,7 +697,7 @@ auto main(const int argc, const char* argv[]) -> int {
                          case_index++);
         }
         backend.free_named_register(token{}, 0, continuation);
-        backend.program_end();
+        backend.end_main();
         std::println(
             "frame_overflow:\n    li a3, 1\n    jr s3\nframe_failure:");
         backend.exit(token{}, 1, operand::imm("1", integer));
@@ -712,7 +712,7 @@ auto main(const int argc, const char* argv[]) -> int {
                               machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.program_start();
+        backend.start();
         std::println("    addi sp, sp, -16");
         for (const size_t stride : {4U, 2047U, 2048U, 4094U, 4095U, 8192U}) {
             const std::string loop_label{std::format("long_loop_{}", stride)};
@@ -730,7 +730,7 @@ auto main(const int argc, const char* argv[]) -> int {
                          3 * (stride + 1));
         }
         std::println("    addi sp, sp, 16");
-        backend.program_end();
+        backend.end_main();
         backend.label(0, "long_loop_failure");
         backend.exit(token{}, 1, operand::imm("1", integer));
         backend.finish();
@@ -746,7 +746,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                   : machine_rv32i::jump_mode::optimized};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.program_start();
+        backend.start();
 
         // buffered output must come from the backend, so pad with 'xori' on a
         // register nothing reads
@@ -811,13 +811,53 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.add_subtract(token{}, 1, '+', stack,
                              operand::imm("16", integer));
 
-        backend.program_end();
+        backend.end_main();
         padding(270000);
         backend.label(0, "far_failure");
         backend.exit(token{}, 1, operand::imm("1", integer));
         backend.finish();
         backend.write_assembly(std::cout);
         std::println(".data\ndat:\n    .word 0");
+
+        return 0;
+    }
+    if (mode == "far-foo" or mode == "far-foo-optimized") {
+        std::string source{"dat values[] = {1, 2, 3, 4, 5}\nfunc main() {\n"
+                           "    var pad = 0\n    var visits = 0\n"
+                           "    var sum = 0\n"};
+
+        // each 'pad = pad + 1' is 12 bytes, so 700 needs 'j' and 90000 needs
+        // 'jump' for the jumps of 'foo', 'if', 'break' and 'continue'
+        for (const size_t count : {700U, 90000U}) {
+            std::string padding;
+            for (size_t i{}; i < count; ++i) {
+                padding += "        pad = pad + 1\n";
+            }
+
+            // 'continue' at 2 runs the padding and 'break' at 4 skips it, so
+            // it runs for 1, 2 and 3
+            source += std::format("    pad = 0\n    visits = 0\n    sum = 0\n"
+                                  "    foo values {{\n"
+                                  "        visits = visits + 1\n"
+                                  "        if e == 2 {{\n{}"
+                                  "            continue\n        }}\n"
+                                  "        if e == 4 {{\n"
+                                  "            break\n        }}\n"
+                                  "{}        sum = sum + e\n    }}\n"
+                                  "    if visits != 4 exit(1)\n"
+                                  "    if sum != 4 exit(2)\n"
+                                  "    if pad != {} exit(3)\n",
+                                  padding, padding, 3 * count);
+        }
+        source += "}\n";
+
+        machine_rv32i compiler{std::cout, {},
+                               mode == "far-foo"
+                                   ? machine_rv32i::jump_mode::resolved
+                                   : machine_rv32i::jump_mode::optimized};
+
+        program prg{compiler, source, 4096, false, false, false};
+        prg.build(std::cout);
 
         return 0;
     }
@@ -999,7 +1039,7 @@ func main() {
             bounds_backend.check_bounds(
                 token{}, 1, operand::reg("a0", integer), 4, false, {},
                 {.upper{true}, .lower{true}, .with_line{}});
-            bounds_backend.program_end();
+            bounds_backend.end_main();
             bounds_backend.emit_bounds_failure_handler(false);
         } else {
             const operand continuation{
@@ -1056,7 +1096,7 @@ func main() {
                 }
             }
             bounds_backend.free_named_register(token{}, 0, continuation);
-            bounds_backend.program_end();
+            bounds_backend.end_main();
             std::println(
                 "baz_bounds_panic:\n    li a3, 1\n    jr s3\nbounds_failure:");
             bounds_backend.exit(token{}, 1, operand::imm("1", integer));
@@ -2046,7 +2086,7 @@ func main() {
         }
         assert(not output.str().contains(".Lbaz_multiply:"));
         assert(not output.str().contains(".Lbaz_divide:"));
-        helper_backend.program_end();
+        helper_backend.end_main();
         helper_backend.begin_data(4);
         const std::string assembly{output.str()};
         for (const std::string_view label :
@@ -2744,7 +2784,7 @@ func main() {
     }
     assert(syscall_conflict);
     backend.free_named_register(token{}, 0, held_syscall_register);
-    backend.program_end();
+    backend.end_main();
     std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
     backend.divide(token{}, 1, '/', operand::reg("a0", integer),
                    operand::imm("0", integer));

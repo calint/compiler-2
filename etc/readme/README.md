@@ -67,10 +67,10 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    53           3799           1192          13186
+C/C++ Header                    53           3829           1193          13206
 C++                              1             50              8            235
 -------------------------------------------------------------------------------
-SUM:                            54           3849           1200          13421
+SUM:                            54           3879           1201          13441
 -------------------------------------------------------------------------------
 ```
 
@@ -1656,8 +1656,8 @@ main:
         if.295.9.end:
     jmp loop.289.5
     loop.289.5.end:
-    mov rax, 60
     mov rdi, 0
+    mov rax, 60
     syscall
 func.print_num:
     mov qword [rbx + 8], 0
@@ -1877,13 +1877,10 @@ section .text
 bits 64
 global _start
 _start:
-lea rbp, [dat]
-
-;
-; program
-;
 
 ; allocate named register rbp
+lea rbp, [dat]
+
 ;[7:1] point : 16 B    fields:
 ;[7:1]       name :  offset :    size :  array? : array size
 ;[7:1]          x :       0 :       8 :      no :           
@@ -4495,9 +4492,8 @@ main:
         if.295.9.end:
     jmp loop.289.5
     loop.289.5.end:
-    ; system call: exit 0
-    mov rax, 60
     mov rdi, 0
+    mov rax, 60
     syscall
 
 ; 
