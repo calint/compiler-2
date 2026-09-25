@@ -25,8 +25,63 @@
 
 // buffers rv32i output until every label has an offset, then grows the jumps
 // that cannot reach their targets
+//
+// jump optimizations done by 'optimize_jumps':
+//
+// jumps_to_next:
+//     j if.16.8.code
+//     if.16.8.code:
+//   to
+//     if.16.8.code:
+//
+// unreachable_jumps:
+//     j loop.10.5.end
+//     j loop.10.5
+//   to
+//     j loop.10.5.end
+//
+// same_outcome_branches:
+//     beq t0, zero, bool.15.19.end
+//     j bool.15.19.end
+//   to
+//     j bool.15.19.end
+//
+// inverted_branches:
+//     bne t0, t1, cmp.19.27
+//     j if.19.8.code
+//     cmp.19.27:
+//   to
+//     beq t0, t1, if.19.8.code
+//     cmp.19.27:
 
 class almost_assembler_rv32i final {
+  public:
+    // same output as 'jump_optimizer::x86::optimization_counts'
+    struct optimization_counts {
+        size_t jumps_to_next{};
+        size_t unreachable_jumps{};
+        size_t same_outcome_branches{};
+        size_t inverted_branches{};
+
+        // aligned with the usage statistics
+        auto print(std::ostream& os) const -> void {
+            std::println(os);
+
+            std::println(os, "# {:>28}: {}", "removed jumps to next code",
+                         jumps_to_next);
+
+            std::println(os, "# {:>28}: {}", "removed unreachable jumps",
+                         unreachable_jumps);
+
+            std::println(os, "# {:>28}: {}", "removed same target branches",
+                         same_outcome_branches);
+
+            std::println(os, "# {:>28}: {}", "inverted branches over jumps",
+                         inverted_branches);
+        }
+    };
+
+  private:
     enum class jump_reach : uint8_t {
         // 'bcc target' within 4 KiB
         branch,
@@ -68,18 +123,11 @@ class almost_assembler_rv32i final {
         "snez", "sltz", "sgtz",  "beq",    "bne",   "blt",
     };
 
-    // changes made by 'optimize_jumps', printed by 'finish'
-    struct optimization_counts {
-        size_t jumps_to_next{};
-        size_t unreachable_jumps{};
-        size_t same_outcome_branches{};
-        size_t inverted_branches{};
-    };
-
     std::vector<line> lines_;
     // versions being emitted by 'emit_smaller', innermost last
     std::vector<std::vector<line>> captures_;
     bool code_section_{true};
+    // changes made by 'optimize_jumps', printed by 'finish'
     optimization_counts optimizations_;
 
     [[nodiscard]] auto current_lines() -> std::vector<line>& {
@@ -695,23 +743,9 @@ class almost_assembler_rv32i final {
         lines_.clear();
     }
 
-    // prints the optimization counts as comments, aligned with the usage
-    // statistics that follow
+    // prints the optimization counts as comments before the usage statistics
     auto finish(std::ostream& os) -> void {
-        std::println(os);
-
-        std::println(os, "# {:>28}: {}", "removed jumps to next code",
-                     optimizations_.jumps_to_next);
-
-        std::println(os, "# {:>28}: {}", "removed unreachable jumps",
-                     optimizations_.unreachable_jumps);
-
-        std::println(os, "# {:>28}: {}", "removed same target branches",
-                     optimizations_.same_outcome_branches);
-
-        std::println(os, "# {:>28}: {}", "inverted branches over jumps",
-                     optimizations_.inverted_branches);
-
+        optimizations_.print(os);
         optimizations_ = {};
     }
 };

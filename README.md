@@ -67,10 +67,10 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    52           3711           1125          12895
+C/C++ Header                    52           3734           1162          12974
 C++                              1             52              8            244
 -------------------------------------------------------------------------------
-SUM:                            53           3763           1133          13139
+SUM:                            53           3786           1170          13218
 -------------------------------------------------------------------------------
 ```
 
@@ -1604,7 +1604,6 @@ main:
         jne if.297.19
         if.295.12.code:
             jmp loop.289.5.end
-        jmp if.295.9.end
         if.297.19:
         cmp.297.19:
         cmp byte [rbp + 1041], 4
@@ -1618,7 +1617,6 @@ main:
                 syscall
             func.print.298.13.end:
             jmp loop.289.5
-        jmp if.295.9.end
         if.295.9.else:
             func.print.301.13:
                 mov rdi, 1
@@ -4372,7 +4370,6 @@ main:
         if.295.12.code:
 ;           [296:13] break
             jmp loop.289.5.end
-        jmp if.295.9.end
         if.297.19:
 ;       [297:19] ? nm.len <= 4
 ;       [297:19] ? nm.len <= 4
@@ -4402,7 +4399,6 @@ main:
             func.print.298.13.end:
 ;           [299:13] continue
             jmp loop.289.5
-        jmp if.295.9.end
         if.295.9.else:
 ;           [301:13] print(prompt3)
 ;           [35:6] print(str[] i8)
@@ -4850,6 +4846,9 @@ vars.end:
 ;            max frames in use: 8
 ;              dat var padding: 1 B
 ;                max vars size: 953 B
-;          optimization pass 1: 120
-;          optimization pass 2: 0
+
+;   removed jumps to next code: 87
+;    removed unreachable jumps: 2
+; removed same target branches: 33
+; inverted branches over jumps: 0
 ```

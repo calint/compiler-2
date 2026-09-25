@@ -3,7 +3,7 @@ SRC=002 && EXP=1 && RUN
 SRC=003 && EXP=7 && RUN
 SRC=004 && EXP=0 && RUN
 SRC=005 && EXP=0 && RUN
-SRC=006 && EXP=0 && RUN
+SRC=006 && EXP=0 && DIFFNOPT
 SRC=007 && EXP=0 && RUN
 SRC=008 && EXP=0 && RUN
 SRC=009 && EXP=0 && RUN
@@ -544,4 +544,4 @@ SRC=538 && EXP=0 && RUN
 if [[ $MACHINE == x86_64 ]]; then SRC=539 && COMPERR; fi
 if [[ $MACHINE == x86_64 ]]; then SRC=540 && COMPERR; fi
 if [[ $MACHINE == x86_64 ]]; then SRC=541 && COMPERR; fi
-SRC=542 && EXP=0 && RUN
+# SRC=542 && EXP=0 && RUN # note: generates a huge file and is very slow

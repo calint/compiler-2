@@ -220,6 +220,29 @@ DIFFPY() {
     check_output "${SRC%.*}.out"
 }
 
+# Test with exit code and the jump optimizations as a diff from --nopt
+DIFFNOPT() {
+    echo -n "$SRC: "
+    if ! LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}-nopt.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" $OPTS --nopt 2>err >gen-nopt.s; then
+        echo "compiler failed. see 'err' and 'gen-nopt.s'" >&2
+        exit 1
+    fi
+    compile_and_build
+
+    set +e
+    execute_program 2>err
+    local exit_code=$?
+    diff gen-nopt.s gen.s >out
+    set -e
+
+    if [ $exit_code -ne $EXP ]; then
+        echo "FAILED. expected $EXP got $exit_code"
+        exit 1
+    fi
+
+    check_output "${SRC%.*}.$MACHINE.diff"
+}
+
 # Test with output comparison of compiler (no input)
 COMPERR() {
     echo -n "$SRC: "
@@ -235,7 +258,7 @@ COMPERR() {
 source "$SCRIPT_DIR/cases.sh"
 
 # Cleanup
-rm -f gen gen.o gen.s diff.baz out err
+rm -f gen gen.o gen.s gen-nopt.s diff.baz out err
 
 echo $SEP
 

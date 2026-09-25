@@ -2537,7 +2537,6 @@ main:
         if.295.12.code:
 ;           [296:13] break
             jmp loop.289.5.end
-        jmp if.295.9.end
         if.297.19:
 ;       [297:19] ? nm.len <= 4
 ;       [297:19] ? nm.len <= 4
@@ -2567,7 +2566,6 @@ main:
             func.print.298.13.end:
 ;           [299:13] continue
             jmp loop.289.5
-        jmp if.295.9.end
         if.295.9.else:
 ;           [301:13] print(prompt3)
 ;           [35:6] print(str[] i8)
@@ -3015,5 +3013,8 @@ vars.end:
 ;            max frames in use: 8
 ;              dat var padding: 1 B
 ;                max vars size: 953 B
-;          optimization pass 1: 120
-;          optimization pass 2: 0
+
+;   removed jumps to next code: 87
+;    removed unreachable jumps: 2
+; removed same target branches: 33
+; inverted branches over jumps: 0

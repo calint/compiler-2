@@ -1,0 +1,21 @@
+82,83d81
+<         jmp loop.10.5.end
+<     jmp loop.10.5
+98,99d95
+<     jne bool.15.19.end
+<     jmp bool.15.19.end
+107d102
+<     jmp if.16.8.code
+128,129c123
+<     jne cmp.19.27
+<     jmp if.19.8.code
+---
+>     je if.19.8.code
+140d133
+<     jmp if.19.8.code
+218a212,216
+> 
+> ;   removed jumps to next code: 4
+> ;    removed unreachable jumps: 1
+> ; removed same target branches: 1
+> ; inverted branches over jumps: 1

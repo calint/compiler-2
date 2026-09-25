@@ -256,9 +256,9 @@ auto main(const int argc, const char** const argv) -> int {
             return 0;
         }
 
-        std::stringstream ss2;
-        jump_optimizer::x86::pass1(ss1, ss2);
-        jump_optimizer::x86::pass2(ss2, std::cout);
+        jump_optimizer::x86::optimization_counts counts;
+        jump_optimizer::x86::optimize(ss1, std::cout, counts);
+        counts.print(std::cout);
 
     } catch (const compiler_exception& e) {
         const auto [line, col]{

@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] jump_optimizers test case 006.baz should result in same number of
+    optimizations of each type
 [x] clean up ai generated code in jump_optimizer
     => almost assembler does less text processing and understannds the structure
        of branches an labels

@@ -72,9 +72,9 @@ CLI_JUMP_OPTIMIZATIONS() {
     [[ "$optimized" == *$'je if.10.5.end\nif.10.8.code:'* ]]
     [[ "$raw" == *$'jne cmp.5.31\njmp if.5.8.code\ncmp.5.31:'* ]]
     [[ "$optimized" == *$'je if.5.8.code\ncmp.5.31:'* ]]
-    [[ "$optimized" == *';          optimization pass 1: 2'* ]]
-    [[ "$optimized" == *';          optimization pass 2: 1'* ]]
-    [[ "$raw" != *'optimization pass'* ]]
+    [[ "$optimized" == *';   removed jumps to next code: 2'* ]]
+    [[ "$optimized" == *'; inverted branches over jumps: 1'* ]]
+    [[ "$raw" != *'removed jumps to next code'* ]]
     local raw_count optimized_count
     raw_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' gen.s)
     optimized_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' out)
@@ -89,7 +89,7 @@ CLI_JUMP_OPTIMIZATIONS() {
     done
     rm -f "$temp_dir/test.o" "$temp_dir/test"
     rmdir "$temp_dir"
-    echo "ok (pass 1: 2, pass 2: 1; jumps $raw_count -> $optimized_count; both exit 0)"
+    echo "ok (jumps to next: 2, inverted: 1; jumps $raw_count -> $optimized_count; both exit 0)"
 }
 
 CLI --vars=65536 0 --help

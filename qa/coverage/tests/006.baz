@@ -1,11 +1,21 @@
-# boolean jump optimization pattern
+# jump optimization patterns, the optimized output is compared with --nopt
+# in 006.x86_64.diff and 006.rv32i.diff
 
 func main(){
     var a=1
     var b=2
     var c=3
     var d=4
-    # triggers optimize_jumps_1 and optimize_jumps_2
+    # rv32i: the jump back to the loop start follows the unconditional 'break'
+    loop {
+        a = 1
+        break
+    }
+    # both outcomes of the last comparison continue at the end of the list
+    var ok bool = a==1 and b==2
+    if not ok
+        exit(2)
+    # jumps to the next code and a branch over a jump
     if (a==1 and b==2) or (c==3 and d==4)
         exit(0)
     exit(1)

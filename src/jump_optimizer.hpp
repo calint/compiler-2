@@ -1,15 +1,45 @@
 #pragma once
 // x86 jump optimizations applied to the generated assembly as a
 // post-processing pass, rv32i optimizes in 'almost_assembler_rv32i'
+//
+// jumps_to_next:
+//     jmp if.16.8.code
+//     if.16.8.code:
+//   to
+//     if.16.8.code:
+//
+// unreachable_jumps:
+//     jmp loop.10.5.end
+//     jmp loop.10.5
+//   to
+//     jmp loop.10.5.end
+//
+// same_outcome_branches:
+//     jne bool.15.19.end
+//     jmp bool.15.19.end
+//   to
+//     jmp bool.15.19.end
+//
+// inverted_branches:
+//     jne cmp.19.27
+//     jmp if.19.8.code
+//     cmp.19.27:
+//   to
+//     je if.19.8.code
+//     cmp.19.27:
 
 // NOLINTBEGIN(misc-definitions-in-headers)
 
+#include <format>
 #include <istream>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <print>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace jump_optimizer {
@@ -32,6 +62,31 @@ namespace jump_optimizer {
 
 // keep target-specific parsing separate because branch syntax differs
 namespace x86 {
+
+// same output as 'almost_assembler_rv32i::optimization_counts'
+struct optimization_counts {
+    size_t jumps_to_next{};
+    size_t unreachable_jumps{};
+    size_t same_outcome_branches{};
+    size_t inverted_branches{};
+
+    // aligned with the usage statistics
+    auto print(std::ostream& os) const -> void {
+        std::println(os);
+
+        std::println(os, "; {:>28}: {}", "removed jumps to next code",
+                     jumps_to_next);
+
+        std::println(os, "; {:>28}: {}", "removed unreachable jumps",
+                     unreachable_jumps);
+
+        std::println(os, "; {:>28}: {}", "removed same target branches",
+                     same_outcome_branches);
+
+        std::println(os, "; {:>28}: {}", "inverted branches over jumps",
+                     inverted_branches);
+    }
+};
 
 struct jump_info {
     std::string_view mnemonic;
@@ -133,30 +188,6 @@ struct jump_info {
     return line.substr(label_start, label_end - label_start);
 }
 
-[[nodiscard]] static auto parse_label_any(const std::string_view line)
-    -> std::optional<std::string_view> {
-
-    const size_t start{leading_ws(line).size()};
-    if (start == line.size()) {
-        return std::nullopt;
-    }
-
-    const size_t colon{line.find(':', start)};
-    if (colon == std::string_view::npos) {
-        return std::nullopt;
-    }
-
-    size_t end{colon};
-    while (end > start and is_ascii_space(line[end - 1])) {
-        --end;
-    }
-    if (end == start) {
-        return std::nullopt;
-    }
-
-    return line.substr(start, end - start);
-}
-
 [[nodiscard]] static auto invert_jcc(const std::string_view jcc)
     -> std::optional<std::string_view> {
 
@@ -182,169 +213,243 @@ struct jump_info {
     return std::nullopt;
 }
 
-auto pass1(std::istream& is, std::ostream& os) -> void;
-auto pass2(std::istream& is, std::ostream& os) -> void;
+// owns its text because 'jump_info' views into a line being read
+struct jump {
+    std::string mnemonic;
+    std::string target;
+};
 
-//
-// pass 1
-//
-//  example:
-//    jmp cmp_13_26
-//    cmp_13_26:
-//  to
-//    cmp_13_26:
-//
-//  example:
-//    jne bool_end_15_9
-//    jmp bool_end_15_9
-//    bool_end_15_9:
-//  to
-//    bool_end_15_9:
-//
-auto pass1(std::istream& is, std::ostream& os) -> void {
+struct line {
+    std::string text;
+    std::string label;
+    std::unique_ptr<jump> jump_to;
+    // emits an instruction
+    bool code{};
+    // a label in code where execution can enter
+    bool entry{};
+    bool removed{};
+};
 
-    size_t opts_count{};
+auto optimize(std::istream& is, std::ostream& os, optimization_counts& counts)
+    -> void;
 
-    std::vector<std::string> pending_jumps;
-    std::optional<std::string> pending_label;
+// comments, blank lines and other sections emit no code, like in rv32i
+[[nodiscard]] static auto make_line(std::string text, bool& code_section)
+    -> line {
 
-    auto flush_pending{[&]() -> void {
-        for (const std::string& buffered_line : pending_jumps) {
-            std::println(os, "{}", buffered_line);
-        }
-        pending_jumps.clear();
-        pending_label.reset();
-    }};
+    line l{
+        .text{std::move(text)},
+        .label{},
+        .jump_to{},
+        .code{},
+        .entry{},
+        .removed{},
+    };
 
-    std::string line;
-    while (getline(is, line)) {
-        if (const std::optional<jump_info> jump{parse_jump(line)}) {
-            // keep buffering only while jumps target the same label
-            if (pending_label and *pending_label != jump->label) {
-                flush_pending();
-            }
-            pending_jumps.emplace_back(line);
-            pending_label = std::string{jump->label};
-            continue;
-        }
+    const std::string_view trimmed{
+        std::string_view{l.text}.substr(leading_ws(l.text).size())};
 
-        if (const std::optional<std::string_view> lbl{
-                parse_label_strict(line)}) {
+    constexpr std::string_view section{"section "};
+    if (trimmed.starts_with(section)) {
+        code_section = trimmed.substr(section.size()).starts_with(".text");
 
-            // target label reached: drop pending jumps, print label
-            if (pending_label and *pending_label == *lbl) {
-                opts_count += pending_jumps.size();
-                pending_jumps.clear();
-                pending_label.reset();
-                std::println(os, "{}", line);
-                continue;
-            }
-        }
-
-        flush_pending();
-        std::println(os, "{}", line);
+        return l;
     }
 
-    flush_pending();
-    std::println(os, ";          optimization pass 1: {}", opts_count);
+    if (not code_section or trimmed.empty() or trimmed.starts_with(';')) {
+        return l;
+    }
+
+    if (const std::optional<std::string_view> label{
+            parse_label_strict(trimmed)}) {
+
+        l.label = *label;
+        l.entry = true;
+
+        return l;
+    }
+
+    l.code = true;
+    if (const std::optional<jump_info> parsed{parse_jump(trimmed)}) {
+        l.jump_to = std::make_unique<jump>(jump{
+            .mnemonic{parsed->mnemonic},
+            .target{parsed->label},
+        });
+    }
+
+    return l;
 }
 
-//
-// pass 2
-//
-// example:
-//   jne cmp_14_26
-//   jmp if_14_8_code
-//   cmp_14_26:
-// to
-//   je if_14_8_code
-//   cmp_14_26:
-//
-auto pass2(std::istream& is, std::ostream& os) -> void {
+[[nodiscard]] static auto is_conditional(const jump& j) -> bool {
+    return j.mnemonic != "jmp";
+}
 
-    size_t optimizations{};
+// labels, comments, other sections and removed lines emit no code
+[[nodiscard]] static auto next_instruction(const std::vector<line>& lines,
+                                           size_t index) -> size_t {
 
-    auto print2{
-        [&](const std::string_view a, const std::string_view b) -> void {
-            std::println(os, "{}", a);
-            std::println(os, "{}", b);
-        }};
-
-    auto print3{[&](const std::string_view a, const std::string_view b,
-                    const std::string_view c) -> void {
-        std::println(os, "{}", a);
-        std::println(os, "{}", b);
-        std::println(os, "{}", c);
-    }};
-
-    std::string first_line;
-    while (getline(is, first_line)) {
-        const std::optional<jump_info> jcc_match{parse_jump(first_line)};
-        if (not jcc_match) {
-            std::println(os, "{}", first_line);
-            continue;
-        }
-
-        const std::string_view jcc{jcc_match->mnemonic};
-        const std::string_view jcc_label{jcc_match->label};
-
-        std::string second_line;
-        if (not getline(is, second_line)) {
-            std::println(os, "{}", first_line);
-
-            return;
-        }
-
-        const std::optional<jump_info> jmp_match{parse_jump(second_line)};
-        if (not jmp_match or jmp_match->mnemonic != "jmp") {
-            print2(first_line, second_line);
-            continue;
-        }
-
-        const std::string_view jmp_label{jmp_match->label};
-
-        std::string third_line;
-        if (not getline(is, third_line)) {
-            print2(first_line, second_line);
-
-            return;
-        }
-
-        const std::optional<std::string_view> lbl_match{
-            parse_label_any(third_line)};
-
-        if (not lbl_match) {
-            print3(first_line, second_line, third_line);
-            continue;
-        }
-
-        const std::string_view label{*lbl_match};
-
-        if (jcc_label != label) {
-            print3(first_line, second_line, third_line);
-            continue;
-        }
-
-        //   jne cmp_14_26
-        //   jmp if_14_8_code
-        //   cmp_14_26:
-        const std::optional<std::string_view> inverted_jcc{invert_jcc(jcc)};
-        if (not inverted_jcc) {
-            print3(first_line, second_line, third_line);
-            continue;
-        }
-        //   je if_14_8_code
-        //   cmp_14_26:
-
-        // get the whitespace
-        const std::string_view ws_before{leading_ws(first_line)};
-
-        std::println(os, "{}{} {}", ws_before, *inverted_jcc, jmp_label);
-        std::println(os, "{}", third_line);
-        ++optimizations;
+    while (index < lines.size() and not lines[index].code) {
+        ++index;
     }
 
-    std::println(os, ";          optimization pass 2: {}", optimizations);
+    return index;
+}
+
+// a label in between would let execution enter between the two jumps
+[[nodiscard]] static auto
+following_unconditional_jump(const std::vector<line>& lines, const size_t index)
+    -> std::optional<size_t> {
+
+    for (size_t next{index + 1}; next < lines.size(); ++next) {
+        const line& l{lines[next]};
+        if (l.entry) {
+            return std::nullopt;
+        }
+
+        if (not l.code) {
+            continue;
+        }
+
+        if (not l.jump_to or is_conditional(*l.jump_to)) {
+            return std::nullopt;
+        }
+
+        return next;
+    }
+
+    return std::nullopt;
+}
+
+[[nodiscard]] static auto
+destination(const std::unordered_map<std::string_view, size_t>& labels,
+            const jump& j) -> std::optional<size_t> {
+
+    const auto found{labels.find(j.target)};
+    if (found == labels.end()) {
+        return std::nullopt;
+    }
+
+    return found->second;
+}
+
+static auto remove(line& l) -> void {
+    l.jump_to.reset();
+    l.code = false;
+    l.removed = true;
+}
+
+// the same rules in the same order as 'almost_assembler_rv32i::optimize_jump'
+// so both targets count the same optimizations
+[[nodiscard]] static auto
+optimize_jump(std::vector<line>& lines, const size_t index,
+              const std::unordered_map<std::string_view, size_t>& labels,
+              optimization_counts& counts) -> bool {
+
+    line& branch{lines[index]};
+    if (not branch.jump_to) {
+        return false;
+    }
+
+    const std::optional<size_t> target{destination(labels, *branch.jump_to)};
+    if (not target) {
+        return false;
+    }
+
+    const size_t target_code{next_instruction(lines, *target)};
+
+    // execution continues at the target anyway
+    if (target_code == next_instruction(lines, index + 1)) {
+        remove(branch);
+        ++counts.jumps_to_next;
+
+        return true;
+    }
+
+    const std::optional<size_t> jump_index{
+        following_unconditional_jump(lines, index)};
+
+    if (not jump_index) {
+        return false;
+    }
+
+    line& jmp{lines[*jump_index]};
+
+    // nothing reaches a jump right after an unconditional jump
+    if (not is_conditional(*branch.jump_to)) {
+        remove(jmp);
+        ++counts.unreachable_jumps;
+
+        return true;
+    }
+
+    const std::optional<size_t> jmp_target{destination(labels, *jmp.jump_to)};
+    if (not jmp_target) {
+        return false;
+    }
+
+    // both outcomes continue at the same place
+    if (target_code == next_instruction(lines, *jmp_target)) {
+        remove(branch);
+        ++counts.same_outcome_branches;
+
+        return true;
+    }
+
+    // branching over the jump is the inverse branch to its target
+    if (target_code != next_instruction(lines, *jump_index + 1)) {
+        return false;
+    }
+
+    const std::optional<std::string_view> inverted{
+        invert_jcc(branch.jump_to->mnemonic)};
+
+    if (not inverted) {
+        return false;
+    }
+
+    branch.jump_to->mnemonic = *inverted;
+    branch.jump_to->target = jmp.jump_to->target;
+    branch.text = std::format("{}{} {}", leading_ws(branch.text),
+                              branch.jump_to->mnemonic, branch.jump_to->target);
+    remove(jmp);
+    ++counts.inverted_branches;
+
+    return true;
+}
+
+// removes jumps that change nothing and turns a branch over a jump into the
+// inverse branch, repeating because each change can enable another
+auto optimize(std::istream& is, std::ostream& os, optimization_counts& counts)
+    -> void {
+
+    std::vector<line> lines;
+    bool code_section{true};
+    std::string text;
+    while (getline(is, text)) {
+        lines.push_back(make_line(std::move(text), code_section));
+    }
+
+    // views into 'lines' stay valid because it is no longer resized
+    std::unordered_map<std::string_view, size_t> labels;
+    for (size_t i{}; i < lines.size(); ++i) {
+        if (not lines[i].label.empty()) {
+            labels.emplace(lines[i].label, i);
+        }
+    }
+
+    bool changed{true};
+    while (changed) {
+        changed = false;
+        for (size_t i{}; i < lines.size(); ++i) {
+            changed = optimize_jump(lines, i, labels, counts) or changed;
+        }
+    }
+
+    for (const line& l : lines) {
+        if (not l.removed) {
+            std::println(os, "{}", l.text);
+        }
+    }
 }
 
 } // namespace x86

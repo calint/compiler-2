@@ -1212,7 +1212,6 @@ main:
         jne if.297.19
         if.295.12.code:
             jmp loop.289.5.end
-        jmp if.295.9.end
         if.297.19:
         cmp.297.19:
         cmp byte [rbp + 1041], 4
@@ -1226,7 +1225,6 @@ main:
                 syscall
             func.print.298.13.end:
             jmp loop.289.5
-        jmp if.295.9.end
         if.295.9.else:
             func.print.301.13:
                 mov rdi, 1
