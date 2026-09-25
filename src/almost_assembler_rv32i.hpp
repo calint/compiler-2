@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <format>
 #include <functional>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <optional>
