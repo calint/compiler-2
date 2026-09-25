@@ -8,6 +8,9 @@
 #include <optional>
 #include <ostream>
 #include <print>
+#include <ranges>
+#include <span>
+#include <string_view>
 #include <utility>
 
 #include "almost_assembler_rv32i.hpp"
@@ -41,6 +44,9 @@ class machine_rv32i : public machine {
     static constexpr int64_t frame_save_bytes_{16};
     // a word for each of x1 to x31, rounded up to keep sp 16-byte aligned
     static constexpr int64_t register_save_bytes_{128};
+    static constexpr size_t word_size_bytes_{4};
+    // the i/o call save area keeps sp 16-byte aligned
+    static constexpr int io_save_size_bytes_{16};
 
     static constexpr const decltype(almost_assembler_rv32i::register_names)&
         register_names_{almost_assembler_rv32i::register_names};
@@ -121,6 +127,12 @@ class machine_rv32i : public machine {
         const size_t index{register_index(name)};
 
         return index == register_names_.size() ? 0 : uint32_t{1} << index;
+    }
+
+    [[nodiscard]] auto is_register_allocated(const std::string_view name) const
+        -> bool {
+
+        return (unavailable_registers_ & register_mask(name)) != 0;
     }
 
     static auto validate_scalar(const token& src_loc_tk, const type& value_type)
@@ -1108,6 +1120,44 @@ class machine_rv32i : public machine {
     virtual auto emit_write_call(const size_t indent) -> void {
         assembler_.li(indent, "a7", syscall_write_);
         assembler_.ecall(indent);
+    }
+
+    // i/o routines replacing system calls return through a7 and change only
+    // 'clobbered' besides a0, so the call keeps just the live ones like a
+    // system call does
+    auto call_io_routine(const size_t indent, const std::string_view label,
+                         const std::span<const std::string_view> clobbered)
+        -> void {
+
+        std::vector<std::string_view> saved;
+        for (const std::string_view name : clobbered) {
+            if (is_register_allocated(name)) {
+                saved.push_back(name);
+            }
+        }
+
+        if (saved.empty()) {
+            assembler_.call(indent, label, "a7");
+
+            return;
+        }
+
+        assert(saved.size() * word_size_bytes_ <=
+               static_cast<size_t>(io_save_size_bytes_));
+
+        assembler_.addi(indent, "sp", "sp", -io_save_size_bytes_);
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.sw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
+
+        assembler_.call(indent, label, "a7");
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.lw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
+
+        assembler_.addi(indent, "sp", "sp", io_save_size_bytes_);
     }
 
   public:

@@ -2,31 +2,25 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
-#include <limits>
 #include <ostream>
 #include <string_view>
 
 #include "almost_assembler_rv32i.hpp"
 #include "decouple.hpp"
 #include "machine_rv32i.hpp"
-#include "panic_exception.hpp"
 
-// runs the flat image without an operating system on the qemu 'virt' machine,
-// input and output go through its ns16550a uart and exit ends qemu with the
-// exit code as its status
+// runs the flat image loaded at address 0 on the fpga or its emulator,
+// input and output go through the memory mapped uart
 
-class machine_rv32i_qemu final : public machine_rv32i {
-    // 'lui' of the uart address 0x10000000
-    static constexpr int uart_upper_{0x10000};
-    static constexpr int line_status_offset_{5};
-    static constexpr int line_status_data_ready_{0x01};
-    static constexpr int line_status_transmit_empty_{0x20};
-    // 'lui' of the test finisher address 0x100000
-    static constexpr int test_finisher_upper_{0x100};
-    // the finisher takes the exit code in the upper 16 bits
-    static constexpr int finisher_code_shift_{16};
-    static constexpr int finisher_pass_{0x5555};
+class machine_rv32i_fpga final : public machine_rv32i {
+    // the uart addresses 0xffff'fff4 and 0xffff'fff8 are reached as sign
+    // extended offsets from the zero register
+    static constexpr int uart_in_offset_{-12};
+    static constexpr int uart_out_offset_{-8};
+    // uart_in reads -1 while no byte is received, uart_out while ready
+    static constexpr int uart_idle_{-1};
+    // 'lui' of the end of memory 0x800000
+    static constexpr int memory_end_upper_{0x800};
     static constexpr int newline_{'\n'};
     static constexpr int carriage_return_{'\r'};
     // ctrl-d
@@ -37,23 +31,15 @@ class machine_rv32i_qemu final : public machine_rv32i {
     static constexpr std::array<std::string_view, 3> write_clobbered_{
         "a3", "a4", "a5"};
 
-    size_t stack_size_bytes_{};
     bool read_used_{};
     bool write_used_{};
     bool exit_used_{};
 
   public:
-    machine_rv32i_qemu(std::ostream& os_ref, const std::string_view source,
+    machine_rv32i_fpga(std::ostream& os_ref, const std::string_view source,
                        const jump_mode jumps,
-                       const std::string_view binary_file_name,
-                       const size_t stack_size_bytes)
-        : machine_rv32i{os_ref, source, jumps, binary_file_name},
-          stack_size_bytes_{stack_size_bytes} {
-
-        if (stack_size_bytes > std::numeric_limits<uint32_t>::max()) {
-            throw panic_exception{"stack size exceeds RV32I address range"};
-        }
-    }
+                       const std::string_view binary_file_name)
+        : machine_rv32i{os_ref, source, jumps, binary_file_name} {}
 
     auto start() -> void override {
         read_used_ = false;
@@ -62,19 +48,14 @@ class machine_rv32i_qemu final : public machine_rv32i {
 
         machine_rv32i::start();
 
-        // no operating system sets up a stack, so it follows the variables
-        almost_assembler_rv32i& a{assembler()};
-
-        a.la(0, "sp", "vars.end");
-        a.li(0, "t0", stack_size_bytes_);
-        a.add(0, "sp", "sp", "t0");
+        // no operating system sets up a stack, so it grows down from the end
+        // of memory
+        assembler().lui(0, "sp", memory_end_upper_);
     }
 
-    auto exit(const token& src_loc_tk, const size_t indent,
-              const operand& exit_code) -> void override {
-
-        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
-                   exit_code);
+    // todo: there is no way to end the program yet, so exit halts
+    auto exit([[maybe_unused]] const token& src_loc_tk, const size_t indent,
+              [[maybe_unused]] const operand& exit_code) -> void override {
 
         branch(indent, ".Lbaz_exit");
         exit_used_ = true;
@@ -116,16 +97,14 @@ class machine_rv32i_qemu final : public machine_rv32i {
         almost_assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_read");
-        a.lui(1, "a3", uart_upper_);
+        a.li(1, "a3", uart_idle_);
         a.mv(1, "a6", "a1");
         a.li(1, "a0", 0);
         a.label(0, "1");
         a.beq(1, "a0", "a2", "4f");
         a.label(0, "2");
-        a.lbu(1, "a4", line_status_offset_, "a3");
-        a.andi(1, "a4", "a4", line_status_data_ready_);
-        a.beqz(1, "a4", "2b");
-        a.lbu(1, "a4", 0, "a3");
+        a.lw(1, "a4", uart_in_offset_, "zero");
+        a.beq(1, "a4", "a3", "2b");
         // the uart has no end of input, so ctrl-d stands for it
         a.li(1, "a5", end_of_transmission_);
         a.beq(1, "a4", "a5", "4f");
@@ -148,18 +127,17 @@ class machine_rv32i_qemu final : public machine_rv32i {
         almost_assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_write");
-        a.lui(1, "a3", uart_upper_);
+        a.li(1, "a3", uart_idle_);
         a.mv(1, "a5", "a1");
         // the descriptor is not needed so a0 holds the end
         a.add(1, "a0", "a1", "a2");
         a.label(0, "1");
         a.beq(1, "a5", "a0", "3f");
         a.label(0, "2");
-        a.lbu(1, "a4", line_status_offset_, "a3");
-        a.andi(1, "a4", "a4", line_status_transmit_empty_);
-        a.beqz(1, "a4", "2b");
+        a.lw(1, "a4", uart_out_offset_, "zero");
+        a.bne(1, "a4", "a3", "2b");
         a.lbu(1, "a4", 0, "a5");
-        a.sb(1, "a4", 0, "a3");
+        a.sw(1, "a4", uart_out_offset_, "zero");
         a.addi(1, "a5", "a5", 1);
         a.j(1, "1b");
         a.label(0, "3");
@@ -167,18 +145,10 @@ class machine_rv32i_qemu final : public machine_rv32i {
         a.jr(1, "a7");
     }
 
-    // ends qemu with the exit code a0 as its status
     auto emit_exit_routine() const -> void {
         almost_assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_exit");
-        a.slli(1, "a0", "a0", finisher_code_shift_);
-        a.li(1, "t0", finisher_pass_);
-        a.or_op(1, "a0", "a0", "t0");
-        a.lui(1, "t0", test_finisher_upper_);
-        a.sw(1, "a0", 0, "t0");
-        // qemu shuts down after the store completes
-        a.label(0, "1");
-        a.j(1, "1b");
+        a.j(1, ".Lbaz_exit");
     }
 };

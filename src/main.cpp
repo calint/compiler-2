@@ -22,6 +22,7 @@
 #include "decouple_impl.hpp" // IWYU pragma: keep
 #include "machine.hpp"
 #include "machine_rv32i.hpp"
+#include "machine_rv32i_fpga.hpp"
 #include "machine_rv32i_qemu.hpp"
 #include "machine_x86.hpp"
 #include "null_stream.hpp"
@@ -76,8 +77,8 @@ auto main(const int argc, const char** const argv) -> int {
             std::println("Usage: {} [OPTIONS] [filename]", prg);
             std::println("");
             std::println("Options:");
-            std::println("  --target=MACHINE    x86_64 (default), rv32i or "
-                         "rv32i-qemu");
+            std::println("  --target=MACHINE    x86_64 (default), rv32i, "
+                         "rv32i-qemu or rv32i-fpga");
             std::println("  --vars=SIZE         Set variable storage size "
                          "(default: "
                          "0x10000/65536)");
@@ -155,10 +156,10 @@ auto main(const int argc, const char** const argv) -> int {
         } else if (arg.starts_with(target_option)) {
             target = arg.substr(target_option.size());
             if (target != "x86_64" and target != "rv32i" and
-                target != "rv32i-qemu") {
+                target != "rv32i-qemu" and target != "rv32i-fpga") {
                 std::println(stderr,
                              "Invalid target: '{}'. Supported targets are: "
-                             "x86_64, rv32i, rv32i-qemu.",
+                             "x86_64, rv32i, rv32i-qemu, rv32i-fpga.",
                              target);
 
                 std::println(stderr, "Use --help for usage information");
@@ -234,6 +235,9 @@ auto main(const int argc, const char** const argv) -> int {
         } else if (target == "rv32i-qemu") {
             backend = std::make_unique<machine_rv32i_qemu>(
                 parser_output, src, jumps, "gen-rv32i.bin", stack_size_bytes);
+        } else if (target == "rv32i-fpga") {
+            backend = std::make_unique<machine_rv32i_fpga>(
+                parser_output, src, jumps, "gen-rv32i.bin");
         } else {
             throw panic_exception{std::format("unknown target '{}'", target)};
         }

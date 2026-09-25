@@ -6,9 +6,10 @@
 # tools:
 #   qemu-system-riscv32: 11.1.1
 set -eu
+cd "$(dirname "$0")"
+
 # a given image is relative to the caller's directory
 IMAGE="$(realpath "${1:-$(dirname "$0")/gen-rv32i.bin}")"
-cd "$(dirname "$0")"
 
 # a plain serial console passes every input byte to the program
 exec qemu-system-riscv32 -machine virt -bios none -display none \
