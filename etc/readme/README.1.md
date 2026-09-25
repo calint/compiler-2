@@ -10,7 +10,7 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 * gain experience writing compilers
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
-* limited support for non-inline functions
+* limited support for non-inlined functions
 * opt-in checks that make the language ub-free
 
 ## Supports
@@ -26,7 +26,7 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 * optional bounds checking at runtime
   * optional line number
 * inlined functions
-* limited support for non-inline functions
+* limited support for non-inlined functions
 * partial ub-free support
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`
