@@ -9,12 +9,18 @@ for arg in "$@"; do
 	esac
 done
 case "$TARGET" in
-	x86_64|rv32i) ;;
+	x86_64|rv32i|rv32i-qemu) ;;
 	*)
-		printf 'Unsupported target: %s (use --target=x86_64 or --target=rv32i)\n' "$TARGET" >&2
+		printf 'Unsupported target: %s (use --target=x86_64, --target=rv32i or --target=rv32i-qemu)\n' "$TARGET" >&2
 		exit 1
 		;;
 esac
+
+# rv32i-qemu emits rv32i assembly
+RV32I=
+if [[ "$TARGET" == rv32i* ]]; then
+	RV32I=1
+fi
 
 SEP="--------------------------------------------------------------------------------"
 echo $SEP
@@ -24,11 +30,11 @@ printf '\n'
 ./baz "$@" >gen.s
 echo $SEP
 COMMENT=';'
-if [[ "$TARGET" == rv32i ]]; then
+if [[ -n "$RV32I" ]]; then
 	COMMENT='#'
 fi
 awk -v comment="$COMMENT" '$0 !~ "^[[:space:]]*" comment && $0 !~ /^[[:space:]]*$/ { print }' gen.s >gen-without-comments.s
-if [[ "$TARGET" == rv32i ]]; then
+if [[ -n "$RV32I" ]]; then
 	awk '
 		/^[[:space:]]*[[:alpha:]][[:alnum:]]*[[:space:]]/ {
 			instructions++
@@ -43,18 +49,24 @@ else
 	grep -E '^\s*j[a-z]{1,2}\s' gen.s | grep -v '^\s*jmp\s' | wc | awk '{print "jcc: " $1}'
 fi
 echo $SEP
-if [[ "$TARGET" == rv32i ]]; then
+if [[ "$TARGET" == rv32i-qemu ]]; then
+	# the compiler writes the image, no linking needed
+	ls --color -la gen.s gen-without-comments.s gen-rv32i.bin
+elif [[ "$TARGET" == rv32i ]]; then
 	llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
 	ld.lld -m elf32lriscv -e _start -o gen gen.o
+	ls --color -la gen.s gen-without-comments.s gen
 else
 	nasm -f elf64 gen.s
 	ld -s -T baz.ld -o gen gen.o
+	ls --color -la gen.s gen-without-comments.s gen
 fi
-ls --color -la gen.s gen-without-comments.s gen
 echo $SEP
 
 set +e # don't stop at errors
-if [[ "$TARGET" == rv32i ]]; then
+if [[ "$TARGET" == rv32i-qemu ]]; then
+	./run-rv32i-qemu.sh gen-rv32i.bin
+elif [[ "$TARGET" == rv32i ]]; then
 	qemu-riscv32 ./gen
 else
 	./gen

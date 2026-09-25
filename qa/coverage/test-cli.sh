@@ -54,6 +54,11 @@ CLI_TARGETS() {
     "$BIN" --target=rv32i --nopt 430.baz >out 2>err
     [[ ! -s err ]]
     [[ $(wc -l <gen.s) -le $(wc -l <out) ]]
+    # without an operating system the uart routines replace system calls
+    "$BIN" --target=rv32i-qemu --stack=4096 430.baz >gen.s 2>err
+    [[ ! -s err ]]
+    [[ $(grep -Ec '^[[:space:]]*ecall$' gen.s) -eq 0 ]]
+    grep -Eq '^[[:space:]]*li t0, 4096$' gen.s
     echo ok
 }
 
@@ -100,7 +105,12 @@ CLI --vars=-16 1 --help
 CLI --vars=17 1 --help
 CLI --vars=16junk 1 --help
 CLI --vars=18446744073709551616 1 --help
-CLI --stack=65536 1 --help
+CLI --stack=65536 0 --help
+CLI --stack=0x10000 0 --help
+CLI --stack= 1 --help
+CLI --stack=0 1 --help
+CLI --stack=17 1 --help
+CLI --stack=16junk 1 --help
 CLI --no-reproduce 1 --help
 CLI --checks=frame 0 015.baz
 CLI --checks=alias 0 015.baz
@@ -108,6 +118,7 @@ CLI --checks=upper,lower,line,frame,alias 0 015.baz
 CLI --checks=unknown 1 --help
 CLI --target=x86_64 0 --help
 CLI --target=rv32i 0 --help
+CLI --target=rv32i-qemu 0 --help
 CLI --target= 1 --help
 CLI --target=unknown 1 --help
 CLI_TARGETS

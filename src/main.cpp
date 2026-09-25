@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <print>
 #include <ranges>
 #include <span>
@@ -21,6 +22,7 @@
 #include "decouple_impl.hpp" // IWYU pragma: keep
 #include "machine.hpp"
 #include "machine_rv32i.hpp"
+#include "machine_rv32i_qemu.hpp"
 #include "machine_x86.hpp"
 #include "null_stream.hpp"
 #include "panic_exception.hpp"
@@ -30,6 +32,11 @@
 namespace {
 [[nodiscard]] auto read_file_to_string(const char* const file_name)
     -> std::string;
+
+[[nodiscard]] auto parse_size_bytes(const std::string_view text,
+                                    const std::string_view name,
+                                    const size_t alignment)
+    -> std::optional<size_t>;
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -42,12 +49,16 @@ auto main(const int argc, const char** const argv) -> int {
 
     constexpr size_t default_vars_size_bytes{0x10000};
     constexpr size_t vars_alignment{16};
+    constexpr size_t default_stack_size_bytes{0x10000};
+    // keeps sp 16-byte aligned
+    constexpr size_t stack_alignment{16};
     // note: to avoid "magic number" lint
 
     // default values
     const char* src_file_name{"prog.baz"};
     std::string_view target{"x86_64"};
     size_t vars_size_bytes{default_vars_size_bytes};
+    size_t stack_size_bytes{default_stack_size_bytes};
     bool checks_upper{};
     bool checks_show_line{};
     bool checks_lower{};
@@ -65,8 +76,8 @@ auto main(const int argc, const char** const argv) -> int {
             std::println("Usage: {} [OPTIONS] [filename]", prg);
             std::println("");
             std::println("Options:");
-            std::println(
-                "  --target=MACHINE    x86_64 (default) or rv32i (TODO)");
+            std::println("  --target=MACHINE    x86_64 (default), rv32i or "
+                         "rv32i-qemu");
             std::println("  --vars=SIZE         Set variable storage size "
                          "(default: "
                          "0x10000/65536)");
@@ -76,6 +87,12 @@ auto main(const int argc, const char** const argv) -> int {
 
             std::println("                      Must be a multiple of {}",
                          vars_alignment);
+
+            std::println("  --stack=SIZE        Set rv32i-qemu stack size "
+                         "(default: 0x10000/65536)");
+
+            std::println("                      Must be a multiple of {}",
+                         stack_alignment);
 
             std::println("  --checks=TYPE       Enable runtime checks:");
             std::println(
@@ -111,51 +128,37 @@ auto main(const int argc, const char** const argv) -> int {
             return 0;
         }
         constexpr std::string_view vars_option{"--vars="};
+        constexpr std::string_view stack_option{"--stack="};
         constexpr std::string_view target_option{"--target="};
         constexpr std::string_view checks_option{"--checks="};
         constexpr std::string_view nopt_option{"--nopt"};
         if (arg.starts_with(vars_option)) {
-            try {
-                const std::string vars_text{arg.substr(vars_option.size())};
-                size_t chars_read{};
-                const uint64_t parsed_size_bytes{
-                    std::stoull(vars_text, &chars_read, 0)};
+            const std::optional<size_t> parsed{
+                parse_size_bytes(arg.substr(vars_option.size()),
+                                 "variable storage size", vars_alignment)};
 
-                if (vars_text.empty() or vars_text.starts_with('-') or
-                    chars_read != vars_text.size() or parsed_size_bytes == 0 or
-                    not std::in_range<size_t>(parsed_size_bytes)) {
-
-                    throw std::invalid_argument{
-                        "invalid variable storage size"};
-                }
-
-                if (parsed_size_bytes % vars_alignment != 0) {
-                    std::println(stderr,
-                                 "Invalid variable storage size: '{}' is not "
-                                 "a multiple of {}",
-                                 vars_text, vars_alignment);
-
-                    std::println(stderr, "Use --help for usage information");
-
-                    return 1;
-                }
-
-                vars_size_bytes = static_cast<size_t>(parsed_size_bytes);
-            } catch (...) {
-                std::println(stderr,
-                             "Could not parse variable storage size: \"{}\"",
-                             arg.substr(vars_option.size()));
-
-                std::println(stderr, "Use --help for usage information");
-
+            if (not parsed) {
                 return 1;
             }
+
+            vars_size_bytes = *parsed;
+        } else if (arg.starts_with(stack_option)) {
+            const std::optional<size_t> parsed{
+                parse_size_bytes(arg.substr(stack_option.size()), "stack size",
+                                 stack_alignment)};
+
+            if (not parsed) {
+                return 1;
+            }
+
+            stack_size_bytes = *parsed;
         } else if (arg.starts_with(target_option)) {
             target = arg.substr(target_option.size());
-            if (target != "x86_64" and target != "rv32i") {
+            if (target != "x86_64" and target != "rv32i" and
+                target != "rv32i-qemu") {
                 std::println(stderr,
                              "Invalid target: '{}'. Supported targets are: "
-                             "x86_64, rv32i.",
+                             "x86_64, rv32i, rv32i-qemu.",
                              target);
 
                 std::println(stderr, "Use --help for usage information");
@@ -228,6 +231,9 @@ auto main(const int argc, const char** const argv) -> int {
         } else if (target == "rv32i") {
             backend = std::make_unique<machine_rv32i>(parser_output, src, jumps,
                                                       "gen-rv32i.bin");
+        } else if (target == "rv32i-qemu") {
+            backend = std::make_unique<machine_rv32i_qemu>(
+                parser_output, src, jumps, "gen-rv32i.bin", stack_size_bytes);
         } else {
             throw panic_exception{std::format("unknown target '{}'", target)};
         }
@@ -289,5 +295,42 @@ namespace {
 
     return std::string{std::istreambuf_iterator<char>{fs},
                        std::istreambuf_iterator<char>{}};
+}
+
+// decimal or 0x hexadecimal, 'name' describes the size in error messages
+[[nodiscard]] auto parse_size_bytes(const std::string_view text,
+                                    const std::string_view name,
+                                    const size_t alignment)
+    -> std::optional<size_t> {
+
+    uint64_t parsed_size_bytes{};
+    try {
+        const std::string digits{text};
+        size_t chars_read{};
+        parsed_size_bytes = std::stoull(digits, &chars_read, 0);
+
+        if (digits.empty() or digits.starts_with('-') or
+            chars_read != digits.size() or parsed_size_bytes == 0 or
+            not std::in_range<size_t>(parsed_size_bytes)) {
+
+            throw std::invalid_argument{std::format("invalid {}", name)};
+        }
+    } catch (...) {
+        std::println(stderr, "Could not parse {}: \"{}\"", name, text);
+        std::println(stderr, "Use --help for usage information");
+
+        return std::nullopt;
+    }
+
+    if (parsed_size_bytes % alignment != 0) {
+        std::println(stderr, "Invalid {}: '{}' is not a multiple of {}", name,
+                     text, alignment);
+
+        std::println(stderr, "Use --help for usage information");
+
+        return std::nullopt;
+    }
+
+    return static_cast<size_t>(parsed_size_bytes);
 }
 } // namespace

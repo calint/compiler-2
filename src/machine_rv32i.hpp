@@ -16,7 +16,7 @@
 #include "machine.hpp"
 #include "type.hpp"
 
-class machine_rv32i final : public machine {
+class machine_rv32i : public machine {
   public:
     // buffered modes hold output from 'start' to 'finish' so jumps can
     // be optimized and grown to reach their targets
@@ -440,10 +440,11 @@ class machine_rv32i final : public machine {
         return lower_address_scaled_index(src_loc_tk, indent, address, result);
     }
 
-    auto io_syscall(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const operand& descriptor,
-                    const operand& address, const operand& count,
-                    const int syscall_number) -> void {
+    auto reserve_io_call_register(const token& src_loc_tk, const size_t indent,
+                                  const operand& dst, const operand& descriptor,
+                                  const operand& address, const operand& count)
+        -> operand {
+
         constexpr size_t word_size{4};
         for (const operand* value : {&dst, &descriptor, &address, &count}) {
             assert(value->is_register() and
@@ -455,12 +456,8 @@ class machine_rv32i final : public machine {
         assert(register_index(address.base_register()) == register_index("a1"));
         assert(register_index(count.base_register()) == register_index("a2"));
 
-        const operand syscall_register{
-            alloc_named_register(src_loc_tk, indent, "a7", default_type())};
-
-        assembler_.li(indent, "a7", syscall_number);
-        assembler_.ecall(indent);
-        free_named_register(src_loc_tk, indent, syscall_register);
+        // selects the system call or receives the return address
+        return alloc_named_register(src_loc_tk, indent, "a7", default_type());
     }
 
     [[nodiscard]] static auto immediate_value(const operand& value)
@@ -1095,6 +1092,24 @@ class machine_rv32i final : public machine {
         }
     }
 
+  protected:
+    [[nodiscard]] auto assembler() const -> almost_assembler_rv32i& {
+        return assembler_;
+    }
+
+    // a0 is the descriptor and receives the byte count, a1 is the address,
+    // a2 the count and a7 is reserved, other registers keep their values
+    virtual auto emit_read_call(const size_t indent) -> void {
+        assembler_.li(indent, "a7", syscall_read_);
+        assembler_.ecall(indent);
+    }
+
+    // same registers as 'emit_read_call'
+    virtual auto emit_write_call(const size_t indent) -> void {
+        assembler_.li(indent, "a7", syscall_write_);
+        assembler_.ecall(indent);
+    }
+
   public:
     // 'binary_file_name' receives the image of the resolved output, backend
     // tests without complete programs leave it empty
@@ -1705,16 +1720,22 @@ class machine_rv32i final : public machine {
               const operand& descriptor, const operand& address,
               const operand& count) -> void override {
 
-        io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
-                   syscall_read_);
+        const operand call_register{reserve_io_call_register(
+            src_loc_tk, indent, dst, descriptor, address, count)};
+
+        emit_read_call(indent);
+        free_named_register(src_loc_tk, indent, call_register);
     }
 
     auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
                const operand& descriptor, const operand& address,
                const operand& count) -> void override {
 
-        io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
-                   syscall_write_);
+        const operand call_register{reserve_io_call_register(
+            src_loc_tk, indent, dst, descriptor, address, count)};
+
+        emit_write_call(indent);
+        free_named_register(src_loc_tk, indent, call_register);
     }
 
     auto invoke_syscall(const size_t indent) -> void override {
@@ -2703,8 +2724,7 @@ class machine_rv32i final : public machine {
             assembler_.li(1, "a0", 2);
             assembler_.la(1, "a1", ".Lbaz_bounds_message");
             assembler_.li(1, "a2", message.size());
-            assembler_.li(1, "a7", syscall_write_);
-            assembler_.ecall(1);
+            emit_write_call(1);
             assembler_.addi(1, "sp", "sp", -digits_bytes);
             assembler_.mv(1, "a1", "sp");
             assembler_.li(1, "a2", 0);
@@ -2736,8 +2756,7 @@ class machine_rv32i final : public machine {
             assembler_.addi(1, "a2", "a2", 1);
             assembler_.mv(1, "a1", "sp");
             assembler_.li(1, "a0", 2);
-            assembler_.li(1, "a7", syscall_write_);
-            assembler_.ecall(1);
+            emit_write_call(1);
         }
         exit(token{}, 1, operand::imm("255", default_type()));
         if (with_line) {
@@ -2769,8 +2788,7 @@ class machine_rv32i final : public machine {
         assembler_.la(1, "a1", ".Lbaz_frame_message");
         // the newline follows the message text
         assembler_.li(1, "a2", message.size() + 1);
-        assembler_.li(1, "a7", syscall_write_);
-        assembler_.ecall(1);
+        emit_write_call(1);
         exit(token{}, 1, operand::imm("255", default_type()));
         assembler_.switch_section(section::rodata);
         assembler_.label(0, ".Lbaz_frame_message");

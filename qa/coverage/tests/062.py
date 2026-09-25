@@ -3,7 +3,14 @@
 import subprocess
 import os
 
-command = ['qemu-riscv32', './gen'] if os.environ.get('MACHINE') == 'rv32i' else ['./gen']
+machine = os.environ.get('MACHINE')
+command = ['./gen']
+if machine == 'rv32i':
+    command = ['qemu-riscv32', './gen']
+if machine == 'rv32i-qemu':
+    command = ['qemu-system-riscv32', '-machine', 'virt', '-bios', 'none',
+               '-display', 'none', '-serial', 'stdio', '-monitor', 'none',
+               '-kernel', 'gen-rv32i.bin']
 p = subprocess.Popen(command,
                            stdin=subprocess.PIPE,
                            stdout=subprocess.PIPE,

@@ -9,6 +9,7 @@
 #           llvm-mc: 22.1.8
 #            ld.lld: 22.1.8
 #      qemu-riscv32: 11.1.1
+# qemu-system-riscv32: 11.1.1
 #           python3: 3.14.7
 
 set -e
@@ -22,7 +23,7 @@ OPTS="--vars=262144 --checks=upper,lower,line --reproduce-source"
 SEP="--------------------------------------------------------------------------------"
 
 usage() {
-    echo "usage: $0 [--target=x86|x86_64|rv32i] clean|build|run|report"
+    echo "usage: $0 [--target=x86|x86_64|rv32i|rv32i-qemu] clean|build|run|report"
 }
 
 ACTION=
@@ -49,18 +50,25 @@ done
 
 case "$MACHINE" in
 x86) MACHINE=x86_64 ;;
-x86_64 | rv32i) ;;
+x86_64 | rv32i | rv32i-qemu) ;;
 *)
     echo "unsupported target: $MACHINE" >&2
     exit 1
     ;;
 esac
 
+# rv32i-qemu compiles like rv32i, so it shares the rv32i compiler messages
+COMPILER_MACHINE="${MACHINE%-qemu}"
+
+# a plain serial console passes every input byte to the program
+QEMU_SYSTEM=(qemu-system-riscv32 -machine virt -bios none -display none
+    -serial stdio -monitor none -kernel gen-rv32i.bin)
+
 case "$ACTION" in
 clean)
     echo $SEP
     rm -f -- *.profraw baz.profdata gen gen.o gen.s diff.baz out err
-    rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/diff.baz tests/out tests/err
+    rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/gen-rv32i.bin tests/diff.baz tests/out tests/err
     rm -rf -- report/
     echo removed reports
     echo $SEP
@@ -118,13 +126,34 @@ assemble_and_link() {
         llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
         ld.lld -m elf32lriscv -e _start -o gen gen.o
         ;;
+    # the compiler writes the image 'gen-rv32i.bin'
+    rv32i-qemu) ;;
     esac
+}
+
+# the uart has no end of input, so ctrl-d ends it like at a terminal and a
+# second one ends a last line without newline
+run_qemu() {
+    local input=/dev/stdin
+    if [[ -t 0 ]]; then
+        input=/dev/null
+    fi
+    { cat "$input"; printf '\x04\x04'; } | "${QEMU_SYSTEM[@]}"
 }
 
 execute_program() {
     case "$MACHINE" in
     x86_64) ./gen ;;
     rv32i) qemu-riscv32 ./gen ;;
+    rv32i-qemu) run_qemu ;;
+    esac
+}
+
+# the uart carries both output streams, so errors are in the output
+execute_program_errors_to_out() {
+    case "$MACHINE" in
+    rv32i-qemu) execute_program >out ;;
+    *) execute_program 2>out ;;
     esac
 }
 
@@ -202,7 +231,7 @@ RUN_ERR() {
     compile_and_build
 
     set +e
-    execute_program 2>out
+    execute_program_errors_to_out
     local exit_code=$?
     set -e
 
@@ -219,7 +248,7 @@ RUN_ERR_OPTS() {
     compile_and_build_with_opts "$1"
 
     set +e
-    execute_program 2>out
+    execute_program_errors_to_out
     local exit_code=$?
     set -e
 
@@ -273,6 +302,9 @@ DIFFINP2() {
     if [ "$MACHINE" = rv32i ]; then
         command=(qemu-riscv32 ./gen)
     fi
+    if [ "$MACHINE" = rv32i-qemu ]; then
+        command=("${QEMU_SYSTEM[@]}")
+    fi
 
     "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${command[@]}" >out 2>err
 
@@ -314,7 +346,7 @@ DIFFNOPT() {
 COMPERR() {
     echo -n "$SRC: "
     compile_expect_error
-    local expected="${SRC%.*}.$MACHINE.out"
+    local expected="${SRC%.*}.$COMPILER_MACHINE.out"
     if [[ ! -f "$expected" ]]; then
         expected="${SRC%.*}.out"
     fi
@@ -325,6 +357,6 @@ COMPERR() {
 source "$SCRIPT_DIR/cases.sh"
 
 # Cleanup
-rm -f gen gen.o gen.s gen-nopt.s diff.baz out err
+rm -f gen gen.o gen.s gen-nopt.s gen-rv32i.bin diff.baz out err
 
 echo $SEP

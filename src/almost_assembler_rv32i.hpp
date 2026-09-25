@@ -92,6 +92,7 @@ class almost_assembler_rv32i final : public almost_assembler {
         la,
         mv,
         j,
+        jr,
         call,
         ret,
     };
@@ -200,6 +201,7 @@ class almost_assembler_rv32i final : public almost_assembler {
         load_address,
         move,
         jump,
+        jump_register,
         call,
         ret,
     };
@@ -716,6 +718,7 @@ class almost_assembler_rv32i final : public almost_assembler {
             {.mnemonic{"la"}, .operands{form::load_address}, .encoding{0x17}},
             {.mnemonic{"mv"}, .operands{form::move}, .encoding{0x13}},
             {.mnemonic{"j"}, .operands{form::jump}, .encoding{0x6f}},
+            {.mnemonic{"jr"}, .operands{form::jump_register}, .encoding{0x67}},
             {.mnemonic{"call"}, .operands{form::call}, .encoding{0x17}},
             {.mnemonic{"ret"}, .operands{form::ret}, .encoding{0x8067}},
         }};
@@ -815,6 +818,15 @@ class almost_assembler_rv32i final : public almost_assembler {
 
         if (operands == form::move) {
             return std::format("{} {}, {}", mnemonic, names.rd, names.rs1);
+        }
+
+        if (operands == form::jump_register) {
+            return std::format("{} {}", mnemonic, names.rs1);
+        }
+
+        // 'ra' is the implied link register
+        if (operands == form::call and ins.rd != return_address_register) {
+            return std::format("{} {}, {}", mnemonic, names.rd, ins.target);
         }
 
         if (operands == form::jump or operands == form::call) {
@@ -1308,6 +1320,11 @@ class almost_assembler_rv32i final : public almost_assembler {
             return {encode_immediate(addi_encoding, ins.rd, ins.rs1, 0)};
         }
 
+        if (operands == form::jump_register) {
+            return {
+                encode_immediate(details.encoding, zero_register, ins.rs1, 0)};
+        }
+
         // the remaining forms go to a label
         const int64_t distance{symbol_value(symbols, ins.target, line_index) -
                                address};
@@ -1317,8 +1334,7 @@ class almost_assembler_rv32i final : public almost_assembler {
         }
 
         if (operands == form::call) {
-            return pc_relative(jalr_encoding, return_address_register,
-                               return_address_register, distance);
+            return pc_relative(jalr_encoding, ins.rd, ins.rd, distance);
         }
 
         return {branch_word(ins.code, ins.rs1, ins.rs2, distance)};
@@ -2131,17 +2147,33 @@ class almost_assembler_rv32i final : public almost_assembler {
                         {});
     }
 
-    auto call(const size_t indent, const std::string_view target) -> void {
+    // routines returning with 'jr' may take the return address in 'link'
+    auto call(const size_t indent, const std::string_view target,
+              const std::string_view link = "ra") -> void {
+
         add_instruction(indent,
                         {
                             .code{op::call},
-                            .rd{},
+                            .rd{number_of(link)},
                             .rs1{},
                             .rs2{},
                             .value{},
                             .target{std::string{target}},
                         },
-                        {});
+                        {.rd{link}, .rs1{}, .rs2{}});
+    }
+
+    auto jr(const size_t indent, const std::string_view rs) -> void {
+        add_instruction(indent,
+                        {
+                            .code{op::jr},
+                            .rd{},
+                            .rs1{number_of(rs)},
+                            .rs2{},
+                            .value{},
+                            .target{},
+                        },
+                        {.rd{}, .rs1{rs}, .rs2{}});
     }
 
     auto ret(const size_t indent) -> void {
