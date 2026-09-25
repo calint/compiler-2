@@ -9,7 +9,6 @@
 #           llvm-mc: 22.1.8
 #            ld.lld: 22.1.8
 #      qemu-riscv32: 11.1.1
-#            script: 2.42.4
 #           python3: 3.14.7
 
 set -e
@@ -270,14 +269,12 @@ DIFFINP2() {
     echo -n "$SRC: "
     compile_and_build
 
-    local command="./gen"
+    local command=(./gen)
     if [ "$MACHINE" = rv32i ]; then
-        command="qemu-riscv32 ./gen"
+        command=(qemu-riscv32 ./gen)
     fi
 
-    # a terminal on stdin makes each read return at most one line
-    script -q -e -E never --echo never -c "stty -icrnl -ixon; $command >&3 2>&4" /dev/null \
-        <"${SRC%.*}.in" 3>out 4>err >/dev/null
+    "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${command[@]}" >out 2>err
 
     check_output "${SRC%.*}.out"
 }
