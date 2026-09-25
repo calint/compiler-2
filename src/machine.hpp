@@ -10,7 +10,6 @@
 #include <ostream>
 #include <ranges>
 #include <span>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -78,8 +77,6 @@ class machine {
                                    const type& t_bool, const type& t_void)
         -> void = 0;
 
-    virtual auto use_stream(std::ostream& new_stream) -> std::ostream& = 0;
-
     virtual auto comment(const token& src_loc_tk, const size_t indent,
                          const std::string_view text) -> void = 0;
 
@@ -126,6 +123,9 @@ class machine {
     }
 
     virtual auto finish() -> void = 0;
+
+    // 'as_emitted' output was already written, so nothing is buffered
+    virtual auto write_assembly(std::ostream& os) -> void = 0;
 
     [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
 
@@ -385,17 +385,6 @@ class machine {
     }
 
   protected:
-    [[nodiscard]] auto capture_output(const std::function_ref<void()> emit)
-        -> std::string {
-
-        std::stringstream buffer;
-        std::ostream& previous{use_stream(buffer)};
-        emit();
-        use_stream(previous);
-
-        return std::move(buffer).str();
-    }
-
     // immediates are decimal numbers prefixed by unary '-' and '~' operators
     // returns two's complement bits or empty for symbolic expressions
     [[nodiscard]] static auto immediate_bits(const operand& value)

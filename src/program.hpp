@@ -121,8 +121,6 @@ class program final {
 
         machine& x{tc.machine()};
 
-        x.program_start();
-
         tc.enter_block();
 
         for (const std::unique_ptr<statement>& s : statements_) {
@@ -179,13 +177,14 @@ class program final {
     auto build(std::ostream& os) -> void {
         machine& x{tc_.machine()};
 
-        std::ostream& previous{x.use_stream(os)};
+        // buffering starts here, so the variables base comment is included
+        x.program_start();
         x.reserve_variables_base();
         compile(tc_, 0);
         x.release_variables_base();
         x.finish();
         tc_.finish();
-        x.use_stream(previous);
+        x.write_assembly(os);
     }
 
     static auto assert_functions_set_return_value(

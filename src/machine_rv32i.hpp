@@ -3,9 +3,9 @@
 #include <array>
 #include <bit>
 #include <charconv>
-#include <iostream>
 #include <limits>
 #include <optional>
+#include <ostream>
 #include <print>
 #include <utility>
 
@@ -50,7 +50,7 @@ class machine_rv32i final : public machine {
         bool named;
     };
 
-    std::reference_wrapper<std::ostream> os_{std::cout};
+    std::reference_wrapper<std::ostream> os_;
     std::string_view source_;
     jump_mode jump_mode_{};
     // buffering output is no more logical state than writing to 'os_'
@@ -1080,9 +1080,10 @@ class machine_rv32i final : public machine {
     }
 
   public:
-    explicit machine_rv32i(const std::string_view source = {},
-                           const jump_mode jumps = jump_mode::as_emitted)
-        : source_{source}, jump_mode_{jumps} {}
+    explicit machine_rv32i(std::ostream& os_ref,
+                           const std::string_view source = {},
+                           const jump_mode jumps = jump_mode::resolved)
+        : os_{os_ref}, source_{source}, jump_mode_{jumps} {}
 
     using machine::comment;
     using machine::emit_data_array;
@@ -1126,13 +1127,6 @@ class machine_rv32i final : public machine {
         type_i32_ = &t_i32;
     }
 
-    auto use_stream(std::ostream& new_stream) -> std::ostream& override {
-        std::ostream& previous{os_.get()};
-        os_ = new_stream;
-
-        return previous;
-    }
-
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void override {
         // synthetic tokens and standalone backend calls have no source location
@@ -1153,34 +1147,17 @@ class machine_rv32i final : public machine {
                         const std::function_ref<void()> emit_with_scratch)
         -> void override {
 
-        // buffered versions keep their labels and jumps for resolution
-        if (assembling_) {
-            assembler_.emit_smaller(emit_without_scratch, emit_with_scratch);
-
+        // both versions are buffered to compare sizes, even when output is
+        // otherwise written as emitted
+        const bool buffered{assembling_};
+        assembling_ = true;
+        assembler_.emit_smaller(emit_without_scratch, emit_with_scratch);
+        if (buffered) {
             return;
         }
 
-        const std::string without_scratch{capture_output(emit_without_scratch)};
-
-        const std::string with_scratch{capture_output(emit_with_scratch)};
-
-        const auto code_size_bytes{[](const std::string_view text) -> size_t {
-            size_t size_bytes{};
-            for (const auto line : text | std::views::split('\n')) {
-                // unknown instructions count as one word
-                size_bytes += almost_assembler_rv32i::line_size_bytes(
-                                  std::string_view{line})
-                                  .value_or(4);
-            }
-
-            return size_bytes;
-        }};
-
-        std::print(os_.get(), "{}",
-                   code_size_bytes(without_scratch) <=
-                           code_size_bytes(with_scratch)
-                       ? without_scratch
-                       : with_scratch);
+        assembling_ = false;
+        assembler_.write(os_.get());
     }
 
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
@@ -1276,13 +1253,15 @@ class machine_rv32i final : public machine {
             return;
         }
 
-        // later output such as usage statistics is written directly
-        assembling_ = false;
         if (jump_mode_ == jump_mode::optimized) {
             assembler_.optimize_jumps();
         }
-        assembler_.resolve_and_write(os_.get());
-        assembler_.finish(os_.get());
+        assembler_.add_optimization_counts();
+    }
+
+    auto write_assembly(std::ostream& os) -> void override {
+        assembling_ = false;
+        assembler_.resolve_and_write(os);
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {

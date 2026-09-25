@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -51,7 +52,7 @@ class almost_assembler {
     // 'as_emitted' writes directly, 'resolved' buffers without optimizing
     enum class jump_mode : uint8_t { as_emitted, resolved, optimized };
 
-    // changes made by 'optimize_jumps', printed by 'finish'
+    // changes made by 'optimize_jumps', added by 'add_optimization_counts'
     struct optimization_counts {
         size_t jumps_to_next{};
         size_t unreachable_jumps{};
@@ -187,28 +188,42 @@ class almost_assembler {
         }
     }
 
-    // prints the optimization counts as comments aligned with the usage
+    // adds the optimization counts as comments aligned with the usage
     // statistics that follow
-    auto finish(std::ostream& os) -> void {
+    auto add_optimization_counts() -> void {
         const std::string_view prefix{comment_prefix()};
 
-        std::println(os);
+        add_text("");
 
-        std::println(os, "{} {:>28}: {}", prefix, "removed jumps to next code",
-                     optimizations_.jumps_to_next);
+        add_text(std::format("{} {:>28}: {}", prefix,
+                             "removed jumps to next code",
+                             optimizations_.jumps_to_next));
 
-        std::println(os, "{} {:>28}: {}", prefix, "removed unreachable jumps",
-                     optimizations_.unreachable_jumps);
+        add_text(std::format("{} {:>28}: {}", prefix,
+                             "removed unreachable jumps",
+                             optimizations_.unreachable_jumps));
 
-        std::println(os, "{} {:>28}: {}", prefix,
-                     "removed same target branches",
-                     optimizations_.same_outcome_branches);
+        add_text(std::format("{} {:>28}: {}", prefix,
+                             "removed same target branches",
+                             optimizations_.same_outcome_branches));
 
-        std::println(os, "{} {:>28}: {}", prefix,
-                     "inverted branches over jumps",
-                     optimizations_.inverted_branches);
+        add_text(std::format("{} {:>28}: {}", prefix,
+                             "inverted branches over jumps",
+                             optimizations_.inverted_branches));
 
         optimizations_ = {};
+    }
+
+    // writes the lines as they are, far jumps are left to the caller
+    auto write(std::ostream& os) -> void {
+        assert(captures_.empty());
+
+        for (const line& l : lines_) {
+            if (not l.removed) {
+                std::println(os, "{}", l.text);
+            }
+        }
+        lines_.clear();
     }
 
   protected:

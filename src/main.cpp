@@ -10,7 +10,6 @@
 #include <print>
 #include <ranges>
 #include <span>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -214,16 +213,23 @@ auto main(const int argc, const char** const argv) -> int {
     std::string src;
     try {
         src = read_file_to_string(src_file_name);
-        null_stream initial_output;
+
         const almost_assembler::jump_mode jumps{
             optimize_jumps ? almost_assembler::jump_mode::optimized
                            : almost_assembler::jump_mode::resolved};
 
+        // the output from the parse stage is discarded, compile receives the
+        // output stream 'build' writes the complete assembly
+        null_stream parser_output;
+
         std::unique_ptr<machine> backend;
         if (target == "x86_64") {
-            backend = std::make_unique<machine_x86>(initial_output, src, jumps);
+            backend = std::make_unique<machine_x86>(parser_output, src, jumps);
+        } else if (target == "rv32i") {
+            backend =
+                std::make_unique<machine_rv32i>(parser_output, src, jumps);
         } else {
-            backend = std::make_unique<machine_rv32i>(src, jumps);
+            throw panic_exception{std::format("unknown target '{}'", target)};
         }
 
         program prg{*backend,     src,          vars_size_bytes,
@@ -241,16 +247,7 @@ auto main(const int argc, const char** const argv) -> int {
             }
         }
 
-        if (not optimize_jumps) {
-            prg.build(std::cout);
-
-            return 0;
-        }
-
-        // optimized output is written only when compiling succeeds
-        std::stringstream output;
-        prg.build(output);
-        std::cout << output.rdbuf();
+        prg.build(std::cout);
 
     } catch (const compiler_exception& e) {
         const auto [line, col]{

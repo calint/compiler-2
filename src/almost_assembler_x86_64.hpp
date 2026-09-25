@@ -1,12 +1,9 @@
 #pragma once
 
 #include <array>
-#include <cassert>
 #include <cstddef>
 #include <format>
 #include <optional>
-#include <ostream>
-#include <print>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -32,17 +29,6 @@ class almost_assembler_x86_64 final : public almost_assembler {
         }
 
         return count;
-    }
-
-    auto write(std::ostream& os) -> void {
-        assert(not is_capturing());
-
-        for (const line& l : lines()) {
-            if (not l.removed) {
-                std::println(os, "{}", l.text);
-            }
-        }
-        lines().clear();
     }
 
   private:

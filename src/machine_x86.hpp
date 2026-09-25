@@ -204,7 +204,7 @@ class machine_x86 final : public machine {
 
   public:
     explicit machine_x86(std::ostream& os_ref, const std::string_view source,
-                         const jump_mode jumps = jump_mode::as_emitted)
+                         const jump_mode jumps = jump_mode::resolved)
         : source_{source}, os_{os_ref}, jump_mode_{jumps} {}
 
     [[nodiscard]] auto
@@ -249,15 +249,6 @@ class machine_x86 final : public machine {
         type_void_ = &t_void;
     }
 
-    // redirects output to 'new_stream', returning the previously used stream
-    // so the caller can restore it later
-    auto use_stream(std::ostream& new_stream) -> std::ostream& override {
-        std::ostream& prev{os_.get()};
-        os_ = new_stream;
-
-        return prev;
-    }
-
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void override {
 
@@ -278,50 +269,39 @@ class machine_x86 final : public machine {
                         const std::function_ref<void()> emit_with_scratch)
         -> void override {
 
-        // buffered versions keep their labels and jumps for optimizing
-        if (assembling_) {
-            assert(pending_text_.empty());
+        // both versions are buffered to count instructions, even when output
+        // is otherwise written as emitted
+        const bool buffered{assembling_};
+        assembling_ = true;
+        assert(pending_text_.empty());
 
-            std::vector<almost_assembler::line> without_scratch{
-                assembler_.capture(emit_without_scratch)};
+        std::vector<almost_assembler::line> without_scratch{
+            assembler_.capture(emit_without_scratch)};
 
-            std::vector<almost_assembler::line> with_scratch{
-                assembler_.capture(emit_with_scratch)};
+        std::vector<almost_assembler::line> with_scratch{
+            assembler_.capture(emit_with_scratch)};
 
-            assert(pending_text_.empty());
+        assert(pending_text_.empty());
 
-            const size_t without_count{
-                almost_assembler_x86_64::count_instructions(without_scratch)};
+        const size_t without_count{
+            almost_assembler_x86_64::count_instructions(without_scratch)};
 
-            const size_t with_count{
-                almost_assembler_x86_64::count_instructions(with_scratch)};
-
-            comment(src_loc_tk, indent,
-                    "instructions without scratch register {}, with {}",
-                    without_count, with_count);
-
-            assembler_.append(std::move(
-                without_count <= with_count ? without_scratch : with_scratch));
-
-            return;
-        }
-
-        const std::string without_scratch{capture_output(emit_without_scratch)};
-
-        const std::string with_scratch{capture_output(emit_with_scratch)};
-
-        const size_t without_count{count_instructions(without_scratch)};
-        const size_t with_count{count_instructions(with_scratch)};
+        const size_t with_count{
+            almost_assembler_x86_64::count_instructions(with_scratch)};
 
         comment(src_loc_tk, indent,
                 "instructions without scratch register {}, with {}",
                 without_count, with_count);
 
-        if (without_count <= with_count) {
-            emit_buffer(without_scratch);
-        } else {
-            emit_buffer(with_scratch);
+        assembler_.append(std::move(
+            without_count <= with_count ? without_scratch : with_scratch));
+
+        if (buffered) {
+            return;
         }
+
+        assembling_ = false;
+        assembler_.write(os_.get());
     }
 
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
@@ -395,13 +375,10 @@ class machine_x86 final : public machine {
         if (assembling_) {
             assert(pending_text_.empty());
 
-            // later output such as usage statistics is written directly
-            assembling_ = false;
             if (jump_mode_ == jump_mode::optimized) {
                 assembler_.optimize_jumps();
             }
-            assembler_.write(os_.get());
-            assembler_.finish(os_.get());
+            assembler_.add_optimization_counts();
         }
 
         println("\n; max scratch registers in use: {}",
@@ -412,6 +389,13 @@ class machine_x86 final : public machine {
         assert(not frame_base_reserved_);
 
         usage_max_scratch_regs_ = 0;
+    }
+
+    auto write_assembly(std::ostream& os) -> void override {
+        assert(pending_text_.empty());
+
+        assembling_ = false;
+        assembler_.write(os);
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
@@ -1946,32 +1930,6 @@ class machine_x86 final : public machine {
 
         comment_indent(indent);
         print("[{}:{}] ", line, column);
-    }
-
-    auto emit_buffer(const std::string_view text) const -> void {
-        print("{}", text);
-    }
-
-    [[nodiscard]] static auto count_instructions(const std::string_view text)
-        -> size_t {
-
-        size_t count{};
-        for (const auto p : text | std::views::split('\n')) {
-            const std::string_view s{p};
-            if (not is_nasm_comment_or_empty_line(s)) {
-                ++count;
-            }
-        }
-
-        return count;
-    }
-
-    [[nodiscard]] static auto
-    is_nasm_comment_or_empty_line(const std::string_view line) -> bool {
-
-        const size_t first{line.find_first_not_of(" \t\n\r\f\v")};
-
-        return first == std::string_view::npos or line[first] == ';';
     }
 
     auto mov(const token& src_loc_tk, const size_t indent,

@@ -432,11 +432,10 @@ auto main(const int argc, const char* argv[]) -> int {
              {machine_rv32i::jump_mode::as_emitted,
               machine_rv32i::jump_mode::resolved,
               machine_rv32i::jump_mode::optimized}) {
-            machine_rv32i backend{{}, jumps};
+            std::ostringstream output;
+            machine_rv32i backend{output, {}, jumps};
             backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                       empty);
-            std::ostringstream output;
-            backend.use_stream(output);
             backend.program_start();
 
             const operand result{operand::reg("a0", integer)};
@@ -458,17 +457,17 @@ auto main(const int argc, const char* argv[]) -> int {
                                         copy);
 
             backend.finish();
+            backend.write_assembly(output);
             // buffered output is followed by the optimization counts
             assert(output.str().contains("li a0, 2047\naddi a0, a1, 0\n"));
         }
     }
     {
         // the backend's jumps and labels reach the optimizer
-        machine_rv32i backend{{}, machine_rv32i::jump_mode::optimized};
+        std::ostringstream output;
+        machine_rv32i backend{output, {}, machine_rv32i::jump_mode::optimized};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        std::ostringstream output;
-        backend.use_stream(output);
         backend.program_start();
 
         const operand left{operand::reg("a0", integer)};
@@ -496,6 +495,7 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.invoke_syscall(0);
         backend.label(0, "if_14_8_code");
         backend.finish();
+        backend.write_assembly(output);
 
         assert(output.str().contains("la s0, dat\ncmp_13_26:\n"
                                      "bool_end_15_9:\n"
@@ -503,11 +503,10 @@ auto main(const int argc, const char* argv[]) -> int {
                                      "cmp_14_26:\necall\nif_14_8_code:\n"));
     }
     {
-        machine_rv32i backend;
         assembly_output copies;
+        machine_rv32i backend{copies};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.use_stream(copies);
         const operand address{operand::mem("s0", {}, 1, 24, integer)};
         backend.copy_value(token{}, 0, address, address);
         assert(copies.str().empty());
@@ -522,21 +521,19 @@ auto main(const int argc, const char* argv[]) -> int {
         assert(copies.str().contains("lw t0, 24(s0)\n"));
         assert(copies.str().contains("sb t0, 24(s0)\n"));
 
-        std::ostringstream comments;
-        backend.use_stream(comments);
+        copies.str({});
         backend.comment_variable(token{}, 0, "arr: i32[4]", 16,
                                  operand::mem("s0", {}, 1, 208, integer));
         backend.comment_variable(token{}, 0, "indexed", 4,
                                  operand::mem("s1", "t0", 4, -16, integer));
         backend.comment_variable(token{}, 0, "first", 4,
                                  operand::mem("s0", {}, 1, 0, integer));
-        assert(comments.str() == "# arr: i32[4] (16 B @ [s0 + 208])\n"
-                                 "# indexed (4 B @ [s1 + t0 * 4 - 16])\n"
-                                 "# first (4 B @ [s0])\n");
+        assert(copies.str() == "# arr: i32[4] (16 B @ [s0 + 208])\n"
+                               "# indexed (4 B @ [s1 + t0 * 4 - 16])\n"
+                               "# first (4 B @ [s0])\n");
         // columns must be relative to the source line rather than the file
-        machine_rv32i located{"first\n    value"};
-        located.use_stream(comments);
-        comments.str({});
+        std::ostringstream comments;
+        machine_rv32i located{comments, "first\n    value"};
         const token location{{}, 10, "value", 15, {}, 2, false};
         located.comment(location, 1, "assignment");
         located.comment(token{}, 0, "generated");
@@ -590,10 +587,11 @@ auto main(const int argc, const char* argv[]) -> int {
         located.finish();
     }
     if (argc > 1 and std::string_view{argv[1]} == "noninline") {
-        machine_rv32i backend;
+        // hand-written lines are interleaved with the backend's output
+        machine_rv32i backend{std::cout, {},
+                              machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.use_stream(std::cout);
         backend.program_start();
         std::println("    addi sp, sp, -128\n    sw sp, 124(sp)");
         for (size_t index{1}; index < 32; ++index) {
@@ -651,10 +649,11 @@ auto main(const int argc, const char* argv[]) -> int {
         return 0;
     }
     if (argc > 1 and std::string_view{argv[1]} == "frame-checks") {
-        machine_rv32i backend;
+        // hand-written lines are interleaved with the backend's output
+        machine_rv32i backend{std::cout, {},
+                              machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.use_stream(std::cout);
         backend.program_start();
         const operand continuation{
             backend.alloc_named_register(token{}, 0, "s3", integer)};
@@ -708,10 +707,11 @@ auto main(const int argc, const char* argv[]) -> int {
         return 0;
     }
     if (argc > 1 and std::string_view{argv[1]} == "long-loop") {
-        machine_rv32i backend;
+        // hand-written lines are interleaved with the backend's output
+        machine_rv32i backend{std::cout, {},
+                              machine_rv32i::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.use_stream(std::cout);
         backend.program_start();
         std::println("    addi sp, sp, -16");
         for (const size_t stride : {4U, 2047U, 2048U, 4094U, 4095U, 8192U}) {
@@ -740,13 +740,12 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     const std::string_view mode{argc > 1 ? argv[1] : ""};
     if (mode == "far-jumps" or mode == "far-jumps-optimized") {
-        machine_rv32i backend{{},
+        machine_rv32i backend{std::cout, {},
                               mode == "far-jumps"
                                   ? machine_rv32i::jump_mode::resolved
                                   : machine_rv32i::jump_mode::optimized};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
-        backend.use_stream(std::cout);
         backend.program_start();
 
         // buffered output must come from the backend, so pad with 'xori' on a
@@ -817,6 +816,7 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.label(0, "far_failure");
         backend.exit(token{}, 1, operand::imm("1", integer));
         backend.finish();
+        backend.write_assembly(std::cout);
         std::println(".data\ndat:\n    .word 0");
 
         return 0;
@@ -829,9 +829,9 @@ func main() {
     array_copy(source[2], destination[1], 2)
 }
 )baz"};
-        machine_rv32i compiler;
-        program prg{compiler, source, 4096, false, false, false};
         std::ostringstream output;
+        machine_rv32i compiler{output};
+        program prg{compiler, source, 4096, false, false, false};
         prg.build(output);
         // reserved pointers must hold the address throughout index arithmetic
         assert(output.str().contains("slli t0, t3, 2\n"));
@@ -850,9 +850,9 @@ func main() {
     assert(arrays_equal(source[2], destination[1], 2))
 }
 )baz"};
-        machine_rv32i compiler;
-        program prg{compiler, source, 4096, false, false, false};
         std::ostringstream output;
+        machine_rv32i compiler{output};
+        program prg{compiler, source, 4096, false, false, false};
         prg.build(output);
         assert(output.str().contains("slli t1, t4, 2\n"));
         assert(output.str().contains("add t1, t1, s0\n"));
@@ -917,7 +917,7 @@ func main() {
         assert(not x86_output.str().contains("xor r15b, 1\n"));
 
         std::ostringstream rv32i_output;
-        machine_rv32i rv32i_compiler;
+        machine_rv32i rv32i_compiler{rv32i_output};
         program rv32i_program{rv32i_compiler, source, 4096,
                               false,          false,  false};
         rv32i_program.build(rv32i_output);
@@ -965,7 +965,7 @@ func main() {
     assert(not arrays_equal(source[1], destination, 1))
 }
 )baz"};
-        machine_rv32i compiler;
+        machine_rv32i compiler{std::cout};
         program prg{compiler, source, 4096, true, true, true};
         prg.build(std::cout);
 
@@ -982,17 +982,16 @@ func main() {
     exit(0)
 }
 )baz"};
-        machine_rv32i compiler;
+        machine_rv32i compiler{std::cout};
         program prg{compiler, source, 4096, false, false, false};
         prg.build(std::cout);
 
         return 0;
     }
     if (argc > 1) {
-        machine_rv32i bounds_backend;
+        machine_rv32i bounds_backend{std::cout};
         bounds_backend.set_builtin_types(integer64, integer, half, byte,
                                          boolean, empty);
-        bounds_backend.use_stream(std::cout);
         std::println(
             ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
         if (std::string_view{argv[1]} == "bounds-silent") {
@@ -1216,7 +1215,9 @@ func main() {
         }
         assert(rejected);
     }
-    machine_rv32i backend;
+    // later checks capture this backend's output by redirecting the buffer
+    std::ostream backend_output{std::cout.rdbuf()};
+    machine_rv32i backend{backend_output};
     backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
     assert(&backend.default_type() == &integer);
     assert(backend.address_size_bytes() == 4);
@@ -1229,7 +1230,7 @@ func main() {
     assert(not backend.can_lower_index_scale(UINT64_C(4294967296)));
 
     assembly_output shift_output;
-    backend.use_stream(shift_output);
+    backend_output.rdbuf(shift_output.rdbuf());
     for (const bool counted : {false, true}) {
         std::vector<operand> held;
         for (size_t count{}; count < 25; ++count) {
@@ -1564,7 +1565,7 @@ func main() {
             "func main() { var a = 3 var b = 2 var x = a << b exit(x) }"};
 
         std::ostringstream output;
-        machine_rv32i compiler;
+        machine_rv32i compiler{output};
         program prg{compiler, source, 4096, false, false, false};
         prg.build(output);
         assert(output.str().contains("sll t0, t0, t1"));
@@ -1572,7 +1573,7 @@ func main() {
     }
 
     assembly_output address_output;
-    backend.use_stream(address_output);
+    backend_output.rdbuf(address_output.rdbuf());
     backend.copy_value(token{}, 0, operand::reg("a1", integer),
                        operand::mem("a2", "a3", 1, 8196, integer));
 
@@ -1838,7 +1839,7 @@ func main() {
     backend.finish();
 
     std::ostringstream rejected_output;
-    backend.use_stream(rejected_output);
+    backend_output.rdbuf(rejected_output.rdbuf());
     for (const std::string_view base :
          {"buffer", "x32", "not_a_register", ""}) {
         for (const std::string_view index : {"", "a2"}) {
@@ -1996,14 +1997,13 @@ func main() {
         backend.free_named_register(token{}, 0, named);
         backend.finish();
     }
-    backend.use_stream(std::cout);
+    backend_output.rdbuf(std::cout.rdbuf());
 
     for (const char operation : {'*', '/', '%', '+'}) {
-        machine_rv32i helper_backend;
+        std::ostringstream output;
+        machine_rv32i helper_backend{output};
         helper_backend.set_builtin_types(integer64, integer, half, byte,
                                          boolean, empty);
-        std::ostringstream output;
-        helper_backend.use_stream(output);
         if (operation != '+') {
             const auto emit = [&]() {
                 if (operation == '*') {
