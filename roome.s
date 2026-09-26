@@ -882,7 +882,7 @@ func.print_num:
     addi sp, sp, 16
     ret
 # free named register s1
-.equ func.print_num.size, 40
+.equ size.func.print_num, 40
 #
 baz_bounds_panic:
     mv s2, a0

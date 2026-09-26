@@ -40,9 +40,12 @@ func print(str[] i8) {
 
 # function arguments and return are equivalent to mutable references
 
-func fooz(pt point) {
-    pt.x = 0b10    # binary value 2
-    pt.y = 0xb     # hex value 11
+# functions can act on user types: `func point.fooz()` is called as
+# `p.fooz()` with `p` as the implicit reference argument `self`
+
+func point.fooz() {
+    self.x = 0b10    # binary value 2
+    self.y = 0xb     # hex value 11
 }
 
 # default argument type is i64 on x86_64 and i32 on rv32i
@@ -70,15 +73,15 @@ func faz(arg[] i32) {
     arg[1] = 0xfe
 }
 
-func str_in(s str) {
-    var nbytes = read(0, s.data)
+func str.input() {
+    var nbytes = read(0, self.data)
     # read is built-in function that operates on file descriptors
     # it has 2 more optional arguments: count and start index
-    s.len = i8(nbytes - 1)
+    self.len = i8(nbytes - 1)
 } 
 
-func str_out(s str) {
-    write(1, s.data, s.len)
+func str.output() {
+    write(1, self.data, self.len)
 } 
 
 func point_init() res point {
@@ -201,7 +204,7 @@ func main() {
     #   `n`: constant array size
 
     var p point = {0, 0}
-    fooz(p)
+    p.fooz()
     assert(p.x == 2)
     assert(p.y == 0xb)
 
@@ -291,15 +294,16 @@ func main() {
         print_num(counter)
         print(colon)
         print(prompt1)
-        str_in(nm)
-        if nm.len == 0 {
+        nm.input()
+        # ctrl-d reads no bytes and gives -1
+        if nm.len <= 0 {
             break
         } else if nm.len <= 4 {
             print(prompt2)
             continue
         } else {
             print(prompt3)
-            str_out(nm)
+            nm.output()
             print(dot)
             print(nl)
         }
