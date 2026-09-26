@@ -10,7 +10,6 @@ cd ..
 echo
 echo "building firmware"
 
-# ./baz --target=rv32i-fpga --vars=131072 --checks=upper,lower,line roome.baz >/dev/null
 ./baz --target=rv32i-fpga --vars=131072 --checks=upper,lower,line,alias roome.baz >/dev/null
 
 # check result

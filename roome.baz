@@ -1,9 +1,4 @@
-type str {
-    len i8,
-    data[127] i8
-}
-
-dat   hello[] i8 = "hello world from baz\n"
+dat   hello[] i8 = "u r in roome\n"
 dat prompt1[] i8 = "enter name:\n"
 dat prompt2[] i8 = "that is not a name.\n"
 dat prompt3[] i8 = "hello "
@@ -12,30 +7,35 @@ dat      nl[] i8 = "\n"
 dat   erase[] i8 = "\b \b"
 dat   colon[] i8 = ": "
 
-func str_out(s str) {
-    write(1, s.data, s.len)
+type str {
+    len i8,
+    data[127] i8
 }
 
-func str_in(s str) {
+func str.out() {
+    write(1, self.data, self.len)
+}
+
+func str.in() {
     # the uart does not echo, so each byte is written back as it is read
     var nbytes = 0
     loop {
-        if nbytes == array_length(s.data) break
-        if read(0, s.data, 1, nbytes) == 0 break
+        if nbytes == array_length(self.data) break
+        if read(0, self.data, 1, nbytes) == 0 break
         # the terminal sends delete for backspace and only moves the cursor on
         # an echoed backspace, so the erase is done here
-        if s.data[nbytes] == 127 {
+        if self.data[nbytes] == 127 {
             if nbytes > 0 {
                 nbytes = nbytes - 1
                 write(1, erase)
             }
             continue
         }
-        write(1, s.data, 1, nbytes)
+        write(1, self.data, 1, nbytes)
         nbytes = nbytes + 1
-        if s.data[nbytes - 1] == 10 break
+        if self.data[nbytes - 1] == 10 break
     }
-    s.len = i8(nbytes - 1)
+    self.len = i8(nbytes - 1)
 }
 
 func noinline print_num(num) {
@@ -88,13 +88,13 @@ func main() {
         print_num(counter)
         print(colon)
         print(prompt1)
-        str_in(nm)
+        nm.in()
         if nm.len <= 4 {
             print(prompt2)
             continue
         } else {
             print(prompt3)
-            str_out(nm)
+            nm.out()
             print(dot)
             print(nl)
         }
