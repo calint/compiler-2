@@ -50,7 +50,11 @@ class machine_rv32i_fpga final : public machine_rv32i {
 
         // no operating system sets up a stack, so it grows down from the end
         // of memory
-        assembler().lui(0, "sp", memory_end_upper_);
+
+        ::assembler_rv32i& x{assembler()};
+
+        x.lui(0, "sp", memory_end_upper_);
+        x.add_separator_newline();
     }
 
     auto exit(const token& src_loc_tk, const size_t indent,

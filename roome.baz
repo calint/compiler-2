@@ -18,7 +18,7 @@ func str.out() {
 
 func str.in() {
     # the uart does not echo, so each byte is written back as it is read
-    var nbytes = 0
+    var nbytes
     loop {
         if nbytes == array_length(self.data) break
         if read(0, self.data, 1, nbytes) == 0 break

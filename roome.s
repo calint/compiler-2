@@ -81,6 +81,7 @@ _start:
 la s0, dat
 
 lui sp, 2048
+
 # [1:1] dat hello[] i8 = "u r in roome\n"
 # [1:7] hello: i8[13] (13 B @ [s0])
 # [2:1] dat prompt1[] i8 = "enter name:\n"
@@ -203,10 +204,9 @@ main:
         # [19:6] str.in()
         func.str.in.93.12:
             # [93:12] alias self -> nm
-            # [21:5] var nbytes = 0
+            # [21:5] var nbytes
             # [21:9] nbytes: i32 (4 B @ [s0 + 196])
-            # [21:9] nbytes = 0
-            # [21:18] 0
+            # [21:9] zero 1 * 4 B = 4 B
             sw zero, 196(s0)
             # [22:5] label
             loop.22.5.93.12:
