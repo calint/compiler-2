@@ -1,0 +1,27 @@
+# a '{...}' initializer of an unsized parameter uses the argument size: the
+# unlisted elements of the argument are zeroed
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+func fill(dst[] i32) {
+    dst = {7, 8}
+}
+
+func clear(dst[] i16) {
+    dst = {}
+}
+
+func main() {
+    var values[4] i32 = {1, 2, 3, 4}
+    fill(values)
+    assert(1, values[0] == 7 and values[1] == 8)
+    assert(2, values[2] == 0 and values[3] == 0)
+
+    var exact[2] i32 = {1, 2}
+    fill(exact)
+    assert(3, exact[0] == 7 and exact[1] == 8)
+
+    var shorts[3] i16 = {1, 2, 3}
+    clear(shorts)
+    assert(4, shorts[0] == 0 and shorts[1] == 0 and shorts[2] == 0)
+}

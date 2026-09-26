@@ -1,0 +1,11 @@
+# a '{...}' initializer of an unsized parameter cannot have more elements than
+# the argument
+
+func fill(dst[] i32) {
+    dst = {1, 2, 3}
+}
+
+func main() {
+    var values[2] i32 = {4, 5}
+    fill(values)
+}

@@ -51,10 +51,11 @@ class expr_any final : public statement {
 
         // array
 
+        is_unsized_destination_ = array_count_ == 0;
+
         // e.g. "hello" fills the start of an 'i8' array
         if (tz.is_peek_char('"')) {
             string_tk_ = tz.next_token();
-            is_unsized_destination_ = array_count_ == 0;
             array_count_ = string_array_count(string_tk_, tp, array_count_);
 
             return;
@@ -150,6 +151,19 @@ class expr_any final : public statement {
 
         // assign array elements
 
+        const size_t array_count{destination_array_count(dst_info)};
+
+        // the parser could not check the size of an unsized destination
+        if (vars_.size() > array_count) {
+            throw compiler_exception{
+                vars_[array_count].visit(
+                    [](const auto& expression) -> const token& {
+                        return expression.tok();
+                    }),
+                std::format("too many elements specified for array of size {}",
+                            array_count)};
+        }
+
         ident_info cur_dst_info{dst_info};
 
         machine& x{tc.machine()};
@@ -161,7 +175,7 @@ class expr_any final : public statement {
                 address_offset(cur_dst_info.type_ref().size_bytes()));
         }
 
-        const size_t remaining_count{(array_count_ - vars_.size())};
+        const size_t remaining_count{array_count - vars_.size()};
         if (remaining_count == 0) {
             return;
         }
@@ -330,6 +344,18 @@ class expr_any final : public statement {
     }
 
   private:
+    // an unsized destination e.g. a parameter 's[]' has the size of the
+    // argument which is known only at compile
+    [[nodiscard]] auto destination_array_count(const ident_info& dst_info) const
+        -> size_t {
+
+        if (is_unsized_destination_) {
+            return dst_info.array_len;
+        }
+
+        return array_count_;
+    }
+
     // the string is copied from read-only data and the rest of the array is
     // zeroed like unlisted elements
     auto compile_string(toc& tc, const size_t indent,
@@ -339,8 +365,7 @@ class expr_any final : public statement {
 
         const size_t size_bytes{string_tk_.string_size_bytes()};
 
-        const size_t array_count{is_unsized_destination_ ? dst_info.array_len
-                                                         : array_count_};
+        const size_t array_count{destination_array_count(dst_info)};
 
         if (size_bytes > array_count) {
             throw compiler_exception{

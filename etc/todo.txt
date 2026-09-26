@@ -5,9 +5,11 @@
     => 'var', assignments and record literal fields of 'i8' arrays take
        strings, the bytes are copied from a '.rodata' label and the rest of the
        array is zeroed, identical strings share one label
-[ ] a '{...}' initializer assigned to an unsized array parameter is not checked
+[x] a '{...}' initializer assigned to an unsized array parameter is not checked
     against the argument size and can write past it, strings use the
     argument size
+    => like strings, the argument size is used at compile: too many elements
+       are rejected and the rest of the argument is zeroed
 [ ] string copies: short strings could be stored with immediates instead of
     loads from '.rodata', rv32i copies byte by byte since the constants are
     byte aligned
