@@ -2,8 +2,10 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] update emulator in tang9k and tang20k projects
-[ ] fpga emulator: add ebreak that exits the process with the code and change
+[x] fpga emulator: add ebreak that exits the process with the code and change
     the machine_rv32i_fpga
+[ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
+    the emulator with the dividend in a0 as exit code
 [x] fix alignment of data to be able to run on hardware that demands it
 [ ] reorder locals by alignment, largest first, to reduce padding
 [ ] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;

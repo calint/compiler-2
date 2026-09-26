@@ -435,7 +435,7 @@ SRC=431 && EXP=42 && RUN
 SRC=432 && EXP=42 && RUN
 SRC=433 && COMPERR
 # the uart ignores descriptors, so there are no descriptor errors
-if [[ $MACHINE != rv32i-qemu ]]; then SRC=434 && DIFFINP; fi
+if [[ $MACHINE != rv32i-qemu && $MACHINE != rv32i-fpga ]]; then SRC=434 && DIFFINP; fi
 SRC=435 && COMPERR
 SRC=436 && COMPERR
 SRC=437 && EXP=0 && RUN

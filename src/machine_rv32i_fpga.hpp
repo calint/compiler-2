@@ -53,9 +53,11 @@ class machine_rv32i_fpga final : public machine_rv32i {
         assembler().lui(0, "sp", memory_end_upper_);
     }
 
-    // todo: there is no way to end the program yet, so exit halts
-    auto exit([[maybe_unused]] const token& src_loc_tk, const size_t indent,
-              [[maybe_unused]] const operand& exit_code) -> void override {
+    auto exit(const token& src_loc_tk, const size_t indent,
+              const operand& exit_code) -> void override {
+
+        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
+                   exit_code);
 
         branch(indent, ".Lbaz_exit");
         exit_used_ = true;
@@ -145,10 +147,14 @@ class machine_rv32i_fpga final : public machine_rv32i {
         a.jr(1, "a7");
     }
 
+    // the emulator exits at 'ebreak' with a0 as its status, the loop halts
+    // hardware that continues
     auto emit_exit_routine() const -> void {
         assembler_rv32i& a{assembler()};
 
         a.label(0, ".Lbaz_exit");
-        a.j(1, ".Lbaz_exit");
+        a.label(0, "1");
+        a.ebreak(1);
+        a.j(1, "1b");
     }
 };

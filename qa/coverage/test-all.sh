@@ -8,6 +8,7 @@ cd "$(dirname "$0")"
 ./test-coverage.sh --target=x86 run
 ./test-coverage.sh --target=rv32i run
 ./test-coverage.sh --target=rv32i-qemu run
+./test-coverage.sh --target=rv32i-fpga run
 export LLVM_PROFILE_FILE="$PWD/extra-%p.profraw"
 ./test-cli.sh
 ./test-arena.py

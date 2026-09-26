@@ -23,7 +23,7 @@ OPTS="--vars=262144 --checks=upper,lower,line --reproduce-source"
 SEP="--------------------------------------------------------------------------------"
 
 usage() {
-    echo "usage: $0 [--target=x86|x86_64|rv32i|rv32i-qemu] clean|build|run|report"
+    echo "usage: $0 [--target=x86|x86_64|rv32i|rv32i-qemu|rv32i-fpga] clean|build|run|report"
 }
 
 ACTION=
@@ -50,19 +50,24 @@ done
 
 case "$MACHINE" in
 x86) MACHINE=x86_64 ;;
-x86_64 | rv32i | rv32i-qemu) ;;
+x86_64 | rv32i | rv32i-qemu | rv32i-fpga) ;;
 *)
     echo "unsupported target: $MACHINE" >&2
     exit 1
     ;;
 esac
 
-# rv32i-qemu compiles like rv32i, so it shares the rv32i compiler messages
+# the uart targets compile like rv32i, so they share the rv32i compiler messages
 COMPILER_MACHINE="${MACHINE%-qemu}"
+COMPILER_MACHINE="${COMPILER_MACHINE%-fpga}"
 
 # a plain serial console passes every input byte to the program
 QEMU_SYSTEM=(qemu-system-riscv32 -machine virt -bios none -display none
     -serial stdio -monitor none -kernel gen-rv32i.bin)
+
+# the program does not use the sd card, so an empty image suffices
+FPGA_EMULATOR_DIR="$SCRIPT_DIR/../../fpga-emulator"
+FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin /dev/null)
 
 case "$ACTION" in
 clean)
@@ -102,6 +107,11 @@ run) ;;
 esac
 
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/$MACHINE-%p.profraw"
+
+if [[ $MACHINE == rv32i-fpga && ! -x ${FPGA_EMULATOR[0]} ]]; then
+    "$FPGA_EMULATOR_DIR/make.sh"
+fi
+
 cd "$SCRIPT_DIR/tests"
 
 rm -f gen.s out err
@@ -127,32 +137,33 @@ assemble_and_link() {
         ld.lld -m elf32lriscv -e _start -o gen gen.o
         ;;
     # the compiler writes the image 'gen-rv32i.bin'
-    rv32i-qemu) ;;
+    rv32i-qemu | rv32i-fpga) ;;
     esac
 }
 
 # the uart has no end of input, so ctrl-d ends it like at a terminal and a
 # second one ends a last line without newline
-run_qemu() {
+run_uart() {
     local input=/dev/stdin
     if [[ -t 0 ]]; then
         input=/dev/null
     fi
-    { cat "$input"; printf '\x04\x04'; } | "${QEMU_SYSTEM[@]}"
+    { cat "$input"; printf '\x04\x04'; } | "$@"
 }
 
 execute_program() {
     case "$MACHINE" in
     x86_64) ./gen ;;
     rv32i) qemu-riscv32 ./gen ;;
-    rv32i-qemu) run_qemu ;;
+    rv32i-qemu) run_uart "${QEMU_SYSTEM[@]}" ;;
+    rv32i-fpga) run_uart "${FPGA_EMULATOR[@]}" ;;
     esac
 }
 
 # the uart carries both output streams, so errors are in the output
 execute_program_errors_to_out() {
     case "$MACHINE" in
-    rv32i-qemu) execute_program >out ;;
+    rv32i-qemu | rv32i-fpga) execute_program >out ;;
     *) execute_program 2>out ;;
     esac
 }
@@ -304,6 +315,9 @@ DIFFINP2() {
     fi
     if [ "$MACHINE" = rv32i-qemu ]; then
         command=("${QEMU_SYSTEM[@]}")
+    fi
+    if [ "$MACHINE" = rv32i-fpga ]; then
+        command=("${FPGA_EMULATOR[@]}")
     fi
 
     "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${command[@]}" >out 2>err

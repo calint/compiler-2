@@ -11,6 +11,8 @@ if machine == 'rv32i-qemu':
     command = ['qemu-system-riscv32', '-machine', 'virt', '-bios', 'none',
                '-display', 'none', '-serial', 'stdio', '-monitor', 'none',
                '-kernel', 'gen-rv32i.bin']
+if machine == 'rv32i-fpga':
+    command = ['../../../fpga-emulator/osqa', 'gen-rv32i.bin', '/dev/null']
 p = subprocess.Popen(command,
                            stdin=subprocess.PIPE,
                            stdout=subprocess.PIPE,

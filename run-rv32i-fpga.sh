@@ -2,7 +2,7 @@
 # runs a flat rv32i image on the fpga emulator, the image is loaded at 0 and
 # the uart is the terminal
 # usage: run-rv32i-fpga.sh [gen-rv32i.bin]
-# the program does not exit, ctrl-c ends the emulator
+# the emulator exits with the program's exit code
 set -eu
 cd "$(dirname "$0")"
 

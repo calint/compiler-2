@@ -284,6 +284,10 @@ auto main(int argc, char** argv) -> int {
             printf("CPU error: %d\n", s);
             return int32_t(s);
         }
+        // the program ends with 'ebreak' and the exit code in a0
+        if (cpu.is_halted()) {
+            return cpu.reg(10);
+        }
     }
 
     return 0;
