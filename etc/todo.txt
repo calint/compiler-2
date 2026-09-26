@@ -32,8 +32,41 @@
         (or 'bnez' against 0)
         => the parameter could branch on the condition instead of holding
            the value
+        => plan (big: several files and interfaces, awaiting go-ahead)
+           => the argument cannot be compiled at the 'if' in the body: names
+              resolve in the callee's scope (its root frame only follows
+              aliases, caller locals are not visible and callee names could
+              shadow them), and an argument is a value taken at the call
+              before the body runs
+           [ ] comparison parameter: when a 'bool' parameter gets a single
+               comparison 'a op b' (one 'expr_bool_op', no 'and'/'or', not a
+               shorthand), evaluate 'a' and a non-constant 'b' into scratch
+               registers at the call (same timing as today) and bind the
+               parameter to { lhs register, op, rhs operand } instead of a
+               0/1 register; the registers stay allocated until the body
+               ends like other argument registers
+           [ ] 'alias_info' and 'ident_info' carry the optional comparison,
+               'toc' name resolution returns it for the parameter
+           [ ] 'expr_bool_op' shorthand on such a parameter ('if ok',
+               'if not ok', 'ok and ...') calls 'compare_and_branch' with the
+               bound operands and operation, inversion combined as today
+           [ ] only when every read of the parameter in the body is such a
+               whole condition and it is never assigned, otherwise it is
+               materialized as today; needs a statement visitor that tells
+               condition reads from value reads (new virtual or a flag in
+               'read_visitor')
+           [ ] expected: rv32i 'lw; li; bne' (3 instead of 4), 'x == 0'
+               'lw; bnez' (2 instead of 3); 'and'/'or' lists and shorthand
+               arguments unchanged
+           [ ] tests on both targets: condition-only use, value use and
+               assignment fall back, a callee name shadowing a caller name,
+               an operand changed in the body before the 'if' keeps its
+               value from the call
     [ ] a bool loaded from memory is normalized again: 'lbu; sltu t0, zero,
         t0', a stored bool is already 0 or 1
+        => not true today: 'read(0, flags)' into a 'bool' array stores any
+           byte, so dropping the 'sltu' needs 'read'/'write' to reject
+           'bool' arrays first (language decision)
     [ ] redundant copies and registers:
         [ ] 'x * 10' begins with 'addi t1, t0, 0' before the shift and add
             sequence
@@ -44,11 +77,31 @@
             copies it: 'lw t2; addi a0, t2, 0' instead of 'lw a0'
         [ ] 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per field
             instead of computing the address once
-    [ ] code after an unconditional 'exit' is generated, e.g. after a
+    [o] code after an unconditional 'exit' is generated, e.g. after a
         constant false 'assert' and the implicit 'exit(0)' after an explicit
         one at the end of 'main'
+        => done for the end of 'main': 'program::is_end_reachable' walks the
+           body with 'trace_assignment' and skips 'end_main' when every path
+           exits or returns
     [ ] zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
         shorter than the 6 instruction loop; choose by instruction count
+    [x] rv32i bounds check with both '--checks=lower,upper': after the lower
+        check the upper check repeated 'bltz index, 2f', and with a count
+        computed the 64 bit high word of 'index + count' (8 instructions)
+        although both are non-negative and the sum cannot wrap
+    [x] a narrow memory destination computed through a scratch register of
+        its own width normalizes after each operation ('slli; srai'), e.g.
+        'bt1 = -1 + 2' was 'li; sb; lb; addi; sb'
+        => 'expr_arith::compile_through_scratch' also tries the default
+           width when the low bits do not depend on the high bits
+           ('keeps_low_bits_when_narrowed'), the store truncates; x86 keeps
+           its narrow registers unless the wide version is shorter
+    [ ] multiply/divide helpers: an expression into memory keeps its value in
+        the destination between helper calls, 'sw a0, r; lw a0, r' before
+        each next call ('r = a * b * c * d'), and through a scratch register
+        each call copies 'addi a0, t0, 0' and back 'addi t0, a0, 0'
+        => accumulating in 'a0' across the calls would need register
+           targeting for helper operands
 [ ] constant folding in 'expr_arith': constant elements are computed at run
     time, e.g. 'arr3[0] == 3 + 0 + 2' is 'li t2, 3; addi t2, t2, 2' then
     'xor' instead of 'xori t0, t0, 5', and 'array_length(arr2) == 2' is

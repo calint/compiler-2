@@ -2985,29 +2985,46 @@ class machine_rv32i : public machine {
                 const operand sum{
                     alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-                const operand high{
-                    alloc_scratch_register(src_loc_tk, indent, default_type())};
-
                 top = sum.base_register();
-                assembler_.srai(indent, high.base_register(), index,
-                                sign_shift_);
-                assembler_.srai(indent, limit.base_register(),
-                                reg_count.base_register(), sign_shift_);
-                assembler_.add(indent, high.base_register(),
-                               high.base_register(), limit.base_register());
-                assembler_.add(indent, top, index, reg_count.base_register());
-                assembler_.sltu(indent, limit.base_register(), top, index);
-                assembler_.add(indent, high.base_register(),
-                               high.base_register(), limit.base_register());
-                assembler_.bltz(indent, high.base_register(), "2f");
-                assembler_.bgtz(indent, high.base_register(), "1f");
-            } else {
+
+                // after the lower checks both are below 2^31, so the sum
+                // cannot wrap
+                if (options.lower) {
+                    assembler_.add(indent, top, index,
+                                   reg_count.base_register());
+                }
+
+                if (not options.lower) {
+                    const operand high{alloc_scratch_register(
+                        src_loc_tk, indent, default_type())};
+
+                    assembler_.srai(indent, high.base_register(), index,
+                                    sign_shift_);
+                    assembler_.srai(indent, limit.base_register(),
+                                    reg_count.base_register(), sign_shift_);
+                    assembler_.add(indent, high.base_register(),
+                                   high.base_register(), limit.base_register());
+                    assembler_.add(indent, top, index,
+                                   reg_count.base_register());
+                    assembler_.sltu(indent, limit.base_register(), top, index);
+                    assembler_.add(indent, high.base_register(),
+                                   high.base_register(), limit.base_register());
+                    assembler_.bltz(indent, high.base_register(), "2f");
+                    assembler_.bgtz(indent, high.base_register(), "1f");
+                }
+            }
+
+            // a negative index is left to the lower check, which has
+            // already failed it when enabled
+            if (reg_count.is_empty() and not options.lower) {
                 assembler_.bltz(indent, index, "2f");
             }
+
             assembler_.li(indent, limit.base_register(), array_count);
             if (allow_end) {
                 assembler_.bgeu(indent, limit.base_register(), top, "2f");
             }
+
             if (not allow_end) {
                 assembler_.bltu(indent, top, limit.base_register(), "2f");
             }

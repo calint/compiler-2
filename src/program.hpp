@@ -139,7 +139,11 @@ class program final {
         tc.enter_func("main", {});
         func_main.code().compile(tc, indent, ident_info::make_empty());
         tc.exit_func("main");
-        x.end_main();
+
+        // code after an 'exit' or 'return' on every path would never run
+        if (is_end_reachable(func_main)) {
+            x.end_main();
+        }
 
         for (const stmt_def_func* f : tc.get_func_defs()) {
             if (f->is_inlined()) {
@@ -203,6 +207,23 @@ class program final {
         tc_.finish();
 
         x.write_assembly(os);
+    }
+
+    // uses the definite-assignment walk for its reachability only
+    [[nodiscard]] static auto is_end_reachable(const stmt_def_func& func)
+        -> bool {
+
+        assignment_flow flow{
+            .var{},
+            .func_tk{func.tok()},
+            .assigned{field_coverage{0}},
+            .at_breaks{},
+            .is_reachable{true},
+        };
+
+        func.code().trace_assignment(flow);
+
+        return flow.is_reachable;
     }
 
     static auto assert_functions_set_return_value(

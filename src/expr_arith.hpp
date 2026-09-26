@@ -454,14 +454,60 @@ class expr_arith final : public expression {
     auto compile_through_scratch(toc& tc, const size_t indent,
                                  const ident_info& dst_info) const -> void {
 
+        const type& dst_type{dst_info.type_ref()};
+
+        if (not can_compute_wide(tc, dst_info)) {
+            compile_through_scratch_as(tc, indent, dst_info, dst_type);
+            return;
+        }
+
+        // a target without narrow register operations normalizes a narrow
+        // register after each operation, a wide register needs only the store
+        machine& x{tc.machine()};
+
+        x.emit_most_efficient(
+            tok(), indent,
+            [&] -> void {
+                compile_through_scratch_as(tc, indent, dst_info, dst_type);
+            },
+            [&] -> void {
+                compile_through_scratch_as(tc, indent, dst_info,
+                                           tc.get_type_default());
+            });
+    }
+
+    auto compile_through_scratch_as(toc& tc, const size_t indent,
+                                    const ident_info& dst_info,
+                                    const type& scratch_type) const -> void {
+
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(tok(), indent, dst_info.type_ref())};
+            x.alloc_scratch_register(tok(), indent, scratch_type)};
 
         do_compile(tc, indent, toc::make_ident_info_from_register(reg));
+
         x.copy_value(tok(), indent, dst_info.operand, reg);
+
         x.free_scratch_register(tok(), indent, reg);
+    }
+
+    // a narrow memory destination truncates when stored, which gives the same
+    // value when the low bits do not depend on the high bits
+    [[nodiscard]] auto can_compute_wide(const toc& tc,
+                                        const ident_info& dst_info) const
+        -> bool {
+
+        if (not dst_info.operand.is_memory()) {
+            return false;
+        }
+
+        if (dst_info.type_ref().size_bytes() >=
+            tc.get_type_default().size_bytes()) {
+            return false;
+        }
+
+        return keeps_low_bits_when_narrowed();
     }
 
     auto validate_arithmetic_operands(const toc& tc) const -> void {
