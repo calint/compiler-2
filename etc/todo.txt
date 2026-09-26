@@ -1,6 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[x] a way to use characters e.g. 'a' instead of ascii code
+    => 'a', '\n', '\x41' are constants with the byte value (0-255), the same
+       escapes as strings
 [ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
@@ -145,7 +148,6 @@
 [ ] consider that what registers might be allocated in a noinline functions can
     be listed thus the call can push/pop just the registers the function uses
 [ ] constant evaluation folding in expr_ops_list
-[ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] support variable string initializers
 [ ] read/write/exit builtin so that mov and register access can be removed
 [ ] consider allowing function definitions in functions

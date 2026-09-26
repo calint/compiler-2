@@ -43,6 +43,14 @@ class stmt_const final : public statement {
             return;
         }
 
+        // the unary ops cannot prefix the quoted text as they do a number
+        if (toc::is_character_literal(literal_tk_.text())) {
+            value_ = uops_.evaluate_constant(
+                toc::parse_character(literal_tk_, literal_tk_.text()));
+
+            return;
+        }
+
         std::string num_str{uops_.to_string()};
         num_str += literal_tk_.text();
 

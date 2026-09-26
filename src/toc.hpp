@@ -1001,6 +1001,10 @@ class toc final {
                                              const std::string_view str)
         -> std::optional<int64_t> {
 
+        if (is_character_literal(str)) {
+            return parse_character(src_loc_tk, str);
+        }
+
         constexpr int base_decimal{10};
         constexpr int base_hex{16};
         constexpr int base_binary{2};
@@ -1033,6 +1037,44 @@ class toc final {
         }
 
         return std::nullopt;
+    }
+
+    // the tokenizer keeps the quotes in the text of a character literal
+    [[nodiscard]] static auto is_character_literal(const std::string_view str)
+        -> bool {
+
+        return str.size() >= 2 and str.starts_with('\'') and
+               str.ends_with('\'');
+    }
+
+    // the value is the byte, e.g. 'a' is 97 and '\xff' is 255
+    [[nodiscard]] static auto parse_character(const token& src_loc_tk,
+                                              const std::string_view str)
+        -> int64_t {
+
+        assert(is_character_literal(str));
+
+        const std::string_view body{str.substr(1, str.size() - 2)};
+
+        if (body.size() == 1 and body[0] != '\\') {
+            return static_cast<unsigned char>(body[0]);
+        }
+
+        if (not body.starts_with('\\')) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("character literal {} must contain one character",
+                            str)};
+        }
+
+        const std::optional<char> decoded{token::decode_escape(body.substr(1))};
+        if (not decoded) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("unsupported escape in character literal {}", str)};
+        }
+
+        return static_cast<unsigned char>(*decoded);
     }
 
   private:

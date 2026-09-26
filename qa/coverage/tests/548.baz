@@ -1,0 +1,5 @@
+# character literal without the closing quote
+
+func main() {
+    var c = 'a
+}

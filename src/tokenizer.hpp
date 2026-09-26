@@ -85,6 +85,35 @@ class tokenizer final {
             }
         }
 
+        // a character literal keeps its quotes in the text so it resolves
+        // like a numeric constant, e.g. 'a' or '\n'
+        if (is_next_char('\'')) {
+            while (true) {
+                // points at the opening quote since the end of the line is
+                // reported as column 0
+                if (is_eos() or is_peek_char('\n')) {
+                    throw tokenizer_exception{at_line, bgn_ix,
+                                              "unterminated character "
+                                              "literal"};
+                }
+                const char ch{next_char()};
+                if (ch == '\'') {
+                    break;
+                }
+                // the escaped character may be a quote
+                if (ch == '\\' and not is_eos() and not is_peek_char('\n')) {
+                    (void)next_char();
+                }
+            }
+
+            const size_t end_ix{char_ix_};
+            const std::string_view ws_after{next_whitespace()};
+
+            return {ws_before, bgn_ix,   src_.substr(bgn_ix, end_ix - bgn_ix),
+                    end_ix,    ws_after, at_line,
+                    false};
+        }
+
         // not a string
 
         const std::string_view txt{next_token_str()};

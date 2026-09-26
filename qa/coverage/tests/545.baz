@@ -1,0 +1,5 @@
+# character literal without a character
+
+func main() {
+    var c = ''
+}

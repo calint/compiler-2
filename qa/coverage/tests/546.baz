@@ -1,0 +1,5 @@
+# character literal with more than one character
+
+func main() {
+    var c = 'ab'
+}

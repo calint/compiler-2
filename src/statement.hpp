@@ -30,7 +30,7 @@ class statement {
     }
 
     // one line for an assembler comment: whitespace and source comments
-    // become single spaces, string literals are kept as written
+    // become single spaces, string and character literals are kept as written
     [[nodiscard]] static auto collapse_whitespace(const std::string_view text)
         -> std::string {
 
@@ -39,8 +39,10 @@ class statement {
 
         bool pending_space{};
         bool in_comment{};
-        bool in_string{};
         bool escaped{};
+
+        // the quote of the string or character literal being copied
+        char quote{};
 
         for (const char ch : text) {
             if (in_comment) {
@@ -48,10 +50,13 @@ class statement {
                 continue;
             }
 
-            // a '#' inside a string literal does not start a comment
-            if (in_string) {
+            // a '#' inside a string or character literal does not start a
+            // comment
+            if (quote != '\0') {
                 out.push_back(ch);
-                in_string = escaped or ch != '"';
+                if (not escaped and ch == quote) {
+                    quote = '\0';
+                }
                 escaped = not escaped and ch == '\\';
                 continue;
             }
@@ -74,7 +79,9 @@ class statement {
             pending_space = false;
 
             out.push_back(ch);
-            in_string = ch == '"';
+            if (ch == '"' or ch == '\'') {
+                quote = ch;
+            }
         }
 
         return out;

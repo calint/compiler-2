@@ -141,7 +141,7 @@ module.exports = grammar({
 
     sized_array_type: $ => seq(
       '[',
-      field('size', $.number_literal),
+      field('size', choice($.number_literal, $.character_literal)),
       ']',
       optional(field('type', $._base_type)),
     ),
@@ -393,6 +393,7 @@ module.exports = grammar({
     _literal: $ => choice(
       $.string_literal,
       $.number_literal,
+      $.character_literal,
       $.boolean_literal,
     ),
 
@@ -413,6 +414,8 @@ module.exports = grammar({
       /0b[01]+/,        // Binary
       /\d+(\.\d+)?/,    // Decimal (int or float)
     ),
+
+    character_literal: $ => /'([^'\\\n]|\\x[0-9a-fA-F]{2}|\\[^\n])'/,
 
     comment: $ => /#.*/,
 

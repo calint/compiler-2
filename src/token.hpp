@@ -1,9 +1,13 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <charconv>
+#include <memory>
+#include <optional>
 #include <ostream>
 #include <print>
 #include <string_view>
+#include <system_error>
 
 class token final {
     std::string_view ws_left_;  // whitespace left of token text
@@ -74,5 +78,78 @@ class token final {
         }
 
         return len;
+    }
+
+    // 'escape' is the text after the backslash, e.g. "n" or "x41"
+    // shared by string data and character literals so both accept the same
+    // escapes
+    [[nodiscard]] static auto decode_escape(const std::string_view escape)
+        -> std::optional<char> {
+
+        if (escape.starts_with('x')) {
+            return decode_hex_escape(escape.substr(1));
+        }
+
+        if (escape.size() != 1) {
+            return std::nullopt;
+        }
+
+        switch (escape[0]) {
+        case '0':
+            return '\0';
+
+        case 'a':
+            return '\a';
+
+        case 'b':
+            return '\b';
+
+        case 't':
+            return '\t';
+
+        case 'n':
+            return '\n';
+
+        case 'v':
+            return '\v';
+
+        case 'f':
+            return '\f';
+
+        case 'r':
+            return '\r';
+
+        case 'e':
+            return '\x1b';
+
+        case '\\':
+        case '\'':
+        case '"':
+        case '`':
+            return escape[0];
+
+        default:
+            return std::nullopt;
+        }
+    }
+
+  private:
+    [[nodiscard]] static auto decode_hex_escape(const std::string_view digits)
+        -> std::optional<char> {
+
+        if (digits.size() != 2) {
+            return std::nullopt;
+        }
+
+        unsigned int decoded{};
+        const char* const end{std::to_address(digits.end())};
+        const std::from_chars_result parsed{
+            std::from_chars(std::to_address(digits.begin()), end, decoded, 16)};
+
+        if (parsed.ec != std::errc{} or parsed.ptr != end) {
+            return std::nullopt;
+        }
+
+        return static_cast<char>(decoded);
     }
 };

@@ -2984,72 +2984,26 @@ class machine_rv32i : public machine {
                     throw compiler_exception{token{},
                                              "incomplete string escape"};
                 }
-                switch (value[offset]) {
-                case '0':
-                    byte = 0;
-                    break;
 
-                case 'a':
-                    byte = '\a';
-                    break;
+                // a hex escape spans the 'x' and two digits
+                const bool is_hex{value[offset] == 'x'};
+                const size_t escape_size{is_hex ? 3UZ : 1UZ};
+                const std::optional<char> decoded{
+                    token::decode_escape(value.substr(offset, escape_size))};
 
-                case 'b':
-                    byte = '\b';
-                    break;
-
-                case 't':
-                    byte = '\t';
-                    break;
-
-                case 'n':
-                    byte = '\n';
-                    break;
-
-                case 'v':
-                    byte = '\v';
-                    break;
-
-                case 'f':
-                    byte = '\f';
-                    break;
-
-                case 'r':
-                    byte = '\r';
-                    break;
-
-                case 'e':
-                    byte = '\x1b';
-                    break;
-
-                case '\\':
-                case '\'':
-                case '"':
-                case '`':
-                    byte = static_cast<unsigned char>(value[offset]);
-                    break;
-
-                case 'x': {
-                    const std::string_view digits{value.substr(offset + 1, 2)};
-                    unsigned int decoded{};
-                    const std::from_chars_result parsed{std::from_chars(
-                        std::to_address(digits.begin()),
-                        std::to_address(digits.end()), decoded, 16)};
-
-                    if (digits.size() != 2 or parsed.ec != std::errc{} or
-                        parsed.ptr != std::to_address(digits.end())) {
-                        throw compiler_exception{token{},
-                                                 "string hex escape requires "
-                                                 "two hexadecimal digits"};
-                    }
-                    byte = static_cast<unsigned char>(decoded);
-                    offset += 2;
-                    break;
+                if (not decoded and is_hex) {
+                    throw compiler_exception{token{},
+                                             "string hex escape requires "
+                                             "two hexadecimal digits"};
                 }
 
-                default:
+                if (not decoded) {
                     throw compiler_exception{token{},
                                              "unsupported RV32I string escape"};
                 }
+
+                byte = static_cast<unsigned char>(*decoded);
+                offset += escape_size - 1;
             }
             bytes += static_cast<char>(byte);
         }

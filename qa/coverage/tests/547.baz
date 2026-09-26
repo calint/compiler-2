@@ -1,0 +1,5 @@
+# character literal with an unsupported escape
+
+func main() {
+    var c = '\q'
+}

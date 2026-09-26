@@ -1,0 +1,62 @@
+# character literals are constants with the value of their byte
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+const letter_a = 'a'
+const minus_a = -'a'
+
+type glyph {
+    ch i8,
+    code i32
+}
+
+dat letters[] i8 = {'b', 'a', 'z'}
+dat quoted glyph = {'\'', '"'}
+dat delimiters[] i8 = {' ', '#', '.', '(', ']', ',', '=', '+'}
+
+func is_digit(ch i8) res bool {
+    res = ch >= '0' and ch <= '9'
+}
+
+func main() {
+    assert(1, 'a' == 97)
+    assert(2, letter_a == 97)
+    assert(3, minus_a == -97)
+    assert(4, -'a' == -97)
+    assert(5, ~'a' == -98)
+
+    # escapes decode like in strings
+    assert(6, '\n' == 10)
+    assert(7, '\t' == 9)
+    assert(8, '\0' == 0)
+    assert(9, '\\' == 92)
+    assert(10, '\'' == 39)
+    assert(11, '\x41' == 'A')
+    assert(12, '\xff' == 255)
+    assert(13, '\e' == 27)
+
+    # delimiters and the comment character are part of the literal
+    assert(14, delimiters[0] == 32)
+    assert(15, delimiters[1] == 35) # '#' is not a comment in a literal
+    assert(16, delimiters[2] == 46)
+    assert(17, delimiters[7] == 43)
+
+    # data and record initializers
+    assert(18, letters[0] == 'b' and letters[2] == 'z')
+    assert(19, quoted.ch == 39 and quoted.code == 34)
+
+    # arithmetic, narrowing and array sizes
+    var c i8 = 'x'
+    c = c - 'a' + 'A'
+    assert(20, c == 'X')
+    var n i8 = i8('\xff')
+    assert(21, n == -1)
+    var buf[' '] i8
+    assert(22, array_length(buf) == 32)
+    assert(23, is_digit('7') and not is_digit('a'))
+
+    var digit = '7' - '0'
+    assert(24, digit == 7)
+    var line[] i8 = {'o', 'k', '\n'}
+    write(1, line, array_length(line))
+}
