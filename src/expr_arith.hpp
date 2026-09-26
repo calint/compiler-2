@@ -271,8 +271,8 @@ class expr_arith final : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
-        // is destination a register or a single expression?
-        if (dst_info.is_register() or exprs_.size() == 1) {
+        // is destination a register or a single element without unary ops?
+        if (dst_info.is_register() or is_single_plain_element()) {
             // yes, compile without trying with and without scratch register
             do_compile(tc, indent, dst_info);
 
@@ -415,6 +415,22 @@ class expr_arith final : public expression {
     }
 
   private:
+    // unary ops on a memory destination are a load, modify and store on a
+    // load/store machine where a scratch register can be shorter, other single
+    // elements such as calls are not compiled twice
+    [[nodiscard]] auto is_single_plain_element() const -> bool {
+        if (exprs_.size() != 1) {
+            return false;
+        }
+
+        const statement& e{*exprs_.front()};
+        if (not e.is_identifier()) {
+            return true;
+        }
+
+        return uops_.is_empty() and e.get_unary_ops().is_empty();
+    }
+
     // a plain first element is copied before anything writes the destination
     [[nodiscard]] auto reads_destination_early(const ident_info& dst_info) const
         -> bool {

@@ -21,8 +21,8 @@ func triple(v) {
 }
 
 func swap_into(src bytepair, dst bytepair) {
-    var src_a = src.a
-    var src_b = src.b
+    var src_a i8 = src.a
+    var src_b i8 = src.b
     dst = {src_b, src_a}
 }
 

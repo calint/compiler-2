@@ -435,9 +435,36 @@ class stmt_call : public expression {
 
         if (not func.is_inlined()) {
             compile_noninline(tc, indent, dst_info, func);
-
             return;
         }
+
+        if (get_unary_ops().is_empty() or not dst_info.operand.is_memory()) {
+            compile_inline(tc, indent, dst_info, func);
+            return;
+        }
+
+        // unary ops on a memory result are a load, modify and store on a
+        // load/store machine, a scratch register can be shorter
+        x.emit_most_efficient(
+            tok(), indent,
+            [&] -> void { compile_inline(tc, indent, dst_info, func); },
+            [&] -> void {
+                const operand reg{x.alloc_scratch_register(
+                    tok(), indent, dst_info.type_ref())};
+
+                compile_inline(tc, indent,
+                               toc::make_ident_info_from_register(reg), func);
+
+                x.copy_value(tok(), indent, dst_info.operand, reg);
+                x.free_scratch_register(tok(), indent, reg);
+            });
+    }
+
+    auto compile_inline(toc& tc, const size_t indent,
+                        const ident_info& dst_info,
+                        const stmt_def_func& func) const -> void {
+
+        machine& x{tc.machine()};
 
         // buffer the aliases of arguments and function return
         std::vector<alias_info> aliases_to_add;

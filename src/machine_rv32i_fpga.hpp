@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <ostream>
 #include <string_view>
@@ -22,6 +23,11 @@ class machine_rv32i_fpga final : public machine_rv32i {
     static constexpr int uart_idle_{-1};
     // 'lui' of the end of memory 0x800000
     static constexpr int memory_end_upper_{0x800};
+    // 'lui' places the immediate in the upper 20 bits
+    static constexpr uint32_t lui_shift_{12};
+    // the comment prints the address as two 16 bit halves
+    static constexpr uint32_t half_bits_{16};
+    static constexpr uint32_t half_mask_{0xffff};
     static constexpr int newline_{'\n'};
     static constexpr int carriage_return_{'\r'};
     // ctrl-d
@@ -54,13 +60,13 @@ class machine_rv32i_fpga final : public machine_rv32i {
 
         ::assembler_rv32i& x{assembler()};
 
-        // 'lui' places the immediate in the upper 20 bits
-        const int memory_end{memory_end_upper_ << 12};
+        const uint32_t memory_end{uint32_t{memory_end_upper_} << lui_shift_};
 
         // 'std::format' has no digit separators so the halves are printed
         // apart
         x.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
-                                 memory_end >> 16, memory_end & 0xffff));
+                                 memory_end >> half_bits_,
+                                 memory_end & half_mask_));
 
         x.lui(0, "sp", memory_end_upper_);
         x.add_separator_newline();

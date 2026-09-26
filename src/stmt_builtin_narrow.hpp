@@ -113,22 +113,25 @@ class stmt_builtin_narrow final : public expression {
         if (arg_.keeps_low_bits_when_narrowed() or
             arg_.get_type().size_bytes() == get_type().size_bytes()) {
 
-            arg_.compile(tc, indent, dst_info);
-            get_unary_ops().compile(tc, indent, dst_info.operand);
+            if (dst_info.is_register()) {
+                compile_in_destination(tc, indent, dst_info);
+
+                return;
+            }
+
+            // a load/store machine operates on the memory destination with a
+            // load and a store each time, a wide register needs one store
+            x.emit_most_efficient(
+                tok(), indent,
+                [&] -> void { compile_in_destination(tc, indent, dst_info); },
+                [&] -> void { compile_wide(tc, indent, dst_info); });
 
             return;
         }
 
         // '/', '%', '>>' and calls are computed at the argument's width, a
         // call's result must also have its declared type
-        const operand wide{
-            x.alloc_scratch_register(tok(), indent, arg_.get_type())};
-
-        arg_.compile(tc, indent + 1, toc::make_ident_info_from_register(wide));
-        x.copy_value(tok(), indent, dst_info.operand, wide);
-        x.free_scratch_register(tok(), indent, wide);
-
-        get_unary_ops().compile(tc, indent, dst_info.operand);
+        compile_wide(tc, indent, dst_info);
     }
 
     // only the builtin's own type counts, its argument is narrowed on purpose
@@ -145,6 +148,32 @@ class stmt_builtin_narrow final : public expression {
     }
 
   private:
+    auto compile_in_destination(toc& tc, const size_t indent,
+                                const ident_info& dst_info) const -> void {
+
+        arg_.compile(tc, indent, dst_info);
+        get_unary_ops().compile(tc, indent, dst_info.operand);
+    }
+
+    // the argument is computed at its own width and stored narrowed
+    auto compile_wide(toc& tc, const size_t indent,
+                      const ident_info& dst_info) const -> void {
+
+        machine& x{tc.machine()};
+
+        const operand wide{
+            x.alloc_scratch_register(tok(), indent, arg_.get_type())};
+
+        arg_.compile(tc, indent + 1, toc::make_ident_info_from_register(wide));
+
+        // '-' and '~' give the same low bits at any width, so the one store
+        // also narrows their result
+        get_unary_ops().compile(tc, indent, wide);
+
+        x.copy_value(tok(), indent, dst_info.operand, wide);
+        x.free_scratch_register(tok(), indent, wide);
+    }
+
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<int64_t> {
 

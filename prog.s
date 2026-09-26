@@ -586,6 +586,7 @@ main:
     cmovge rbp, r14
     jge baz_bounds_panic
 ;   [188:10] free scratch register r14
+;   [188:15] instructions without scratch register 1, with 2
 ;   [188:16] -1
     mov dword [rbp + r15 * 4 + 256], -1
 ;   [188:5] free scratch register r15
@@ -677,6 +678,7 @@ main:
 ;   [192:16] arr = ~inv(arr[ix - 1])
 ;   [192:16] = expression
 ;   [192:16] ~inv(arr[ix - 1])
+;   [192:16] instructions without scratch register 15, with 15
 ;   [192:24] allocate scratch register -> r14
 ;   [192:24] set array index
 ;   [192:24] ix
@@ -699,6 +701,7 @@ main:
 ;       [192:16] alias res -> arr (lea: rbp + r15 * 4 + 232)
 ;       [192:16] alias i -> arr (lea: rbp + r14 * 4 + 232)
 ;       [63:5] res = ~i
+;       [63:11] instructions without scratch register 3, with 3
 ;       [63:12] ~i
 ;       [63:12] allocate scratch register -> r13
         mov r13d, dword [rbp + r14 * 4 + 232]
@@ -1379,9 +1382,11 @@ main:
     func.point_init.246.20:
 ;       [246:20] alias res -> pt
 ;       [88:5] res.x = -1
+;       [88:13] instructions without scratch register 1, with 2
 ;       [88:14] -1
         mov qword [rbp + 384], -1
 ;       [89:5] res.y = -2
+;       [89:13] instructions without scratch register 1, with 2
 ;       [89:14] -2
         mov qword [rbp + 392], -2
     func.point_init.246.20.end:
@@ -1563,12 +1568,14 @@ main:
 ;   [260:9] p1: point (16 B @ [rbp + 440])
 ;   [260:9] p1 = {-x, -y}
 ;   [260:21] copy field 'x'
+;   [260:21] instructions without scratch register 3, with 3
 ;   [260:21] allocate scratch register -> r15
     mov r15, qword [rbp + 400]
     mov qword [rbp + 440], r15
 ;   [260:21] free scratch register r15
     neg qword [rbp + 440]
 ;   [260:25] copy field 'y'
+;   [260:25] instructions without scratch register 3, with 3
 ;   [260:25] allocate scratch register -> r15
     mov r15, qword [rbp + 408]
     mov qword [rbp + 448], r15
@@ -2476,6 +2483,7 @@ main:
 ;           [80:5] self.len = i8(nbytes - 1)
 ;           [80:16] self.len = i8(nbytes - 1)
 ;           [80:16] = expression
+;           [80:16] instructions without scratch register 3, with 3
 ;           [80:19] instructions without scratch register 3, with 3
 ;           [80:19] nbytes
 ;           [80:19] allocate scratch register -> r15
@@ -2668,6 +2676,7 @@ func.print_num:
     jle if.121.5.end
     if.121.8.code:
 ;       [122:9] n = -n
+;       [122:13] instructions without scratch register 1, with 3
 ;       [122:14] -n
         neg qword [rbx + 32]
     if.121.5.end:

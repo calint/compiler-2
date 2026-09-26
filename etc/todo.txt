@@ -1,9 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] local code generation found in the rv32i assessment, examples in
+[o] local code generation found in the rv32i assessment, examples in
     etc/codegen-inefficiencies.baz
-    [ ] unary ops and narrowing on a memory destination copy first and then
+    [x] unary ops and narrowing on a memory destination copy first and then
         load, modify and store: 'var a = -x' is 'lw; sw; lw; sub; sw'
         instead of 'lw; sub; sw', 'b = i8(x - 1)' is 'lw; sb; lb; addi; sb'.
         same for record literal fields '{-x, -y}' and an inline result with
@@ -13,6 +13,20 @@
            'get_unary_ops().compile' on the destination; on a load/store
            machine compute in a scratch register and store once like
            'a = a - 1' already does through 'emit_most_efficient'
+        => done: a memory destination tries with and without a scratch
+           register ('emit_most_efficient') in 'expr_arith' (single
+           identifier with unary ops, 'is_single_plain_element'), the
+           narrow builtin (in destination vs 'compile_wide', which now
+           applies '-'/'~' on the wide register before the one store),
+           record literal fields ('expr_type::compile_builtin_field') and
+           inline calls with unary ops on the result ('stmt_call' ->
+           'compile_inline' into the destination or a register). x86 code
+           unchanged (ties keep the first version), 29 rv32i tests shorter,
+           e.g. 'var a = -x' is 'lw; sub; sw', 'b = i8(x - 1)' is
+           'lw; addi; sb', '~inv(...)' computes the result in a register
+        => found on the way: a plain identifier in a record literal field
+           narrowed silently, now rejected like other narrowing (571.baz,
+           394.baz declared 'i8' locals)
     [ ] a runtime bool argument to an inline function is materialized:
         'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
         (or 'bnez' against 0)

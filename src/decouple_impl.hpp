@@ -459,6 +459,9 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
 
         const operand dst_operand{operand::mem(dst_op, field.type())};
 
+        // the paths below that copy directly skip the check in 'expr_any'
+        src.assert_not_narrowed(tc, field.type());
+
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
             cur_dst_info.operand = dst_operand;
@@ -484,10 +487,8 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
                            field.size_bytes, field.type().alignment());
                 } else {
                     // built-in, not expression, not constant, not array
-                    x.copy_value(src.tok(), indent, dst_operand,
-                                 src_info.operand);
-
-                    src.get_unary_ops().compile(tc, indent, dst_operand);
+                    compile_builtin_field(tc, indent, src, src_info.operand,
+                                          dst_operand);
                 }
             }
         }
@@ -506,6 +507,39 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
         exprs_.size() == flds.size() ? "padding" : "remaining fields",
         remaining_bytes, offset_alignment(written_bytes, dst_type.alignment()),
         dst_op);
+}
+
+// declared in 'expr_type.hpp'
+// unary ops on a memory field are a load, modify and store each on a
+// load/store machine, a scratch register can be shorter
+auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
+                                      const expr_any& src,
+                                      const operand& src_op, const operand& dst)
+    -> void {
+
+    machine& x{tc.machine()};
+
+    const unary_ops& uops{src.get_unary_ops()};
+
+    if (uops.is_empty()) {
+        x.copy_value(src.tok(), indent, dst, src_op);
+        return;
+    }
+
+    const auto compile_in_field{[&] -> void {
+        x.copy_value(src.tok(), indent, dst, src_op);
+        uops.compile(tc, indent, dst);
+    }};
+
+    x.emit_most_efficient(src.tok(), indent, compile_in_field, [&] -> void {
+        const operand reg{
+            x.alloc_scratch_register(src.tok(), indent, dst.type_ref())};
+
+        x.copy_value(src.tok(), indent, reg, src_op);
+        uops.compile(tc, indent, reg);
+        x.copy_value(src.tok(), indent, dst, reg);
+        x.free_scratch_register(src.tok(), indent, reg);
+    });
 }
 
 // declared in 'expr_type.hpp'
