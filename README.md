@@ -76,10 +76,10 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           4368           1348          15260
+C/C++ Header                    55           4447           1382          15492
 C++                              1             58             10            273
 -------------------------------------------------------------------------------
-SUM:                            56           4426           1358          15533
+SUM:                            56           4505           1392          15765
 -------------------------------------------------------------------------------
 ```
 
@@ -1811,10 +1811,12 @@ baz_bounds_panic:
     mov rdi, 255
     syscall
 section .rodata
-    msg_panic: db 'panic: bounds at line '
-    msg_panic_len equ $ - msg_panic
+msg_panic:
+db `panic: bounds at line `
+msg_panic_len equ $ - msg_panic
 section .bss
-    num_buffer: resb 21
+num_buffer:
+resb 21
 section .data
 align 16
 dat:
@@ -1834,7 +1836,7 @@ dat.end:
 section .bss.vars nobits alloc write
 align 16
 vars:
-vars resb 131072
+resb 131072
 vars.end:
 ```
 
@@ -4802,10 +4804,12 @@ baz_bounds_panic:
     mov rdi, 255
     syscall
 section .rodata
-    msg_panic: db 'panic: bounds at line '
-    msg_panic_len equ $ - msg_panic
+msg_panic:
+db `panic: bounds at line `
+msg_panic_len equ $ - msg_panic
 section .bss
-    num_buffer: resb 21
+num_buffer:
+resb 21
 
 section .data
 align 16
@@ -4850,7 +4854,7 @@ dat.end:
 section .bss.vars nobits alloc write
 align 16
 vars:
-vars resb 131072
+resb 131072
 vars.end:
 ; free named register rbp
 

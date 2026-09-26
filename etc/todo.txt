@@ -1,18 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[x] update emulator in tang9k and tang20k projects
-[x] fpga emulator: add ebreak that exits the process with the code and change
-    the machine_rv32i_fpga
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
-[x] fix alignment of data to be able to run on hardware that demands it
 [ ] reorder locals by alignment, largest first, to reduce padding
 [ ] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
     derive a larger alignment from the addresses as 'copy' and 'zero' do
 [ ] 'equal' on records compares the padding bytes; a record set by a call
     result keeps whatever padding bytes its storage held
-[x] consider expanding assembler_rv32i to generate binary
 [ ] when reading trailing whitespace stop at newline
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments
@@ -276,6 +271,11 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] update emulator in tang9k and tang20k projects
+[x] fpga emulator: add ebreak that exits the process with the code and change
+    the machine_rv32i_fpga
+[x] fix alignment of data to be able to run on hardware that demands it
+[x] consider expanding assembler_rv32i to generate binary
 [x] merge both x86 and rv32i optimizers to use common optimization code
 [x] jump_optimizers test case 006.baz should result in same number of
     optimizations of each type

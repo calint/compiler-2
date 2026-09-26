@@ -12,7 +12,6 @@
 #include <limits>
 #include <optional>
 #include <ostream>
-#include <print>
 #include <ranges>
 #include <span>
 #include <string>
@@ -37,6 +36,10 @@ class machine_x86_64 final : public machine {
     using jump_mode = assembler::jump_mode;
 
   private:
+    using op = assembler_x86_64::op;
+    using condition = assembler_x86_64::condition;
+    using section = assembler_x86_64::section;
+
     static constexpr size_t size_qword{8};
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
@@ -46,16 +49,12 @@ class machine_x86_64 final : public machine {
 
     static constexpr std::string_view variables_base_register_{"rbp"};
 
-    static constexpr std::string_view data_qword{"dq"};
-    static constexpr std::string_view data_dword{"dd"};
-    static constexpr std::string_view data_word{"dw"};
-    static constexpr std::string_view data_byte{"db"};
-
     static constexpr std::array<size_t, 4> index_register_scalings{1, 2, 4, 8};
 
     static constexpr size_t threshold_for_rep_stos_size_bytes{32};
     static constexpr size_t threshold_for_rep_movs_size_bytes{16};
     static constexpr int syscall_exit{60};
+    static constexpr int panic_exit_code{255};
 
     struct register_names {
         std::string_view qword;
@@ -201,14 +200,15 @@ class machine_x86_64 final : public machine {
     jump_mode jump_mode_{};
     // buffering output is no more logical state than writing to 'os_'
     mutable assembler_x86_64 assembler_;
-    // the start of a line printed in parts
-    mutable std::string pending_text_;
-    bool assembling_{};
 
   public:
     explicit machine_x86_64(std::ostream& os_ref, const std::string_view source,
                             const jump_mode jumps = jump_mode::resolved)
-        : source_{source}, os_{os_ref}, jump_mode_{jumps} {}
+        : source_{source}, os_{os_ref}, jump_mode_{jumps} {
+
+        // output before 'start' is written as emitted in every mode
+        assembler_.set_direct_output(&os_.get());
+    }
 
     [[nodiscard]] auto
     registers_for_builtin_function(const builtin_function function) const
@@ -256,12 +256,16 @@ class machine_x86_64 final : public machine {
                  const std::string_view text) -> void override {
 
         if (src_loc_tk.at_line() == 0) {
-            comment_indent(indent);
-            print(" ");
-        } else {
-            comment_start(src_loc_tk, indent);
+            assembler_.comment(indent, std::format(" {}", text));
+
+            return;
         }
-        println("{}", text);
+
+        const auto [line, column]{line_and_col_num_for_char_index(
+            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+
+        assembler_.comment(indent,
+                           std::format("[{}:{}] {}", line, column, text));
     }
 
     using machine::comment;
@@ -274,17 +278,14 @@ class machine_x86_64 final : public machine {
 
         // both versions are buffered to count instructions, even when output
         // is otherwise written as emitted
-        const bool buffered{assembling_};
-        assembling_ = true;
-        assert(pending_text_.empty());
+        std::ostream* const direct_output{assembler_.direct_output()};
+        assembler_.set_direct_output(nullptr);
 
         std::vector<assembler::line> without_scratch{
             assembler_.capture(emit_without_scratch)};
 
         std::vector<assembler::line> with_scratch{
             assembler_.capture(emit_with_scratch)};
-
-        assert(pending_text_.empty());
 
         const size_t without_count{
             assembler_x86_64::count_instructions(without_scratch)};
@@ -299,12 +300,12 @@ class machine_x86_64 final : public machine {
         assembler_.append(std::move(
             without_count <= with_count ? without_scratch : with_scratch));
 
-        if (buffered) {
+        if (direct_output == nullptr) {
             return;
         }
 
-        assembling_ = false;
-        assembler_.write(os_.get());
+        assembler_.set_direct_output(direct_output);
+        assembler_.write(*direct_output);
     }
 
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
@@ -380,17 +381,16 @@ class machine_x86_64 final : public machine {
             release_variables_base();
         }
 
-        if (assembling_) {
-            assert(pending_text_.empty());
-
+        if (assembler_.is_buffering()) {
             if (jump_mode_ == jump_mode::optimized) {
                 assembler_.optimize_jumps();
             }
             assembler_.add_optimization_counts();
         }
 
-        println("\n; max scratch registers in use: {}",
-                usage_max_scratch_regs_);
+        assembler_.empty_line();
+        assembler_.comment(0, std::format(" max scratch registers in use: {}",
+                                          usage_max_scratch_regs_));
 
         assert(allocations_.empty());
         assert(unavailable_registers_ == 0);
@@ -400,10 +400,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto write_assembly(std::ostream& os) -> void override {
-        assert(pending_text_.empty());
-
-        assembling_ = false;
         assembler_.write(os);
+        assembler_.set_direct_output(&os_.get());
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
@@ -423,7 +421,7 @@ class machine_x86_64 final : public machine {
                           const operand& address) -> void override {
 
         comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, size_bytes,
-                format_address(address));
+                assembler_x86_64::address_text(to_address(address)));
     }
 
     auto comment_alias(const token& src_loc_tk, const size_t indent,
@@ -434,7 +432,7 @@ class machine_x86_64 final : public machine {
             comment(src_loc_tk, indent, "alias {} -> {}", from, to);
         } else {
             comment(src_loc_tk, indent, "alias {} -> {} (lea: {})", from, to,
-                    format_address(address));
+                    assembler_x86_64::address_text(to_address(address)));
         }
     }
 
@@ -464,7 +462,7 @@ class machine_x86_64 final : public machine {
 
     auto branch(const size_t indent, const std::string_view target)
         -> void override {
-        jmp(indent, target);
+        assembler_.jmp(indent, target);
     }
 
     auto invoke_syscall(const size_t indent) -> void override {
@@ -503,7 +501,7 @@ class machine_x86_64 final : public machine {
         add(indent, iterator, immediate(element_size_bytes));
         inc(indent, counter);
         cmp(indent, counter, immediate(array_count));
-        jne(indent, loop_label);
+        assembler_.jcc(indent, condition::ne, loop_label);
     }
 
     // x86 accesses unaligned memory so the alignment is not needed
@@ -524,7 +522,7 @@ class machine_x86_64 final : public machine {
                 machine_x86_64::make_register_operand("rcx", *type_i64_),
                 immediate(size_bytes));
 
-            rep_movs(indent, 'b');
+            assembler_.instruction(indent, op::rep_movsb);
 
             release_bulk_registers(src_loc_tk, indent);
 
@@ -591,7 +589,7 @@ class machine_x86_64 final : public machine {
             machine_x86_64::make_register_operand("rcx", *type_i64_),
             element_size_bytes);
 
-        rep_movs(indent, 'b');
+        assembler_.instruction(indent, op::rep_movsb);
         release_bulk_registers(src_loc_tk, indent);
     }
 
@@ -621,22 +619,22 @@ class machine_x86_64 final : public machine {
                           const operand& dst, const bool inverted = false)
         -> void override {
 
-        char size_suffix{'b'};
+        op compare{op::repe_cmpsb};
         size_t count{size_bytes};
         if ((count % size_qword) == 0) {
-            size_suffix = 'q';
+            compare = op::repe_cmpsq;
             count /= size_qword;
         } else if ((count % size_dword) == 0) {
-            size_suffix = 'd';
+            compare = op::repe_cmpsd;
             count /= size_dword;
         } else if ((count % size_word) == 0) {
-            size_suffix = 'w';
+            compare = op::repe_cmpsw;
             count /= size_word;
         }
         mov(src_loc_tk, indent,
             machine_x86_64::make_register_operand("rcx", *type_i64_),
             immediate(count));
-        repe_cmps(indent, size_suffix);
+        assembler_.instruction(indent, compare);
         release_bulk_registers(src_loc_tk, indent);
         store_equal_result(indent, dst, inverted);
     }
@@ -654,7 +652,7 @@ class machine_x86_64 final : public machine {
 
         test(indent, machine_x86_64::make_register_operand("rcx", *type_i64_),
              machine_x86_64::make_register_operand("rcx", *type_i64_));
-        repe_cmps(indent, 'b');
+        assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk_registers(src_loc_tk, indent);
         store_equal_result(indent, dst, inverted);
     }
@@ -675,7 +673,7 @@ class machine_x86_64 final : public machine {
             mov(src_loc_tk, indent,
                 machine_x86_64::make_register_operand("rcx", *type_i64_),
                 immediate(size_bytes));
-            rep_stos(indent, 'b');
+            assembler_.instruction(indent, op::rep_stosb);
             release_named_register(src_loc_tk, indent, "rcx");
             release_named_register(src_loc_tk, indent, "rdi");
             release_named_register(src_loc_tk, indent, "rax");
@@ -710,7 +708,8 @@ class machine_x86_64 final : public machine {
 
         assert(operation == '+' or operation == '-');
 
-        op(src_loc_tk, indent, operation == '+' ? "add" : "sub", dst, src);
+        emit_op(src_loc_tk, indent, operation == '+' ? op::add : op::sub, dst,
+                src);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -719,17 +718,17 @@ class machine_x86_64 final : public machine {
 
         switch (operation) {
         case '&':
-            op(src_loc_tk, indent, "and", dst, src);
+            emit_op(src_loc_tk, indent, op::and_op, dst, src);
 
             return;
 
         case '|':
-            op(src_loc_tk, indent, "or", dst, src);
+            emit_op(src_loc_tk, indent, op::or_op, dst, src);
 
             return;
 
         case '^':
-            op(src_loc_tk, indent, "xor", dst, src);
+            emit_op(src_loc_tk, indent, op::xor_op, dst, src);
 
             return;
 
@@ -774,8 +773,8 @@ class machine_x86_64 final : public machine {
             }
 
             if (std::has_single_bit(multiplier)) {
-                op(src_loc_tk, indent, "sal", product,
-                   immediate(std::countr_zero(multiplier)));
+                emit_op(src_loc_tk, indent, op::sal, product,
+                        immediate(std::countr_zero(multiplier)));
 
                 return;
             }
@@ -837,9 +836,10 @@ class machine_x86_64 final : public machine {
 
         assert(operation == '<' or operation == '>');
 
+        const op code{operation == '<' ? op::sal : op::sar};
+
         if (count.is_immediate()) {
-            op(src_loc_tk, indent, operation == '<' ? "sal" : "sar", dst,
-               count);
+            emit_op(src_loc_tk, indent, code, dst, count);
 
             return;
         }
@@ -848,8 +848,8 @@ class machine_x86_64 final : public machine {
         reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
         mov(src_loc_tk, indent,
             sized_register("rcx", dst.type_ref().size_bytes()), count);
-        op(src_loc_tk, indent, operation == '<' ? "sal" : "sar", dst,
-           sized_register("rcx", size_byte));
+        emit_op(src_loc_tk, indent, code, dst,
+                sized_register("rcx", size_byte));
         release_named_register(src_loc_tk, indent, "rcx");
     }
 
@@ -876,7 +876,7 @@ class machine_x86_64 final : public machine {
             machine_x86_64::make_register_operand("rax", *type_i64_), dst);
 
         reserve_named_register(src_loc_tk, indent, "rdx", *default_type_);
-        asm_line(indent, "cqo");
+        assembler_.instruction(indent, op::cqo);
 
         if (divisor.is_immediate() or
             divisor.type_ref().size_bytes() != size_qword) {
@@ -907,15 +907,7 @@ class machine_x86_64 final : public machine {
     auto label(const size_t indent, const std::string_view label)
         -> void override {
 
-        if (not assembling_) {
-            asm_line(indent, "{}:", label);
-
-            return;
-        }
-
-        assert(pending_text_.empty());
-        assembler_.add_label(std::string{label},
-                             std::format("{}{}:", indentation(indent), label));
+        assembler_.label(indent, label);
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
@@ -1064,17 +1056,17 @@ class machine_x86_64 final : public machine {
         assert(frame_address.index_register().empty());
         assert(frame_address.base_register() != "rsp");
 
-        asm_line(indent, "PUSH_REGS");
+        assembler_.use_macro(indent, "PUSH_REGS");
         lea(indent,
             make_register_operand(frame_base_register(), *default_type_),
             frame_address, true);
 
-        asm_line(indent, "call {}", label);
-        asm_line(indent, "POP_REGS");
+        assembler_.call(indent, label);
+        assembler_.use_macro(indent, "POP_REGS");
     }
 
     auto return_function(const size_t indent) -> void override {
-        asm_line(indent, "ret");
+        assembler_.instruction(indent, op::ret);
     }
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
@@ -1097,61 +1089,76 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
         lea(indent, start, frame_address, true);
-        asm_line(indent, "lea {}, [vars]", format_operand(remaining));
+        assembler_.instruction(indent, op::lea, to_argument(remaining),
+                               assembler_x86_64::memory::of_symbol("vars"));
         cmp(indent, start, remaining);
-        jcc(indent, "b", failure_label);
-        asm_line(indent, "mov {}, strict qword vars.end",
-                 format_operand(remaining));
+        assembler_.jcc(indent, condition::b, failure_label);
+
+        // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
+        assembler_.instruction(
+            indent, op::mov, to_argument(remaining),
+            assembler_x86_64::immediate::of_expression("vars.end", true));
 
         cmp(indent, start, remaining);
-        jcc(indent, "a", failure_label);
-        op(src_loc_tk, indent, "sub", remaining, start);
+        assembler_.jcc(indent, condition::a, failure_label);
+        emit_op(src_loc_tk, indent, op::sub, remaining, start);
         mov(src_loc_tk, indent, start, frame_size_bytes);
         cmp(indent, start, remaining);
-        jcc(indent, "a", failure_label);
+        assembler_.jcc(indent, condition::a, failure_label);
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
     }
 
     auto define_constant(const std::string_view name, const size_t value)
         -> void override {
-        println("{} equ {}", name, value);
+        assembler_.define_constant(name, static_cast<int64_t>(value));
     }
 
     auto start() -> void override {
-        assembling_ = jump_mode_ != jump_mode::as_emitted;
+        // resolved and optimized jumps need every line before writing
+        assembler_.set_direct_output(
+            jump_mode_ == jump_mode::as_emitted ? &os_.get() : nullptr);
 
-        println(";\n; generated by baz\n;\n\ndefault rel\n");
+        assembler_.comment(0, "");
+        assembler_.comment(0, " generated by baz");
+        assembler_.comment(0, "");
+        assembler_.empty_line();
+        assembler_.default_rel();
+        assembler_.empty_line();
 
         const std::array<std::string_view, 15> saved_registers{
             "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "r8",
             "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
 
-        println("%macro PUSH_REGS 0");
-        for (const std::string_view name : saved_registers) {
-            push(1, make_register_operand(name, *default_type_));
-        }
-        println("%endmacro\n");
+        assembler_.define_macro("PUSH_REGS", [&] -> void {
+            for (const std::string_view name : saved_registers) {
+                push(1, make_register_operand(name, *default_type_));
+            }
+        });
+        assembler_.empty_line();
 
-        println("%macro POP_REGS 0");
-        for (const std::string_view name :
-             saved_registers | std::views::reverse) {
-            pop(1, make_register_operand(name, *default_type_));
-        }
-        println("%endmacro");
+        assembler_.define_macro("POP_REGS", [&] -> void {
+            for (const std::string_view name :
+                 saved_registers | std::views::reverse) {
+                pop(1, make_register_operand(name, *default_type_));
+            }
+        });
+        assembler_.empty_line();
 
-        println();
-
-        switch_section("section .text", true);
-        println("bits 64\nglobal _start\n_start:\n");
+        assembler_.switch_section(section::text);
+        assembler_.bits64();
+        assembler_.global("_start");
+        assembler_.label(0, "_start");
+        assembler_.empty_line();
         reserve_variables_base();
-        asm_line(0, "lea {}, [dat]", variables_base_register_);
-        println();
+        assembler_.instruction(0, op::lea, variables_base_register_,
+                               assembler_x86_64::memory::of_symbol("dat"));
+        assembler_.empty_line();
     }
 
     auto end_main() -> void override {
         exit(token{}, 1, immediate(0));
-        println();
+        assembler_.empty_line();
     }
 
     auto check_bounds(const token& src_loc_tk, const size_t indent,
@@ -1163,7 +1170,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        const std::string_view comparison{allow_end ? "g" : "ge"};
+        const condition out_of_bounds{allow_end ? condition::g : condition::ge};
         comment(src_loc_tk, indent, "bounds check");
 
         operand reg_line_num;
@@ -1186,12 +1193,12 @@ class machine_x86_64 final : public machine {
 
                 test(indent, *value, *value);
                 if (options.with_line) {
-                    cmovs(indent,
-                          machine_x86_64::make_register_operand("rbp",
-                                                                *type_i64_),
-                          reg_line_num);
+                    cmovcc(indent, condition::s,
+                           machine_x86_64::make_register_operand("rbp",
+                                                                 *type_i64_),
+                           reg_line_num);
                 }
-                jcc(indent, "s", "baz_bounds_panic");
+                assembler_.jcc(indent, condition::s, "baz_bounds_panic");
             }
         }
 
@@ -1208,11 +1215,11 @@ class machine_x86_64 final : public machine {
                 cmp(indent, reg_to_check, immediate(array_count));
             }
             if (options.with_line) {
-                op(src_loc_tk, indent, std::format("cmov{}", comparison),
-                   machine_x86_64::make_register_operand("rbp", *type_i64_),
-                   reg_line_num);
+                cmovcc(indent, out_of_bounds,
+                       machine_x86_64::make_register_operand("rbp", *type_i64_),
+                       reg_line_num);
             }
-            jcc(indent, comparison, "baz_bounds_panic");
+            assembler_.jcc(indent, out_of_bounds, "baz_bounds_panic");
         }
 
         if (options.with_line) {
@@ -1222,53 +1229,66 @@ class machine_x86_64 final : public machine {
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
         if (not with_line) {
-            println();
-            println("baz_bounds_panic:");
-            println("    ; system call: exit 255");
-            println("    mov rax, 60");
-            println("    mov rdi, 255");
-            println("    syscall");
-        } else {
-            println("baz_bounds_panic:");
-            println(";   print message to stderr");
-            println("    mov rax, 1");
-            println("    mov rdi, 2");
-            println("    lea rsi, [msg_panic]");
-            println("    mov rdx, msg_panic_len");
-            println("    syscall");
-            println(";   line number is in `rbp`");
-            println("    mov rax, rbp");
-            println(";   convert to string");
-            println("    mov rdi, strict qword num_buffer + 19");
-            println("    mov byte [rdi], 10");
-            println("    dec rdi");
-            println("    mov rcx, 10");
-            println(".convert_loop:");
-            println("    xor rdx, rdx");
-            println("    div rcx");
-            println("    add dl, '0'");
-            println("    mov [rdi], dl");
-            println("    dec rdi");
-            println("    test rax, rax");
-            println("    jnz .convert_loop");
-            println("    inc rdi");
-            println(";   print line number to stderr");
-            println("    mov rax, 1");
-            println("    mov rsi, rdi");
-            println("    mov rdx, strict qword num_buffer + 20");
-            println("    sub rdx, rdi");
-            println("    mov rdi, 2");
-            println("    syscall");
-            println(";   exit with error code 255");
-            println("    mov rax, 60");
-            println("    mov rdi, 255");
-            println("    syscall");
-            switch_section("section .rodata", false);
-            println("    msg_panic: db 'panic: bounds at line '");
-            println("    msg_panic_len equ $ - msg_panic");
-            switch_section("section .bss", false);
-            println("    num_buffer: resb 21");
+            assembler_.empty_line();
+            assembler_.label(0, "baz_bounds_panic");
+            emit_panic_exit();
+
+            return;
         }
+
+        assembler_.label(0, "baz_bounds_panic");
+        emit_panic_message("msg_panic");
+
+        constexpr int newline{10};
+        constexpr int decimal_base{10};
+        // the digits of a 64-bit number and a newline
+        constexpr size_t number_buffer_size_bytes{21};
+
+        assembler_.comment(1, "line number is in `rbp`");
+        assembler_.instruction(1, op::mov, "rax", "rbp");
+        assembler_.comment(1, "convert to string");
+
+        assembler_.instruction(1, op::mov, "rdi",
+                               assembler_x86_64::immediate::of_expression(
+                                   "num_buffer + 19", true));
+
+        assembler_.instruction(
+            1, op::mov, assembler_x86_64::memory::of_base("rdi", 1), newline);
+        assembler_.instruction(1, op::dec, "rdi");
+        assembler_.instruction(1, op::mov, "rcx", decimal_base);
+        assembler_.label(0, ".convert_loop");
+        assembler_.instruction(1, op::xor_op, "rdx", "rdx");
+        assembler_.instruction(1, op::div, "rcx");
+
+        assembler_.instruction(
+            1, op::add, "dl",
+            assembler_x86_64::immediate::of_expression("'0'"));
+
+        assembler_.instruction(1, op::mov,
+                               assembler_x86_64::memory::of_base("rdi"), "dl");
+        assembler_.instruction(1, op::dec, "rdi");
+        assembler_.instruction(1, op::test, "rax", "rax");
+        assembler_.jcc(1, condition::nz, ".convert_loop");
+        assembler_.instruction(1, op::inc, "rdi");
+        assembler_.comment(1, "print line number to stderr");
+        assembler_.instruction(1, op::mov, "rax", 1);
+        assembler_.instruction(1, op::mov, "rsi", "rdi");
+
+        assembler_.instruction(1, op::mov, "rdx",
+                               assembler_x86_64::immediate::of_expression(
+                                   "num_buffer + 20", true));
+
+        assembler_.instruction(1, op::sub, "rdx", "rdi");
+        assembler_.instruction(1, op::mov, "rdi", 2);
+        assembler_.instruction(1, op::syscall);
+        emit_panic_exit();
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, "msg_panic");
+        assembler_.string_data("panic: bounds at line ");
+        assembler_.define_length("msg_panic_len", "msg_panic");
+        assembler_.switch_section(section::bss);
+        assembler_.label(0, "num_buffer");
+        assembler_.reserve(number_buffer_size_bytes);
     }
 
     [[nodiscard]] auto data_alignment() const -> size_t override {
@@ -1276,53 +1296,49 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_frame_overflow_handler() -> void override {
-        println("baz_frame_overflow:");
-        println(";   print message to stderr");
-        println("    mov rax, 1");
-        println("    mov rdi, 2");
-        println("    lea rsi, [msg_frame_overflow]");
-        println("    mov rdx, msg_frame_overflow_len");
-        println("    syscall");
-        println(";   exit with error code 255");
-        println("    mov rax, 60");
-        println("    mov rdi, 255");
-        println("    syscall");
-        switch_section("section .rodata", false);
-        println("    msg_frame_overflow: db 'panic: frame overflow', 10");
-        println("    msg_frame_overflow_len equ $ - msg_frame_overflow");
+        assembler_.label(0, "baz_frame_overflow");
+        emit_panic_message("msg_frame_overflow");
+        emit_panic_exit();
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, "msg_frame_overflow");
+        assembler_.string_data("panic: frame overflow\\n");
+        assembler_.define_length("msg_frame_overflow_len",
+                                 "msg_frame_overflow");
+
         // the bounds handler may follow and must stay in the code section
-        switch_section("section .text", true);
+        assembler_.switch_section(section::text);
     }
 
     auto begin_data(const size_t alignment) -> void override {
-        println();
-        switch_section("section .data", false);
-        println("align {}\ndat:", alignment);
+        assembler_.empty_line();
+        assembler_.switch_section(section::data);
+        assembler_.align(alignment);
+        assembler_.label(0, "dat");
     }
 
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
 
-        println("dat.end:\n");
-        switch_section("section .bss.vars nobits alloc write", false);
-        println("align {}\nvars:", alignment);
-        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
-        println("vars resb {}", std::min(size_bytes, max_chunk));
-        size_t remaining{size_bytes - std::min(size_bytes, max_chunk)};
-        while (remaining != 0) {
-            const size_t chunk{std::min(remaining, max_chunk)};
-            println("resb {}", chunk);
-            remaining -= chunk;
-        }
-        println("vars.end:");
+        assembler_.label(0, "dat.end");
+        assembler_.empty_line();
+        assembler_.switch_section(section::variables);
+        assembler_.align(alignment);
+        assembler_.label(0, "vars");
+        assembler_.reserve(size_bytes);
+        assembler_.label(0, "vars.end");
     }
 
     auto emit_data(const size_t element_size_bytes,
                    const data_initializer& value) -> void override {
 
-        print("{} ", get_data_def(element_size_bytes));
-        emit_data_value(value);
-        println();
+        const std::array<assembler_x86_64::data_value, 1> values{{
+            {
+                .value{value.value},
+                .unary_operations{value.uops},
+            },
+        }};
+
+        assembler_.data(element_size_bytes, values);
     }
 
     using machine::emit_data_array;
@@ -1331,31 +1347,20 @@ class machine_x86_64 final : public machine {
                          const std::function_ref<bool(data_initializer&)> next)
         -> void override {
 
-        print("{} ", get_data_def(element_size_bytes));
-        bool first{true};
+        std::vector<assembler_x86_64::data_value> values;
         data_initializer value;
         while (next(value)) {
-            if (not first) {
-                print(", ");
-            }
-            emit_data_value(value);
-            first = false;
+            values.push_back({
+                .value{value.value},
+                .unary_operations{value.uops},
+            });
         }
-        println();
+
+        assembler_.data(element_size_bytes, values);
     }
 
     auto emit_string_data(const std::string_view value) -> void override {
-        print("db `");
-        for (const auto [i, p] :
-             std::views::enumerate(value | std::views::split('`'))) {
-
-            if (i != 0) {
-                print("\\`");
-            }
-
-            print("{}", std::string_view{p});
-        }
-        println("`");
+        assembler_.string_data(value);
     }
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {
@@ -1367,8 +1372,8 @@ class machine_x86_64 final : public machine {
                             const data_initializer& value) const
         -> void override {
 
-        println("times {} {} {}{}", count, get_data_def(element_size_bytes),
-                value.uops, value.value);
+        assembler_.repeated_data(element_size_bytes, count, value.uops,
+                                 value.value);
     }
 
     // returns 0 if name is not a register
@@ -1534,99 +1539,42 @@ class machine_x86_64 final : public machine {
                                          std::max(rhs.scale(), uint64_t{1}));
     }
 
-    [[nodiscard]] static auto size_specifier(const size_t size_bytes)
-        -> std::string_view {
-
-        switch (size_bytes) {
-        case size_qword:
-            return "qword";
-
-        case size_dword:
-            return "dword";
-
-        case size_word:
-            return "word";
-
-        case size_byte:
-            return "byte";
-
-        default:
-            std::unreachable();
-        }
-    }
-
+    // the address without a width, as 'lea' and comments take it
     [[nodiscard]] static auto
-    format_address(const operand& value,
-                   const bool explicit_displacement = false) -> std::string {
+    to_address(const operand& value, const bool explicit_displacement = false)
+        -> assembler_x86_64::memory {
 
         assert(not value.is_immediate());
 
-        std::string s;
-
-        if (not value.base_register().empty()) {
-            s += value.base_register();
-        }
-
-        if (not value.index_register().empty()) {
-            if (not s.empty()) {
-                s += " + ";
-            }
-            s += value.index_register();
-            if (value.scale() > 1) {
-                s += " * " + std::format("{}", value.scale());
-            }
-        }
-
-        if (explicit_displacement) {
-            s += std::format(" + {}", value.displacement());
-        } else if (value.displacement() != 0) {
-            if (not s.empty()) {
-                if (value.displacement() > 0) {
-                    s += " + ";
-                } else {
-                    s += " - ";
-                }
-            }
-            const uint64_t magnitude{
-                value.displacement() < 0
-                    ? uint64_t{} - static_cast<uint64_t>(value.displacement())
-                    : static_cast<uint64_t>(value.displacement())};
-
-            s += std::format("{}", magnitude);
-        }
-
-        return s;
+        return {
+            .symbol{},
+            .base{value.base_register()},
+            .index{value.index_register()},
+            .scale{value.scale()},
+            .displacement{value.displacement()},
+            .size_bytes{},
+            .explicit_displacement{explicit_displacement},
+        };
     }
 
-    [[nodiscard]] static auto format_operand(const operand& value)
-        -> std::string {
+    [[nodiscard]] static auto to_argument(const operand& value)
+        -> assembler_x86_64::argument {
+
         if (value.is_immediate()) {
-            return value.immediate();
+            return assembler_x86_64::immediate::of_expression(
+                value.immediate());
         }
 
-        return value.is_register()
-                   ? value.base_register()
-                   : format_operand(value, value.type_ref().size_bytes());
+        if (value.is_register()) {
+            return std::string_view{value.base_register()};
+        }
+
+        assembler_x86_64::memory address{to_address(value)};
+        address.size_bytes = value.type_ref().size_bytes();
+
+        return address;
     }
 
-    [[nodiscard]] static auto format_operand(const operand& value,
-                                             const size_t size_bytes)
-        -> std::string {
-        if (value.is_immediate()) {
-            return value.immediate();
-        }
-        std::string s;
-        if (size_bytes != 0) {
-            s.append(size_specifier(size_bytes));
-            s.append(" [");
-        }
-        s.append(format_address(value));
-        if (size_bytes != 0) {
-            s.append("]");
-        }
-
-        return s;
-    }
     auto reserve_named_register(const token& src_loc_tk, const size_t indent,
                                 const std::string_view reg,
                                 const type& type_ref) -> void {
@@ -1847,16 +1795,13 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    auto emit_data_value(const data_initializer& value) const -> void {
-        print("{}{}", value.uops, value.value);
-    }
-
     auto branch_comparison(const size_t indent,
                            const std::string_view comparison,
                            const bool inverted, const std::string_view label)
         -> void {
 
-        jcc(indent, asm_cc_for_op(comparison, inverted), label);
+        assembler_.jcc(indent, condition_for_comparison(comparison, inverted),
+                       label);
     }
 
     auto store_comparison(const size_t indent,
@@ -1864,120 +1809,36 @@ class machine_x86_64 final : public machine {
                           const bool inverted, const operand& dst) -> void {
 
         if (dst.is_memory()) {
-            setcc(indent, asm_cc_for_op(comparison, inverted),
+            setcc(indent, condition_for_comparison(comparison, inverted),
                   sized_memory(dst, size_byte));
 
             return;
         }
-        setcc(indent, asm_cc_for_op(comparison, inverted), dst);
+        setcc(indent, condition_for_comparison(comparison, inverted), dst);
     }
 
     auto store_equal_result(const size_t indent, const operand& dst,
                             const bool inverted) -> void {
+
+        const condition cc{inverted ? condition::ne : condition::e};
         if (dst.is_register()) {
-            setcc(indent, inverted ? "ne" : "e",
-                  sized_register(dst, size_byte));
+            setcc(indent, cc, sized_register(dst, size_byte));
 
             return;
         }
-        setcc(indent, inverted ? "ne" : "e", sized_memory(dst, size_byte));
-    }
-
-    template <typename... args_t>
-    auto print(const std::format_string<args_t...> format,
-               args_t&&... args) const -> void {
-
-        if (not assembling_) {
-            std::print(os_.get(), format, std::forward<args_t>(args)...);
-
-            return;
-        }
-
-        pending_text_ += std::format(format, std::forward<args_t>(args)...);
-        add_complete_lines();
-    }
-
-    template <typename... args_t>
-    auto println(const std::format_string<args_t...> format,
-                 args_t&&... args) const -> void {
-
-        if (not assembling_) {
-            std::println(os_.get(), format, std::forward<args_t>(args)...);
-
-            return;
-        }
-
-        pending_text_ += std::format(format, std::forward<args_t>(args)...);
-        pending_text_ += '\n';
-        add_complete_lines();
-    }
-
-    auto println() const -> void { println(""); }
-
-    // the assembler takes whole lines, a line printed in parts waits for its
-    // end
-    auto add_complete_lines() const -> void {
-        size_t start{};
-        size_t end{pending_text_.find('\n')};
-        while (end != std::string::npos) {
-            assembler_.add_text(pending_text_.substr(start, end - start));
-            start = end + 1;
-            end = pending_text_.find('\n', start);
-        }
-        pending_text_.erase(0, start);
-    }
-
-    [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
-        std::string text;
-        text.resize(indent * 4, ' ');
-
-        return text;
-    }
-
-    // code sizes and entries only count in code, so the assembler must know
-    // the section
-    auto switch_section(const std::string_view directive,
-                        const bool code_section) const -> void {
-
-        assembler_.set_code_section(code_section);
-        println("{}", directive);
-    }
-
-    // jumps go to the assembler as jumps so they can be optimized
-    auto emit_jump(const size_t indent, const std::string_view mnemonic,
-                   const std::string_view target) -> void {
-
-        if (not assembling_) {
-            asm_line(indent, "{} {}", mnemonic, target);
-
-            return;
-        }
-
-        assert(pending_text_.empty());
-        assembler_.add_jump(
-            std::format("{}{} {}", indentation(indent), mnemonic, target),
-            mnemonic, {}, target, {});
-    }
-
-    auto comment_start(const token& src_loc_tk, const size_t indent) -> void {
-
-        const auto [line, column]{line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
-
-        comment_indent(indent);
-        print("[{}:{}] ", line, column);
+        setcc(indent, cc, sized_memory(dst, size_byte));
     }
 
     auto mov(const token& src_loc_tk, const size_t indent,
              const operand& dst_op, const operand& src_op) -> void {
 
-        op(src_loc_tk, indent, "mov", dst_op, src_op);
+        emit_op(src_loc_tk, indent, op::mov, dst_op, src_op);
     }
 
     auto cmp(const token& src_loc_tk, const size_t indent,
              const operand& dst_op, const operand& src_op) -> void {
 
-        op(src_loc_tk, indent, "cmp", dst_op, src_op);
+        emit_op(src_loc_tk, indent, op::cmp, dst_op, src_op);
     }
 
     [[nodiscard]] auto address_is_encodable(const operand& value) const
@@ -2000,39 +1861,40 @@ class machine_x86_64 final : public machine {
         const operand address{
             alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
         registers.push_back(address);
-        asm_line(indent, "mov {}, {}", format_operand(address),
-                 value.displacement());
+        const std::string_view sum{address.base_register()};
+        assembler_.instruction(indent, op::mov, sum, value.displacement());
 
         if (not value.base_register().empty()) {
-            asm_line(indent, "lea {}, [{} + {}]", format_operand(address),
-                     value.base_register(), address.base_register());
+            assembler_.instruction(indent, op::lea, sum,
+                                   register_sum(value.base_register(), sum, 1));
         }
 
         if (not value.index_register().empty()) {
             if (value.index_register() != "rsp" and
                 can_lower_index_scale(value.scale())) {
-                asm_line(indent, "lea {}, [{} + {} * {}]",
-                         format_operand(address), address.base_register(),
-                         value.index_register(), value.scale());
+                assembler_.instruction(
+                    indent, op::lea, sum,
+                    register_sum(sum, value.index_register(), value.scale()));
             } else {
                 const operand scaled{
                     alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
                 registers.push_back(scaled);
-                asm_line(indent, "mov {}, {}", format_operand(scaled),
-                         value.index_register());
+                const std::string_view multiple{scaled.base_register()};
+                assembler_.instruction(
+                    indent, op::mov, multiple,
+                    std::string_view{value.index_register()});
 
+                // adds the index times each set bit of the scale
                 for (uint64_t remaining{value.scale()}; remaining != 0;
                      remaining >>= 1U) {
                     if ((remaining & 1U) != 0) {
-                        asm_line(indent, "lea {}, [{} + {}]",
-                                 format_operand(address),
-                                 address.base_register(),
-                                 scaled.base_register());
+                        assembler_.instruction(indent, op::lea, sum,
+                                               register_sum(sum, multiple, 1));
                     }
                     if (remaining > 1) {
-                        asm_line(indent, "lea {}, [{} + {}]",
-                                 format_operand(scaled), scaled.base_register(),
-                                 scaled.base_register());
+                        assembler_.instruction(
+                            indent, op::lea, multiple,
+                            register_sum(multiple, multiple, 1));
                     }
                 }
             }
@@ -2040,6 +1902,22 @@ class machine_x86_64 final : public machine {
 
         return operand::mem(address.base_register(), {}, 1, 0,
                             value.type_ref());
+    }
+
+    [[nodiscard]] static auto register_sum(const std::string_view base,
+                                           const std::string_view index,
+                                           const uint64_t scale)
+        -> assembler_x86_64::memory {
+
+        return {
+            .symbol{},
+            .base{base},
+            .index{index},
+            .scale{scale},
+            .displacement{},
+            .size_bytes{},
+            .explicit_displacement{},
+        };
     }
 
     auto with_lowered_addresses(
@@ -2076,59 +1954,59 @@ class machine_x86_64 final : public machine {
         unavailable_registers_ = saved_unavailable;
     }
 
-    auto emit_binary(const size_t indent, const std::string_view instruction,
-                     const operand& dst, const operand& src) -> void {
+    auto emit_binary(const size_t indent, const op code, const operand& dst,
+                     const operand& src) -> void {
+
         with_lowered_addresses(token{}, indent, dst, src,
                                [&](const operand& lowered_dst,
                                    const operand& lowered_src) -> void {
-                                   asm_line(indent, "{} {}, {}", instruction,
-                                            format_operand(lowered_dst),
-                                            format_operand(lowered_src));
+                                   emit(indent, code, lowered_dst, lowered_src);
                                });
     }
 
-    auto emit_unary(const size_t indent, const std::string_view instruction,
-                    const operand& value) -> void {
+    auto emit_unary(const size_t indent, const op code, const operand& value)
+        -> void {
+
         with_lowered_addresses(
             token{}, indent, value, operand{},
             [&](const operand& lowered,
                 [[maybe_unused]] const operand& empty) -> void {
-                asm_line(indent, "{} {}", instruction, format_operand(lowered));
+                assembler_.instruction(indent, code, to_argument(lowered));
             });
+    }
+
+    // writes the instruction with the operands as they are
+    auto emit(const size_t indent, const op code, const operand& dst,
+              const operand& src) -> void {
+
+        assembler_.instruction(indent, code, to_argument(dst),
+                               to_argument(src));
     }
 
     auto add(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        emit_binary(indent, "add", dst, src);
+        emit_binary(indent, op::add, dst, src);
     }
 
     auto cmp(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        emit_binary(indent, "cmp", dst, src);
+        emit_binary(indent, op::cmp, dst, src);
     }
 
     auto inc(const size_t indent, const operand& dst) -> void {
-        emit_unary(indent, "inc", dst);
+        emit_unary(indent, op::inc, dst);
     }
 
     auto push(const size_t indent, const operand& src) -> void {
         assert(src.is_register() and src.type_ref().size_bytes() == size_qword);
-        asm_line(indent, "push {}", format_operand(src));
+        assembler_.instruction(indent, op::push, to_argument(src));
     }
 
     auto pop(const size_t indent, const operand& dst) -> void {
         assert(dst.is_register() and dst.type_ref().size_bytes() == size_qword);
-        asm_line(indent, "pop {}", format_operand(dst));
-    }
-
-    auto jmp(const size_t indent, const std::string_view label) -> void {
-        emit_jump(indent, "jmp", label);
-    }
-
-    auto jne(const size_t indent, const std::string_view label) -> void {
-        emit_jump(indent, "jne", label);
+        assembler_.instruction(indent, op::pop, to_argument(dst));
     }
 
     auto lea(const size_t indent, const operand& dst, const operand& address,
@@ -2138,36 +2016,28 @@ class machine_x86_64 final : public machine {
             token{}, indent, dst, address,
             [&](const operand& lowered_dst,
                 const operand& lowered_address) -> void {
-                asm_line(
-                    indent, "lea {}, [{}]", format_operand(lowered_dst),
-                    format_address(lowered_address, explicit_displacement));
+                assembler_.instruction(
+                    indent, op::lea, to_argument(lowered_dst),
+                    to_address(lowered_address, explicit_displacement));
             });
     }
 
-    auto syscall(const size_t indent) -> void { asm_line(indent, "syscall"); }
-
-    template <typename... args_t>
-    auto asm_line(const size_t indent,
-                  const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
-
-        for (size_t i{}; i < indent; ++i) {
-            print("    ");
-        }
-        println(format, std::forward<args_t>(args)...);
+    auto syscall(const size_t indent) -> void {
+        assembler_.instruction(indent, op::syscall);
     }
 
     auto imul(const token& src_loc_tk, const size_t indent,
               const operand& dst_op, const operand& src_op) -> void {
 
-        op(src_loc_tk, indent, "imul", dst_op, src_op);
+        emit_op(src_loc_tk, indent, op::imul, dst_op, src_op);
     }
 
-    auto op(const token& src_loc_tk, const size_t indent,
-            const std::string_view op, const operand& dst_op,
-            const operand& src_op) -> void {
+    // matches the widths of the operands with scratch registers and sign
+    // extension, and lowers addresses x86 cannot encode
+    auto emit_op(const token& src_loc_tk, const size_t indent, const op code,
+                 const operand& dst_op, const operand& src_op) -> void {
 
-        if (op == "mov" and same_operand(dst_op, src_op)) {
+        if (code == op::mov and same_operand(dst_op, src_op)) {
             return;
         }
 
@@ -2176,7 +2046,7 @@ class machine_x86_64 final : public machine {
             with_lowered_addresses(
                 src_loc_tk, indent, dst_op, src_op,
                 [&](const operand& dst, const operand& src) -> void {
-                    this->op(src_loc_tk, indent, op, dst, src);
+                    emit_op(src_loc_tk, indent, code, dst, src);
                 });
 
             return;
@@ -2186,21 +2056,18 @@ class machine_x86_64 final : public machine {
         const size_t src_size_bytes{src_op.type_ref().size_bytes()};
 
         if (src_op.is_immediate()) {
-            if (needs_immediate_register(op, dst_op, src_op)) {
+            if (needs_immediate_register(code, dst_op, src_op)) {
                 const operand reg{
                     alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
 
-                asm_line(indent, "mov {}, {}", format_operand(reg),
-                         format_operand(src_op));
-                asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                         format_operand(reg));
+                emit(indent, op::mov, reg, src_op);
+                emit(indent, code, dst_op, reg);
                 free_scratch_register(src_loc_tk, indent, reg);
 
                 return;
             }
 
-            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     format_operand(src_op));
+            emit(indent, code, dst_op, src_op);
 
             return;
         }
@@ -2211,18 +2078,15 @@ class machine_x86_64 final : public machine {
                 builtin_type_for_size_bytes(dst_size_bytes))};
 
             if (dst_size_bytes > src_size_bytes) {
-                asm_line(indent, "movsx {}, {}", format_operand(reg),
-                         format_operand(src_op));
+                emit(indent, op::movsx, reg, src_op);
             } else if (dst_size_bytes < src_size_bytes) {
-                asm_line(indent, "mov {}, {}", format_operand(reg),
-                         format_operand(src_op, dst_size_bytes));
+                emit(indent, op::mov, reg,
+                     sized_memory(src_op, dst_size_bytes));
             } else {
-                asm_line(indent, "mov {}, {}", format_operand(reg),
-                         format_operand(src_op));
+                emit(indent, op::mov, reg, src_op);
             }
 
-            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     format_operand(reg));
+            emit(indent, code, dst_op, reg);
 
             free_scratch_register(src_loc_tk, indent, reg);
 
@@ -2230,8 +2094,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (dst_size_bytes == src_size_bytes) {
-            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     format_operand(src_op));
+            emit(indent, code, dst_op, src_op);
 
             return;
         }
@@ -2239,25 +2102,21 @@ class machine_x86_64 final : public machine {
         if (dst_size_bytes > src_size_bytes) {
             // 'movsx' needs a register destination, so the source register is
             // extended in place, its low bits keep the value
-            if (op == "mov" and dst_op.is_memory()) {
+            if (code == op::mov and dst_op.is_memory()) {
                 const operand wide{sized_register(src_op, dst_size_bytes)};
 
-                asm_line(indent, "movsx {}, {}", format_operand(wide),
-                         format_operand(src_op));
-                asm_line(indent, "mov {}, {}", format_operand(dst_op),
-                         format_operand(wide));
+                emit(indent, op::movsx, wide, src_op);
+                emit(indent, op::mov, dst_op, wide);
 
                 return;
             }
-            if (op == "mov") {
-                asm_line(indent, "movsx {}, {}", format_operand(dst_op),
-                         format_operand(src_op));
+            if (code == op::mov) {
+                emit(indent, op::movsx, dst_op, src_op);
 
                 return;
             }
-            if (op == "sal" or op == "sar") {
-                asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                         format_operand(src_op));
+            if (code == op::sal or code == op::sar) {
+                emit(indent, code, dst_op, src_op);
 
                 return;
             }
@@ -2267,11 +2126,9 @@ class machine_x86_64 final : public machine {
                 src_loc_tk, indent,
                 builtin_type_for_size_bytes(dst_size_bytes))};
 
-            asm_line(indent, "movsx {}, {}", format_operand(reg_sx),
-                     format_operand(src_op));
+            emit(indent, op::movsx, reg_sx, src_op);
 
-            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     format_operand(reg_sx));
+            emit(indent, code, dst_op, reg_sx);
 
             free_scratch_register(src_loc_tk, indent, reg_sx);
 
@@ -2279,34 +2136,36 @@ class machine_x86_64 final : public machine {
         }
 
         if (src_op.is_register()) {
-            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     format_operand(sized_register(src_op, dst_size_bytes)));
+            emit(indent, code, dst_op, sized_register(src_op, dst_size_bytes));
 
             return;
         }
         assert(dst_op.is_register() and src_op.is_memory());
 
-        asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                 format_operand(src_op, dst_size_bytes));
+        emit(indent, code, dst_op, sized_memory(src_op, dst_size_bytes));
     }
 
-    auto cmovs(const size_t indent, const operand& dst, const operand& src)
-        -> void {
+    // only registers are used, which need no lowering
+    auto cmovcc(const size_t indent, const condition cc, const operand& dst,
+                const operand& src) -> void {
 
-        emit_binary(indent, "cmovs", dst, src);
+        assert(dst.is_register() and src.is_register());
+
+        assembler_.cmovcc(indent, cc, to_argument(dst), to_argument(src));
     }
 
     // x86 sign-extends 32-bit immediates and only 'mov' to a register takes 64
     // bits
-    [[nodiscard]] static auto
-    needs_immediate_register(const std::string_view op, const operand& dst,
-                             const operand& src) -> bool {
+    [[nodiscard]] static auto needs_immediate_register(const op code,
+                                                       const operand& dst,
+                                                       const operand& src)
+        -> bool {
 
         if (dst.type_ref().size_bytes() != size_qword) {
             return false;
         }
 
-        if (op == "mov" and dst.is_register()) {
+        if (code == op::mov and dst.is_register()) {
             return false;
         }
 
@@ -2321,114 +2180,92 @@ class machine_x86_64 final : public machine {
     }
 
     auto idiv(const size_t indent, const operand& value) -> void {
-        emit_unary(indent, "idiv", value);
-    }
-
-    auto jcc(const size_t indent, const std::string_view comparison,
-             const std::string_view label) -> void {
-
-        emit_jump(indent, std::format("j{}", comparison), label);
+        emit_unary(indent, op::idiv, value);
     }
 
     auto neg(const size_t indent, const operand& value) -> void {
-        emit_unary(indent, "neg", value);
+        emit_unary(indent, op::neg, value);
     }
 
     auto not_op(const size_t indent, const operand& value) -> void {
-        emit_unary(indent, "not", value);
+        emit_unary(indent, op::not_op, value);
     }
 
-    auto rep_movs(const size_t indent, const char size_suffix) -> void {
-        asm_line(indent, "rep movs{}", size_suffix);
-    }
+    auto setcc(const size_t indent, const condition cc, const operand& value)
+        -> void {
 
-    auto rep_stos(const size_t indent, const char size_suffix) -> void {
-        asm_line(indent, "rep stos{}", size_suffix);
-    }
-
-    auto repe_cmps(const size_t indent, const char size_suffix) -> void {
-        asm_line(indent, "repe cmps{}", size_suffix);
-    }
-
-    auto setcc(const size_t indent, const std::string_view comparison,
-               const operand& value) -> void {
-
-        emit_unary(indent, std::format("set{}", comparison), value);
+        with_lowered_addresses(
+            token{}, indent, value, operand{},
+            [&](const operand& lowered,
+                [[maybe_unused]] const operand& empty) -> void {
+                assembler_.setcc(indent, cc, to_argument(lowered));
+            });
     }
 
     auto shl(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        emit_binary(indent, "shl", dst, src);
+        emit_binary(indent, op::shl, dst, src);
     }
 
     auto test(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        emit_binary(indent, "test", dst, src);
+        emit_binary(indent, op::test, dst, src);
     }
 
     auto xor_op(const size_t indent, const operand& dst, const operand& src)
         -> void {
 
-        emit_binary(indent, "xor", dst, src);
+        emit_binary(indent, op::xor_op, dst, src);
     }
 
-    [[nodiscard]] static auto get_data_def(const size_t size_bytes)
-        -> std::string_view {
+    [[nodiscard]] static auto
+    condition_for_comparison(const std::string_view comparison,
+                             const bool inverted) -> condition {
 
-        switch (size_bytes) {
-        case size_qword:
-            return data_qword;
-
-        case size_dword:
-            return data_dword;
-
-        case size_word:
-            return data_word;
-
-        case size_byte:
-            return data_byte;
-
-        default:
-            std::unreachable();
+        if (comparison == "==") {
+            return inverted ? condition::ne : condition::e;
         }
-    }
-
-    [[nodiscard]] static auto asm_cc_for_op(const std::string_view op,
-                                            const bool inverted)
-        -> std::string_view {
-
-        if (op == "==") {
-            return inverted ? "ne" : "e";
+        if (comparison == "!=") {
+            return inverted ? condition::e : condition::ne;
         }
-        if (op == "!=") {
-            return inverted ? "e" : "ne";
+        if (comparison == "<") {
+            return inverted ? condition::ge : condition::l;
         }
-        if (op == "<") {
-            return inverted ? "ge" : "l";
+        if (comparison == "<=") {
+            return inverted ? condition::g : condition::le;
         }
-        if (op == "<=") {
-            return inverted ? "g" : "le";
+        if (comparison == ">") {
+            return inverted ? condition::le : condition::g;
         }
-        if (op == ">") {
-            return inverted ? "le" : "g";
-        }
-        if (op == ">=") {
-            return inverted ? "l" : "ge";
+        if (comparison == ">=") {
+            return inverted ? condition::l : condition::ge;
         }
         std::unreachable();
     }
 
-    auto comment_indent(const size_t indent) -> void {
-        print(";");
+    // shared by the panic handlers, which run after all allocations
+    auto emit_panic_message(const std::string_view message_label) -> void {
+        assembler_.comment(1, "print message to stderr");
+        assembler_.instruction(1, op::mov, "rax", 1);
+        assembler_.instruction(1, op::mov, "rdi", 2);
+        assembler_.instruction(
+            1, op::lea, "rsi",
+            assembler_x86_64::memory::of_symbol(message_label));
 
-        if (indent != 0) {
-            print("   ");
-        }
-        for (size_t i{1}; i < indent; ++i) {
-            print("    ");
-        }
+        assembler_.instruction(1, op::mov, "rdx",
+                               assembler_x86_64::immediate::of_expression(
+                                   std::format("{}_len", message_label)));
+
+        assembler_.instruction(1, op::syscall);
+    }
+
+    auto emit_panic_exit() -> void {
+        assembler_.comment(1, "exit with error code 255");
+        assembler_.instruction(1, op::mov, "rax", syscall_exit);
+        assembler_.instruction(1, op::mov, "rdi", panic_exit_code);
+        assembler_.instruction(1, op::syscall);
     }
 
     // human-readable "line:col" for a token, using the cached source text

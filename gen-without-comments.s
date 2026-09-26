@@ -1410,10 +1410,12 @@ baz_bounds_panic:
     mov rdi, 255
     syscall
 section .rodata
-    msg_panic: db 'panic: bounds at line '
-    msg_panic_len equ $ - msg_panic
+msg_panic:
+db `panic: bounds at line `
+msg_panic_len equ $ - msg_panic
 section .bss
-    num_buffer: resb 21
+num_buffer:
+resb 21
 section .data
 align 16
 dat:
@@ -1433,5 +1435,5 @@ dat.end:
 section .bss.vars nobits alloc write
 align 16
 vars:
-vars resb 131072
+resb 131072
 vars.end:
