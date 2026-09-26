@@ -10,7 +10,7 @@ cd ..
 echo
 echo "building firmware"
 
-./baz --target=rv32i-fpga --vars=131072 --checks=upper,lower,line,alias roome.baz >/dev/null
+./baz --target=rv32i-fpga --vars=131072 --checks=upper,lower,line,alias roome.baz >roome.s
 
 # check result
 if [ ! -f "$FIRMWARE_FILE" ]; then

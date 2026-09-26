@@ -115,37 +115,41 @@ const maybe = -1
 # arrays not supported
 
 func noinline print_num(num) {
-    var buf[20] i8
+    # 19 digits of an i64 plus the sign
+    const buf_count = 20
+
+    var buf[buf_count] i8
     var n = num
-    var is_negative bool = false
- 
+    var is_negative bool
+
+    # digits are taken from the negative value because the most negative i64
+    # has no positive counterpart
     if n < 0 {
         is_negative = true
+    }
+    if n > 0 {
         n = -n
     }
  
-    var i = 20
+    var i = buf_count
     loop {
         i = i - 1
-        var ascii = 48 + (n % 10)
-        # note: not buf[i] = 48 + ... because expression will be executed as
-        #       byte sized and n overflows
-        buf[i] = i8(ascii) 
+        buf[i] = i8('0' - n % 10)
         n = n / 10
         if n == 0 break
     }
  
     if is_negative {
         i = i - 1
-        buf[i] = 45
+        buf[i] = '-'
     }
  
-    var write_pos = 0
+    var write_pos
     loop {
         buf[write_pos] = buf[i]
         write_pos = write_pos + 1
         i = i + 1
-        if i == 20 break
+        if i == buf_count break
     }
  
     write(1, buf, write_pos)

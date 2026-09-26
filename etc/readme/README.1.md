@@ -2,7 +2,8 @@
 
 Experimental compiler for a minimalistic, specialized language targeting x86_64
 (Linux) via NASM assembler and RV32I via the LLVM assembler running in QEMU
-(Linux).
+(Linux). For bare-metal RV32I (QEMU `virt` machine and an FPGA soft core) the
+compiler writes the binary image itself.
 
 ## Intention
 
@@ -23,10 +24,11 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 * constants
 * arrays
 * array iteration
+* string and character literals: `var name[16] i8 = "baz\n"`, `'a'`, `'\x41'`
 * optional bounds checking at runtime
   * optional line number
 * inlined functions
-* limited support for non-inlined functions
+* limited support for non-inlined functions: `func noinline name(...) { ... }`
 * methods on user defined types: `func list.add(x) { ... }` is called as
   `lst.add(x)` with `lst` as the implicit parameter `self`
 * partial ub-free support
@@ -37,28 +39,37 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 
 ## Howto
 
-* to compile the compiler that compiles `prog.baz` and assembles the generated
-  code run `./make.sh`
-* after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
-  run `prog.baz`
+* to compile the compiler, then compile and run `prog.baz` run `./make.sh`
+  (`./make.sh build` only compiles the compiler)
+* after that use `./run.sh myprogram.baz` to compile, assemble and run a
+  program, `./run.sh` alone uses `prog.baz`
+  * writes `myprogram.s`, `myprogram-without-comments.s`, `myprogram.o` and the
+    binary `myprogram`
   * optional parameters: _variable storage size_, _bounds check_, with _line number
-    information_ and _jump optimizations_ in boolean expression e.g:
-    * `./run-baz.sh myprogram.baz --vars=262144`: reserves 262144 bytes for
+    information_ and _jump optimizations_ e.g:
+    * `./run.sh myprogram.baz --vars=262144`: reserves 262144 bytes for
       variables, no runtime checks
-    * `./run-baz.sh myprogram.baz --vars=262144 --checks=upper`: checks upper
+    * `./run.sh myprogram.baz --vars=262144 --checks=upper`: checks upper
       bounds without line number information and is often enough to ensure
       catching negative values (faster)
-    * `./run-baz.sh myprogram.baz --vars=262144 --checks=upper,line`: checks
+    * `./run.sh myprogram.baz --vars=262144 --checks=upper,line`: checks
       upper bounds with line number information
-    * `./run-baz.sh myprogram.baz --vars=262144 --checks=upper,lower,line`: checks
+    * `./run.sh myprogram.baz --vars=262144 --checks=upper,lower,line`: checks
       bounds with line number information
     * option `--vars=SIZE` reserves variable storage in bytes (default: 65536,
       decimal or `0x` hex, positive multiple of 16)
-    * option `--nopt` disables post processing jump optimizations in boolean
-      expression
+    * option `--checks=TYPE` also accepts `frame` (non-inlined function frame
+      capacity) and `alias` (calls where a result or argument may share
+      storage)
+    * option `--nopt` disables post processing jump optimizations
     * option `--reproduce-source` writes reproduced source to `diff.baz`
       and checks that it matches the input
-    * to compile for rv32i and run in QEMU use `--target=rv32i`
+    * to compile for rv32i and run in QEMU user mode use `--target=rv32i`
+    * to compile a bare-metal image `gen-rv32i.bin` and run it on the QEMU
+      `virt` machine use `--target=rv32i-qemu` (option `--stack=SIZE` sets
+      the stack size, default: 65536, multiple of 16)
+    * to compile a bare-metal image `gen-rv32i.bin` and run it in the fpga
+      soft core emulator use `--target=rv32i-fpga`
 * to run the tests `qa/coverage/test-all.sh` and see coverage report in
   `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
@@ -70,7 +81,8 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
   `prog-uart.baz`
   * <https://github.com/calint/tang-nano-9k--riscv--cache-psram>
   * <https://github.com/calint/tang-nano-20k--riscv--cache-sdram>
-  * to run in an emulator of fpga soft core rv32i: `./run-rv32i-fpga.sh`
+  * to compile and run in an emulator of fpga soft core rv32i:
+    `./run.sh prog-uart.baz --target=rv32i-fpga`
   * to run on hardware use `scripts/fpga-connect-serial.sh`
 
 ## Source

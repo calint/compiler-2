@@ -4,8 +4,11 @@
 /sanitizer.log
 /qa/coverage/report/*
 /baz
-/gen
-/gen.o
+*.o
+# binaries built by run.sh are named after their source
+/prog
+/prog-uart
+/roome
 gen-rv32i.bin
 /diff.baz
 /.idea/

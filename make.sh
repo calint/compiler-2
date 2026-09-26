@@ -113,4 +113,4 @@ if [ $BUILD_ONLY -eq 1 ]; then
     exit 0
 fi
 
-./run-baz.sh prog.baz --vars=131072 --checks=upper,lower,line
+./run.sh prog.baz --vars=131072 --checks=upper,lower,line
