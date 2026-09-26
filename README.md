@@ -11,7 +11,7 @@ compiler writes the binary image itself.
 * gain experience writing compilers
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
-* limited support for non-inlined functions
+* support for non-inlined functions
 * opt-in checks that make the language ub-free
 
 ## Supports
@@ -24,13 +24,12 @@ compiler writes the binary image itself.
 * constants
 * arrays
 * array iteration
-* string and character literals: `var name[16] i8 = "baz\n"`, `'a'`, `'\x41'`
+* string and character literals
 * optional bounds checking at runtime
   * optional line number
 * inlined functions
-* limited support for non-inlined functions: `func noinline name(...) { ... }`
-* methods on user defined types: `func list.add(x) { ... }` is called as
-  `lst.add(x)` with `lst` as the implicit parameter `self`
+* limited support for non-inlined functions
+* methods on user defined types
 * partial ub-free support
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`
