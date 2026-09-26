@@ -1,0 +1,8 @@
+# methods on built-in types are not supported
+
+func i32.abs() res i32 {
+    res = self
+}
+
+func main() {
+}

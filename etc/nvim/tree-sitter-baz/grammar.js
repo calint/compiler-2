@@ -12,6 +12,7 @@ module.exports = grammar({
     [$.variable_declaration],
     [$.sized_array_type],
     [$.unsized_array_type],
+    [$._access_chain],
   ],
 
   // Helper function for separated lists that must have at least one element
@@ -74,10 +75,11 @@ module.exports = grammar({
       $.variable_declaration,
     ),
 
-    // func [noinline] identifier ( parameters ) return_annotation body
+    // func [noinline] [type.]identifier ( parameters ) return_annotation body
     function_definition: $ => seq(
       $.func_keyword,
       optional(field('modifier', $.noinline_keyword)),
+      optional(seq(field('receiver_type', $.identifier), '.')),
       field('name', choice($.identifier, alias($.noinline_keyword, $.identifier))),
       '(',
       optional($.parameter_list),
@@ -199,13 +201,17 @@ module.exports = grammar({
     break_statement: $ => $.break_keyword,
     continue_statement: $ => $.continue_keyword,
 
-    // function_call identifier ( arguments )
+    // function_call [access_chain.]identifier ( arguments )
     function_call: $ => seq(
+      optional(seq(field('receiver', $.receiver), '.')),
       field('function', $.identifier),
       '(',
       optional($.argument_list),
       ')',
     ),
+
+    // e.g. 'h.lists[i]' in 'h.lists[i].add(x)'
+    receiver: $ => $._access_chain,
 
     argument_list: $ => sep1($._expression, ','),
 

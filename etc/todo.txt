@@ -1,27 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[x] support variable string initializers
-    => 'var', assignments and record literal fields of 'i8' arrays take
-       strings, the bytes are copied from a '.rodata' label and the rest of the
-       array is zeroed, identical strings share one label
-[x] a '{...}' initializer assigned to an unsized array parameter is not checked
-    against the argument size and can write past it, strings use the
-    argument size
-    => like strings, the argument size is used at compile: too many elements
-       are rejected and the rest of the argument is zeroed
-[x] string copies: short strings could be stored with immediates instead of
-    loads from '.rodata', rv32i copies byte by byte since the constants are
-    byte aligned
-    => up to 16 bytes x86 stores immediates, rv32i when that takes no more
-       code than the copy; rv32i constants are word aligned so the copy width
-       is limited only by the destination
+[ ] since every element has a whitespace before and after stop reading whitspace
+    after once newline is found
+    => what happens if a block is:
+        {
+            a = 2
+
+        }
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
-[x] a way to use characters e.g. 'a' instead of ascii code
-    => 'a', '\n', '\x41' are constants with the byte value (0-255), the same
-       escapes as strings
 [ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
@@ -31,15 +20,6 @@
     => keep the smallest 'access_alignment' of the addresses given to
        'set_array_copy_source/destination' and 'set_memory_equal_left/right'
        with the bulk registers, width = max(type alignment, that)
-[x] 'array_copy' with a constant count always loops ('rep movsb' on x86, the
-    bulk loop on rv32i). for a count >= 0 compile the addresses without the
-    bulk registers and call 'machine::copy' (unrolled up to 16 B, alignment
-    from both addresses). with bounds checks the count still needs a register
-    for the range check. note: x86 'copy' moves qwords, which changes the
-    result of an overlapping copy with the destination after the source
-    (undefined, see "overlapping 'array_copy'")
-    => a constant count >= 0 copies through 'machine::copy', a negative one
-       keeps the loop so '--checks=lower' rejects it (559.baz, 560.baz)
 [ ] 'arrays_equal'/'equal' with a known size could compare unrolled like
     'array_copy' with a constant count
 [ ] 'array_copy(a, b, array_length(a))' still loops: 'array_length' and
@@ -50,16 +30,6 @@
     word/half/byte tail at run time
     => the redundant 'addi t1, t0, 0' after 'la' in a copy from read-only data
        is fixed: 'copy_bytes' loops from the label pointer ('emit_copy_loop')
-[x] constant '{...}' initializers of builtin elements up to 4 B are stored
-    element by element ('li' + 'sb' each on rv32i). pack the little endian
-    bytes and store them like strings ('copy_string': immediates or a
-    read-only constant). needs: owned text in 'string_constant', a label kind
-    other than 'str', an encoder of bytes to escaped text, and each element
-    still checked with 'assert_not_narrowed'
-    => 'copy_string' is now 'copy_bytes', constant builtin elements are packed
-       and stored with it, 'init.L.C' labels share the read-only constants
-       with strings (token::encode_string), 'bool' and record elements are
-       stored one by one (559.baz)
 [ ] 'equal' on records compares the padding bytes; a record set by a call
     result keeps whatever padding bytes its storage held
 [ ] when reading trailing whitespace stop at newline
@@ -184,7 +154,6 @@
 [ ]  lift the possible ai generated tests in test-rv32i.sh to end-to-end
      .baz tests 
 [ ] change all array access using [ ] to checked using .at
-[ ] consider removing the need of ':' in function declarations
 [ ] rv32i constant masks: use shifts where they avoid a scratch register
 [ ] rv32i: shorten negative constant multiplication and specialize constant division
 [ ]  make the operand the base way of addressing memory with 64 bit offset and
@@ -259,7 +228,6 @@
 [ ] examine NOLINTNEXTLINE annotations and try to fix
 [ ] reject or handle division by zero
     => init to zero prior call?
-[ ] function call of type lst.add(x) that calls list_add(self, x)
 [ ] built-in: mov and syscall functions to statements and remove special
     built-in functions declared in program
 [ ] const allowed in function declaration and code
@@ -323,6 +291,51 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] constant '{...}' initializers of builtin elements up to 4 B are stored
+    element by element ('li' + 'sb' each on rv32i). pack the little endian
+    bytes and store them like strings ('copy_string': immediates or a
+    read-only constant). needs: owned text in 'string_constant', a label kind
+    other than 'str', an encoder of bytes to escaped text, and each element
+    still checked with 'assert_not_narrowed'
+    => 'copy_string' is now 'copy_bytes', constant builtin elements are packed
+       and stored with it, 'init.L.C' labels share the read-only constants
+       with strings (token::encode_string), 'bool' and record elements are
+       stored one by one (559.baz)
+[x] consider removing the need of ':' in function declarations
+[x] function call of type lst.add(x) that calls list_add(self, x)
+    => 'func list.add(x) {...}' declares function 'list.add' with the implicit
+       first parameter 'self list', called as 'lst.add(x)'; the receiver can
+       be a nested field or an array element but not a whole array; only
+       record types have methods; no static form 'list.add(lst, x)'; frame
+       size labels are now 'size.func.NAME' since 'func.NAME.size' could be
+       the body of method 'NAME.size'
+[x] support variable string initializers
+    => 'var', assignments and record literal fields of 'i8' arrays take
+       strings, the bytes are copied from a '.rodata' label and the rest of the
+       array is zeroed, identical strings share one label
+[x] a '{...}' initializer assigned to an unsized array parameter is not checked
+    against the argument size and can write past it, strings use the
+    argument size
+    => like strings, the argument size is used at compile: too many elements
+       are rejected and the rest of the argument is zeroed
+[x] string copies: short strings could be stored with immediates instead of
+    loads from '.rodata', rv32i copies byte by byte since the constants are
+    byte aligned
+    => up to 16 bytes x86 stores immediates, rv32i when that takes no more
+       code than the copy; rv32i constants are word aligned so the copy width
+       is limited only by the destination
+[x] a way to use characters e.g. 'a' instead of ascii code
+    => 'a', '\n', '\x41' are constants with the byte value (0-255), the same
+       escapes as strings
+[x] 'array_copy' with a constant count always loops ('rep movsb' on x86, the
+    bulk loop on rv32i). for a count >= 0 compile the addresses without the
+    bulk registers and call 'machine::copy' (unrolled up to 16 B, alignment
+    from both addresses). with bounds checks the count still needs a register
+    for the range check. note: x86 'copy' moves qwords, which changes the
+    result of an overlapping copy with the destination after the source
+    (undefined, see "overlapping 'array_copy'")
+    => a constant count >= 0 copies through 'machine::copy', a negative one
+       keeps the loop so '--checks=lower' rejects it (559.baz, 560.baz)
 [x] update emulator in tang9k and tang20k projects
 [x] fpga emulator: add ebreak that exits the process with the code and change
     the machine_rv32i_fpga

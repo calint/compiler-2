@@ -1,0 +1,2 @@
+
+564.baz:8:11: method 'count' has the same name as a field in type 'list'

@@ -51,6 +51,10 @@ class stmt_identifier : public statement {
     // false when a runtime index leaves the element unknown
     bool is_exact_access_{};
 
+    // e.g. '.add' in 'lst.add(x)', the path is the receiver
+    token method_dot_tk_;
+    token method_name_tk_;
+
   public:
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
@@ -93,12 +97,19 @@ class stmt_identifier : public statement {
             }
 
             if (const token t{tz.is_next_char_token('.')}; not t.is_empty()) {
-                elem_delims_tk_.emplace_back(t);
-                tk_prv = tk;
-                tk = tz.next_token();
-                path_as_string_.push_back('.');
-                path_as_string_ += tk.text();
-                continue;
+                const token next_tk{tz.next_token()};
+                if (not is_method_name(tc, tk, next_tk)) {
+                    elem_delims_tk_.emplace_back(t);
+                    tk_prv = tk;
+                    tk = next_tk;
+                    path_as_string_.push_back('.');
+                    path_as_string_ += tk.text();
+                    continue;
+                }
+
+                // the path so far is resolved as the receiver below
+                method_dot_tk_ = t;
+                method_name_tk_ = next_tk;
             }
 
             if (tc.is_func(path_as_string_)) {
@@ -128,6 +139,18 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto first_token() const -> const token& {
         return elems_[0].name_tk;
+    }
+
+    [[nodiscard]] auto is_method_receiver() const -> bool {
+        return not method_name_tk_.is_empty();
+    }
+
+    [[nodiscard]] auto method_dot_token() const -> const token& {
+        return method_dot_tk_;
+    }
+
+    [[nodiscard]] auto method_name_token() const -> const token& {
+        return method_name_tk_;
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
@@ -371,6 +394,20 @@ class stmt_identifier : public statement {
     }
 
   private:
+    // 'name_tk' after the path so far names a method of the path's type
+    [[nodiscard]] auto is_method_name(const toc& tc, const token& path_tk,
+                                      const token& name_tk) const -> bool {
+
+        if (tc.is_func(path_as_string_)) {
+            return false;
+        }
+
+        const ident_info info{tc.make_ident_info(path_tk, path_as_string_)};
+
+        return tc.is_func(
+            std::format("{}.{}", info.type_ref().name(), name_tk.text()));
+    }
+
     // only signed types exist so a constant must fit the signed range
     auto assert_constant_fits(const ident_info& info,
                               const type& dst_type) const -> void {

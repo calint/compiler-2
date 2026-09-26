@@ -27,6 +27,8 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
   * optional line number
 * inlined functions
 * limited support for non-inlined functions
+* methods on user defined types: `func list.add(x) { ... }` is called as
+  `lst.add(x)` with `lst` as the implicit parameter `self`
 * partial ub-free support
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`

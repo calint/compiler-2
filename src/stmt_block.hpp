@@ -101,8 +101,12 @@ class stmt_block final : public statement {
                 stmt_identifier si{tc, {}, tk, tz};
                 // note: 'unary_ops' not allowed before destination identifier
 
-                if (const token t{tz.is_next_char_token('=')};
-                    not t.is_empty()) {
+                if (si.is_method_receiver()) {
+                    stms_.emplace_back(
+                        create_stmt_method_call(tc, tz, std::move(si)));
+
+                } else if (const token t{tz.is_next_char_token('=')};
+                           not t.is_empty()) {
 
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si), t, si.is_array(),

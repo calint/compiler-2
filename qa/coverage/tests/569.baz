@@ -1,0 +1,12 @@
+# 'self' is the implicit first parameter of a method
+
+type list {
+    count,
+    items[4]
+}
+
+func list.add(self) {
+}
+
+func main() {
+}

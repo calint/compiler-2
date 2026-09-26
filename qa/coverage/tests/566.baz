@@ -1,0 +1,15 @@
+# a method name must be followed by the arguments
+
+type list {
+    count,
+    items[4]
+}
+
+func list.clear() {
+    self.count = 0
+}
+
+func main() {
+    var lst list
+    lst.clear = 1
+}

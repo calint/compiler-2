@@ -152,6 +152,10 @@ class statement {
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 
+    // an identifier parsed as a possible method receiver gets its unary ops
+    // after it turned out to be a value
+    auto set_unary_ops(unary_ops uops) -> void { uops_ = std::move(uops); }
+
     [[nodiscard]] auto get_type() const -> const type& {
         assert(type_ != nullptr);
 

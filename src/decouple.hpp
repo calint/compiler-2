@@ -455,3 +455,7 @@ struct ident_info {
                                     const stmt_identifier& si,
                                     const token open_paren_tk)
     -> std::unique_ptr<statement>;
+
+[[nodiscard]] auto create_stmt_method_call(toc& tc, tokenizer& tz,
+                                           stmt_identifier receiver)
+    -> std::unique_ptr<statement>;

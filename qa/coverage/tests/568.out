@@ -1,0 +1,2 @@
+
+568.baz:16:16: argument 1 may share storage with receiver, use a separate variable

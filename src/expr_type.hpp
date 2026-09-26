@@ -32,6 +32,9 @@ class expr_type final : public statement {
     // 'stmt_identifier'
     expr_type(toc& tc, tokenizer& tz, const type& tp);
 
+    // out-of-line: a method receiver that has already been parsed
+    explicit expr_type(std::shared_ptr<stmt_identifier> receiver);
+
     expr_type() = default;
     // note: copy and assignment constructor will not compile if used
 
@@ -100,6 +103,9 @@ class expr_type final : public statement {
     }
 
   private:
+    // out-of-line: calls 'stmt_call'
+    auto assert_call_type(const type& tp) const -> void;
+
     // out-of-line: calls 'expr_any'
     auto assert_items_not_reading(const record_destination& dst,
                                   const size_t record_offset) const -> void;

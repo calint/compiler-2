@@ -79,6 +79,15 @@ auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si,
 }
 
 // declared in 'decouple.hpp'
+// called from 'stmt_block'
+auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
+    -> std::unique_ptr<statement> {
+
+    return std::make_unique<stmt_call>(tc, unary_ops{}, std::move(receiver),
+                                       tz);
+}
+
+// declared in 'decouple.hpp'
 // called from 'expr_arith' to solve circular dependencies with function
 // calls
 auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
@@ -124,7 +133,17 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     }
 
     // e.g. 0x80, rax, identifiers, constants
-    return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
+    stmt_identifier si{tc, {}, tk, tz};
+
+    // e.g. '-lst.size()' negates the result, not the receiver
+    if (si.is_method_receiver()) {
+        return std::make_unique<stmt_call>(tc, std::move(uops), std::move(si),
+                                           tz);
+    }
+
+    si.set_unary_ops(std::move(uops));
+
+    return std::make_unique<stmt_identifier>(std::move(si));
 }
 
 // declared in 'expr_type.hpp'
@@ -146,18 +165,24 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp)
             stmt_call_ =
                 std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
 
-            if (tp.name() != stmt_call_->get_type().name()) {
-                throw compiler_exception{
-                    tok(),
-                    std::format("expected return type '{}', got '{}'",
-                                tp.name(), stmt_call_->get_type().name())};
-            }
+            assert_call_type(tp);
 
             return;
         }
 
-        stmt_ident_ =
-            std::make_shared<stmt_identifier>(tc, unary_ops{}, tok(), tz);
+        stmt_identifier si{tc, unary_ops{}, tok(), tz};
+
+        // e.g. o.pos = lst.first()
+        if (si.is_method_receiver()) {
+            stmt_call_ =
+                std::make_shared<stmt_call>(tc, unary_ops{}, std::move(si), tz);
+
+            assert_call_type(tp);
+
+            return;
+        }
+
+        stmt_ident_ = std::make_shared<stmt_identifier>(std::move(si));
 
         // check that an identifier type matches the expected type
         const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
@@ -209,6 +234,26 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp)
         exprs_.emplace_back(std::make_unique<expr_any>(
             tc, tz, tf.type(), true, tf.is_array, tf.array_count));
     }
+}
+
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+expr_type::expr_type(std::shared_ptr<stmt_identifier> receiver)
+    : statement{receiver->first_token()}, stmt_ident_{std::move(receiver)} {
+
+    set_type(stmt_ident_->get_type());
+}
+
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::assert_call_type(const type& tp) const -> void {
+    if (tp.name() == stmt_call_->get_type().name()) {
+        return;
+    }
+
+    throw compiler_exception{
+        tok(), std::format("expected return type '{}', got '{}'", tp.name(),
+                           stmt_call_->get_type().name())};
 }
 
 // declared in 'expr_type.hpp'

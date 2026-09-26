@@ -1,0 +1,122 @@
+# methods: 'func list.add(x)' is called as 'lst.add(x)' with 'lst' as the
+# implicit first parameter 'self'
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type list {
+    count,
+    items[4]
+}
+
+type point {
+    x,
+    y
+}
+
+type holder {
+    tag i8,
+    lst list,
+    lists[2] list
+}
+
+func list.clear() {
+    self.count = 0
+}
+
+func list.add(value) {
+    self.items[self.count] = value
+    self.count = self.count + 1
+}
+
+func list.size() res {
+    res = self.count
+}
+
+func list.sum() res {
+    res = 0
+    var i = 0
+    loop {
+        if i == self.count break
+        res = res + self.items[i]
+        i = i + 1
+    }
+}
+
+# a method calling another method of the same receiver
+func list.add_twice(value) {
+    self.add(value)
+    self.add(value)
+}
+
+func list.is_empty() res bool {
+    res = self.count == 0
+}
+
+func point.shifted(dx, dy) res point {
+    res = {self.x + dx, self.y + dy}
+}
+
+func noinline point.move(dx) {
+    self.x = self.x + dx
+}
+
+func noinline point.length_sq() res {
+    res = self.x * self.x + self.y * self.y
+}
+
+# 'self' is a pointer in a non-inline method and forwarded to both kinds
+func noinline point.move_twice(dx) {
+    self.move(dx)
+    var q point = self.shifted(dx, 0)
+    self.x = q.x
+}
+
+func main() {
+    var lst list
+    lst.clear()
+    assert(1, lst.is_empty())
+    lst.add(3)
+    lst.add(4)
+    assert(2, lst.size() == 2)
+    assert(3, lst.sum() == 7)
+    assert(4, not lst.is_empty())
+
+    # unary operators apply to the result
+    var neg = -lst.size()
+    assert(5, neg == -2)
+
+    lst.add_twice(5)
+    assert(6, lst.size() == 4 and lst.sum() == 17)
+
+    # nested field and array element receivers
+    var h holder
+    h.lst.clear()
+    h.lst.add(10)
+    var i = 1
+    h.lists[0].clear()
+    h.lists[i].clear()
+    h.lists[i].add(20)
+    h.lists[i].add(h.lst.sum())
+    assert(7, h.lst.size() == 1 and h.lists[0].size() == 0)
+    assert(8, h.lists[1].sum() == 30)
+
+    # record result
+    var p point = {1, 2}
+    var q point = p.shifted(3, 4)
+    assert(9, q.x == 4 and q.y == 6)
+
+    # non-inline methods
+    var d = 2
+    p.move(d)
+    assert(10, p.x == 3 and p.y == 2)
+    var len_sq = 0
+    len_sq = p.length_sq()
+    assert(11, len_sq == 13)
+
+    # a method result in an expression
+    var total = lst.sum() + h.lists[i].size() * 2
+    assert(12, total == 21)
+
+    p.move_twice(d)
+    assert(13, p.x == 7 and p.y == 2)
+}

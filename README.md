@@ -27,6 +27,8 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
   * optional line number
 * inlined functions
 * limited support for non-inlined functions
+* methods on user defined types: `func list.add(x) { ... }` is called as
+  `lst.add(x)` with `lst` as the implicit parameter `self`
 * partial ub-free support
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`
@@ -76,10 +78,10 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           4631           1453          15997
+C/C++ Header                    55           4690           1484          16175
 C++                              1             58             10            273
 -------------------------------------------------------------------------------
-SUM:                            56           4689           1463          16270
+SUM:                            56           4748           1494          16448
 -------------------------------------------------------------------------------
 ```
 
@@ -1782,7 +1784,7 @@ func.print_num:
     mov rax, 1
     syscall
     ret
-func.print_num.size equ 64
+size.func.print_num equ 64
 baz_bounds_panic:
     mov rax, 1
     mov rdi, 2
@@ -4763,7 +4765,7 @@ func.print_num:
 ;   [140:5] free named register rsi
 ;   [140:5] free named register rdi
     ret
-func.print_num.size equ 64
+size.func.print_num equ 64
 ;
 baz_bounds_panic:
 ;    print message to stderr

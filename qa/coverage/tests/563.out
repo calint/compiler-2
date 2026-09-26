@@ -1,0 +1,2 @@
+
+563.baz:3:6: methods on built-in type 'i32' are not supported

@@ -12,6 +12,9 @@ class stmt_def_func_param final : public statement {
     token close_bracket_tk_;
     bool is_array_{};
 
+    // the 'self' of a method is not written in the source
+    bool is_implicit_{};
+
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
         : statement{tz.next_token()} {
@@ -47,9 +50,19 @@ class stmt_def_func_param final : public statement {
                      : tc.get_type_or_throw(type_tk_, type_tk_.text()));
     }
 
+    stmt_def_func_param(const token tk, const type& tp)
+        : statement{tk}, is_implicit_{true} {
+
+        set_type(tp);
+    }
+
     stmt_def_func_param() = default;
 
     auto source_to(std::ostream& os) const -> void override {
+        if (is_implicit_) {
+            return;
+        }
+
         statement::source_to(os);
         if (is_array_) {
             open_bracket_tk_.source_to(os);

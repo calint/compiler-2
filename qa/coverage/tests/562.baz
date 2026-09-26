@@ -1,0 +1,7 @@
+# method on a type that does not exist
+
+func nosuch.add(value) {
+}
+
+func main() {
+}

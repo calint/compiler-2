@@ -4,8 +4,10 @@
 //           2026-09-08
 
 #include <format>
+#include <memory>
 #include <ranges>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -14,8 +16,12 @@
 #include "decouple.hpp"
 #include "expr_any.hpp"
 #include "stmt_def_func.hpp"
+#include "stmt_identifier.hpp"
 
 class stmt_call : public expression {
+    // e.g. the '.' in 'lst.add(x)', the receiver is the first argument
+    token method_dot_tk_;
+    std::string func_name_;
     token open_paren_tk_;
     std::vector<expr_any> args_;
     std::vector<token> arg_delims_tk_;
@@ -24,74 +30,17 @@ class stmt_call : public expression {
   public:
     stmt_call(toc& tc, unary_ops uops, const token tk,
               const token open_paren_tk, tokenizer& tz)
-        : expression{tk, std::move(uops)}, open_paren_tk_{open_paren_tk} {
+        : expression{tk, std::move(uops)}, func_name_{tk.text()},
+          open_paren_tk_{open_paren_tk} {
 
-        set_type(
-            tc.get_func_return_type_or_throw(tok(), statement::identifier()));
+        set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{tok(), "expected '(' after function name"};
         }
 
-        if (not tc.is_func_builtin(statement::identifier())) {
-
-            // user-defined function
-
-            const stmt_def_func& func{
-                tc.get_func_or_throw(tok(), statement::identifier())};
-
-            const size_t param_count{func.params().size()};
-            args_.reserve(param_count);
-            for (const auto [i, param] : std::views::enumerate(func.params())) {
-                if (i != 0) {
-                    const token t{tz.is_next_char_token(',')};
-                    if (t.is_empty()) {
-                        throw compiler_exception{
-                            tz, std::format("expected argument {} ('{}')",
-                                            i + 1, param.name())};
-
-                        // note: +1 because 'i' starts at 0
-                    }
-                    arg_delims_tk_.emplace_back(t);
-                }
-                args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
-            }
-
-            close_paren_tk_ = tz.is_next_char_token(')');
-            if (close_paren_tk_.is_empty()) {
-                throw compiler_exception{tz, "expected ')' after arguments"};
-            }
-
-            for (const auto [arg_number, arg, param] :
-                 std::views::zip(std::views::iota(1), args_, func.params())) {
-
-                // todo: literals and call results need a temporary to be
-                //       passed, see etc/todo.txt
-                if (not param.get_type().is_builtin() and
-                    not arg.is_identifier()) {
-
-                    throw compiler_exception{
-                        arg.tok(),
-                        std::format("argument {} cannot be a temporary",
-                                    arg_number)};
-                }
-
-                if (param.is_array()) {
-                    const ident_info arg_info{tc.make_ident_info(arg)};
-
-                    // an element would give the parameter the whole array's
-                    // length, pass the array and a start index instead
-                    if (not arg_info.is_array or arg.is_array_element()) {
-                        throw compiler_exception{
-                            arg.tok(),
-                            std::format("parameter {} requires an array",
-                                        arg_number)};
-                    }
-                }
-
-                // note: the types have been checked prior to getting here so
-                //       only check if both argument and parameter are arrays
-            }
+        if (not tc.is_func_builtin(func_name_)) {
+            parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_));
 
             return;
         }
@@ -115,6 +64,42 @@ class stmt_call : public expression {
                 arg_delims_tk_.emplace_back(delim_tk);
             }
         }
+    }
+
+    // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
+    stmt_call(toc& tc, unary_ops uops, stmt_identifier receiver, tokenizer& tz)
+        : expression{receiver.method_name_token(), std::move(uops)},
+          method_dot_tk_{receiver.method_dot_token()},
+          func_name_{std::format("{}.{}", receiver.get_type().name(),
+                                 receiver.method_name_token().text())},
+          open_paren_tk_{tz.is_next_char_token('(')} {
+
+        set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
+
+        if (open_paren_tk_.is_empty()) {
+            throw compiler_exception{tok(), "expected '(' after method name"};
+        }
+
+        // an element of an array can be the receiver
+        if (receiver.is_array()) {
+            throw compiler_exception{
+                receiver.first_token(),
+                std::format("receiver of method '{}' cannot be an array",
+                            func_name_)};
+        }
+
+        // the whitespace before the receiver belongs to its first token
+        const token& first_tk{receiver.first_token()};
+        const token receiver_pos_tk{
+            "", first_tk.start_index(), "",    first_tk.start_index(),
+            "", first_tk.at_line(),     false,
+        };
+
+        args_.emplace_back(
+            receiver_pos_tk,
+            expr_type{std::make_shared<stmt_identifier>(std::move(receiver))});
+
+        parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_));
     }
 
     stmt_call() = default;
@@ -228,8 +213,8 @@ class stmt_call : public expression {
 
         std::vector<std::pair<size_t, ident_info>> references;
 
-        for (const auto [arg_number, arg] :
-             std::views::zip(std::views::iota(size_t{1}), args_)) {
+        for (size_t i{}; i < args_.size(); ++i) {
+            const expr_any& arg{args_[i]};
 
             // expressions and unary operators pass a copied value
             if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
@@ -246,22 +231,23 @@ class stmt_call : public expression {
             if (dst_info.is_var() and may_share_storage(tc, dst_info, info)) {
                 throw compiler_exception{
                     arg.tok(),
-                    std::format("argument {} may share storage with the "
-                                "result destination, use a separate variable",
-                                arg_number)};
+                    std::format("{} may share storage with the result "
+                                "destination, use a separate variable",
+                                describe_argument(i))};
             }
 
-            for (const auto& [other_number, other] : references) {
+            for (const auto& [other_index, other] : references) {
                 if (may_share_storage(tc, other, info)) {
                     throw compiler_exception{
                         arg.tok(),
-                        std::format("argument {} may share storage with "
-                                    "argument {}, use a separate variable",
-                                    arg_number, other_number)};
+                        std::format("{} may share storage with {}, use a "
+                                    "separate variable",
+                                    describe_argument(i),
+                                    describe_argument(other_index))};
                 }
             }
 
-            references.emplace_back(arg_number, std::move(info));
+            references.emplace_back(i, std::move(info));
         }
     }
 
@@ -419,12 +405,15 @@ class stmt_call : public expression {
     }
 
     auto source_to(std::ostream& os) const -> void override {
-        expression::source_to(os);
+        source_callee_to(os);
         open_paren_tk_.source_to(os);
-        if (not args_.empty()) {
-            args_.front().source_to(os);
-            for (const auto [d, e] :
-                 std::views::zip(arg_delims_tk_, args_ | std::views::drop(1))) {
+
+        // the receiver is written before the name
+        const size_t first{first_argument_index()};
+        if (args_.size() > first) {
+            args_[first].source_to(os);
+            for (const auto [d, e] : std::views::zip(
+                     arg_delims_tk_, args_ | std::views::drop(first + 1))) {
 
                 d.source_to(os);
                 e.source_to(os);
@@ -440,8 +429,7 @@ class stmt_call : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const stmt_def_func& func{
-            tc.get_func_or_throw(tok(), statement::identifier())};
+        const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
         assert_no_shared_storage(tc, dst_info);
 
@@ -670,5 +658,97 @@ class stmt_call : public expression {
                              const type& dst_type) const -> void override {
 
         assert_own_type_not_narrowed(dst_type);
+    }
+
+  private:
+    [[nodiscard]] auto is_method() const -> bool {
+        return not method_dot_tk_.is_empty();
+    }
+
+    // the receiver is not counted as an argument
+    [[nodiscard]] auto first_argument_index() const -> size_t {
+        return is_method() ? 1 : 0;
+    }
+
+    [[nodiscard]] auto describe_argument(const size_t index) const
+        -> std::string {
+
+        if (index < first_argument_index()) {
+            return "receiver";
+        }
+
+        return std::format("argument {}", index + 1 - first_argument_index());
+    }
+
+    // e.g. 'foo' or 'lst.add'
+    auto source_callee_to(std::ostream& os) const -> void {
+        if (not is_method()) {
+            expression::source_to(os);
+
+            return;
+        }
+
+        get_unary_ops().source_to(os);
+        args_.front().source_to(os);
+        method_dot_tk_.source_to(os);
+        tok().source_to(os);
+    }
+
+    // a method receiver is already in 'args_'
+    auto parse_arguments(toc& tc, tokenizer& tz, const stmt_def_func& func)
+        -> void {
+
+        const std::span<const stmt_def_func_param> params{func.params()};
+        const size_t first{args_.size()};
+
+        args_.reserve(params.size());
+
+        for (size_t i{first}; i < params.size(); ++i) {
+            if (i != first) {
+                const token t{tz.is_next_char_token(',')};
+                if (t.is_empty()) {
+                    throw compiler_exception{tz,
+                                             std::format("expected {} ('{}')",
+                                                         describe_argument(i),
+                                                         params[i].name())};
+                }
+                arg_delims_tk_.emplace_back(t);
+            }
+
+            args_.emplace_back(tc, tz, params[i].get_type(), true, false, 0);
+        }
+
+        close_paren_tk_ = tz.is_next_char_token(')');
+        if (close_paren_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected ')' after arguments"};
+        }
+
+        for (size_t i{}; i < args_.size(); ++i) {
+            const expr_any& arg{args_[i]};
+            const stmt_def_func_param& param{params[i]};
+
+            // todo: literals and call results need a temporary to be
+            //       passed, see etc/todo.txt
+            if (not param.get_type().is_builtin() and not arg.is_identifier()) {
+                throw compiler_exception{arg.tok(),
+                                         std::format("{} cannot be a temporary",
+                                                     describe_argument(i))};
+            }
+
+            if (param.is_array()) {
+                const ident_info arg_info{tc.make_ident_info(arg)};
+
+                // an element would give the parameter the whole array's
+                // length, pass the array and a start index instead
+                if (not arg_info.is_array or arg.is_array_element()) {
+                    throw compiler_exception{
+                        arg.tok(), std::format("parameter {} requires an array",
+                                               i + 1 - first_argument_index())};
+                }
+            }
+
+            // note: the types have been checked prior to getting here so
+            //       only check if both argument and parameter are arrays
+        }
     }
 };

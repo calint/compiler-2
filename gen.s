@@ -2915,7 +2915,7 @@ func.print_num:
 ;   [140:5] free named register rsi
 ;   [140:5] free named register rdi
     ret
-func.print_num.size equ 64
+size.func.print_num equ 64
 ;
 baz_bounds_panic:
 ;    print message to stderr

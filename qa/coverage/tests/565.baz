@@ -1,0 +1,15 @@
+# the receiver of a method cannot be a whole array
+
+type list {
+    count,
+    items[4]
+}
+
+func list.clear() {
+    self.count = 0
+}
+
+func main() {
+    var lists[2] list
+    lists.clear()
+}

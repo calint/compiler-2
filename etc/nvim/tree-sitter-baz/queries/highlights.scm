@@ -36,7 +36,14 @@
 (unsized_array_type) @type
 
 (identifier) @variable
+
+; 'self' is the implicit receiver of a method
+((identifier) @type
+  (#eq? @type "self")
+  (#set! priority 110))
+
 (function_definition name: (identifier) @function)
+(function_definition receiver_type: (identifier) @type)
 (type_definition name: (identifier) @type.definition)
 (member_field name: (identifier) @variable.member)
 (member_field type: (_) @type)

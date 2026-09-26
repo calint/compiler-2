@@ -1,0 +1,13 @@
+# a method named like a field would make 'lst.count' ambiguous
+
+type list {
+    count,
+    items[4]
+}
+
+func list.count() res {
+    res = self.count
+}
+
+func main() {
+}

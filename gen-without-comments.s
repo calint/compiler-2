@@ -1381,7 +1381,7 @@ func.print_num:
     mov rax, 1
     syscall
     ret
-func.print_num.size equ 64
+size.func.print_num equ 64
 baz_bounds_panic:
     mov rax, 1
     mov rdi, 2

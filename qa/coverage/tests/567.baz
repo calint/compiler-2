@@ -1,0 +1,15 @@
+# arguments of a method are numbered without the receiver
+
+type point {
+    x,
+    y
+}
+
+func point.shifted(dx, dy) res point {
+    res = {self.x + dx, self.y + dy}
+}
+
+func main() {
+    var p point = {1, 2}
+    var q point = p.shifted(1)
+}

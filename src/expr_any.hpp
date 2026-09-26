@@ -105,6 +105,12 @@ class expr_any final : public statement {
         }
     }
 
+    // a method receiver, the first argument of the call
+    expr_any(const token pos_tk, expr_type receiver) : statement{pos_tk} {
+        set_type(receiver.get_type());
+        vars_.emplace_back(std::move(receiver));
+    }
+
     expr_any() = default;
 
     auto source_to(std::ostream& os) const -> void override {

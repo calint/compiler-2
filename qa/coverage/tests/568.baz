@@ -1,0 +1,17 @@
+# the receiver is a reference like the other arguments
+
+type list {
+    count,
+    items[4]
+}
+
+func list.append(other list) {
+    self.items[self.count] = other.count
+    self.count = self.count + 1
+}
+
+func main() {
+    var lst list
+    lst.count = 0
+    lst.append(lst)
+}

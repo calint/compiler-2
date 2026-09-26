@@ -17,6 +17,9 @@
 class stmt_def_func final : public statement {
     token noinline_tk_;
     token name_tk_;
+    token method_dot_tk_;
+    token method_name_tk_;
+    std::string name_;
     token open_paren_tk_;
     std::vector<stmt_def_func_param> params_;
     std::vector<token> param_delims_tk_;
@@ -33,6 +36,17 @@ class stmt_def_func final : public statement {
             noinline_tk_ = name_tk_;
             name_tk_ = tz.next_token();
             open_paren_tk_ = tz.is_next_char_token('(');
+        }
+
+        name_ = name_tk_.text();
+
+        // e.g. 'func list.add(x)'
+        if (open_paren_tk_.is_empty()) {
+            method_dot_tk_ = tz.is_next_char_token('.');
+            if (not method_dot_tk_.is_empty()) {
+                parse_method_name(tc, tz);
+                open_paren_tk_ = tz.is_next_char_token('(');
+            }
         }
 
         if (open_paren_tk_.is_empty()) {
@@ -82,8 +96,7 @@ class stmt_def_func final : public statement {
             set_type(tc.get_type_void());
         }
 
-        tc.add_func(name_tk_, std::string{name_tk_.text()},
-                    statement::get_type(), this);
+        tc.add_func(name_tk_, name_, statement::get_type(), this);
 
         // establish the function scope before parsing its body
         tc.enter_func(name(), returns_, {}, {}, is_inlined());
@@ -145,11 +158,19 @@ class stmt_def_func final : public statement {
         }
         noinline_tk_.source_to(os);
         name_tk_.source_to(os);
+        if (is_method()) {
+            method_dot_tk_.source_to(os);
+            method_name_tk_.source_to(os);
+        }
         open_paren_tk_.source_to(os);
-        if (not params_.empty()) {
-            params_.front().source_to(os);
-            for (const auto [d, e] : std::views::zip(
-                     param_delims_tk_, params_ | std::views::drop(1))) {
+
+        // the implicit 'self' has no source and no delimiter after it
+        const size_t first_param{is_method() ? size_t{1} : size_t{0}};
+        if (params_.size() > first_param) {
+            params_[first_param].source_to(os);
+            for (const auto [d, e] :
+                 std::views::zip(param_delims_tk_,
+                                 params_ | std::views::drop(first_param + 1))) {
 
                 d.source_to(os);
                 e.source_to(os);
@@ -180,8 +201,10 @@ class stmt_def_func final : public statement {
         return std::format("func.{}", name());
     }
 
+    // a suffix could collide with a method body, e.g. 'func.list.size' of
+    // function 'list' and method 'list.size'
     [[nodiscard]] auto frame_size_label() const -> std::string {
-        return std::format("{}.size", body_label());
+        return std::format("size.{}", body_label());
     }
 
     [[nodiscard]] auto compile_body(toc& tc, const size_t indent) const
@@ -256,7 +279,53 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 
-    [[nodiscard]] auto name() const -> std::string_view {
-        return name_tk_.text();
+    [[nodiscard]] auto name() const -> std::string_view { return name_; }
+
+    [[nodiscard]] auto is_method() const -> bool {
+        return not method_dot_tk_.is_empty();
+    }
+
+  private:
+    // 'name_tk_' is the receiver type, the method gets an implicit first
+    // parameter 'self' of that type
+    auto parse_method_name(const toc& tc, tokenizer& tz) -> void {
+        const type& receiver_type{
+            tc.get_type_or_throw(name_tk_, name_tk_.text())};
+
+        if (receiver_type.is_builtin()) {
+            throw compiler_exception{
+                name_tk_, std::format("methods on built-in type '{}' are not "
+                                      "supported",
+                                      receiver_type.name())};
+        }
+
+        method_name_tk_ = tz.next_token();
+        if (method_name_tk_.text().empty()) {
+            throw compiler_exception{tz, "expected method name after '.'"};
+        }
+
+        // 'lst.add' would be ambiguous
+        for (const type_field& f : receiver_type.fields()) {
+            if (f.name == method_name_tk_.text()) {
+                throw compiler_exception{
+                    method_name_tk_,
+                    std::format("method '{}' has the same name as a field in "
+                                "type '{}'",
+                                f.name, receiver_type.name())};
+            }
+        }
+
+        name_ =
+            std::format("{}.{}", receiver_type.name(), method_name_tk_.text());
+
+        // located at the method name for diagnostics
+        const token self_tk{
+            "",     method_name_tk_.start_index(),
+            "self", method_name_tk_.start_index(),
+            "",     method_name_tk_.at_line(),
+            false,
+        };
+
+        params_.emplace_back(self_tk, receiver_type);
     }
 };
