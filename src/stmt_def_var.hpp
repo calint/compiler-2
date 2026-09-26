@@ -162,7 +162,8 @@ class stmt_def_var final : public statement {
         x.comment(name_tk_, indent, "zero {} * {} B = {} B", instance_count,
                   var_dst_info.type_ref().size_bytes(), size_bytes);
 
-        x.zero(tok(), indent, var_dst_info.operand, size_bytes);
+        x.zero(tok(), indent, var_dst_info.operand, size_bytes,
+               var_dst_info.type_ref().alignment());
     }
 
     auto visit_reads(const std::string_view var,

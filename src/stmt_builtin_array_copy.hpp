@@ -122,7 +122,8 @@ class stmt_builtin_array_copy final : public statement {
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
-        x.end_array_copy(tok(), indent, array_src_info.type_ref().size_bytes());
+        x.end_array_copy(tok(), indent, array_src_info.type_ref().size_bytes(),
+                         array_src_info.type_ref().alignment());
     }
 
     // the copied elements are not tracked, so the destination stays unassigned

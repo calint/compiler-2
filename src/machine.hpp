@@ -166,9 +166,11 @@ class machine {
         const size_t element_size_bytes, const size_t array_count,
         const std::string_view loop_label) -> void = 0;
 
+    // 'alignment' is the alignment known for both addresses
     virtual auto copy(const token& src_loc_tk, const size_t indent,
                       const operand& src, const operand& dst,
-                      const size_t size_bytes) -> void = 0;
+                      const size_t size_bytes, const size_t alignment)
+        -> void = 0;
 
     [[nodiscard]] virtual auto begin_array_copy(const token& src_loc_tk,
                                                 const size_t indent)
@@ -191,7 +193,8 @@ class machine {
                                             const operand& address) -> void = 0;
 
     virtual auto end_array_copy(const token& src_loc_tk, const size_t indent,
-                                const size_t element_size_bytes) -> void = 0;
+                                const size_t element_size_bytes,
+                                const size_t alignment) -> void = 0;
 
     virtual auto begin_memory_equal(const token& src_loc_tk,
                                     const size_t indent) -> operand = 0;
@@ -211,16 +214,18 @@ class machine {
                                         const operand& address) -> void = 0;
 
     virtual auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                                  const size_t size_bytes, const operand& dst,
+                                  const size_t size_bytes,
+                                  const size_t alignment, const operand& dst,
                                   const bool inverted = false) -> void = 0;
 
     virtual auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
                                   const size_t element_size_bytes,
-                                  const operand& dst,
+                                  const size_t alignment, const operand& dst,
                                   const bool inverted = false) -> void = 0;
 
     virtual auto zero(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const size_t size_bytes) -> void = 0;
+                      const operand& dst, const size_t size_bytes,
+                      const size_t alignment) -> void = 0;
 
     virtual auto add_subtract(const token& src_loc_tk, const size_t indent,
                               const char operation, const operand& dst,

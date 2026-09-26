@@ -110,7 +110,8 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     directory = Path(temporary)
     # Each layout is (global data source, extra runtime assertions, data bytes,
     # expected data offsets from 'rbp').
-    # Seven bytes need nine bytes of alignment padding; sixteen need none.
+    # Ten bytes, including three padding bytes that align 'second', need six
+    # bytes of alignment padding before vars; sixteen need none.
     layouts = {
         "no-data": ("", "", 0, {}),
         "odd-data": (
@@ -118,7 +119,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             """    assert(12, first == 7)
     assert(13, second == 123456)
     assert(14, third[1] == 22)
-""", 7, {"first": 0, "second": 1, "third": 5}),
+""", 10, {"first": 0, "second": 4, "third": 8}),
         "aligned-data": (
             "dat first[2] i64 = {7, 9}\n",
             """    assert(10, first[0] == 7)
@@ -169,9 +170,9 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
          "func leaf() { var leaf_local[7] i8 }\n"
          "func middle() { var middle_local[5] i8 leaf() }\n",
          "var local[3] i8\nmiddle()\nmiddle()", 15),
-        # Two packed records: 2 * (1 + 3 * 4) = 26.
+        # Two aligned records: 2 * (1 + 3 padding + 3 * 4) = 32.
         ("structured-array", "type record { tag i8, values[3] i32 }\n",
-         "var records[2] record", 26),
+         "var records[2] record", 32),
     ]
     for name, data_source in statistics_layouts:
         for case, declarations, body, expected_size in statistics_cases:
@@ -258,9 +259,10 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             assert measurements[1][2] - measurements[0][2] == 1048576 - 4096
             print(f"arena {name} {mode}: ok", flush=True)
 
+    # byte fields keep the unaligned boundary offsets such as 2047
     for offset in (2047, 2048, 8196, 2147483647, 2147483648, 2147483656):
-        source = f"""type large {{ padding[{offset}] i8, value i32, next i32 }}
-func noinline update(value i32) {{ value = value + 1 }}
+        source = f"""type large {{ padding[{offset}] i8, value i8, next i8 }}
+func noinline update(value i8) {{ value = value + 1 }}
 func main() {{
     var data large
     data.value = 7

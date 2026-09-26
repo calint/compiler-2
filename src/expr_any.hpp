@@ -154,7 +154,8 @@ class expr_any final : public statement {
                   remaining_count, cur_dst_info.type_ref().size_bytes(),
                   size_bytes);
 
-        x.zero(tok(), indent, cur_dst_info.operand, size_bytes);
+        x.zero(tok(), indent, cur_dst_info.operand, size_bytes,
+               cur_dst_info.type_ref().alignment());
     }
 
     [[nodiscard]] auto is_array_element() const -> bool override {

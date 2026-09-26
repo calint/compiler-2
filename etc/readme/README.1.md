@@ -68,8 +68,7 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
   `prog-uart.baz`
   * <https://github.com/calint/tang-nano-9k--riscv--cache-psram>
   * <https://github.com/calint/tang-nano-20k--riscv--cache-sdram>
-  * to run in an emulator of fpga soft core rv32i compile `prog-uart.baz` using
-    `./run-baz.sh --target=rv32i-fpga prog-uart.baz`
+  * to run in an emulator of fpga soft core rv32i: `./run-rv32i-fpga.sh`
 
 ## Source
 

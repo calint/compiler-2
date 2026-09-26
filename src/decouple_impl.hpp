@@ -332,7 +332,7 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
 
         machine& x{tc.machine()};
 
-        x.copy(tok(), indent, src_op, dst_op, size_bytes);
+        x.copy(tok(), indent, src_op, dst_op, size_bytes, dst_type.alignment());
 
         dst_op.increment_offset(address_offset(size_bytes));
 
@@ -354,7 +354,19 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
 
     machine& x{tc.machine()};
 
+    // bytes of the record written so far, fields in order then padding
+    size_t written_bytes{};
+
     for (const auto [expr, field] : std::views::zip(exprs_, flds)) {
+        const size_t padding_bytes{field.offset - written_bytes};
+
+        zero_unwritten(tc, indent, "padding", padding_bytes,
+                       offset_alignment(written_bytes, dst_type.alignment()),
+                       dst_op);
+
+        cur_dst_info.increment_offset(address_offset(padding_bytes));
+        written_bytes = field.offset + field.size_bytes;
+
         x.comment(expr->tok(), indent, "copy field '{}'", field.name);
 
         cur_dst_info.push(field.name, field.type_ptr, {});
@@ -381,7 +393,8 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
                       field.array_count, field.type().size_bytes(),
                       field.size_bytes);
 
-            x.zero(tok(), indent, dst_op, field.size_bytes);
+            x.zero(tok(), indent, dst_op, field.size_bytes,
+                   field.type().alignment());
             const int64_t size_bytes{address_offset(field.size_bytes)};
             dst_op.increment_offset(size_bytes);
             cur_dst_info.increment_offset(size_bytes);
@@ -418,7 +431,7 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
 
                     validate_array_assignment(src.tok(), field, src_info);
                     x.copy(src.tok(), indent, src_info.operand, dst_op,
-                           field.size_bytes);
+                           field.size_bytes, field.type().alignment());
                 } else {
                     // built-in, not expression, not constant, not array
                     x.copy_value(src.tok(), indent, dst_operand,
@@ -434,21 +447,15 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
         cur_dst_info.pop();
     }
 
-    // zero out the remaining fields
+    // zero out the remaining fields and the padding after the written ones
 
-    if (exprs_.size() == flds.size()) {
-        // all fields have been assigned
-        return;
-    }
+    const size_t remaining_bytes{dst_type.size_bytes() - written_bytes};
 
-    // calculate remaining bytes of the type to zero
-
-    const size_t size_bytes{
-        dst_type.remaining_fields_size_bytes(exprs_.size())};
-
-    x.comment(tok(), indent, "zero remaining fields: {} B", size_bytes);
-    x.zero(tok(), indent, dst_op, size_bytes);
-    dst_op.increment_offset(address_offset(size_bytes));
+    zero_unwritten(
+        tc, indent,
+        exprs_.size() == flds.size() ? "padding" : "remaining fields",
+        remaining_bytes, offset_alignment(written_bytes, dst_type.alignment()),
+        dst_op);
 }
 
 // declared in 'expr_type.hpp'
@@ -485,7 +492,7 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
 
     x.comment(src.tok(), indent, "zero remaining elements: {} * {} B = {} B",
               remaining_count, field.type().size_bytes(), size_bytes);
-    x.zero(src.tok(), indent, dst_op, size_bytes);
+    x.zero(src.tok(), indent, dst_op, size_bytes, field.type().alignment());
     dst_op.increment_offset(address_offset(size_bytes));
 }
 

@@ -356,8 +356,12 @@ class toc final {
                 stmt->tok(), "'dat' can only be added before any 'var'"};
         }
         data_.emplace_back(stmt);
+
+        // same padding as 'add_var' places before the dat
         total_dat_size_bytes_ =
-            add_storage_size(total_dat_size_bytes_, stmt->dat_size_bytes());
+            add_storage_size(align_storage_size(total_dat_size_bytes_,
+                                                stmt->get_type().alignment()),
+                             stmt->dat_size_bytes());
         const size_t alignment{machine_.get().data_alignment()};
         vars_entry_gap_ =
             (alignment - (total_dat_size_bytes_ % alignment)) % alignment;
@@ -427,6 +431,10 @@ class toc final {
                 : multiply_storage_size(var.type_ptr->size_bytes(),
                                         var.is_array ? var.array_len : 1)};
 
+        const size_t var_alignment{var.is_pointer
+                                       ? machine_.get().address_size_bytes()
+                                       : var.type_ptr->alignment()};
+
         if (not is_dat and not vars_entry_gap_applied_) {
             frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
             vars_size_bytes_ =
@@ -434,10 +442,35 @@ class toc final {
             vars_entry_gap_applied_ = true;
         }
 
+        // offsets are relative to the variables base or to the nearest frame
+        // with its own storage base, both are aligned
+        frame* storage_frame{};
+        size_t base_offset{vars_size_bytes_};
+
+        if (not is_dat) {
+            size_t local_size_bytes{};
+            for (frame& frm : frames_ | std::views::reverse) {
+                local_size_bytes = add_storage_size(
+                    local_size_bytes, frm.allocated_stack_size_bytes());
+                if (not frm.storage_base_register().empty()) {
+                    storage_frame = &frm;
+                    base_offset = local_size_bytes;
+
+                    break;
+                }
+            }
+        }
+
+        const size_t padding_bytes{
+            align_storage_size(base_offset, var_alignment) - base_offset};
+
+        const size_t allocated_size_bytes{
+            add_storage_size(padding_bytes, var_size_bytes)};
+
         if (not is_dat) {
             const size_t used_size_bytes{
                 vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_};
-            if (var_size_bytes > vars_capacity_bytes_ - used_size_bytes) {
+            if (allocated_size_bytes > vars_capacity_bytes_ - used_size_bytes) {
                 throw compiler_exception{
                     src_loc_tk,
                     std::format("variable '{}' would overflow allocated vars "
@@ -446,26 +479,17 @@ class toc final {
             }
         }
 
-        var.offset = address_offset(vars_size_bytes_);
+        var.offset = address_offset(base_offset + padding_bytes);
 
-        if (not is_dat) {
-            size_t local_size_bytes{};
-            for (frame& frm : frames_ | std::views::reverse) {
-                local_size_bytes = add_storage_size(
-                    local_size_bytes, frm.allocated_stack_size_bytes());
-                if (not frm.storage_base_register().empty()) {
-                    var.base_register = frm.storage_base_register();
-                    var.offset = address_offset(local_size_bytes);
-                    frm.record_storage_size_bytes(
-                        add_storage_size(local_size_bytes, var_size_bytes));
-
-                    break;
-                }
-            }
+        if (storage_frame) {
+            var.base_register = storage_frame->storage_base_register();
+            storage_frame->record_storage_size_bytes(
+                add_storage_size(base_offset, allocated_size_bytes));
         }
 
-        frames_.back().add_var(var, var_size_bytes, is_dat);
-        vars_size_bytes_ = add_storage_size(vars_size_bytes_, var_size_bytes);
+        frames_.back().add_var(var, allocated_size_bytes, is_dat);
+        vars_size_bytes_ =
+            add_storage_size(vars_size_bytes_, allocated_size_bytes);
 
         // stats
         if (not is_dat) {
@@ -553,14 +577,18 @@ class toc final {
         std::unreachable();
     }
 
+    // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
+        const size_t frame_alignment{machine_.get().address_size_bytes()};
+
         size_t local_size_bytes{};
         for (const frame& frm : frames_ | std::views::reverse) {
             local_size_bytes = add_storage_size(
                 local_size_bytes, frm.allocated_stack_size_bytes());
             if (not frm.storage_base_register().empty()) {
                 return operand::mem(frm.storage_base_register(), {}, 1,
-                                    address_offset(local_size_bytes),
+                                    address_offset(align_storage_size(
+                                        local_size_bytes, frame_alignment)),
                                     get_type_address());
             }
         }
@@ -569,7 +597,8 @@ class toc final {
             vars_size_bytes_, vars_entry_gap_applied_ ? 0 : vars_entry_gap_)};
 
         return operand::mem(machine_.get().variables_base_register(), {}, 1,
-                            address_offset(root_size_bytes),
+                            address_offset(align_storage_size(root_size_bytes,
+                                                              frame_alignment)),
                             get_type_address());
     }
 

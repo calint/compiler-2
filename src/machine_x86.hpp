@@ -506,8 +506,10 @@ class machine_x86 final : public machine {
         jne(indent, loop_label);
     }
 
+    // x86 accesses unaligned memory so the alignment is not needed
     auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
-              const operand& dst, const size_t size_bytes) -> void override {
+              const operand& dst, const size_t size_bytes,
+              [[maybe_unused]] const size_t alignment) -> void override {
 
         if (size_bytes > threshold_for_rep_movs_size_bytes) {
             reserve_named_register(src_loc_tk, indent, "rsi", *default_type_);
@@ -580,7 +582,9 @@ class machine_x86 final : public machine {
     }
 
     auto end_array_copy(const token& src_loc_tk, const size_t indent,
-                        const size_t element_size_bytes) -> void override {
+                        const size_t element_size_bytes,
+                        [[maybe_unused]] const size_t alignment)
+        -> void override {
 
         scale_by_element_size_bytes(
             src_loc_tk, indent,
@@ -612,8 +616,10 @@ class machine_x86 final : public machine {
     }
 
     auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t size_bytes, const operand& dst,
-                          const bool inverted = false) -> void override {
+                          const size_t size_bytes,
+                          [[maybe_unused]] const size_t alignment,
+                          const operand& dst, const bool inverted = false)
+        -> void override {
 
         char size_suffix{'b'};
         size_t count{size_bytes};
@@ -636,8 +642,10 @@ class machine_x86 final : public machine {
     }
 
     auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t element_size_bytes, const operand& dst,
-                          const bool inverted = false) -> void override {
+                          const size_t element_size_bytes,
+                          [[maybe_unused]] const size_t alignment,
+                          const operand& dst, const bool inverted = false)
+        -> void override {
 
         scale_by_element_size_bytes(
             src_loc_tk, indent,
@@ -652,7 +660,8 @@ class machine_x86 final : public machine {
     }
 
     auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,
-              const size_t size_bytes) -> void override {
+              const size_t size_bytes, [[maybe_unused]] const size_t alignment)
+        -> void override {
 
         if (size_bytes > threshold_for_rep_stos_size_bytes) {
             reserve_named_register(src_loc_tk, indent, "rax", *default_type_);

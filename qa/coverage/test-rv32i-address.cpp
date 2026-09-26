@@ -574,7 +574,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                       operand::mem("s0", {}, 1, 216, integer));
         located.set_array_copy_destination(
             1, operand::mem("s0", {}, 1, 208, integer));
-        located.end_array_copy(location, 1, 4);
+        located.end_array_copy(location, 1, 4, 4);
         for (const std::string_view text :
              {"t0: source, t1: destination, t2: count",
               "t2: elements to bytes (4 bytes/element)",
@@ -1285,9 +1285,9 @@ func main() {
         backend.set_memory_equal_right(0, operand::mem(held.back(), byte));
         shift_output.str({});
         if (counted) {
-            backend.end_arrays_equal(token{}, 0, 1, result);
+            backend.end_arrays_equal(token{}, 0, 1, 4, result);
         } else {
-            backend.end_memory_equal(token{}, 0, 7, result);
+            backend.end_memory_equal(token{}, 0, 7, 4, result);
         }
         const std::string assembly{shift_output.str()};
         for (const std::string_view instruction : {"lw", "lhu", "lbu"}) {
@@ -1307,7 +1307,7 @@ func main() {
     }
     for (size_t size_bytes{}; size_bytes <= 24; ++size_bytes) {
         backend.copy(token{}, 0, operand::mem("a0", {}, 1, 0, byte),
-                     operand::mem("a1", {}, 1, 0, byte), size_bytes);
+                     operand::mem("a1", {}, 1, 0, byte), size_bytes, 4);
         const std::string assembly{shift_output.str()};
         assert(assembly.contains("bnez") == (size_bytes > 16));
         if (size_bytes == 0) {
@@ -1734,14 +1734,14 @@ func main() {
                        operand::imm("255", integer));
     assert(address_output.str() == "li a1, -1\n");
     address_output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 1);
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 1, 4);
     assert(address_output.str() == "sb zero, 0(a2)\n");
     address_output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 208, byte), 16);
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 208, byte), 16, 4);
     assert(address_output.str() == "sw zero, 208(a2)\nsw zero, 212(a2)\nsw "
                                    "zero, 216(a2)\nsw zero, 220(a2)\n");
     address_output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 4);
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 4, 4);
     assert(address_output.str() == "sw zero, 0(a2)\n");
     address_output.str({});
 
@@ -1848,11 +1848,11 @@ func main() {
     address_registers.clear();
     address_output.str({});
     backend.copy(token{}, 0, operand::mem("a1", {}, 1, 208, byte),
-                 operand::mem("a2", {}, 1, 240, byte), 4);
+                 operand::mem("a2", {}, 1, 240, byte), 4, 4);
     assert(address_output.str() == "lw t0, 208(a1)\nsw t0, 240(a2)\n");
     address_output.str({});
     backend.copy(token{}, 0, operand::mem("a1", {}, 1, -16, byte),
-                 operand::mem("a2", {}, 1, 16, byte), 7);
+                 operand::mem("a2", {}, 1, 16, byte), 7, 4);
     assert(address_output.str() ==
            "lw t0, -16(a1)\nsw t0, 16(a2)\nlhu t0, -12(a1)\nsh t0, 20(a2)\n"
            "lbu t0, -10(a1)\nsb t0, 22(a2)\n");
@@ -1862,16 +1862,16 @@ func main() {
             backend.alloc_scratch_register(token{}, 0, integer));
     }
     backend.copy(token{}, 0, operand::mem("a1", {}, 1, 208, byte),
-                 operand::mem("a2", {}, 1, 240, byte), 4);
+                 operand::mem("a2", {}, 1, 240, byte), 4, 4);
     assert(address_output.str() == "lw a0, 208(a1)\nsw a0, 240(a2)\n");
     backend.free_scratch_registers(token{}, 0, address_registers);
     address_output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 2047, byte), 16);
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 2047, byte), 16, 4);
     assert(address_output.str() ==
            "addi t0, a2, 2047\nsw zero, 0(t0)\nsw zero, 4(t0)\nsw zero, "
            "8(t0)\nsw zero, 12(t0)\n");
     address_output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 19);
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 19, 4);
     assert(address_output.str() ==
            "addi t0, a2, 0\nli t1, 4\n1:\nsw zero, 0(t0)\naddi t0, t0, 4\naddi "
            "t1, t1, -1\nbnez t1, 1b\nsh zero, 0(t0)\nsb zero, 2(t0)\n");
@@ -2119,6 +2119,8 @@ func main() {
                 }
                 std::println("    addi a0, sp, {}\n    addi a1, sp, {}",
                              alignment, 36 + alignment);
+                // both addresses are 'alignment' bytes past a word boundary
+                const size_t known_alignment{offset_alignment(alignment, 4)};
                 if (counted) {
                     const operand count{backend.begin_array_copy(token{}, 1)};
                     backend.copy_value(
@@ -2128,7 +2130,7 @@ func main() {
                         1, operand::mem("a0", {}, 1, 0, byte));
                     backend.set_array_copy_destination(
                         1, operand::mem("a1", {}, 1, 0, byte));
-                    backend.end_array_copy(token{}, 1, 1);
+                    backend.end_array_copy(token{}, 1, 1, known_alignment);
                 } else {
                     std::println(
                         "    li a2, {}\n    sub a0, a0, a2\n    sub a1, a1, a2",
@@ -2136,7 +2138,7 @@ func main() {
                     backend.copy(token{}, 1,
                                  operand::mem("a0", {}, 1, displacement, byte),
                                  operand::mem("a1", {}, 1, displacement, byte),
-                                 size_bytes);
+                                 size_bytes, known_alignment);
                     std::println(
                         "    li a2, {}\n    add a0, a0, a2\n    add a1, a1, a2",
                         displacement);
@@ -2478,7 +2480,7 @@ func main() {
             backend.zero(token{}, 1,
                          operand::mem("a2", {}, 1,
                                       static_cast<int64_t>(displacement), byte),
-                         count);
+                         count, offset_alignment(start, 4));
             for (size_t offset{}; offset < 64; ++offset) {
                 const int expected{
                     offset >= start and offset < start + count ? 0 : 255};

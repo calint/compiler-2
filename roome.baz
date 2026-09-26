@@ -1,0 +1,93 @@
+type str {
+    len i8,
+    data[127] i8
+}
+
+dat   hello[] i8 = "hello world from baz\r"
+dat prompt1[] i8 = "enter name:\r"
+dat prompt2[] i8 = "that is not a name.\r"
+dat prompt3[] i8 = "hello "
+dat     dot[] i8 = "."
+dat      nl[] i8 = "\r"
+dat   colon[] i8 = ": "
+
+func str_out(s str) {
+    write(1, s.data, s.len)
+}
+
+func str_in(s str) {
+    # the uart does not echo, so each byte is written back as it is read
+    var nbytes = 0
+    loop {
+        if nbytes == array_length(s.data) break
+        if read(0, s.data, 1, nbytes) == 0 break
+        write(1, s.data, 1, nbytes)
+        nbytes = nbytes + 1
+        if s.data[nbytes - 1] == 10 break
+    }
+    s.len = i8(nbytes - 1)
+}
+
+func noinline print_num(num) {
+    var buf[20] i8
+    var n = num
+    var is_negative bool = false
+ 
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+ 
+    var i = 20
+    loop {
+        i = i - 1
+        var ascii = 48 + (n % 10)
+        # note: not buf[i] = 48 + ... because expression will be executed as
+        #       byte sized and n overflows
+        buf[i] = i8(ascii) 
+        n = n / 10
+        if n == 0 break
+    }
+ 
+    if is_negative {
+        i = i - 1
+        buf[i] = 45
+    }
+ 
+    var write_pos = 0
+    loop {
+        buf[write_pos] = buf[i]
+        write_pos = write_pos + 1
+        i = i + 1
+        if i == 20 break
+    }
+ 
+    write(1, buf, write_pos)
+}
+
+func print(s[] i8) {
+    write(1, s)
+}
+
+func main() {
+    var counter
+    var nm str
+    print(hello)
+    loop {
+        counter = counter + 1
+        print_num(counter)
+        print(colon)
+        print(prompt1)
+        str_in(nm)
+        if nm.len <= 4 {
+            print(prompt2)
+            continue
+        } else {
+            print(prompt3)
+            str_out(nm)
+            print(dot)
+            print(nl)
+        }
+    }
+}
+

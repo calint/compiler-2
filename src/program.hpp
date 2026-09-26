@@ -167,8 +167,22 @@ class program final {
         const size_t alignment{x.data_alignment()};
         x.begin_data(alignment);
 
+        // zero padding places each dat at the offset 'toc::add_var' gave it
+        size_t dat_offset{};
         for (const statement* s : tc.get_data()) {
+            const size_t padding_bytes{
+                align_storage_size(dat_offset, s->get_type().alignment()) -
+                dat_offset};
+
+            if (padding_bytes != 0) {
+                x.comment({}, 0, "padding {} B", padding_bytes);
+                x.emit_zero_data(padding_bytes);
+            }
+
             s->compile_data(tc);
+
+            dat_offset = add_storage_size(dat_offset + padding_bytes,
+                                          s->dat_size_bytes());
         }
 
         x.reserve_variables(alignment, vars_size_bytes_);

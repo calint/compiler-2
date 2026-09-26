@@ -409,15 +409,22 @@ class stmt_identifier : public statement {
             const ident_info info{tc.make_ident_info(elem.name_tk, path)};
 
             // inside an unknown element only the types are followed
-            if (is_exact_access_) {
-                const size_t field_offset{
-                    is_root ? 0
-                            : parent_type->field_offset(elem.name_tk,
-                                                        elem.name_tk.text())};
-
+            // a field covers its trailing padding so that assigning every
+            // field assigns the whole record
+            if (is_exact_access_ and is_root) {
                 access_range_ = {
-                    .offset{access_range_.offset + field_offset},
+                    .offset{access_range_.offset},
                     .size_bytes{storage_size_bytes(info)},
+                };
+            }
+
+            if (is_exact_access_ and not is_root) {
+                access_range_ = {
+                    .offset{access_range_.offset +
+                            parent_type->field_offset(elem.name_tk,
+                                                      elem.name_tk.text())},
+                    .size_bytes{parent_type->field_extent_bytes(
+                        elem.name_tk, elem.name_tk.text())},
                 };
             }
 
@@ -444,10 +451,18 @@ class stmt_identifier : public statement {
 
         const size_t element_size_bytes{array_info.type_ref().size_bytes()};
 
+        const size_t element_offset{static_cast<size_t>(*index) *
+                                    element_size_bytes};
+
+        // the last element keeps the padding after the array
+        const bool is_last_element{
+            std::cmp_equal(*index, array_info.array_len - 1)};
+
         access_range_ = {
-            .offset{access_range_.offset +
-                    (static_cast<size_t>(*index) * element_size_bytes)},
-            .size_bytes{element_size_bytes},
+            .offset{access_range_.offset + element_offset},
+            .size_bytes{is_last_element
+                            ? access_range_.size_bytes - element_offset
+                            : element_size_bytes},
         };
     }
 

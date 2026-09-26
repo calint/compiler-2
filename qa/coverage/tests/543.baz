@@ -1,0 +1,163 @@
+# natural alignment: words at multiples of 4 and half words at even offsets,
+# padding between and after fields is zero so records compare byte by byte
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type mixed {
+    tag i8,
+    value i32,
+    half i16,
+    last i8
+}
+
+type packed {
+    a i8,
+    b i8,
+    c i8
+}
+
+type outer {
+    flag bool,
+    inner mixed,
+    names[3] i8,
+    items[2] mixed
+}
+
+type holder {
+    vals[3] i8,
+    n i32
+}
+
+dat greeting[] i8 = "hi!"
+dat numbers[] i32 = {10, 20, 30}
+dat letter i8 = 7
+dat halves[] i16 = {-1, 2}
+dat constant_mixed mixed = {1, 2, 3, 4}
+
+# the i32 locals after the byte would be written at an unaligned offset
+func noinline print_sign(num) res {
+    var n = num
+    var is_negative bool = false
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+    var i = 20
+    loop {
+        i = i - 1
+        n = n / 10
+        if n == 0 break
+    }
+    var ascii = 48 + i
+    res = 0
+    if is_negative res = 1
+    res = res + ascii
+}
+
+# assigning every field sets the result although the padding is not written
+func make_mixed() res mixed {
+    res.tag = 1
+    res.value = 2
+    res.half = 3
+    res.last = 4
+}
+
+# the last array element covers the padding after the array
+func make_holder() res holder {
+    res.vals[0] = 1
+    res.vals[1] = 2
+    res.vals[2] = 3
+    res.n = 4
+}
+
+func main() {
+    # the values must survive stores to the fields next to them
+    var m mixed = {1, 2, 3, 4}
+    assert(1, m.tag == 1 and m.value == 2 and m.half == 3 and m.last == 4)
+    m.value = -123456789
+    assert(2, m.tag == 1 and m.value == -123456789 and m.half == 3)
+    m.half = -2
+    m.tag = 9
+    assert(3, m.value == -123456789 and m.half == -2 and m.last == 4)
+
+    # records equal field by field compare equal including their padding
+    var p mixed = {9, -123456789, -2, 4}
+    assert(4, equal(m, p))
+    var q mixed = m
+    assert(5, equal(q, p))
+    q.last = 5
+    assert(6, not equal(q, p))
+
+    # unlisted fields and padding are zero
+    var z mixed = {1}
+    var zero_mixed mixed = {1, 0, 0, 0}
+    assert(7, equal(z, zero_mixed))
+
+    # nested records and arrays of records keep their own alignment
+    var o outer = {true, {1, 2, 3, 4}, {5, 6, 7}, {{8, 9, 10, 11}}}
+    assert(8, o.flag and o.inner.value == 2 and o.inner.last == 4)
+    assert(9, o.names[2] == 7 and o.items[0].value == 9)
+    assert(10, o.items[1].tag == 0 and o.items[1].value == 0)
+    o.items[1].value = 1000000
+    o.items[1].half = 300
+    assert(11, o.items[1].value == 1000000 and o.items[1].half == 300)
+    assert(12, o.items[0].last == 11 and o.names[0] == 5)
+
+    var o2 outer = o
+    assert(13, equal(o, o2))
+    o2.items[1].half = 301
+    assert(14, not equal(o, o2))
+
+    # records without wider fields need no padding
+    var pk packed = {1, 2, 3}
+    var pk2 packed = pk
+    assert(15, equal(pk, pk2) and pk2.c == 3)
+
+    # data after data of other sizes
+    assert(16, greeting[2] == 33)
+    assert(17, numbers[0] == 10 and numbers[2] == 30)
+    assert(18, letter == 7)
+    assert(19, halves[0] == -1 and halves[1] == 2)
+    assert(20, constant_mixed.value == 2 and constant_mixed.last == 4)
+    var cm mixed = {1, 2, 3, 4}
+    assert(21, equal(cm, constant_mixed))
+
+    # a byte between word sized locals
+    var before = 11
+    var flag bool = true
+    var after = 22
+    var small i16 = 33
+    var after2 = 44
+    assert(22, before == 11 and flag and after == 22)
+    assert(23, small == 33 and after2 == 44)
+
+    # the noninline frame lays out a bool before i32 locals
+    var positive = 5
+    var negative = -5
+    var sign_positive = print_sign(positive)
+    var sign_negative = print_sign(negative)
+    assert(24, sign_positive == 67)
+    assert(25, sign_negative == 68)
+
+    # byte arrays at odd offsets are copied and compared bytewise
+    var bytes1[7] i8 = {1, 2, 3, 4, 5, 6, 7}
+    var bytes2[7] i8
+    array_copy(bytes1[1], bytes2[1], 5)
+    assert(26, bytes2[0] == 0 and bytes2[1] == 2 and bytes2[5] == 6)
+    assert(27, bytes2[6] == 0)
+    assert(28, arrays_equal(bytes1[1], bytes2[1], 5))
+    assert(29, not arrays_equal(bytes1, bytes2, 7))
+
+    # large records and arrays copy with the widest aligned accesses
+    var big1[5] mixed = {{1, 2, 3, 4}, {5, 6, 7, 8}}
+    var big2[5] mixed = big1
+    assert(30, big2[1].value == 6 and big2[4].value == 0)
+    assert(31, equal(big1, big2))
+    array_copy(big1, big2[3], 2)
+    assert(32, big2[3].value == 2 and big2[4].half == 7)
+
+    var made mixed = make_mixed()
+    assert(33, made.tag == 1 and made.value == 2 and made.last == 4)
+    var held holder = make_holder()
+    assert(34, held.vals[2] == 3 and held.n == 4)
+}

@@ -255,8 +255,21 @@ class stmt_def_dat final : public statement {
 
         // user-defined type
 
+        machine& x{tc.machine()};
+
+        // bytes of the record emitted so far, fields in order then padding
+        size_t written_bytes{};
+
         const std::span<const type_field> flds{tp.fields()};
         for (const auto [e, f] : std::views::zip(elroot.elems, flds)) {
+            const size_t padding_bytes{f.offset - written_bytes};
+            if (padding_bytes != 0) {
+                x.comment(e.tk, 0, "padding {} B", padding_bytes);
+                x.emit_zero_data(padding_bytes);
+            }
+
+            written_bytes = f.offset + f.size_bytes;
+
             if (f.type().is_builtin()) {
                 compile_data_builtin(tc, f.type(), e);
             } else {
@@ -264,17 +277,18 @@ class stmt_def_dat final : public statement {
             }
         }
 
-        // zero out remaining fields, if any
+        // zero out remaining fields and the padding after the last field
 
-        if (elroot.elems.size() == flds.size()) {
+        const size_t size_bytes{tp.size_bytes() - written_bytes};
+        if (size_bytes == 0) {
             return;
         }
-        const size_t size_bytes{
-            tp.remaining_fields_size_bytes(elroot.elems.size())};
 
-        machine& x{tc.machine()};
+        const std::string_view what{elroot.elems.size() == flds.size()
+                                        ? "padding"
+                                        : "remaining fields"};
 
-        x.comment(elroot.tk, 0, "zero remaining fields");
+        x.comment(elroot.tk, 0, "zero {}: {} B", what, size_bytes);
         x.emit_zero_data(size_bytes);
     }
 

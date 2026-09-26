@@ -166,6 +166,22 @@ class expr_type final : public statement {
                                      const ident_info& dst_info,
                                      operand& dst_op) -> void;
 
+    // padding is zeroed too so that records compare equal byte by byte
+    auto zero_unwritten(toc& tc, const size_t indent,
+                        const std::string_view what, const size_t size_bytes,
+                        const size_t alignment, operand& dst_op) const -> void {
+
+        if (size_bytes == 0) {
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, "zero {}: {} B", what, size_bytes);
+        x.zero(tok(), indent, dst_op, size_bytes, alignment);
+        dst_op.increment_offset(address_offset(size_bytes));
+    }
+
     static auto validate_array_assignment(const token& src_loc_tk,
                                           const type_field& fld,
                                           const ident_info& src_info) -> void {

@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 //           2026-09-09
 
+#include <algorithm>
 #include <cstdint>
 #include <format>
 #include <ranges>
@@ -29,17 +30,24 @@ struct type_field {
 
 class type final {
     std::string name_;
-    size_t size_bytes_{}; // total size of type in bytes
+    size_t size_bytes_{};       // total size of type in bytes including padding
+    size_t fields_end_bytes_{}; // end of the last field before tail padding
+    size_t alignment_{1};
     std::vector<type_field> fields_;
     bool is_builtin_{};
 
   public:
+    // builtins are aligned to their size, a zero size needs no alignment
     type(const std::string_view name, const size_t size_bytes,
          const bool is_builtin)
-        : name_{name}, size_bytes_{size_bytes}, is_builtin_{is_builtin} {}
+        : name_{name}, size_bytes_{size_bytes},
+          alignment_{std::max(size_bytes, size_t{1})}, is_builtin_{is_builtin} {
+    }
 
     type() = default;
 
+    // fields are placed at offsets aligned to their type and the size is
+    // rounded up so that array elements stay aligned
     auto add_field([[maybe_unused]] const token& src_loc_tk,
                    const std::string_view name, const type& tp,
                    const bool is_array, const size_t array_count) -> void {
@@ -47,10 +55,15 @@ class type final {
         const size_t total_size_bytes{
             multiply_storage_size(tp.size_bytes_, is_array ? array_count : 1)};
 
-        fields_.emplace_back(std::string{name}, &tp, size_bytes_,
-                             total_size_bytes, array_count, is_array);
+        const size_t offset{
+            align_storage_size(fields_end_bytes_, tp.alignment_)};
 
-        size_bytes_ = add_storage_size(size_bytes_, total_size_bytes);
+        fields_.emplace_back(std::string{name}, &tp, offset, total_size_bytes,
+                             array_count, is_array);
+
+        fields_end_bytes_ = add_storage_size(offset, total_size_bytes);
+        alignment_ = std::max(alignment_, tp.alignment_);
+        size_bytes_ = align_storage_size(fields_end_bytes_, alignment_);
     }
 
     [[nodiscard]] auto field(const token& src_loc_tk,
@@ -139,13 +152,23 @@ class type final {
                                     const std::string_view field_name) const
         -> size_t {
 
-        size_t offset{};
+        return field(src_loc_tk, field_name).offset;
+    }
 
-        for (const type_field& tf : fields_) {
-            if (tf.name == field_name) {
-                return offset;
+    // the field and the padding after it up to the next field or the end
+    [[nodiscard]] auto
+    field_extent_bytes(const token& src_loc_tk,
+                       const std::string_view field_name) const -> size_t {
+
+        for (size_t i{}; i < fields_.size(); ++i) {
+            if (fields_[i].name != field_name) {
+                continue;
             }
-            offset += tf.size_bytes;
+
+            const size_t next_offset{
+                i + 1 < fields_.size() ? fields_[i + 1].offset : size_bytes_};
+
+            return next_offset - fields_[i].offset;
         }
 
         throw compiler_exception(
@@ -155,6 +178,8 @@ class type final {
 
     [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
 
+    [[nodiscard]] auto alignment() const -> size_t { return alignment_; }
+
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
     auto set_name(const std::string_view name) -> void { name_ = name; }
@@ -163,16 +188,5 @@ class type final {
 
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
         return fields_;
-    }
-
-    [[nodiscard]] auto remaining_fields_size_bytes(const size_t first) const
-        -> size_t {
-
-        size_t size_bytes{};
-        for (const type_field& f : fields_ | std::views::drop(first)) {
-            size_bytes = add_storage_size(size_bytes, f.size_bytes);
-        }
-
-        return size_bytes;
     }
 };

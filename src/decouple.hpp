@@ -71,6 +71,30 @@ class expr_any;
     return size_bytes * count;
 }
 
+// rounds 'size_bytes' up to a multiple of 'alignment', a power of two
+[[nodiscard]] inline auto align_storage_size(const size_t size_bytes,
+                                             const size_t alignment) -> size_t {
+
+    assert(std::has_single_bit(alignment));
+
+    return add_storage_size(size_bytes,
+                            (alignment - (size_bytes % alignment)) % alignment);
+}
+
+// the alignment known at 'offset' bytes from an address aligned to
+// 'alignment'
+[[nodiscard]] inline auto offset_alignment(const size_t offset,
+                                           const size_t alignment) -> size_t {
+    if (offset == 0) {
+        return alignment;
+    }
+
+    const unsigned trailing_zeros{
+        static_cast<unsigned>(std::countr_zero(offset))};
+
+    return std::min(alignment, size_t{1} << trailing_zeros);
+}
+
 [[nodiscard]] inline auto address_offset(const size_t size_bytes) -> int64_t {
     if (not std::in_range<int64_t>(size_bytes)) {
         throw std::overflow_error{"address offset exceeds signed 64-bit range"};

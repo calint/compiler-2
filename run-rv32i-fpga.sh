@@ -14,6 +14,8 @@ if [[ ! -x $EMULATOR ]]; then
     fpga-emulator/make.sh
 fi
 
+./baz --target=rv32i-fpga --vars=131072 --checks=upper,lower,line,alias roome.baz >roome.s
+
 # the emulator requires an sd card image which the program does not use
 SDCARD="$(mktemp)"
 

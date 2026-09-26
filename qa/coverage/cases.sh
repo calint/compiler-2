@@ -546,3 +546,4 @@ if [[ $MACHINE == x86_64 ]]; then SRC=539 && COMPERR; fi
 if [[ $MACHINE == x86_64 ]]; then SRC=540 && COMPERR; fi
 if [[ $MACHINE == x86_64 ]]; then SRC=541 && COMPERR; fi
 # SRC=542 && EXP=0 && RUN # note: generates a huge file and is very slow
+SRC=543 && EXP=0 && RUN

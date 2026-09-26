@@ -137,7 +137,8 @@ class stmt_builtin_equal final : public expression {
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
-        x.end_memory_equal(tok(), indent, size_bytes, dst, inverted);
+        x.end_memory_equal(tok(), indent, size_bytes,
+                           lhs_info.type_ref().alignment(), dst, inverted);
     }
 
     auto visit_reads(const std::string_view var,
