@@ -249,12 +249,9 @@ func noinline print_num(num) {
 }
 
 func main() {
-    var arr[4] i32
-    # arrays are initialized to 0
-
     var answer
-    assert(answer == 0)
     # variables without initializer are zeroed
+    assert(answer == 0)
 
     answer = maybe
     assert(answer == -1)
@@ -268,8 +265,11 @@ func main() {
 
     assert(maybe == -1)
 
+    var arr[4] i32
+    # arrays without initializer are zeroed 
+
     var ix = 1
-    # variables can have an initial value that can be an expression
+    # variables can have an initial expression
 
     arr[ix] = 2
     arr[ix + 1] = arr[ix]
@@ -308,12 +308,17 @@ func main() {
     #   `i`: index starting at 0
     #   `n`: constant array size
 
-    var p point = {0, 0}
+    var p point
+    # user types without initializer are zeroed
     p.fooz()
+    # call on user type method
+
     assert(p.x == 2)
     assert(p.y == 0xb)
 
     var q point = p
+    # user type initializer may be an expression
+
     assert(equal(p, q))
     # `equal` is built-in function to compare user types for equality or same 
     # size arrays
@@ -340,6 +345,8 @@ func main() {
     assert(p0.x == 6)
 
     var pt point = point_init()
+    # "return" from functions are writing to the destination through a reference
+    
     assert(pt.x == -1)
     assert(pt.y == -2)
 
