@@ -4,7 +4,7 @@
 #include "../../src/assembler_rv32i.hpp"
 #include "../../src/decouple_impl.hpp" // IWYU pragma: keep
 #include "../../src/machine_rv32i.hpp"
-#include "../../src/machine_x86.hpp"
+#include "../../src/machine_x86_64.hpp"
 #include "../../src/program.hpp"
 
 // instruction-shape tests must not depend on register diagnostic comments
@@ -380,7 +380,7 @@ auto main(const int argc, const char* argv[]) -> int {
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
     if (argc > 1 and std::string_view{argv[1]} == "x86-scales") {
-        machine_x86 backend{std::cout, {}};
+        machine_x86_64 backend{std::cout, {}};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         std::println("bits 64\nsection .text\nglobal _start\n_start:");
@@ -925,7 +925,7 @@ func main() {
 }
 )baz"};
         std::ostringstream output;
-        machine_x86 compiler{output, source};
+        machine_x86_64 compiler{output, source};
         program prg{compiler, source, 4096, false, false, false};
         prg.build(output);
         assert(output.str().contains("sete r15b\n"));
@@ -946,7 +946,7 @@ func main() {
 }
 )baz"};
         std::ostringstream x86_output;
-        machine_x86 x86_compiler{x86_output, source};
+        machine_x86_64 x86_compiler{x86_output, source};
         program x86_program{x86_compiler, source, 4096, false, false, false};
         x86_program.build(x86_output);
         assert(x86_output.str().contains("sete byte [rbp + 4]\n"));
@@ -1106,7 +1106,7 @@ func main() {
         return 0;
     }
     std::ostringstream x86_output;
-    machine_x86 x86_backend{x86_output, {}};
+    machine_x86_64 x86_backend{x86_output, {}};
     x86_backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
     constexpr std::array<std::string_view, 14> x86_scratch_order{
@@ -1228,7 +1228,7 @@ func main() {
             "exit(value) }"};
 
         std::ostringstream output;
-        machine_x86 compiler{output, source};
+        machine_x86_64 compiler{output, source};
         program prg{compiler, source, 4096, false, false, false};
         prg.build(output);
         const std::string assembly{output.str()};
@@ -1244,7 +1244,7 @@ func main() {
          {"func main() { var b[1] i8 write(1, b, write(1, b, 0)) }",
           "func main() { var b[1] i8 exit(write(1, b, 0)) }"}) {
         std::ostringstream output;
-        machine_x86 compiler{output, source};
+        machine_x86_64 compiler{output, source};
         program prg{compiler, source, 4096, false, false, false};
         bool rejected{};
         try {

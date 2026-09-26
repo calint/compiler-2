@@ -24,7 +24,7 @@
 #include "machine_rv32i.hpp"
 #include "machine_rv32i_fpga.hpp"
 #include "machine_rv32i_qemu.hpp"
-#include "machine_x86.hpp"
+#include "machine_x86_64.hpp"
 #include "null_stream.hpp"
 #include "panic_exception.hpp"
 #include "program.hpp"
@@ -228,7 +228,8 @@ auto main(const int argc, const char** const argv) -> int {
 
         std::unique_ptr<machine> backend;
         if (target == "x86_64") {
-            backend = std::make_unique<machine_x86>(parser_output, src, jumps);
+            backend =
+                std::make_unique<machine_x86_64>(parser_output, src, jumps);
         } else if (target == "rv32i") {
             backend = std::make_unique<machine_rv32i>(parser_output, src, jumps,
                                                       "gen-rv32i.bin");
