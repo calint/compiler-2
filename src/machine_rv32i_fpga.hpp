@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <format>
 #include <ostream>
 #include <string_view>
 
@@ -52,6 +53,14 @@ class machine_rv32i_fpga final : public machine_rv32i {
         // of memory
 
         ::assembler_rv32i& x{assembler()};
+
+        // 'lui' places the immediate in the upper 20 bits
+        const int memory_end{memory_end_upper_ << 12};
+
+        // 'std::format' has no digit separators so the halves are printed
+        // apart
+        x.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
+                                 memory_end >> 16, memory_end & 0xffff));
 
         x.lui(0, "sp", memory_end_upper_);
         x.add_separator_newline();

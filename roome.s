@@ -80,6 +80,7 @@ _start:
 # allocate named register s0
 la s0, dat
 
+# load stack pointer to 0x80:0000
 lui sp, 2048
 
 # [1:1] dat hello[] i8 = "u r in roome\n"
