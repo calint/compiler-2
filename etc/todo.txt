@@ -1,14 +1,43 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] since every element has a whitespace before and after stop reading whitspace
+[ ] specify device memory size and error if code size + dat size + max used
+    vars + stack size overflows it
+[x] since every element has a whitespace before and after stop reading whitspace
     after once newline is found for nicer tokens
     => what happens if a block is:
         {
             a = 2
 
         }
+       => whitespace token for is_char_token('{') reads the remaing whitespace
+    => done: 'tokenizer::next_trailing_whitespace' ends after the first
+       newline, the whitespace at the end of the source stays with the last
+       token; lookahead after a token uses 'peek_char_after_whitespace' and
+       'expr_arith' keeps the whitespace before each operator so operators
+       may still start the next line (570.baz)
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
+    => plan (big: new machine interface method, several files)
+       [ ] parse a string token or an identifier for the 'array_copy' source
+           and either 'arrays_equal' argument; 'source_to', 'visit_reads'
+           and the type check treat the string as 'i8'
+       [ ] the string length is the array count: a constant count above it
+           is a compile error, a runtime count is checked with
+           'check_bounds' when '--checks=upper' is on
+       [ ] 'array_copy' with a constant count: 'machine::copy_bytes' with the
+           first 'count' decoded bytes, no backend change (possible first
+           step)
+       [ ] runtime count and 'arrays_equal': new machine method that loads
+           the address of a '.rodata' label into a register (x86
+           'lea reg, [rel label]', rv32i 'la') for
+           'array_copy_source_register' and 'memory_equal_left/right_register'
+           since operands have no symbol memory form
+       [ ] register the constant with 'toc::add_string_constant' only when
+           emitted
+       [ ] tree-sitter grammar
+       [ ] tests on both targets: runtime copy and compare, errors for a
+           non-'i8' destination, a count above the string length and the
+           empty string
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
 [ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
@@ -32,7 +61,8 @@
        is fixed: 'copy_bytes' loops from the label pointer ('emit_copy_loop')
 [ ] 'equal' on records compares the padding bytes; a record set by a call
     result keeps whatever padding bytes its storage held
-[ ] when reading trailing whitespace stop at newline
+[x] when reading trailing whitespace stop at newline
+    => done, see the first item
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments
 [x] opus 5.5 ai review and bug-hunt

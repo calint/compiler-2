@@ -70,7 +70,8 @@ class stmt_identifier : public statement {
                 const ident_info cur_ident_info{
                     tc.make_ident_info(tk, path_as_string_)};
 
-                if (tz.peek_char() == '[' and not cur_ident_info.is_array) {
+                if (tz.peek_char_after_whitespace() == '[' and
+                    not cur_ident_info.is_array) {
                     throw compiler_exception{
                         tk, std::format("cannot index non-array '{}'",
                                         path_as_string_)};

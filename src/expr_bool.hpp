@@ -635,7 +635,8 @@ class expr_bool final : public statement {
                 //   e.g., not ((t1 + t2) > 2)
                 //         where (t1 + t2) is a valid 'expr_bool' of 1
                 //         element with the expression 't1 + t2'
-                if (std::string_view{"<>=!+-*/%&|^"}.contains(tz.peek_char())) {
+                if (std::string_view{"<>=!+-*/%&|^"}.contains(
+                        tz.peek_char_after_whitespace())) {
                     // it is a 'bool_op', reposition the tokenizer and parse it
                     tz.rewind_to_position(rewind_pos_tk);
                     bools_.emplace_back(std::in_place_type<expr_bool_op>, tc,

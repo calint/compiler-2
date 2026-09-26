@@ -121,7 +121,7 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
                                                     tz);
     }
     if (stmt_builtin_narrow::is_builtin_name(tk.text()) and
-        tz.is_peek_char('(')) {
+        tz.peek_char_after_whitespace() == '(') {
 
         return std::make_unique<stmt_builtin_narrow>(tc, std::move(uops), tk,
                                                      tz);

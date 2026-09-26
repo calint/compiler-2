@@ -64,7 +64,7 @@ class tokenizer final {
                 }
                 if (is_next_char('"')) {
                     const size_t end_ix{char_ix_};
-                    const std::string_view ws_after{next_whitespace()};
+                    const std::string_view ws_after{next_trailing_whitespace()};
 
                     return token{ws_before,
                                  bgn_ix,
@@ -107,7 +107,7 @@ class tokenizer final {
             }
 
             const size_t end_ix{char_ix_};
-            const std::string_view ws_after{next_whitespace()};
+            const std::string_view ws_after{next_trailing_whitespace()};
 
             return {ws_before, bgn_ix,   src_.substr(bgn_ix, end_ix - bgn_ix),
                     end_ix,    ws_after, at_line,
@@ -118,7 +118,7 @@ class tokenizer final {
 
         const std::string_view txt{next_token_str()};
         const size_t end_ix{char_ix_};
-        const std::string_view ws_after{next_whitespace()};
+        const std::string_view ws_after{next_trailing_whitespace()};
 
         return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
     }
@@ -136,7 +136,7 @@ class tokenizer final {
         const std::string_view txt{src_.substr(char_ix_, 1)};
         ++char_ix_;
         const size_t end_ix{char_ix_};
-        const std::string_view ws_after{next_whitespace()};
+        const std::string_view ws_after{next_trailing_whitespace()};
 
         return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
     }
@@ -192,6 +192,16 @@ class tokenizer final {
         return is_eos() ? '\0' : src_[char_ix_];
     }
 
+    // trailing whitespace ends at a newline so lookahead past a token skips
+    // the next line's indentation
+    [[nodiscard]] auto peek_char_after_whitespace() -> char {
+        const std::string_view ws{next_whitespace()};
+        const char ch{peek_char()};
+        move_back(ws.size());
+
+        return ch;
+    }
+
     [[nodiscard]] auto next_char() -> char {
         assert(not is_eos());
 
@@ -238,6 +248,21 @@ class tokenizer final {
         const size_t len{char_ix_ - bgn_ix};
 
         return src_.substr(bgn_ix, len);
+    }
+
+    // the next line's indentation and comments belong to the next token, the
+    // whitespace at the end of the source stays with the last token
+    [[nodiscard]] auto next_trailing_whitespace() -> std::string_view {
+        const size_t bgn_ix{char_ix_};
+        const size_t len{next_whitespace().size()};
+        const size_t newline{src_.substr(bgn_ix, len).find('\n')};
+        if (is_eos() or newline == std::string_view::npos) {
+            return src_.substr(bgn_ix, len);
+        }
+
+        move_back(len - newline - 1);
+
+        return src_.substr(bgn_ix, newline + 1);
     }
 
     // the newline is left for 'next_whitespace' so it counts the line

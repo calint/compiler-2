@@ -1,0 +1,30 @@
+# trailing whitespace ends at a newline: operators, brackets and parentheses
+# may still start the next line
+
+func main() {
+    var x = 1
+        + 2
+        * 3
+    if x != 7 exit(1)
+
+    var arr[4] i8
+    arr
+        [1] = 5
+    if arr[1] != 5 exit(2)
+
+    var y i8 = i8
+        (x)
+    if y != 7 exit(3)
+
+    if (x + 1)
+        < 8 exit(4)
+
+    # a blank line before '}' belongs to the '}'
+    if x == 7 {
+        x = 2
+
+    }
+    if x != 2 exit(5)
+
+    exit(0)
+}

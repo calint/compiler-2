@@ -27,10 +27,11 @@
 class expr_arith final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     std::vector<char> ops_; // operators between elements in the vector
-    unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
-    token open_paren_tk_;   // when 'enclosed' the '(' token
-    token close_paren_tk_;  // when 'enclosed' the ')' token
-    bool enclosed_{};       // (a + b)  vs  a + b
+    std::vector<token> ws_before_ops_; // whitespace before each of 'ops_'
+    unary_ops uops_;                   // unary ops for all result e.g. ~(a+b)
+    token open_paren_tk_;              // when 'enclosed' the '(' token
+    token close_paren_tk_;             // when 'enclosed' the ')' token
+    bool enclosed_{};                  // (a + b)  vs  a + b
 
     // true when this list was created because of a higher-precedence operation
     //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
@@ -102,10 +103,15 @@ class expr_arith final : public expression {
                 }
             }
 
+            // an operator may start the next line after the trailing
+            // whitespace of the previous element
+            const token ws_before_op_tk{tz.next_whitespace_token()};
+
             // is it parsed within a function argument?
             if (in_args) {
                 // yes, exit when ',' or ')' is found
                 if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
+                    tz.put_back_token(ws_before_op_tk);
                     validate_arithmetic_operands(tc);
 
                     return;
@@ -136,6 +142,7 @@ class expr_arith final : public expression {
                 ops_.emplace_back('>');
             } else {
                 // no more operations, return
+                tz.put_back_token(ws_before_op_tk);
                 validate_arithmetic_operands(tc);
 
                 return;
@@ -155,6 +162,7 @@ class expr_arith final : public expression {
                 // remove the operator which has higher precedence, it will be
                 // parsed in the sub-expression before the second element
                 ops_.pop_back();
+                tz.put_back_token(ws_before_op_tk);
 
                 // move the last element out of the list
                 std::unique_ptr<statement> last_elem_in_list{
@@ -184,6 +192,7 @@ class expr_arith final : public expression {
                 // remove the operator that has lower precedence, it will be
                 // parsed by the parent expression
                 ops_.pop_back();
+                tz.put_back_token(ws_before_op_tk);
 
                 validate_arithmetic_operands(tc);
 
@@ -194,6 +203,7 @@ class expr_arith final : public expression {
             precedence = next_precedence;
 
             // consume the peeked operator
+            ws_before_ops_.emplace_back(ws_before_op_tk);
             const char ch{tz.next_char()};
 
             // consume the second character of a previously recognized shift
@@ -241,9 +251,10 @@ class expr_arith final : public expression {
         }
         expression::source_to(os); // whitespace
         exprs_[0]->source_to(os);
-        for (const auto [o, e] :
-             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
+        for (const auto [ws, o, e] : std::views::zip(
+                 ws_before_ops_, ops_, exprs_ | std::views::drop(1))) {
 
+            ws.source_to(os);
             std::print(os, "{}", o);
             if (o == '<' or o == '>') {
                 // handle case << and >>
