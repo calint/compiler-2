@@ -75,6 +75,7 @@
 (type_definition name: (identifier) @type.definition)
 
 (string_literal) @string
+(escape_sequence) @string.escape
 (character_literal) @string
 (number_literal) @number
 (boolean_literal) @boolean

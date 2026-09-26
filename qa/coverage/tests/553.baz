@@ -1,0 +1,10 @@
+# an unsized parameter has the size of the argument, which is too small
+
+func fill(dst[] i8) {
+    dst = "abc"
+}
+
+func main() {
+    var small[2] i8 = {}
+    fill(small)
+}

@@ -508,53 +508,37 @@ class machine_x86_64 final : public machine {
               const operand& dst, const size_t size_bytes,
               [[maybe_unused]] const size_t alignment) -> void override {
 
-        if (size_bytes > threshold_for_rep_movs_size_bytes) {
-            reserve_named_register(src_loc_tk, indent, "rsi", *default_type_);
-            reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
-            reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
+        copy_bytes(
+            src_loc_tk, indent, dst, size_bytes,
+            [&](const operand& pointer) -> void { lea(indent, pointer, src); },
+            [&](const operand& value, const int64_t offset) -> void {
+                operand part{sized_memory(src, value.type_ref().size_bytes())};
+                part.increment_offset(offset);
+                mov(src_loc_tk, indent, value, part);
+            });
+    }
 
-            lea(indent,
-                machine_x86_64::make_register_operand("rsi", *type_i64_), src);
-            lea(indent,
-                machine_x86_64::make_register_operand("rdi", *type_i64_), dst);
-            mov(src_loc_tk, indent,
-                machine_x86_64::make_register_operand("rcx", *type_i64_),
-                immediate(size_bytes));
+    // rip-relative label addresses need no address register
+    auto copy_from_label(const token& src_loc_tk, const size_t indent,
+                         const std::string_view label, const operand& dst,
+                         const size_t size_bytes) -> void override {
 
-            assembler_.instruction(indent, op::rep_movsb);
+        copy_bytes(
+            src_loc_tk, indent, dst, size_bytes,
+            [&](const operand& pointer) -> void {
+                assembler_.instruction(
+                    indent, op::lea, to_argument(pointer),
+                    assembler_x86_64::memory::of_symbol(label));
+            },
+            [&](const operand& value, const int64_t offset) -> void {
+                assembler_x86_64::memory part{
+                    assembler_x86_64::memory::of_symbol(label)};
 
-            release_bulk_registers(src_loc_tk, indent);
-
-            return;
-        }
-
-        comment(src_loc_tk, indent, "size <= {} B, use mov",
-                threshold_for_rep_movs_size_bytes);
-
-        reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
-        size_t remaining_size_bytes{size_bytes};
-        operand src_operand{src};
-        operand dst_operand{dst};
-        for (size_t width_size_bytes{size_qword}; width_size_bytes >= size_byte;
-             width_size_bytes /= 2) {
-
-            while (remaining_size_bytes >= width_size_bytes) {
-                const operand reg{sized_register("rax", width_size_bytes)};
-                mov(src_loc_tk, indent, reg,
-                    sized_memory(src_operand, width_size_bytes));
-                mov(src_loc_tk, indent,
-                    sized_memory(dst_operand, width_size_bytes), reg);
-
-                remaining_size_bytes -= width_size_bytes;
-                if (remaining_size_bytes != 0) {
-                    src_operand.increment_offset(
-                        address_offset(width_size_bytes));
-                    dst_operand.increment_offset(
-                        address_offset(width_size_bytes));
-                }
-            }
-        }
-        release_named_register(src_loc_tk, indent, "rax");
+                part.displacement = offset;
+                part.size_bytes = value.type_ref().size_bytes();
+                assembler_.instruction(indent, op::mov, to_argument(value),
+                                       part);
+            });
     }
 
     [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
@@ -1308,6 +1292,17 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::text);
     }
 
+    auto emit_string_constants(const std::span<const string_constant> strings)
+        -> void override {
+
+        assembler_.switch_section(section::rodata);
+        for (const string_constant& s : strings) {
+            assembler_.label(0, s.label);
+            assembler_.string_data(s.text);
+        }
+        assembler_.switch_section(section::text);
+    }
+
     auto begin_data(const size_t alignment) -> void override {
         assembler_.add_separator_newline();
         assembler_.switch_section(section::data);
@@ -1708,6 +1703,62 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rcx");
         release_named_register(src_loc_tk, indent, "rdi");
         release_named_register(src_loc_tk, indent, "rsi");
+    }
+
+    // 'load_source_address' sets the 'rep movsb' source pointer and
+    // 'load_source_part' loads the sized value at an offset of the source
+    auto copy_bytes(
+        const token& src_loc_tk, const size_t indent, const operand& dst,
+        const size_t size_bytes,
+        const std::function_ref<void(const operand&)> load_source_address,
+        const std::function_ref<void(const operand&, int64_t)> load_source_part)
+        -> void {
+
+        if (size_bytes > threshold_for_rep_movs_size_bytes) {
+            reserve_named_register(src_loc_tk, indent, "rsi", *default_type_);
+            reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
+            reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
+
+            load_source_address(
+                machine_x86_64::make_register_operand("rsi", *type_i64_));
+            lea(indent,
+                machine_x86_64::make_register_operand("rdi", *type_i64_), dst);
+            mov(src_loc_tk, indent,
+                machine_x86_64::make_register_operand("rcx", *type_i64_),
+                immediate(size_bytes));
+
+            assembler_.instruction(indent, op::rep_movsb);
+
+            release_bulk_registers(src_loc_tk, indent);
+
+            return;
+        }
+
+        comment(src_loc_tk, indent, "size <= {} B, use mov",
+                threshold_for_rep_movs_size_bytes);
+
+        reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
+        size_t remaining_size_bytes{size_bytes};
+        int64_t offset{};
+        operand dst_operand{dst};
+        for (size_t width_size_bytes{size_qword}; width_size_bytes >= size_byte;
+             width_size_bytes /= 2) {
+
+            while (remaining_size_bytes >= width_size_bytes) {
+                const operand reg{sized_register("rax", width_size_bytes)};
+                load_source_part(reg, offset);
+                mov(src_loc_tk, indent,
+                    sized_memory(dst_operand, width_size_bytes), reg);
+
+                remaining_size_bytes -= width_size_bytes;
+                if (remaining_size_bytes != 0) {
+                    offset += address_offset(width_size_bytes);
+                    dst_operand.increment_offset(
+                        address_offset(width_size_bytes));
+                }
+            }
+        }
+        release_named_register(src_loc_tk, indent, "rax");
     }
 
     auto scale_by_element_size_bytes(const token& src_loc_tk,

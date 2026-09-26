@@ -1,0 +1,5 @@
+# an empty string cannot give a 'var' array its size
+
+func main() {
+    var empty[] i8 = ""
+}

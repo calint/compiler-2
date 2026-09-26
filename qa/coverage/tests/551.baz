@@ -1,0 +1,9 @@
+# only 'i8' arrays take strings
+
+type wide {
+    chars[4] i32
+}
+
+func main() {
+    var w wide = {"ab"}
+}

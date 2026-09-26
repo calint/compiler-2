@@ -403,11 +403,21 @@ module.exports = grammar({
         'false',
     ),
 
+    // immediate tokens keep '#' and whitespace inside the string instead of
+    // treating them as extras
     string_literal: $ => seq(
       '"',
-      repeat(/[^"\n]/),
-      '"',
+      repeat(choice(
+        token.immediate(prec(1, /[^"\\\n]+/)),
+        $.escape_sequence,
+      )),
+      token.immediate('"'),
     ),
+
+    escape_sequence: $ => token.immediate(seq(
+      '\\',
+      choice(/x[0-9a-fA-F]{2}/, /[^x\n]/),
+    )),
 
     number_literal: $ => choice(
       /0x[0-9a-fA-F]+/, // Hex

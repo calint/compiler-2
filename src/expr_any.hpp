@@ -27,9 +27,12 @@ class expr_any final : public statement {
     std::vector<token> var_delims_tk_;
     token open_brace_tk_;
     token close_brace_tk_;
+    token string_tk_;
     size_t array_count_{};
     bool is_array_{};
     bool is_identifier_{};
+    // e.g. an array parameter 's[]' gets its size from the argument
+    bool is_unsized_destination_{};
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
@@ -47,6 +50,15 @@ class expr_any final : public statement {
         }
 
         // array
+
+        // e.g. "hello" fills the start of an 'i8' array
+        if (tz.is_peek_char('"')) {
+            string_tk_ = tz.next_token();
+            is_unsized_destination_ = array_count_ == 0;
+            array_count_ = string_array_count(string_tk_, tp, array_count_);
+
+            return;
+        }
 
         // check if it is '{ ... }' or identifier e.g. 'str.data'
 
@@ -95,6 +107,7 @@ class expr_any final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
+        string_tk_.source_to(os);
         open_brace_tk_.source_to(os);
         if (not vars_.empty()) {
             vars_.front().visit([&os](const auto& expression) -> void {
@@ -126,6 +139,12 @@ class expr_any final : public statement {
         // the base case
         if (is_identifier_ or not is_array_) {
             compile_variant(tc, indent, dst_info, tok(), vars_[0]);
+            return;
+        }
+
+        if (is_string()) {
+            compile_string(tc, indent, dst_info);
+
             return;
         }
 
@@ -174,7 +193,13 @@ class expr_any final : public statement {
         return is_array_ and is_identifier_;
     }
 
-    [[nodiscard]] auto is_empty() const -> bool { return vars_.empty(); }
+    [[nodiscard]] auto is_empty() const -> bool {
+        return vars_.empty() and not is_string();
+    }
+
+    [[nodiscard]] auto is_string() const -> bool {
+        return string_tk_.is_string();
+    }
 
     [[nodiscard]] auto is_expression() const -> bool override {
         if (is_array_) {
@@ -291,6 +316,10 @@ class expr_any final : public statement {
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
     [[nodiscard]] auto tok() const -> const token& override {
+        if (is_string()) {
+            return string_tk_;
+        }
+
         if (vars_.empty()) {
             return statement::tok();
         }
@@ -301,6 +330,48 @@ class expr_any final : public statement {
     }
 
   private:
+    // the string is copied from read-only data and the rest of the array is
+    // zeroed like unlisted elements
+    auto compile_string(toc& tc, const size_t indent,
+                        const ident_info& dst_info) const -> void {
+
+        machine& x{tc.machine()};
+
+        const size_t size_bytes{string_tk_.string_size_bytes()};
+
+        const size_t array_count{is_unsized_destination_ ? dst_info.array_len
+                                                         : array_count_};
+
+        if (size_bytes > array_count) {
+            throw compiler_exception{
+                string_tk_,
+                std::format("string size {} overflows array size {}",
+                            size_bytes, array_count)};
+        }
+
+        operand dst{dst_info.operand};
+
+        // an empty string has no constant to copy
+        if (size_bytes != 0) {
+            x.copy_from_label(string_tk_, indent,
+                              tc.add_string_constant(string_tk_), dst,
+                              size_bytes);
+
+            dst.increment_offset(address_offset(size_bytes));
+        }
+
+        const size_t remaining_size_bytes{array_count - size_bytes};
+        if (remaining_size_bytes == 0) {
+            return;
+        }
+
+        x.comment(string_tk_, indent, "zero remaining elements: {} B",
+                  remaining_size_bytes);
+
+        x.zero(string_tk_, indent, dst, remaining_size_bytes,
+               dst_info.type_ref().alignment());
+    }
+
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
                                             const type& tp, const bool in_args)
         -> expr_variant {

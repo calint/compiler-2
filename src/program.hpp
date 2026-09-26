@@ -163,6 +163,12 @@ class program final {
             x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
         }
 
+        // no section switches without strings
+        if (not tc.get_string_constants().empty()) {
+            x.comment({}, 0, "");
+            x.emit_string_constants(tc.get_string_constants());
+        }
+
         // data section
         const size_t alignment{x.data_alignment()};
         x.begin_data(alignment);

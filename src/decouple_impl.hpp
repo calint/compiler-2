@@ -87,6 +87,11 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     // note: no 'std::move' on 'tk' because it is trivially copyable
     unary_ops uops{tz};
     const token tk{tz.next_token()};
+    // array destinations parse strings in 'expr_any'
+    if (tk.is_string()) {
+        throw compiler_exception{
+            tk, "a string can only be assigned to an array of type 'i8'"};
+    }
     if (tk.text().empty()) {
         throw compiler_exception{
             tk, "expected constant, identifier, or function call"};

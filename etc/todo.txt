@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[x] support variable string initializers
+    => 'var', assignments and record literal fields of 'i8' arrays take
+       strings, the bytes are copied from a '.rodata' label and the rest of the
+       array is zeroed, identical strings share one label
+[ ] a '{...}' initializer assigned to an unsized array parameter is not checked
+    against the argument size and can write past it, strings use the
+    argument size
+[ ] string copies: short strings could be stored with immediates instead of
+    loads from '.rodata', rv32i copies byte by byte since the constants are
+    byte aligned
+[ ] strings as sources of 'arrays_equal' and 'array_copy'
 [x] a way to use characters e.g. 'a' instead of ascii code
     => 'a', '\n', '\x41' are constants with the byte value (0-255), the same
        escapes as strings
@@ -148,7 +159,6 @@
 [ ] consider that what registers might be allocated in a noinline functions can
     be listed thus the call can push/pop just the registers the function uses
 [ ] constant evaluation folding in expr_ops_list
-[ ] support variable string initializers
 [ ] read/write/exit builtin so that mov and register access can be removed
 [ ] consider allowing function definitions in functions
 [ ] consider a var type that can be viewed from enclosing functions

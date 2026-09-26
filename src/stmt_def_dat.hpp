@@ -380,28 +380,9 @@ class stmt_def_dat final : public statement {
             // special case for string
             el.tk = tz.next_token();
             if (el.tk.is_string()) {
-                const size_t strsz{el.tk.string_size_bytes()};
-                if (strsz == 0 and el.array_count == 0) {
-                    throw compiler_exception{
-                        el.tk, "an empty string is not valid for an array "
-                               "with unspecified size"};
-                }
-                if (el.array_count == 0) {
-                    el.array_count = strsz;
-                } else {
-                    if (strsz > el.array_count) {
-                        throw compiler_exception{
-                            el.tk, std::format(
-                                       "string size {} overflows array size {}",
-                                       strsz, el.array_count)};
-                    }
-                }
-                if (tp.name() == "i8") {
-                    return el;
-                }
-                throw compiler_exception{el.tk,
-                                         "only arrays of type 'i8' can be "
-                                         "initialized with strings"};
+                el.array_count = string_array_count(el.tk, tp, el.array_count);
+
+                return el;
             }
             tz.put_back_token(el.tk);
 

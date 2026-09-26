@@ -1,5 +1,9 @@
-# assign string to array variable
+# assign an empty string to a sized array variable
 
 func main() {
-    var value[8] i8 = ""
+    var value[8] i8 = {1, 2, 3, 4, 5, 6, 7, 8}
+    value = ""
+    if value[0] != 0 or value[7] != 0 exit(1)
+    var cleared[8] i8 = ""
+    if cleared[0] != 0 or cleared[7] != 0 exit(2)
 }

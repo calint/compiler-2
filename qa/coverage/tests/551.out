@@ -1,0 +1,2 @@
+
+551.baz:8:19: only arrays of type 'i8' can be initialized with strings

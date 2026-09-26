@@ -1,0 +1,71 @@
+# strings initialize and assign 'i8' arrays: the bytes are copied from
+# read-only data and the rest of the array is zeroed
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type name {
+    text[8] i8,
+    len i32
+}
+
+type team {
+    lead name,
+    members[2] name,
+    motto[24] i8
+}
+
+dat expected_motto[] i8 = "strings longer than 16!\n"
+dat cleared[3] i8 = ""
+
+# an unsized parameter takes the size of the argument
+func greet(dst[] i8) {
+    dst = "hi"
+}
+
+func main() {
+    var hello[] i8 = "hello\n"
+    assert(1, array_length(hello) == 6)
+    write(1, hello, array_length(hello))
+
+    # the rest of a sized array is zero
+    var buf[8] i8 = "abc"
+    assert(2, buf[2] == 'c' and buf[3] == 0 and buf[7] == 0)
+
+    # a shorter string clears what a longer one left
+    buf = "12345678"
+    buf = "x\n"
+    assert(3, buf[2] == 0 and buf[7] == 0)
+    write(1, buf, 2)
+
+    # an empty string zeroes a sized array
+    buf = ""
+    assert(4, buf[0] == 0 and buf[1] == 0)
+    var empty[3] i8 = ""
+    assert(12, empty[0] == 0 and empty[2] == 0)
+    assert(13, cleared[0] == 0 and cleared[2] == 0)
+
+    # record literal fields, nested record arrays and field assignment
+    var t team = {{"ann", 3}, {{"bo", 2}, {"cy", 2}},
+                  "strings longer than 16!\n"}
+    assert(5, t.lead.text[2] == 'n' and t.lead.text[3] == 0)
+    assert(6, t.members[1].text[0] == 'c' and t.members[1].len == 2)
+    assert(7, arrays_equal(t.motto, expected_motto, array_length(t.motto)))
+    write(1, t.motto, array_length(t.motto))
+    t.members[0].text = "dee"
+    assert(8, t.members[0].text[2] == 'e' and t.members[0].len == 2)
+    write(1, t.members[0].text, 3)
+
+    # escapes are decoded and '#' inside a string is not a comment
+    var escaped[] i8 = "\x41\\\"#\n"
+    assert(9, array_length(escaped) == 5)
+    assert(10, escaped[0] == 'A' and escaped[1] == '\\' and escaped[2] == '"')
+    write(1, escaped, array_length(escaped))
+
+    # identical strings share one constant
+    var again[] i8 = "hello\n"
+    write(1, again, array_length(again))
+
+    var small[4] i8 = {1, 2, 3, 4}
+    greet(small)
+    assert(11, small[1] == 'i' and small[2] == 0 and small[3] == 0)
+}

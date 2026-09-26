@@ -1,0 +1,6 @@
+# a string longer than the destination array
+
+func main() {
+    var buf[4] i8 = "abc"
+    buf = "abcde"
+}

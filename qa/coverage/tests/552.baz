@@ -1,0 +1,9 @@
+# a string is not an argument, it would refer to read-only data
+
+func print(text[] i8) {
+    write(1, text, array_length(text))
+}
+
+func main() {
+    print("hello")
+}

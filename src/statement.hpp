@@ -321,4 +321,39 @@ class statement {
         throw compiler_exception{
             use_tk, std::format("use of uninitialized variable '{}'", var)};
     }
+
+    // shared by 'dat' and 'var' initializers, 'array_count' 0 takes the size
+    // of the string
+    [[nodiscard]] static auto string_array_count(const token& string_tk,
+                                                 const type& element_type,
+                                                 const size_t array_count)
+        -> size_t {
+
+        const size_t size_bytes{string_tk.string_size_bytes()};
+
+        // arrays of zero length are not allowed
+        if (size_bytes == 0 and array_count == 0) {
+            throw compiler_exception{
+                string_tk, "an empty string is not valid for an array with "
+                           "unspecified size"};
+        }
+
+        if (array_count != 0 and size_bytes > array_count) {
+            throw compiler_exception{
+                string_tk, std::format("string size {} overflows array size {}",
+                                       size_bytes, array_count)};
+        }
+
+        if (element_type.name() != "i8") {
+            throw compiler_exception{string_tk,
+                                     "only arrays of type 'i8' can be "
+                                     "initialized with strings"};
+        }
+
+        if (array_count == 0) {
+            return size_bytes;
+        }
+
+        return array_count;
+    }
 };

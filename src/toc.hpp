@@ -286,6 +286,7 @@ class toc final {
     std::vector<frame> frames_;
     std::vector<const stmt_def_func*> func_defs_;
     std::vector<const statement*> data_;
+    std::vector<machine::string_constant> string_constants_;
     lut<func_info> funcs_;
     lut<type_info> types_;
     const type* type_void_{};
@@ -731,6 +732,31 @@ class toc final {
         -> const std::vector<const statement*>& {
 
         return data_;
+    }
+
+    // identical strings share the label of the first one compiled
+    [[nodiscard]] auto add_string_constant(const token& string_tk)
+        -> std::string {
+
+        for (const machine::string_constant& s : string_constants_) {
+            if (s.text == string_tk.text()) {
+                return s.label;
+            }
+        }
+
+        string_constants_.push_back({
+            .label{std::format("str.{}",
+                               source_location_for_use_in_label(string_tk))},
+            .text{string_tk.text()},
+        });
+
+        return string_constants_.back().label;
+    }
+
+    [[nodiscard]] auto get_string_constants() const
+        -> std::span<const machine::string_constant> {
+
+        return string_constants_;
     }
 
     [[nodiscard]] auto get_func_defs() const

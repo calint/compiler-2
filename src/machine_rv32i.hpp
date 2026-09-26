@@ -2003,6 +2003,24 @@ class machine_rv32i : public machine {
                        width);
     }
 
+    auto copy_from_label(const token& src_loc_tk, const size_t indent,
+                         const std::string_view label, const operand& dst,
+                         const size_t size_bytes) -> void override {
+
+        // the scope keeps 'dst' registers from being picked for the pointer
+        const address_scope scope{*this, dst, operand{}};
+
+        const operand pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        assembler_.la(indent, pointer.base_register(), label);
+
+        // string constants are byte aligned
+        copy(src_loc_tk, indent,
+             operand::mem(pointer.base_register(), {}, 1, 0, dst.type_ref()),
+             dst, size_bytes, 1);
+    }
+
     [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
                                         const size_t indent)
         -> operand override {
@@ -2948,6 +2966,18 @@ class machine_rv32i : public machine {
         assembler_.ascii(message);
         assembler_.data(1, newline);
         // the bounds handler may follow and must stay in the code section
+        assembler_.switch_section(section::text);
+    }
+
+    auto emit_string_constants(const std::span<const string_constant> strings)
+        -> void override {
+
+        assembler_.switch_section(section::rodata);
+        for (const string_constant& s : strings) {
+            assembler_.label(0, s.label);
+            emit_string_data(s.text);
+        }
+        // the arithmetic helpers follow and must stay in the code section
         assembler_.switch_section(section::text);
     }
 

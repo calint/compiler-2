@@ -56,6 +56,12 @@ class machine {
         std::string_view uops; // unary operations
     };
 
+    // read-only bytes at 'label', 'text' keeps its escapes such as '\n'
+    struct string_constant {
+        std::string label;
+        std::string_view text;
+    };
+
     enum class builtin_function : uint8_t { read, write, exit };
 
     struct builtin_function_registers {
@@ -170,6 +176,12 @@ class machine {
     virtual auto copy(const token& src_loc_tk, const size_t indent,
                       const operand& src, const operand& dst,
                       const size_t size_bytes, const size_t alignment)
+        -> void = 0;
+
+    // copies 'size_bytes' of the string constant at 'label'
+    virtual auto copy_from_label(const token& src_loc_tk, const size_t indent,
+                                 const std::string_view label,
+                                 const operand& dst, const size_t size_bytes)
         -> void = 0;
 
     [[nodiscard]] virtual auto begin_array_copy(const token& src_loc_tk,
@@ -330,6 +342,11 @@ class machine {
 
     // prints 'panic: frame overflow' to stderr and exits with 255
     virtual auto emit_frame_overflow_handler() -> void = 0;
+
+    // leaves the code section current
+    virtual auto
+    emit_string_constants(const std::span<const string_constant> strings)
+        -> void = 0;
 
     [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
 
