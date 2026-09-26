@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <format>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -89,6 +91,17 @@ class stmt_builtin_array_copy final : public statement {
                             array_dst_info.type_ref().name())};
         }
 
+        const std::optional<int64_t> count{count_.constant_value(tc)};
+
+        // a negative count keeps the loop so '--checks=lower' rejects it at
+        // run time
+        if (count and *count >= 0) {
+            compile_constant_count(tc, indent, array_src_info, array_dst_info,
+                                   static_cast<size_t>(*count));
+
+            return;
+        }
+
         const operand count_register{x.begin_array_copy(tok(), indent)};
 
         std::vector<operand> allocated_scratch_registers;
@@ -133,5 +146,51 @@ class stmt_builtin_array_copy final : public statement {
         src_.visit_reads(var, reader);
         dst_.visit_index_reads(var, reader);
         count_.visit_reads(var, reader);
+    }
+
+  private:
+    // the size is known so the copy is unrolled when small and the width
+    // follows the alignment of both addresses
+    auto compile_constant_count(toc& tc, const size_t indent,
+                                const ident_info& array_src_info,
+                                const ident_info& array_dst_info,
+                                const size_t count) const -> void {
+
+        machine& x{tc.machine()};
+
+        std::vector<operand> allocated_scratch_registers;
+
+        // the range checks compare 'start + count' in registers
+        operand count_register;
+        if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
+            count_register =
+                x.alloc_scratch_register(tok(), indent, tc.get_type_default());
+
+            allocated_scratch_registers.push_back(count_register);
+
+            x.comment(count_.tok(), indent, statement::trimmed_source(count_));
+
+            count_.compile(tc, indent,
+                           toc::make_ident_info_from_register(count_register));
+        }
+
+        x.comment(src_.tok(), indent, statement::trimmed_source(src_));
+
+        const operand src_operand{src_.compile_lea(
+            tc, indent, src_.first_token(), allocated_scratch_registers,
+            count_register, array_src_info.lea_path, {})};
+
+        x.comment(dst_.tok(), indent, statement::trimmed_source(dst_));
+
+        const operand dst_operand{dst_.compile_lea(
+            tc, indent, dst_.first_token(), allocated_scratch_registers,
+            count_register, array_dst_info.lea_path, {})};
+
+        x.copy(tok(), indent, src_operand, dst_operand,
+               multiply_storage_size(array_src_info.type_ref().size_bytes(),
+                                     count),
+               array_src_info.type_ref().alignment());
+
+        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
     }
 };

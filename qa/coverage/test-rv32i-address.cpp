@@ -921,7 +921,8 @@ auto main(const int argc, const char* argv[]) -> int {
 func main() {
     var source[4] i32
     var destination[4] i32
-    array_copy(source[2], destination[1], 2)
+    var count = 2
+    array_copy(source[2], destination[1], count)
 }
 )baz"};
         std::ostringstream output;

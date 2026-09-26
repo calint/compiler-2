@@ -76,10 +76,10 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           4584           1434          15870
+C/C++ Header                    55           4631           1453          15997
 C++                              1             58             10            273
 -------------------------------------------------------------------------------
-SUM:                            56           4642           1444          16143
+SUM:                            56           4689           1463          16270
 -------------------------------------------------------------------------------
 ```
 
@@ -577,31 +577,29 @@ main:
             syscall
         if.32.24.169.5.end:
     func.assert.169.5.end:
-    mov rcx, 2
     mov r15, 2
-    mov r14, 171
+    mov r14, 2
+    mov r13, 171
+    test r14, r14
+    cmovs rbp, r13
+    js baz_bounds_panic
     test r15, r15
-    cmovs rbp, r14
+    cmovs rbp, r13
     js baz_bounds_panic
-    test rcx, rcx
-    cmovs rbp, r14
-    js baz_bounds_panic
-    mov r13, rcx
-    add r13, r15
-    cmp r13, 4
-    cmovg rbp, r14
+    mov r12, r15
+    add r12, r14
+    cmp r12, 4
+    cmovg rbp, r13
     jg baz_bounds_panic
-    lea rsi, [rbp + r15 * 4 + 224]
-    mov r15, 171
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r13, 171
+    test r15, r15
+    cmovs rbp, r13
     js baz_bounds_panic
-    cmp rcx, 4
-    cmovg rbp, r15
+    cmp r15, 4
+    cmovg rbp, r13
     jg baz_bounds_panic
-    lea rdi, [rbp + 224]
-    shl rcx, 2
-    rep movsb
+    mov rax, qword [rbp + r14 * 4 + 224]
+    mov qword [rbp + 224], rax
     cmp.172.12:
     mov r14, 0
     mov r13, 172
@@ -629,25 +627,25 @@ main:
     mov qword [rbp + 264], 0
     mov qword [rbp + 272], 0
     mov qword [rbp + 280], 0
-    mov rcx, 4
-    mov r15, 176
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r15, 4
+    mov r14, 176
+    test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-    cmp rcx, 4
-    cmovg rbp, r15
+    cmp r15, 4
+    cmovg rbp, r14
     jg baz_bounds_panic
-    lea rsi, [rbp + 224]
-    mov r15, 176
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r14, 176
+    test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-    cmp rcx, 8
-    cmovg rbp, r15
+    cmp r15, 8
+    cmovg rbp, r14
     jg baz_bounds_panic
-    lea rdi, [rbp + 256]
-    shl rcx, 2
-    rep movsb
+    mov rax, qword [rbp + 224]
+    mov qword [rbp + 256], rax
+    mov rax, qword [rbp + 232]
+    mov qword [rbp + 264], rax
     cmp.177.19:
         mov rcx, 3
         mov r15, 1
@@ -822,8 +820,10 @@ main:
             syscall
         if.32.24.190.5.end:
     func.assert.190.5.end:
-    mov qword [rbp + 296], 3
-    mov qword [rbp + 304], 5
+    mov dword [rbp + 296], 3
+    mov dword [rbp + 300], 0
+    mov dword [rbp + 304], 5
+    mov dword [rbp + 308], 0
     lea r15, [rbp + 296]
     mov qword [rbp + 320], 0
     foo.193.5:
@@ -1499,8 +1499,10 @@ main:
             syscall
         if.32.24.276.5.end:
     func.assert.276.5.end:
-    mov qword [rbp + 1040], -1
-    mov qword [rbp + 1048], 2
+    mov dword [rbp + 1040], -1
+    mov dword [rbp + 1044], -1
+    mov dword [rbp + 1048], 2
+    mov dword [rbp + 1052], 0
     cmp.282.12:
         mov r14, 2
     cmp r14, 2
@@ -2216,55 +2218,52 @@ main:
 ;       [169:5] free scratch register r15
     func.assert.169.5.end:
 ;   [171:5] array_copy(arr[2], arr, 2)
-;   [171:5] allocate named register rsi
-;   [171:5] allocate named register rdi
-;   [171:5] allocate named register rcx
+;   [171:5] allocate scratch register -> r15
 ;   [171:29] 2
 ;   [171:29] 2
-    mov rcx, 2
+    mov r15, 2
 ;   [171:16] arr[2]
-;   [171:20] allocate scratch register -> r15
+;   [171:20] allocate scratch register -> r14
 ;   [171:20] set array index
 ;   [171:20] 2
-    mov r15, 2
+    mov r14, 2
 ;   [171:20] bounds check
-;   [171:20] allocate scratch register -> r14
-;   [171:20] line number
-    mov r14, 171
-    test r15, r15
-    cmovs rbp, r14
-    js baz_bounds_panic
-    test rcx, rcx
-    cmovs rbp, r14
-    js baz_bounds_panic
 ;   [171:20] allocate scratch register -> r13
-    mov r13, rcx
-    add r13, r15
-    cmp r13, 4
-;   [171:20] free scratch register r13
-    cmovg rbp, r14
+;   [171:20] line number
+    mov r13, 171
+    test r14, r14
+    cmovs rbp, r13
+    js baz_bounds_panic
+    test r15, r15
+    cmovs rbp, r13
+    js baz_bounds_panic
+;   [171:20] allocate scratch register -> r12
+    mov r12, r15
+    add r12, r14
+    cmp r12, 4
+;   [171:20] free scratch register r12
+    cmovg rbp, r13
     jg baz_bounds_panic
-;   [171:20] free scratch register r14
-    lea rsi, [rbp + r15 * 4 + 224]
-;   [171:5] free scratch register r15
+;   [171:20] free scratch register r13
 ;   [171:24] arr
 ;   [171:24] bounds check
-;   [171:24] allocate scratch register -> r15
+;   [171:24] allocate scratch register -> r13
 ;   [171:24] line number
-    mov r15, 171
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r13, 171
+    test r15, r15
+    cmovs rbp, r13
     js baz_bounds_panic
-    cmp rcx, 4
-    cmovg rbp, r15
+    cmp r15, 4
+    cmovg rbp, r13
     jg baz_bounds_panic
-;   [171:24] free scratch register r15
-    lea rdi, [rbp + 224]
-    shl rcx, 2
-    rep movsb
-;   [171:5] free named register rcx
-;   [171:5] free named register rdi
-;   [171:5] free named register rsi
+;   [171:24] free scratch register r13
+;   [171:5] size <= 16 B, use mov
+;   [171:5] allocate named register rax
+    mov rax, qword [rbp + r14 * 4 + 224]
+    mov qword [rbp + 224], rax
+;   [171:5] free named register rax
+;   [171:5] free scratch register r14
+;   [171:5] free scratch register r15
 ;   [172:5] assert(arr[0] == 2)
 ;   [172:12] allocate scratch register -> r15
 ;   [172:12] ? arr[0] == 2
@@ -2318,43 +2317,42 @@ main:
     mov qword [rbp + 272], 0
     mov qword [rbp + 280], 0
 ;   [176:5] array_copy(arr, arr1, 4)
-;   [176:5] allocate named register rsi
-;   [176:5] allocate named register rdi
-;   [176:5] allocate named register rcx
+;   [176:5] allocate scratch register -> r15
 ;   [176:27] 4
 ;   [176:27] 4
-    mov rcx, 4
+    mov r15, 4
 ;   [176:16] arr
 ;   [176:16] bounds check
-;   [176:16] allocate scratch register -> r15
+;   [176:16] allocate scratch register -> r14
 ;   [176:16] line number
-    mov r15, 176
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r14, 176
+    test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-    cmp rcx, 4
-    cmovg rbp, r15
+    cmp r15, 4
+    cmovg rbp, r14
     jg baz_bounds_panic
-;   [176:16] free scratch register r15
-    lea rsi, [rbp + 224]
+;   [176:16] free scratch register r14
 ;   [176:21] arr1
 ;   [176:21] bounds check
-;   [176:21] allocate scratch register -> r15
+;   [176:21] allocate scratch register -> r14
 ;   [176:21] line number
-    mov r15, 176
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r14, 176
+    test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-    cmp rcx, 8
-    cmovg rbp, r15
+    cmp r15, 8
+    cmovg rbp, r14
     jg baz_bounds_panic
-;   [176:21] free scratch register r15
-    lea rdi, [rbp + 256]
-    shl rcx, 2
-    rep movsb
-;   [176:5] free named register rcx
-;   [176:5] free named register rdi
-;   [176:5] free named register rsi
+;   [176:21] free scratch register r14
+;   [176:5] size <= 16 B, use mov
+;   [176:5] allocate named register rax
+    mov rax, qword [rbp + 224]
+    mov qword [rbp + 256], rax
+    mov rax, qword [rbp + 232]
+    mov qword [rbp + 264], rax
+;   [176:5] free named register rax
+;   [176:5] free scratch register r15
 ;   [177:5] var eq bool = arrays_equal(arr[1], arr1[1], 3)
 ;   [177:9] eq: bool (1 B @ [rbp + 288])
 ;   [177:9] eq = arrays_equal(arr[1], arr1[1], 3)
@@ -2708,12 +2706,11 @@ main:
 ;   [192:5] var arr3[] = { 3, 5 }
 ;   [192:9] arr3: i64[2] (16 B @ [rbp + 296])
 ;   [192:9] arr3= { 3, 5 }
-;   [192:20] [0]
-;   [192:20] 3
-    mov qword [rbp + 296], 3
-;   [192:20] [1]
-;   [192:23] 5
-    mov qword [rbp + 304], 5
+;   [192:18] size <= 16 B, use immediates
+    mov dword [rbp + 296], 3
+    mov dword [rbp + 300], 0
+    mov dword [rbp + 304], 5
+    mov dword [rbp + 308], 0
 ;   [193:5] foo arr3
 ;   [193:9] allocate scratch register -> r15
 ;   [193:9] e: i64 (r15)
@@ -4114,12 +4111,11 @@ main:
 ;   [281:5] var arr2[] = { -1, 2 }
 ;   [281:9] arr2: i64[2] (16 B @ [rbp + 1040])
 ;   [281:9] arr2= { -1, 2 }
-;   [281:20] [0]
-;   [281:21] -1
-    mov qword [rbp + 1040], -1
-;   [281:20] [1]
-;   [281:24] 2
-    mov qword [rbp + 1048], 2
+;   [281:18] size <= 16 B, use immediates
+    mov dword [rbp + 1040], -1
+    mov dword [rbp + 1044], -1
+    mov dword [rbp + 1048], 2
+    mov dword [rbp + 1052], 0
 ;   [282:5] assert(array_length(arr2) == 2)
 ;   [282:12] allocate scratch register -> r15
 ;   [282:12] ? array_length(arr2) == 2

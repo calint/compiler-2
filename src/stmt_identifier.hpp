@@ -440,7 +440,7 @@ class stmt_identifier : public statement {
     auto narrow_to_element(toc& tc, const expr_any& index_expr,
                            const ident_info& array_info) -> void {
 
-        const std::optional<int64_t> index{constant_index(tc, index_expr)};
+        const std::optional<int64_t> index{index_expr.constant_value(tc)};
         if (not index or *index < 0 or
             std::cmp_greater_equal(*index, array_info.array_len)) {
 
@@ -464,22 +464,6 @@ class stmt_identifier : public statement {
                             ? access_range_.size_bytes - element_offset
                             : element_size_bytes},
         };
-    }
-
-    [[nodiscard]] static auto constant_index(toc& tc,
-                                             const expr_any& index_expr)
-        -> std::optional<int64_t> {
-
-        if (index_expr.is_expression()) {
-            return std::nullopt;
-        }
-
-        const ident_info info{tc.make_ident_info(index_expr)};
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        return index_expr.get_unary_ops().evaluate_constant(info.const_value);
     }
 
     [[nodiscard]] static auto storage_size_bytes(const ident_info& info)

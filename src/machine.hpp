@@ -60,7 +60,7 @@ class machine {
     // read-only bytes at 'label', 'text' keeps its escapes such as '\n'
     struct string_constant {
         std::string label;
-        std::string_view text;
+        std::string text;
     };
 
     enum class builtin_function : uint8_t { read, write, exit };
@@ -179,13 +179,12 @@ class machine {
                       const size_t size_bytes, const size_t alignment)
         -> void = 0;
 
-    // 'bytes' are decoded, 'add_constant' returns the read-only data label and
-    // is called only when the string is not stored with immediates
-    virtual auto
-    copy_string(const token& src_loc_tk, const size_t indent,
-                const std::string_view bytes, const operand& dst,
-                const size_t alignment,
-                const std::function_ref<std::string()> add_constant)
+    // stores constant 'bytes', 'add_constant' returns the read-only data label
+    // and is called only when the bytes are not stored with immediates
+    virtual auto copy_bytes(const token& src_loc_tk, const size_t indent,
+                            const std::string_view bytes, const operand& dst,
+                            const size_t alignment,
+                            const std::function_ref<std::string()> add_constant)
         -> void = 0;
 
     [[nodiscard]] virtual auto begin_array_copy(const token& src_loc_tk,

@@ -31,20 +31,35 @@
     => keep the smallest 'access_alignment' of the addresses given to
        'set_array_copy_source/destination' and 'set_memory_equal_left/right'
        with the bulk registers, width = max(type alignment, that)
-[ ] 'array_copy' with a constant count always loops ('rep movsb' on x86, the
+[x] 'array_copy' with a constant count always loops ('rep movsb' on x86, the
     bulk loop on rv32i). for a count >= 0 compile the addresses without the
     bulk registers and call 'machine::copy' (unrolled up to 16 B, alignment
     from both addresses). with bounds checks the count still needs a register
     for the range check. note: x86 'copy' moves qwords, which changes the
     result of an overlapping copy with the destination after the source
     (undefined, see "overlapping 'array_copy'")
-    => 'arrays_equal'/'equal' with a known size could also compare unrolled
-[ ] constant '{...}' initializers of builtin elements up to 4 B are stored
+    => a constant count >= 0 copies through 'machine::copy', a negative one
+       keeps the loop so '--checks=lower' rejects it (559.baz, 560.baz)
+[ ] 'arrays_equal'/'equal' with a known size could compare unrolled like
+    'array_copy' with a constant count
+[ ] 'array_copy(a, b, array_length(a))' still loops: 'array_length' and
+    'array_size_of' are expressions, not constants
+[ ] 'array_copy' with a constant count and constant indexes still checks the
+    range at run time, it could be checked at compile time
+[ ] rv32i: above the unroll threshold a copy of known size still tests the
+    word/half/byte tail at run time
+    => the redundant 'addi t1, t0, 0' after 'la' in a copy from read-only data
+       is fixed: 'copy_bytes' loops from the label pointer ('emit_copy_loop')
+[x] constant '{...}' initializers of builtin elements up to 4 B are stored
     element by element ('li' + 'sb' each on rv32i). pack the little endian
     bytes and store them like strings ('copy_string': immediates or a
     read-only constant). needs: owned text in 'string_constant', a label kind
     other than 'str', an encoder of bytes to escaped text, and each element
     still checked with 'assert_not_narrowed'
+    => 'copy_string' is now 'copy_bytes', constant builtin elements are packed
+       and stored with it, 'init.L.C' labels share the read-only constants
+       with strings (token::encode_string), 'bool' and record elements are
+       stored one by one (559.baz)
 [ ] 'equal' on records compares the padding bytes; a record set by a call
     result keeps whatever padding bytes its storage held
 [ ] when reading trailing whitespace stop at newline

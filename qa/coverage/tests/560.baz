@@ -1,0 +1,8 @@
+# a constant 'array_copy' count past the end of the array panics
+
+func main() {
+    var a[4] i8
+    var b[4] i8
+    var k = 2
+    array_copy(a[k], b[k], 3)
+}

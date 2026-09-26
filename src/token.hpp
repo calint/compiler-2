@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <charconv>
+#include <format>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -161,6 +162,30 @@ class token final {
         }
 
         return bytes;
+    }
+
+    // string text that 'decode_string' turns back into 'bytes', bytes that
+    // are not printable are written as hex escapes
+    [[nodiscard]] static auto encode_string(const std::string_view bytes)
+        -> std::string {
+
+        std::string text;
+        for (const char c : bytes) {
+            if (c == '\\' or c == '"') {
+                text += '\\';
+                text += c;
+                continue;
+            }
+
+            if (c >= ' ' and c <= '~') {
+                text += c;
+                continue;
+            }
+
+            text += std::format("\\x{:02x}", static_cast<unsigned char>(c));
+        }
+
+        return text;
     }
 
   private:

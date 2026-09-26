@@ -548,10 +548,10 @@ class machine_x86_64 final : public machine {
 
     // a dword immediate store is one instruction without a register while a
     // copy needs a load and a store for each qword
-    auto copy_string(const token& src_loc_tk, const size_t indent,
-                     const std::string_view bytes, const operand& dst,
-                     [[maybe_unused]] const size_t alignment,
-                     const std::function_ref<std::string()> add_constant)
+    auto copy_bytes(const token& src_loc_tk, const size_t indent,
+                    const std::string_view bytes, const operand& dst,
+                    [[maybe_unused]] const size_t alignment,
+                    const std::function_ref<std::string()> add_constant)
         -> void override {
 
         if (bytes.size() > threshold_for_rep_movs_size_bytes) {

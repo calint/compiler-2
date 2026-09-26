@@ -176,31 +176,29 @@ main:
             syscall
         if.32.24.169.5.end:
     func.assert.169.5.end:
-    mov rcx, 2
     mov r15, 2
-    mov r14, 171
+    mov r14, 2
+    mov r13, 171
+    test r14, r14
+    cmovs rbp, r13
+    js baz_bounds_panic
     test r15, r15
-    cmovs rbp, r14
+    cmovs rbp, r13
     js baz_bounds_panic
-    test rcx, rcx
-    cmovs rbp, r14
-    js baz_bounds_panic
-    mov r13, rcx
-    add r13, r15
-    cmp r13, 4
-    cmovg rbp, r14
+    mov r12, r15
+    add r12, r14
+    cmp r12, 4
+    cmovg rbp, r13
     jg baz_bounds_panic
-    lea rsi, [rbp + r15 * 4 + 224]
-    mov r15, 171
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r13, 171
+    test r15, r15
+    cmovs rbp, r13
     js baz_bounds_panic
-    cmp rcx, 4
-    cmovg rbp, r15
+    cmp r15, 4
+    cmovg rbp, r13
     jg baz_bounds_panic
-    lea rdi, [rbp + 224]
-    shl rcx, 2
-    rep movsb
+    mov rax, qword [rbp + r14 * 4 + 224]
+    mov qword [rbp + 224], rax
     cmp.172.12:
     mov r14, 0
     mov r13, 172
@@ -228,25 +226,25 @@ main:
     mov qword [rbp + 264], 0
     mov qword [rbp + 272], 0
     mov qword [rbp + 280], 0
-    mov rcx, 4
-    mov r15, 176
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r15, 4
+    mov r14, 176
+    test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-    cmp rcx, 4
-    cmovg rbp, r15
+    cmp r15, 4
+    cmovg rbp, r14
     jg baz_bounds_panic
-    lea rsi, [rbp + 224]
-    mov r15, 176
-    test rcx, rcx
-    cmovs rbp, r15
+    mov r14, 176
+    test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-    cmp rcx, 8
-    cmovg rbp, r15
+    cmp r15, 8
+    cmovg rbp, r14
     jg baz_bounds_panic
-    lea rdi, [rbp + 256]
-    shl rcx, 2
-    rep movsb
+    mov rax, qword [rbp + 224]
+    mov qword [rbp + 256], rax
+    mov rax, qword [rbp + 232]
+    mov qword [rbp + 264], rax
     cmp.177.19:
         mov rcx, 3
         mov r15, 1
@@ -421,8 +419,10 @@ main:
             syscall
         if.32.24.190.5.end:
     func.assert.190.5.end:
-    mov qword [rbp + 296], 3
-    mov qword [rbp + 304], 5
+    mov dword [rbp + 296], 3
+    mov dword [rbp + 300], 0
+    mov dword [rbp + 304], 5
+    mov dword [rbp + 308], 0
     lea r15, [rbp + 296]
     mov qword [rbp + 320], 0
     foo.193.5:
@@ -1098,8 +1098,10 @@ main:
             syscall
         if.32.24.276.5.end:
     func.assert.276.5.end:
-    mov qword [rbp + 1040], -1
-    mov qword [rbp + 1048], 2
+    mov dword [rbp + 1040], -1
+    mov dword [rbp + 1044], -1
+    mov dword [rbp + 1048], 2
+    mov dword [rbp + 1052], 0
     cmp.282.12:
         mov r14, 2
     cmp r14, 2

@@ -738,19 +738,17 @@ class toc final {
     [[nodiscard]] auto add_string_constant(const token& string_tk)
         -> std::string {
 
-        for (const machine::string_constant& s : string_constants_) {
-            if (s.text == string_tk.text()) {
-                return s.label;
-            }
-        }
+        return add_read_only_constant("str", string_tk,
+                                      std::string{string_tk.text()});
+    }
 
-        string_constants_.push_back({
-            .label{std::format("str.{}",
-                               source_location_for_use_in_label(string_tk))},
-            .text{string_tk.text()},
-        });
+    // e.g. the packed elements of a constant '{...}' initializer
+    [[nodiscard]] auto add_bytes_constant(const token& src_loc_tk,
+                                          const std::string_view bytes)
+        -> std::string {
 
-        return string_constants_.back().label;
+        return add_read_only_constant("init", src_loc_tk,
+                                      token::encode_string(bytes));
     }
 
     [[nodiscard]] auto get_string_constants() const
@@ -1104,6 +1102,26 @@ class toc final {
     }
 
   private:
+    // identical text shares the label of the first constant added
+    [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
+                                              const token& src_loc_tk,
+                                              std::string text) -> std::string {
+
+        for (const machine::string_constant& s : string_constants_) {
+            if (s.text == text) {
+                return s.label;
+            }
+        }
+
+        string_constants_.push_back({
+            .label{std::format("{}.{}", kind,
+                               source_location_for_use_in_label(src_loc_tk))},
+            .text{std::move(text)},
+        });
+
+        return string_constants_.back().label;
+    }
+
     [[nodiscard]] auto
     builtin_type_for_size_bytes(const size_t size_bytes) const -> const type& {
 

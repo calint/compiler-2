@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-29
 
+#include <cstdint>
 #include <format>
 #include <optional>
 #include <span>
@@ -166,19 +167,14 @@ class expr_any final : public statement {
 
         ident_info cur_dst_info{dst_info};
 
-        machine& x{tc.machine()};
-
-        for (const auto [i, e] : std::views::enumerate(vars_)) {
-            x.comment(tok(), indent, "[{}]", i);
-            compile_variant(tc, indent, cur_dst_info, tok(), e);
-            cur_dst_info.operand.increment_offset(
-                address_offset(cur_dst_info.type_ref().size_bytes()));
-        }
+        compile_elements(tc, indent, cur_dst_info);
 
         const size_t remaining_count{array_count - vars_.size()};
         if (remaining_count == 0) {
             return;
         }
+
+        machine& x{tc.machine()};
 
         const size_t size_bytes{multiply_storage_size(
             cur_dst_info.type_ref().size_bytes(), remaining_count)};
@@ -329,6 +325,17 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
+    // e.g. '-2' or a named constant, empty when computed at run time
+    [[nodiscard]] auto constant_value(const toc& tc) const
+        -> std::optional<int64_t> {
+
+        if (is_array_) {
+            return std::nullopt;
+        }
+
+        return constant_element_value(tc, vars_[0]);
+    }
+
     [[nodiscard]] auto tok() const -> const token& override {
         if (is_string()) {
             return string_tk_;
@@ -387,11 +394,10 @@ class expr_any final : public statement {
 
         // an empty string has nothing to store
         if (size_bytes != 0) {
-            x.copy_string(string_tk_, indent, *bytes, dst,
-                          dst_info.type_ref().alignment(),
-                          [&]() -> std::string {
-                              return tc.add_string_constant(string_tk_);
-                          });
+            x.copy_bytes(string_tk_, indent, *bytes, dst,
+                         dst_info.type_ref().alignment(), [&]() -> std::string {
+                             return tc.add_string_constant(string_tk_);
+                         });
 
             dst.increment_offset(address_offset(size_bytes));
         }
@@ -406,6 +412,86 @@ class expr_any final : public statement {
 
         x.zero(string_tk_, indent, dst, remaining_size_bytes,
                dst_info.type_ref().alignment());
+    }
+
+    // constant elements are stored like a string so the backend can pack them
+    // into wider immediates or copy them from read-only data, 'dst_info'
+    // advances past the listed elements
+    auto compile_elements(toc& tc, const size_t indent,
+                          ident_info& dst_info) const -> void {
+
+        machine& x{tc.machine()};
+
+        const std::optional<std::string> bytes{
+            constant_bytes(tc, dst_info.type_ref())};
+
+        if (bytes) {
+            x.copy_bytes(open_brace_tk_, indent, *bytes, dst_info.operand,
+                         dst_info.type_ref().alignment(), [&]() -> std::string {
+                             return tc.add_bytes_constant(open_brace_tk_,
+                                                          *bytes);
+                         });
+
+            dst_info.operand.increment_offset(address_offset(bytes->size()));
+
+            return;
+        }
+
+        for (const auto [i, e] : std::views::enumerate(vars_)) {
+            x.comment(tok(), indent, "[{}]", i);
+            compile_variant(tc, indent, dst_info, tok(), e);
+            dst_info.operand.increment_offset(
+                address_offset(dst_info.type_ref().size_bytes()));
+        }
+    }
+
+    // the little endian bytes of the elements, empty when an element is not a
+    // constant or there are no elements to store
+    [[nodiscard]] auto constant_bytes(const toc& tc,
+                                      const type& element_type) const
+        -> std::optional<std::string> {
+
+        if (vars_.empty()) {
+            return std::nullopt;
+        }
+
+        constexpr size_t byte_bits{8};
+
+        std::string bytes;
+        for (const expr_variant& e : vars_) {
+            const std::optional<int64_t> value{constant_element_value(tc, e)};
+            if (not value) {
+                return std::nullopt;
+            }
+
+            // e.g. '{300}' for 'i8' is rejected as when stored alone
+            get<expr_arith>(e).assert_not_narrowed(tc, element_type);
+
+            const uint64_t bits{static_cast<uint64_t>(*value)};
+            for (size_t i{}; i < element_type.size_bytes(); ++i) {
+                bytes += static_cast<char>(bits >> (byte_bits * i));
+            }
+        }
+
+        return bytes;
+    }
+
+    // 'bool' and record elements are not packed
+    [[nodiscard]] static auto constant_element_value(const toc& tc,
+                                                     const expr_variant& e)
+        -> std::optional<int64_t> {
+
+        const expr_arith* const arith{std::get_if<expr_arith>(&e)};
+        if (arith == nullptr or arith->is_expression()) {
+            return std::nullopt;
+        }
+
+        const ident_info info{tc.make_ident_info(*arith)};
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        return arith->get_unary_ops().evaluate_constant(info.const_value);
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
