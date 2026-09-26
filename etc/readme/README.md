@@ -89,10 +89,10 @@ compiler writes the binary image itself.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           4697           1491          16204
+C/C++ Header                    55           4739           1510          16343
 C++                              1             58             10            273
 -------------------------------------------------------------------------------
-SUM:                            56           4755           1501          16477
+SUM:                            56           4797           1520          16616
 -------------------------------------------------------------------------------
 ```
 
@@ -500,32 +500,14 @@ main:
             syscall
         if.32.24.155.5.end:
     func.assert.155.5.end:
-        cmp.161.16:
-        bool.161.16.end:
-        mov r15b, 1
         func.assert.161.9:
             if.32.27.161.9:
             cmp.32.27.161.9:
-            cmp r15b, 0
-            jne if.32.24.161.9.end
-            if.32.27.161.9.code:
-                mov rdi, 1
-                mov rax, 60
-                syscall
             if.32.24.161.9.end:
         func.assert.161.9.end:
-    cmp.164.12:
-    bool.164.12.end:
-    mov r15b, 1
     func.assert.164.5:
         if.32.27.164.5:
         cmp.32.27.164.5:
-        cmp r15b, 0
-        jne if.32.24.164.5.end
-        if.32.27.164.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
         if.32.24.164.5.end:
     func.assert.164.5.end:
     mov qword [rbp + 232], 0
@@ -998,9 +980,8 @@ main:
         if.55.8.229.5:
         cmp.55.8.229.5:
         cmp qword [rbp + 344], 0
-        jne if.55.5.229.5.end
+        je func.bar.229.5.end
         if.55.8.229.5.code:
-            jmp func.bar.229.5.end
         if.55.5.229.5.end:
         mov qword [rbp + 344], 255
     func.bar.229.5.end:
@@ -1024,9 +1005,8 @@ main:
         if.55.8.233.5:
         cmp.55.8.233.5:
         cmp qword [rbp + 344], 0
-        jne if.55.5.233.5.end
+        je func.bar.233.5.end
         if.55.8.233.5.code:
-            jmp func.bar.233.5.end
         if.55.5.233.5.end:
         mov qword [rbp + 344], 255
     func.bar.233.5.end:
@@ -1641,9 +1621,8 @@ main:
         if.310.12:
         cmp.310.12:
         cmp byte [rbp + 1064], 0
-        jg if.312.19
+        jle loop.303.5.end
         if.310.12.code:
-            jmp loop.303.5.end
         if.312.19:
         cmp.312.19:
         cmp byte [rbp + 1064], 4
@@ -1749,11 +1728,9 @@ func.print_num:
         if.130.12:
         cmp.130.12:
         cmp qword [rbx + 32], 0
-        jne if.130.9.end
+        jne loop.126.5
         if.130.12.code:
-            jmp loop.126.5.end
         if.130.9.end:
-    jmp loop.126.5
     loop.126.5.end:
     if.133.8:
     cmp.133.8:
@@ -1796,11 +1773,9 @@ func.print_num:
         if.143.12:
         cmp.143.12:
         cmp qword [rbx + 48], 20
-        jne if.143.9.end
+        jne loop.139.5
         if.143.12.code:
-            jmp loop.139.5.end
         if.143.9.end:
-    jmp loop.139.5
     loop.139.5.end:
     mov rdi, 1
     mov rdx, qword [rbx + 56]
@@ -2037,60 +2012,26 @@ main:
     func.assert.155.5.end:
 ;       [160:15] const maybe = 33
 ;       [161:9] assert(maybe == 33)
-;       [161:16] allocate scratch register -> r15
-;       [161:16] ? maybe == 33
-;       [161:16] ? maybe == 33
-        cmp.161.16:
-;       [161:16] const eval to true
-        bool.161.16.end:
-        mov r15b, 1
 ;       [32:6] assert(ok bool)
         func.assert.161.9:
-;           [161:9] alias ok -> r15b
+;           [161:9] alias ok -> 1
             if.32.27.161.9:
 ;           [32:27] ? not ok
 ;           [32:27] ? not ok
             cmp.32.27.161.9:
-            cmp r15b, 0
-            jne if.32.24.161.9.end
-            if.32.27.161.9.code:
-;               [32:34] exit(1)
-;               [32:34] allocate named register rdi
-;               [32:39] 1
-                mov rdi, 1
-                mov rax, 60
-                syscall
-;               [32:34] free named register rdi
+;           [32:31] const eval to false
             if.32.24.161.9.end:
-;           [161:9] free scratch register r15
         func.assert.161.9.end:
 ;   [164:5] assert(maybe == -1)
-;   [164:12] allocate scratch register -> r15
-;   [164:12] ? maybe == -1
-;   [164:12] ? maybe == -1
-    cmp.164.12:
-;   [164:12] const eval to true
-    bool.164.12.end:
-    mov r15b, 1
 ;   [32:6] assert(ok bool)
     func.assert.164.5:
-;       [164:5] alias ok -> r15b
+;       [164:5] alias ok -> 1
         if.32.27.164.5:
 ;       [32:27] ? not ok
 ;       [32:27] ? not ok
         cmp.32.27.164.5:
-        cmp r15b, 0
-        jne if.32.24.164.5.end
-        if.32.27.164.5.code:
-;           [32:34] exit(1)
-;           [32:34] allocate named register rdi
-;           [32:39] 1
-            mov rdi, 1
-            mov rax, 60
-            syscall
-;           [32:34] free named register rdi
+;       [32:31] const eval to false
         if.32.24.164.5.end:
-;       [164:5] free scratch register r15
     func.assert.164.5.end:
 ;   [166:5] var arr[4] i32
 ;   [166:9] arr: i32[4] (16 B @ [rbp + 232])
@@ -3055,10 +2996,9 @@ main:
 ;       [55:8] ? arg == 0
         cmp.55.8.229.5:
         cmp qword [rbp + 344], 0
-        jne if.55.5.229.5.end
+        je func.bar.229.5.end
         if.55.8.229.5.code:
 ;           [55:17] return
-            jmp func.bar.229.5.end
         if.55.5.229.5.end:
 ;       [56:5] arg = 0xff
 ;       [56:11] 0xff
@@ -3104,10 +3044,9 @@ main:
 ;       [55:8] ? arg == 0
         cmp.55.8.233.5:
         cmp qword [rbp + 344], 0
-        jne if.55.5.233.5.end
+        je func.bar.233.5.end
         if.55.8.233.5.code:
 ;           [55:17] return
-            jmp func.bar.233.5.end
         if.55.5.233.5.end:
 ;       [56:5] arg = 0xff
 ;       [56:11] 0xff
@@ -4407,10 +4346,9 @@ main:
 ;       [310:12] ? nm.len <= 0
         cmp.310.12:
         cmp byte [rbp + 1064], 0
-        jg if.312.19
+        jle loop.303.5.end
         if.310.12.code:
 ;           [311:13] break
-            jmp loop.303.5.end
         if.312.19:
 ;       [312:19] ? nm.len <= 4
 ;       [312:19] ? nm.len <= 4
@@ -4665,12 +4603,10 @@ func.print_num:
 ;       [130:12] ? n == 0
         cmp.130.12:
         cmp qword [rbx + 32], 0
-        jne if.130.9.end
+        jne loop.126.5
         if.130.12.code:
 ;           [130:19] break
-            jmp loop.126.5.end
         if.130.9.end:
-    jmp loop.126.5
     loop.126.5.end:
     if.133.8:
 ;   [133:8] ? is_negative
@@ -4764,12 +4700,10 @@ func.print_num:
 ;       [143:12] ? i == buf_count
         cmp.143.12:
         cmp qword [rbx + 48], 20
-        jne if.143.9.end
+        jne loop.139.5
         if.143.12.code:
 ;           [143:27] break
-            jmp loop.139.5.end
         if.143.9.end:
-    jmp loop.139.5
     loop.139.5.end:
 ;   [146:5] write(1, buf, write_pos)
 ;   [146:5] allocate named register rdi
@@ -4893,7 +4827,7 @@ vars.end:
 ;   removed jumps to next code: 88
 ;    removed unreachable jumps: 2
 ; removed same target branches: 33
-; inverted branches over jumps: 0
+; inverted branches over jumps: 7
 
 ; max scratch registers in use: 4
 ;            max frames in use: 8

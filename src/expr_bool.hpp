@@ -313,6 +313,42 @@ class expr_bool_op final : public statement {
         return tc.create_unique_label(tok(), "cmp");
     }
 
+    // the value 'compile' would find without emitting code, empty when
+    // evaluated at run time
+    [[nodiscard]] auto constant_value(const toc& tc) const
+        -> std::optional<bool> {
+
+        if (lhs_.is_expression()) {
+            return std::nullopt;
+        }
+
+        const ident_info& lhs_info{tc.make_ident_info(lhs_)};
+        if (not lhs_info.is_const()) {
+            return std::nullopt;
+        }
+
+        const int64_t lhs_value{
+            lhs_.get_unary_ops().evaluate_constant(lhs_info.const_value)};
+
+        if (is_shorthand_) {
+            return (lhs_value != 0) != is_not_;
+        }
+
+        if (rhs_.is_expression()) {
+            return std::nullopt;
+        }
+
+        const ident_info& rhs_info{tc.make_ident_info(rhs_)};
+        if (not rhs_info.is_const()) {
+            return std::nullopt;
+        }
+
+        const int64_t rhs_value{
+            rhs_.get_unary_ops().evaluate_constant(rhs_info.const_value)};
+
+        return eval_constant(lhs_value, op_, rhs_value) != is_not_;
+    }
+
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(not is_expression_);
 
@@ -761,6 +797,33 @@ class expr_bool final : public statement {
 
         return bools_[0].visit(
             [](const auto& e) -> std::string_view { return e.identifier(); });
+    }
+
+    // decided at compile time only by constants before any run-time element,
+    // a later short-circuit still needs the earlier elements evaluated
+    [[nodiscard]] auto constant_value(const toc& tc) const
+        -> std::optional<bool> {
+
+        const bool is_or{not ops_.empty() and ops_.front().is_text("or")};
+        const bool invert{not_tk_.is_text("not")};
+
+        for (const element& e : bools_) {
+            const std::optional<bool> value{
+                e.visit([&tc](const auto& item) -> std::optional<bool> {
+                    return item.constant_value(tc);
+                })};
+
+            if (not value) {
+                return std::nullopt;
+            }
+
+            // 'true' ends an 'or' list and 'false' ends an 'and' list
+            if (*value == is_or) {
+                return *value != invert;
+            }
+        }
+
+        return (not is_or) != invert;
     }
 
     auto visit_reads(const std::string_view var,

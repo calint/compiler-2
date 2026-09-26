@@ -1,0 +1,119 @@
+# local code generation inefficiencies found in the rv32i assessment
+# (2026-09-26), see etc/todo.txt
+#
+# review with: ./baz --target=rv32i etc/codegen-inefficiencies.baz
+
+type point {x, y}
+
+type object {pos point, color i32}
+
+type world { locations[8] }
+
+func assert(ok bool) { if not ok exit(1) }
+
+func inv(i i32) res i32 {
+    res = ~i
+}
+
+func object_init() res object {
+    res.pos.x = 2
+    res.pos.y = 74
+    res.color = 0xffffff
+}
+
+func noinline print_num(num) {
+    var buf[20] i8
+    var n = num
+    var i = 20
+    loop {
+        i = i - 1
+        # divide call: 'lw t2' then 'addi a0, t2, 0' instead of 'lw a0'
+        buf[i] = i8('0' - n % 10)
+        n = n / 10
+        if n == 0 break
+    }
+    write(1, buf, 20)
+}
+
+func main() {
+    var x = 1
+    var arr[4] i32
+    var arr3[] = { 3, 5 }
+    var o3[2] object
+    var worlds[8] world
+
+    # constant folding: 'li t2, 3; addi t2, t2, 2; xor' instead of 'xori 5'
+    assert(arr3[0] + 2 == 3 + 0 + 2)
+
+    # constant folding: 'li t1, 2; xori t0, t1, 2; sltiu' for a known result
+    assert(array_length(arr3) == 2)
+
+    # constant index: 'li; slli; add; lw 212(t0)' instead of 'lw 216(s0)'
+    arr[1] = 2
+    assert(arr[1] == 2)
+
+    # constant index with element size 12: 7 instructions instead of 1
+    o3[1].pos.y = 74
+    assert(o3[1].pos.y == 74)
+
+    # constant indexes and field offset: 9 instructions instead of 2
+    worlds[1].locations[1] = 0xffee
+
+    # constant part of a runtime index and the base offset are not folded
+    # into the displacement: 'addi t0, t0, 1' and 'addi t0, t0, 384'
+    var ix = 1
+    arr[ix + 1] = arr[ix]
+    worlds[ix].locations[1] = 0xffee
+
+    # unary on a memory destination: 'lw; sw; lw; sub; sw'
+    var a = -x
+    a = ~x
+
+    # narrowing on a memory destination: 'lw; sb; lb; addi; sb'
+    var b i8
+    b = i8(x - 1)
+
+    # unary in a record literal field: copy then negate in memory
+    var p1 point = {-x, -a}
+
+    # inline result with unary: the destination address is computed 3 times
+    arr[ix] = ~inv(arr[ix - 1])
+
+    # runtime bool argument: 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
+    assert(x == 1)
+
+    # bool loaded from memory: redundant 'sltu t0, zero, t0'
+    var eq bool = x == 1
+    assert(eq)
+
+    # redundant copy: 'addi t1, t0, 0' before the shift and add sequence
+    a = x * 10
+
+    # address in a new register instead of reusing the index register
+    a = arr[ix]
+
+    # 'add t1, s0, t0' is repeated for each field of the result
+    o3[ix] = object_init()
+
+    # zeroing 20 bytes uses a 6 instruction loop instead of 5 'sw'
+    var buf[20] i8
+
+    # 'equal' with a known 8 byte size uses the generic loop and tail code
+    var q point = p1
+    assert(equal(p1, q))
+
+    # 'array_length' count is not a constant so the copy loops
+    array_copy(worlds[1].locations, worlds[0].locations,
+               array_length(worlds.locations))
+
+    # call saves and restores all 30 registers although only s0 is live
+    print_num(a)
+
+    assert(buf[0] == 0)
+    assert(b == 0)
+    assert(p1.x == -1)
+
+    # code after an explicit exit is still generated, here the implicit
+    # 'exit(0)' at the end of 'main'
+    exit(0)
+}

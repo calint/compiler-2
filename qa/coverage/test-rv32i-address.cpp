@@ -220,10 +220,16 @@ auto main(const int argc, const char* argv[]) -> int {
         // labels between the jumps let execution enter
         for (const std::string_view unchanged :
              {"top:\nj top\n", "call end\nend:\n",
-              "beq a0, zero, skip\nentry:\nj end\nskip:\necall\nend:\n",
+              "call entry\nbeq a0, zero, skip\nentry:\nj end\nskip:\necall\n"
+              "end:\n",
               "beq a0, zero, skip\n1:\nj end\nskip:\necall\nend:\n"}) {
             assert(optimize(unchanged) == unchanged);
         }
+
+        // a label nothing names cannot be entered
+        assert(optimize("beq a0, zero, skip\nentry:\nj end\nskip:\necall\n"
+                        "end:\n") ==
+               "bne a0, zero, end\nentry:\nskip:\necall\nend:\n");
 
         // folding ignores reach because resolving grows the branch again
         std::string distant{"beq a0, zero, skip\nj end\nskip:\n"};

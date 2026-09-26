@@ -518,6 +518,16 @@ class stmt_call : public expression {
             // handle expression arguments
 
             if (arg.is_expression()) {
+                // a constant lets the inlined body be decided at compile time
+                const std::optional<int64_t> value{arg.constant_value(tc)};
+                if (value) {
+                    aliases_to_add.emplace_back(std::string{param.identifier()},
+                                                std::format("{}", *value),
+                                                operand{}, &param.get_type());
+
+                    continue;
+                }
+
                 const operand arg_reg{x.alloc_scratch_register(
                     arg.tok(), indent, param.get_type())};
 

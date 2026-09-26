@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -13,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -46,6 +49,9 @@
 //   to
 //     je if.19.8.code                   beq t0, t1, if.19.8.code
 //     cmp.19.27:                        cmp.19.27:
+//
+// a label between the lines stops a rule only when a jump or another line,
+// such as a call, names it
 
 class assembler {
   public:
@@ -129,11 +135,19 @@ class assembler {
         const std::unordered_map<std::string_view, size_t> labels{
             label_lines()};
 
+        const std::unordered_set<std::string_view> named{
+            labels_named_outside_jumps(labels)};
+
         bool changed{true};
         while (changed) {
             changed = false;
+
+            // removed jumps no longer reference their targets
+            const std::unordered_set<std::string_view> referenced{
+                referenced_labels(labels, named)};
+
             for (size_t index{}; index < lines_.size(); ++index) {
-                changed = optimize_jump(index, labels) or changed;
+                changed = optimize_jump(index, labels, referenced) or changed;
             }
         }
     }
@@ -384,13 +398,112 @@ class assembler {
         return index;
     }
 
+    // labels named by lines other than jumps e.g. calls, addresses and
+    // '.globl', these keep their references while jumps are optimized
+    [[nodiscard]] auto labels_named_outside_jumps(
+        const std::unordered_map<std::string_view, size_t>& labels) const
+        -> std::unordered_set<std::string_view> {
+
+        std::unordered_set<std::string_view> named;
+        for (const line& l : lines_) {
+            if (l.removed or l.jump or not l.label.empty()) {
+                continue;
+            }
+
+            add_named_labels(l.text, labels, named);
+        }
+
+        return named;
+    }
+
+    // comments naming a label only keep it referenced, which is safe
+    static auto
+    add_named_labels(const std::string_view text,
+                     const std::unordered_map<std::string_view, size_t>& labels,
+                     std::unordered_set<std::string_view>& named) -> void {
+
+        size_t begin{};
+        while (begin < text.size()) {
+            if (not is_symbol_char(text[begin])) {
+                ++begin;
+                continue;
+            }
+
+            size_t end{begin};
+            while (end < text.size() and is_symbol_char(text[end])) {
+                ++end;
+            }
+
+            // the key views the label line, which outlives the optimization
+            const auto found{labels.find(text.substr(begin, end - begin))};
+            if (found != labels.end()) {
+                named.insert(found->first);
+            }
+
+            begin = end;
+        }
+    }
+
+    [[nodiscard]] static auto is_symbol_char(const char ch) -> bool {
+        return std::isalnum(static_cast<unsigned char>(ch)) != 0 or ch == '_' or
+               ch == '.' or ch == '$';
+    }
+
+    // a jump target is viewed through the label map because inverting a
+    // branch replaces its target string
+    [[nodiscard]] auto referenced_labels(
+        const std::unordered_map<std::string_view, size_t>& labels,
+        const std::unordered_set<std::string_view>& named) const
+        -> std::unordered_set<std::string_view> {
+
+        std::unordered_set<std::string_view> referenced{named};
+        for (const line& l : lines_) {
+            if (not l.jump) {
+                continue;
+            }
+
+            const auto found{labels.find(l.jump->target)};
+            if (found != labels.end()) {
+                referenced.insert(found->first);
+            }
+        }
+
+        return referenced;
+    }
+
+    // text labels and numeric labels, named by references such as '1b', are
+    // entries without a lookup
+    [[nodiscard]] static auto
+    is_enterable(const line& l,
+                 const std::unordered_set<std::string_view>& referenced)
+        -> bool {
+
+        if (not l.entry) {
+            return false;
+        }
+
+        if (l.label.empty() or is_numeric(l.label)) {
+            return true;
+        }
+
+        return referenced.contains(l.label);
+    }
+
+    [[nodiscard]] static auto is_numeric(const std::string_view text) -> bool {
+        return std::ranges::all_of(text, [](const char ch) -> bool {
+            return std::isdigit(static_cast<unsigned char>(ch)) != 0;
+        });
+    }
+
     // a label in between would let execution enter between the two jumps
-    [[nodiscard]] auto following_unconditional_jump(const size_t index) const
+    [[nodiscard]] auto following_unconditional_jump(
+        const size_t index,
+        const std::unordered_set<std::string_view>& referenced) const
         -> std::optional<size_t> {
 
         for (size_t next{index + 1}; next < lines_.size(); ++next) {
             const line& l{lines_[next]};
-            if (l.entry) {
+            if (is_enterable(l, referenced)) {
                 return std::nullopt;
             }
 
@@ -433,7 +546,8 @@ class assembler {
 
     [[nodiscard]] auto
     optimize_jump(const size_t index,
-                  const std::unordered_map<std::string_view, size_t>& labels)
+                  const std::unordered_map<std::string_view, size_t>& labels,
+                  const std::unordered_set<std::string_view>& referenced)
         -> bool {
 
         line& branch{lines_[index]};
@@ -458,7 +572,7 @@ class assembler {
         }
 
         const std::optional<size_t> jump_index{
-            following_unconditional_jump(index)};
+            following_unconditional_jump(index, referenced)};
 
         if (not jump_index) {
             return false;

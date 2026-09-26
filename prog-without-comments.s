@@ -71,32 +71,14 @@ main:
             syscall
         if.32.24.155.5.end:
     func.assert.155.5.end:
-        cmp.161.16:
-        bool.161.16.end:
-        mov r15b, 1
         func.assert.161.9:
             if.32.27.161.9:
             cmp.32.27.161.9:
-            cmp r15b, 0
-            jne if.32.24.161.9.end
-            if.32.27.161.9.code:
-                mov rdi, 1
-                mov rax, 60
-                syscall
             if.32.24.161.9.end:
         func.assert.161.9.end:
-    cmp.164.12:
-    bool.164.12.end:
-    mov r15b, 1
     func.assert.164.5:
         if.32.27.164.5:
         cmp.32.27.164.5:
-        cmp r15b, 0
-        jne if.32.24.164.5.end
-        if.32.27.164.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
         if.32.24.164.5.end:
     func.assert.164.5.end:
     mov qword [rbp + 232], 0
@@ -569,9 +551,8 @@ main:
         if.55.8.229.5:
         cmp.55.8.229.5:
         cmp qword [rbp + 344], 0
-        jne if.55.5.229.5.end
+        je func.bar.229.5.end
         if.55.8.229.5.code:
-            jmp func.bar.229.5.end
         if.55.5.229.5.end:
         mov qword [rbp + 344], 255
     func.bar.229.5.end:
@@ -595,9 +576,8 @@ main:
         if.55.8.233.5:
         cmp.55.8.233.5:
         cmp qword [rbp + 344], 0
-        jne if.55.5.233.5.end
+        je func.bar.233.5.end
         if.55.8.233.5.code:
-            jmp func.bar.233.5.end
         if.55.5.233.5.end:
         mov qword [rbp + 344], 255
     func.bar.233.5.end:
@@ -1212,9 +1192,8 @@ main:
         if.310.12:
         cmp.310.12:
         cmp byte [rbp + 1064], 0
-        jg if.312.19
+        jle loop.303.5.end
         if.310.12.code:
-            jmp loop.303.5.end
         if.312.19:
         cmp.312.19:
         cmp byte [rbp + 1064], 4
@@ -1320,11 +1299,9 @@ func.print_num:
         if.130.12:
         cmp.130.12:
         cmp qword [rbx + 32], 0
-        jne if.130.9.end
+        jne loop.126.5
         if.130.12.code:
-            jmp loop.126.5.end
         if.130.9.end:
-    jmp loop.126.5
     loop.126.5.end:
     if.133.8:
     cmp.133.8:
@@ -1367,11 +1344,9 @@ func.print_num:
         if.143.12:
         cmp.143.12:
         cmp qword [rbx + 48], 20
-        jne if.143.9.end
+        jne loop.139.5
         if.143.12.code:
-            jmp loop.139.5.end
         if.143.9.end:
-    jmp loop.139.5
     loop.139.5.end:
     mov rdi, 1
     mov rdx, qword [rbx + 56]

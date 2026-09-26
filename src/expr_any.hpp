@@ -339,7 +339,20 @@ class expr_any final : public statement {
             return std::nullopt;
         }
 
-        return constant_element_value(tc, vars_[0]);
+        const expr_variant& e{vars_.front()};
+
+        // e.g. 'maybe == 33' with 'maybe' a constant
+        const expr_bool* const bol{std::get_if<expr_bool>(&e)};
+        if (bol != nullptr) {
+            const std::optional<bool> value{bol->constant_value(tc)};
+            if (not value) {
+                return std::nullopt;
+            }
+
+            return *value ? 1 : 0;
+        }
+
+        return constant_element_value(tc, e);
     }
 
     [[nodiscard]] auto tok() const -> const token& override {
