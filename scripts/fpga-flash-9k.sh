@@ -5,7 +5,7 @@ cd $(dirname "$0")
 # override configuration
 . ./configuration.sh
 
-cd ../..
+cd ..
 
 echo
 echo "building firmware"

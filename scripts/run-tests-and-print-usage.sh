@@ -2,7 +2,7 @@
 set -e
 cd $(dirname "$0")
 
-cd ../..
+cd ..
 
 for file in qa/coverage/tests/*.baz; do
     echo "File: $file"

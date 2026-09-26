@@ -69,7 +69,7 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
   * <https://github.com/calint/tang-nano-9k--riscv--cache-psram>
   * <https://github.com/calint/tang-nano-20k--riscv--cache-sdram>
   * to run in an emulator of fpga soft core rv32i: `./run-rv32i-fpga.sh`
-  * to run on hardware use `etc/scripts/fpga-connect-serial.sh`
+  * to run on hardware use `scripts/fpga-connect-serial.sh`
 
 ## Source
 

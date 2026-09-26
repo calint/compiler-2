@@ -2,7 +2,7 @@
 #set -e
 cd $(dirname "$0")
 
-cd ../../qa/coverage/tests/
+cd ../qa/coverage/tests/
 
 for file in *.baz; do
     echo -n "$file: "

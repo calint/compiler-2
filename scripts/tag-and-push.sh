@@ -2,7 +2,7 @@
 set -e
 cd "$(dirname "$0")"
 
-cd ../..
+cd ..
 
 TAG=$(date "+%Y-%m-%d--%H-%M")
 if [ -n "$1" ]; then

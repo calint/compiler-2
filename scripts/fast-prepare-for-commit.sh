@@ -2,7 +2,7 @@
 set -e
 cd "$(dirname "$0")"
 
-cd ../..
+cd ..
 
 clang-format -i --style=file src/*
 qa/lint/clang-tidy.sh
