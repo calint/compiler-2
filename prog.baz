@@ -34,14 +34,14 @@ func assert(ok bool) { if not ok exit(1) }
 
 func print(str[] i8) {
     write(1, str)
-    # write is a built-in functions writes to a file descriptor
+    # write is a built-in function that operates on file descriptors
     # it has 2 more optional arguments: count and start index
 }
 
 # function arguments and return are equivalent to mutable references
 
 # functions can act on user types: `func point.fooz()` is called as
-# `p.fooz()` with `p` as the implicit reference argument `self`
+# `p.fooz()`
 
 func point.fooz() {
     self.x = 0b10    # binary value 2
@@ -100,7 +100,6 @@ const no = 0
 const maybe = -1
 
 # constants can be declared in any scope and shadow outer declarations
-
 
 # limited support for non-inlined functions
 # arguments and return are references to memory locations
@@ -209,6 +208,7 @@ func main() {
 
     var p point
     # user types without initializer are zeroed
+
     p.fooz()
     # call on user type method
 
@@ -245,7 +245,7 @@ func main() {
 
     var pt point = point_init()
     # "return" from functions are writing to the destination through a reference
-    
+ 
     assert(pt.x == -1)
     assert(pt.y == -2)
 

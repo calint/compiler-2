@@ -40,65 +40,65 @@ _start:
 lea rbp, [dat]
 main:
     mov qword [rbp + 224], 0
-    cmp.153.12:
+    cmp.152.12:
     cmp qword [rbp + 224], 0
     sete r15b
-    bool.153.12.end:
-    func.assert.153.5:
-        if.32.27.153.5:
-        cmp.32.27.153.5:
+    bool.152.12.end:
+    func.assert.152.5:
+        if.32.27.152.5:
+        cmp.32.27.152.5:
         cmp r15b, 0
-        jne if.32.24.153.5.end
-        if.32.27.153.5.code:
+        jne if.32.24.152.5.end
+        if.32.27.152.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.32.24.153.5.end:
-    func.assert.153.5.end:
+        if.32.24.152.5.end:
+    func.assert.152.5.end:
     mov qword [rbp + 224], -1
-    cmp.156.12:
+    cmp.155.12:
     cmp qword [rbp + 224], -1
     sete r15b
-    bool.156.12.end:
-    func.assert.156.5:
-        if.32.27.156.5:
-        cmp.32.27.156.5:
+    bool.155.12.end:
+    func.assert.155.5:
+        if.32.27.155.5:
+        cmp.32.27.155.5:
         cmp r15b, 0
-        jne if.32.24.156.5.end
-        if.32.27.156.5.code:
+        jne if.32.24.155.5.end
+        if.32.27.155.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.32.24.156.5.end:
-    func.assert.156.5.end:
-        cmp.162.16:
-        bool.162.16.end:
+        if.32.24.155.5.end:
+    func.assert.155.5.end:
+        cmp.161.16:
+        bool.161.16.end:
         mov r15b, 1
-        func.assert.162.9:
-            if.32.27.162.9:
-            cmp.32.27.162.9:
+        func.assert.161.9:
+            if.32.27.161.9:
+            cmp.32.27.161.9:
             cmp r15b, 0
-            jne if.32.24.162.9.end
-            if.32.27.162.9.code:
+            jne if.32.24.161.9.end
+            if.32.27.161.9.code:
                 mov rdi, 1
                 mov rax, 60
                 syscall
-            if.32.24.162.9.end:
-        func.assert.162.9.end:
-    cmp.165.12:
-    bool.165.12.end:
+            if.32.24.161.9.end:
+        func.assert.161.9.end:
+    cmp.164.12:
+    bool.164.12.end:
     mov r15b, 1
-    func.assert.165.5:
-        if.32.27.165.5:
-        cmp.32.27.165.5:
+    func.assert.164.5:
+        if.32.27.164.5:
+        cmp.32.27.164.5:
         cmp r15b, 0
-        jne if.32.24.165.5.end
-        if.32.27.165.5.code:
+        jne if.32.24.164.5.end
+        if.32.27.164.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.32.24.165.5.end:
-    func.assert.165.5.end:
+        if.32.24.164.5.end:
+    func.assert.164.5.end:
     mov qword [rbp + 232], 0
     mov qword [rbp + 240], 0
     mov qword [rbp + 248], 1
@@ -109,8 +109,24 @@ main:
     mov r14, qword [rbp + 248]
     mov r13d, dword [rbp + r14 * 4 + 232]
     mov dword [rbp + r15 * 4 + 232], r13d
-    cmp.175.12:
+    cmp.174.12:
     mov r14, 1
+    cmp dword [rbp + r14 * 4 + 232], 2
+    sete r15b
+    bool.174.12.end:
+    func.assert.174.5:
+        if.32.27.174.5:
+        cmp.32.27.174.5:
+        cmp r15b, 0
+        jne if.32.24.174.5.end
+        if.32.27.174.5.code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if.32.24.174.5.end:
+    func.assert.174.5.end:
+    cmp.175.12:
+    mov r14, 2
     cmp dword [rbp + r14 * 4 + 232], 2
     sete r15b
     bool.175.12.end:
@@ -125,41 +141,25 @@ main:
             syscall
         if.32.24.175.5.end:
     func.assert.175.5.end:
-    cmp.176.12:
-    mov r14, 2
-    cmp dword [rbp + r14 * 4 + 232], 2
-    sete r15b
-    bool.176.12.end:
-    func.assert.176.5:
-        if.32.27.176.5:
-        cmp.32.27.176.5:
-        cmp r15b, 0
-        jne if.32.24.176.5.end
-        if.32.27.176.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if.32.24.176.5.end:
-    func.assert.176.5.end:
     mov r15, 2
     mov rax, qword [rbp + r15 * 4 + 232]
     mov qword [rbp + 232], rax
-    cmp.179.12:
+    cmp.178.12:
     mov r14, 0
     cmp dword [rbp + r14 * 4 + 232], 2
     sete r15b
-    bool.179.12.end:
-    func.assert.179.5:
-        if.32.27.179.5:
-        cmp.32.27.179.5:
+    bool.178.12.end:
+    func.assert.178.5:
+        if.32.27.178.5:
+        cmp.32.27.178.5:
         cmp r15b, 0
-        jne if.32.24.179.5.end
-        if.32.27.179.5.code:
+        jne if.32.24.178.5.end
+        if.32.27.178.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.32.24.179.5.end:
-    func.assert.179.5.end:
+        if.32.24.178.5.end:
+    func.assert.178.5.end:
     mov qword [rbp + 256], 0
     mov qword [rbp + 264], 0
     mov qword [rbp + 272], 0
@@ -168,7 +168,7 @@ main:
     mov qword [rbp + 256], rax
     mov rax, qword [rbp + 240]
     mov qword [rbp + 264], rax
-    cmp.184.19:
+    cmp.183.19:
         mov rcx, 3
         mov r15, 1
         lea rsi, [rbp + r15 * 4 + 232]
@@ -178,25 +178,25 @@ main:
         test rcx, rcx
         repe cmpsb
         sete byte [rbp + 288]
-    bool.184.19.end:
-    cmp.187.12:
+    bool.183.19.end:
+    cmp.186.12:
     cmp byte [rbp + 288], 0
     setne r15b
-    bool.187.12.end:
-    func.assert.187.5:
-        if.32.27.187.5:
-        cmp.32.27.187.5:
+    bool.186.12.end:
+    func.assert.186.5:
+        if.32.27.186.5:
+        cmp.32.27.186.5:
         cmp r15b, 0
-        jne if.32.24.187.5.end
-        if.32.27.187.5.code:
+        jne if.32.24.186.5.end
+        if.32.27.186.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.32.24.187.5.end:
-    func.assert.187.5.end:
+        if.32.24.186.5.end:
+    func.assert.186.5.end:
     mov r15, 2
     mov dword [rbp + r15 * 4 + 256], -1
-    cmp.190.12:
+    cmp.189.12:
         mov rcx, 4
         lea rsi, [rbp + 232]
         lea rdi, [rbp + 256]
@@ -204,84 +204,103 @@ main:
         test rcx, rcx
         repe cmpsb
         setne r15b
-    bool.190.12.end:
-    func.assert.190.5:
-        if.32.27.190.5:
-        cmp.32.27.190.5:
+    bool.189.12.end:
+    func.assert.189.5:
+        if.32.27.189.5:
+        cmp.32.27.189.5:
         cmp r15b, 0
-        jne if.32.24.190.5.end
-        if.32.27.190.5.code:
+        jne if.32.24.189.5.end
+        if.32.27.189.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.32.24.190.5.end:
-    func.assert.190.5.end:
+        if.32.24.189.5.end:
+    func.assert.189.5.end:
     mov qword [rbp + 248], 3
     mov r15, qword [rbp + 248]
     mov r14, qword [rbp + 248]
     sub r14, 1
-    func.inv.193.16:
+    func.inv.192.16:
         mov r13d, dword [rbp + r14 * 4 + 232]
         mov dword [rbp + r15 * 4 + 232], r13d
         not dword [rbp + r15 * 4 + 232]
-    func.inv.193.16.end:
+    func.inv.192.16.end:
     not dword [rbp + r15 * 4 + 232]
-    cmp.194.12:
+    cmp.193.12:
     mov r14, qword [rbp + 248]
     cmp dword [rbp + r14 * 4 + 232], 2
     sete r15b
-    bool.194.12.end:
-    func.assert.194.5:
-        if.32.27.194.5:
-        cmp.32.27.194.5:
+    bool.193.12.end:
+    func.assert.193.5:
+        if.32.27.193.5:
+        cmp.32.27.193.5:
         cmp r15b, 0
-        jne if.32.24.194.5.end
-        if.32.27.194.5.code:
+        jne if.32.24.193.5.end
+        if.32.27.193.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.32.24.194.5.end:
-    func.assert.194.5.end:
-    func.faz.196.5:
+        if.32.24.193.5.end:
+    func.assert.193.5.end:
+    func.faz.195.5:
         mov r15, 1
         mov dword [rbp + r15 * 4 + 232], 254
-    func.faz.196.5.end:
-    cmp.197.12:
+    func.faz.195.5.end:
+    cmp.196.12:
     mov r14, 1
     cmp dword [rbp + r14 * 4 + 232], 254
     sete r15b
-    bool.197.12.end:
-    func.assert.197.5:
-        if.32.27.197.5:
-        cmp.32.27.197.5:
+    bool.196.12.end:
+    func.assert.196.5:
+        if.32.27.196.5:
+        cmp.32.27.196.5:
         cmp r15b, 0
-        jne if.32.24.197.5.end
-        if.32.27.197.5.code:
+        jne if.32.24.196.5.end
+        if.32.27.196.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.32.24.197.5.end:
-    func.assert.197.5.end:
+        if.32.24.196.5.end:
+    func.assert.196.5.end:
     mov dword [rbp + 296], 3
     mov dword [rbp + 300], 0
     mov dword [rbp + 304], 5
     mov dword [rbp + 308], 0
     lea r15, [rbp + 296]
     mov qword [rbp + 320], 0
-    foo.200.5:
+    foo.199.5:
         mov r14, qword [rbp + 320]
         add qword [r15], r14
         add qword [r15], 2
-        foo.200.5.continue:
+        foo.199.5.continue:
             add r15, 8
             inc qword [rbp + 320]
             cmp qword [rbp + 320], 2
-            jne foo.200.5
-    foo.200.5.end:
-    cmp.203.12:
+            jne foo.199.5
+    foo.199.5.end:
+    cmp.202.12:
     mov r14, 0
         mov r13, 3
         add r13, 0
+        add r13, 2
+    cmp qword [rbp + r14 * 8 + 296], r13
+    sete r15b
+    bool.202.12.end:
+    func.assert.202.5:
+        if.32.27.202.5:
+        cmp.32.27.202.5:
+        cmp r15b, 0
+        jne if.32.24.202.5.end
+        if.32.27.202.5.code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if.32.24.202.5.end:
+    func.assert.202.5.end:
+    cmp.203.12:
+    mov r14, 1
+        mov r13, 5
+        add r13, 1
         add r13, 2
     cmp qword [rbp + r14 * 8 + 296], r13
     sete r15b
@@ -297,25 +316,6 @@ main:
             syscall
         if.32.24.203.5.end:
     func.assert.203.5.end:
-    cmp.204.12:
-    mov r14, 1
-        mov r13, 5
-        add r13, 1
-        add r13, 2
-    cmp qword [rbp + r14 * 8 + 296], r13
-    sete r15b
-    bool.204.12.end:
-    func.assert.204.5:
-        if.32.27.204.5:
-        cmp.32.27.204.5:
-        cmp r15b, 0
-        jne if.32.24.204.5.end
-        if.32.27.204.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if.32.24.204.5.end:
-    func.assert.204.5.end:
     mov qword [rbp + 312], 0
     mov qword [rbp + 320], 0
     func.point.fooz.212.7:
@@ -967,22 +967,22 @@ func.print_num:
     mov r14, qword [r15]
     mov qword [rbx + 32], r14
     mov byte [rbx + 40], 0
-    if.119.8:
-    cmp.119.8:
+    if.118.8:
+    cmp.118.8:
     cmp qword [rbx + 32], 0
-    jge if.119.5.end
-    if.119.8.code:
+    jge if.118.5.end
+    if.118.8.code:
         mov byte [rbx + 40], 1
-    if.119.5.end:
-    if.122.8:
-    cmp.122.8:
+    if.118.5.end:
+    if.121.8:
+    cmp.121.8:
     cmp qword [rbx + 32], 0
-    jle if.122.5.end
-    if.122.8.code:
+    jle if.121.5.end
+    if.121.8.code:
         neg qword [rbx + 32]
-    if.122.5.end:
+    if.121.5.end:
     mov qword [rbx + 48], 20
-    loop.127.5:
+    loop.126.5:
         sub qword [rbx + 48], 1
         mov r15, qword [rbx + 48]
             mov r14, 48
@@ -999,41 +999,41 @@ func.print_num:
         mov r15, 10
         idiv r15
         mov qword [rbx + 32], rax
-        if.131.12:
-        cmp.131.12:
+        if.130.12:
+        cmp.130.12:
         cmp qword [rbx + 32], 0
-        jne if.131.9.end
-        if.131.12.code:
-            jmp loop.127.5.end
-        if.131.9.end:
-    jmp loop.127.5
-    loop.127.5.end:
-    if.134.8:
-    cmp.134.8:
+        jne if.130.9.end
+        if.130.12.code:
+            jmp loop.126.5.end
+        if.130.9.end:
+    jmp loop.126.5
+    loop.126.5.end:
+    if.133.8:
+    cmp.133.8:
     cmp byte [rbx + 40], 0
-    je if.134.5.end
-    if.134.8.code:
+    je if.133.5.end
+    if.133.8.code:
         sub qword [rbx + 48], 1
         mov r15, qword [rbx + 48]
         mov byte [rbx + r15 + 8], 45
-    if.134.5.end:
+    if.133.5.end:
     mov qword [rbx + 56], 0
-    loop.140.5:
+    loop.139.5:
         mov r15, qword [rbx + 56]
         mov r14, qword [rbx + 48]
         mov r13b, byte [rbx + r14 + 8]
         mov byte [rbx + r15 + 8], r13b
         add qword [rbx + 56], 1
         add qword [rbx + 48], 1
-        if.144.12:
-        cmp.144.12:
+        if.143.12:
+        cmp.143.12:
         cmp qword [rbx + 48], 20
-        jne if.144.9.end
-        if.144.12.code:
-            jmp loop.140.5.end
-        if.144.9.end:
-    jmp loop.140.5
-    loop.140.5.end:
+        jne if.143.9.end
+        if.143.12.code:
+            jmp loop.139.5.end
+        if.143.9.end:
+    jmp loop.139.5
+    loop.139.5.end:
     mov rdi, 1
     mov rdx, qword [rbx + 56]
     lea rsi, [rbx + 8]
