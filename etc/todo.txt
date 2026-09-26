@@ -3,19 +3,6 @@
 --------------------------------------------------------------------------------
 [ ] specify device memory size and error if code size + dat size + max used
     vars + stack size overflows it
-[x] since every element has a whitespace before and after stop reading whitspace
-    after once newline is found for nicer tokens
-    => what happens if a block is:
-        {
-            a = 2
-
-        }
-       => whitespace token for is_char_token('{') reads the remaing whitespace
-    => done: 'tokenizer::next_trailing_whitespace' ends after the first
-       newline, the whitespace at the end of the source stays with the last
-       token; lookahead after a token uses 'peek_char_after_whitespace' and
-       'expr_arith' keeps the whitespace before each operator so operators
-       may still start the next line (570.baz)
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
     => plan (big: new machine interface method, several files)
        [ ] parse a string token or an identifier for the 'array_copy' source
@@ -38,33 +25,6 @@
        [ ] tests on both targets: runtime copy and compare, errors for a
            non-'i8' destination, a count above the string length and the
            empty string
-[ ] should if str == "abc" be supported?
-    => an argument is that it is a magic string and should be dat
-[ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
-[ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
-    the emulator with the dividend in a0 as exit code
-[ ] reorder locals by alignment, largest first, to reduce padding
-[ ] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
-    derive a larger alignment from the addresses as 'copy' and 'zero' do
-    => keep the smallest 'access_alignment' of the addresses given to
-       'set_array_copy_source/destination' and 'set_memory_equal_left/right'
-       with the bulk registers, width = max(type alignment, that)
-[ ] 'arrays_equal'/'equal' with a known size could compare unrolled like
-    'array_copy' with a constant count
-[ ] 'array_copy(a, b, array_length(a))' still loops: 'array_length' and
-    'array_size_of' are expressions, not constants
-[ ] 'array_copy' with a constant count and constant indexes still checks the
-    range at run time, it could be checked at compile time
-[ ] rv32i: above the unroll threshold a copy of known size still tests the
-    word/half/byte tail at run time
-    => the redundant 'addi t1, t0, 0' after 'la' in a copy from read-only data
-       is fixed: 'copy_bytes' loops from the label pointer ('emit_copy_loop')
-[ ] 'equal' on records compares the padding bytes; a record set by a call
-    result keeps whatever padding bytes its storage held
-[x] when reading trailing whitespace stop at newline
-    => done, see the first item
-[ ] variable argument count in read/write might be confusing. consider requiring
-    all arguments
 [x] opus 5.5 ai review and bug-hunt
 [o] --checks=noub: a program either behaves as defined or panics with a line
     => viable: no heap, no pointer type, no casts, no raw registers
@@ -130,6 +90,33 @@
             record and non-inline results with runtime indexes
         [ ] re-enable 485.baz
     [ ] --checks=noub enables all of the above
+[ ] should if str == "abc" be supported?
+    => an argument is that it is a magic string and should be dat
+[ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
+[ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
+    the emulator with the dividend in a0 as exit code
+[ ] reorder locals by alignment, largest first, to reduce padding
+[ ] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
+    derive a larger alignment from the addresses as 'copy' and 'zero' do
+    => keep the smallest 'access_alignment' of the addresses given to
+       'set_array_copy_source/destination' and 'set_memory_equal_left/right'
+       with the bulk registers, width = max(type alignment, that)
+[ ] 'arrays_equal'/'equal' with a known size could compare unrolled like
+    'array_copy' with a constant count
+[ ] 'array_copy(a, b, array_length(a))' still loops: 'array_length' and
+    'array_size_of' are expressions, not constants
+[ ] 'array_copy' with a constant count and constant indexes still checks the
+    range at run time, it could be checked at compile time
+[ ] rv32i: above the unroll threshold a copy of known size still tests the
+    word/half/byte tail at run time
+    => the redundant 'addi t1, t0, 0' after 'la' in a copy from read-only data
+       is fixed: 'copy_bytes' loops from the label pointer ('emit_copy_loop')
+[ ] 'equal' on records compares the padding bytes; a record set by a call
+    result keeps whatever padding bytes its storage held
+[x] when reading trailing whitespace stop at newline
+    => done, see the first item
+[ ] variable argument count in read/write might be confusing. consider requiring
+    all arguments
 [ ] allow record literals and record call results as arguments, e.g.
     'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
     caller's frame. rejected today with "argument 1 cannot be a temporary"
@@ -321,6 +308,19 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] since every element has a whitespace before and after stop reading whitspace
+    after once newline is found for nicer tokens
+    => what happens if a block is:
+        {
+            a = 2
+
+        }
+       => whitespace token for is_char_token('{') reads the remaing whitespace
+    => done: 'tokenizer::next_trailing_whitespace' ends after the first
+       newline, the whitespace at the end of the source stays with the last
+       token; lookahead after a token uses 'peek_char_after_whitespace' and
+       'expr_arith' keeps the whitespace before each operator so operators
+       may still start the next line (570.baz)
 [x] constant '{...}' initializers of builtin elements up to 4 B are stored
     element by element ('li' + 'sb' each on rv32i). pack the little endian
     bytes and store them like strings ('copy_string': immediates or a
