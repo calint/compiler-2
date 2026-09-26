@@ -588,7 +588,9 @@ class expr_bool_op final : public statement {
 // list of boolean expressions / lists instead of tree
 // note: quirky parsing and compiling but supports short-circuiting
 class expr_bool final : public statement {
-    std::vector<std::variant<expr_bool_op, expr_bool>> bools_;
+    using element = std::variant<expr_bool_op, expr_bool>;
+
+    std::vector<element> bools_;
     std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
     token not_tk_;           // e.g. not (a==b and c==d)
     token open_paren_tk_;
@@ -763,7 +765,7 @@ class expr_bool final : public statement {
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override {
 
-        for (const auto& e : bools_) {
+        for (const element& e : bools_) {
             e.visit([&var, &reader](const auto& item) -> void {
                 item.visit_reads(var, reader);
             });
@@ -951,9 +953,8 @@ class expr_bool final : public statement {
         return tc.create_unique_label(tok(), "cmp");
     }
 
-    [[nodiscard]] static auto
-    create_cmp_label_from(const toc& tc,
-                          const std::variant<expr_bool_op, expr_bool>& var)
+    [[nodiscard]] static auto create_cmp_label_from(const toc& tc,
+                                                    const element& var)
         -> std::string {
 
         return var.visit([&tc](const auto& e) -> std::string {

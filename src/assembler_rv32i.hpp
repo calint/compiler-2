@@ -1391,7 +1391,8 @@ class assembler_rv32i final : public assembler {
             return long_jump(reach_form, jump, target - address);
         }
 
-        const auto* const compared{std::get_if<jump_registers>(record_of(l))};
+        const jump_registers* const compared{
+            std::get_if<jump_registers>(record_of(l))};
         if (compared == nullptr) {
             throw panic_exception{
                 std::format("no registers for '{}'", trim(l.text))};
@@ -1440,7 +1441,7 @@ class assembler_rv32i final : public assembler {
     }
 
     [[nodiscard]] auto image_size_bytes(const line& l) const -> size_t {
-        const auto* const data{std::get_if<data_values>(record_of(l))};
+        const data_values* const data{std::get_if<data_values>(record_of(l))};
         if (data == nullptr) {
             return l.code_size;
         }
@@ -1459,7 +1460,8 @@ class assembler_rv32i final : public assembler {
         for (const line& l : lines()) {
             const record* const structured{record_of(l)};
 
-            const auto* const start{std::get_if<section_start>(structured)};
+            const section_start* const start{
+                std::get_if<section_start>(structured)};
             if (start != nullptr) {
                 current = start->which;
             }
@@ -1467,7 +1469,7 @@ class assembler_rv32i final : public assembler {
             const size_t index{section_index(current)};
             size_t& offset{image.sizes.at(index)};
 
-            const auto* const align{std::get_if<alignment>(structured)};
+            const alignment* const align{std::get_if<alignment>(structured)};
             if (align != nullptr) {
                 offset = align_up(offset, align->size_bytes);
 
@@ -1509,7 +1511,7 @@ class assembler_rv32i final : public assembler {
         for (size_t index{}; index < lines().size(); ++index) {
             const line& l{lines()[index]};
 
-            const auto* const defined{std::get_if<constant>(record_of(l))};
+            const constant* const defined{std::get_if<constant>(record_of(l))};
             if (defined != nullptr) {
                 symbols.values.emplace(defined->name, defined->value);
             }
@@ -1644,7 +1646,8 @@ class assembler_rv32i final : public assembler {
             }
 
             const line& l{lines()[index]};
-            const auto* const data{std::get_if<data_values>(record_of(l))};
+            const data_values* const data{
+                std::get_if<data_values>(record_of(l))};
 
             const bool is_zero_fill{
                 data != nullptr and
@@ -1682,7 +1685,8 @@ class assembler_rv32i final : public assembler {
                 write_zeros(os, address - written);
 
                 const line& l{lines()[index]};
-                const auto* const data{std::get_if<data_values>(record_of(l))};
+                const data_values* const data{
+                    std::get_if<data_values>(record_of(l))};
                 if (data != nullptr) {
                     write_data(os, *data);
                     written = address + data_size_bytes(*data);
