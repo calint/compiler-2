@@ -30,10 +30,10 @@ func str.in() {
             continue
         }
         write(1, self.data, 1, nbytes)
+        if self.data[nbytes] == '\n' break
         nbytes = nbytes + 1
-        if self.data[nbytes - 1] == '\n' break
     }
-    self.len = i8(nbytes - 1)
+    self.len = i8(nbytes)
 }
 
 func noinline print_num(num) {
