@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -178,10 +179,13 @@ class machine {
                       const size_t size_bytes, const size_t alignment)
         -> void = 0;
 
-    // copies 'size_bytes' of the string constant at 'label'
-    virtual auto copy_from_label(const token& src_loc_tk, const size_t indent,
-                                 const std::string_view label,
-                                 const operand& dst, const size_t size_bytes)
+    // 'bytes' are decoded, 'add_constant' returns the read-only data label and
+    // is called only when the string is not stored with immediates
+    virtual auto
+    copy_string(const token& src_loc_tk, const size_t indent,
+                const std::string_view bytes, const operand& dst,
+                const size_t alignment,
+                const std::function_ref<std::string()> add_constant)
         -> void = 0;
 
     [[nodiscard]] virtual auto begin_array_copy(const token& src_loc_tk,
@@ -407,6 +411,21 @@ class machine {
     }
 
   protected:
+    // a word is sign extended so its bits fit a signed 32-bit immediate
+    [[nodiscard]] static auto little_endian_value(const std::string_view bytes)
+        -> int64_t {
+
+        constexpr size_t byte_bits{8};
+
+        uint32_t bits{};
+        for (size_t i{}; i < bytes.size(); ++i) {
+            bits |= uint32_t{static_cast<unsigned char>(bytes[i])}
+                    << (byte_bits * i);
+        }
+
+        return std::bit_cast<int32_t>(bits);
+    }
+
     // immediates are decimal numbers prefixed by unary '-' and '~' operators
     // returns two's complement bits or empty for symbolic expressions
     [[nodiscard]] static auto immediate_bits(const operand& value)

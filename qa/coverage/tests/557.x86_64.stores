@@ -1,0 +1,31 @@
+=== 11: dat expected_high[] i8 = "\xff\x80\x7f\x01"
+=== 16:     zeros = "\0\0"
+    mov word [rbp + 16], 0
+    mov word [rbp + 18], 0
+=== 20:     var high[4] i8 = "\xff\x80\x7f\x01"
+    mov dword [rbp + 20], 25133311
+=== 24:     var same[] i8 = "aaaaaaaa\n"
+    mov dword [rbp + 24], 1633771873
+    mov dword [rbp + 28], 1633771873
+    mov byte [rbp + 32], 10
+=== 28:     var p padded = {1, "abcdef\n"}
+    mov byte [rbp + 33], 1
+    mov dword [rbp + 34], 1684234849
+    mov word [rbp + 38], 26213
+    mov byte [rbp + 40], 10
+=== 31:     p.text = "xyz\n"
+    mov dword [rbp + 34], 175798648
+    mov word [rbp + 38], 0
+    mov byte [rbp + 40], 0
+=== 37:     ps[i].text = "hi\n"
+    mov r15, qword [rbp + 64]
+    mov word [rbp + r15 * 8 + 42], 26984
+    mov byte [rbp + r15 * 8 + 44], 10
+    mov dword [rbp + r15 * 8 + 45], 0
+=== 42:     var line[] i8 = "0123456789abcd\n"
+    mov dword [rbp + 72], 858927408
+    mov dword [rbp + 76], 926299444
+    mov dword [rbp + 80], 1650538808
+    mov word [rbp + 84], 25699
+    mov byte [rbp + 86], 10
+=== read-only constants

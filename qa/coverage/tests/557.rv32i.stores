@@ -1,0 +1,67 @@
+=== 11: dat expected_high[] i8 = "\xff\x80\x7f\x01"
+=== 16:     zeros = "\0\0"
+    sh zero, 16(s0)
+    sh zero, 18(s0)
+=== 20:     var high[4] i8 = "\xff\x80\x7f\x01"
+    li t0, 25133311
+    sw t0, 20(s0)
+=== 24:     var same[] i8 = "aaaaaaaa\n"
+    li t0, 1633771873
+    sw t0, 24(s0)
+    sw t0, 28(s0)
+    li t0, 10
+    sb t0, 32(s0)
+=== 28:     var p padded = {1, "abcdef\n"}
+    li t0, 1
+    sb t0, 33(s0)
+    la t0, str.28.24
+    lhu t1, 0(t0)
+    sh t1, 34(s0)
+    lhu t1, 2(t0)
+    sh t1, 36(s0)
+    lhu t1, 4(t0)
+    sh t1, 38(s0)
+    lbu t1, 6(t0)
+    sb t1, 40(s0)
+=== 31:     p.text = "xyz\n"
+    li t0, 31096
+    sh t0, 34(s0)
+    li t0, 2682
+    sh t0, 36(s0)
+    sh zero, 38(s0)
+    sb zero, 40(s0)
+=== 37:     ps[i].text = "hi\n"
+    lw t0, 60(s0)
+    slli t1, t0, 3
+    add t1, t1, s0
+    li t2, 104
+    sb t2, 42(t1)
+    li t2, 105
+    sb t2, 43(t1)
+    li t2, 10
+    sb t2, 44(t1)
+    slli t1, t0, 3
+    add t1, t1, s0
+    sb zero, 45(t1)
+    sb zero, 46(t1)
+    sb zero, 47(t1)
+    sb zero, 48(t1)
+=== 42:     var line[] i8 = "0123456789abcd\n"
+    la t0, str.42.21
+    lw t1, 0(t0)
+    sw t1, 64(s0)
+    lw t1, 4(t0)
+    sw t1, 68(s0)
+    lw t1, 8(t0)
+    sw t1, 72(s0)
+    lhu t1, 12(t0)
+    sh t1, 76(s0)
+    lbu t1, 14(t0)
+    sb t1, 78(s0)
+=== read-only constants
+.balign 4
+str.28.24:
+.ascii "abcdef\n"
+.balign 4
+str.42.21:
+.ascii "0123456789abcd\n"

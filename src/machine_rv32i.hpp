@@ -999,6 +999,133 @@ class machine_rv32i : public machine {
         return std::max(alignment, displacement_alignment);
     }
 
+    // keeps an unrolled access of 'size_bytes' within the load/store offset
+    // range
+    [[nodiscard]] auto unrolled_address(const token& src_loc_tk,
+                                        const size_t indent,
+                                        const operand& address,
+                                        const size_t size_bytes) -> operand {
+
+        operand lowered{lower_address(src_loc_tk, indent, address)};
+        if (lowered.displacement() + static_cast<int64_t>(size_bytes) - 1 >
+            immediate_max) {
+
+            const operand pointer{
+                alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+            address_of(src_loc_tk, indent, pointer, lowered);
+            lowered = operand::mem(pointer.base_register(), {}, 1, 0,
+                                   address.type_ref());
+        }
+
+        // one return keeps the copy elided
+        return lowered;
+    }
+
+    // a store of string bytes at 'offset' with 'size_bytes' of 1, 2 or 4
+    struct string_part {
+        size_t offset{};
+        size_t size_bytes{};
+        int64_t value{};
+        // zero is stored from register 'zero' and a repeated value is reused
+        bool needs_load{};
+    };
+
+    // the widest parts first like the unrolled 'copy'
+    [[nodiscard]] static auto split_string(const std::string_view bytes,
+                                           const size_t width)
+        -> std::vector<string_part> {
+
+        std::vector<string_part> parts;
+        int64_t loaded_value{};
+        size_t offset{};
+        for (const size_t w : {size_t{4}, size_t{2}, size_t{1}}) {
+            if (w > width) {
+                continue;
+            }
+            while (bytes.size() - offset >= w) {
+                const int64_t value{
+                    little_endian_value(bytes.substr(offset, w))};
+
+                const bool needs_load{value != 0 and value != loaded_value};
+                if (needs_load) {
+                    loaded_value = value;
+                }
+
+                parts.push_back({
+                    .offset{offset},
+                    .size_bytes{w},
+                    .value{value},
+                    .needs_load{needs_load},
+                });
+                offset += w;
+            }
+        }
+
+        return parts;
+    }
+
+    // 'copy' of a constant takes 'la' and a load and a store for each part,
+    // above the unroll threshold it loops
+    [[nodiscard]] static auto
+    are_immediates_smaller(const std::span<const string_part> parts,
+                           const size_t size_bytes) -> bool {
+
+        if (size_bytes > copy_unroll_threshold_bytes_) {
+            return false;
+        }
+
+        const size_t copy_size_bytes{
+            assembler_rv32i::two_instructions_bytes +
+            (parts.size() * assembler_rv32i::two_instructions_bytes)};
+
+        size_t immediates_size_bytes{};
+        for (const string_part& p : parts) {
+            immediates_size_bytes += assembler_rv32i::one_instruction_bytes;
+            if (p.needs_load) {
+                immediates_size_bytes +=
+                    assembler_rv32i::li_value_size_bytes(p.value);
+            }
+        }
+
+        return immediates_size_bytes <= copy_size_bytes;
+    }
+
+    auto store_string_parts(const token& src_loc_tk, const size_t indent,
+                            const std::span<const string_part> parts,
+                            const operand& dst, const size_t size_bytes)
+        -> void {
+
+        const operand address{
+            unrolled_address(src_loc_tk, indent, dst, size_bytes)};
+
+        const bool has_load{std::ranges::any_of(
+            parts, [](const string_part& p) -> bool { return p.needs_load; })};
+
+        const operand value{has_load ? alloc_scratch_register(
+                                           src_loc_tk, indent, default_type())
+                                     : operand{}};
+
+        for (const string_part& p : parts) {
+            const int64_t displacement{address.displacement() +
+                                       static_cast<int64_t>(p.offset)};
+
+            if (p.value == 0) {
+                assembler_.store(indent, store_op(p.size_bytes), "zero",
+                                 displacement, address.base_register());
+                continue;
+            }
+
+            if (p.needs_load) {
+                assembler_.li(indent, value.base_register(), p.value);
+            }
+
+            assembler_.store(indent, store_op(p.size_bytes),
+                             value.base_register(), displacement,
+                             address.base_register());
+        }
+    }
+
     // one 'width' access that compares and branches to '5f' at a mismatch or
     // copies
     auto emit_bulk_access(const size_t indent, const bulk_access& access,
@@ -1939,29 +2066,14 @@ class machine_rv32i : public machine {
                                 access_alignment(dst, alignment)))};
 
         if (size_bytes <= copy_unroll_threshold_bytes_) {
-            const auto prepare_address =
-                [&](const operand& address) -> operand {
-                operand lowered{lower_address(src_loc_tk, indent, address)};
-                // keep the entire unrolled copy within the load/store offset
-                // range
-                if (lowered.displacement() + static_cast<int64_t>(size_bytes) -
-                        1 >
-                    immediate_max) {
-                    const operand pointer{alloc_scratch_register(
-                        src_loc_tk, indent, default_type())};
-
-                    address_of(src_loc_tk, indent, pointer, lowered);
-                    lowered = operand::mem(pointer.base_register(), {}, 1, 0,
-                                           address.type_ref());
-                }
-
-                return lowered;
-            };
-
             // direct offsets avoid two pointer temporaries for ordinary small
             // copies
-            const operand src_address{prepare_address(src)};
-            const operand dst_address{prepare_address(dst)};
+            const operand src_address{
+                unrolled_address(src_loc_tk, indent, src, size_bytes)};
+
+            const operand dst_address{
+                unrolled_address(src_loc_tk, indent, dst, size_bytes)};
+
             const operand value{
                 alloc_scratch_register(src_loc_tk, indent, default_type())};
 
@@ -2003,22 +2115,36 @@ class machine_rv32i : public machine {
                        width);
     }
 
-    auto copy_from_label(const token& src_loc_tk, const size_t indent,
-                         const std::string_view label, const operand& dst,
-                         const size_t size_bytes) -> void override {
+    // a short string is stored with immediates when that takes no more code
+    // than loading it from read-only data
+    auto copy_string(const token& src_loc_tk, const size_t indent,
+                     const std::string_view bytes, const operand& dst,
+                     const size_t alignment,
+                     const std::function_ref<std::string()> add_constant)
+        -> void override {
 
-        // the scope keeps 'dst' registers from being picked for the pointer
+        // the scope keeps 'dst' registers from being picked for scratch
         const address_scope scope{*this, dst, operand{}};
+
+        const size_t width{bulk_width(access_alignment(dst, alignment))};
+
+        const std::vector<string_part> parts{split_string(bytes, width)};
+
+        if (are_immediates_smaller(parts, bytes.size())) {
+            store_string_parts(src_loc_tk, indent, parts, dst, bytes.size());
+
+            return;
+        }
 
         const operand pointer{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        assembler_.la(indent, pointer.base_register(), label);
+        assembler_.la(indent, pointer.base_register(), add_constant());
 
-        // string constants are byte aligned
+        // string constants are word aligned so 'dst' limits the width
         copy(src_loc_tk, indent,
              operand::mem(pointer.base_register(), {}, 1, 0, dst.type_ref()),
-             dst, size_bytes, 1);
+             dst, bytes.size(), width);
     }
 
     [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
@@ -2148,17 +2274,9 @@ class machine_rv32i : public machine {
 
         constexpr size_t direct_store_limit{16};
         if (size_bytes <= direct_store_limit) {
-            operand address{lower_address(src_loc_tk, indent, destination)};
-            // keep every unrolled store inside the signed 12-bit offset range
-            if (address.displacement() + static_cast<int64_t>(size_bytes) - 1 >
-                immediate_max) {
-                const operand pointer{
-                    alloc_scratch_register(src_loc_tk, indent, default_type())};
+            const operand address{
+                unrolled_address(src_loc_tk, indent, destination, size_bytes)};
 
-                address_of(src_loc_tk, indent, pointer, address);
-                address = operand::mem(pointer.base_register(), {}, 1, 0,
-                                       destination.type_ref());
-            }
             size_t offset{};
             for (const size_t w : {size_t{4}, size_t{2}, size_t{1}}) {
                 if (w > width) {
@@ -2974,6 +3092,8 @@ class machine_rv32i : public machine {
 
         assembler_.switch_section(section::rodata);
         for (const string_constant& s : strings) {
+            // word alignment lets copies to aligned destinations use words
+            assembler_.align(word_size_bytes_);
             assembler_.label(0, s.label);
             emit_string_data(s.text);
         }
@@ -3005,39 +3125,13 @@ class machine_rv32i : public machine {
     }
 
     auto emit_string_data(const std::string_view value) -> void override {
-        std::string bytes;
-        for (size_t offset{}; offset < value.size(); ++offset) {
-            unsigned char byte{static_cast<unsigned char>(value[offset])};
-            if (byte == '\\') {
-                ++offset;
-                if (offset == value.size()) {
-                    throw compiler_exception{token{},
-                                             "incomplete string escape"};
-                }
-
-                // a hex escape spans the 'x' and two digits
-                const bool is_hex{value[offset] == 'x'};
-                const size_t escape_size{is_hex ? 3UZ : 1UZ};
-                const std::optional<char> decoded{
-                    token::decode_escape(value.substr(offset, escape_size))};
-
-                if (not decoded and is_hex) {
-                    throw compiler_exception{token{},
-                                             "string hex escape requires "
-                                             "two hexadecimal digits"};
-                }
-
-                if (not decoded) {
-                    throw compiler_exception{token{},
-                                             "unsupported RV32I string escape"};
-                }
-
-                byte = static_cast<unsigned char>(*decoded);
-                offset += escape_size - 1;
-            }
-            bytes += static_cast<char>(byte);
+        const std::optional<std::string> bytes{token::decode_string(value)};
+        if (not bytes) {
+            throw compiler_exception{token{},
+                                     "unsupported RV32I string escape"};
         }
-        assembler_.ascii(bytes);
+
+        assembler_.ascii(*bytes);
     }
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {

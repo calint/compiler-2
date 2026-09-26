@@ -6,6 +6,7 @@
 #include <optional>
 #include <ostream>
 #include <print>
+#include <string>
 #include <string_view>
 #include <system_error>
 
@@ -131,6 +132,35 @@ class token final {
         default:
             return std::nullopt;
         }
+    }
+
+    // the bytes of string text such as "a\n", empty at an unsupported escape
+    [[nodiscard]] static auto decode_string(const std::string_view text)
+        -> std::optional<std::string> {
+
+        std::string bytes;
+        for (size_t i{}; i < text.size(); ++i) {
+            if (text[i] != '\\') {
+                bytes += text[i];
+                continue;
+            }
+
+            // a hex escape spans the 'x' and two digits
+            const size_t escape_size{text.substr(i + 1).starts_with('x') ? 3UZ
+                                                                         : 1UZ};
+
+            const std::optional<char> decoded{
+                decode_escape(text.substr(i + 1, escape_size))};
+
+            if (not decoded) {
+                return std::nullopt;
+            }
+
+            bytes += *decoded;
+            i += escape_size;
+        }
+
+        return bytes;
     }
 
   private:

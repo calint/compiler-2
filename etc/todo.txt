@@ -10,10 +10,15 @@
     argument size
     => like strings, the argument size is used at compile: too many elements
        are rejected and the rest of the argument is zeroed
-[ ] string copies: short strings could be stored with immediates instead of
+[x] string copies: short strings could be stored with immediates instead of
     loads from '.rodata', rv32i copies byte by byte since the constants are
     byte aligned
+    => up to 16 bytes x86 stores immediates, rv32i when that takes no more
+       code than the copy; rv32i constants are word aligned so the copy width
+       is limited only by the destination
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
+[ ] should if str == "abc" be supported?
+    => an argument is that it is a magic string and should be dat
 [x] a way to use characters e.g. 'a' instead of ascii code
     => 'a', '\n', '\x41' are constants with the byte value (0-255), the same
        escapes as strings
@@ -23,6 +28,23 @@
 [ ] reorder locals by alignment, largest first, to reduce padding
 [ ] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
     derive a larger alignment from the addresses as 'copy' and 'zero' do
+    => keep the smallest 'access_alignment' of the addresses given to
+       'set_array_copy_source/destination' and 'set_memory_equal_left/right'
+       with the bulk registers, width = max(type alignment, that)
+[ ] 'array_copy' with a constant count always loops ('rep movsb' on x86, the
+    bulk loop on rv32i). for a count >= 0 compile the addresses without the
+    bulk registers and call 'machine::copy' (unrolled up to 16 B, alignment
+    from both addresses). with bounds checks the count still needs a register
+    for the range check. note: x86 'copy' moves qwords, which changes the
+    result of an overlapping copy with the destination after the source
+    (undefined, see "overlapping 'array_copy'")
+    => 'arrays_equal'/'equal' with a known size could also compare unrolled
+[ ] constant '{...}' initializers of builtin elements up to 4 B are stored
+    element by element ('li' + 'sb' each on rv32i). pack the little endian
+    bytes and store them like strings ('copy_string': immediates or a
+    read-only constant). needs: owned text in 'string_constant', a label kind
+    other than 'str', an encoder of bytes to escaped text, and each element
+    still checked with 'assert_not_narrowed'
 [ ] 'equal' on records compares the padding bytes; a record set by a call
     result keeps whatever padding bytes its storage held
 [ ] when reading trailing whitespace stop at newline

@@ -1,0 +1,5 @@
+# string with an unsupported escape
+
+func main() {
+    var s[] i8 = "a\qb"
+}

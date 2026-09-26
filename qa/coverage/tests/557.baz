@@ -1,0 +1,44 @@
+# short strings are stored with immediates when that takes no more code than
+# copying from read-only data, the constants are word aligned
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type padded {
+    tag i8,
+    text[7] i8
+}
+
+dat expected_high[] i8 = "\xff\x80\x7f\x01"
+
+func main() {
+    # zero bytes are stored without a value
+    var zeros[4] i8 = {1, 2, 3, 4}
+    zeros = "\0\0"
+    assert(1, zeros[0] == 0 and zeros[1] == 0 and zeros[3] == 0)
+
+    # bytes above 0x7f keep their bits in a word
+    var high[4] i8 = "\xff\x80\x7f\x01"
+    assert(2, arrays_equal(high, expected_high, array_length(high)))
+
+    # a repeated value is stored again without reloading it
+    var same[] i8 = "aaaaaaaa\n"
+    write(1, same, array_length(same))
+
+    # a field after a byte has only the alignment of its offset
+    var p padded = {1, "abcdef\n"}
+    assert(3, p.tag == 1)
+    write(1, p.text, array_length(p.text))
+    p.text = "xyz\n"
+    write(1, p.text, 4)
+
+    # an indexed destination has only the element alignment
+    var ps[2] padded
+    var i = 1
+    ps[i].text = "hi\n"
+    assert(4, ps[0].text[0] == 0)
+    write(1, ps[1].text, 3)
+
+    # a word aligned destination copies words from read-only data
+    var line[] i8 = "0123456789abcd\n"
+    write(1, line, array_length(line))
+}

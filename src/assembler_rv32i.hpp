@@ -40,6 +40,9 @@ class assembler_rv32i final : public assembler {
         "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
     };
 
+    static constexpr size_t one_instruction_bytes{4};
+    static constexpr size_t two_instructions_bytes{8};
+
     // 'and', 'or' and 'xor' are c++ operator names
     enum class op : uint8_t {
         add,
@@ -322,9 +325,6 @@ class assembler_rv32i final : public assembler {
     // receives the instructions while a macro is being defined
     std::vector<instruction>* macro_body_{};
 
-    static constexpr size_t one_instruction_bytes{4};
-    static constexpr size_t two_instructions_bytes{8};
-
     // instructions that assemble to one 4-byte word
     static constexpr std::array<std::string_view, 46> single_instructions{
         "add",  "addi", "sub",   "and",    "andi",  "or",  "ori",  "xor",
@@ -575,21 +575,6 @@ class assembler_rv32i final : public assembler {
         return name == ".option" or name == ".globl" or name == ".equ" or
                name == ".text" or name == ".data" or name == ".section" or
                name == ".macro" or name == ".endm";
-    }
-
-    // an 'li' constant that fits 'addi' or has no low part is one instruction
-    [[nodiscard]] static auto li_value_size_bytes(const int64_t value)
-        -> size_t {
-
-        const uint32_t bits{static_cast<uint32_t>(value)};
-        const int32_t number{std::bit_cast<int32_t>(bits)};
-        if ((number >= immediate_min and number <= immediate_max) or
-            (bits & low_mask) == 0) {
-
-            return one_instruction_bytes;
-        }
-
-        return two_instructions_bytes;
     }
 
     [[nodiscard]] static auto li_size_bytes(const std::string_view arguments)
@@ -1758,6 +1743,22 @@ class assembler_rv32i final : public assembler {
 
         return std::nullopt;
     }
+
+    // an 'li' constant that fits 'addi' or has no low part is one instruction
+    [[nodiscard]] static auto li_value_size_bytes(const int64_t value)
+        -> size_t {
+
+        const uint32_t bits{static_cast<uint32_t>(value)};
+        const int32_t number{std::bit_cast<int32_t>(bits)};
+        if ((number >= immediate_min and number <= immediate_max) or
+            (bits & low_mask) == 0) {
+
+            return one_instruction_bytes;
+        }
+
+        return two_instructions_bytes;
+    }
+
     // labels, directives and comments occupy no space, unknown instructions
     // have no size
     [[nodiscard]] static auto line_size_bytes(const std::string_view text)

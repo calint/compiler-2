@@ -356,14 +356,23 @@ class expr_any final : public statement {
         return array_count_;
     }
 
-    // the string is copied from read-only data and the rest of the array is
-    // zeroed like unlisted elements
+    // the string is stored and the rest of the array is zeroed like unlisted
+    // elements
     auto compile_string(toc& tc, const size_t indent,
                         const ident_info& dst_info) const -> void {
 
         machine& x{tc.machine()};
 
-        const size_t size_bytes{string_tk_.string_size_bytes()};
+        const std::optional<std::string> bytes{
+            token::decode_string(string_tk_.text())};
+
+        if (not bytes) {
+            throw compiler_exception{
+                string_tk_, std::format("unsupported escape in string \"{}\"",
+                                        string_tk_.text())};
+        }
+
+        const size_t size_bytes{bytes->size()};
 
         const size_t array_count{destination_array_count(dst_info)};
 
@@ -376,11 +385,13 @@ class expr_any final : public statement {
 
         operand dst{dst_info.operand};
 
-        // an empty string has no constant to copy
+        // an empty string has nothing to store
         if (size_bytes != 0) {
-            x.copy_from_label(string_tk_, indent,
-                              tc.add_string_constant(string_tk_), dst,
-                              size_bytes);
+            x.copy_string(string_tk_, indent, *bytes, dst,
+                          dst_info.type_ref().alignment(),
+                          [&]() -> std::string {
+                              return tc.add_string_constant(string_tk_);
+                          });
 
             dst.increment_offset(address_offset(size_bytes));
         }

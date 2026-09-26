@@ -85,7 +85,7 @@ lui sp, 2048
 # [1:1]       name :  offset :    size :  array? : array size
 # [1:1]        len :       0 :       1 :      no :           
 # [1:1]       data :       1 :     127 :     yes :        127
-# 
+#
 # [6:1] dat hello[] i8 = "hello world from baz\n"
 # [6:7] hello: i8[21] (21 B @ [s0])
 # [7:1] dat prompt1[] i8 = "enter name:\n"
@@ -102,7 +102,7 @@ lui sp, 2048
 # [12:7] erase: i8[3] (3 B @ [s0 + 61])
 # [13:1] dat colon[] i8 = ": "
 # [13:7] colon: i8[2] (2 B @ [s0 + 64])
-# 
+#
 main:
     # [83:5] var counter
     # [83:9] counter: i32 (4 B @ [s0 + 80])
@@ -578,7 +578,7 @@ main:
     loop.86.5.end:
     li a0, 0
     j .Lbaz_exit
-# 
+#
 # [41:15] noinline print_num(num)
 func.print_num:
 # allocate named register s1
@@ -883,7 +883,7 @@ func.print_num:
     ret
 # free named register s1
 .equ func.print_num.size, 40
-# 
+#
 baz_bounds_panic:
     mv s2, a0
     li a0, 2
