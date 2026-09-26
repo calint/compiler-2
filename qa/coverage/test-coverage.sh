@@ -8,6 +8,7 @@
 #                ld: 2.47
 #           llvm-mc: 22.1.8
 #            ld.lld: 22.1.8
+#      llvm-objcopy: 22.1.8
 #      qemu-riscv32: 11.1.1
 # qemu-system-riscv32: 11.1.1
 #           python3: 3.14.7
@@ -74,6 +75,7 @@ clean)
     echo $SEP
     rm -f -- *.profraw baz.profdata gen gen.o gen.s diff.baz out err
     rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/gen-rv32i.bin tests/diff.baz tests/out tests/err
+    rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin
     rm -rf -- report/
     echo removed reports
     echo $SEP
@@ -125,6 +127,17 @@ export ASAN_OPTIONS="fast_unwind_on_fatal=0:print_stacktrace=1:detect_stack_use_
 export ASAN_SYMBOLIZER_PATH="$(which llvm-symbolizer)"
 export ASAN_SYMBOLIZE=1
 
+# the built-in assembler must produce the bytes llvm assembles from 'gen.s'
+verify-rv32i-image() {
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen-image.o
+    ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start -o gen-image.elf gen-image.o
+    llvm-objcopy -O binary gen-image.elf gen-image.bin
+    if ! cmp gen-image.bin gen-rv32i.bin; then
+        echo "FAILED. image differs from assembled 'gen.s'. see: llvm-objdump -d gen-image.elf"
+        exit 1
+    fi
+}
+
 # Common: compile and assemble
 assemble_and_link() {
     case "$MACHINE" in
@@ -135,9 +148,10 @@ assemble_and_link() {
     rv32i)
         llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
         ld.lld -m elf32lriscv -e _start -o gen gen.o
+        verify-rv32i-image
         ;;
     # the compiler writes the image 'gen-rv32i.bin'
-    rv32i-qemu | rv32i-fpga) ;;
+    rv32i-qemu | rv32i-fpga) verify-rv32i-image ;;
     esac
 }
 
@@ -372,5 +386,6 @@ source "$SCRIPT_DIR/cases.sh"
 
 # Cleanup
 rm -f gen gen.o gen.s gen-nopt.s gen-rv32i.bin diff.baz out err
+rm -f gen-image.o gen-image.elf gen-image.bin
 
 echo $SEP

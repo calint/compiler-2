@@ -1658,6 +1658,11 @@ class assembler_rv32i final : public assembler {
         for (const section which :
              {section::text, section::rodata, section::data}) {
 
+            // an empty section adds no alignment gap, like 'objcopy -O binary'
+            if (image.sizes.at(section_index(which)) == 0) {
+                continue;
+            }
+
             const size_t base{image.bases.at(section_index(which))};
             for (size_t index{}; index < lines().size(); ++index) {
                 const line_position& position{image.positions[index]};
