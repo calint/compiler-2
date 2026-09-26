@@ -2,7 +2,7 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] since every element has a whitespace before and after stop reading whitspace
-    after once newline is found
+    after once newline is found for nicer tokens
     => what happens if a block is:
         {
             a = 2
