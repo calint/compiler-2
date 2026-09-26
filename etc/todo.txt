@@ -1,6 +1,59 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] local code generation found in the rv32i assessment, examples in
+    etc/codegen-inefficiencies.baz
+    [ ] unary ops and narrowing on a memory destination copy first and then
+        load, modify and store: 'var a = -x' is 'lw; sw; lw; sub; sw'
+        instead of 'lw; sub; sw', 'b = i8(x - 1)' is 'lw; sb; lb; addi; sb'.
+        same for record literal fields '{-x, -y}' and an inline result with
+        unary 'arr[ix] = ~inv(arr[ix - 1])' (destination address computed 3
+        times)
+        => 'stmt_identifier::compile' and the narrow forwarding apply
+           'get_unary_ops().compile' on the destination; on a load/store
+           machine compute in a scratch register and store once like
+           'a = a - 1' already does through 'emit_most_efficient'
+    [ ] a runtime bool argument to an inline function is materialized:
+        'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
+        (or 'bnez' against 0)
+        => the parameter could branch on the condition instead of holding
+           the value
+    [ ] a bool loaded from memory is normalized again: 'lbu; sltu t0, zero,
+        t0', a stored bool is already 0 or 1
+    [ ] redundant copies and registers:
+        [ ] 'x * 10' begins with 'addi t1, t0, 0' before the shift and add
+            sequence
+        [ ] the scaled index goes into a new register instead of reusing the
+            scratch register holding the index ('slli t1, t0, 2' instead of
+            'slli t0, t0, 2')
+        [ ] the divide call loads the dividend into a scratch register then
+            copies it: 'lw t2; addi a0, t2, 0' instead of 'lw a0'
+        [ ] 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per field
+            instead of computing the address once
+    [ ] code after an unconditional 'exit' is generated, e.g. after a
+        constant false 'assert' and the implicit 'exit(0)' after an explicit
+        one at the end of 'main'
+    [ ] zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
+        shorter than the 6 instruction loop; choose by instruction count
+[ ] constant folding in 'expr_arith': constant elements are computed at run
+    time, e.g. 'arr3[0] == 3 + 0 + 2' is 'li t2, 3; addi t2, t2, 2' then
+    'xor' instead of 'xori t0, t0, 5', and 'array_length(arr2) == 2' is
+    'li t1, 2; xori t0, t1, 2; sltiu' although both sides are known
+    => fold only runs of constants that do not change evaluation order or
+       precedence, e.g. 'x + 3 + 2' but not 'x * 3 + 2' into 'x * 5'
+    => the folded value must stay free of ub (same checks as the existing
+       constant evaluation)
+[ ] constant array indexes are computed at run time on both targets:
+    'arr[1]' is 'li t1, 1; slli t0, t1, 2; add t0, t0, s0; lw t0, 212(t0)'
+    instead of 'lw t0, 216(s0)'; 'o3[1].pos.y' takes 7 instructions (x12
+    by shift and subtract), 'worlds[1].locations[1] = 0xffee' 9 instead of 2
+    => 'expr_any::constant_value' already detects the index (see
+       'narrow_to_element'), fold 'index * element size' into the
+       displacement instead of 'compile_checked_index' and check the bounds
+       at compile time
+    => a constant part of a runtime index, e.g. 'arr[ix + 1]', and the field
+       offset after an indexed base ('addi t0, t0, 384') can also go into the
+       final displacement
 [ ] specify device memory size and error if code size + dat size + max used
     vars + stack size overflows it
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
@@ -183,60 +236,6 @@
 [ ] remove panic_exception
 [ ] consider that what registers might be allocated in a noinline functions can
     be listed thus the call can push/pop just the registers the function uses
-[ ] constant folding in 'expr_arith': constant elements are computed at run
-    time, e.g. 'arr3[0] == 3 + 0 + 2' is 'li t2, 3; addi t2, t2, 2' then
-    'xor' instead of 'xori t0, t0, 5', and 'array_length(arr2) == 2' is
-    'li t1, 2; xori t0, t1, 2; sltiu' although both sides are known
-    => fold only runs of constants that do not change evaluation order or
-       precedence, e.g. 'x + 3 + 2' but not 'x * 3 + 2' into 'x * 5'
-    => the folded value must stay free of ub (same checks as the existing
-       constant evaluation)
-[ ] constant array indexes are computed at run time on both targets:
-    'arr[1]' is 'li t1, 1; slli t0, t1, 2; add t0, t0, s0; lw t0, 212(t0)'
-    instead of 'lw t0, 216(s0)'; 'o3[1].pos.y' takes 7 instructions (x12
-    by shift and subtract), 'worlds[1].locations[1] = 0xffee' 9 instead of 2
-    => 'expr_any::constant_value' already detects the index (see
-       'narrow_to_element'), fold 'index * element size' into the
-       displacement instead of 'compile_checked_index' and check the bounds
-       at compile time
-    => a constant part of a runtime index, e.g. 'arr[ix + 1]', and the field
-       offset after an indexed base ('addi t0, t0, 384') can also go into the
-       final displacement
-[ ] local code generation found in the rv32i assessment, examples in
-    etc/codegen-inefficiencies.baz
-    [ ] unary ops and narrowing on a memory destination copy first and then
-        load, modify and store: 'var a = -x' is 'lw; sw; lw; sub; sw'
-        instead of 'lw; sub; sw', 'b = i8(x - 1)' is 'lw; sb; lb; addi; sb'.
-        same for record literal fields '{-x, -y}' and an inline result with
-        unary 'arr[ix] = ~inv(arr[ix - 1])' (destination address computed 3
-        times)
-        => 'stmt_identifier::compile' and the narrow forwarding apply
-           'get_unary_ops().compile' on the destination; on a load/store
-           machine compute in a scratch register and store once like
-           'a = a - 1' already does through 'emit_most_efficient'
-    [ ] a runtime bool argument to an inline function is materialized:
-        'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
-        (or 'bnez' against 0)
-        => the parameter could branch on the condition instead of holding
-           the value
-    [ ] a bool loaded from memory is normalized again: 'lbu; sltu t0, zero,
-        t0', a stored bool is already 0 or 1
-    [ ] redundant copies and registers:
-        [ ] 'x * 10' begins with 'addi t1, t0, 0' before the shift and add
-            sequence
-        [ ] the scaled index goes into a new register instead of reusing the
-            scratch register holding the index ('slli t1, t0, 2' instead of
-            'slli t0, t0, 2')
-        [ ] the divide call loads the dividend into a scratch register then
-            copies it: 'lw t2; addi a0, t2, 0' instead of 'lw a0'
-        [ ] 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per field
-            instead of computing the address once
-    [ ] code after an unconditional 'exit' is generated, e.g. after a
-        constant false 'assert' and the implicit 'exit(0)' after an explicit
-        one at the end of 'main'
-    [ ] zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
-        shorter than the 6 instruction loop; choose by instruction count
-[ ] read/write/exit builtin so that mov and register access can be removed
 [ ] consider allowing function definitions in functions
 [ ] consider a var type that can be viewed from enclosing functions
 [ ] consider padding to natural bounds: dat, var and type fields
@@ -359,6 +358,7 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] read/write/exit builtin so that mov and register access can be removed
 [x] since every element has a whitespace before and after stop reading whitspace
     after once newline is found for nicer tokens
     => what happens if a block is:

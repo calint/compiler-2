@@ -82,7 +82,9 @@ compiler writes the binary image itself.
   * <https://github.com/calint/tang-nano-20k--riscv--cache-sdram>
   * to compile and run in an emulator of fpga soft core rv32i:
     `./run.sh prog-uart.baz --target=rv32i-fpga`
-  * to run on hardware use `scripts/fpga-connect-serial.sh`
+  * to run on hardware flash the `gen-rv32i.bin` image using
+    `scripts/fpga-flash-9k.sh` then connect using
+   `scripts/fpga-connect-serial.sh`
 
 ## Source
 
