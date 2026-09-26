@@ -2320,6 +2320,33 @@ class assembler_rv32i final : public assembler {
                   std::format("{}{}:", indentation(indent), name));
     }
 
+    auto comment(const size_t indent, const std::string_view text) -> void {
+        if (text.empty()) {
+            add_text(indentation(indent) + "#");
+
+            return;
+        }
+
+        add_text(std::format("{}# {}", indentation(indent), text));
+    }
+
+    // 'line' and 'column' locate the source the comment is about
+    auto comment(const size_t indent, const size_t line, const size_t column,
+                 const std::string_view text) -> void {
+
+        add_text(std::format("{}# [{}:{}] {}", indentation(indent), line,
+                             column, text));
+    }
+
+    // the sizes and the binary image assume both options
+    auto option_norvc() -> void { add_text(".option norvc"); }
+
+    auto option_norelax() -> void { add_text(".option norelax"); }
+
+    auto globl(const std::string_view name) -> void {
+        add_text(std::format(".globl {}", name));
+    }
+
     // sizes only count in code, so code must be in the text section
     auto switch_section(const section which) -> void {
         set_code_section(which == section::text);

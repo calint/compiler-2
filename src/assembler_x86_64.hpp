@@ -209,21 +209,23 @@ class assembler_x86_64 final : public assembler {
                   std::format("{}{}:", indentation(indent), name));
     }
 
-    // 'text' follows the comment marker and indentation as it is
     auto comment(const size_t indent, const std::string_view text) -> void {
-        std::string line{";"};
-        if (indent != 0) {
-            line += "   ";
-        }
-        for (size_t i{1}; i < indent; ++i) {
-            line += "    ";
-        }
-        line += text;
+        if (text.empty()) {
+            add_text(comment_start(indent));
 
-        add_text(std::move(line));
+            return;
+        }
+
+        add_text(std::format("{} {}", comment_start(indent), text));
     }
 
-    auto empty_line() -> void { add_text(""); }
+    // 'line' and 'column' locate the source the comment is about
+    auto comment(const size_t indent, const size_t line, const size_t column,
+                 const std::string_view text) -> void {
+
+        add_text(std::format("{}[{}:{}] {}", comment_start(indent), line,
+                             column, text));
+    }
 
     auto default_rel() -> void { add_text("default rel"); }
 
@@ -511,6 +513,21 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
         std::string text;
         text.resize(indent * 4, ' ');
+
+        return text;
+    }
+
+    // the marker replaces the first spaces of the indentation
+    [[nodiscard]] static auto comment_start(const size_t indent)
+        -> std::string {
+
+        std::string text{";"};
+        if (indent != 0) {
+            text += "   ";
+        }
+        for (size_t i{1}; i < indent; ++i) {
+            text += "    ";
+        }
 
         return text;
     }

@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
 [ ] reorder locals by alignment, largest first, to reduce padding

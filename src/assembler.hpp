@@ -89,11 +89,6 @@ class assembler {
     auto operator=(assembler&&) -> assembler& = delete;
     virtual ~assembler() = default;
 
-    // code sizes and entries only count in code
-    auto set_code_section(const bool code_section) -> void {
-        code_section_ = code_section;
-    }
-
     // lines are written to 'os' as they are added, or buffered when null
     auto set_direct_output(std::ostream* const os) -> void {
         direct_output_ = os;
@@ -105,6 +100,86 @@ class assembler {
 
     [[nodiscard]] auto is_buffering() const -> bool {
         return direct_output_ == nullptr;
+    }
+
+    // a blank line that separates parts of the output
+    auto add_separator_newline() -> void { add_text(""); }
+
+    // lines added by 'emit' are kept apart so a version can be chosen
+    [[nodiscard]] auto capture(const std::function_ref<void()> emit)
+        -> std::vector<line> {
+
+        captures_.emplace_back();
+        emit();
+        std::vector<line> captured{std::move(captures_.back())};
+        captures_.pop_back();
+
+        return captured;
+    }
+
+    auto append(std::vector<line> lines) -> void {
+        std::ranges::move(lines, std::back_inserter(current_lines()));
+    }
+
+    // removes jumps that change nothing and turns a branch over a jump into
+    // the inverse branch, repeating because each change can enable another
+    auto optimize_jumps() -> void {
+        assert(captures_.empty());
+
+        const std::unordered_map<std::string_view, size_t> labels{
+            label_lines()};
+
+        bool changed{true};
+        while (changed) {
+            changed = false;
+            for (size_t index{}; index < lines_.size(); ++index) {
+                changed = optimize_jump(index, labels) or changed;
+            }
+        }
+    }
+
+    // adds the optimization counts as comments aligned with the usage
+    // statistics that follow
+    auto add_optimization_counts() -> void {
+        const std::string_view prefix{comment_prefix()};
+
+        add_text("");
+
+        add_text(std::format("{} {:>28}: {}", prefix,
+                             "removed jumps to next code",
+                             optimizations_.jumps_to_next));
+
+        add_text(std::format("{} {:>28}: {}", prefix,
+                             "removed unreachable jumps",
+                             optimizations_.unreachable_jumps));
+
+        add_text(std::format("{} {:>28}: {}", prefix,
+                             "removed same target branches",
+                             optimizations_.same_outcome_branches));
+
+        add_text(std::format("{} {:>28}: {}", prefix,
+                             "inverted branches over jumps",
+                             optimizations_.inverted_branches));
+
+        optimizations_ = {};
+    }
+
+    // writes the lines as they are, far jumps are left to the caller
+    auto write(std::ostream& os) -> void {
+        assert(captures_.empty());
+
+        for (const line& l : lines_) {
+            if (not l.removed) {
+                std::println(os, "{}", l.text);
+            }
+        }
+        lines_.clear();
+    }
+
+  protected:
+    // code sizes and entries only count in code
+    auto set_code_section(const bool code_section) -> void {
+        code_section_ = code_section;
     }
 
     auto add_text(std::string text) -> void {
@@ -186,78 +261,6 @@ class assembler {
         });
     }
 
-    // lines added by 'emit' are kept apart so a version can be chosen
-    [[nodiscard]] auto capture(const std::function_ref<void()> emit)
-        -> std::vector<line> {
-
-        captures_.emplace_back();
-        emit();
-        std::vector<line> captured{std::move(captures_.back())};
-        captures_.pop_back();
-
-        return captured;
-    }
-
-    auto append(std::vector<line> lines) -> void {
-        std::ranges::move(lines, std::back_inserter(current_lines()));
-    }
-
-    // removes jumps that change nothing and turns a branch over a jump into
-    // the inverse branch, repeating because each change can enable another
-    auto optimize_jumps() -> void {
-        assert(captures_.empty());
-
-        const std::unordered_map<std::string_view, size_t> labels{
-            label_lines()};
-
-        bool changed{true};
-        while (changed) {
-            changed = false;
-            for (size_t index{}; index < lines_.size(); ++index) {
-                changed = optimize_jump(index, labels) or changed;
-            }
-        }
-    }
-
-    // adds the optimization counts as comments aligned with the usage
-    // statistics that follow
-    auto add_optimization_counts() -> void {
-        const std::string_view prefix{comment_prefix()};
-
-        add_text("");
-
-        add_text(std::format("{} {:>28}: {}", prefix,
-                             "removed jumps to next code",
-                             optimizations_.jumps_to_next));
-
-        add_text(std::format("{} {:>28}: {}", prefix,
-                             "removed unreachable jumps",
-                             optimizations_.unreachable_jumps));
-
-        add_text(std::format("{} {:>28}: {}", prefix,
-                             "removed same target branches",
-                             optimizations_.same_outcome_branches));
-
-        add_text(std::format("{} {:>28}: {}", prefix,
-                             "inverted branches over jumps",
-                             optimizations_.inverted_branches));
-
-        optimizations_ = {};
-    }
-
-    // writes the lines as they are, far jumps are left to the caller
-    auto write(std::ostream& os) -> void {
-        assert(captures_.empty());
-
-        for (const line& l : lines_) {
-            if (not l.removed) {
-                std::println(os, "{}", l.text);
-            }
-        }
-        lines_.clear();
-    }
-
-  protected:
     // a line whose size and structured form the target already knows
     auto add_record_line(std::string text, const size_t code_size,
                          const std::optional<size_t> record) -> void {

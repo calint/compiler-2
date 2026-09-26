@@ -76,10 +76,10 @@ Experimental compiler for a minimalistic, specialized language targeting x86_64
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           4447           1382          15492
+C/C++ Header                    55           4460           1385          15510
 C++                              1             58             10            273
 -------------------------------------------------------------------------------
-SUM:                            56           4505           1392          15765
+SUM:                            56           4518           1395          15783
 -------------------------------------------------------------------------------
 ```
 
@@ -1898,21 +1898,21 @@ lea rbp, [dat]
 ;[7:1]       name :  offset :    size :  array? : array size
 ;[7:1]          x :       0 :       8 :      no :           
 ;[7:1]          y :       8 :       8 :      no :           
-; 
+;
 ;[9:1] object : 24 B    fields:
 ;[9:1]       name :  offset :    size :  array? : array size
 ;[9:1]        pos :       0 :      16 :      no :           
 ;[9:1]      color :      16 :       4 :      no :           
-; 
+;
 ;[11:1] world : 64 B    fields:
 ;[11:1]       name :  offset :    size :  array? : array size
 ;[11:1]  locations :       0 :      64 :     yes :          8
-; 
+;
 ;[13:1] str : 128 B    fields:
 ;[13:1]       name :  offset :    size :  array? : array size
 ;[13:1]        len :       0 :       1 :      no :           
 ;[13:1]       data :       1 :     127 :     yes :        127
-; 
+;
 ;[20:1] dat hello[] i8 = "hello world from baz\n"
 ;[20:7] hello: i8[21] (21 B @ [rbp])
 ;[21:1] dat prompt1[] i8 = "enter name:\n"
@@ -1934,7 +1934,7 @@ lea rbp, [dat]
 ;[95:7] const yes = 1
 ;[96:7] const no = 0
 ;[97:7] const maybe = -1
-; 
+;
 main:
 ;   [144:5] var arr[4] i32
 ;   [144:9] arr: i32[4] (16 B @ [rbp + 224])
@@ -4512,7 +4512,7 @@ main:
     mov rax, 60
     syscall
 
-; 
+;
 ;[106:15] noinline print_num(num)
 func.print_num:
 ;   [106:25] num: i64 (8 B @ [rbx])
@@ -4768,17 +4768,17 @@ func.print_num:
 ;   [140:5] free named register rdi
     ret
 func.print_num.size equ 64
-; 
+;
 baz_bounds_panic:
-;   print message to stderr
+;    print message to stderr
     mov rax, 1
     mov rdi, 2
     lea rsi, [msg_panic]
     mov rdx, msg_panic_len
     syscall
-;   line number is in `rbp`
+;    line number is in `rbp`
     mov rax, rbp
-;   convert to string
+;    convert to string
     mov rdi, strict qword num_buffer + 19
     mov byte [rdi], 10
     dec rdi
@@ -4792,14 +4792,14 @@ baz_bounds_panic:
     test rax, rax
     jnz .convert_loop
     inc rdi
-;   print line number to stderr
+;    print line number to stderr
     mov rax, 1
     mov rsi, rdi
     mov rdx, strict qword num_buffer + 20
     sub rdx, rdi
     mov rdi, 2
     syscall
-;   exit with error code 255
+;    exit with error code 255
     mov rax, 60
     mov rdi, 255
     syscall
