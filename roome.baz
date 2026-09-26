@@ -3,12 +3,13 @@ type str {
     data[127] i8
 }
 
-dat   hello[] i8 = "hello world from baz\r"
-dat prompt1[] i8 = "enter name:\r"
-dat prompt2[] i8 = "that is not a name.\r"
+dat   hello[] i8 = "hello world from baz\n"
+dat prompt1[] i8 = "enter name:\n"
+dat prompt2[] i8 = "that is not a name.\n"
 dat prompt3[] i8 = "hello "
 dat     dot[] i8 = "."
-dat      nl[] i8 = "\r"
+dat      nl[] i8 = "\n"
+dat   erase[] i8 = "\b \b"
 dat   colon[] i8 = ": "
 
 func str_out(s str) {
@@ -21,6 +22,15 @@ func str_in(s str) {
     loop {
         if nbytes == array_length(s.data) break
         if read(0, s.data, 1, nbytes) == 0 break
+        # the terminal sends delete for backspace and only moves the cursor on
+        # an echoed backspace, so the erase is done here
+        if s.data[nbytes] == 127 {
+            if nbytes > 0 {
+                nbytes = nbytes - 1
+                write(1, erase)
+            }
+            continue
+        }
         write(1, s.data, 1, nbytes)
         nbytes = nbytes + 1
         if s.data[nbytes - 1] == 10 break

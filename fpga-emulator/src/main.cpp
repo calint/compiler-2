@@ -108,13 +108,7 @@ static auto bus(uint32_t const address, rv32i::bus_op_width const op_width,
             break;
         }
         case osqa::uart_out: {
-            int const ch = data & 0xff;
-            if (ch == 0x7f) {
-                // convert from serial to terminal
-                printf("\b \b");
-            } else {
-                putchar(ch);
-            }
+            putchar(data & 0xff);
             fflush(stdout);
             break;
         }
