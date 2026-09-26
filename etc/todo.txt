@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] update emulator in tang9k and tang20k projects
+[x] update emulator in tang9k and tang20k projects
 [x] fpga emulator: add ebreak that exits the process with the code and change
     the machine_rv32i_fpga
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
