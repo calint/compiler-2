@@ -1,21 +1,21 @@
-57,58d56
+126,127d125
 <         j loop.10.5.end
 <     j loop.10.5
-80d77
+149d146
 <     beq t0, zero, bool.15.19.end
-82d78
+151d147
 <     j bool.15.19.end
-92d87
+161d156
 <     j if.16.8.code
-121c116
+190c185
 <     bne t0, t1, cmp.19.27
 ---
 >     beq t0, t1, if.19.8.code
-124d118
+193d187
 <     j if.19.8.code
-145d138
+214d207
 <     j if.19.8.code
-227,230c220,223
+296,299c289,292
 < #   removed jumps to next code: 0
 < #    removed unreachable jumps: 0
 < # removed same target branches: 0

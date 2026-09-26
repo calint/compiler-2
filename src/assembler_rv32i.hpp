@@ -280,8 +280,18 @@ class assembler_rv32i final : public assembler {
         int64_t value{};
     };
 
+    struct macro {
+        std::string name;
+        std::vector<instruction> body;
+    };
+
+    // index in 'macros_' of the expanded macro
+    struct macro_use {
+        size_t index{};
+    };
+
     using record = std::variant<instruction, jump_registers, data_values,
-                                alignment, section_start, constant>;
+                                alignment, section_start, constant, macro_use>;
 
     static constexpr size_t section_count{4};
 
@@ -307,6 +317,10 @@ class assembler_rv32i final : public assembler {
     };
 
     std::vector<record> records_;
+    // macros outlive 'clear' because they are defined once at the start
+    std::vector<macro> macros_;
+    // receives the instructions while a macro is being defined
+    std::vector<instruction>* macro_body_{};
 
     static constexpr size_t one_instruction_bytes{4};
     static constexpr size_t two_instructions_bytes{8};
@@ -559,7 +573,8 @@ class assembler_rv32i final : public assembler {
         const std::string_view name{code.substr(0, code.find_first_of(" \t"))};
 
         return name == ".option" or name == ".globl" or name == ".equ" or
-               name == ".text" or name == ".data" or name == ".section";
+               name == ".text" or name == ".data" or name == ".section" or
+               name == ".macro" or name == ".endm";
     }
 
     // an 'li' constant that fits 'addi' or has no low part is one instruction
@@ -938,6 +953,15 @@ class assembler_rv32i final : public assembler {
         }
 
         std::string text{indentation(indent) + instruction_text(ins, names)};
+
+        // a macro body emits code only where the macro is used
+        if (macro_body_ != nullptr) {
+            add_record_line(std::move(text), 0, std::nullopt);
+            macro_body_->push_back(std::move(ins));
+
+            return;
+        }
+
         const size_t size_bytes{encoded_size_bytes(ins)};
         add_record(std::move(text), size_bytes, std::move(ins));
     }
@@ -1550,6 +1574,50 @@ class assembler_rv32i final : public assembler {
         }
     }
 
+    [[nodiscard]] static auto
+    encode_macro(const macro& expanded, const size_t line_index,
+                 const int64_t address, const symbol_table& symbols)
+        -> std::vector<uint32_t> {
+
+        std::vector<uint32_t> words;
+        int64_t ins_address{address};
+        for (const instruction& ins : expanded.body) {
+            std::ranges::copy(
+                encode_instruction(ins, line_index, ins_address, symbols),
+                std::back_inserter(words));
+
+            ins_address += static_cast<int64_t>(encoded_size_bytes(ins));
+        }
+
+        return words;
+    }
+
+    [[nodiscard]] auto encode_line(const line& l, const size_t line_index,
+                                   const int64_t address,
+                                   const symbol_table& symbols) const
+        -> std::vector<uint32_t> {
+
+        if (l.jump) {
+            return encode_jump(l, line_index, address, symbols);
+        }
+
+        const record* const structured{record_of(l)};
+
+        const instruction* const ins{std::get_if<instruction>(structured)};
+        if (ins != nullptr) {
+            return encode_instruction(*ins, line_index, address, symbols);
+        }
+
+        const macro_use* const expansion{std::get_if<macro_use>(structured)};
+        if (expansion == nullptr) {
+            throw panic_exception{
+                std::format("no binary form for '{}'", trim(l.text))};
+        }
+
+        return encode_macro(macros_.at(expansion->index), line_index, address,
+                            symbols);
+    }
+
     auto write_code(std::ostream& os, const line& l, const size_t line_index,
                     const int64_t address, const symbol_table& symbols) const
         -> void {
@@ -1558,15 +1626,8 @@ class assembler_rv32i final : public assembler {
             return;
         }
 
-        const auto* const ins{std::get_if<instruction>(record_of(l))};
-        if (not l.jump and ins == nullptr) {
-            throw panic_exception{
-                std::format("no binary form for '{}'", trim(l.text))};
-        }
-
         const std::vector<uint32_t> words{
-            l.jump ? encode_jump(l, line_index, address, symbols)
-                   : encode_instruction(*ins, line_index, address, symbols)};
+            encode_line(l, line_index, address, symbols)};
 
         assert(words.size() * one_instruction_bytes == l.code_size);
 
@@ -2271,6 +2332,57 @@ class assembler_rv32i final : public assembler {
                        .name{std::string{name}},
                        .value{value},
                    });
+    }
+
+    // writes the instructions 'emit_body' adds as a '.macro' that 'use_macro'
+    // expands, a redefinition replaces the body
+    auto define_macro(const std::string_view name,
+                      const std::function_ref<void()> emit_body) -> void {
+
+        assert(macro_body_ == nullptr);
+
+        add_text(std::format(".macro {}", name));
+
+        std::vector<instruction> body;
+        macro_body_ = &body;
+        emit_body();
+        macro_body_ = nullptr;
+
+        add_text(".endm");
+
+        for (macro& m : macros_) {
+            if (m.name == name) {
+                m.body = std::move(body);
+
+                return;
+            }
+        }
+
+        macros_.push_back({
+            .name{std::string{name}},
+            .body{std::move(body)},
+        });
+    }
+
+    auto use_macro(const size_t indent, const std::string_view name) -> void {
+        for (size_t index{}; index < macros_.size(); ++index) {
+            const macro& m{macros_[index]};
+            if (m.name != name) {
+                continue;
+            }
+
+            size_t size_bytes{};
+            for (const instruction& ins : m.body) {
+                size_bytes += encoded_size_bytes(ins);
+            }
+
+            add_record(indentation(indent) + m.name, size_bytes,
+                       macro_use{.index{index}});
+
+            return;
+        }
+
+        throw panic_exception{std::format("undefined macro '{}'", name)};
     }
 
     auto align(const size_t size_bytes) -> void {

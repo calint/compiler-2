@@ -1184,6 +1184,28 @@ class machine_rv32i : public machine {
         }
     }
 
+    // one definition keeps each non-inline call's register saving to a line
+    auto define_register_macros() -> void {
+        assembler_.define_macro("PUSH_REGS", [this] -> void {
+            assembler_.addi(1, "sp", "sp", -register_save_bytes_);
+            for (const size_t index : scratch_registers_) {
+                assembler_.sw(1, register_names_.at(index), (index - 1) * 4,
+                              "sp");
+            }
+        });
+
+        write_line("");
+
+        assembler_.define_macro("POP_REGS", [this] -> void {
+            for (const size_t index : scratch_registers_) {
+                assembler_.lw(1, register_names_.at(index), (index - 1) * 4,
+                              "sp");
+            }
+
+            assembler_.addi(1, "sp", "sp", register_save_bytes_);
+        });
+    }
+
   protected:
     [[nodiscard]] auto assembler() const -> assembler_rv32i& {
         return assembler_;
@@ -2666,24 +2688,14 @@ class machine_rv32i : public machine {
         assert(register_index(frame_address.base_register()) !=
                register_index("sp"));
 
-        assembler_.addi(indent, "sp", "sp", -register_save_bytes_);
-
-        for (const size_t index : scratch_registers_) {
-            assembler_.sw(indent, register_names_.at(index), (index - 1) * 4,
-                          "sp");
-        }
+        assembler_.use_macro(indent, "PUSH_REGS");
 
         address_of(token{}, indent,
                    make_register_operand(frame_base_register(), default_type()),
                    frame_address);
 
         assembler_.call(indent, label);
-        for (const size_t index : scratch_registers_) {
-            assembler_.lw(indent, register_names_.at(index), (index - 1) * 4,
-                          "sp");
-        }
-
-        assembler_.addi(indent, "sp", "sp", register_save_bytes_);
+        assembler_.use_macro(indent, "POP_REGS");
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -2764,6 +2776,9 @@ class machine_rv32i : public machine {
 
         asm_line(0, ".option norvc");
         asm_line(0, ".option norelax");
+        write_line("");
+        define_register_macros();
+        write_line("");
         assembler_.switch_section(section::text);
         asm_line(0, ".globl _start");
         label(0, "_start");
