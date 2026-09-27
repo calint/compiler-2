@@ -39,11 +39,6 @@ generated assembly, easiest first
     => 'expr_bool_op::resolve_cmp', reuse 'mirrored_operation'; the
        "wider, swap" check then applies to the swapped sides
 [ ] low priority: constant folding leftovers in 'expr_arith'
-    => a leading lone negation '-x + 23' could be '23 - x', one instruction
-       less on x86 (rv32i same count, one register more), try both with
-       'emit_most_efficient'
-    => a leading constant 0 ('2 - b - 2') emits 'li t0, 0' before 'sub' on
-       rv32i where 'sub t0, zero, t1' would do
     => '*' mixed with '/': constants within a run of '*' and consecutive
        constant divisors ('b / 2 / 3' -> 'b / 6' when the product fits)
 [ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per

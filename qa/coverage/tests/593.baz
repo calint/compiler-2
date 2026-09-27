@@ -29,6 +29,14 @@ func main() {
     assert(5, d == -2)
     d = 2 - b - 2 # folds
     assert(6, d == -5)
+    d = 2 - b + one - 2 # folds
+    assert(38, d == -4)
+
+    # a negated first run-time element is subtracted from the constant
+    d = -b + 23 # folds
+    assert(36, d == 18)
+    d = -b + 2 - 2 # folds
+    assert(37, d == -5)
 
     # the destination read by a later element
     d = 3 + d # folds

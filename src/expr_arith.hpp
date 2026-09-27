@@ -680,7 +680,29 @@ class expr_arith final : public expression {
     }
 
     // a subtracted element cannot lead without a negation so the constant
-    // leads instead: '1 - b + 2' is '3 - b'
+    // leads instead: '1 - b + 2' is '3 - b', a negated element is then
+    // subtracted: '-b + 23' is '23 - b'
+    [[nodiscard]] static auto
+    leads_with_constant(const toc& tc, const merged_constants& merged) -> bool {
+
+        const runtime_element& first{merged.runtime_elements.front()};
+
+        // a zero constant adds nothing so negating in place is shorter
+        if (merged.value == 0) {
+            return false;
+        }
+
+        if (first.op == '-') {
+            return true;
+        }
+
+        if (first.op != '+') {
+            return false;
+        }
+
+        return is_negated_operand(tc, *first.element);
+    }
+
     auto compile_merged(toc& tc, const size_t indent,
                         const ident_info& dst_info,
                         const merged_constants& merged) const -> void {
@@ -688,7 +710,7 @@ class expr_arith final : public expression {
         const std::span<const runtime_element> elements{
             merged.runtime_elements};
 
-        if (elements.front().op == '-') {
+        if (leads_with_constant(tc, merged)) {
             compile_constant(tc, indent, dst_info, merged.value,
                              merged.folded_source);
 
@@ -701,14 +723,19 @@ class expr_arith final : public expression {
 
         compile_first_element(tc, indent, dst_info, *elements.front().element);
 
+        machine& x{tc.machine()};
+
+        // only a zero constant leaves a subtracted element first: '2 - b - 2'
+        if (elements.front().op == '-') {
+            x.unary(indent, '-', dst_info.operand);
+        }
+
         for (const runtime_element& e : elements.subspan(1)) {
             asm_op(tc, indent, e.op, dst_info, *e.element);
         }
 
         // e.g. 'b + 1 - 1'
         if (merged.value == identity_of(merged.op)) {
-            machine& x{tc.machine()};
-
             x.comment(tok(), indent,
                       "src: folded constant '{}' is {} and changes nothing",
                       merged.folded_source, merged.value);
