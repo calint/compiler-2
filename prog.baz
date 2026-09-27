@@ -12,7 +12,7 @@ type world { locations[8] }
 
 type str {
     len i8,
-    data[127] i8
+    data[127] i8, # trailing comma allowed
 }
 
 # initial data is initialized before variables

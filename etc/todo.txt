@@ -3,13 +3,8 @@
 --------------------------------------------------------------------------------
 easy
 --------------------------------------------------------------------------------
-[ ] --checks=noub enables all the noub checks: today 'upper', 'lower', 'frame'
-    and 'alias', later the remaining '--checks=noub:' items
-[ ] allow trailing comma at type definition. e.g.,
-    type object {
-        pos : point,
-        color : i32,
-    }
+[ ] make sure there are comments in the assembler sections that implement nuob
+    it should be clear which assembler code belongs to which nuob check
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] rv32i: zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
     shorter than the 6 instruction loop; choose by instruction count
@@ -331,6 +326,19 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] allow trailing comma at type definition. e.g.,
+    type object {
+        pos : point,
+        color : i32,
+    }
+    => 'stmt_def_type' accepts '}' after a ',', source reproduction keeps the
+       comma; tree-sitter 'member_field_list' allows it too; tests 588, 589
+[x] --checks=noub enables all the noub checks: today 'upper', 'lower', 'frame'
+    and 'alias', later the remaining '--checks=noub:' items
+    => 'main.cpp' 'parse_checks' sets the four, 'line' stays separate since it
+       only changes the report; combinable, e.g. '--checks=noub,line';
+       new '--checks=noub:' items are added to that branch; test-cli.sh
+       compares the output with the expanded list
 [x] a whole array assigned to a built-in scalar reads the first element:
     'var x i32 = arr' and '{ arr }' for an 'i32' field are accepted, records
     reject it with "source must not be an array"

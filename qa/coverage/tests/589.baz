@@ -1,0 +1,3 @@
+# a trailing comma is followed by '}', not another comma
+
+type point { x i32, y i32,, }

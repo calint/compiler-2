@@ -132,6 +132,8 @@ checks:
   frame  runtime non-inlined function frame capacity
   alias  compile time rejection of calls where a result or argument may
          share storage
+  noub   all checks against undefined behavior: upper, lower, frame and
+         alias
 
 examples:
   {0} prog.baz > prog.s
@@ -338,10 +340,17 @@ namespace {
             parsed.frame = true;
         } else if (option == "alias") {
             parsed.alias = true;
+        } else if (option == "noub") {
+            // 'line' only changes the report, it prevents no undefined
+            // behavior
+            parsed.upper = true;
+            parsed.lower = true;
+            parsed.frame = true;
+            parsed.alias = true;
         } else if (not option.empty()) {
             print_usage_error(
                 std::format("Invalid --checks option: '{}'. Supported options "
-                            "are: upper, lower, line, frame, alias.",
+                            "are: upper, lower, line, frame, alias, noub.",
                             option));
 
             return std::nullopt;

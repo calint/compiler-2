@@ -40,6 +40,12 @@ class stmt_def_type final : public statement {
                                     name_tk_.text())};
             }
             field_delims_tk_.emplace_back(t);
+
+            // a trailing ',' lets each field end its line the same way
+            close_brace_tk_ = tz.is_next_char_token('}');
+            if (not close_brace_tk_.is_empty()) {
+                break;
+            }
         }
         // initialize the type definition
         type_.set_name(name_tk_.text());
@@ -72,6 +78,10 @@ class stmt_def_type final : public statement {
 
                 d.source_to(os);
                 e.source_to(os);
+            }
+
+            if (field_delims_tk_.size() == fields_.size()) {
+                field_delims_tk_.back().source_to(os);
             }
         }
         close_brace_tk_.source_to(os);

@@ -111,7 +111,7 @@ module.exports = grammar({
       optional(field('type', $._parameter_type)),
     ),
 
-    member_field_list: $ => sep1($.member_field, ','),
+    member_field_list: $ => seq(sep1($.member_field, ','), optional(',')),
 
     // member_field name type
     member_field: $ => seq(

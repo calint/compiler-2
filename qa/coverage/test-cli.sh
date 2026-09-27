@@ -116,6 +116,17 @@ CLI_JUMP_OPTIMIZATIONS() {
     echo "ok (jumps to next: 2, inverted: 1; jumps $raw_count -> $optimized_count; both exit 0)"
 }
 
+CLI_CHECKS_NOUB() {
+    echo -n "cli --checks=noub expansion: "
+    "$BIN" --checks=noub 015.baz >gen.s 2>err
+    "$BIN" --checks=upper,lower,frame,alias 015.baz >out 2>err
+    cmp -s gen.s out
+    "$BIN" --checks=line,noub 015.baz >gen.s 2>err
+    "$BIN" --checks=upper,lower,line,frame,alias 015.baz >out 2>err
+    cmp -s gen.s out
+    echo ok
+}
+
 CLI_FPGA_MEMORY() {
     echo -n "cli rv32i-fpga memory size: "
     local memory_size=$((0x800000)) stack_size=$((0x10000))
@@ -162,6 +173,7 @@ CLI --no-reproduce 1 --help
 CLI --checks=frame 0 015.baz
 CLI --checks=alias 0 015.baz
 CLI --checks=upper,lower,line,frame,alias 0 015.baz
+CLI --checks=noub 0 015.baz
 CLI --checks=unknown 1 --help
 CLI --target=x86_64 0 --help
 CLI --target=rv32i 0 --help
@@ -174,6 +186,7 @@ CLI_TARGETS
 CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE
 CLI_JUMP_OPTIMIZATIONS
+CLI_CHECKS_NOUB
 CLI_FPGA_MEMORY
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

@@ -1,0 +1,19 @@
+# a trailing comma after the last field of a type
+
+func assert(expr bool) {
+    if not expr exit(1)
+}
+
+type point { x i32, y i32, }
+
+type object {
+    pos point,
+    color i32, # the last field
+}
+
+func main() {
+    var o object = {{1, 2}, 3}
+    assert(o.pos.x == 1)
+    assert(o.pos.y == 2)
+    assert(o.color == 3)
+}
