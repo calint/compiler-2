@@ -2,7 +2,7 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [x] opus 5.5 ai review and bug-hunt
-[o] opus untangling nested if/else, apply early returns  and consolidating
+[o] opus untangling nested if/else, apply early returns and consolidate
     repeated code in helpers
 [o] local code generation found in the rv32i assessment, examples in
     etc/codegen-inefficiencies.baz
