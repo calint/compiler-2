@@ -50,31 +50,8 @@ class expr_arith final : public expression {
 
         // a recursive call might have supplied the first element it already
         // parsed
-
-        if (first_expression) {
-            // it did, add provided first expression as first element in the
-            // list
-            exprs_.emplace_back(std::move(first_expression));
-        } else {
-            // it did not, check if it is an element or the start of a new
-            // sub-expression
-            //   -(a + b)  vs  -a
-
-            // read the unary ops before checking for open parenthesis
-            unary_ops uo{tz};
-
-            // parenthesized expressions become nested lists
-            if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-                // move the unary ops to be applied on the whole sub-expression
-                exprs_.emplace_back(std::make_unique<expr_arith>(
-                    tc, tz, in_args, true, t, false, std::move(uo)));
-            } else {
-                // non-parenthesized unary ops belong to the next expression
-                // push back for so the element attaches it as its own
-                uo.put_back(tz);
-                exprs_.emplace_back(create_statement_in_expr_arith(tc, tz));
-            }
-        }
+        exprs_.emplace_back(first_expression ? std::move(first_expression)
+                                             : parse_element(tc, tz, in_args));
 
         // set the type of this list same as first element
 
@@ -213,31 +190,7 @@ class expr_arith final : public expression {
                 (void)tz.next_char();
             }
 
-            // check if the next statement is a sub-expression or an expression
-            // element
-            //   -(a + b)  vs  -a
-
-            // read the unary ops before checking if parenthesis opens
-            // sub-expression
-            unary_ops uo{tz};
-
-            // is it a sub-expression?
-            if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-                // yes, recurse and forward the unary ops to be applied on the
-                // whole sub-expression
-                exprs_.emplace_back(std::make_unique<expr_arith>(
-                    tc, tz, in_args, true, t, false, std::move(uo)));
-
-                continue;
-            }
-
-            // not sub-expression, push back unary ops because those belong to
-            // the next element
-            //   [-a] + b
-            uo.put_back(tz);
-
-            // read the next element
-            exprs_.emplace_back(create_statement_in_expr_arith(tc, tz));
+            exprs_.emplace_back(parse_element(tc, tz, in_args));
 
             // continue to next arithmetic op + element
         }
@@ -433,6 +386,25 @@ class expr_arith final : public expression {
     }
 
   private:
+    // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
+    [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
+                                            const bool in_args)
+        -> std::unique_ptr<statement> {
+
+        // read the unary ops before checking for open parenthesis
+        unary_ops uo{tz};
+
+        // the unary ops apply to the whole sub-expression
+        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
+            return std::make_unique<expr_arith>(tc, tz, in_args, true, t, false,
+                                                std::move(uo));
+        }
+
+        // the element reads its own unary ops: '[-a] + b'
+        uo.put_back(tz);
+
+        return create_statement_in_expr_arith(tc, tz);
+    }
     // unary ops on a memory destination are a load, modify and store on a
     // load/store machine where a scratch register can be shorter, other single
     // elements such as calls are not compiled twice
@@ -546,16 +518,24 @@ class expr_arith final : public expression {
         }
     }
 
+    // an identifier copies itself, anything else is assigned with '='
+    static auto compile_first_element(toc& tc, const size_t indent,
+                                      const ident_info& dst_info,
+                                      const statement& first) -> void {
+
+        if (first.is_identifier()) {
+            first.compile(tc, indent, dst_info);
+
+            return;
+        }
+
+        asm_op(tc, indent, '=', dst_info, first);
+    }
+
     auto do_compile(toc& tc, const size_t indent,
                     const ident_info& dst_info) const -> void {
 
-        const statement& st0{*exprs_[0]};
-        if (st0.is_identifier()) {
-            st0.compile(tc, indent, dst_info);
-        } else {
-            // the first element is assigned to destination, operator '='
-            asm_op(tc, indent, '=', dst_info, st0);
-        }
+        compile_first_element(tc, indent, dst_info, *exprs_[0]);
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
         for (const auto [o, e] :

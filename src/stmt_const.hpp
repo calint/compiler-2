@@ -54,15 +54,16 @@ class stmt_const final : public statement {
         std::string num_str{uops_.to_string()};
         num_str += literal_tk_.text();
 
-        if (std::optional<int64_t> num{
-                toc::parse_constant(literal_tk_, num_str)}) {
+        const std::optional<int64_t> num{
+            toc::parse_constant(literal_tk_, num_str)};
 
-            value_ = *num;
-        } else {
+        if (not num.has_value()) {
             throw compiler_exception{
                 literal_tk_,
                 std::format("cannot parse constant '{}'", num_str)};
         }
+
+        value_ = *num;
     }
 
     stmt_const() = default;

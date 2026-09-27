@@ -148,12 +148,15 @@ struct assignment_flow {
     }
 
     auto record_break() -> void {
-        if (at_breaks) {
-            at_breaks->intersect(assigned);
-        } else {
+        // the first break sets the coverage, later ones narrow it
+        if (not at_breaks) {
             at_breaks = assigned;
+            end_path();
+
+            return;
         }
 
+        at_breaks->intersect(assigned);
         end_path();
     }
 };

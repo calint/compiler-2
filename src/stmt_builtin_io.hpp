@@ -43,11 +43,8 @@ class stmt_builtin_io final : public stmt_call {
                 : x.alloc_named_register(tok(), indent, registers.result,
                                          tc.get_type_default())};
 
-        if (tok().is_text("read")) {
-            x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
-        } else {
-            x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
-        }
+        emit_call(x, indent, result, args);
+
         get_unary_ops().compile(tc, indent, result);
         if (not dst_info.is_empty()) {
             x.copy_value(tok(), indent, dst_info.operand, result);
@@ -59,6 +56,18 @@ class stmt_builtin_io final : public stmt_call {
     }
 
   private:
+    auto emit_call(machine& x, const size_t indent, const operand& result,
+                   const std::vector<operand>& args) const -> void {
+
+        if (tok().is_text("read")) {
+            x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
+
+            return;
+        }
+
+        x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
+    }
+
     // an address would bypass the bounds check, so only arrays are accepted
     auto assert_array_buffer(const toc& tc) const -> void {
         const statement& buffer{argument(1)};

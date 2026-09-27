@@ -79,24 +79,7 @@ class stmt_identifier : public statement {
                 }
             }
 
-            if (const token t{tz.is_next_char_token('[')}; not t.is_empty()) {
-                is_indexed_ = true;
-                elems_.emplace_back(
-                    tk, token{},
-                    std::make_unique<expr_any>(tc, tz, tc.get_type_default(),
-                                               false, false, 0),
-                    token{});
-
-                const token tt{tz.is_next_char_token(']')};
-                if (tt.is_empty()) {
-                    throw compiler_exception{
-                        tz, "expected ']' to close array index expression"};
-                }
-                elems_.back().open_bracket_tk = t;
-                elems_.back().close_bracket_tk = tt;
-            } else {
-                elems_.emplace_back(tk, token{}, nullptr, token{});
-            }
+            parse_element(tc, tz, tk);
 
             if (const token t{tz.is_next_char_token('.')}; not t.is_empty()) {
                 const token next_tk{tz.next_token()};
@@ -420,6 +403,30 @@ class stmt_identifier : public statement {
     }
 
   private:
+    // a path element with an optional '[index]'
+    auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void {
+        const token open_bracket_tk{tz.is_next_char_token('[')};
+        if (open_bracket_tk.is_empty()) {
+            elems_.emplace_back(tk, token{}, nullptr, token{});
+
+            return;
+        }
+
+        is_indexed_ = true;
+        elems_.emplace_back(tk, token{},
+                            std::make_unique<expr_any>(
+                                tc, tz, tc.get_type_default(), false, false, 0),
+                            token{});
+
+        const token close_bracket_tk{tz.is_next_char_token(']')};
+        if (close_bracket_tk.is_empty()) {
+            throw compiler_exception{
+                tz, "expected ']' to close array index expression"};
+        }
+
+        elems_.back().open_bracket_tk = open_bracket_tk;
+        elems_.back().close_bracket_tk = close_bracket_tk;
+    }
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] auto is_method_name(const toc& tc, const token& path_tk,
                                       const token& name_tk) const -> bool {
@@ -566,18 +573,16 @@ class stmt_identifier : public statement {
 
         const size_t type_size{cur_info.type_ref().size_bytes()};
 
-        uint64_t scale{1};
-
         // a scale the addressing mode cannot encode is applied to the index
         // register instead, leaving scale 1 in the operand
-        if (x.can_lower_index_scale(type_size)) {
-            scale = type_size;
-        } else {
+        const bool is_encodable_scale{x.can_lower_index_scale(type_size)};
+        if (not is_encodable_scale) {
             x.scale_index(src_loc_tk, indent, checked_index, type_size);
         }
 
         return operand::mem(address.base_register(),
-                            checked_index.base_register(), scale,
+                            checked_index.base_register(),
+                            is_encodable_scale ? type_size : 1,
                             address.displacement(), cur_info.type_ref());
     }
 

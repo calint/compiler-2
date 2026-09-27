@@ -173,6 +173,11 @@ class expr_type final : public statement {
                                      operand& dst_op) -> void;
 
     // out-of-line: calls 'expr_any'
+    auto write_builtin_field(toc& tc, const size_t indent, const expr_any& src,
+                             const type_field& field, ident_info& dst_info,
+                             const operand& dst_op) const -> void;
+
+    // out-of-line: calls 'expr_any'
     static auto compile_builtin_field(toc& tc, const size_t indent,
                                       const expr_any& src,
                                       const operand& src_op, const operand& dst)

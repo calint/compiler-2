@@ -432,66 +432,8 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
 
         // built-in
 
-        const expr_any& src{*expr};
+        write_builtin_field(tc, indent, *expr, field, cur_dst_info, dst_op);
 
-        if (src.is_array() and src.is_empty()) {
-            // special case when empty array
-            // e.g.:
-            //   type msgpoint {  msg : i8[128], pt : point }
-            //   var mp : msgpoint[3] = { { {}, { x, y } } }
-            x.comment(expr->tok(), indent, "zero empty field: {} * {} B = {} B",
-                      field.array_count, field.type().size_bytes(),
-                      field.size_bytes);
-
-            x.zero(tok(), indent, dst_op, field.size_bytes,
-                   field.type().alignment());
-            const int64_t size_bytes{address_offset(field.size_bytes)};
-            dst_op.increment_offset(size_bytes);
-            cur_dst_info.increment_offset(size_bytes);
-            cur_dst_info.pop();
-            continue;
-        }
-
-        if (field.is_array and src.is_array_identifier()) {
-            validate_array_assignment(src.tok(), field,
-                                      tc.make_ident_info(src));
-        }
-
-        const operand dst_operand{operand::mem(dst_op, field.type())};
-
-        // the paths below that copy directly skip the check in 'expr_any'
-        src.assert_not_narrowed(tc, field.type());
-
-        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
-            // built-in, expression
-            cur_dst_info.operand = dst_operand;
-            src.compile(tc, indent, cur_dst_info);
-        } else {
-            // built-in, not expression
-            const ident_info src_info{tc.make_ident_info(src)};
-            if (src_info.is_const()) {
-                // built-in, not expression, constant
-                x.copy_value(src.tok(), indent, dst_operand,
-                             src.make_constant_operand(src_info));
-            } else {
-                // built-in, not expression, not constant
-                if (field.is_array) {
-                    // built-in, not expression, not constant, array
-
-                    // note: never reached because when 'src' is an array,
-                    //       'expr_any::is_expression()' returns true and takes
-                    //       the expression path above
-
-                    validate_array_assignment(src.tok(), field, src_info);
-                    x.copy(src.tok(), indent, src_info.operand, dst_op,
-                           field.size_bytes, field.type().alignment());
-                } else {
-                    // built-in, not expression, not constant, not array
-                    compile_builtin_field(tc, indent, src, src_info.operand,
-                                          dst_operand);
-                }
-            }
-        }
         const int64_t size_bytes{address_offset(field.size_bytes)};
         dst_op.increment_offset(size_bytes);
         cur_dst_info.increment_offset(size_bytes);
@@ -507,6 +449,68 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
         exprs_.size() == flds.size() ? "padding" : "remaining fields",
         remaining_bytes, offset_alignment(written_bytes, dst_type.alignment()),
         dst_op);
+}
+
+// declared in 'expr_type.hpp'
+// the caller advances 'dst_op' past the field
+auto expr_type::write_builtin_field(toc& tc, const size_t indent,
+                                    const expr_any& src,
+                                    const type_field& field,
+                                    ident_info& dst_info,
+                                    const operand& dst_op) const -> void {
+
+    machine& x{tc.machine()};
+
+    // e.g. 'msg' in 'type msgpoint { msg i8[128], pt point }' given '{}'
+    if (src.is_array() and src.is_empty()) {
+        x.comment(src.tok(), indent, "zero empty field: {} * {} B = {} B",
+                  field.array_count, field.type().size_bytes(),
+                  field.size_bytes);
+
+        x.zero(tok(), indent, dst_op, field.size_bytes,
+               field.type().alignment());
+
+        return;
+    }
+
+    if (field.is_array and src.is_array_identifier()) {
+        validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
+    }
+
+    const operand dst_operand{operand::mem(dst_op, field.type())};
+
+    // the paths below that copy directly skip the check in 'expr_any'
+    src.assert_not_narrowed(tc, field.type());
+
+    if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
+        dst_info.operand = dst_operand;
+        src.compile(tc, indent, dst_info);
+
+        return;
+    }
+
+    const ident_info src_info{tc.make_ident_info(src)};
+
+    if (src_info.is_const()) {
+        x.copy_value(src.tok(), indent, dst_operand,
+                     src.make_constant_operand(src_info));
+
+        return;
+    }
+
+    // note: never reached because when 'src' is an array,
+    //       'expr_any::is_expression()' returns true and takes the
+    //       expression path above
+
+    if (field.is_array) {
+        validate_array_assignment(src.tok(), field, src_info);
+        x.copy(src.tok(), indent, src_info.operand, dst_op, field.size_bytes,
+               field.type().alignment());
+
+        return;
+    }
+
+    compile_builtin_field(tc, indent, src, src_info.operand, dst_operand);
 }
 
 // declared in 'expr_type.hpp'

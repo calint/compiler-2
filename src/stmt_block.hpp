@@ -27,6 +27,33 @@ class stmt_block final : public statement {
     token close_brace_tk_;
     bool is_one_statement_{};
 
+    // a method call, an assignment or a function call
+    // note: 'unary_ops' not allowed before destination identifier
+    [[nodiscard]] static auto parse_identifier_statement(toc& tc, tokenizer& tz,
+                                                         const token tk)
+        -> std::unique_ptr<statement> {
+
+        stmt_identifier si{tc, {}, tk, tz};
+
+        if (si.is_method_receiver()) {
+            return create_stmt_method_call(tc, tz, std::move(si));
+        }
+
+        if (const token t{tz.is_next_char_token('=')}; not t.is_empty()) {
+            return std::make_unique<stmt_assign_var>(
+                tc, tz, std::move(si), t, si.is_array(), si.array_count());
+        }
+
+        // note: solves circular reference
+        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
+            return create_stmt_call(tc, tz, si, t);
+        }
+
+        throw compiler_exception{
+            tz, "unexpected character; expected '=' for assignment or '(' "
+                "for function call"};
+    }
+
   public:
     // note: without '{', a single statement is allowed unless braces are
     // required
@@ -97,32 +124,7 @@ class stmt_block final : public statement {
                 // note: solves circular reference problem
                 //       'loop' and 'if' uses this class
             } else {
-                // resolve identifier
-                stmt_identifier si{tc, {}, tk, tz};
-                // note: 'unary_ops' not allowed before destination identifier
-
-                if (si.is_method_receiver()) {
-                    stms_.emplace_back(
-                        create_stmt_method_call(tc, tz, std::move(si)));
-
-                } else if (const token t{tz.is_next_char_token('=')};
-                           not t.is_empty()) {
-
-                    stms_.emplace_back(std::make_unique<stmt_assign_var>(
-                        tc, tz, std::move(si), t, si.is_array(),
-                        si.array_count()));
-
-                } else if (const token tt{tz.is_next_char_token('(')};
-                           not tt.is_empty()) {
-
-                    stms_.emplace_back(create_stmt_call(tc, tz, si, tt));
-                    // note: solves circular reference
-
-                } else {
-                    throw compiler_exception{
-                        tz, "unexpected character; expected '=' for assignment "
-                            "or '(' for function call"};
-                }
+                stms_.emplace_back(parse_identifier_statement(tc, tz, tk));
             }
             if (is_one_statement_) {
                 break;

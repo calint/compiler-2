@@ -9,5 +9,7 @@ qa/lint/clang-tidy.sh
 ./make.sh build
 qa/coverage/test-coverage.sh --target=x86 run
 qa/coverage/test-coverage.sh --target=rv32i run
+qa/coverage/test-coverage.sh --target=rv32i-qemu run
+qa/coverage/test-coverage.sh --target=rv32i-fpga run
 ./run.sh prog.baz --vars=131072 --checks=upper,lower,line
 etc/readme/make.sh

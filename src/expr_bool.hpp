@@ -59,17 +59,9 @@ class expr_bool_op final : public statement {
             }
             op_ = "!=";
         } else if (tz.is_next_char('<')) {
-            if (tz.is_next_char('=')) {
-                op_ = "<=";
-            } else {
-                op_ = "<";
-            }
+            op_ = tz.is_next_char('=') ? "<=" : "<";
         } else if (tz.is_next_char('>')) {
-            if (tz.is_next_char('=')) {
-                op_ = ">=";
-            } else {
-                op_ = ">";
-            }
+            op_ = tz.is_next_char('=') ? ">=" : ">";
         } else {
             // e.g. if a ...
             is_shorthand_ = true;
@@ -571,22 +563,33 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        operand dst;
-        if (lhs.is_expression() and action.destination.is_register() and
-            lhs.get_type().name() == action.destination.type_ref().name()) {
-            // matching types avoid narrowing before the in-place truth test
-            dst = action.destination;
-            lhs.compile(tc, indent + 1,
-                        toc::make_ident_info_from_register(dst));
-        } else {
-            dst = resolve_expr(tc, indent, lhs, true, allocated_registers);
-        }
+        const operand dst{
+            truth_test_operand(tc, indent, lhs, action, allocated_registers)};
 
         machine& x{tc.machine()};
 
         x.compare_and_branch(tok(), indent, dst,
                              operand::imm("0", tc.get_type_default()), action,
                              allocated_registers);
+    }
+
+    // the value compared with 0, matching types avoid narrowing before the
+    // in-place truth test
+    [[nodiscard]] static auto
+    truth_test_operand(toc& tc, const size_t indent, const expr_arith& lhs,
+                       const machine::comparison_action& action,
+                       std::vector<operand>& allocated_registers) -> operand {
+
+        if (lhs.is_expression() and action.destination.is_register() and
+            lhs.get_type().name() == action.destination.type_ref().name()) {
+
+            lhs.compile(tc, indent + 1,
+                        toc::make_ident_info_from_register(action.destination));
+
+            return action.destination;
+        }
+
+        return resolve_expr(tc, indent, lhs, true, allocated_registers);
     }
 
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
@@ -683,47 +686,7 @@ class expr_bool final : public statement {
 
         // parse
         while (true) {
-            // place a marker at this location to be able to rewind if
-            // speculative parsing failed
-            const token rewind_pos_tk{tz.cur_position_token()};
-            // this token may be "not"
-            token maybe_not_tk{tz.next_token()};
-            // is it "not"?
-            if (not maybe_not_tk.is_text("not")) {
-                // no, put the token back and make it into the whitespace
-                tz.put_back_token(maybe_not_tk);
-                maybe_not_tk = tz.next_whitespace_token();
-            }
-            // place the position at the beginning of the parenthesis or start
-            // of expression
-            const token pos_tk{tz.cur_position_token()};
-            // is it start of new sub-expression?
-            if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-                // yes, try as 'expr_bool' but it might not be that
-                // e.g.: (t1 + t2) > 3 is not but will compile so further checks
-                // are necessary after the parsing
-                expr_bool bol{tc, pos_tk, tz, true, maybe_not_tk, t};
-                // check if 'expr_bool' parsed an expression,
-                // wrongfully, as the shorthand boolean expression
-                //   e.g., not ((t1 + t2) > 2)
-                //         where (t1 + t2) is a valid 'expr_bool' of 1
-                //         element with the expression 't1 + t2'
-                if (std::string_view{"<>=!+-*/%&|^"}.contains(
-                        tz.peek_char_after_whitespace())) {
-                    // it is a 'bool_op', reposition the tokenizer and parse it
-                    tz.rewind_to_position(rewind_pos_tk);
-                    bools_.emplace_back(std::in_place_type<expr_bool_op>, tc,
-                                        tz);
-                } else {
-                    // is not an 'expr_bool_op'
-                    bools_.emplace_back(std::move(bol));
-                }
-            } else {
-                // put back the token in the tokenizer for the 'expr_bool_op' to
-                // parse it
-                tz.put_back_token(maybe_not_tk);
-                bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
-            }
+            parse_element(tc, tz);
 
             // end of '(...)' enclosed expression?
             if (enclosed_) {
@@ -874,6 +837,45 @@ class expr_bool final : public statement {
     }
 
   private:
+    // a comparison or a parenthesized list, either may follow 'not'
+    auto parse_element(toc& tc, tokenizer& tz) -> void {
+        // a speculative parse may need to start over from here
+        const token rewind_pos_tk{tz.cur_position_token()};
+
+        // a token that is not 'not' is put back and becomes the whitespace
+        token maybe_not_tk{tz.next_token()};
+        if (not maybe_not_tk.is_text("not")) {
+            tz.put_back_token(maybe_not_tk);
+            maybe_not_tk = tz.next_whitespace_token();
+        }
+
+        const token pos_tk{tz.cur_position_token()};
+        const token open_paren_tk{tz.is_next_char_token('(')};
+
+        // 'expr_bool_op' parses the 'not' itself
+        if (open_paren_tk.is_empty()) {
+            tz.put_back_token(maybe_not_tk);
+            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
+
+            return;
+        }
+
+        // '(t1 + t2) > 3' parses as a list but is a comparison
+        expr_bool bol{tc, pos_tk, tz, true, maybe_not_tk, open_paren_tk};
+
+        // an operator after ')' means the parentheses belonged to an operand
+        if (std::string_view{"<>=!+-*/%&|^"}.contains(
+                tz.peek_char_after_whitespace())) {
+
+            tz.rewind_to_position(rewind_pos_tk);
+            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
+
+            return;
+        }
+
+        bools_.emplace_back(std::move(bol));
+    }
+
     [[nodiscard]] auto compile_rec(toc& tc, const size_t indent,
                                    const std::string_view jmp_to_if_false,
                                    const std::string_view jmp_to_if_true,

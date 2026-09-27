@@ -76,25 +76,7 @@ class stmt_def_func final : public statement {
             params_.emplace_back(tc, tz);
         }
 
-        const token ident_tk{tz.next_token()};
-        if (not ident_tk.text().empty()) {
-            // function returns
-            token type_tk{tz.next_token()};
-            if (not tc.has_type(type_tk.text())) {
-                tz.put_back_token(type_tk);
-                type_tk = {};
-            }
-            const type& tp{type_tk.is_empty()
-                               ? tc.get_type_default()
-                               : tc.get_type_or_throw(type_tk, type_tk.text())};
-
-            returns_.emplace(type_tk, ident_tk, &tp);
-            set_type(tp);
-        } else {
-            tz.put_back_token(ident_tk);
-            // no return, set type to 'void'
-            set_type(tc.get_type_void());
-        }
+        parse_returns(tc, tz);
 
         tc.add_func(name_tk_, name_, statement::get_type(), this);
 
@@ -286,6 +268,30 @@ class stmt_def_func final : public statement {
     }
 
   private:
+    // 'name [type]' of the returned value, without a name the type is void
+    auto parse_returns(toc& tc, tokenizer& tz) -> void {
+        const token ident_tk{tz.next_token()};
+        if (ident_tk.text().empty()) {
+            tz.put_back_token(ident_tk);
+            set_type(tc.get_type_void());
+
+            return;
+        }
+
+        token type_tk{tz.next_token()};
+        if (not tc.has_type(type_tk.text())) {
+            tz.put_back_token(type_tk);
+            type_tk = {};
+        }
+
+        const type& tp{type_tk.is_empty()
+                           ? tc.get_type_default()
+                           : tc.get_type_or_throw(type_tk, type_tk.text())};
+
+        returns_.emplace(type_tk, ident_tk, &tp);
+        set_type(tp);
+    }
+
     // 'name_tk_' is the receiver type, the method gets an implicit first
     // parameter 'self' of that type
     auto parse_method_name(const toc& tc, tokenizer& tz) -> void {

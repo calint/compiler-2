@@ -113,19 +113,7 @@ class stmt_builtin_foo final : public statement {
 
         x.comment(ident_.tok(), indent, "initiate iterator {}", var_e.name);
 
-        // load address of referenced array into 'reg_iter'
-        if (ii.has_lea() or ident_.is_indexed()) {
-            std::vector<operand> allocated_registers;
-
-            const operand op{ident_.compile_lea(
-                tc, indent, tok(), allocated_registers, {}, ii.lea_path, {})};
-
-            x.address_of(tok(), indent, reg_iter, op);
-
-            x.free_scratch_registers(tok(), indent, allocated_registers);
-        } else {
-            x.address_of(tok(), indent, reg_iter, ii.operand);
-        }
+        load_array_address(tc, indent, ii, reg_iter);
 
         x.comment(ident_.tok(), indent, "initiate counter {}", var_i.name);
         x.copy_value(tok(), indent, var_i_info.operand,
@@ -148,5 +136,28 @@ class stmt_builtin_foo final : public statement {
     auto trace_assignment(assignment_flow& flow) const -> void override {
         ident_.assert_var_not_used(flow.var, flow.assigned);
         std::ignore = code_.trace_loop_body(flow);
+    }
+
+  private:
+    // an indexed or forwarded array needs its address computed
+    auto load_array_address(toc& tc, const size_t indent, const ident_info& ii,
+                            const operand& reg_iter) const -> void {
+
+        machine& x{tc.machine()};
+
+        if (not ii.has_lea() and not ident_.is_indexed()) {
+            x.address_of(tok(), indent, reg_iter, ii.operand);
+
+            return;
+        }
+
+        std::vector<operand> allocated_registers;
+
+        const operand op{ident_.compile_lea(
+            tc, indent, tok(), allocated_registers, {}, ii.lea_path, {})};
+
+        x.address_of(tok(), indent, reg_iter, op);
+
+        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 };

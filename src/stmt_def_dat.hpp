@@ -111,19 +111,7 @@ class stmt_def_dat final : public statement {
 
         tc.add_var(name_tk_, 0, var, true);
 
-        if (has_init_) {
-            elroot_ = parse_elem(tc, tz, type_tk_, tp, is_array, array_count);
-            if (elroot_.is_array and elroot_.array_count == 0 and
-                not elroot_.tk.is_string() and elroot_.elems.empty()) {
-
-                throw compiler_exception{name_tk_,
-                                         "empty arrays require a specified "
-                                         "size"};
-            }
-        } else {
-            elroot_.is_array = is_array;
-            elroot_.array_count = array_count;
-        }
+        elroot_ = parse_root(tc, tz, tp, is_array, array_count);
 
         tc.add_dat(this);
     }
@@ -272,9 +260,10 @@ class stmt_def_dat final : public statement {
 
             if (f.type().is_builtin()) {
                 compile_data_builtin(tc, f.type(), e);
-            } else {
-                compile_data_rec(tc, f.type(), e);
+                continue;
             }
+
+            compile_data_rec(tc, f.type(), e);
         }
 
         // zero out remaining fields and the padding after the last field
@@ -484,6 +473,46 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
+    // without an initializer only the shape is known and the data is zero
+    [[nodiscard]] auto parse_root(toc& tc, tokenizer& tz, const type& tp,
+                                  const bool is_array,
+                                  const size_t array_count) const -> elem {
+
+        if (not has_init_) {
+            elem el{};
+            el.is_array = is_array;
+            el.array_count = array_count;
+
+            return el;
+        }
+
+        elem el{parse_elem(tc, tz, type_tk_, tp, is_array, array_count)};
+
+        if (el.is_array and el.array_count == 0 and not el.tk.is_string() and
+            el.elems.empty()) {
+
+            throw compiler_exception{name_tk_,
+                                     "empty arrays require a specified size"};
+        }
+
+        return el;
+    }
+
+    [[nodiscard]] static auto parse_bool_value(const token& tk, const type& tp)
+        -> int64_t {
+        if (tk.is_text("true")) {
+            return 1;
+        }
+
+        if (tk.is_text("false")) {
+            return 0;
+        }
+
+        throw compiler_exception{
+            tk, std::format("boolean field '{}' must be 'true' or 'false'",
+                            tp.name())};
+    }
+
     [[nodiscard]] static auto parse_builtin(const toc& tc, tokenizer& tz,
                                             const type& tp) -> elem {
 
@@ -491,16 +520,7 @@ class stmt_def_dat final : public statement {
         el.uops = unary_ops{tz};
         el.tk = tz.next_token();
         if (&tp == &tc.get_type_bool()) {
-            if (el.tk.is_text("true")) {
-                el.value = 1;
-            } else if (el.tk.is_text("false")) {
-                el.value = 0;
-            } else {
-                throw compiler_exception{
-                    el.tk,
-                    std::format("boolean field '{}' must be 'true' or 'false'",
-                                tp.name())};
-            }
+            el.value = parse_bool_value(el.tk, tp);
 
             return el;
         }

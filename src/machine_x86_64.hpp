@@ -429,10 +429,12 @@ class machine_x86_64 final : public machine {
 
         if (address.is_empty()) {
             comment(src_loc_tk, indent, "alias {} -> {}", from, to);
-        } else {
-            comment(src_loc_tk, indent, "alias {} -> {} (lea: {})", from, to,
-                    assembler_x86_64::address_text(to_address(address)));
+
+            return;
         }
+
+        comment(src_loc_tk, indent, "alias {} -> {} (lea: {})", from, to,
+                assembler_x86_64::address_text(to_address(address)));
     }
 
     auto
@@ -907,17 +909,7 @@ class machine_x86_64 final : public machine {
         reserve_named_register(src_loc_tk, indent, "rdx", *default_type_);
         assembler_.instruction(indent, op::cqo);
 
-        if (divisor.is_immediate() or
-            divisor.type_ref().size_bytes() != size_qword) {
-            const operand scratch_reg{
-                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
-
-            mov(src_loc_tk, indent, scratch_reg, divisor);
-            idiv(indent, scratch_reg);
-            free_scratch_register(src_loc_tk, indent, scratch_reg);
-        } else {
-            idiv(indent, divisor);
-        }
+        emit_signed_divide(src_loc_tk, indent, divisor);
 
         mov(src_loc_tk, indent, dst,
             machine_x86_64::make_register_operand(
@@ -1232,17 +1224,9 @@ class machine_x86_64 final : public machine {
         }
 
         if (options.upper) {
-            if (not reg_count.is_empty()) {
-                const operand reg_top_idx{
-                    alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
+                                reg_count);
 
-                mov(src_loc_tk, indent, reg_top_idx, reg_count);
-                add(indent, reg_top_idx, reg_to_check);
-                cmp(indent, reg_top_idx, immediate(array_count));
-                free_scratch_register(src_loc_tk, indent, reg_top_idx);
-            } else {
-                cmp(indent, reg_to_check, immediate(array_count));
-            }
             if (options.with_line) {
                 cmovcc(indent, out_of_bounds,
                        machine_x86_64::make_register_operand("rbp", *type_i64_),
@@ -1934,38 +1918,48 @@ class machine_x86_64 final : public machine {
         }
 
         if (not value.index_register().empty()) {
-            if (value.index_register() != "rsp" and
-                can_lower_index_scale(value.scale())) {
-                assembler_.instruction(
-                    indent, op::lea, sum,
-                    register_sum(sum, value.index_register(), value.scale()));
-            } else {
-                const operand scaled{
-                    alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
-                registers.push_back(scaled);
-                const std::string_view multiple{scaled.base_register()};
-                assembler_.instruction(
-                    indent, op::mov, multiple,
-                    std::string_view{value.index_register()});
-
-                // adds the index times each set bit of the scale
-                for (uint64_t remaining{value.scale()}; remaining != 0;
-                     remaining >>= 1U) {
-                    if ((remaining & 1U) != 0) {
-                        assembler_.instruction(indent, op::lea, sum,
-                                               register_sum(sum, multiple, 1));
-                    }
-                    if (remaining > 1) {
-                        assembler_.instruction(
-                            indent, op::lea, multiple,
-                            register_sum(multiple, multiple, 1));
-                    }
-                }
-            }
+            add_scaled_index(src_loc_tk, indent, sum, value, registers);
         }
 
         return operand::mem(address.base_register(), {}, 1, 0,
                             value.type_ref());
+    }
+
+    // adds 'index * scale' of 'value' to the register 'sum'
+    auto add_scaled_index(const token& src_loc_tk, const size_t indent,
+                          const std::string_view sum, const operand& value,
+                          std::vector<operand>& registers) -> void {
+
+        if (value.index_register() != "rsp" and
+            can_lower_index_scale(value.scale())) {
+
+            assembler_.instruction(
+                indent, op::lea, sum,
+                register_sum(sum, value.index_register(), value.scale()));
+
+            return;
+        }
+
+        const operand scaled{
+            alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
+
+        registers.push_back(scaled);
+        const std::string_view multiple{scaled.base_register()};
+        assembler_.instruction(indent, op::mov, multiple,
+                               std::string_view{value.index_register()});
+
+        // adds the index times each set bit of the scale
+        for (uint64_t remaining{value.scale()}; remaining != 0;
+             remaining >>= 1U) {
+            if ((remaining & 1U) != 0) {
+                assembler_.instruction(indent, op::lea, sum,
+                                       register_sum(sum, multiple, 1));
+            }
+            if (remaining > 1) {
+                assembler_.instruction(indent, op::lea, multiple,
+                                       register_sum(multiple, multiple, 1));
+            }
+        }
     }
 
     [[nodiscard]] static auto register_sum(const std::string_view base,
@@ -2245,6 +2239,47 @@ class machine_x86_64 final : public machine {
 
     auto idiv(const size_t indent, const operand& value) -> void {
         emit_unary(indent, op::idiv, value);
+    }
+
+    // idiv takes the divisor as a qword register or memory operand
+    auto emit_signed_divide(const token& src_loc_tk, const size_t indent,
+                            const operand& divisor) -> void {
+
+        if (not divisor.is_immediate() and
+            divisor.type_ref().size_bytes() == size_qword) {
+
+            idiv(indent, divisor);
+
+            return;
+        }
+
+        const operand scratch_reg{
+            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
+        mov(src_loc_tk, indent, scratch_reg, divisor);
+        idiv(indent, scratch_reg);
+        free_scratch_register(src_loc_tk, indent, scratch_reg);
+    }
+
+    // a range 'index + count' may end at the array count
+    auto compare_upper_bound(const token& src_loc_tk, const size_t indent,
+                             const operand& reg_to_check,
+                             const size_t array_count, const operand& reg_count)
+        -> void {
+
+        if (reg_count.is_empty()) {
+            cmp(indent, reg_to_check, immediate(array_count));
+
+            return;
+        }
+
+        const operand reg_top_idx{
+            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
+        mov(src_loc_tk, indent, reg_top_idx, reg_count);
+        add(indent, reg_top_idx, reg_to_check);
+        cmp(indent, reg_top_idx, immediate(array_count));
+        free_scratch_register(src_loc_tk, indent, reg_top_idx);
     }
 
     auto neg(const size_t indent, const operand& value) -> void {

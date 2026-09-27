@@ -70,13 +70,12 @@ class token final {
         size_t len{};
         const std::string_view s{text_};
         for (size_t i{}; i < s.size(); ++i, ++len) {
-            if (s[i] == '\\' and i + 1 < s.size()) {
-                if (s[i + 1] == 'x' and i + 3 < s.size()) {
-                    i += 3; // skip \xHH
-                } else {
-                    ++i; // skip 2-character escape sequence
-                }
+            if (s[i] != '\\' or i + 1 >= s.size()) {
+                continue;
             }
+
+            // skip \xHH or a 2-character escape sequence
+            i += (s[i + 1] == 'x' and i + 3 < s.size()) ? 3 : 1;
         }
 
         return len;

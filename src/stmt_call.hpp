@@ -380,19 +380,7 @@ class stmt_call : public expression {
         operand slot{frame_address};
 
         for (const auto [i, addr] : std::views::enumerate(addresses)) {
-
-            if (func.returns() and i == 0) {
-                x.comment(tok(), indent, "result address in callee frame");
-            } else {
-
-                const size_t arg_idx{
-                    static_cast<size_t>(i - (func.returns() ? 1 : 0))};
-
-                x.comment(tok(), indent,
-                          "address of argument '{}' to parameter '{}'",
-                          statement::trimmed_source(args_[arg_idx]),
-                          func.params()[arg_idx].name());
-            }
+            comment_frame_slot(x, indent, func, static_cast<size_t>(i));
 
             x.address_of(tok(), indent, slot, addr);
 
@@ -698,6 +686,24 @@ class stmt_call : public expression {
     }
 
   private:
+    // the result address comes first, then one address per argument
+    auto comment_frame_slot(machine& x, const size_t indent,
+                            const stmt_def_func& func,
+                            const size_t slot_index) const -> void {
+
+        if (func.returns() and slot_index == 0) {
+            x.comment(tok(), indent, "result address in callee frame");
+
+            return;
+        }
+
+        const size_t arg_idx{slot_index - (func.returns() ? 1 : 0)};
+
+        x.comment(tok(), indent, "address of argument '{}' to parameter '{}'",
+                  statement::trimmed_source(args_[arg_idx]),
+                  func.params()[arg_idx].name());
+    }
+
     [[nodiscard]] auto is_method() const -> bool {
         return not method_dot_tk_.is_empty();
     }
