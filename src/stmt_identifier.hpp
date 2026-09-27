@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -298,6 +299,30 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+
+    // 'use' runs while the scratch registers that build the address are still
+    // allocated, then they are freed
+    auto
+    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                    const std::span<const operand> lea_path,
+                    const operand& reg_count, const operand& address_register,
+                    const std::function_ref<void(const operand&)> use) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, statement::trimmed_source(*this));
+
+        std::vector<operand> allocated_registers;
+
+        const operand address{compile_lea(tc, indent, first_token(),
+                                          allocated_registers, reg_count,
+                                          lea_path, address_register)};
+
+        use(address);
+
+        x.free_scratch_registers(src_loc_tk, indent, allocated_registers);
+    }
 
     // * using 'lea_path' which depends on the call-stack builds and
     //    accessor operand to this identifier

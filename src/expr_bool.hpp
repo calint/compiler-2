@@ -623,44 +623,36 @@ class expr_bool_op final : public statement {
                  const bool is_lhs, std::vector<operand>& allocated_registers)
         -> operand {
 
-        if (not expr.is_expression() and
-            (expr.is_indexed() or tc.has_lea(expr))) {
-
-            const ident_info expr_info{tc.make_ident_info(expr)};
-            return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
-                                    {}, expr_info.lea_path, {});
-        }
-
         if (expr.is_expression()) {
             return compile_to_scratch(tc, indent, expr, allocated_registers);
         }
 
-        // 'expr' is not an expression
-        const ident_info expr_info{tc.make_ident_info(expr)};
-        if (expr_info.is_const()) {
-            if (is_lhs) {
-                return compile_to_scratch(tc, indent, expr,
-                                          allocated_registers);
-            }
+        if (expr.is_indexed() or tc.has_lea(expr)) {
+            const ident_info expr_info{tc.make_ident_info(expr)};
 
+            return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
+                                    {}, expr_info.lea_path, {});
+        }
+
+        const ident_info expr_info{tc.make_ident_info(expr)};
+
+        // the comparison needs its left operand in a register
+        if (expr_info.is_const() and is_lhs) {
+            return compile_to_scratch(tc, indent, expr, allocated_registers);
+        }
+
+        if (expr_info.is_const()) {
             return expr.make_constant_operand(expr_info);
         }
 
-        // 'expr' not a constant, it is an identifier
         if (expr.get_unary_ops().is_empty()) {
             return expr_info.operand;
         }
 
-        // 'expr' is not an expression and has unary ops
-
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register(expr.tok(), indent, expr_info.type_ref())};
+        const operand reg{expr_arith::compile_unary_to_scratch(
+            tc, indent, expr, expr_info.operand, expr_info.type_ref())};
 
         allocated_registers.emplace_back(reg);
-        x.copy_value(expr.tok(), indent, reg, expr_info.operand);
-        expr.get_unary_ops().compile(tc, indent, reg);
 
         return reg;
     }

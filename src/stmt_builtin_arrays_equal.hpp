@@ -112,35 +112,22 @@ class stmt_builtin_arrays_equal final : public expression {
 
         const operand count_register{x.begin_memory_equal(tok(), indent)};
 
-        std::vector<operand> allocated_scratch_registers;
-
         x.comment(count_.tok(), indent, statement::trimmed_source(count_));
 
         count_.compile(tc, indent,
                        toc::make_ident_info_from_register(count_register));
 
-        x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
+        lhs_.compile_address(tc, indent, tok(), lhs_info.lea_path,
+                             count_register, x.memory_equal_left_register(),
+                             [&](const operand& address) -> void {
+                                 x.set_memory_equal_left(indent, address);
+                             });
 
-        const operand lhs_operand{lhs_.compile_lea(
-            tc, indent, lhs_.first_token(), allocated_scratch_registers,
-            count_register, lhs_info.lea_path, x.memory_equal_left_register())};
-
-        x.set_memory_equal_left(indent, lhs_operand);
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
-
-        x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
-
-        allocated_scratch_registers.clear();
-
-        const operand rhs_operand{rhs_.compile_lea(
-            tc, indent, rhs_.first_token(), allocated_scratch_registers,
-            count_register, rhs_info.lea_path,
-            x.memory_equal_right_register())};
-
-        x.set_memory_equal_right(indent, rhs_operand);
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
+        rhs_.compile_address(tc, indent, tok(), rhs_info.lea_path,
+                             count_register, x.memory_equal_right_register(),
+                             [&](const operand& address) -> void {
+                                 x.set_memory_equal_right(indent, address);
+                             });
 
         x.end_arrays_equal(tok(), indent, lhs_info.type_ref().size_bytes(),
                            lhs_info.type_ref().alignment(), dst, inverted);

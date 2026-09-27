@@ -415,6 +415,23 @@ class expr_arith final : public expression {
                                       address_register);
     }
 
+    // the caller frees the returned register
+    [[nodiscard]] static auto
+    compile_unary_to_scratch(toc& tc, const size_t indent, const statement& src,
+                             const operand& src_operand,
+                             const type& register_type) -> operand {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(src.tok(), indent, register_type)};
+
+        x.copy_value(src.tok(), indent, reg, src_operand);
+        src.get_unary_ops().compile(tc, indent, reg);
+
+        return reg;
+    }
+
   private:
     // unary ops on a memory destination are a load, modify and store on a
     // load/store machine where a scratch register can be shorter, other single
@@ -672,22 +689,6 @@ class expr_arith final : public expression {
             x.alloc_scratch_register(src.tok(), indent, register_type)};
 
         src.compile(tc, indent, toc::make_ident_info_from_register(reg));
-
-        return reg;
-    }
-
-    [[nodiscard]] static auto
-    compile_unary_to_scratch(toc& tc, const size_t indent, const statement& src,
-                             const operand& src_operand,
-                             const type& register_type) -> operand {
-
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, register_type)};
-
-        x.copy_value(src.tok(), indent, reg, src_operand);
-        src.get_unary_ops().compile(tc, indent, reg);
 
         return reg;
     }

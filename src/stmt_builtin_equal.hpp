@@ -113,29 +113,15 @@ class stmt_builtin_equal final : public expression {
 
         x.begin_memory_equal(tok(), indent);
 
-        std::vector<operand> allocated_scratch_registers;
+        lhs_.compile_address(tc, indent, tok(), lhs_info.lea_path, {}, {},
+                             [&](const operand& address) -> void {
+                                 x.set_memory_equal_left(indent, address);
+                             });
 
-        x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
-
-        const operand lhs_operand{lhs_.compile_lea(
-            tc, indent, lhs_.first_token(), allocated_scratch_registers, {},
-            lhs_info.lea_path, {})};
-
-        x.set_memory_equal_left(indent, lhs_operand);
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
-
-        x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
-
-        allocated_scratch_registers.clear();
-
-        const operand rhs_operand{rhs_.compile_lea(
-            tc, indent, rhs_.first_token(), allocated_scratch_registers, {},
-            rhs_info.lea_path, {})};
-
-        x.set_memory_equal_right(indent, rhs_operand);
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
+        rhs_.compile_address(tc, indent, tok(), rhs_info.lea_path, {}, {},
+                             [&](const operand& address) -> void {
+                                 x.set_memory_equal_right(indent, address);
+                             });
 
         x.end_memory_equal(tok(), indent, size_bytes,
                            lhs_info.type_ref().alignment(), dst, inverted);

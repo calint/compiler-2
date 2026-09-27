@@ -104,36 +104,23 @@ class stmt_builtin_array_copy final : public statement {
 
         const operand count_register{x.begin_array_copy(tok(), indent)};
 
-        std::vector<operand> allocated_scratch_registers;
-
         x.comment(count_.tok(), indent, statement::trimmed_source(count_));
 
         count_.compile(tc, indent,
                        toc::make_ident_info_from_register(count_register));
 
-        x.comment(src_.tok(), indent, statement::trimmed_source(src_));
+        src_.compile_address(tc, indent, tok(), array_src_info.lea_path,
+                             count_register, x.array_copy_source_register(),
+                             [&](const operand& address) -> void {
+                                 x.set_array_copy_source(indent, address);
+                             });
 
-        const operand src_operand{src_.compile_lea(
-            tc, indent, src_.first_token(), allocated_scratch_registers,
-            count_register, array_src_info.lea_path,
-            x.array_copy_source_register())};
-
-        x.set_array_copy_source(indent, src_operand);
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
-
-        x.comment(dst_.tok(), indent, statement::trimmed_source(dst_));
-
-        allocated_scratch_registers.clear();
-
-        const operand dst_operand{dst_.compile_lea(
-            tc, indent, dst_.first_token(), allocated_scratch_registers,
-            count_register, array_dst_info.lea_path,
-            x.array_copy_destination_register())};
-
-        x.set_array_copy_destination(indent, dst_operand);
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
+        dst_.compile_address(tc, indent, tok(), array_dst_info.lea_path,
+                             count_register,
+                             x.array_copy_destination_register(),
+                             [&](const operand& address) -> void {
+                                 x.set_array_copy_destination(indent, address);
+                             });
 
         x.end_array_copy(tok(), indent, array_src_info.type_ref().size_bytes(),
                          array_src_info.type_ref().alignment());
