@@ -3511,15 +3511,6 @@ class machine_rv32i : public machine {
         size_t indent_;
         std::string_view verb_;
 
-        static constexpr std::string_view false_label_{"5f"};
-
-        // the loop runs 'width' accesses after 'head_size_bytes' of narrower
-        // ones
-        struct loop_start {
-            size_t head_size_bytes{};
-            size_t width{};
-        };
-
       public:
         bulk_operation(machine_rv32i& backend, const token& src_loc_tk,
                        const size_t indent, const std::string_view verb)
@@ -3532,144 +3523,35 @@ class machine_rv32i : public machine {
         auto operator=(bulk_operation&&) -> bulk_operation& = delete;
         virtual ~bulk_operation() = default;
 
-        // 'src' is empty for zero; unrolled accesses use direct offsets, a
-        // loop takes its head from them and then walks pointers from the
-        // boundary
+        // 'src' is empty for zero
         auto walk_known_size(const operand& src, const operand& dst,
                              const size_t size_bytes,
                              const std::span<const access_start> starts)
             -> void {
 
-            const address_scope scope{backend_, dst, src};
-
-            if (unrolls(size_bytes, aligned_part_count(size_bytes, starts))) {
-                backend_.comment_aligned_parts(src_loc_tk_, indent_, verb_,
-                                               size_bytes, starts);
-
-                emit_parts(size_bytes, starts, direct_address(src, size_bytes),
-                           direct_address(dst, size_bytes));
-
-                return;
-            }
-
-            const loop_start loop{plan_loop_start(starts, size_bytes)};
-
-            const std::string head{
-                loop.head_size_bytes == 0
-                    ? std::string{}
-                    : std::format(" after a {} B head", loop.head_size_bytes)};
-
-            backend_.comment(src_loc_tk_, indent_,
-                             "{} loop of {}-byte accesses{}: {}", verb_,
-                             loop.width, head, describe_starts(starts));
-
-            if (loop.head_size_bytes != 0) {
-                // a head pointer for a far offset is not needed by the loop
-                const address_scope head_scope{backend_, dst, src};
-                emit_parts(loop.head_size_bytes, starts,
-                           direct_address(src, loop.head_size_bytes),
-                           direct_address(dst, loop.head_size_bytes));
-            }
-
-            const operand src_pointer{pointer_to(src, loop.head_size_bytes)};
-            const operand dst_pointer{pointer_to(dst, loop.head_size_bytes)};
-
-            const operand count{backend_.alloc_scratch_register(
-                src_loc_tk_, indent_, backend_.default_type())};
-
-            emit_counted_loop(src_pointer, dst_pointer, count,
-                              size_bytes - loop.head_size_bytes, loop.width);
+            known_size_walk{*this}.from_addresses(src, dst, size_bytes, starts);
         }
 
-        // a known size from pointers the walk may advance, 'alignment' is the
-        // type alignment
+        // pointers the walk may advance, 'alignment' is the type alignment
         auto walk_from_pointers(const operand& src_pointer,
                                 const operand& dst_pointer,
                                 const operand& count, const size_t size_bytes,
                                 const std::span<const access_start> starts,
                                 const size_t alignment) -> void {
 
-            const address_scope scope{backend_, dst_pointer, src_pointer};
-
-            // the known size limits the head
-            const loop_start start{
-                plan_pointer_loop(starts, alignment, size_bytes)};
-
-            emit_pointer_head(src_pointer, dst_pointer, start);
-            emit_counted_loop(src_pointer, dst_pointer, count,
-                              size_bytes - start.head_size_bytes, start.width);
+            known_size_walk{*this}.from_pointers(
+                src_pointer, dst_pointer, count, size_bytes, starts, alignment);
         }
 
-        // a byte 'count' known at run time; the pointers stay aligned to the
-        // loop width so each tail access is aligned too
+        // a byte 'count' known at run time, 'alignment' is the type alignment
         auto walk_runtime_count(const operand& src_pointer,
                                 const operand& dst_pointer,
                                 const operand& count,
                                 const std::span<const access_start> starts,
                                 const size_t alignment) -> void {
 
-            const address_scope scope{backend_, dst_pointer, src_pointer};
-
-            // the run-time count may be smaller than any head
-            const loop_start start{plan_pointer_loop(
-                starts, alignment, std::numeric_limits<size_t>::max())};
-
-            const size_t width{start.width};
-
-            // without a known alignment every access is a byte
-            if (width == 1) {
-                backend_.comment(src_loc_tk_, indent_, "{}; skip if none",
-                                 describe_loop(1));
-                assembler().beqz(indent_, count.base_register(), "4f");
-                emit_chunk_loop(src_pointer, dst_pointer, count, 1);
-                assembler().label(indent_, "4");
-
-                return;
-            }
-
-            // also the scratch of the head check and the halfword tail test
-            const operand chunks{backend_.alloc_scratch_register(
-                src_loc_tk_, indent_, backend_.default_type())};
-
-            backend_.comment(src_loc_tk_, indent_, "{}: {}, {}: tail bytes",
-                             chunks.base_register(),
-                             width == 4 ? "words" : "halfwords",
-                             count.base_register());
-
-            emit_checked_head(src_pointer, dst_pointer, count, chunks,
-                              start.head_size_bytes);
-
-            backend_.comment(
-                src_loc_tk_, indent_,
-                "split bytes into chunks and tail; skip loop if none");
-            assembler().srli(indent_, chunks.base_register(),
-                             count.base_register(), std::countr_zero(width));
-            assembler().andi(indent_, count.base_register(),
-                             count.base_register(), width - 1);
-            assembler().beqz(indent_, chunks.base_register(), "2f");
-            backend_.comment(src_loc_tk_, indent_, "{}", describe_loop(width));
-            emit_chunk_loop(src_pointer, dst_pointer, chunks, width);
-            assembler().label(indent_, "2");
-
-            // after words at most 3 bytes remain, bit 1 selects a halfword
-            if (width == 4) {
-                backend_.comment(src_loc_tk_, indent_,
-                                 "{} optional 2-byte tail", verb_);
-                assembler().andi(indent_, chunks.base_register(),
-                                 count.base_register(), 2);
-                assembler().beqz(indent_, chunks.base_register(), "3f");
-                access_at_pointers(2, src_pointer, dst_pointer);
-                advance(src_pointer, dst_pointer, 2);
-                assembler().label(indent_, "3");
-                assembler().andi(indent_, count.base_register(),
-                                 count.base_register(), 1);
-            }
-
-            backend_.comment(src_loc_tk_, indent_, "{} optional final byte",
-                             verb_);
-            assembler().beqz(indent_, count.base_register(), "4f");
-            access_at_pointers(1, src_pointer, dst_pointer);
-            assembler().label(indent_, "4");
+            runtime_count_walk{*this}.from_pointers(src_pointer, dst_pointer,
+                                                    count, starts, alignment);
         }
 
       protected:
@@ -3705,308 +3587,527 @@ class machine_rv32i : public machine {
         [[nodiscard]] auto indent() const -> size_t { return indent_; }
 
       private:
-        // the widest width that every start reaches after the same head of at
-        // most 'max_head_size_bytes'
-        [[nodiscard]] static auto
-        plan_loop_start(const std::span<const access_start> starts,
-                        const size_t max_head_size_bytes) -> loop_start {
+        // what both walks share: one access, advancing the pointers, a loop of
+        // equal chunks and the loop width for pointers
+        class walk {
+            bulk_operation& operation_;
 
-            for (size_t width{word_size_bytes_}; width > 1; width /= 2) {
-                const size_t phase{starts.front().phase % width};
-                const size_t head_size_bytes{(width - phase) % width};
+            static constexpr std::string_view false_label_{"5f"};
 
-                const bool reaches_width{std::ranges::all_of(
-                    starts, [width, phase](const access_start& s) -> bool {
-                        return width <= s.alignment and
-                               s.phase % width == phase;
-                    })};
+          public:
+            explicit walk(bulk_operation& operation) : operation_{operation} {}
 
-                if (reaches_width and head_size_bytes <= max_head_size_bytes) {
-                    return {
-                        .head_size_bytes{head_size_bytes},
-                        .width{width},
-                    };
-                }
-            }
+            walk(const walk&) = delete;
+            walk(walk&&) = delete;
+            auto operator=(const walk&) -> walk& = delete;
+            auto operator=(walk&&) -> walk& = delete;
+            ~walk() = default;
 
-            return {
-                .head_size_bytes{},
-                .width{1},
+          protected:
+            // the loop runs 'width' accesses after 'head_size_bytes' of
+            // narrower ones
+            struct loop_start {
+                size_t head_size_bytes{};
+                size_t width{};
             };
-        }
 
-        // pointers may hold any address, so 'starts' from 'start_of' with
-        // alignment 1 gain the type 'alignment' here
-        [[nodiscard]] auto plan_pointer_loop(
-            const std::span<const access_start> starts, const size_t alignment,
-            const size_t max_head_size_bytes) const -> loop_start {
-
-            std::vector<access_start> typed{starts.begin(), starts.end()};
-            for (access_start& s : typed) {
-                s.alignment = std::max(s.alignment, bulk_width(alignment));
+            [[nodiscard]] auto operation() const -> bulk_operation& {
+                return operation_;
             }
 
-            const loop_start start{plan_loop_start(typed, max_head_size_bytes)};
-
-            if (start.head_size_bytes != 0) {
-                backend_.comment(
-                    src_loc_tk_, indent_,
-                    "{}-byte accesses after a {} B head: addresses {} and {}",
-                    start.width, start.head_size_bytes,
-                    describe_start(typed.front()),
-                    describe_start(typed.back()));
-
-                return start;
+            [[nodiscard]] auto backend() const -> machine_rv32i& {
+                return operation_.backend_;
             }
 
-            // name the alignment that decided the width
-            if (start.width > alignment) {
-                backend_.comment(src_loc_tk_, indent_,
-                                 "{}-byte accesses: both addresses {}-byte "
-                                 "aligned, type {}-byte aligned",
-                                 start.width, start.width, alignment);
-
-                return start;
+            [[nodiscard]] auto assembler() const -> assembler_rv32i& {
+                return operation_.backend_.assembler_;
             }
 
-            backend_.comment(src_loc_tk_, indent_,
-                             "{}-byte accesses: type {}-byte aligned, "
-                             "addresses not proven more aligned",
-                             start.width, alignment);
-
-            return start;
-        }
-
-        // an access 'offset' past the addresses, 'src' is empty for zero
-        auto access(const size_t width, const operand& src, const operand& dst,
-                    const size_t offset) -> void {
-
-            const bool has_src{not src.is_empty()};
-
-            const std::string_view src_base{
-                has_src ? std::string_view{src.base_register()}
-                        : std::string_view{}};
-
-            const int64_t src_offset{has_src ? src.displacement() +
-                                                   static_cast<int64_t>(offset)
-                                             : 0};
-
-            do_operation(width, src_base, src_offset, dst.base_register(),
-                         dst.displacement() + static_cast<int64_t>(offset),
-                         false_label_);
-        }
-
-        auto access_at_pointers(const size_t width, const operand& src_pointer,
-                                const operand& dst_pointer) -> void {
-
-            access(width, pointer_address(src_pointer),
-                   pointer_address(dst_pointer), 0);
-        }
-
-        // unrolled accesses at offsets from 'src' and 'dst'
-        auto emit_parts(const size_t size_bytes,
-                        const std::span<const access_start> starts,
-                        const operand& src, const operand& dst) -> void {
-
-            for_each_aligned_part(
-                size_bytes, starts,
-                [&](const size_t width, const size_t offset) -> void {
-                    access(width, src, dst, offset);
-                });
-        }
-
-        [[nodiscard]] auto pointer_address(const operand& pointer) const
-            -> operand {
-
-            if (pointer.is_empty()) {
-                return {};
+            [[nodiscard]] auto src_loc_tk() const -> const token& {
+                return operation_.src_loc_tk_;
             }
 
-            return operand::mem(pointer.base_register(), {}, 1, 0,
-                                backend_.default_type());
-        }
-
-        [[nodiscard]] auto direct_address(const operand& address,
-                                          const size_t reach_bytes) -> operand {
-
-            if (address.is_empty()) {
-                return {};
+            [[nodiscard]] auto indent() const -> size_t {
+                return operation_.indent_;
             }
 
-            return backend_.unrolled_address(src_loc_tk_, indent_, address,
-                                             reach_bytes);
-        }
-
-        // a pointer register holding 'address' plus 'offset'
-        [[nodiscard]] auto pointer_to(const operand& address,
-                                      const size_t offset) -> operand {
-
-            if (address.is_empty()) {
-                return {};
+            [[nodiscard]] auto verb() const -> std::string_view {
+                return operation_.verb_;
             }
 
-            const operand pointer{backend_.alloc_scratch_register(
-                src_loc_tk_, indent_, backend_.default_type())};
+            template <typename... args_t>
+            auto comment(const std::format_string<args_t...> format,
+                         args_t&&... args) const -> void {
 
-            operand moved{address};
-            moved.increment_offset(static_cast<int64_t>(offset));
-            backend_.address_of(src_loc_tk_, indent_, pointer, moved);
+                const std::string text{
+                    std::format(format, std::forward<args_t>(args)...)};
 
-            return pointer;
-        }
+                backend().comment(src_loc_tk(), indent(),
+                                  std::string_view{text});
+            }
 
-        auto advance(const operand& src_pointer, const operand& dst_pointer,
-                     const size_t size_bytes) -> void {
+            // an access 'offset' past the addresses, 'src' is empty for zero
+            auto access(const size_t width, const operand& src,
+                        const operand& dst, const size_t offset) -> void {
 
-            for (const operand* pointer : {&src_pointer, &dst_pointer}) {
-                if (pointer->is_empty()) {
-                    continue;
+                const bool has_src{not src.is_empty()};
+
+                const std::string_view src_base{
+                    has_src ? std::string_view{src.base_register()}
+                            : std::string_view{}};
+
+                const int64_t src_offset{
+                    has_src ? src.displacement() + static_cast<int64_t>(offset)
+                            : 0};
+
+                operation_.do_operation(
+                    width, src_base, src_offset, dst.base_register(),
+                    dst.displacement() + static_cast<int64_t>(offset),
+                    false_label_);
+            }
+
+            auto access_at_pointers(const size_t width,
+                                    const operand& src_pointer,
+                                    const operand& dst_pointer) -> void {
+
+                access(width, pointer_address(src_pointer),
+                       pointer_address(dst_pointer), 0);
+            }
+
+            // unrolled accesses at offsets from 'src' and 'dst'
+            auto emit_parts(const size_t size_bytes,
+                            const std::span<const access_start> starts,
+                            const operand& src, const operand& dst) -> void {
+
+                for_each_aligned_part(
+                    size_bytes, starts,
+                    [&](const size_t width, const size_t offset) -> void {
+                        access(width, src, dst, offset);
+                    });
+            }
+
+            [[nodiscard]] auto pointer_address(const operand& pointer) const
+                -> operand {
+
+                if (pointer.is_empty()) {
+                    return {};
                 }
 
-                assembler().addi(indent_, pointer->base_register(),
-                                 pointer->base_register(), size_bytes);
+                return operand::mem(pointer.base_register(), {}, 1, 0,
+                                    backend().default_type());
             }
-        }
 
-        // repeats 'width' accesses 'chunks' times, 'chunks' must not be zero
-        auto emit_chunk_loop(const operand& src_pointer,
-                             const operand& dst_pointer, const operand& chunks,
-                             const size_t width) -> void {
+            auto advance(const operand& src_pointer, const operand& dst_pointer,
+                         const size_t size_bytes) -> void {
 
-            assembler().label(indent_, "1");
-            access_at_pointers(width, src_pointer, dst_pointer);
-            advance(src_pointer, dst_pointer, width);
-            assembler().addi(indent_, chunks.base_register(),
-                             chunks.base_register(), -1);
-            assembler().bnez(indent_, chunks.base_register(), "1b");
-        }
+                for (const operand* pointer : {&src_pointer, &dst_pointer}) {
+                    if (pointer->is_empty()) {
+                        continue;
+                    }
 
-        // 'size_bytes' from pointers at a 'width' boundary; one chunk needs
-        // no loop and the tail is known at compile time
-        auto emit_counted_loop(const operand& src_pointer,
+                    assembler().addi(indent(), pointer->base_register(),
+                                     pointer->base_register(), size_bytes);
+                }
+            }
+
+            // repeats 'width' accesses 'chunks' times, 'chunks' must not be
+            // zero
+            auto emit_chunk_loop(const operand& src_pointer,
+                                 const operand& dst_pointer,
+                                 const operand& chunks, const size_t width)
+                -> void {
+
+                assembler().label(indent(), "1");
+                access_at_pointers(width, src_pointer, dst_pointer);
+                advance(src_pointer, dst_pointer, width);
+                assembler().addi(indent(), chunks.base_register(),
+                                 chunks.base_register(), -1);
+                assembler().bnez(indent(), chunks.base_register(), "1b");
+            }
+
+            // the widest width that every start reaches after the same head of
+            // at most 'max_head_size_bytes'
+            [[nodiscard]] static auto
+            plan_loop_start(const std::span<const access_start> starts,
+                            const size_t max_head_size_bytes) -> loop_start {
+
+                for (size_t width{word_size_bytes_}; width > 1; width /= 2) {
+                    const size_t phase{starts.front().phase % width};
+                    const size_t head_size_bytes{(width - phase) % width};
+
+                    const bool reaches_width{std::ranges::all_of(
+                        starts, [width, phase](const access_start& s) -> bool {
+                            return width <= s.alignment and
+                                   s.phase % width == phase;
+                        })};
+
+                    if (reaches_width and
+                        head_size_bytes <= max_head_size_bytes) {
+
+                        return {
+                            .head_size_bytes{head_size_bytes},
+                            .width{width},
+                        };
+                    }
+                }
+
+                return {
+                    .head_size_bytes{},
+                    .width{1},
+                };
+            }
+
+            // pointers may hold any address, so 'starts' from 'start_of' with
+            // alignment 1 gain the type 'alignment' here
+            [[nodiscard]] auto
+            plan_pointer_loop(const std::span<const access_start> starts,
+                              const size_t alignment,
+                              const size_t max_head_size_bytes) const
+                -> loop_start {
+
+                std::vector<access_start> typed{starts.begin(), starts.end()};
+                for (access_start& s : typed) {
+                    s.alignment = std::max(s.alignment, bulk_width(alignment));
+                }
+
+                const loop_start start{
+                    plan_loop_start(typed, max_head_size_bytes)};
+
+                if (start.head_size_bytes != 0) {
+                    comment("{}-byte accesses after a {} B head: addresses {} "
+                            "and {}",
+                            start.width, start.head_size_bytes,
+                            describe_start(typed.front()),
+                            describe_start(typed.back()));
+
+                    return start;
+                }
+
+                // name the alignment that decided the width
+                if (start.width > alignment) {
+                    comment("{}-byte accesses: both addresses {}-byte aligned, "
+                            "type {}-byte aligned",
+                            start.width, start.width, alignment);
+
+                    return start;
+                }
+
+                comment("{}-byte accesses: type {}-byte aligned, addresses not "
+                        "proven more aligned",
+                        start.width, alignment);
+
+                return start;
+            }
+
+            [[nodiscard]] auto describe_loop(const size_t width) const
+                -> std::string {
+
+                if (width == 1) {
+                    return std::format("{} bytes", verb());
+                }
+
+                return std::format("{} {}-byte {}", verb(), width,
+                                   width == 4 ? "words" : "halfwords");
+            }
+        };
+
+        // the size is known at compile time, so the head, loop and tail are
+        // decided here and a single chunk needs no loop
+        class known_size_walk final : public walk {
+          public:
+            using walk::walk;
+
+            // unrolled accesses use direct offsets, a loop takes its head from
+            // them and then walks pointers from the boundary
+            auto from_addresses(const operand& src, const operand& dst,
+                                const size_t size_bytes,
+                                const std::span<const access_start> starts)
+                -> void {
+
+                const address_scope scope{backend(), dst, src};
+
+                const size_t part_count{aligned_part_count(size_bytes, starts)};
+
+                if (operation().unrolls(size_bytes, part_count)) {
+                    backend().comment_aligned_parts(src_loc_tk(), indent(),
+                                                    verb(), size_bytes, starts);
+
+                    emit_parts(size_bytes, starts,
+                               direct_address(src, size_bytes),
+                               direct_address(dst, size_bytes));
+
+                    return;
+                }
+
+                const loop_start loop{plan_loop_start(starts, size_bytes)};
+
+                const std::string head{loop.head_size_bytes == 0
+                                           ? std::string{}
+                                           : std::format(" after a {} B head",
+                                                         loop.head_size_bytes)};
+
+                comment("{} loop of {}-byte accesses{}: {}", verb(), loop.width,
+                        head, describe_starts(starts));
+
+                if (loop.head_size_bytes != 0) {
+                    // a head pointer for a far offset is not needed by the loop
+                    const address_scope head_scope{backend(), dst, src};
+                    emit_parts(loop.head_size_bytes, starts,
+                               direct_address(src, loop.head_size_bytes),
+                               direct_address(dst, loop.head_size_bytes));
+                }
+
+                const operand src_pointer{
+                    pointer_to(src, loop.head_size_bytes)};
+
+                const operand dst_pointer{
+                    pointer_to(dst, loop.head_size_bytes)};
+
+                const operand count{backend().alloc_scratch_register(
+                    src_loc_tk(), indent(), backend().default_type())};
+
+                emit_counted_loop(src_pointer, dst_pointer, count,
+                                  size_bytes - loop.head_size_bytes,
+                                  loop.width);
+            }
+
+            auto from_pointers(const operand& src_pointer,
                                const operand& dst_pointer, const operand& count,
-                               const size_t size_bytes, const size_t width)
-            -> void {
+                               const size_t size_bytes,
+                               const std::span<const access_start> starts,
+                               const size_t alignment) -> void {
 
-            const access_start start{
-                .alignment{width},
-                .phase{},
-            };
+                const address_scope scope{backend(), dst_pointer, src_pointer};
 
-            const size_t chunk_count{size_bytes / width};
-            if (chunk_count <= 1) {
-                emit_parts(size_bytes, std::span{&start, 1},
+                // the known size limits the head
+                const loop_start start{
+                    plan_pointer_loop(starts, alignment, size_bytes)};
+
+                emit_pointer_head(src_pointer, dst_pointer, start);
+                emit_counted_loop(src_pointer, dst_pointer, count,
+                                  size_bytes - start.head_size_bytes,
+                                  start.width);
+            }
+
+          private:
+            [[nodiscard]] auto direct_address(const operand& address,
+                                              const size_t reach_bytes)
+                -> operand {
+
+                if (address.is_empty()) {
+                    return {};
+                }
+
+                return backend().unrolled_address(src_loc_tk(), indent(),
+                                                  address, reach_bytes);
+            }
+
+            // a pointer register holding 'address' plus 'offset'
+            [[nodiscard]] auto pointer_to(const operand& address,
+                                          const size_t offset) -> operand {
+
+                if (address.is_empty()) {
+                    return {};
+                }
+
+                const operand pointer{backend().alloc_scratch_register(
+                    src_loc_tk(), indent(), backend().default_type())};
+
+                operand moved{address};
+                moved.increment_offset(static_cast<int64_t>(offset));
+                backend().address_of(src_loc_tk(), indent(), pointer, moved);
+
+                return pointer;
+            }
+
+            // 'size_bytes' from pointers at a 'width' boundary
+            auto emit_counted_loop(const operand& src_pointer,
+                                   const operand& dst_pointer,
+                                   const operand& count,
+                                   const size_t size_bytes, const size_t width)
+                -> void {
+
+                const access_start start{
+                    .alignment{width},
+                    .phase{},
+                };
+
+                const size_t chunk_count{size_bytes / width};
+                if (chunk_count <= 1) {
+                    emit_parts(size_bytes, std::span{&start, 1},
+                               pointer_address(src_pointer),
+                               pointer_address(dst_pointer));
+
+                    return;
+                }
+
+                comment("{}", describe_loop(width));
+                assembler().li(indent(), count.base_register(), chunk_count);
+                emit_chunk_loop(src_pointer, dst_pointer, count, width);
+
+                const size_t tail_size_bytes{size_bytes % width};
+                if (tail_size_bytes == 0) {
+                    return;
+                }
+
+                comment("{} {} B tail", verb(), tail_size_bytes);
+
+                emit_parts(tail_size_bytes, std::span{&start, 1},
+                           pointer_address(src_pointer),
+                           pointer_address(dst_pointer));
+            }
+
+            // the pointers are 'width - head' past a boundary, so the head
+            // parts are at fixed offsets followed by one advance
+            auto emit_pointer_head(const operand& src_pointer,
+                                   const operand& dst_pointer,
+                                   const loop_start& start) -> void {
+
+                if (start.head_size_bytes == 0) {
+                    return;
+                }
+
+                const access_start head_start{
+                    .alignment{start.width},
+                    .phase{start.width - start.head_size_bytes},
+                };
+
+                comment("{} {} B head", verb(), start.head_size_bytes);
+
+                emit_parts(start.head_size_bytes, std::span{&head_start, 1},
                            pointer_address(src_pointer),
                            pointer_address(dst_pointer));
 
-                return;
+                advance(src_pointer, dst_pointer, start.head_size_bytes);
             }
 
-            backend_.comment(src_loc_tk_, indent_, "{}", describe_loop(width));
-            assembler().li(indent_, count.base_register(), chunk_count);
-            emit_chunk_loop(src_pointer, dst_pointer, count, width);
+            [[nodiscard]] static auto
+            describe_starts(const std::span<const access_start> starts)
+                -> std::string {
 
-            const size_t tail_size_bytes{size_bytes % width};
-            if (tail_size_bytes == 0) {
-                return;
+                if (starts.size() == 1) {
+                    return std::format("start {}",
+                                       describe_start(starts.front()));
+                }
+
+                return std::format("source {}, destination {}",
+                                   describe_start(starts.front()),
+                                   describe_start(starts.back()));
             }
+        };
 
-            backend_.comment(src_loc_tk_, indent_, "{} {} B tail", verb_,
-                             tail_size_bytes);
+        // the byte count is known only at run time, so each head access checks
+        // it and its low bits select the tail; the pointers stay aligned to
+        // the loop width so each tail access is aligned too
+        class runtime_count_walk final : public walk {
+          public:
+            using walk::walk;
 
-            emit_parts(tail_size_bytes, std::span{&start, 1},
-                       pointer_address(src_pointer),
-                       pointer_address(dst_pointer));
-        }
-
-        // the pointers are 'width - head' past a boundary, so the head parts
-        // are at fixed offsets followed by one advance
-        auto emit_pointer_head(const operand& src_pointer,
-                               const operand& dst_pointer,
-                               const loop_start& start) -> void {
-
-            if (start.head_size_bytes == 0) {
-                return;
-            }
-
-            const access_start head_start{
-                .alignment{start.width},
-                .phase{start.width - start.head_size_bytes},
-            };
-
-            backend_.comment(src_loc_tk_, indent_, "{} {} B head", verb_,
-                             start.head_size_bytes);
-
-            emit_parts(start.head_size_bytes, std::span{&head_start, 1},
-                       pointer_address(src_pointer),
-                       pointer_address(dst_pointer));
-
-            advance(src_pointer, dst_pointer, start.head_size_bytes);
-        }
-
-        // each head access first checks that the run-time 'count' still
-        // covers it, otherwise the fewer bytes are left to the tail, which
-        // needs no more than the current pointer alignment
-        auto emit_checked_head(const operand& src_pointer,
+            auto from_pointers(const operand& src_pointer,
                                const operand& dst_pointer, const operand& count,
-                               const operand& scratch,
-                               const size_t head_size_bytes) -> void {
+                               const std::span<const access_start> starts,
+                               const size_t alignment) -> void {
 
-            if (head_size_bytes == 0) {
-                return;
-            }
+                const address_scope scope{backend(), dst_pointer, src_pointer};
 
-            backend_.comment(src_loc_tk_, indent_, "{} {} B head", verb_,
-                             head_size_bytes);
+                // the run-time count may be smaller than any head
+                const loop_start start{plan_pointer_loop(
+                    starts, alignment, std::numeric_limits<size_t>::max())};
 
-            for (const size_t width : {size_t{1}, size_t{2}}) {
-                if ((head_size_bytes & width) == 0) {
-                    continue;
-                }
+                const size_t width{start.width};
 
+                // without a known alignment every access is a byte
                 if (width == 1) {
-                    assembler().beqz(indent_, count.base_register(), "7f");
+                    comment("{}; skip if none", describe_loop(1));
+                    assembler().beqz(indent(), count.base_register(), "4f");
+                    emit_chunk_loop(src_pointer, dst_pointer, count, 1);
+                    assembler().label(indent(), "4");
+
+                    return;
                 }
 
-                if (width == 2) {
-                    assembler().sltiu(indent_, scratch.base_register(),
-                                      count.base_register(), 2);
-                    assembler().bnez(indent_, scratch.base_register(), "7f");
-                }
+                // also the scratch of the head check and the halfword tail test
+                const operand chunks{backend().alloc_scratch_register(
+                    src_loc_tk(), indent(), backend().default_type())};
 
-                access_at_pointers(width, src_pointer, dst_pointer);
-                advance(src_pointer, dst_pointer, width);
-                assembler().addi(indent_, count.base_register(),
+                comment("{}: {}, {}: tail bytes", chunks.base_register(),
+                        width == 4 ? "words" : "halfwords",
+                        count.base_register());
+
+                emit_checked_head(src_pointer, dst_pointer, count, chunks,
+                                  start.head_size_bytes);
+
+                comment("split bytes into chunks and tail; skip loop if none");
+                assembler().srli(indent(), chunks.base_register(),
                                  count.base_register(),
-                                 -static_cast<int64_t>(width));
+                                 std::countr_zero(width));
+                assembler().andi(indent(), count.base_register(),
+                                 count.base_register(), width - 1);
+                assembler().beqz(indent(), chunks.base_register(), "2f");
+                comment("{}", describe_loop(width));
+                emit_chunk_loop(src_pointer, dst_pointer, chunks, width);
+                assembler().label(indent(), "2");
+
+                // after words at most 3 bytes remain, bit 1 selects a halfword
+                if (width == 4) {
+                    comment("{} optional 2-byte tail", verb());
+                    assembler().andi(indent(), chunks.base_register(),
+                                     count.base_register(), 2);
+                    assembler().beqz(indent(), chunks.base_register(), "3f");
+                    access_at_pointers(2, src_pointer, dst_pointer);
+                    advance(src_pointer, dst_pointer, 2);
+                    assembler().label(indent(), "3");
+                    assembler().andi(indent(), count.base_register(),
+                                     count.base_register(), 1);
+                }
+
+                comment("{} optional final byte", verb());
+                assembler().beqz(indent(), count.base_register(), "4f");
+                access_at_pointers(1, src_pointer, dst_pointer);
+                assembler().label(indent(), "4");
             }
 
-            assembler().label(indent_, "7");
-        }
+          private:
+            // each head access first checks that the count still covers it,
+            // otherwise the fewer bytes are left to the tail, which needs no
+            // more than the current pointer alignment
+            auto emit_checked_head(const operand& src_pointer,
+                                   const operand& dst_pointer,
+                                   const operand& count, const operand& scratch,
+                                   const size_t head_size_bytes) -> void {
 
-        [[nodiscard]] auto describe_loop(const size_t width) const
-            -> std::string {
+                if (head_size_bytes == 0) {
+                    return;
+                }
 
-            if (width == 1) {
-                return std::format("{} bytes", verb_);
+                comment("{} {} B head", verb(), head_size_bytes);
+
+                for (const size_t width : {size_t{1}, size_t{2}}) {
+                    if ((head_size_bytes & width) == 0) {
+                        continue;
+                    }
+
+                    if (width == 1) {
+                        assembler().beqz(indent(), count.base_register(), "7f");
+                    }
+
+                    if (width == 2) {
+                        assembler().sltiu(indent(), scratch.base_register(),
+                                          count.base_register(), 2);
+                        assembler().bnez(indent(), scratch.base_register(),
+                                         "7f");
+                    }
+
+                    access_at_pointers(width, src_pointer, dst_pointer);
+                    advance(src_pointer, dst_pointer, width);
+                    assembler().addi(indent(), count.base_register(),
+                                     count.base_register(),
+                                     -static_cast<int64_t>(width));
+                }
+
+                assembler().label(indent(), "7");
             }
-
-            return std::format("{} {}-byte {}", verb_, width,
-                               width == 4 ? "words" : "halfwords");
-        }
-
-        [[nodiscard]] static auto
-        describe_starts(const std::span<const access_start> starts)
-            -> std::string {
-
-            if (starts.size() == 1) {
-                return std::format("start {}", describe_start(starts.front()));
-            }
-
-            return std::format("source {}, destination {}",
-                               describe_start(starts.front()),
-                               describe_start(starts.back()));
-        }
+        };
     };
 
     class bulk_zero final : public bulk_operation {
