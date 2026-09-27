@@ -1,0 +1,6 @@
+# a whole array read as a scalar is not its first element
+
+func main() {
+    var arr[2] i32
+    var x i32 = 1 + arr
+}

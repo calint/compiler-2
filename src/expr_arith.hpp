@@ -689,7 +689,7 @@ class expr_arith final : public expression {
             return;
         }
 
-        const ident_info src_info{tc.make_ident_info(src)};
+        const ident_info src_info{tc.make_scalar_ident_info(src)};
         if (src_info.is_const()) {
             x.comment(src.tok(), indent, "src: constant");
             emit(src.make_constant_operand(src_info), false);
@@ -759,7 +759,7 @@ class expr_arith final : public expression {
         if (is_negated_operand(tc, src)) {
             x.comment(src.tok(), indent, "src: negated operand");
 
-            const ident_info src_info{tc.make_ident_info(src)};
+            const ident_info src_info{tc.make_scalar_ident_info(src)};
             std::vector<operand> lea_registers;
             const operand src_operand{
                 tc.get_lea_operand(indent, src, src_info, lea_registers)};

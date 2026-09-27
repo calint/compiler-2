@@ -84,6 +84,7 @@ class stmt_identifier : public statement {
             if (const token t{tz.is_next_char_token('.')}; not t.is_empty()) {
                 const token next_tk{tz.next_token()};
                 if (not is_method_name(tc, tk, next_tk)) {
+                    assert_element_selected(tc, tk);
                     elem_delims_tk_.emplace_back(t);
                     tk_prv = tk;
                     tk = next_tk;
@@ -254,7 +255,7 @@ class stmt_identifier : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info src_info{tc.make_ident_info(*this)};
+        const ident_info src_info{tc.make_scalar_ident_info(*this)};
 
         if (src_info.is_const()) {
             x.copy_value(tok(), indent, dst_info.operand,
@@ -403,6 +404,21 @@ class stmt_identifier : public statement {
     }
 
   private:
+    // 'ps.x' does not mean 'ps[0].x'
+    auto assert_element_selected(const toc& tc, const token& tk) const -> void {
+
+        if (elems_.back().array_index_expr or tc.is_func(path_as_string_)) {
+            return;
+        }
+
+        if (not tc.make_ident_info(tk, path_as_string_).is_array) {
+            return;
+        }
+
+        throw compiler_exception{
+            tk, std::format("array '{}' must be indexed", path_as_string_)};
+    }
+
     // a path element with an optional '[index]'
     auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void {
         const token open_bracket_tk{tz.is_next_char_token('[')};

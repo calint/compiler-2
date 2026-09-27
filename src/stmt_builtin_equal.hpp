@@ -94,9 +94,14 @@ class stmt_builtin_equal final : public expression {
 
         size_t size_bytes{lhs_info.type_ref().size_bytes()};
 
+        // a whole array is not compared as its first element
+        if (lhs_info.is_array != rhs_info.is_array) {
+            toc::assert_not_whole_array(lhs_, lhs_info);
+            toc::assert_not_whole_array(rhs_, rhs_info);
+        }
+
         // check comparing 2 arrays of the same size without indexing
-        if (lhs_info.is_array and not lhs_.is_indexed() and
-            rhs_info.is_array and not rhs_.is_indexed()) {
+        if (lhs_info.is_array and rhs_info.is_array) {
 
             if (lhs_info.array_len != rhs_info.array_len) {
                 throw compiler_exception{lhs_.tok(),

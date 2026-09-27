@@ -3,10 +3,14 @@
 --------------------------------------------------------------------------------
 easy
 --------------------------------------------------------------------------------
-[ ] a whole array assigned to a built-in scalar reads the first element:
-    'var x i32 = arr' and '{ arr }' for an 'i32' field are accepted, records
-    reject it with "source must not be an array"
-    => decide: reject like records or keep as shorthand for 'arr[0]'
+[ ] --checks=noub enables all the noub checks: today 'upper', 'lower', 'frame'
+    and 'alias', later the remaining '--checks=noub:' items
+[ ] allow trailing comma at type definition. e.g.,
+    type object {
+        pos : point,
+        color : i32,
+    }
+[ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] rv32i: zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
     shorter than the 6 instruction loop; choose by instruction count
     (etc/codegen-inefficiencies.baz)
@@ -15,19 +19,11 @@ easy
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
-[ ] --checks=noub enables all the noub checks: today 'upper', 'lower', 'frame'
-    and 'alias', later the remaining '--checks=noub:' items
 [ ] a 'read' into a 'bool' array stores any byte, but copying a 'bool'
     ('is_bool_copy') relies on 0 or 1; reject 'bool' arrays in 'read'
     => for now the user ensures a 'read' into a 'bool' array stores only 0 or 1
-[ ] allow trailing comma at type definition. e.g.,
-    type object {
-        pos : point,
-        color : i32,
-    }
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments
-[ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
     => do perf tests first using etc/perf.sh
@@ -335,6 +331,16 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] a whole array assigned to a built-in scalar reads the first element:
+    'var x i32 = arr' and '{ arr }' for an 'i32' field are accepted, records
+    reject it with "source must not be an array"
+    => shorthand for index 0 removed: "array 'arr' must be indexed" for
+       scalar reads ('toc::make_scalar_ident_info'), unindexed arrays inside
+       a path such as 'ps.x', whole arrays given to scalar parameters and
+       'equal' of an array with a non-array; aliases of an element
+       ('alias_info::is_element') resolve to the element, so 'array_length'
+       of such a parameter is rejected instead of giving the array length;
+       tests 583-587
 [x] validate destination array size against source array size during type
     assignment copy
     => 'expr_type' knows from parsing whether its destination is a whole

@@ -504,7 +504,7 @@ auto expr_type::write_builtin_field(toc& tc, const size_t indent,
     // an array field is parsed as an array 'expr_any' which is an expression
     assert(not field.is_array);
 
-    const ident_info src_info{tc.make_ident_info(src)};
+    const ident_info src_info{tc.make_scalar_ident_info(src)};
 
     if (src_info.is_const()) {
         x.copy_value(src.tok(), indent, dst_operand,

@@ -104,7 +104,7 @@ func main() {
 
     # 'array_length' count is not a constant so the copy loops
     array_copy(worlds[1].locations, worlds[0].locations,
-               array_length(worlds.locations))
+               array_length(worlds[0].locations))
 
     # call saves and restores all 30 registers although only s0 is live
     print_num(a)

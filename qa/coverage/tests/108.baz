@@ -18,7 +18,7 @@ func foozi(data[] i8) {
 }
 
 func bar(flg flags) {
-    assert(array_length(flg) == 4)
+    assert(array_length(flg.data) == 8)
 }
 
 func main() {

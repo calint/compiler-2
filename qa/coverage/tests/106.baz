@@ -29,7 +29,7 @@ func fuz(wld1 world, wld2 world) {
     array_copy(
       wld1.locations[2].links,
       wld2.locations[0].links,
-      array_length(wld1.locations.links)
+      array_length(wld1.locations[2].links)
     )
 }
 

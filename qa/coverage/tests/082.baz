@@ -105,8 +105,8 @@ func main() {
     var idx1 i32 = 1
     var idx2 i32 = 2
     var idx3 i32 = 3
-    mega.layers[idx1].clusters[idx2].objs[idx3].id = 0x12345678
-    assert(mega.layers[idx1].clusters[idx2].objs[idx3].id == 0x12345678)
+    mega[0].layers[idx1].clusters[idx2].objs[idx3].id = 0x12345678
+    assert(mega[0].layers[idx1].clusters[idx2].objs[idx3].id == 0x12345678)
     
     # Test 12: Chained expression indices
     var base i32 = 1

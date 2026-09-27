@@ -12,12 +12,12 @@ type object {pos point, pgons[8] polygon, color i32}
 
 func main() {
     var o[1] object
-    o.pgons[3].nindices = 4
-    o.pgons[3].indices[3] = 7
+    o[0].pgons[3].nindices = 4
+    o[0].pgons[3].indices[3] = 7
 
-    assert(o.pgons[3].indices[3] == 7)
-    assert(o.pgons[3].nindices == 4)
+    assert(o[0].pgons[3].indices[3] == 7)
+    assert(o[0].pgons[3].nindices == 4)
 
-    o.pgons[0].indices[0] = 1
+    o[0].pgons[0].indices[0] = 1
     assert(o[0].pgons[0].indices[0] == 1)
 }

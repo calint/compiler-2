@@ -269,8 +269,7 @@ func main() {
     assert(o2.color == 0xff0000)
 
     var o3[2] object
-    o3.pos.y = 73
-    # index 0 in an array can be accessed without array index
+    o3[0].pos.y = 73
 
     assert(o3[0].pos.y == 73)
     o3[1] = object_init()

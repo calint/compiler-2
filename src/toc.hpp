@@ -41,6 +41,8 @@ struct alias_info {
     operand lea;
     const type* type_ptr{};
     operand register_operand;
+    // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
+    bool is_element{};
 
     [[nodiscard]] static auto make_register(const std::string_view name,
                                             const type& alias_type,
@@ -54,6 +56,7 @@ struct alias_info {
             .lea{},
             .type_ptr{&alias_type},
             .register_operand{reg},
+            .is_element{},
         };
     }
 };
@@ -867,15 +870,32 @@ class toc final {
     [[nodiscard]] auto make_ident_info(const statement& st) const
         -> ident_info {
 
-        ident_info info{make_ident_info_or_throw(st.tok(), st.identifier())};
-
         // the name refers to the declared array, 'ps[1]' accesses one element
-        if (st.is_array_element()) {
-            info.is_array = false;
-            info.array_len = 0;
-        }
+        return as_element_if(
+            st.is_array_element(),
+            make_ident_info_or_throw(st.tok(), st.identifier()));
+    }
+
+    // a whole array is not read as its first element
+    [[nodiscard]] auto make_scalar_ident_info(const statement& st) const
+        -> ident_info {
+
+        ident_info info{make_ident_info(st)};
+        assert_not_whole_array(st, info);
 
         return info;
+    }
+
+    static auto assert_not_whole_array(const statement& st,
+                                       const ident_info& info) -> void {
+
+        if (not info.is_array) {
+            return;
+        }
+
+        throw compiler_exception{
+            st.tok(),
+            std::format("array '{}' must be indexed", st.identifier())};
     }
 
     [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
@@ -1147,12 +1167,17 @@ class toc final {
         lea_path.insert(lea_path.end(), id.path().size() - 1, operand{});
         // note: -1 to exclude the first element
 
+        // an alias of an element names the element, not the array holding it
+        bool is_element{};
+
         for (const frame& cur_frame : frames_ | std::views::reverse) {
 
             // does this frame contain the variable?
             if (cur_frame.has_var(id.base())) {
-                return make_ident_info_from_frame(cur_frame, src_loc_tk, ident,
-                                                  id, std::move(lea_path));
+                return as_element_if(
+                    is_element,
+                    make_ident_info_from_frame(cur_frame, src_loc_tk, ident, id,
+                                               std::move(lea_path)));
             }
 
             // from the root frame of a function aliases are followed to the
@@ -1165,8 +1190,10 @@ class toc final {
                 // add an empty
                 lea_path.emplace_back();
 
-                return make_ident_info_from_frame(cur_frame, src_loc_tk, ident,
-                                                  id, std::move(lea_path));
+                return as_element_if(
+                    is_element,
+                    make_ident_info_from_frame(cur_frame, src_loc_tk, ident, id,
+                                               std::move(lea_path)));
             }
 
             // this is an alias, continue resolving until it is a variable,
@@ -1177,6 +1204,11 @@ class toc final {
             if (alias.register_operand.is_register() and
                 id.path().size() == 1) {
                 return ident_info::make_register(ident, alias.register_operand);
+            }
+
+            // a field path such as 'p.x' gets its array-ness from the field
+            if (alias.is_element and id.path().size() == 1) {
+                is_element = true;
             }
 
             lea_path.emplace_back(alias.lea);
@@ -1213,6 +1245,19 @@ class toc final {
         }
 
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);
+    }
+
+    [[nodiscard]] static auto as_element_if(const bool is_element,
+                                            ident_info info) -> ident_info {
+
+        if (not is_element) {
+            return info;
+        }
+
+        info.is_array = false;
+        info.array_len = 0;
+
+        return info;
     }
 
     [[nodiscard]] auto make_ident_info_from_frame(

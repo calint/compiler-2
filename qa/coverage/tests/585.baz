@@ -1,0 +1,10 @@
+# a whole array passed to a scalar parameter
+
+func f(v i32) result i32 {
+    result = v
+}
+
+func main() {
+    var arr[2] i32
+    var x i32 = f(arr)
+}

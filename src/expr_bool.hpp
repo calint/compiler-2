@@ -520,14 +520,12 @@ class expr_bool_op final : public statement {
             return compile_to_scratch(tc, indent, expr, allocated_registers);
         }
 
-        if (expr.is_indexed() or tc.has_lea(expr)) {
-            const ident_info expr_info{tc.make_ident_info(expr)};
+        const ident_info expr_info{tc.make_scalar_ident_info(expr)};
 
+        if (expr.is_indexed() or tc.has_lea(expr)) {
             return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
                                     {}, expr_info.lea_path, {});
         }
-
-        const ident_info expr_info{tc.make_ident_info(expr)};
 
         // the comparison needs its left operand in a register
         if (expr_info.is_const() and is_lhs) {

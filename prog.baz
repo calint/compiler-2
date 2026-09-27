@@ -268,8 +268,7 @@ func main() {
     assert(o2.color == 0xff0000)
 
     var o3[2] object
-    o3.pos.y = 73
-    # index 0 in an array can be accessed without array index
+    o3[0].pos.y = 73
 
     assert(o3[0].pos.y == 73)
     o3[1] = object_init()
@@ -282,7 +281,7 @@ func main() {
     array_copy(
         worlds[1].locations,
         worlds[0].locations,
-        array_length(worlds.locations)
+        array_length(worlds[0].locations)
     )
     # `array_length` is built-in
 
@@ -290,7 +289,7 @@ func main() {
     assert(arrays_equal(
              worlds[0].locations,
              worlds[1].locations,
-             array_length(worlds.locations)
+             array_length(worlds[0].locations)
           ))
     var arr2[] = { -1, 2 }
     assert(array_length(arr2) == 2)

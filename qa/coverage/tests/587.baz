@@ -1,0 +1,32 @@
+# aliases of array elements are read as the element
+
+func assert(expr bool) {
+    if not expr exit(1)
+}
+
+type point { x i32, y i32 }
+
+func twice(v i32) res i32 {
+    res = v
+    res = res + v
+}
+
+func sum(p point) res i32 {
+    res = p.x + p.y
+}
+
+func main() {
+    var arr[3] i32 = {1, 2, 3}
+    var ix = 2
+
+    arr[0] = twice(arr[ix])
+    assert(arr[0] == 6)
+
+    arr[ix] = twice(arr[1])
+    assert(arr[2] == 4)
+
+    var ps[2] point = {{1, 2}, {3, 4}}
+    assert(sum(ps[1]) == 7)
+    assert(equal(ps[0], ps[0]))
+    assert(not equal(arr[0], arr[1]))
+}

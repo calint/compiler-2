@@ -365,10 +365,12 @@ class stmt_call : public expression {
                                 ? dst_info.operand
                                 : operand{}};
 
+            // a destination such as 'arr[1]' is not an array
             aliases_to_add.emplace_back(
                 std::string{ret->ident_tk.text()}, dst_info.id,
                 std::move(dst_lea), ret->type_ptr,
-                dst_info.is_register() ? dst_info.operand : operand{});
+                dst_info.is_register() ? dst_info.operand : operand{},
+                not dst_info.is_array);
         }
 
         // scratch registers stay allocated until the inlined body is compiled
@@ -689,6 +691,7 @@ class stmt_call : public expression {
             .lea{lea},
             .type_ptr{&param.get_type()},
             .register_operand{},
+            .is_element{arg.is_array_element()},
         };
     }
 
@@ -726,6 +729,7 @@ class stmt_call : public expression {
             .lea{},
             .type_ptr{&param.get_type()},
             .register_operand{},
+            .is_element{},
         };
     }
 
@@ -838,10 +842,14 @@ class stmt_call : public expression {
                         arg.tok(), std::format("parameter {} requires an array",
                                                i + 1 - first_argument_index())};
                 }
+
+                continue;
             }
 
-            // note: the types have been checked prior to getting here so
-            //       only check if both argument and parameter are arrays
+            // the alias would make the parameter name the whole array
+            if (arg.is_identifier()) {
+                toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
+            }
         }
     }
 };
