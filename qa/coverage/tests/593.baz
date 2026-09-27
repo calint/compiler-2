@@ -54,6 +54,26 @@ func main() {
     d = b * 4 / 2 # folds
     assert(12, d == 10)
 
+    # constants merge within a run of '*' and over consecutive divisors
+    d = 2 * b * 3 / one # folds
+    assert(39, d == 30)
+    d = b * 60 / 2 / 3 # folds
+    assert(40, d == 50)
+    d = 2 * 3 / b # folds
+    assert(41, d == 1)
+    d = b * -13 / 2 / 3 % 4 # folds
+    assert(42, d == -2)
+    d = b * -1 * -1 / one # folds
+    assert(43, d == 5)
+    d = b / 1 / 1 # folds
+    assert(44, d == 5)
+
+    # a divisor of -1 or a run-time divisor keeps the divisions apart
+    d = b * 9 / -1 / 3 # folds
+    assert(45, d == -15)
+    d = b * 40 / 2 / one / 4 # folds
+    assert(46, d == 25)
+
     # constant sub-expressions as operands
     d = b / (1 + 1) # folds
     assert(13, d == 2)
@@ -90,6 +110,16 @@ func main() {
     assert(24, s8 == -128)
     var r8 i8 = (1 << 7) >> 7 # folds
     assert(30, r8 == -1)
+
+    # divisors merge only while their product fits the width
+    var q8 i8 = 100
+    var q8_apart i8 = q8 / 16 / 16 # folds
+    assert(47, q8_apart == 0)
+    var q8_merged i8 = q8 / 4 / 8 # folds
+    assert(48, q8_merged == 3)
+    var q8_min i8 = 1 << 7
+    var q8_min_merged i8 = q8_min / -2 / 64 # folds
+    assert(49, q8_min_merged == 1)
 
     # inline arguments that are constants fold in the body
     assert(25, add_three(4) == 7)

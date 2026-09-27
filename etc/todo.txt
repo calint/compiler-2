@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 easy
 --------------------------------------------------------------------------------
+[ ] review opus generated code regarding constant folding in expr_arith
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
 [ ] variable argument count in read/write might be confusing. consider requiring
@@ -38,9 +39,6 @@ generated assembly, easiest first
     => x86 one instruction less, rv32i same count ('li' either way)
     => 'expr_bool_op::resolve_cmp', reuse 'mirrored_operation'; the
        "wider, swap" check then applies to the swapped sides
-[ ] low priority: constant folding leftovers in 'expr_arith'
-    => '*' mixed with '/': constants within a run of '*' and consecutive
-       constant divisors ('b / 2 / 3' -> 'b / 6' when the product fits)
 [ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
     field instead of computing the address once
     (etc/codegen-inefficiencies.baz)
@@ -370,6 +368,14 @@ resolved
        'a < 1 + 1' is accepted (was "wider, swap") when the value fits 'a'
     => a constant left side is still a scratch register copy, see the open
        item on mirroring the operation
+[x] constant folding in lists mixing '*' with '/' or '%' ('expr_arith')
+    => the constants of a run of '*' merge at its end past run-time factors
+       ('2 * b * 3 / c' -> 'b * 6 / c')
+    => consecutive constant divisors merge while their product fits the
+       width ('b / 2 / 3' -> 'b / 6'); left to run time: divisors 0 and -1
+       (MIN / -1 traps or wraps), a run-time divisor between constants
+    => merging nothing keeps the list as written, a merged 1 changes
+       nothing and is only a comment
 [x] rv32i: a zero, copy or compare loop at a known offset from s0/s1 inside a
     word keeps one width throughout; peel 'sb'/'sh' up to the word boundary
     before the loop, e.g. 'var big[80] i8' at an odd offset loops 80 'sb'
