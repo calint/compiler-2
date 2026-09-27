@@ -290,6 +290,73 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] local code generation found in the rv32i assessment, completed parts
+    [x] unary ops and narrowing on a memory destination copied first, then
+        loaded, modified and stored: 'var a = -x' was 'lw; sw; lw; sub; sw'
+        => a memory destination tries with and without a scratch register
+           ('emit_most_efficient') in 'expr_arith', the narrow builtin,
+           record literal fields and inline calls with unary ops on the
+           result; 29 rv32i tests shorter, x86 unchanged
+        => found on the way: a plain identifier in a record literal field
+           narrowed silently, now rejected (571.baz)
+    [-] a bool loaded from memory was normalized again: 'lbu; sltu'
+        => not a normalization: the shorthand 'eq' compiles as 'eq != 0'; a
+           plain 'bool' into a 'bool' destination is now copied
+           ('is_bool_copy')
+    [x] a constant multiply, e.g. an index scaled by an element size of 12,
+        began with a copy 'addi t1, t0, 0'; now the first shift goes to the
+        scratch register and the last add or sub writes the product (947
+        fewer lines in the tests)
+        => found on the way: 'a = a * -4' into memory shifted an unloaded
+           register (576.baz)
+    [x] live scratch registers were saved on the stack around the
+        multiply/divide helpers; the helpers now use 'a2'-'a6', allocated
+        last, instead of 't0'-'t4' (938 fewer lines in the tests)
+    [x] rv32i bounds check with both '--checks=lower,upper' repeated
+        'bltz index' and computed the high word of 'index + count'
+    [x] a narrow memory destination computed through a scratch register
+        normalized after each operation ('slli; srai'); the default width is
+        tried when the low bits do not depend on the high bits
+[x] constants outside the signed range of the type, e.g. 'i8' 255
+    => comparisons, assignments, arguments and '{...}' literals already
+       rejected them; 'dat' initializers were truncated by the assembler, now
+       rejected after unary ops (572.baz-575.baz)
+[x] --checks=noub, completed parts
+    [x] array index bounds: --checks=upper,lower, a negative count with a
+        start is rejected by --checks=lower (519.baz-524.baz)
+    [x] non-inline frame arena: --checks=frame
+    [x] narrowing is a compile error, 'i8(...)' etc. acknowledges it
+    [x] unset results rejected at compile time, variables are zeroed
+    [x] compiler constant folding free of ub (ubsan scan of all tests)
+    [x] raw register access removed ('mov', 'syscall', 'reg_...', names)
+    [x] posix-like 'read(fd, buf[, count[, start]])': count and start in
+        elements, 'start + count' bounds checked, the result in bytes
+        (513.baz-515.baz, 517.baz, 518.baz)
+    [x] an element passed to an array parameter is rejected; pass the array
+        and a start index: 'print(buf, i, 20 - i)' (516.baz, 429.baz)
+    [x] a non-array buffer to 'read'/'write' is rejected (435.baz, 436.baz)
+    [x] 'address_of' removed, layout tests check the placement comments
+    [x] --checks=alias rejects a call when the result or a by-reference
+        argument shares its root variable with another by-reference
+        argument, or a non-inline parameter meets a global (526.baz-532.baz)
+        => conservative: rejects 26 tests and prog.baz
+[x] opus 5.5 ai review and bug-hunt
+[x] immediate value can maximum be 32 bit. handle that at initiation of var
+    => see 'handle case where x86_64 cannot load immediate 64 bit value'
+[x] does not work: var s1: i8[] = "hello world"
+    => string initializers: 'var s1[] i8 = "hello world"'
+[x] consider padding to natural bounds: dat, var and type fields
+    => natural alignment of fields, locals and data on all targets
+[x] rv32i alignment issues
+    => natural alignment, the fpga emulator checks aligned accesses
+[x] func foo(object& self, arg) can be called with o.foo(arg)
+    => methods: 'func T.m(...)' called as 'x.m(...)'
+[x] points.len
+    => 'array_length(points)'
+[x] ponder representing nasm instructions in classes to optimize better than
+    the text based jump optimizer
+    => 'assembler_x86_64' emits structured instructions, jumps are optimized
+       on their metadata
 [x] read/write/exit builtin so that mov and register access can be removed
 [x] since every element has a whitespace before and after stop reading whitspace
     after once newline is found for nicer tokens
