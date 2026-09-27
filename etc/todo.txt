@@ -3,129 +3,68 @@
 --------------------------------------------------------------------------------
 [o] local code generation found in the rv32i assessment, examples in
     etc/codegen-inefficiencies.baz
-    [x] unary ops and narrowing on a memory destination copy first and then
-        load, modify and store: 'var a = -x' is 'lw; sw; lw; sub; sw'
-        instead of 'lw; sub; sw', 'b = i8(x - 1)' is 'lw; sb; lb; addi; sb'.
-        same for record literal fields '{-x, -y}' and an inline result with
-        unary 'arr[ix] = ~inv(arr[ix - 1])' (destination address computed 3
-        times)
-        => 'stmt_identifier::compile' and the narrow forwarding apply
-           'get_unary_ops().compile' on the destination; on a load/store
-           machine compute in a scratch register and store once like
-           'a = a - 1' already does through 'emit_most_efficient'
-        => done: a memory destination tries with and without a scratch
-           register ('emit_most_efficient') in 'expr_arith' (single
-           identifier with unary ops, 'is_single_plain_element'), the
-           narrow builtin (in destination vs 'compile_wide', which now
-           applies '-'/'~' on the wide register before the one store),
-           record literal fields ('expr_type::compile_builtin_field') and
-           inline calls with unary ops on the result ('stmt_call' ->
-           'compile_inline' into the destination or a register). x86 code
-           unchanged (ties keep the first version), 29 rv32i tests shorter,
-           e.g. 'var a = -x' is 'lw; sub; sw', 'b = i8(x - 1)' is
-           'lw; addi; sb', '~inv(...)' computes the result in a register
-        => found on the way: a plain identifier in a record literal field
-           narrowed silently, now rejected like other narrowing (571.baz,
-           394.baz declared 'i8' locals)
     [ ] a runtime bool argument to an inline function is materialized:
         'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
         (or 'bnez' against 0)
-        => the parameter could branch on the condition instead of holding
-           the value
         => plan (big: several files and interfaces, awaiting go-ahead)
            => the argument cannot be compiled at the 'if' in the body: names
-              resolve in the callee's scope (its root frame only follows
-              aliases, caller locals are not visible and callee names could
-              shadow them), and an argument is a value taken at the call
-              before the body runs
-           [ ] comparison parameter: when a 'bool' parameter gets a single
-               comparison 'a op b' (one 'expr_bool_op', no 'and'/'or', not a
-               shorthand), evaluate 'a' and a non-constant 'b' into scratch
-               registers at the call (same timing as today) and bind the
-               parameter to { lhs register, op, rhs operand } instead of a
-               0/1 register; the registers stay allocated until the body
-               ends like other argument registers
+              resolve in the callee's scope and an argument is a value taken
+              at the call before the body runs
+           [ ] a 'bool' parameter given a single comparison 'a op b' (no
+               'and'/'or', not a shorthand) evaluates 'a' and a non-constant
+               'b' into scratch registers at the call and binds the parameter
+               to { lhs register, op, rhs operand } instead of 0/1; the
+               registers stay allocated until the body ends
            [ ] 'alias_info' and 'ident_info' carry the optional comparison,
-               'toc' name resolution returns it for the parameter
-           [ ] 'expr_bool_op' shorthand on such a parameter ('if ok',
-               'if not ok', 'ok and ...') calls 'compare_and_branch' with the
-               bound operands and operation, inversion combined as today
-           [ ] only when every read of the parameter in the body is such a
-               whole condition and it is never assigned, otherwise it is
-               materialized as today; needs a statement visitor that tells
-               condition reads from value reads (new virtual or a flag in
-               'read_visitor')
-           [ ] expected: rv32i 'lw; li; bne' (3 instead of 4), 'x == 0'
-               'lw; bnez' (2 instead of 3); 'and'/'or' lists and shorthand
-               arguments unchanged
+               'toc' name resolution returns it
+           [ ] a shorthand on the parameter ('if ok', 'if not ok',
+               'ok and ...') calls 'compare_and_branch' with the bound
+               operands, inversion combined as today
+           [ ] only when every read in the body is such a whole condition and
+               the parameter is never assigned, otherwise materialized as
+               today; needs a visitor that tells condition reads from value
+               reads
+           [ ] expected: rv32i 'lw; li; bne', 'x == 0' as 'lw; bnez'
            [ ] tests on both targets: condition-only use, value use and
                assignment fall back, a callee name shadowing a caller name,
-               an operand changed in the body before the 'if' keeps its
-               value from the call
-    [-] a bool loaded from memory is normalized again: 'lbu; sltu t0, zero,
-        t0', a stored bool is already 0 or 1
-        => not a normalization: 'assert(eq)' passes the shorthand 'eq', a
-           bool expression without a right hand side like 'if eq', which
-           compiles as 'eq != 0'
-        => done: a plain 'bool' identifier into a 'bool' destination without
-           inversion or branch is copied ('is_bool_copy'), 'assert(eq)' is
-           'lbu' instead of 'lbu; sltu'
-        [ ] a non-bool cannot be assigned to a bool, so a bool is always 0
-            or 1, but 'read(0, flags)' into a 'bool' array stores any byte.
-            reject 'bool' arrays in 'read'
-            => for now the user ensures a 'read' into a 'bool' array stores
-               only 0 or 1, the copy above relies on it
-    [ ] redundant copies and registers:
-        [ ] the scaled index goes into a new register instead of reusing the
-            scratch register holding the index ('slli t1, t0, 2' instead of
-            'slli t0, t0, 2')
-        [ ] the divide call loads the dividend into a scratch register then
-            copies it: 'lw t2; addi a0, t2, 0' instead of 'lw a0'
+               an operand changed in the body before the 'if'
     [ ] zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
         shorter than the 6 instruction loop; choose by instruction count
-    [x] rv32i bounds check with both '--checks=lower,upper': after the lower
-        check the upper check repeated 'bltz index, 2f', and with a count
-        computed the 64 bit high word of 'index + count' (8 instructions)
-        although both are non-negative and the sum cannot wrap
-    [x] a narrow memory destination computed through a scratch register of
-        its own width normalizes after each operation ('slli; srai'), e.g.
-        'bt1 = -1 + 2' was 'li; sb; lb; addi; sb'
-        => 'expr_arith::compile_through_scratch' also tries the default
-           width when the low bits do not depend on the high bits
-           ('keeps_low_bits_when_narrowed'), the store truncates; x86 keeps
-           its narrow registers unless the wide version is shorter
 [ ] register allocation optimizations spanning past local scope of 1 machine
     operation, examples in etc/codegen-inefficiencies.baz
     [ ] a value is loaded again right after it was stored: 'i = i - 1' ends
-        with 'sw t0, 28(s1)' and 'buf[i]' starts with 'lw t0, 28(s1)';
-        'n = n / 10' then 'if n == 0' is 'sw a0, 24(s1); lw t0, 24(s1)'
+        with 'sw t0, 28(s1)' and 'buf[i]' starts with 'lw t0, 28(s1)'
         => needs to know which register still holds a variable between
            statements
+    [ ] the scaled index goes into a new register instead of reusing the
+        index register when it is no longer needed ('slli t1, t0, 2' instead
+        of 'slli t0, t0, 2')
+    [ ] an operand is loaded into a scratch register then copied to where the
+        next operation needs it: 'lw t2; addi a0, t2, 0' before the divide
+        call instead of 'lw a0', the syscall count 'addi a2, t0, 0'
     [ ] 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per field instead
         of computing the address once
-    [ ] multiply/divide helpers: an expression into memory keeps its value in
-        the destination between helper calls, 'sw a0, r; lw a0, r' before
-        each next call ('r = a * b * c * d'), and through a scratch register
-        each call copies 'addi a0, t0, 0' and back 'addi t0, a0, 0'
-        => accumulating in 'a0' across the calls would need register
-           targeting for helper operands
-    [x] registers live across a helper call are saved on the stack:
-        'buf[i] = i8('0' - n % 10)' holds the index in 't0' and '0' in 't1'
-        during the divide call ('addi sp; sw; sw; call; lw; lw; addi sp')
-        => '.Lbaz_multiply'/'.Lbaz_divide' use 'a2'-'a6' instead of 't0'-'t4',
-           which are allocated last, so live scratch registers are rarely
-           clobbered (helper save areas in the tests 546 -> 378, the rest
-           are other stack uses, 938 fewer lines)
+    [ ] multiply/divide helper chains ('r = a * b * c * d') pass the value
+        through memory ('sw a0, r; lw a0, r') or a scratch register
+        ('addi a0, t0, 0' and back) between the calls
+        => needs register targeting for helper operands
     [ ] a non-inline call saves and restores all 30 registers with
         'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
         'print_num(a)'
+        => the registers a non-inline function can use could be listed so the
+           call saves only those
 [ ] optimizations when constant known at compile
+    [ ] fold constant elements in expressions ('expr_arith', 'expr_bool')
+    [ ] an identifier without an index register can compute its offset at
+        compile time ('stmt_identifier::init_reg_offset')
+    [ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
+        compares, then the remaining dword, word and byte compares
 [o] low priority: code after an unconditional 'exit' is generated, e.g. after
-    a constant false 'assert' and the implicit 'exit(0)' after an explicit one
-    at the end of 'main'
-    => done for the end of 'main': 'program::is_end_reachable' walks the body
-       with 'trace_assignment' and skips 'end_main' when every path exits or
-       returns
+    a constant false 'assert'
+    => done for the end of 'main' ('program::is_end_reachable')
+[ ] a 'read' into a 'bool' array stores any byte, but copying a 'bool'
+    ('is_bool_copy') relies on 0 or 1; reject 'bool' arrays in 'read'
+    => for now the user ensures a 'read' into a 'bool' array stores only 0 or 1
 [ ] specify device memory size and error if code size + dat size + max used
     vars + stack size overflows it
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
@@ -150,31 +89,9 @@
        [ ] tests on both targets: runtime copy and compare, errors for a
            non-'i8' destination, a count above the string length and the
            empty string
-[x] opus 5.5 ai review and bug-hunt
 [o] --checks=noub: a program either behaves as defined or panics with a line
     => viable: no heap, no pointer type, no casts, no raw registers
-    [x] array index bounds: --checks=upper,lower
-        => a negative count with a start passed 'start + count', fixed:
-           --checks=lower also rejects it ('read'/'write', 'array_copy',
-           'arrays_equal', 519.baz-524.baz)
-    [x] non-inline frame arena: --checks=frame
-    [x] narrowing is a compile error, 'i8(...)' etc. acknowledges it
-    [x] unset results rejected at compile time, variables are zeroed
-    [x] compiler constant folding free of ub (ubsan scan of all tests)
-    [x] raw register access removed ('mov', 'syscall', 'reg_...', names)
-    [o] 'read'/'write' take any 'address_of' integer and length: a 2 byte
-        buffer read with length 8 overwrites the next variable. take an
-        array and a checked count instead
-        [x] posix-like 'read(fd, buf[, count[, start]])': count and start in
-            elements, count defaults to the array length, 'start + count'
-            bounds checked, the result stays in bytes. 'buf[start]' is
-            rejected, 'array_copy'/'arrays_equal' keep the element form
-            since they have two arrays (513.baz-515.baz, 517.baz, 518.baz)
-        [x] an element passed to an array parameter is rejected, it would
-            carry the whole array's length. pass the array and a start
-            index instead: 'print(buf, i, 20 - i)' (516.baz, 429.baz)
-        [x] tests and prog.baz migrated, a non-array buffer is rejected with
-            "argument 2 must be an array" (435.baz, 436.baz)
+    [o] 'read'/'write' take an array and a checked count
         [ ] a partial 'read'/'write' can end inside a record and the start
             argument cannot resume there. for elements larger than 1 byte,
             repeat the syscall until the current record is complete, not
@@ -185,8 +102,6 @@
                a division that conflicts with the syscall registers on x86
                and uses the helper on rv32i
             => test with 'DIFFINP2' input split inside a record
-        [x] 'address_of' removed, layout tests check the compiler's placement
-            comments instead
     [ ] system stack overflow in deep non-inline recursion segfaults before
         the frame check. check 'rsp'/'sp' or depth at each call
     [ ] division by zero traps and MIN / -1 wraps or traps by width. check
@@ -196,15 +111,9 @@
     [ ] signed overflow wraps. define wrapping as the semantics or add
         --checks=overflow (x86 'jo', rv32i several instructions)
     [ ] overlapping 'array_copy': check ranges at run-time or define as
-        memmove
+        memmove, warn when it can be detected at compile time
     [o] aliasing of results and by-reference arguments, see 'UB detection'
         below. reject or check addresses at the call
-        [x] --checks=alias rejects a call when the result destination or a
-            by-reference argument shares its resolved root variable with
-            another by-reference argument, or a non-inline parameter meets a
-            global (526.baz-532.baz)
-            => conservative: rejects 26 tests and prog.baz, e.g.
-               'values[3] = faz(values[2], values[1])', 'g(q, q)'
         [ ] accept disjoint constant paths by comparing byte ranges
             (137.baz-140.baz, 294.baz, 418.baz)
         [ ] route inline builtin results through a scratch register instead
@@ -228,8 +137,6 @@
        with the bulk registers, width = max(type alignment, that)
 [ ] 'equal' on records compares the padding bytes; a record set by a call
     result keeps whatever padding bytes its storage held
-[x] when reading trailing whitespace stop at newline
-    => done, see the first item
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments
 [ ] allow record literals and record call results as arguments, e.g.
@@ -264,24 +171,10 @@
     [ ] conservative rejections: a write through a runtime index covers
         nothing, 'array_copy' into a result is not an assignment, 'foo'
         bodies do not count as assigning
-    [-] writes through 'address_of' are not tracked
-        => 'address_of' was removed
     [ ] prog.baz 'object_init' sets only 'res.pos.y' and is rejected
     [ ] consider accepting partial results when the caller's destination is
         already initialized (call-site coverage summary)
-[x] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
-    sign-extends loads
-    => comparisons, assignments, arguments and '{...}' literals already
-       reject constants outside the signed range of the type
-    => 'dat' initializers were not checked (nasm warned and truncated), now
-       rejected in 'stmt_def_dat::parse_builtin' after unary ops (572-575)
-[x] numbers such as i8 : 255 cause problems when cmp because value is moved
-    to unspecified register size with sign extension
-    => 255 is outside the range of i8: -128 -> 127
-    => rejected, see above
 [ ] x86 register utilization: 109.baz, 082.baz, 104.baz
-[ ] rv32i alignment issues
-    => works in qemu for now that does not require alignment
 [ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
     => there is a longer jump way +/- 2 GB that can be implemented later
 [ ] rv32i: check loop iteration regarding large span
@@ -296,12 +189,8 @@
     => more registers, more scalings of operand index register, more 
        displacement, more branch offset
 [ ] remove panic_exception
-[ ] consider that what registers might be allocated in a noinline functions can
-    be listed thus the call can push/pop just the registers the function uses
 [ ] consider allowing function definitions in functions
 [ ] consider a var type that can be viewed from enclosing functions
-[ ] consider padding to natural bounds: dat, var and type fields
-[ ] consider refactoring it into a 1 pass compiler
 [ ] a way to specify a range in the array: foo arr(bgn_index, len, i_start)
 [ ] foo arr1, arr2, ... {
       # injected variable 'e1', 'e2', 'e...': current array elements
@@ -343,10 +232,6 @@
         pos : point,
         color : i32,
     }
-[ ] immediate value can maximum be 32 bit. handle that at initiation of var
-[ ] does not work: var s1: i8[]  = "hello world"
-[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
-    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] expr_type_value has mixed responsibilities, ok?
     expr_ops_list: handles expressions that writes the result with one mov
     expr_bool_ops_list: handles boolean expressions and also results in one mov
@@ -356,16 +241,8 @@
     => confusing. better is func init_points(pts : point[]) {...}
 [ ] make an extensive comment file explaining lea, indexing array etc
 [ ] examine NOLINTNEXTLINE annotations and try to fix
-[ ] reject or handle division by zero
-    => init to zero prior call?
-[ ] built-in: mov and syscall functions to statements and remove special
-    built-in functions declared in program
 [ ] const allowed in function declaration and code
     foo(ix : const i32) { const x = ix }
-[ ] stmt_identifier: 357: if register will be just offset without indexing
-    register then that can be calculated in init_reg_offset
-[ ] expr_*: pre-calculate consts
-[ ] expr_ops_list: const eval
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
     => do perf tests first using etc/perf.sh
@@ -386,10 +263,6 @@
 [ ] declare external C functions
 [ ] rename compiler_exception
 [ ] break: exit current block instead of just loop?
-[ ] ponder representing nasm instructions in classes to have better opportunity
-    to optimize compared to current text based optimize_jump_x
-[ ] array_copy does not handle when destination overlaps source
-    => issue warning when that can be detected at compile-time
 [ ] lea_path may not be necessary since only most recent lea relevant
     => also index of where in elems path lea was found
 [ ] C++ brace initializers offer no performance advantage and the narrowing
@@ -401,12 +274,9 @@
 [ ] func f(p : point copy) copies point to callee stack
 [ ] func f(p : point const) const is default. same as "func f(p : point)"
 [ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
-[ ] func foo(object& self, arg) can be called with o.foo(arg)
 [ ] string type
       var str = "hello world"
       var len = str.len
-[ ] points.len
-      => array_elements_count(points)
 [ ] expr_any: deduce expression type to bool or numbers
 [ ]   is_const, is_bool_expression, is_number_expression
 [ ] let i=1 creates a constant

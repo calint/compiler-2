@@ -2455,16 +2455,16 @@ class machine_rv32i : public machine {
                                   ? lower_address(src_loc_tk, indent, product)
                                   : operand{}};
 
-        const operand result{
+        // the original value stays here until the last add or sub, which
+        // writes the result in its place so no copy is needed
+        const operand value{
             product.is_register()
                 ? product
                 : alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        const operand left{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        copy_value(src_loc_tk, indent, left,
-                   product.is_memory() ? address : product);
+        if (product.is_memory()) {
+            copy_value(src_loc_tk, indent, value, address);
+        }
 
         // known multipliers use an unrolled sequence of shifts with adds or
         // subtracts
@@ -2488,42 +2488,54 @@ class machine_rv32i : public machine {
             --top;
         }
 
-        bool initialized{};
+        size_t lowest{};
+        while (digits.at(lowest) == 0) {
+            ++lowest;
+        }
+
+        // a single digit needs only the final shift
+        const operand partial{
+            lowest == top
+                ? operand{}
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        std::string_view shifted{value.base_register()};
         int pending_shift{};
 
-        for (size_t bit{top}; bit != 0;) {
+        for (size_t bit{top}; bit != lowest;) {
             --bit;
             ++pending_shift;
 
-            // emit a shift when the next nonzero digit needs an add or sub
-            if (digits.at(bit) != 0) {
-                assembler_.slli(indent, result.base_register(),
-                                initialized ? result.base_register()
-                                            : left.base_register(),
-                                pending_shift);
-
-                assembler_.register_op(
-                    indent, digits.at(bit) < 0 ? op::sub : op::add,
-                    result.base_register(), result.base_register(),
-                    left.base_register());
-
-                pending_shift = 0;
-                initialized = true;
+            if (digits.at(bit) == 0) {
+                continue;
             }
+
+            assembler_.slli(indent, partial.base_register(), shifted,
+                            pending_shift);
+
+            const std::string_view sum{bit == lowest ? value.base_register()
+                                                     : partial.base_register()};
+
+            assembler_.register_op(
+                indent, digits.at(bit) < 0 ? op::sub : op::add, sum,
+                partial.base_register(), value.base_register());
+
+            shifted = partial.base_register();
+            pending_shift = 0;
         }
 
-        // trailing zero bits require only a final shift
-        if (pending_shift != 0) {
-            assembler_.slli(indent, result.base_register(),
-                            result.base_register(), pending_shift);
+        // the zero bits below the lowest digit
+        if (lowest != 0) {
+            assembler_.slli(indent, value.base_register(),
+                            value.base_register(), lowest);
         }
 
         if (negate) {
-            assembler_.sub(indent, result.base_register(), "zero",
-                           result.base_register());
+            assembler_.sub(indent, value.base_register(), "zero",
+                           value.base_register());
         }
 
-        store_operation_result(indent, product, address, result, true);
+        store_operation_result(indent, product, address, value, true);
     }
 
     auto validate_shift_operand(const token& src_loc_tk,
