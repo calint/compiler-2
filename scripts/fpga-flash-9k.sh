@@ -1,5 +1,12 @@
 #!/bin/sh
 set -e
+
+# resolve before changing directory since the argument is relative to the caller
+SOURCE_FILE=""
+if [ -n "$1" ]; then
+    SOURCE_FILE=$(realpath "$1")
+fi
+
 cd $(dirname "$0")
 
 # override configuration
@@ -7,10 +14,14 @@ cd $(dirname "$0")
 
 cd ..
 
-echo
-echo "building firmware"
+if [ -z "$SOURCE_FILE" ]; then
+    SOURCE_FILE="roome.baz"
+fi
 
-./baz --target=rv32i-fpga --vars=131072 --checks=upper,lower,line,alias roome.baz >roome.s
+echo
+echo "building firmware from '$SOURCE_FILE'"
+
+./baz --target=rv32i-fpga --vars=131072 --checks=upper,lower,line,alias "$SOURCE_FILE" >"${SOURCE_FILE%.baz}.s"
 
 # check result
 if [ ! -f "$FIRMWARE_FILE" ]; then

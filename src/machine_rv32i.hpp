@@ -634,6 +634,51 @@ class machine_rv32i : public machine {
         return op::addi;
     }
 
+    // a register destination holds the result directly, memory needs a scratch
+    [[nodiscard]] auto working_register(const token& src_loc_tk,
+                                        const size_t indent,
+                                        const operand& destination) -> operand {
+
+        if (destination.is_register()) {
+            return destination;
+        }
+
+        return alloc_scratch_register(src_loc_tk, indent, default_type());
+    }
+
+    // 'value' is modified in place then written back by
+    // 'store_operation_result' through 'address'
+    struct loaded_destination {
+        operand address;
+        operand value;
+    };
+
+    [[nodiscard]] auto load_destination(const token& src_loc_tk,
+                                        const size_t indent,
+                                        const operand& destination)
+        -> loaded_destination {
+
+        if (destination.is_register()) {
+            return {
+                .address{},
+                .value{destination},
+            };
+        }
+
+        // lowering before allocating keeps the scratch register order
+        const operand address{lower_address(src_loc_tk, indent, destination)};
+
+        const operand value{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        copy_value(src_loc_tk, indent, value, address);
+
+        return {
+            .address{address},
+            .value{value},
+        };
+    }
+
     auto store_operation_result(const size_t indent, const operand& destination,
                                 const operand& address, const operand& value,
                                 const bool normalize) const -> void {
@@ -674,10 +719,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        const operand value{
-            destination.is_register()
-                ? destination
-                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+        const operand value{working_register(src_loc_tk, indent, destination)};
 
         assembler_.li(indent, value.base_register(), constant);
         store_operation_result(indent, destination, address, value, false);
@@ -742,25 +784,14 @@ class machine_rv32i : public machine {
 
         const address_scope scope{*this, destination, src};
 
-        const operand address{
-            destination.is_memory()
-                ? lower_address(src_loc_tk, indent, destination)
-                : operand{}};
-
-        const operand left{
-            destination.is_register()
-                ? destination
-                : alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        if (destination.is_memory()) {
-            copy_value(src_loc_tk, indent, left, address);
-        }
+        const loaded_destination loaded{
+            load_destination(src_loc_tk, indent, destination)};
 
         emit_binary_instruction(src_loc_tk, indent, instruction, destination,
-                                src, left, constant);
+                                src, loaded.value, constant);
 
         store_operation_result(
-            indent, destination, address, left,
+            indent, destination, loaded.address, loaded.value,
             needs_normalize(instruction, destination, src, constant));
     }
 
@@ -2286,10 +2317,7 @@ class machine_rv32i : public machine {
                      operand::imm(std::format("{}", element_size_bytes),
                                   default_type()));
 
-        const operand value{
-            counter.is_register()
-                ? counter
-                : alloc_scratch_register(token{}, indent, default_type())};
+        const operand value{working_register(token{}, indent, counter)};
 
         copy_value(token{}, indent, value, counter);
 
@@ -2689,20 +2717,10 @@ class machine_rv32i : public machine {
 
         const address_scope scope{*this, product, factor};
 
-        const operand address{product.is_memory()
-                                  ? lower_address(src_loc_tk, indent, product)
-                                  : operand{}};
-
         // the original value stays here until the last add or sub, which
         // writes the result in its place so no copy is needed
-        const operand value{
-            product.is_register()
-                ? product
-                : alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        if (product.is_memory()) {
-            copy_value(src_loc_tk, indent, value, address);
-        }
+        const loaded_destination loaded{
+            load_destination(src_loc_tk, indent, product)};
 
         // known multipliers use an unrolled sequence of shifts with adds or
         // subtracts
@@ -2737,7 +2755,7 @@ class machine_rv32i : public machine {
                 ? operand{}
                 : alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        std::string_view shifted{value.base_register()};
+        std::string_view shifted{loaded.value.base_register()};
         int pending_shift{};
 
         for (size_t bit{top}; bit != lowest;) {
@@ -2751,12 +2769,13 @@ class machine_rv32i : public machine {
             assembler_.slli(indent, partial.base_register(), shifted,
                             pending_shift);
 
-            const std::string_view sum{bit == lowest ? value.base_register()
-                                                     : partial.base_register()};
+            const std::string_view sum{bit == lowest
+                                           ? loaded.value.base_register()
+                                           : partial.base_register()};
 
             assembler_.register_op(
                 indent, digits.at(bit) < 0 ? op::sub : op::add, sum,
-                partial.base_register(), value.base_register());
+                partial.base_register(), loaded.value.base_register());
 
             shifted = partial.base_register();
             pending_shift = 0;
@@ -2764,16 +2783,17 @@ class machine_rv32i : public machine {
 
         // the zero bits below the lowest digit
         if (lowest != 0) {
-            assembler_.slli(indent, value.base_register(),
-                            value.base_register(), lowest);
+            assembler_.slli(indent, loaded.value.base_register(),
+                            loaded.value.base_register(), lowest);
         }
 
         if (negate) {
-            assembler_.sub(indent, value.base_register(), "zero",
-                           value.base_register());
+            assembler_.sub(indent, loaded.value.base_register(), "zero",
+                           loaded.value.base_register());
         }
 
-        store_operation_result(indent, product, address, value, true);
+        store_operation_result(indent, product, loaded.address, loaded.value,
+                               true);
     }
 
     auto validate_shift_operand(const token& src_loc_tk,
@@ -2820,57 +2840,53 @@ class machine_rv32i : public machine {
         }
 
         const address_scope scope{*this, dst, count};
-        const operand address{dst.is_memory()
-                                  ? lower_address(src_loc_tk, indent, dst)
-                                  : operand{}};
 
-        const operand value{
-            dst.is_register()
-                ? dst
-                : alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        if (dst.is_memory()) {
-            copy_value(src_loc_tk, indent, value, address);
-        }
+        const loaded_destination loaded{
+            load_destination(src_loc_tk, indent, dst)};
 
         // a narrow register shifts to the top and back, extending in one pair
         constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
         if (constant.has_value() and operation == '<' and
             bits < register_bits and dst.is_register()) {
 
-            assembler_.slli(indent, value.base_register(),
-                            value.base_register(),
+            assembler_.slli(indent, loaded.value.base_register(),
+                            loaded.value.base_register(),
                             register_bits - bits + shift_count);
 
-            assembler_.immediate_op(
-                indent, extend_shift_op(dst.type_ref()), value.base_register(),
-                value.base_register(), register_bits - bits);
+            assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
+                                    loaded.value.base_register(),
+                                    loaded.value.base_register(),
+                                    register_bits - bits);
 
-            store_operation_result(indent, dst, address, value, false);
+            store_operation_result(indent, dst, loaded.address, loaded.value,
+                                   false);
 
             return;
         }
 
         // known counts already have rv32's five-bit shift semantics applied
         if (constant.has_value()) {
-            assembler_.immediate_op(
-                indent, operation == '<' ? op::slli : op::srai,
-                value.base_register(), value.base_register(), shift_count);
+            assembler_.immediate_op(indent,
+                                    operation == '<' ? op::slli : op::srai,
+                                    loaded.value.base_register(),
+                                    loaded.value.base_register(), shift_count);
 
-            store_operation_result(indent, dst, address, value,
+            store_operation_result(indent, dst, loaded.address, loaded.value,
                                    operation == '<');
 
             return;
         }
 
         const operand amount{source_register(src_loc_tk, indent, dst, count,
-                                             value, std::nullopt)};
+                                             loaded.value, std::nullopt)};
 
         assembler_.register_op(indent, operation == '<' ? op::sll : op::sra,
-                               value.base_register(), value.base_register(),
+                               loaded.value.base_register(),
+                               loaded.value.base_register(),
                                amount.base_register());
 
-        store_operation_result(indent, dst, address, value, operation == '<');
+        store_operation_result(indent, dst, loaded.address, loaded.value,
+                               operation == '<');
     }
 
     auto validate_division_operand(const token& src_loc_tk,
@@ -2919,10 +2935,7 @@ class machine_rv32i : public machine {
                 src_loc_tk, "RV32I address destination must be 32-bit storage"};
         }
         const address_scope scope{*this, dst, address};
-        const operand value{
-            dst.is_register()
-                ? dst
-                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+        const operand value{working_register(src_loc_tk, indent, dst)};
 
         const operand lowered{
             lower_address(src_loc_tk, indent, address, value)};
@@ -2950,24 +2963,15 @@ class machine_rv32i : public machine {
         }
         const address_scope scope{*this, destination, operand{}};
 
-        const operand address{destination.is_memory()
-                                  ? lower_address(token{}, indent, destination)
-                                  : operand{}};
-
-        const operand value{
-            destination.is_register()
-                ? destination
-                : alloc_scratch_register(token{}, indent, default_type())};
-
-        if (destination.is_memory()) {
-            copy_value(token{}, indent, value, address);
-        }
+        const loaded_destination loaded{
+            load_destination(token{}, indent, destination)};
 
         if (operation == '-') {
-            assembler_.sub(indent, value.base_register(), "zero",
-                           value.base_register());
+            assembler_.sub(indent, loaded.value.base_register(), "zero",
+                           loaded.value.base_register());
 
-            store_operation_result(indent, destination, address, value, true);
+            store_operation_result(indent, destination, loaded.address,
+                                   loaded.value, true);
 
             return;
         }
@@ -2977,10 +2981,11 @@ class machine_rv32i : public machine {
                            ? std::numeric_limits<uint8_t>::max()
                            : -1};
 
-        assembler_.xori(indent, value.base_register(), value.base_register(),
-                        mask);
+        assembler_.xori(indent, loaded.value.base_register(),
+                        loaded.value.base_register(), mask);
 
-        store_operation_result(indent, destination, address, value, false);
+        store_operation_result(indent, destination, loaded.address,
+                               loaded.value, false);
     }
 
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
