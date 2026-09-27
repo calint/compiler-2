@@ -1,0 +1,16 @@
+118: array_copy(a1, b1, 40): copy 4-byte words
+127: assert(7, equal(p, q)): compare 4-byte words
+129: assert(8, not equal(p, q)): compare 4-byte words
+132: assert(9, not equal(p, q)): compare 4-byte words
+56: array_copy(a, b, n): copy 4-byte words
+58: assert(err, arrays_equal(a, b, n)): compare 4-byte words
+61: assert(err, not arrays_equal(a, b, n)): compare 4-byte words
+62: assert(err, arrays_equal(a, b, n - 1)): compare 4-byte words
+56: array_copy(a, b, n): copy 4-byte words
+58: assert(err, arrays_equal(a, b, n)): compare 4-byte words
+61: assert(err, not arrays_equal(a, b, n)): compare 4-byte words
+62: assert(err, arrays_equal(a, b, n - 1)): compare 4-byte words
+56: array_copy(a, b, n): copy 2-byte halfwords
+58: assert(err, arrays_equal(a, b, n)): compare 2-byte halfwords
+61: assert(err, not arrays_equal(a, b, n)): compare 2-byte halfwords
+62: assert(err, arrays_equal(a, b, n - 1)): compare 2-byte halfwords

@@ -81,10 +81,17 @@ class machine_rv32i : public machine {
     std::vector<allocation> allocations_;
     std::vector<std::array<operand, 3>> bulk_registers_;
 
-    // the addresses given to an active bulk operation
+    // where unrolled accesses start: the address minus 'phase' is aligned to
+    // 'alignment', which is at most a word
+    struct access_start {
+        size_t alignment{};
+        size_t phase{};
+    };
+
+    // the addresses given to an active bulk operation, each start taken with
+    // alignment 1 since the type alignment is given at the end
     struct bulk_addresses {
-        // smallest alignment proven, lowered by each address from a word
-        size_t alignment{word_size_bytes_};
+        std::array<access_start, 2> starts;
         // a missing address would leave the word alignment unproven
         size_t count{};
     };
@@ -1214,12 +1221,10 @@ class machine_rv32i : public machine {
         bulk_addresses_.pop_back();
     }
 
-    // the pointers advance together so the least aligned address limits the
-    // width; 1 means only the type alignment is known for that address
-    auto record_bulk_address_alignment(const operand& address) -> void {
+    // the pointers advance together so both starts decide the loop width
+    auto record_bulk_address_start(const operand& address) -> void {
         bulk_addresses& addresses{bulk_addresses_.back()};
-        addresses.alignment =
-            std::min(addresses.alignment, access_alignment(address, 1));
+        addresses.starts.at(addresses.count) = start_of(address, 1);
         ++addresses.count;
     }
 
@@ -1236,36 +1241,89 @@ class machine_rv32i : public machine {
     //         an index register or a pointer still loops words
     //       * the byte count may be known only at run time, so the tail is
     //         selected by testing its bits
-    //       * a loop keeps one width, so a start inside a word is not peeled
-    //         (todo item); unrolled accesses are ('for_each_aligned_part')
+    //       * a loop keeps one width, so when both starts are the same
+    //         distance from a wider boundary a byte and a halfword head
+    //         reaches it first ('plan_loop_start'); a run-time count is
+    //         checked before each head access
 
-    [[nodiscard]] auto bulk_loop_width(const token& src_loc_tk,
-                                       const size_t indent,
-                                       const size_t alignment) -> size_t {
+    // the loop runs 'width' accesses after 'head_size_bytes' of narrower ones
+    struct loop_start {
+        size_t head_size_bytes{};
+        size_t width{};
+    };
+
+    // the widest width that every start reaches after the same head of at
+    // most 'max_head_size_bytes'
+    [[nodiscard]] static auto
+    plan_loop_start(const std::span<const access_start> starts,
+                    const size_t max_head_size_bytes) -> loop_start {
+
+        for (size_t width{word_size_bytes_}; width > 1; width /= 2) {
+            const size_t phase{starts.front().phase % width};
+            const size_t head_size_bytes{(width - phase) % width};
+
+            const bool reaches_width{std::ranges::all_of(
+                starts, [width, phase](const access_start& s) -> bool {
+                    return width <= s.alignment and s.phase % width == phase;
+                })};
+
+            if (reaches_width and head_size_bytes <= max_head_size_bytes) {
+                return {
+                    .head_size_bytes{head_size_bytes},
+                    .width{width},
+                };
+            }
+        }
+
+        return {
+            .head_size_bytes{},
+            .width{1},
+        };
+    }
+
+    [[nodiscard]] auto
+    bulk_loop_start(const token& src_loc_tk, const size_t indent,
+                    const size_t alignment, const size_t max_head_size_bytes)
+        -> loop_start {
 
         const bulk_addresses& addresses{bulk_addresses_.back()};
 
         assert(addresses.count == 2);
 
-        const size_t width{
-            bulk_width(std::max(alignment, addresses.alignment))};
+        // an address without a known base is still aligned to its type
+        std::array<access_start, 2> starts{addresses.starts};
+        for (access_start& s : starts) {
+            s.alignment = std::max(s.alignment, bulk_width(alignment));
+        }
+
+        const loop_start start{plan_loop_start(starts, max_head_size_bytes)};
+
+        if (start.head_size_bytes != 0) {
+            comment(src_loc_tk, indent,
+                    "{}-byte accesses after a {} B head: addresses {} and {}",
+                    start.width, start.head_size_bytes,
+                    describe_start(starts.front()),
+                    describe_start(starts.back()));
+
+            return start;
+        }
 
         // name the alignment that decided the width
-        if (addresses.alignment > alignment) {
+        if (start.width > alignment) {
             comment(src_loc_tk, indent,
                     "{}-byte accesses: both addresses {}-byte aligned, type "
                     "{}-byte aligned",
-                    width, addresses.alignment, alignment);
+                    start.width, start.width, alignment);
 
-            return width;
+            return start;
         }
 
         comment(src_loc_tk, indent,
                 "{}-byte accesses: type {}-byte aligned, addresses not proven "
                 "more aligned",
-                width, alignment);
+                start.width, alignment);
 
-        return width;
+        return start;
     }
 
     // registers of a bulk copy or comparison, 'compared' is empty for a copy
@@ -1344,13 +1402,6 @@ class machine_rv32i : public machine {
 
         return std::max(alignment, displacement_alignment);
     }
-
-    // where unrolled accesses start: the address minus 'phase' is aligned to
-    // 'alignment', which is at most a word
-    struct access_start {
-        size_t alignment{};
-        size_t phase{};
-    };
 
     [[nodiscard]] auto start_of(const operand& address,
                                 const size_t alignment) const -> access_start {
@@ -1525,9 +1576,6 @@ class machine_rv32i : public machine {
     auto zero_unrolled(const token& src_loc_tk, const size_t indent,
                        const operand& destination, const size_t size_bytes,
                        const access_start& start) -> void {
-
-        comment_aligned_parts(src_loc_tk, indent, "zero", size_bytes,
-                              std::span{&start, 1});
 
         const operand address{
             unrolled_address(src_loc_tk, indent, destination, size_bytes)};
@@ -1734,15 +1782,70 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type())};
 
         assembler_.li(indent, count.base_register(), size_bytes);
+
+        const loop_start start{
+            .head_size_bytes{},
+            .width{width},
+        };
+
         emit_bulk_loop(src_loc_tk, indent, count, src_pointer, dst_pointer,
-                       width);
+                       start, false);
     }
 
+    // a byte then a halfword brings both pointers to the loop width; a head
+    // counted in 'count' checks it before each access and leaves fewer bytes
+    // to the tail, which needs no more than the current pointer alignment
+    auto emit_bulk_head(const token& src_loc_tk, const size_t indent,
+                        const bulk_access& access, const operand& count,
+                        const std::string_view verb,
+                        const size_t head_size_bytes,
+                        const bool count_includes_head) -> void {
+
+        if (head_size_bytes == 0) {
+            return;
+        }
+
+        comment(src_loc_tk, indent, "{} {} B head", verb, head_size_bytes);
+
+        for (const size_t width : {size_t{1}, size_t{2}}) {
+            if ((head_size_bytes & width) == 0) {
+                continue;
+            }
+
+            if (count_includes_head and width == 1) {
+                assembler_.beqz(indent, count.base_register(), "7f");
+            }
+
+            if (count_includes_head and width == 2) {
+                assembler_.sltiu(indent, access.left.base_register(),
+                                 count.base_register(), 2);
+                assembler_.bnez(indent, access.left.base_register(), "7f");
+            }
+
+            emit_bulk_access(indent, access, width, true);
+
+            if (count_includes_head) {
+                assembler_.addi(indent, count.base_register(),
+                                count.base_register(),
+                                -static_cast<int64_t>(width));
+            }
+        }
+
+        if (count_includes_head) {
+            assembler_.label(indent, "7");
+        }
+    }
+
+    // 'count_includes_head' is false when 'count' holds only the bytes after
+    // the head
     auto emit_bulk_loop(const token& src_loc_tk, const size_t indent,
                         const operand& count, const operand& source,
-                        const operand& destination, const size_t width,
+                        const operand& destination, const loop_start& start,
+                        const bool count_includes_head,
                         const operand& result = {}, const bool inverted = false)
         -> void {
+
+        const size_t width{start.width};
 
         const address_scope scope{*this, result, operand{}};
 
@@ -1800,6 +1903,9 @@ class machine_rv32i : public machine {
             // right holds the chunk count and count retains the tail bytes
             comment_bulk_registers(src_loc_tk, indent, access, right, count,
                                    chunks);
+
+            emit_bulk_head(src_loc_tk, indent, access, count, verb,
+                           start.head_size_bytes, count_includes_head);
 
             comment(src_loc_tk, indent,
                     "split bytes into {} and tail; skip {} loop if none",
@@ -2733,61 +2839,88 @@ class machine_rv32i : public machine {
         }
         const address_scope scope{*this, dst, src};
 
-        const size_t width{
-            bulk_width(std::min(access_alignment(src, alignment),
-                                access_alignment(dst, alignment)))};
+        // the pointers of a loop advance together, unrolled accesses can
+        // follow where each address is within its word
+        const std::array<access_start, 2> starts{
+            start_of(src, alignment),
+            start_of(dst, alignment),
+        };
 
         if (size_bytes <= copy_unroll_threshold_bytes_) {
-            // the pointers of a loop advance together, unrolled accesses can
-            // follow where each address is within its word
-            const std::array<access_start, 2> starts{
-                start_of(src, alignment),
-                start_of(dst, alignment),
-            };
-
             comment_aligned_parts(src_loc_tk, indent, "copy", size_bytes,
                                   starts);
 
-            // direct offsets avoid two pointer temporaries for ordinary small
-            // copies
-            const operand src_address{
-                unrolled_address(src_loc_tk, indent, src, size_bytes)};
-
-            const operand dst_address{
-                unrolled_address(src_loc_tk, indent, dst, size_bytes)};
-
-            const operand value{
-                alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-            for_each_aligned_part(
-                size_bytes, starts,
-                [&](const size_t part_size_bytes, const size_t offset) -> void {
-                    assembler_.load(indent, unsigned_load_op(part_size_bytes),
-                                    value.base_register(),
-                                    src_address.displacement() +
-                                        static_cast<int64_t>(offset),
-                                    src_address.base_register());
-
-                    assembler_.store(indent, store_op(part_size_bytes),
-                                     value.base_register(),
-                                     dst_address.displacement() +
-                                         static_cast<int64_t>(offset),
-                                     dst_address.base_register());
-                });
-
+            copy_unrolled(src_loc_tk, indent, src, dst, size_bytes, starts);
             return;
         }
+
+        const loop_start loop{plan_loop_start(starts, size_bytes)};
+
+        operand src_rest{src};
+        operand dst_rest{dst};
+        if (loop.head_size_bytes != 0) {
+            comment(src_loc_tk, indent,
+                    "copy loop of {}-byte accesses after a {} B head: source "
+                    "{}, destination {}",
+                    loop.width, loop.head_size_bytes,
+                    describe_start(starts.front()),
+                    describe_start(starts.back()));
+
+            {
+                // the head value register is free again for the loop
+                const address_scope head_scope{*this, dst, src};
+                copy_unrolled(src_loc_tk, indent, src, dst,
+                              loop.head_size_bytes, starts);
+            }
+
+            src_rest.increment_offset(
+                static_cast<int64_t>(loop.head_size_bytes));
+
+            dst_rest.increment_offset(
+                static_cast<int64_t>(loop.head_size_bytes));
+        }
+
         const operand src_pointer{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
 
         const operand dst_pointer{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-        address_of(src_loc_tk, indent, src_pointer, src);
-        const operand& dst_address{dst};
-        address_of(src_loc_tk, indent, dst_pointer, dst_address);
-        emit_copy_loop(src_loc_tk, indent, src_pointer, dst_pointer, size_bytes,
-                       width);
+        address_of(src_loc_tk, indent, src_pointer, src_rest);
+        address_of(src_loc_tk, indent, dst_pointer, dst_rest);
+        emit_copy_loop(src_loc_tk, indent, src_pointer, dst_pointer,
+                       size_bytes - loop.head_size_bytes, loop.width);
+    }
+
+    // direct offsets avoid two pointer temporaries for ordinary small copies
+    auto copy_unrolled(const token& src_loc_tk, const size_t indent,
+                       const operand& src, const operand& dst,
+                       const size_t size_bytes,
+                       const std::span<const access_start> starts) -> void {
+
+        const operand src_address{
+            unrolled_address(src_loc_tk, indent, src, size_bytes)};
+
+        const operand dst_address{
+            unrolled_address(src_loc_tk, indent, dst, size_bytes)};
+
+        const operand value{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        for_each_aligned_part(
+            size_bytes, starts,
+            [&](const size_t part_size_bytes, const size_t offset) -> void {
+                assembler_.load(indent, unsigned_load_op(part_size_bytes),
+                                value.base_register(),
+                                src_address.displacement() +
+                                    static_cast<int64_t>(offset),
+                                src_address.base_register());
+
+                assembler_.store(
+                    indent, store_op(part_size_bytes), value.base_register(),
+                    dst_address.displacement() + static_cast<int64_t>(offset),
+                    dst_address.base_register());
+            });
     }
 
     // few bytes are stored with immediates when that takes no more code than
@@ -2881,14 +3014,14 @@ class machine_rv32i : public machine {
     auto set_array_copy_source(const size_t indent, const operand& address)
         -> void override {
 
-        record_bulk_address_alignment(address);
+        record_bulk_address_start(address);
         address_of(token{}, indent, bulk_registers_.back().at(0), address);
     }
 
     auto set_array_copy_destination(const size_t indent, const operand& address)
         -> void override {
 
-        record_bulk_address_alignment(address);
+        record_bulk_address_start(address);
         address_of(token{}, indent, bulk_registers_.back().at(1), address);
     }
 
@@ -2900,9 +3033,14 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
                 registers.at(2).base_register(), element_size_bytes);
         scale_index(src_loc_tk, indent, registers.at(2), element_size_bytes);
+
+        // the run-time count may be smaller than any head
+        const loop_start start{bulk_loop_start(
+            src_loc_tk, indent, alignment, std::numeric_limits<size_t>::max())};
+
         emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
-                       registers.at(1),
-                       bulk_loop_width(src_loc_tk, indent, alignment));
+                       registers.at(1), start, true);
+
         release_bulk(src_loc_tk, indent);
     }
 
@@ -2943,11 +3081,17 @@ class machine_rv32i : public machine {
                 src_loc_tk, "comparison size exceeds RV32I address range"};
         }
         const std::array<operand, 3>& registers{bulk_registers_.back()};
-        assembler_.li(indent, registers.at(2).base_register(), size_bytes);
+
+        // the known size limits the head, and the count holds what follows it
+        const loop_start start{
+            bulk_loop_start(src_loc_tk, indent, alignment, size_bytes)};
+
+        assembler_.li(indent, registers.at(2).base_register(),
+                      size_bytes - start.head_size_bytes);
+
         emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
-                       registers.at(1),
-                       bulk_loop_width(src_loc_tk, indent, alignment), dst,
-                       inverted);
+                       registers.at(1), start, false, dst, inverted);
+
         release_bulk(src_loc_tk, indent);
     }
 
@@ -2964,10 +3108,14 @@ class machine_rv32i : public machine {
                     registers.at(2).base_register(), element_size_bytes);
             scale_index(src_loc_tk, indent, registers.at(2),
                         element_size_bytes);
+
+            // the run-time count may be smaller than any head
+            const loop_start start{
+                bulk_loop_start(src_loc_tk, indent, alignment,
+                                std::numeric_limits<size_t>::max())};
+
             emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
-                           registers.at(1),
-                           bulk_loop_width(src_loc_tk, indent, alignment), dst,
-                           inverted);
+                           registers.at(1), start, true, dst, inverted);
         }
         release_bulk(src_loc_tk, indent);
     }
@@ -2991,23 +3139,42 @@ class machine_rv32i : public machine {
         // only bounds the code size
         constexpr size_t max_unrolled_stores{16};
         if (store_count <= max_unrolled_stores) {
+            comment_aligned_parts(src_loc_tk, indent, "zero", size_bytes,
+                                  std::span{&start, 1});
+
             zero_unrolled(src_loc_tk, indent, destination, size_bytes, start);
             return;
         }
 
-        const size_t width{
-            bulk_width(access_alignment(destination, alignment))};
+        const loop_start loop{
+            plan_loop_start(std::span{&start, 1}, size_bytes)};
 
-        // the loop keeps one width, so name the start it did not peel
-        if (start.phase != 0) {
-            comment(src_loc_tk, indent,
-                    "zero loop of {}-byte stores: {} stores exceed {}, start "
-                    "{} is not peeled",
-                    width, store_count, max_unrolled_stores,
-                    describe_start(start));
+        if (loop.head_size_bytes == 0) {
+            zero_with_loop(src_loc_tk, indent, destination, size_bytes,
+                           loop.width);
+
+            return;
         }
 
-        zero_with_loop(src_loc_tk, indent, destination, size_bytes, width);
+        // the loop keeps one width, so the bytes before its first boundary
+        // are stored ahead of it
+        comment(src_loc_tk, indent,
+                "zero loop of {}-byte stores after a {} B head: {} stores "
+                "exceed {}, start {}",
+                loop.width, loop.head_size_bytes, store_count,
+                max_unrolled_stores, describe_start(start));
+
+        {
+            // a head pointer for a far offset is not needed by the loop
+            const address_scope head_scope{*this, destination, operand{}};
+            zero_unrolled(src_loc_tk, indent, destination, loop.head_size_bytes,
+                          start);
+        }
+
+        operand rest{destination};
+        rest.increment_offset(static_cast<int64_t>(loop.head_size_bytes));
+        zero_with_loop(src_loc_tk, indent, rest,
+                       size_bytes - loop.head_size_bytes, loop.width);
     }
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,

@@ -19,13 +19,12 @@ medium
 --------------------------------------------------------------------------------
 generated assembly, easiest first
 --------------------------------------------------------------------------------
-[ ] rv32i: a zero, copy or compare loop at a known offset from s0/s1 inside a
-    word keeps one width throughout; peel 'sb'/'sh' up to the word boundary
-    before the loop, e.g. 'var big[80] i8' at an odd offset loops 80 'sb'
-    => unrolled accesses are peeled ('for_each_aligned_part'); a loop needs
-       the start position in 'bulk_addresses_', a peeled head and the
-       existing tail; 'array_copy'/'arrays_equal' have a run-time count that
-       may be smaller than the head
+[ ] rv32i: a constant above 16 bytes stored at an address inside a word
+    ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
+    offset) loops bytes: the constant is word aligned and the destination is
+    not, so no head reaches a common boundary
+    => the constant could be laid out starting at the destination's position
+       within a word; needs the frontend 'add_constant' callback to pad it
 [ ] constant known at compile: an identifier without an index register can
     compute its offset at compile time ('stmt_identifier::init_reg_offset')
 [ ] constant known at compile: fold constant elements in expressions
@@ -331,6 +330,23 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] rv32i: a zero, copy or compare loop at a known offset from s0/s1 inside a
+    word keeps one width throughout; peel 'sb'/'sh' up to the word boundary
+    before the loop, e.g. 'var big[80] i8' at an odd offset loops 80 'sb'
+    => 'plan_loop_start' picks the widest loop width every start reaches
+       after the same head (a byte and/or a halfword); 'bulk_addresses_'
+       keeps both starts; zero and known-size copy loops store the head
+       unrolled from the direct offsets, 'equal' accesses it through the
+       pointers and loads the count without it, 'array_copy' and
+       'arrays_equal' check the run-time count before each head access and
+       leave a shorter count to the existing tail; 'var big[80] i8' at
+       's0 + 9' is 'sb', 'sh', a 19 'sw' loop and 'sb'; starts at different
+       positions within a word (e.g. 1 and 3 B past a boundary) reach
+       halfwords after a byte; x86 unchanged, rv32i output changes in 16
+       tests (most only move the 'equal' count 'li' after the width comment);
+       test 592 (every run-time count 0 to 9, noinline frame) with its loop
+       widths in tests/592.rv32i.widths, tests/590.rv32i.widths 'd'/'e'
+       now words
 [x] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
     uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
     then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead

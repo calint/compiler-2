@@ -8,10 +8,10 @@
 53: assert(6, arrays_equal(a, c, n)): compare bytes
 56: assert(7, not arrays_equal(a, c, n)): compare bytes
 57: assert(8, arrays_equal(c, a, n - 1)): compare bytes
-64: array_copy(d, e, n): copy 2-byte halfwords
-65: assert(10, arrays_equal(d, e, n)): compare 2-byte halfwords
-68: assert(11, not arrays_equal(d, e, n)): compare 2-byte halfwords
-69: assert(12, arrays_equal(d, e, n - 1)): compare 2-byte halfwords
+64: array_copy(d, e, n): copy 4-byte words
+65: assert(10, arrays_equal(d, e, n)): compare 4-byte words
+68: assert(11, not arrays_equal(d, e, n)): compare 4-byte words
+69: assert(12, arrays_equal(d, e, n - 1)): compare 4-byte words
 13: assert(20, equal(p, q)): compare 4-byte words
 16: assert(21, not equal(p, q)): compare 4-byte words
 21: array_copy(a, b, n): copy 4-byte words

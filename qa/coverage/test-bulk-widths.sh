@@ -13,7 +13,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN="$SCRIPT_DIR/../../baz"
 TESTS="$SCRIPT_DIR/tests"
-SOURCES=(590)
+SOURCES=(590 592)
 
 MODE="${1:-check}"
 if [[ "$MODE" != check && "$MODE" != update ]]; then
