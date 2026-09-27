@@ -83,22 +83,22 @@ la s0, dat
 # load stack pointer to 0x80:0000
 lui sp, 2048
 
-# [1:1] dat hello[] i8 = "u r in roome\n"
-# [1:7] hello: i8[13] (13 B @ [s0])
-# [2:1] dat prompt1[] i8 = "enter name:\n"
-# [2:5] prompt1: i8[12] (12 B @ [s0 + 13])
-# [3:1] dat prompt2[] i8 = "that is not a name.\n"
-# [3:5] prompt2: i8[20] (20 B @ [s0 + 25])
+# [1:1] dat hello[] i8 = "welcome to adventure #6\n    type 'help'\n\nu r in roome\nu c me\nexits: none\ntodo: find an exit\n"
+# [1:7] hello: i8[92] (92 B @ [s0])
+# [2:1] dat prompt1[] i8 = "> "
+# [2:5] prompt1: i8[2] (2 B @ [s0 + 92])
+# [3:1] dat prompt2[] i8 = "unknown command\n"
+# [3:5] prompt2: i8[16] (16 B @ [s0 + 94])
 # [4:1] dat prompt3[] i8 = "hello "
-# [4:5] prompt3: i8[6] (6 B @ [s0 + 45])
+# [4:5] prompt3: i8[6] (6 B @ [s0 + 110])
 # [5:1] dat dot[] i8 = "."
-# [5:9] dot: i8[1] (1 B @ [s0 + 51])
+# [5:9] dot: i8[1] (1 B @ [s0 + 116])
 # [6:1] dat nl[] i8 = "\n"
-# [6:10] nl: i8[1] (1 B @ [s0 + 52])
+# [6:10] nl: i8[1] (1 B @ [s0 + 117])
 # [7:1] dat erase[] i8 = "\b \b"
-# [7:7] erase: i8[3] (3 B @ [s0 + 53])
+# [7:7] erase: i8[3] (3 B @ [s0 + 118])
 # [8:1] dat colon[] i8 = ": "
-# [8:7] colon: i8[2] (2 B @ [s0 + 56])
+# [8:7] colon: i8[2] (2 B @ [s0 + 121])
 # [10:1] str : 128 B    fields:
 # [10:1]       name :  offset :    size :  array? : array size
 # [10:1]        len :       0 :       1 :      no :           
@@ -107,15 +107,15 @@ lui sp, 2048
 #
 main:
     # [85:5] var counter
-    # [85:9] counter: i32 (4 B @ [s0 + 64])
+    # [85:9] counter: i32 (4 B @ [s0 + 128])
     # [85:9] zero 1 * 4 B = 4 B
-    sw zero, 64(s0)
+    sw zero, 128(s0)
     # [86:5] var nm str
-    # [86:9] nm: str (128 B @ [s0 + 68])
+    # [86:9] nm: str (128 B @ [s0 + 132])
     # [86:9] zero 1 * 128 B = 128 B
     # [86:5] allocate scratch register -> t0
     # [86:5] allocate scratch register -> t1
-    addi t0, s0, 68
+    addi t0, s0, 132
     li t1, 32
     1:
     sw zero, 0(t0)
@@ -134,7 +134,7 @@ main:
         # [81:5] allocate named register a2
         # [81:11] 1
         li a0, 1
-        li a2, 13
+        li a2, 92
         addi a1, s0, 0
         # [81:5] allocate named register a7
         call a7, .Lbaz_write
@@ -148,19 +148,20 @@ main:
         # [89:9] counter = counter + 1
         # [89:19] counter
         # [89:29] counter + 1
+        # [89:29] src: constant
         # [89:29] allocate scratch register -> t0
-        lw t0, 64(s0)
+        lw t0, 128(s0)
         addi t0, t0, 1
-        sw t0, 64(s0)
+        sw t0, 128(s0)
         # [89:29] free scratch register t0
         # [90:9] print_num(counter)
         # [90:9] address of argument 'counter' to parameter 'num'
         # [90:9] allocate scratch register -> t0
-        addi t0, s0, 64
-        sw t0, 196(s0)
+        addi t0, s0, 128
+        sw t0, 260(s0)
         # [90:9] free scratch register t0
         PUSH_REGS
-        addi s1, s0, 196
+        addi s1, s0, 260
         call func.print_num
         POP_REGS
         # [91:9] print(colon)
@@ -174,7 +175,7 @@ main:
             # [81:11] 1
             li a0, 1
             li a2, 2
-            addi a1, s0, 56
+            addi a1, s0, 121
             # [81:5] allocate named register a7
             call a7, .Lbaz_write
             # [81:5] free named register a7
@@ -192,8 +193,8 @@ main:
             # [81:5] allocate named register a2
             # [81:11] 1
             li a0, 1
-            li a2, 12
-            addi a1, s0, 13
+            li a2, 2
+            addi a1, s0, 92
             # [81:5] allocate named register a7
             call a7, .Lbaz_write
             # [81:5] free named register a7
@@ -206,9 +207,9 @@ main:
         func.str.in.93.12:
             # [93:12] alias self -> nm
             # [21:5] var nbytes
-            # [21:9] nbytes: i32 (4 B @ [s0 + 196])
+            # [21:9] nbytes: i32 (4 B @ [s0 + 260])
             # [21:9] zero 1 * 4 B = 4 B
-            sw zero, 196(s0)
+            sw zero, 260(s0)
             # [22:5] label
             loop.22.5.93.12:
                 if.23.12.93.12:
@@ -221,7 +222,7 @@ main:
                     # [23:22] array_length(self.data)
                     li t0, 127
                 # [23:12] allocate scratch register -> t1
-                lw t1, 196(s0)
+                lw t1, 260(s0)
                 beq t1, t0, loop.22.5.93.12.end
                 # [23:12] free scratch register t1
                 # [23:12] free scratch register t0
@@ -245,31 +246,22 @@ main:
                     li a2, 1
                     # [24:34] allocate scratch register -> t1
                     # [24:34] nbytes
-                    lw t1, 196(s0)
+                    lw t1, 260(s0)
                     # [24:34] bounds check
                     bltz t1, 1f
                     bltz a2, 1f
                     # [24:34] allocate scratch register -> t2
                     # [24:34] allocate scratch register -> t3
-                    # [24:34] allocate scratch register -> t4
-                    srai t4, t1, 31
-                    srai t2, a2, 31
-                    add t4, t4, t2
                     add t3, t1, a2
-                    sltu t2, t3, t1
-                    add t4, t4, t2
-                    bltz t4, 2f
-                    bgtz t4, 1f
                     li t2, 127
                     bgeu t2, t3, 2f
                     1:
                     li a0, 24
                     j baz_bounds_panic
                     2:
-                    # [24:34] free scratch register t4
                     # [24:34] free scratch register t3
                     # [24:34] free scratch register t2
-                    addi a1, s0, 69
+                    addi a1, s0, 133
                     add a1, a1, t1
                     # [24:12] free scratch register t1
                     # [24:12] allocate named register a7
@@ -291,11 +283,10 @@ main:
                 # [25:22] allocate scratch register -> t0
                 # [25:22] set array index
                 # [25:22] nbytes
-                lw t0, 196(s0)
+                lw t0, 260(s0)
                 # [25:22] bounds check
                 bltz t0, 1f
                 # [25:22] allocate scratch register -> t1
-                bltz t0, 2f
                 li t1, 127
                 bltu t0, t1, 2f
                 1:
@@ -305,7 +296,7 @@ main:
                 # [25:22] free scratch register t1
                 # [25:12] allocate scratch register -> t1
                 add t1, s0, t0
-                lb t1, 69(t1)
+                lb t1, 133(t1)
                 # [25:12] allocate scratch register -> t2
                 li t2, 127
                 bne t1, t2, if.25.9.93.12.end
@@ -318,17 +309,18 @@ main:
                     # [26:16] ? nbytes > 0
                     cmp.26.16.93.12:
                     # [26:16] allocate scratch register -> t0
-                    lw t0, 196(s0)
+                    lw t0, 260(s0)
                     bge zero, t0, if.26.13.93.12.end
                     # [26:16] free scratch register t0
                     if.26.16.93.12.code:
                         # [27:17] nbytes = nbytes - 1
                         # [27:26] nbytes
                         # [27:35] nbytes - 1
+                        # [27:35] src: constant
                         # [27:35] allocate scratch register -> t0
-                        lw t0, 196(s0)
+                        lw t0, 260(s0)
                         addi t0, t0, -1
-                        sw t0, 196(s0)
+                        sw t0, 260(s0)
                         # [27:35] free scratch register t0
                         # [28:17] write(1, erase)
                         # [28:17] allocate named register a0
@@ -337,7 +329,7 @@ main:
                         # [28:23] 1
                         li a0, 1
                         li a2, 3
-                        addi a1, s0, 53
+                        addi a1, s0, 118
                         # [28:17] allocate named register a7
                         call a7, .Lbaz_write
                         # [28:17] free named register a7
@@ -358,31 +350,22 @@ main:
                 li a2, 1
                 # [32:32] allocate scratch register -> t0
                 # [32:32] nbytes
-                lw t0, 196(s0)
+                lw t0, 260(s0)
                 # [32:32] bounds check
                 bltz t0, 1f
                 bltz a2, 1f
                 # [32:32] allocate scratch register -> t1
                 # [32:32] allocate scratch register -> t2
-                # [32:32] allocate scratch register -> t3
-                srai t3, t0, 31
-                srai t1, a2, 31
-                add t3, t3, t1
                 add t2, t0, a2
-                sltu t1, t2, t0
-                add t3, t3, t1
-                bltz t3, 2f
-                bgtz t3, 1f
                 li t1, 127
                 bgeu t1, t2, 2f
                 1:
                 li a0, 32
                 j baz_bounds_panic
                 2:
-                # [32:32] free scratch register t3
                 # [32:32] free scratch register t2
                 # [32:32] free scratch register t1
-                addi a1, s0, 69
+                addi a1, s0, 133
                 add a1, a1, t0
                 # [32:9] free scratch register t0
                 # [32:9] allocate named register a7
@@ -398,11 +381,10 @@ main:
                 # [33:22] allocate scratch register -> t0
                 # [33:22] set array index
                 # [33:22] nbytes
-                lw t0, 196(s0)
+                lw t0, 260(s0)
                 # [33:22] bounds check
                 bltz t0, 1f
                 # [33:22] allocate scratch register -> t1
-                bltz t0, 2f
                 li t1, 127
                 bltu t0, t1, 2f
                 1:
@@ -412,7 +394,7 @@ main:
                 # [33:22] free scratch register t1
                 # [33:12] allocate scratch register -> t1
                 add t1, s0, t0
-                lb t1, 69(t1)
+                lb t1, 133(t1)
                 # [33:12] allocate scratch register -> t2
                 li t2, 10
                 beq t1, t2, loop.22.5.93.12.end
@@ -425,10 +407,11 @@ main:
                 # [34:9] nbytes = nbytes + 1
                 # [34:18] nbytes
                 # [34:27] nbytes + 1
+                # [34:27] src: constant
                 # [34:27] allocate scratch register -> t0
-                lw t0, 196(s0)
+                lw t0, 260(s0)
                 addi t0, t0, 1
-                sw t0, 196(s0)
+                sw t0, 260(s0)
                 # [34:27] free scratch register t0
             j loop.22.5.93.12
             loop.22.5.93.12.end:
@@ -437,8 +420,8 @@ main:
             # [36:16] = expression
             # [36:19] nbytes
             # [36:19] allocate scratch register -> t0
-            lw t0, 196(s0)
-            sb t0, 68(s0)
+            lw t0, 260(s0)
+            sb t0, 132(s0)
             # [36:19] free scratch register t0
         func.str.in.93.12.end:
         if.94.12:
@@ -446,7 +429,7 @@ main:
         # [94:12] ? nm.len <= 4
         cmp.94.12:
         # [94:12] allocate scratch register -> t0
-        lb t0, 68(s0)
+        lb t0, 132(s0)
         # [94:12] allocate scratch register -> t1
         li t1, 4
         blt t1, t0, if.94.9.else
@@ -463,8 +446,8 @@ main:
                 # [81:5] allocate named register a2
                 # [81:11] 1
                 li a0, 1
-                li a2, 20
-                addi a1, s0, 25
+                li a2, 16
+                addi a1, s0, 94
                 # [81:5] allocate named register a7
                 call a7, .Lbaz_write
                 # [81:5] free named register a7
@@ -486,7 +469,7 @@ main:
                 # [81:11] 1
                 li a0, 1
                 li a2, 6
-                addi a1, s0, 45
+                addi a1, s0, 110
                 # [81:5] allocate named register a7
                 call a7, .Lbaz_write
                 # [81:5] free named register a7
@@ -505,11 +488,10 @@ main:
                 # [16:11] 1
                 li a0, 1
                 # [16:25] self.len
-                lb a2, 68(s0)
+                lb a2, 132(s0)
                 # [16:14] bounds check
                 bltz a2, 1f
                 # [16:14] allocate scratch register -> t0
-                bltz a2, 2f
                 li t0, 127
                 bgeu t0, a2, 2f
                 1:
@@ -517,7 +499,7 @@ main:
                 j baz_bounds_panic
                 2:
                 # [16:14] free scratch register t0
-                addi a1, s0, 69
+                addi a1, s0, 133
                 # [16:5] allocate named register a7
                 call a7, .Lbaz_write
                 # [16:5] free named register a7
@@ -536,7 +518,7 @@ main:
                 # [81:11] 1
                 li a0, 1
                 li a2, 1
-                addi a1, s0, 51
+                addi a1, s0, 116
                 # [81:5] allocate named register a7
                 call a7, .Lbaz_write
                 # [81:5] free named register a7
@@ -555,7 +537,7 @@ main:
                 # [81:11] 1
                 li a0, 1
                 li a2, 1
-                addi a1, s0, 52
+                addi a1, s0, 117
                 # [81:5] allocate named register a7
                 call a7, .Lbaz_write
                 # [81:5] free named register a7
@@ -566,8 +548,6 @@ main:
         if.94.9.end:
     j loop.88.5
     loop.88.5.end:
-    li a0, 0
-    j .Lbaz_exit
 #
 # [39:15] noinline print_num(num)
 func.print_num:
@@ -650,6 +630,7 @@ func.print_num:
         # [58:9] i = i - 1
         # [58:13] i
         # [58:17] i - 1
+        # [58:17] src: constant
         # [58:17] allocate scratch register -> t0
         lw t0, 32(s1)
         addi t0, t0, -1
@@ -663,7 +644,6 @@ func.print_num:
         # [59:13] bounds check
         bltz t0, 1f
         # [59:13] allocate scratch register -> t1
-        bltz t0, 2f
         li t1, 20
         bltu t0, t1, 2f
         1:
@@ -677,21 +657,16 @@ func.print_num:
             # [59:21] '0'
             li t1, 48
             # [59:29] t1 - n % 10
+            # [59:29] src: expression
             # [59:29] allocate scratch register -> t2
             # [59:27] n
             lw t2, 24(s1)
             # [59:31] t2 % 10
-            # [59:31] div const
-            addi sp, sp, -16
-            sw t0, 0(sp)
-            sw t1, 4(sp)
+            # [59:31] src: constant
             addi a0, t2, 0
             li a1, 10
             call .Lbaz_divide
             addi t2, a1, 0
-            lw t0, 0(sp)
-            lw t1, 4(sp)
-            addi sp, sp, 16
             sub t1, t1, t2
             # [59:29] free scratch register t2
         # [59:18] allocate scratch register -> t2
@@ -703,7 +678,7 @@ func.print_num:
         # [60:9] n = n / 10
         # [60:13] n
         # [60:17] n / 10
-        # [60:17] div const
+        # [60:17] src: constant
         lw a0, 24(s1)
         li a1, 10
         call .Lbaz_divide
@@ -722,7 +697,7 @@ func.print_num:
     loop.57.5.end:
     if.64.8:
     # [64:8] ? is_negative
-    # [64:8] ? is_negative
+    # [64:8] ? shorthand: is_negative
     cmp.64.8:
     # [64:8] allocate scratch register -> t0
     lbu t0, 28(s1)
@@ -732,6 +707,7 @@ func.print_num:
         # [65:9] i = i - 1
         # [65:13] i
         # [65:17] i - 1
+        # [65:17] src: constant
         # [65:17] allocate scratch register -> t0
         lw t0, 32(s1)
         addi t0, t0, -1
@@ -745,7 +721,6 @@ func.print_num:
         # [66:13] bounds check
         bltz t0, 1f
         # [66:13] allocate scratch register -> t1
-        bltz t0, 2f
         li t1, 20
         bltu t0, t1, 2f
         1:
@@ -777,7 +752,6 @@ func.print_num:
         # [71:13] bounds check
         bltz t0, 1f
         # [71:13] allocate scratch register -> t1
-        bltz t0, 2f
         li t1, 20
         bltu t0, t1, 2f
         1:
@@ -793,7 +767,6 @@ func.print_num:
         # [71:30] bounds check
         bltz t1, 1f
         # [71:30] allocate scratch register -> t2
-        bltz t1, 2f
         li t2, 20
         bltu t1, t2, 2f
         1:
@@ -814,6 +787,7 @@ func.print_num:
         # [72:9] write_pos = write_pos + 1
         # [72:21] write_pos
         # [72:33] write_pos + 1
+        # [72:33] src: constant
         # [72:33] allocate scratch register -> t0
         lw t0, 36(s1)
         addi t0, t0, 1
@@ -822,6 +796,7 @@ func.print_num:
         # [73:9] i = i + 1
         # [73:13] i
         # [73:17] i + 1
+        # [73:17] src: constant
         # [73:17] allocate scratch register -> t0
         lw t0, 32(s1)
         addi t0, t0, 1
@@ -853,7 +828,6 @@ func.print_num:
     # [77:14] bounds check
     bltz a2, 1f
     # [77:14] allocate scratch register -> t0
-    bltz a2, 2f
     li t0, 20
     bgeu t0, a2, 2f
     1:
@@ -964,30 +938,30 @@ baz_bounds_panic:
     jr a7
 .Lbaz_divide:
     beqz a1, 5f
-    srai t2, a0, 31
-    srai t1, a1, 31
-    xor a0, a0, t2
-    sub a0, a0, t2
-    xor a1, a1, t1
-    sub a1, a1, t1
-    xor t1, t1, t2
-    li t0, 0
-    li t3, 32
+    srai a4, a0, 31
+    srai a3, a1, 31
+    xor a0, a0, a4
+    sub a0, a0, a4
+    xor a1, a1, a3
+    sub a1, a1, a3
+    xor a3, a3, a4
+    li a2, 0
+    li a5, 32
 1:
-    srli t4, a0, 31
-    slli t0, t0, 1
-    or t0, t0, t4
+    srli a6, a0, 31
+    slli a2, a2, 1
+    or a2, a2, a6
     slli a0, a0, 1
-    bltu t0, a1, 2f
-    sub t0, t0, a1
+    bltu a2, a1, 2f
+    sub a2, a2, a1
     ori a0, a0, 1
 2:
-    addi t3, t3, -1
-    bnez t3, 1b
-    xor a0, a0, t1
-    sub a0, a0, t1
-    xor a1, t0, t2
-    sub a1, a1, t2
+    addi a5, a5, -1
+    bnez a5, 1b
+    xor a0, a0, a3
+    sub a0, a0, a3
+    xor a1, a2, a4
+    sub a1, a1, a4
     ret
 5:
     ebreak
@@ -996,14 +970,14 @@ baz_bounds_panic:
 .balign 16
 dat:
 # [1:7] hello
-# [1:20] i8[13]
-.ascii "u r in roome\n"
+# [1:20] i8[92]
+.ascii "welcome to adventure #6\n    type 'help'\n\nu r in roome\nu c me\nexits: none\ntodo: find an exit\n"
 # [2:5] prompt1
-# [2:20] i8[12]
-.ascii "enter name:\n"
+# [2:20] i8[2]
+.ascii "> "
 # [3:5] prompt2
-# [3:20] i8[20]
-.ascii "that is not a name.\n"
+# [3:20] i8[16]
+.ascii "unknown command\n"
 # [4:5] prompt3
 # [4:20] i8[6]
 .ascii "hello "
@@ -1032,5 +1006,5 @@ vars.end:
 # removed same target branches: 0
 # inverted branches over jumps: 7
 #            max frames in use: 11
-#              dat var padding: 6 B
+#              dat var padding: 5 B
 #                max vars size: 136 B

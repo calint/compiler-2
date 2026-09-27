@@ -1663,37 +1663,46 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            const size_t base{image.bases.at(section_index(which))};
-            for (size_t index{}; index < lines().size(); ++index) {
-                const line_position& position{image.positions[index]};
-                if (position.which != which) {
-                    continue;
-                }
+            written = write_section(os, image, symbols, which, written);
+        }
+    }
 
-                // alignment gaps and the gaps between sections are zero
-                const size_t address{base + position.offset};
-                write_zeros(os, address - written);
+    // returns the end address of the section, 'written' is where the image
+    // written so far ends
+    auto write_section(std::ostream& os, const image_layout& image,
+                       const symbol_table& symbols, const section which,
+                       size_t written) const -> size_t {
 
-                const line& l{lines()[index]};
-                const data_values* const data{
-                    std::get_if<data_values>(record_of(l))};
-                if (data != nullptr) {
-                    write_data(os, *data);
-                    written = address + data_size_bytes(*data);
-                    continue;
-                }
-
-                write_code(os, l, index, static_cast<int64_t>(address),
-                           symbols);
-
-                written = address + l.code_size;
+        const size_t base{image.bases.at(section_index(which))};
+        for (size_t index{}; index < lines().size(); ++index) {
+            const line_position& position{image.positions[index]};
+            if (position.which != which) {
+                continue;
             }
 
-            // a trailing alignment still belongs to the section
-            const size_t end{base + image.sizes.at(section_index(which))};
-            write_zeros(os, end - written);
-            written = end;
+            // alignment gaps and the gaps between sections are zero
+            const size_t address{base + position.offset};
+            write_zeros(os, address - written);
+
+            const line& l{lines()[index]};
+            const data_values* const data{
+                std::get_if<data_values>(record_of(l))};
+            if (data != nullptr) {
+                write_data(os, *data);
+                written = address + data_size_bytes(*data);
+                continue;
+            }
+
+            write_code(os, l, index, static_cast<int64_t>(address), symbols);
+
+            written = address + l.code_size;
         }
+
+        // a trailing alignment still belongs to the section
+        const size_t end{base + image.sizes.at(section_index(which))};
+        write_zeros(os, end - written);
+
+        return end;
     }
 
     auto write_text(std::ostream& os) const -> void {

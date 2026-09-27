@@ -745,43 +745,8 @@ class machine_x86_64 final : public machine {
                   const operand& product, const operand& factor,
                   const bool reuse_source = false) -> void override {
 
-        // a constant factor is resolved at compile time: zero clears, one
-        // needs no code, minus one negates and a power of two is a shift
-        if (const std::optional<uint64_t> bits{immediate_bits(factor)}) {
-            const size_t width_bits{product.type_ref().size_bytes() * 8};
-            const uint64_t mask{width_bits >= 64
-                                    ? std::numeric_limits<uint64_t>::max()
-                                    : (uint64_t{1} << width_bits) - 1};
-            const uint64_t multiplier{*bits & mask};
-
-            if (multiplier == 0) {
-                // 'xor' is the shorter idiom but cannot target memory
-                if (product.is_register()) {
-                    xor_op(indent, product, product);
-                    return;
-                }
-
-                mov(src_loc_tk, indent, product, immediate(0));
-
-                return;
-            }
-
-            if (multiplier == 1) {
-                return;
-            }
-
-            // all low bits set is multiplication by minus one at this width
-            if (multiplier == mask) {
-                neg(indent, product);
-                return;
-            }
-
-            if (std::has_single_bit(multiplier)) {
-                emit_op(src_loc_tk, indent, op::sal, product,
-                        immediate(std::countr_zero(multiplier)));
-
-                return;
-            }
+        if (multiply_by_constant(src_loc_tk, indent, product, factor)) {
+            return;
         }
 
         if (product.type_ref().size_bytes() == size_byte) {
@@ -1186,13 +1151,7 @@ class machine_x86_64 final : public machine {
                 }
 
                 test(indent, *value, *value);
-                if (options.with_line) {
-                    cmovcc(indent, condition::s,
-                           machine_x86_64::make_register_operand("rbp",
-                                                                 *type_i64_),
-                           reg_line_num);
-                }
-                assembler_.jcc(indent, condition::s, "baz_bounds_panic");
+                branch_to_bounds_panic(indent, condition::s, reg_line_num);
             }
         }
 
@@ -1200,12 +1159,7 @@ class machine_x86_64 final : public machine {
             compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
                                 reg_count);
 
-            if (options.with_line) {
-                cmovcc(indent, out_of_bounds,
-                       machine_x86_64::make_register_operand("rbp", *type_i64_),
-                       reg_line_num);
-            }
-            assembler_.jcc(indent, out_of_bounds, "baz_bounds_panic");
+            branch_to_bounds_panic(indent, out_of_bounds, reg_line_num);
         }
 
         if (options.with_line) {
@@ -2243,6 +2197,73 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, scratch_reg, divisor);
         idiv(indent, scratch_reg);
         free_scratch_register(src_loc_tk, indent, scratch_reg);
+    }
+
+    // a constant factor is resolved at compile time: zero clears, one needs no
+    // code, minus one negates and a power of two is a shift, false when a
+    // multiplication is still needed
+    [[nodiscard]] auto multiply_by_constant(const token& src_loc_tk,
+                                            const size_t indent,
+                                            const operand& product,
+                                            const operand& factor) -> bool {
+
+        const std::optional<uint64_t> bits{immediate_bits(factor)};
+        if (not bits) {
+            return false;
+        }
+
+        const size_t width_bits{product.type_ref().size_bytes() * 8};
+        const uint64_t mask{width_bits >= 64
+                                ? std::numeric_limits<uint64_t>::max()
+                                : (uint64_t{1} << width_bits) - 1};
+        const uint64_t multiplier{*bits & mask};
+
+        // 'xor' is the shorter idiom but cannot target memory
+        if (multiplier == 0 and product.is_register()) {
+            xor_op(indent, product, product);
+
+            return true;
+        }
+
+        if (multiplier == 0) {
+            mov(src_loc_tk, indent, product, immediate(0));
+
+            return true;
+        }
+
+        if (multiplier == 1) {
+            return true;
+        }
+
+        // all low bits set is multiplication by minus one at this width
+        if (multiplier == mask) {
+            neg(indent, product);
+
+            return true;
+        }
+
+        if (not std::has_single_bit(multiplier)) {
+            return false;
+        }
+
+        emit_op(src_loc_tk, indent, op::sal, product,
+                immediate(std::countr_zero(multiplier)));
+
+        return true;
+    }
+
+    // the handler reads the line number from rbp, empty 'reg_line_num' when
+    // the line is not reported
+    auto branch_to_bounds_panic(const size_t indent, const condition failed,
+                                const operand& reg_line_num) -> void {
+
+        if (not reg_line_num.is_empty()) {
+            cmovcc(indent, failed,
+                   machine_x86_64::make_register_operand("rbp", *type_i64_),
+                   reg_line_num);
+        }
+
+        assembler_.jcc(indent, failed, "baz_bounds_panic");
     }
 
     // a range 'index + count' may end at the array count

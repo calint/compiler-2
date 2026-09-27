@@ -31,6 +31,14 @@
 #include "tokenizer.hpp"
 
 namespace {
+struct check_options {
+    bool upper{};
+    bool lower{};
+    bool show_line{};
+    bool frame{};
+    bool alias{};
+};
+
 [[nodiscard]] auto read_file_to_string(const char* const file_name)
     -> std::string;
 
@@ -38,6 +46,15 @@ namespace {
                                     const std::string_view name,
                                     const size_t alignment)
     -> std::optional<size_t>;
+
+[[nodiscard]] auto parse_checks(const std::string_view checks)
+    -> std::optional<check_options>;
+
+[[nodiscard]] auto make_backend(const std::string_view target, std::ostream& os,
+                                const std::string_view src,
+                                const assembler::jump_mode jumps,
+                                const size_t stack_size_bytes)
+    -> std::unique_ptr<machine>;
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -60,11 +77,7 @@ auto main(const int argc, const char** const argv) -> int {
     std::string_view target{"x86_64"};
     size_t vars_size_bytes{default_vars_size_bytes};
     size_t stack_size_bytes{default_stack_size_bytes};
-    bool checks_upper{};
-    bool checks_show_line{};
-    bool checks_lower{};
-    bool checks_frame{};
-    bool checks_alias{};
+    check_options checks{};
     bool optimize_jumps{true};
     bool reproduce_source{};
 
@@ -155,38 +168,14 @@ examples:
                 return 1;
             }
         } else if (arg.starts_with(checks_option)) {
-            const std::string_view checks{arg.substr(checks_option.size())};
+            const std::optional<check_options> parsed{
+                parse_checks(arg.substr(checks_option.size()))};
 
-            checks_upper = false;
-            checks_lower = false;
-            checks_show_line = false;
-            checks_frame = false;
-            checks_alias = false;
-
-            for (const auto part : checks | std::views::split(',')) {
-                const std::string_view option{part};
-                if (option == "upper") {
-                    checks_upper = true;
-                } else if (option == "lower") {
-                    checks_lower = true;
-                } else if (option == "line") {
-                    checks_show_line = true;
-                } else if (option == "frame") {
-                    checks_frame = true;
-                } else if (option == "alias") {
-                    checks_alias = true;
-                } else if (not option.empty()) {
-                    std::println(std::cerr,
-                                 "Invalid --checks option: '{}'. Supported "
-                                 "options are: upper, lower, line, frame, "
-                                 "alias.",
-                                 option);
-
-                    std::println(stderr, "Use --help for usage information");
-
-                    return 1;
-                }
+            if (not parsed) {
+                return 1;
             }
+
+            checks = *parsed;
         } else if (arg == nopt_option) {
             optimize_jumps = false;
         } else if (arg == "--reproduce-source") {
@@ -214,26 +203,12 @@ examples:
         // output stream 'build' writes the complete assembly
         null_stream parser_output;
 
-        std::unique_ptr<machine> backend;
-        if (target == "x86_64") {
-            backend =
-                std::make_unique<machine_x86_64>(parser_output, src, jumps);
-        } else if (target == "rv32i") {
-            backend = std::make_unique<machine_rv32i>(parser_output, src, jumps,
-                                                      "gen-rv32i.bin");
-        } else if (target == "rv32i-qemu") {
-            backend = std::make_unique<machine_rv32i_qemu>(
-                parser_output, src, jumps, "gen-rv32i.bin", stack_size_bytes);
-        } else if (target == "rv32i-fpga") {
-            backend = std::make_unique<machine_rv32i_fpga>(
-                parser_output, src, jumps, "gen-rv32i.bin", stack_size_bytes);
-        } else {
-            throw panic_exception{std::format("unknown target '{}'", target)};
-        }
+        const std::unique_ptr<machine> backend{
+            make_backend(target, parser_output, src, jumps, stack_size_bytes)};
 
         program prg{*backend,     src,          vars_size_bytes,
-                    checks_upper, checks_lower, checks_show_line,
-                    checks_frame, checks_alias};
+                    checks.upper, checks.lower, checks.show_line,
+                    checks.frame, checks.alias};
 
         if (reproduce_source) {
             std::ofstream reproduced_source{"diff.baz"};
@@ -325,5 +300,66 @@ namespace {
     }
 
     return static_cast<size_t>(parsed_size_bytes);
+}
+
+// each '--checks' replaces the earlier ones, empty parts are ignored
+[[nodiscard]] auto parse_checks(const std::string_view checks)
+    -> std::optional<check_options> {
+
+    check_options parsed{};
+
+    for (const auto part : checks | std::views::split(',')) {
+        const std::string_view option{part};
+        if (option == "upper") {
+            parsed.upper = true;
+        } else if (option == "lower") {
+            parsed.lower = true;
+        } else if (option == "line") {
+            parsed.show_line = true;
+        } else if (option == "frame") {
+            parsed.frame = true;
+        } else if (option == "alias") {
+            parsed.alias = true;
+        } else if (not option.empty()) {
+            std::println(std::cerr,
+                         "Invalid --checks option: '{}'. Supported options "
+                         "are: upper, lower, line, frame, alias.",
+                         option);
+
+            std::println(stderr, "Use --help for usage information");
+
+            return std::nullopt;
+        }
+    }
+
+    return parsed;
+}
+
+// 'os' receives the output of the parse stage
+[[nodiscard]] auto make_backend(const std::string_view target, std::ostream& os,
+                                const std::string_view src,
+                                const assembler::jump_mode jumps,
+                                const size_t stack_size_bytes)
+    -> std::unique_ptr<machine> {
+
+    if (target == "x86_64") {
+        return std::make_unique<machine_x86_64>(os, src, jumps);
+    }
+
+    if (target == "rv32i") {
+        return std::make_unique<machine_rv32i>(os, src, jumps, "gen-rv32i.bin");
+    }
+
+    if (target == "rv32i-qemu") {
+        return std::make_unique<machine_rv32i_qemu>(
+            os, src, jumps, "gen-rv32i.bin", stack_size_bytes);
+    }
+
+    if (target == "rv32i-fpga") {
+        return std::make_unique<machine_rv32i_fpga>(
+            os, src, jumps, "gen-rv32i.bin", stack_size_bytes);
+    }
+
+    throw panic_exception{std::format("unknown target '{}'", target)};
 }
 } // namespace

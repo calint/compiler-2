@@ -2,8 +2,10 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [x] opus 5.5 ai review and bug-hunt
-[o] opus untangling nested if/else, apply early returns and consolidate
-    repeated code in helpers
+[o] opus untangle nested if/else, apply early returns and consolidate repeated
+    code into helpers
+[ ] main.cpp: make an option --bin that decides the name of the binary including
+    the nasm generated binary
 [o] local code generation found in the rv32i assessment, examples in
     etc/codegen-inefficiencies.baz
     [ ] a runtime bool argument to an inline function is materialized:

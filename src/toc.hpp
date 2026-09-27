@@ -900,27 +900,31 @@ class toc final {
             return false;
         }
 
-        std::string_view id_base{st.identifier()};
-        id_base = id_base.substr(0, id_base.find('.'));
+        std::string_view id_base{root_id_of(st.identifier())};
 
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.has_var(id_base)) {
                 return frm.get_var_const_ref(id_base).is_pointer;
             }
-            if (frm.is_func()) {
-                if (not frm.has_alias(id_base)) {
-                    return false;
-                }
-                const alias_info& alias{frm.get_alias(id_base)};
-                if (not alias.lea.is_empty()) {
-                    return true;
-                }
-                if (alias.register_operand.is_register()) {
-                    return false;
-                }
-                id_base = alias.to;
-                id_base = id_base.substr(0, id_base.find('.'));
+
+            // aliases are declared at the root frame of a function
+            if (not frm.is_func()) {
+                continue;
             }
+
+            if (not frm.has_alias(id_base)) {
+                return false;
+            }
+
+            const alias_info& alias{frm.get_alias(id_base)};
+            if (not alias.lea.is_empty()) {
+                return true;
+            }
+            if (alias.register_operand.is_register()) {
+                return false;
+            }
+
+            id_base = root_id_of(alias.to);
         }
 
         std::unreachable();
@@ -1102,6 +1106,13 @@ class toc final {
     }
 
   private:
+    // variable name without the field path
+    [[nodiscard]] static auto root_id_of(const std::string_view id)
+        -> std::string_view {
+
+        return id.substr(0, id.find('.'));
+    }
+
     // identical text shares the label of the first constant added
     [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
                                               const token& src_loc_tk,
@@ -1184,67 +1195,61 @@ class toc final {
                                                   id, std::move(lea_path));
             }
 
-            if (cur_frame.is_func()) {
-
-                // root frame of the function
-                // from here on aliases are followed to the actual variable
-                // referred to
-
-                if (not cur_frame.has_alias(id.base())) {
-                    // is not an alias
-
-                    // add an empty
-                    lea_path.emplace_back();
-
-                    return make_ident_info_from_frame(
-                        cur_frame, src_loc_tk, ident, id, std::move(lea_path));
-                }
-
-                // this is an alias, continue resolving until it is a variable,
-                // register or constant
-
-                const alias_info& alias{cur_frame.get_alias(id.base())};
-
-                if (alias.register_operand.is_register() and
-                    id.path().size() == 1) {
-                    return ident_info::make_register(ident,
-                                                     alias.register_operand);
-                }
-
-                lea_path.emplace_back(alias.lea);
-
-                ident_path new_id{std::string{alias.to}};
-
-                // big note: the fishy resizing of the 'lea_path' happens when
-                //           the 'new_id' extended past fields that do not need
-                //           lea
-                //           if 'lea_path' is not extended then the types, id
-                //           path elements and lea path vectors are not in sync
-
-                const size_t new_id_count{new_id.path().size()};
-                const size_t lea_count{lea_path.size()};
-                if ((new_id_count > lea_count) and
-                    (new_id_count - lea_count > 1)) {
-                    lea_path.resize(lea_path.size() + new_id.path().size() - 2);
-                    // note: -2 because last element is current element and
-                    //       first will be processed
-                }
-
-                // this is an alias
-                // e.g.
-                //   res -> pt.x becomes pt.x
-                //   pt.x -> p becomes p.x
-                //   lnk.count -> world.room.link becomes
-                //   world.room.link.count
-
-                for (const std::string& s : id.path() | std::views::drop(1)) {
-                    new_id.append(s);
-                }
-
-                id = new_id;
-
-                assert(not id.path().empty());
+            // from the root frame of a function aliases are followed to the
+            // actual variable referred to
+            if (not cur_frame.is_func()) {
+                continue;
             }
+
+            if (not cur_frame.has_alias(id.base())) {
+                // add an empty
+                lea_path.emplace_back();
+
+                return make_ident_info_from_frame(cur_frame, src_loc_tk, ident,
+                                                  id, std::move(lea_path));
+            }
+
+            // this is an alias, continue resolving until it is a variable,
+            // register or constant
+
+            const alias_info& alias{cur_frame.get_alias(id.base())};
+
+            if (alias.register_operand.is_register() and
+                id.path().size() == 1) {
+                return ident_info::make_register(ident, alias.register_operand);
+            }
+
+            lea_path.emplace_back(alias.lea);
+
+            ident_path new_id{std::string{alias.to}};
+
+            // big note: the fishy resizing of the 'lea_path' happens when the
+            //           'new_id' extended past fields that do not need lea
+            //           if 'lea_path' is not extended then the types, id path
+            //           elements and lea path vectors are not in sync
+
+            const size_t new_id_count{new_id.path().size()};
+            const size_t lea_count{lea_path.size()};
+            if ((new_id_count > lea_count) and (new_id_count - lea_count > 1)) {
+                lea_path.resize(lea_path.size() + new_id.path().size() - 2);
+                // note: -2 because last element is current element and first
+                //       will be processed
+            }
+
+            // this is an alias
+            // e.g.
+            //   res -> pt.x becomes pt.x
+            //   pt.x -> p becomes p.x
+            //   lnk.count -> world.room.link becomes
+            //   world.room.link.count
+
+            for (const std::string& s : id.path() | std::views::drop(1)) {
+                new_id.append(s);
+            }
+
+            id = new_id;
+
+            assert(not id.path().empty());
         }
 
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);

@@ -489,123 +489,8 @@ class stmt_call : public expression {
 
         // process each argument
         for (const auto [arg, param] : std::views::zip(args_, func.params())) {
-
-            const bool is_reference{not arg.is_expression() and
-                                    (arg.is_indexed() or tc.has_lea(arg))};
-
-            if (is_reference and not arg.get_unary_ops().is_empty()) {
-                throw compiler_exception{
-                    arg.tok(),
-                    "unary operators on reference arguments are unsupported"};
-            }
-
-            // an alias uses the argument's storage so its type must match
-            if (not arg.is_expression() and arg.get_unary_ops().is_empty()) {
-
-                assert_alias_type(tc, arg, param);
-            }
-
-            // if the argument is an identifier containing indexing, then save
-            // the 'lea' address to access the argument
-            // examples: [rbp + r14 * 4 + 205] or [r15 + r14] or simply [r15]
-
-            if (is_reference) {
-
-                const ident_info arg_info{tc.make_ident_info(arg)};
-
-                std::vector<operand> regs_lea;
-
-                const operand lea{arg.compile_lea(tc, indent, arg.tok(),
-                                                  regs_lea, {},
-                                                  arg_info.lea_path, {})};
-
-                for (const operand& r : regs_lea) {
-                    allocated_registers.push_back(r);
-                }
-
-                aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            std::string{arg.identifier()}, lea,
-                                            &param.get_type());
-
-                continue;
-            }
-
-            // handle expression arguments
-
-            if (arg.is_expression()) {
-                // a constant lets the inlined body be decided at compile time
-                const std::optional<int64_t> value{arg.constant_value(tc)};
-                if (value) {
-                    aliases_to_add.emplace_back(std::string{param.identifier()},
-                                                std::format("{}", *value),
-                                                operand{}, &param.get_type());
-
-                    continue;
-                }
-
-                const operand arg_reg{x.alloc_scratch_register(
-                    arg.tok(), indent, param.get_type())};
-
-                allocated_registers.push_back(arg_reg);
-
-                arg.compile(tc, indent,
-                            toc::make_ident_info_from_register(arg_reg));
-
-                aliases_to_add.push_back(alias_info::make_register(
-                    param.identifier(), param.get_type(), arg_reg));
-
-                continue;
-            }
-
-            // constants and unary ops pass a value, not storage, so the value
-            // must fit the parameter
-            arg.assert_not_narrowed(tc, param.get_type());
-
-            // handle non-expression without unary ops
-            if (arg.get_unary_ops().is_empty()) {
-                const ident_info arg_info{tc.make_ident_info(arg)};
-
-                // a name is resolved in the callee where its own constants
-                // would shadow the caller's, so constants pass their value
-                const std::string alias_to{
-                    arg_info.is_const()
-                        ? arg.make_constant_operand(arg_info).immediate()
-                        : std::string{arg.identifier()}};
-
-                aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            alias_to, operand{},
-                                            &param.get_type());
-
-                continue;
-            }
-
-            // handle non-expression with unary ops
-
-            const ident_info& arg_info{tc.make_ident_info(arg)};
-
-            // the alias target must be a plain integer, e.g. '~1' is not
-            if (arg_info.is_const()) {
-                aliases_to_add.emplace_back(
-                    std::string{param.identifier()},
-                    std::format("{}", arg.get_unary_ops().evaluate_constant(
-                                          arg_info.const_value)),
-                    operand{}, &param.get_type());
-
-                continue;
-            }
-
-            const operand scratch_reg{
-                x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
-
-            allocated_registers.push_back(scratch_reg);
-
-            x.copy_value(param.tok(), indent, scratch_reg, arg_info.operand);
-
-            // apply unary ops
-            arg.get_unary_ops().compile(tc, indent, scratch_reg);
-
-            aliases_to_add.push_back(alias_info::make_register(
-                param.identifier(), param.get_type(), scratch_reg));
+            aliases_to_add.push_back(make_argument_alias(tc, indent, arg, param,
+                                                         allocated_registers));
         }
 
         // create unique labels for inlined functions
@@ -702,6 +587,135 @@ class stmt_call : public expression {
         x.comment(tok(), indent, "address of argument '{}' to parameter '{}'",
                   statement::trimmed_source(args_[arg_idx]),
                   func.params()[arg_idx].name());
+    }
+
+    // the inlined body reaches an argument through its storage, its constant
+    // value or a scratch register holding its value
+    [[nodiscard]] static auto
+    make_argument_alias(toc& tc, const size_t indent, const expr_any& arg,
+                        const stmt_def_func_param& param,
+                        std::vector<operand>& allocated_registers)
+        -> alias_info {
+
+        const bool is_reference{not arg.is_expression() and
+                                (arg.is_indexed() or tc.has_lea(arg))};
+
+        if (is_reference and not arg.get_unary_ops().is_empty()) {
+            throw compiler_exception{
+                arg.tok(),
+                "unary operators on reference arguments are unsupported"};
+        }
+
+        // an alias uses the argument's storage so its type must match
+        if (not arg.is_expression() and arg.get_unary_ops().is_empty()) {
+            assert_alias_type(tc, arg, param);
+        }
+
+        if (is_reference) {
+            return make_reference_alias(tc, indent, arg, param,
+                                        allocated_registers);
+        }
+
+        if (arg.is_expression()) {
+            return make_expression_alias(tc, indent, arg, param,
+                                         allocated_registers);
+        }
+
+        // constants and unary ops pass a value, not storage, so the value
+        // must fit the parameter
+        arg.assert_not_narrowed(tc, param.get_type());
+
+        const ident_info arg_info{tc.make_ident_info(arg)};
+
+        // a name is resolved in the callee where its own constants would
+        // shadow the caller's, and the alias target must be a plain integer,
+        // e.g. '~1' is not
+        if (arg_info.is_const()) {
+            return make_value_alias(
+                param, std::format("{}", arg.get_unary_ops().evaluate_constant(
+                                             arg_info.const_value)));
+        }
+
+        if (arg.get_unary_ops().is_empty()) {
+            return make_value_alias(param, arg.identifier());
+        }
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
+
+        allocated_registers.push_back(reg);
+        x.copy_value(param.tok(), indent, reg, arg_info.operand);
+        arg.get_unary_ops().compile(tc, indent, reg);
+
+        return alias_info::make_register(param.identifier(), param.get_type(),
+                                         reg);
+    }
+
+    // an indexed argument keeps its computed address, e.g. [rbp + r14 * 4 +
+    // 205] or [r15 + r14] or simply [r15]
+    [[nodiscard]] static auto
+    make_reference_alias(toc& tc, const size_t indent, const expr_any& arg,
+                         const stmt_def_func_param& param,
+                         std::vector<operand>& allocated_registers)
+        -> alias_info {
+
+        const ident_info arg_info{tc.make_ident_info(arg)};
+
+        std::vector<operand> regs_lea;
+
+        const operand lea{arg.compile_lea(tc, indent, arg.tok(), regs_lea, {},
+                                          arg_info.lea_path, {})};
+
+        // the address registers stay allocated until the inlined body is
+        // compiled
+        allocated_registers.append_range(regs_lea);
+
+        return {
+            .from{std::string{param.identifier()}},
+            .to{std::string{arg.identifier()}},
+            .lea{lea},
+            .type_ptr{&param.get_type()},
+            .register_operand{},
+        };
+    }
+
+    // a constant lets the inlined body be decided at compile time
+    [[nodiscard]] static auto
+    make_expression_alias(toc& tc, const size_t indent, const expr_any& arg,
+                          const stmt_def_func_param& param,
+                          std::vector<operand>& allocated_registers)
+        -> alias_info {
+
+        const std::optional<int64_t> value{arg.constant_value(tc)};
+        if (value) {
+            return make_value_alias(param, std::format("{}", *value));
+        }
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
+
+        allocated_registers.push_back(reg);
+        arg.compile(tc, indent, toc::make_ident_info_from_register(reg));
+
+        return alias_info::make_register(param.identifier(), param.get_type(),
+                                         reg);
+    }
+
+    [[nodiscard]] static auto make_value_alias(const stmt_def_func_param& param,
+                                               const std::string_view to)
+        -> alias_info {
+
+        return {
+            .from{std::string{param.identifier()}},
+            .to{std::string{to}},
+            .lea{},
+            .type_ptr{&param.get_type()},
+            .register_operand{},
+        };
     }
 
     [[nodiscard]] auto is_method() const -> bool {

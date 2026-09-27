@@ -1872,6 +1872,103 @@ class machine_rv32i : public machine {
                        swapped ? left.base_register() : right.base_register());
     }
 
+    // passing checks branch to '2f' and failing ones to '1f', the last check
+    // branches past the handler on success so failures fall through to it
+    auto check_lower_bounds(const size_t indent, const std::string_view index,
+                            const operand& reg_count, const bool is_last)
+        -> void {
+
+        const auto check_negative = [&](const std::string_view reg,
+                                        const bool last) -> void {
+            assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
+                                   last ? "2f" : "1f");
+        };
+
+        if (reg_count.is_empty()) {
+            check_negative(index, is_last);
+
+            return;
+        }
+
+        check_negative(index, false);
+
+        // a negative count passes 'start + count' but spans the address space
+        check_negative(reg_count.base_register(), is_last);
+    }
+
+    auto check_upper_bound(const token& src_loc_tk, const size_t indent,
+                           const std::string_view index,
+                           const size_t array_count, const bool allow_end,
+                           const operand& reg_count, const bool lower_checked)
+        -> void {
+
+        const operand limit{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const std::string top{upper_bound_top(src_loc_tk, indent, index,
+                                              reg_count, limit, lower_checked)};
+
+        assembler_.li(indent, limit.base_register(), array_count);
+        if (allow_end) {
+            assembler_.bgeu(indent, limit.base_register(), top, "2f");
+
+            return;
+        }
+
+        assembler_.bltu(indent, top, limit.base_register(), "2f");
+    }
+
+    // the value compared with the limit, the index or the end 'index + count'
+    [[nodiscard]] auto
+    upper_bound_top(const token& src_loc_tk, const size_t indent,
+                    const std::string_view index, const operand& reg_count,
+                    const operand& limit, const bool lower_checked)
+        -> std::string {
+
+        // a negative index is left to the lower check, which has already
+        // failed it when enabled
+        if (reg_count.is_empty() and not lower_checked) {
+            assembler_.bltz(indent, index, "2f");
+
+            return std::string{index};
+        }
+
+        if (reg_count.is_empty()) {
+            return std::string{index};
+        }
+
+        const operand sum{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const std::string& top{sum.base_register()};
+
+        // after the lower checks both are below 2^31, so the sum cannot wrap
+        if (lower_checked) {
+            assembler_.add(indent, top, index, reg_count.base_register());
+
+            return top;
+        }
+
+        // the sign and carry bits form the high word of the widened sum, which
+        // decides ends outside the 32-bit range
+        const operand high{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        assembler_.srai(indent, high.base_register(), index, sign_shift_);
+        assembler_.srai(indent, limit.base_register(),
+                        reg_count.base_register(), sign_shift_);
+        assembler_.add(indent, high.base_register(), high.base_register(),
+                       limit.base_register());
+        assembler_.add(indent, top, index, reg_count.base_register());
+        assembler_.sltu(indent, limit.base_register(), top, index);
+        assembler_.add(indent, high.base_register(), high.base_register(),
+                       limit.base_register());
+        assembler_.bltz(indent, high.base_register(), "2f");
+        assembler_.bgtz(indent, high.base_register(), "1f");
+
+        return top;
+    }
+
   protected:
     [[nodiscard]] auto assembler() const -> assembler_rv32i& {
         return assembler_;
@@ -3221,78 +3318,15 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "bounds check");
 
-        // the last check branches past the handler on success so failures
-        // fall through to it
-        const auto check_negative = [&](const std::string_view reg,
-                                        const bool last) -> void {
-            assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
-                                   last ? "2f" : "1f");
-        };
-
         if (options.lower) {
-            const bool count_checked{not reg_count.is_empty()};
-            check_negative(index, not options.upper and not count_checked);
-
-            // a negative count passes 'start + count' but spans the address
-            // space
-            if (count_checked) {
-                check_negative(reg_count.base_register(), not options.upper);
-            }
+            check_lower_bounds(indent, index, reg_count, not options.upper);
         }
 
         if (options.upper) {
-            const operand limit{
-                alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-            std::string top{index};
-            if (not reg_count.is_empty()) {
-                const operand sum{
-                    alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-                top = sum.base_register();
-
-                // after the lower checks both are below 2^31, so the sum
-                // cannot wrap
-                if (options.lower) {
-                    assembler_.add(indent, top, index,
-                                   reg_count.base_register());
-                }
-
-                if (not options.lower) {
-                    const operand high{alloc_scratch_register(
-                        src_loc_tk, indent, default_type())};
-
-                    assembler_.srai(indent, high.base_register(), index,
-                                    sign_shift_);
-                    assembler_.srai(indent, limit.base_register(),
-                                    reg_count.base_register(), sign_shift_);
-                    assembler_.add(indent, high.base_register(),
-                                   high.base_register(), limit.base_register());
-                    assembler_.add(indent, top, index,
-                                   reg_count.base_register());
-                    assembler_.sltu(indent, limit.base_register(), top, index);
-                    assembler_.add(indent, high.base_register(),
-                                   high.base_register(), limit.base_register());
-                    assembler_.bltz(indent, high.base_register(), "2f");
-                    assembler_.bgtz(indent, high.base_register(), "1f");
-                }
-            }
-
-            // a negative index is left to the lower check, which has
-            // already failed it when enabled
-            if (reg_count.is_empty() and not options.lower) {
-                assembler_.bltz(indent, index, "2f");
-            }
-
-            assembler_.li(indent, limit.base_register(), array_count);
-            if (allow_end) {
-                assembler_.bgeu(indent, limit.base_register(), top, "2f");
-            }
-
-            if (not allow_end) {
-                assembler_.bltu(indent, top, limit.base_register(), "2f");
-            }
+            check_upper_bound(src_loc_tk, indent, index, array_count, allow_end,
+                              reg_count, options.lower);
         }
+
         assembler_.label(indent, "1");
         if (options.with_line) {
             assembler_.li(indent, "a0", src_loc_tk.at_line());

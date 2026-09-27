@@ -100,98 +100,15 @@ class expr_bool_op final : public statement {
                                   const bool inverted, const operand& dst) const
         -> std::optional<bool> {
 
-        const bool invert{inverted ? not is_not_ : is_not_};
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent,
-                  statement::trimmed_source(*this, "?",
-                                            comment_label("or", inverted)));
-
-        x.label(indent, create_cmp_bgn_label(tc));
-        if (is_shorthand_) {
-            // is 'lhs' a constant?
-            if (not lhs_.is_expression()) {
-                // yes, the left-hand-side is not an expression, either a
-                // constant or an identifier
-                const ident_info& lhs_info{tc.make_ident_info(lhs_)};
-                if (lhs_info.is_const()) {
-                    bool const_eval{lhs_.get_unary_ops().evaluate_constant(
-                                        lhs_info.const_value) != 0};
-
-                    if (invert) {
-                        const_eval = not const_eval;
-                    }
-                    x.comment(lhs_.tok(), indent, "const eval to {}",
-                              (const_eval ? "true" : "false"));
-
-                    if (const_eval) {
-                        // since it is an 'or' chain short-circuit
-                        // expression and jump to label for true
-                        x.branch(indent, jmp_to_if_true);
-                    }
-
-                    return const_eval;
-                }
-            }
-
-            // 'lhs' is an expression
-            resolve_cmp_shorthand(tc, indent, lhs_,
-                                  {
-                                      .operation{"!="},
-                                      .inverted{invert},
-                                      .destination{dst},
-                                      .target{jmp_to_if_true},
-                                      .branch_on_true{true},
-                                  });
-
-            return std::nullopt;
-        }
-
-        // not shorthand boolean expression
-
-        // check case when both operands are constants
-        if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(lhs_)};
-            const ident_info& rhs_info{tc.make_ident_info(rhs_)};
-            if (lhs_info.is_const() and rhs_info.is_const()) {
-                bool const_eval{
-                    eval_constant(lhs_.get_unary_ops().evaluate_constant(
-                                      lhs_info.const_value),
-                                  op_,
-                                  rhs_.get_unary_ops().evaluate_constant(
-                                      rhs_info.const_value))};
-
-                if (invert) {
-                    const_eval = not const_eval;
-                }
-                x.comment(lhs_.tok(), indent, "const eval to {}",
-                          (const_eval ? "true" : "false"));
-
-                if (const_eval) {
-                    // expression evaluated at compile time and true so
-                    // short-circuit and jump to true
-                    x.branch(indent, jmp_to_if_true);
-                }
-
-                return const_eval;
-            }
-        }
-
-        // left-hand-side or right-hand-side or both are expressions
-        // note: if lhs is constant, then a scratch register is used, however,
-        //       the if statement compile time evaluates constant expressions
-        //       before reaching this
-        resolve_cmp(tc, indent, lhs_, rhs_,
-                    {
-                        .operation{op_},
-                        .inverted{invert},
-                        .destination{dst},
-                        .target{jmp_to_if_true},
-                        .branch_on_true{true},
-                    });
-
-        return std::nullopt;
+        return compile_element(tc, indent, "or", inverted,
+                               {
+                                   .operation{op_},
+                                   .inverted{inverted != is_not_},
+                                   .destination{dst},
+                                   .target{jmp_to_if_true},
+                                   .branch_on_true{true},
+                               },
+                               true);
     }
 
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
@@ -200,103 +117,15 @@ class expr_bool_op final : public statement {
                                    const bool branch_required = true) const
         -> std::optional<bool> {
 
-        const bool invert{inverted ? not is_not_ : is_not_};
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent,
-                  statement::trimmed_source(*this, "?",
-                                            comment_label("and", inverted)));
-
-        x.label(indent, create_cmp_bgn_label(tc));
-        if (is_shorthand_) {
-            // check case when operand is constant
-            if (not lhs_.is_expression()) {
-                const ident_info& lhs_info{tc.make_ident_info(lhs_)};
-                if (lhs_info.is_const()) {
-                    bool const_eval{lhs_.get_unary_ops().evaluate_constant(
-                                        lhs_info.const_value) != 0};
-
-                    if (invert) {
-                        const_eval = not const_eval;
-                    }
-                    x.comment(lhs_.tok(), indent, "const eval to {}",
-                              (const_eval ? "true" : "false"));
-
-                    if (not const_eval) {
-                        // since it is an 'and' chain short-circuit
-                        // expression and jump to label for false
-                        x.branch(indent, jmp_to_if_false);
-                    }
-
-                    return const_eval;
-                }
-            }
-
-            // left-hand-side is expression
-            resolve_cmp_shorthand(
-                tc, indent, lhs_,
-                {
-                    .operation{"!="},
-                    .inverted{invert},
-                    .destination{dst},
-                    .target{branch_required ? jmp_to_if_false
-                                            : std::string_view{}},
-                    .branch_on_true{},
-                });
-
-            return std::nullopt;
-        }
-
-        // not shorthand expression
-        // check the case when both operands are constants
-        if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(lhs_)};
-            const ident_info& rhs_info{tc.make_ident_info(rhs_)};
-            if (lhs_info.is_const() and rhs_info.is_const()) {
-                bool const_eval{
-                    eval_constant(lhs_.get_unary_ops().evaluate_constant(
-                                      lhs_info.const_value),
-                                  op_,
-                                  rhs_.get_unary_ops().evaluate_constant(
-                                      rhs_info.const_value))};
-
-                if (invert) {
-                    const_eval = not const_eval;
-                }
-                x.comment(lhs_.tok(), indent, "const eval to {}",
-                          (const_eval ? "true" : "false"));
-
-                if (not const_eval) {
-                    // short circuit 'and' chain
-                    x.branch(indent, jmp_to_if_false);
-                }
-
-                return const_eval;
-            }
-        }
-
-        // don't allow left-hand-side to be constant because generated
-        // assembler does not compile
-        // if (not lhs_.is_expression()) {
-        //     const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
-        //     if (lhs_info.is_const()) {
-        //         throw compiler_exception(
-        //             lhs_.tok(),
-        //             "left hand side expression may not be a constant");
-        //     }
-        // }
-
-        resolve_cmp(tc, indent, lhs_, rhs_,
-                    {
-                        .operation{op_},
-                        .inverted{invert},
-                        .destination{dst},
-                        .target{jmp_to_if_false},
-                        .branch_on_true{},
-                    });
-
-        return std::nullopt;
+        return compile_element(tc, indent, "and", inverted,
+                               {
+                                   .operation{op_},
+                                   .inverted{inverted != is_not_},
+                                   .destination{dst},
+                                   .target{jmp_to_if_false},
+                                   .branch_on_true{},
+                               },
+                               branch_required);
     }
 
     [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
@@ -359,6 +188,67 @@ class expr_bool_op final : public statement {
     }
 
   private:
+    // an 'or' element branches when true and an 'and' element when false
+    [[nodiscard]] auto compile_element(toc& tc, const size_t indent,
+                                       const std::string_view list_op,
+                                       const bool inverted,
+                                       const machine::comparison_action& action,
+                                       const bool branch_required) const
+        -> std::optional<bool> {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent,
+                  statement::trimmed_source(*this, "?",
+                                            comment_label(list_op, inverted)));
+
+        x.label(indent, create_cmp_bgn_label(tc));
+
+        const std::optional<bool> constant{constant_value(tc)};
+        if (constant) {
+            return compile_constant(tc, indent, *constant != inverted, action);
+        }
+
+        // note: a constant 'lhs' is compiled to a scratch register, however,
+        //       the if statement evaluates constant expressions at compile
+        //       time before reaching this
+
+        if (not is_shorthand_) {
+            resolve_cmp(tc, indent, lhs_, rhs_, action);
+
+            return std::nullopt;
+        }
+
+        machine::comparison_action shorthand_action{action};
+        shorthand_action.operation = "!=";
+
+        // only a shorthand omits its branch, a comparison keeps it
+        if (not branch_required) {
+            shorthand_action.target = {};
+        }
+
+        resolve_cmp_shorthand(tc, indent, lhs_, shorthand_action);
+
+        return std::nullopt;
+    }
+
+    // a constant emits no comparison, only the short-circuit branch
+    auto compile_constant(toc& tc, const size_t indent, const bool value,
+                          const machine::comparison_action& action) const
+        -> bool {
+
+        machine& x{tc.machine()};
+
+        x.comment(lhs_.tok(), indent, "const eval to {}",
+                  (value ? "true" : "false"));
+
+        if (value == action.branch_on_true) {
+            x.branch(indent, action.target);
+        }
+
+        return value;
+    }
+
     auto resolve_if_op_is_expression() -> void {
         // is it a negated expression?
         if (is_not_) {

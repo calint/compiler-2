@@ -74,13 +74,14 @@ class stmt_block final : public statement {
         while (true) {
             // is it the end of the block?
             close_brace_tk_ = tz.is_next_char_token('}');
-            if (not close_brace_tk_.is_empty()) {
-                if (not is_one_statement_) {
-                    break;
-                }
+            if (not close_brace_tk_.is_empty() and is_one_statement_) {
                 throw compiler_exception{
                     close_brace_tk_,
                     "unexpected '}' in single statement block"};
+            }
+
+            if (not close_brace_tk_.is_empty()) {
+                break;
             }
 
             // is it a subblock?
@@ -92,11 +93,12 @@ class stmt_block final : public statement {
 
             const token tk{tz.next_token()};
 
+            // no more tokens in the block?
+            if (tk.is_empty() and not is_one_statement_) {
+                throw compiler_exception{tz, "expected '}' to close block"};
+            }
+
             if (tk.is_empty()) {
-                // no more tokens in the block?
-                if (not is_one_statement_) {
-                    throw compiler_exception{tz, "expected '}' to close block"};
-                }
                 break;
             }
 

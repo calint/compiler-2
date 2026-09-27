@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <format>
+#include <functional>
 #include <ostream>
 #include <ranges>
 #include <string>
@@ -129,17 +130,6 @@ class stmt_def_dat final : public statement {
         if (not type_tk_.is_empty()) {
             type_tk_.source_to(os);
         }
-
-        // special case for a string
-
-        if (elroot_.tk.is_string()) {
-            equals_tk_.source_to(os);
-            elroot_.tk.source_to(os);
-
-            return;
-        }
-
-        // normal case
 
         if (not has_init_) {
             return;
@@ -361,72 +351,32 @@ class stmt_def_dat final : public statement {
 
         // array
 
-        elem el{};
-        el.is_array = is_array;
-        el.array_count = array_count;
-
+        // special case for string
         if (tp.is_builtin()) {
-            // special case for string
-            el.tk = tz.next_token();
-            if (el.tk.is_string()) {
-                el.array_count = string_array_count(el.tk, tp, el.array_count);
+            const token tk{tz.next_token()};
+            if (tk.is_string()) {
+                elem el{};
+                el.is_array = is_array;
+                el.tk = tk;
+                el.array_count = string_array_count(tk, tp, array_count);
 
                 return el;
             }
-            tz.put_back_token(el.tk);
-
-            // normal case
-
-            el.tk = src_loc_tk;
-            // note: 'el.tk' is not part of data but is used for source location
-            //       at compile
-
-            el.open_brace_tk_ = tz.is_next_char_token('{');
-            if (el.open_brace_tk_.is_empty()) {
-                throw compiler_exception{
-                    tz, std::format(
-                            "expected '{{' to open array initializer for '{}'",
-                            tp.name())};
-            }
-
-            size_t counter{};
-            el.close_brace_tk_ = tz.is_next_char_token('}');
-            if (el.close_brace_tk_.is_empty()) {
-                while (true) {
-                    el.elems.emplace_back(parse_builtin(tc, tz, tp));
-                    ++counter;
-                    const token t{tz.is_next_char_token(',')};
-                    if (t.is_empty()) {
-                        el.close_brace_tk_ = tz.is_next_char_token('}');
-                        break;
-                    }
-                    if (el.array_count != 0 and counter == el.array_count) {
-                        throw compiler_exception{
-                            t,
-                            std::format("expected '}}' after {} element{} in "
-                                        "array of size {}",
-                                        counter, counter == 1 ? "" : "s",
-                                        el.array_count)};
-                    }
-                    el.elem_delims_tk_.emplace_back(t);
-                }
-            }
-
-            if (el.close_brace_tk_.is_empty()) {
-                throw compiler_exception{
-                    tz, std::format(
-                            "expected '}}' to close array initializer for '{}'",
-                            tp.name())};
-            }
-
-            if (el.array_count == 0) {
-                el.array_count = counter;
-            }
-
-            return el;
+            tz.put_back_token(tk);
         }
 
-        // array of a user-defined type
+        return parse_array(tc, tz, src_loc_tk, tp, array_count);
+    }
+
+    // '{' elements '}', only an array of built-ins may be empty
+    [[nodiscard]] static auto parse_array(const toc& tc, tokenizer& tz,
+                                          const token src_loc_tk,
+                                          const type& tp,
+                                          const size_t array_count) -> elem {
+
+        elem el{};
+        el.is_array = true;
+        el.array_count = array_count;
 
         el.tk = src_loc_tk;
         // note: 'el.tk' is not part of data but is used for source location
@@ -440,25 +390,15 @@ class stmt_def_dat final : public statement {
                             tp.name())};
         }
 
-        size_t counter{};
-        while (true) {
-            el.elems.emplace_back(parse_type(tc, tz, tp));
-            ++counter;
-            const token tk{tz.is_next_char_token(',')};
-            if (tk.is_empty()) {
-                break;
-            }
-            if (array_count != 0 and counter == array_count) {
-                throw compiler_exception{
-                    tk,
-                    std::format("expected '}}' after {} element{} in array of "
-                                "size {}",
-                                counter, counter == 1 ? "" : "s", array_count)};
-            }
-            el.elem_delims_tk_.emplace_back(tk);
+        if (tp.is_builtin()) {
+            el.close_brace_tk_ = tz.is_next_char_token('}');
         }
 
-        el.close_brace_tk_ = tz.is_next_char_token('}');
+        if (el.close_brace_tk_.is_empty()) {
+            parse_array_elements(tc, tz, tp, el);
+            el.close_brace_tk_ = tz.is_next_char_token('}');
+        }
+
         if (el.close_brace_tk_.is_empty()) {
             throw compiler_exception{
                 tz,
@@ -466,11 +406,37 @@ class stmt_def_dat final : public statement {
                             tp.name())};
         }
 
-        if (array_count == 0) {
-            el.array_count = counter;
+        if (el.array_count == 0) {
+            el.array_count = el.elems.size();
         }
 
         return el;
+    }
+
+    // a sized array rejects elements past its size
+    static auto parse_array_elements(const toc& tc, tokenizer& tz,
+                                     const type& tp, elem& el) -> void {
+
+        while (true) {
+            el.elems.emplace_back(tp.is_builtin() ? parse_builtin(tc, tz, tp)
+                                                  : parse_type(tc, tz, tp));
+
+            const token delim_tk{tz.is_next_char_token(',')};
+            if (delim_tk.is_empty()) {
+                return;
+            }
+
+            const size_t count{el.elems.size()};
+            if (el.array_count != 0 and count == el.array_count) {
+                throw compiler_exception{
+                    delim_tk,
+                    std::format("expected '}}' after {} element{} in array of "
+                                "size {}",
+                                count, count == 1 ? "" : "s", el.array_count)};
+            }
+
+            el.elem_delims_tk_.emplace_back(delim_tk);
+        }
     }
 
     // without an initializer only the shape is known and the data is zero
@@ -596,46 +562,41 @@ class stmt_def_dat final : public statement {
     static auto print_source_elem(std::ostream& os, const type& tp,
                                   const elem& elroot) -> void {
 
-        if (not elroot.is_array) {
-            if (tp.is_builtin()) {
-                elroot.source_to(os);
-
-                return;
-            }
-
-            // user-defined type
-
+        if (not tp.is_builtin()) {
             print_source_type(os, tp, elroot);
 
             return;
         }
 
-        // array
-
-        if (tp.is_builtin()) {
-            print_source_builtin_array(os, elroot);
+        if (not elroot.is_array) {
+            elroot.source_to(os);
 
             return;
         }
 
-        // array of a user-defined type
+        // special case for string
+        if (elroot.tk.is_string()) {
+            elroot.tk.source_to(os);
 
-        print_source_type(os, tp, elroot);
+            return;
+        }
+
+        print_source_braced(
+            os, elroot,
+            [&os](const size_t, const elem& e) -> void { e.source_to(os); });
     }
 
-    static auto print_source_builtin_array(std::ostream& os, const elem& elroot)
-        -> void {
+    // '{' items separated by their delimiters '}'
+    static auto print_source_braced(
+        std::ostream& os, const elem& elroot,
+        const std::function_ref<void(size_t, const elem&)> print_item) -> void {
 
         elroot.open_brace_tk_.source_to(os);
-        if (not elroot.elems.empty()) {
-            elroot.elems.front().source_to(os);
-            for (const auto [d, e] :
-                 std::views::zip(elroot.elem_delims_tk_,
-                                 elroot.elems | std::views::drop(1))) {
-
-                d.source_to(os);
-                e.source_to(os);
+        for (size_t i{}; i < elroot.elems.size(); ++i) {
+            if (i != 0) {
+                elroot.elem_delims_tk_[i - 1].source_to(os);
             }
+            print_item(i, elroot.elems[i]);
         }
         elroot.close_brace_tk_.source_to(os);
     }
@@ -644,70 +605,18 @@ class stmt_def_dat final : public statement {
                                   const elem& elroot) -> void {
 
         if (not elroot.is_array) {
-            elroot.open_brace_tk_.source_to(os);
-            if (not elroot.elems.empty()) {
-                print_source_field(os, tp.fields().front(),
-                                   elroot.elems.front());
-
-                for (const auto [d, e, f] :
-                     std::views::zip(elroot.elem_delims_tk_,
-                                     elroot.elems | std::views::drop(1),
-                                     tp.fields() | std::views::drop(1))) {
-
-                    d.source_to(os);
-                    print_source_field(os, f, e);
-                }
-            }
-            elroot.close_brace_tk_.source_to(os);
+            print_source_braced(
+                os, elroot, [&os, &tp](const size_t i, const elem& e) -> void {
+                    const type_field& tf{tp.fields()[i]};
+                    print_source_elem(os, tf.type(), e);
+                });
 
             return;
         }
 
-        // array
-
-        elroot.open_brace_tk_.source_to(os);
-        if (not elroot.elems.empty()) {
-            print_source_elem(os, tp, elroot.elems.front());
-            for (const auto [d, e] :
-                 std::views::zip(elroot.elem_delims_tk_,
-                                 elroot.elems | std::views::drop(1))) {
-
-                d.source_to(os);
-                print_source_elem(os, tp, e);
-            }
-        }
-        elroot.close_brace_tk_.source_to(os);
-    }
-
-    static auto print_source_field(std::ostream& os, const type_field& tf,
-                                   const elem& elroot) -> void {
-
-        if (tf.type().is_builtin()) {
-            if (not tf.is_array) {
-                elroot.source_to(os);
-
-                return;
-            }
-
-            // array
-
-            // special case for string
-
-            if (elroot.tk.is_string()) {
-                elroot.tk.source_to(os);
-
-                return;
-            }
-
-            // normal case
-
-            print_source_builtin_array(os, elroot);
-
-            return;
-        }
-
-        // user-defined type
-
-        print_source_type(os, tf.type(), elroot);
+        print_source_braced(os, elroot,
+                            [&os, &tp](const size_t, const elem& e) -> void {
+                                print_source_elem(os, tp, e);
+                            });
     }
 };
