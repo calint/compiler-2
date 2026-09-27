@@ -1,0 +1,87 @@
+--------------------------------------------------------------------------------
+baz memory usage (2026-09-27)
+--------------------------------------------------------------------------------
+'./make.sh -O3 build', every coverage test compiled once per target with
+'--target=x86_64' and '--target=rv32i', peak resident memory read per process
+with 'wait4' ('ru_maxrss'); heap attribution with valgrind massif
+
+--------------------------------------------------------------------------------
+peak memory per test
+--------------------------------------------------------------------------------
+test          x86_64      rv32i   output lines (x86_64 / rv32i)   time
+542          297 MiB    686 MiB   1,485,657 / 2,272,136           2.3 s / 3.0 s
+525           16 MiB     18 MiB   about 17k                       0.06 s
+all others 14-15 MiB  14-15 MiB   small                           < 0.01 s
+
+notes:
+* 14-15 MiB is the process baseline (binary, libstdc++ and startup), every
+  compile uses at least that, so only 542 and slightly 525 stand out
+* 542 nests inline calls 16 x 16 x 16 x 16 deep, twice, to test far jumps: 78
+  MB of x86_64 and 120 MB of rv32i assembly
+* comments are 72% (x86_64) and 65% (rv32i) of the output lines of 542
+
+--------------------------------------------------------------------------------
+why memory follows the output size
+--------------------------------------------------------------------------------
+* 'assembler::lines_' buffers every output line from 'program_start' until
+  'write_assembly' so jumps can be optimized and resolved; nothing is written
+  before the whole program compiled
+* 'sizeof(assembler::line)' is 104 bytes: 'text' 32, 'label' 32, 'jump' 8,
+  'code_size' 8, 'entry' and 'removed' 2 + 6 padding, 'record'
+  ('std::optional<size_t>') 16; the text of nearly every line is longer than
+  the 15 byte small string buffer and takes a heap block of its own (about 64
+  bytes for the average 53 byte line)
+* rv32i also keeps a 'record' (96 bytes, 'instruction' is 88) per instruction
+  and directive in 'assembler_rv32i::records_', which is why rv32i uses more
+  per line than x86_64
+* 'jump_info' (128 bytes) exists only for jumps and does not matter here
+
+--------------------------------------------------------------------------------
+heap profile at the peak
+--------------------------------------------------------------------------------
+massif on a 1/16 copy of 542 ('step65536' calls 'step4096' once instead of 16
+times):
+
+valgrind --tool=massif --depth=9 --threshold=2 \
+  ./baz small.baz --target=x86_64 --bin=gen.bin > /dev/null
+
+target    output lines   peak heap   std::vector<line> growth   line text
+x86_64          93,027     26.1 MB    20.4 MB (78%)              3.5 MB (13%)
+rv32i          142,226     58.3 MB    40.9 MB (70%)              -
+
+* the peak is reached inside 'std::vector<line>::_M_realloc_append' while
+  'lines_' doubles: the old buffer (6.8 MB) and the new one (13.6 MB) exist at
+  the same time until the lines are moved
+* the growth is triggered from 'assembler::add_text' (mostly comments from
+  'comment_alias' in 'stmt_call::compile_inline') and from 'assembler::append'
+  when 'emit_most_efficient' keeps the chosen version of an expression
+
+--------------------------------------------------------------------------------
+estimate for the full 542
+--------------------------------------------------------------------------------
+x86_64, growth from 2^20 to 2^21 lines:
+  old buffer   1,048,576 x 104 B                      109 MB
+  new buffer   same lines moved                       109 MB
+  line text    about 1.05M x 64 B                      67 MB
+  baseline                                             14 MB
+  total                                              ~299 MB (measured 297 MiB)
+
+rv32i, growth from 2^21 to 2^22 lines:
+  old and new buffer   2 x 2,097,152 x 104 B          436 MB
+  line text            about 2.1M x 64 B              134 MB
+  records              about 0.8M instructions, the
+                       vector at 1M capacity x 96 B   100 MB
+  baseline                                             14 MB
+  total                                              ~684 MB (measured 686 MiB)
+
+--------------------------------------------------------------------------------
+possible reductions (etc/todo.txt, medium, 'compiler memory')
+--------------------------------------------------------------------------------
+* 'std::deque' for 'lines_' (and 'records_'): growth adds blocks instead of
+  copying, which removes the old buffer at the peak (about a third of the
+  peak) and the unused half of the capacity
+* 'record' as 'size_t' with a sentinel instead of 'std::optional<size_t>':
+  104 -> 96 bytes per line
+* the comments are 2 of 3 lines; not emitting them into the buffer when they
+  are not wanted would shrink the buffer accordingly, but there is no option
+  for that today

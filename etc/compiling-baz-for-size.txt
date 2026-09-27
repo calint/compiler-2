@@ -1,0 +1,66 @@
+--------------------------------------------------------------------------------
+compiling baz for size (2026-09-27)
+--------------------------------------------------------------------------------
+clang++ 22.1.8, libstdc++ linked dynamically
+
+--------------------------------------------------------------------------------
+smallest build
+--------------------------------------------------------------------------------
+clang++ -std=c++26 src/main.cpp -o baz -Oz -flto -fuse-ld=lld \
+  -ffunction-sections -fdata-sections -Wl,--gc-sections \
+  -Wl,--icf=all -fno-asynchronous-unwind-tables -fno-rtti -s
+
+--------------------------------------------------------------------------------
+file sizes
+--------------------------------------------------------------------------------
+-O0 -g (make.sh default)                            10.3 MB
+-O0                                                  3.5 MB
+-O0 -s                                               2.0 MB
+-O3 -s                                               1.1 MB
+-O2 -s                                               999 KB
+-Os -s                                               867 KB
+-Oz -s                                               798 KB
++ -ffunction-sections -fdata-sections
+  -Wl,--gc-sections                                  798 KB
++ -flto                                              638 KB
++ -fuse-ld=lld -Wl,--icf=all                         629 KB
++ -fno-asynchronous-unwind-tables -fno-rtti          611 KB
+
+notes:
+* '--gc-sections' alone gains nothing, it pays off with '-flto'
+* '-fno-asynchronous-unwind-tables' and '-fno-rtti' together gain 3%; no source
+  uses 'dynamic_cast' or 'typeid'
+* '-fno-exceptions' is not possible: the compiler reports errors by throwing,
+  so '.eh_frame' and '.gcc_except_table' stay
+
+--------------------------------------------------------------------------------
+why the default build is big
+--------------------------------------------------------------------------------
+* 10 MB of which 6.7 MB is debug info ('-g') and 1.5 MB the symbol table (about
+  10k functions with long mangled template names); stripped it is 2.0 MB with
+  1.4 MB '.text' and 0.3 MB '.eh_frame'
+* '-O0' makes the code bigger, not smaller: without inlining every standard
+  library accessor is an out-of-line function with its own unwind info and
+  values are spilled to the stack; '.text' is 1.38 MB at '-O0', 0.86 MB at
+  '-O3', 0.59 MB at '-Os' and 0.45 MB at '-Oz'
+* of the '-O0' '.text' about 0.43 MB is standard library instantiations (format
+  136 KB incl. unused float formatters, regex 105 KB, variant 62 KB) and
+  0.88 MB project code; no single function stands out (largest about 6 KB)
+
+--------------------------------------------------------------------------------
+stripping symbols
+--------------------------------------------------------------------------------
+* stripping ('-s' or 'strip baz') removes only '.symtab', '.strtab' and the
+  debug sections, which are not loaded at run time
+* the program does not read its own symbols (no backtraces) and exception
+  unwinding uses '.eh_frame', which is kept
+* verified: the 611 KB build produces the same assembly, rv32i binaries, stderr
+  and exit codes as the '-O0 -g' build for all coverage tests, 4 targets x 5
+  modes (default, all checks, --nopt, --checks=alias, --reproduce-source; test
+  542 skipped because it is slow)
+* stripping does affect tooling:
+  - gdb and sanitizer stack traces lose function names and line numbers
+  - 'qa/perf/perf.sh' ('perf record --call-graph dwarf') needs symbols and
+    debug info to name and unwind frames
+  - coverage ('prof') needs its own instrumented build anyway
+* so keep make.sh unstripped for development and strip only a release binary

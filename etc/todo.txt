@@ -1,23 +1,12 @@
 --------------------------------------------------------------------------------
-[ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
+[ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
 easy
 --------------------------------------------------------------------------------
-[ ] etc/run-test with peak memory usage and inspect why some test cases use so
-    much more memory than other
-[ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
-[ ] a 'read' into a 'bool' array stores any byte, but copying a 'bool'
-    ('is_bool_copy') relies on 0 or 1; reject 'bool' arrays in 'read'
-    => for now the user ensures a 'read' into a 'bool' array stores only 0 or 1
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments
-[ ] some improvements (performance wise) of toc::indent using a buffer on the
-    stack
-    => do perf tests first using etc/perf.sh
-[ ] lut: change to map
-    => keep it simple for now
 [ ] rename compiler_exception
 [ ] remove panic_exception
 [o] examine NOLINTNEXTLINE annotations and try to fix
@@ -28,6 +17,10 @@ easy
 --------------------------------------------------------------------------------
 medium
 --------------------------------------------------------------------------------
+[ ] compiler memory: peak is about 2 to 3 'assembler::line' (104 bytes) per
+    output line while 'lines_' grows (old and new buffer during the copy),
+    comments are 2 of 3 lines; e.g. 'std::deque' for 'lines_', 'record' as
+    'size_t' with a sentinel instead of 'std::optional' (16 -> 8 bytes)
 [ ] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
     uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
     then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead
@@ -324,6 +317,46 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[-] a 'read' into a 'bool' array stores any byte, but copying a 'bool'
+    ('is_bool_copy') relies on 0 or 1; reject 'bool' arrays in 'read'
+    => kept: the goal is an efficient conversion of any type to and from
+       bytes, so 'read' stays a raw byte copy. truth tests already treat
+       non-zero as true, but '==', 'equal', 'arrays_equal', bool to integer
+       copies and 'write' use the byte as is, so a stored 'bool' stays 0 or 1.
+       bytes from 'read' can be normalized with an additional pass over the
+       'bool' array
+[-] lut: change to map
+    => keep it simple for now
+    => the frame tables 'consts_', 'vars_' and 'aliases_' hold a few entries
+       and are created and destroyed per block, loop and inlined call; a
+       linear scan over a small contiguous vector beats a map at that size
+       and most keys fit the small string buffer
+    => a map allocates a node per entry ('unordered_map' also buckets and
+       hashing) on every frame push, likely outweighing the lookup savings
+    => only the global 'funcs_' and 'types_' grow with the program, still
+       tens of entries
+    => 'put' accepts duplicate keys and 'get_const_ref' returns the first
+       match; a map would change that behavior
+[-] some improvements (performance wise) of toc::indent using a buffer on the
+    stack
+    => do perf tests first using etc/perf.sh
+    => 'toc::indent' no longer exists; the assemblers' 'indentation' builds a
+       short string that is concatenated into the owned line text right away,
+       fits the small string buffer up to indent 3 and does not show in the
+       compile-only perf reports (malloc in total about 1.5%); a stack buffer
+       would still need the owned line string
+[x] etc/run-test with peak memory usage and inspect why some test cases use so
+    much more memory than other
+    => all tests use 14-15 MiB (the process baseline) except 542 (x86_64
+       297 MiB, rv32i 686 MiB, 1.5M and 2.3M output lines) and 525 (16-18
+       MiB); memory follows the buffered output: 'assembler::lines_' holds
+       every line until 'write_assembly', and the heap profile at the peak is
+       70-78% the 'std::vector<line>' reallocation, 13% line text; see the
+       medium item 'compiler memory' and etc/baz-memory-usage.txt
+[x] why is the binary so big although in-line is turned off in make.sh?
+    => mostly debug info and symbols, and '-O0' makes the code bigger; the
+       smallest build is 611 KB, stripping is safe for the program but not for
+       gdb, sanitizers and perf; see etc/compiling-baz-for-size.txt
 [-] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
     => negligible impact on memory usage: 'token' with 'uint32_t' start, end
        and line (80 -> 64 bytes) left peak memory of test 542 (297 MiB)

@@ -6,7 +6,7 @@ cd ..
 
 clang-format -i --style=file src/*
 qa/lint/clang-tidy.sh
-./make.sh build
+./make.sh build -O3
 qa/coverage/test-coverage.sh --target=x86 run
 qa/coverage/test-coverage.sh --target=rv32i run
 qa/coverage/test-coverage.sh --target=rv32i-qemu run
