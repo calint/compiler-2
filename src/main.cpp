@@ -29,7 +29,6 @@
 #include "null_stream.hpp"
 #include "panic_exception.hpp"
 #include "program.hpp"
-#include "tokenizer.hpp"
 
 namespace {
 struct check_options {
@@ -254,10 +253,6 @@ examples:
 
     } catch (const compiler_exception& e) {
         print_source_error(src_file_name, src, e.line, e.start_index, e.msg);
-
-        return 1;
-    } catch (const tokenizer_exception& e) {
-        print_source_error(src_file_name, src, e.line, e.start_index, e.what());
 
         return 1;
     } catch (const panic_exception& e) {

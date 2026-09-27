@@ -5,7 +5,9 @@
 #include <string>
 
 #include "token.hpp"
-#include "tokenizer.hpp"
+
+// 'tokenizer' throws this, so it is only declared here
+class tokenizer;
 
 class compiler_exception final : public std::exception {
   public:
@@ -19,10 +21,8 @@ class compiler_exception final : public std::exception {
           start_index{src_loc_tk.start_index()},
           end_index{src_loc_tk.end_index()} {}
 
-    compiler_exception(const tokenizer& tz, std::string message)
-        : msg{std::move(message)}, line{tz.cur_line()},
-          start_index{tz.cur_char_index_in_source()},
-          end_index{tz.cur_char_index_in_source()} {}
+    // defined in 'tokenizer.hpp'
+    compiler_exception(const tokenizer& tz, std::string message);
 
     [[nodiscard]] auto what() const noexcept -> const char* override {
         return msg.c_str();

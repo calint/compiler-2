@@ -3,12 +3,6 @@
 --------------------------------------------------------------------------------
 easy
 --------------------------------------------------------------------------------
-[ ] make sure there are comments in the assembler sections that implement nuob
-    it should be clear which assembler code belongs to which nuob check
-[ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
-[ ] rv32i: zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
-    shorter than the 6 instruction loop; choose by instruction count
-    (etc/codegen-inefficiencies.baz)
 [ ] etc/run-test with peak memory usage and inspect why some test cases use so
     much more memory than other
 [ ] why is the binary so big although in-line is turned off in make.sh?
@@ -34,6 +28,10 @@ easy
 --------------------------------------------------------------------------------
 medium
 --------------------------------------------------------------------------------
+[ ] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
+    uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
+    then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead
+    of a 20 iteration 'sb' loop (etc/codegen-inefficiencies.baz)
 [ ] low priority: code after an unconditional 'exit' elsewhere than the end of
     'main' is generated, e.g. after a constant false 'assert'
 [ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
@@ -326,6 +324,28 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[-] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
+    => negligible impact on memory usage: 'token' with 'uint32_t' start, end
+       and line (80 -> 64 bytes) left peak memory of test 542 (297 MiB)
+       unchanged; kept 'size_t' for consistency; 'tokenizer_exception' removed
+       on the way, the tokenizer throws 'compiler_exception'
+[x] rv32i: zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
+    shorter than the 6 instruction loop; choose by instruction count
+    (etc/codegen-inefficiencies.baz)
+    => chosen by speed: unrolled stores always run faster than the loop (4
+       instructions per word), so up to 16 stores are unrolled whatever the
+       byte count, the cap only bounds code size; 20 bytes word aligned is 5
+       'sw', 20 bytes byte aligned (20 'sb') still loops, see the medium item
+       about peeling to the word boundary
+[x] make sure there are comments in the assembler sections that implement nuob
+    it should be clear which assembler code belongs to which nuob check
+    => both targets: 'check_bounds' comments each part as 'lower bound
+       (--checks=lower)', 'upper bound (--checks=upper)', 'line number
+       (--checks=line)'; 'check_frame_capacity' starts with 'frame capacity
+       check (--checks=frame)'; the handlers are introduced by 'frame
+       overflow handler (--checks=frame)' and 'bounds failure handler
+       (--checks=upper or --checks=lower)'; 'alias' emits no code;
+       instructions unchanged (all tests, both targets)
 [x] allow trailing comma at type definition. e.g.,
     type object {
         pos : point,

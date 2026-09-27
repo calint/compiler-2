@@ -95,7 +95,8 @@ func main() {
     # 'add t1, s0, t0' is repeated for each field of the result
     o3[ix] = object_init()
 
-    # zeroing 20 bytes uses a 6 instruction loop instead of 5 'sw'
+    # zeroing 20 bytes at the known odd offset 's0 + 329' loops over 'sb':
+    # 3 'sb' up to the word boundary, 4 'sw' and 1 'sb' would do
     var buf[20] i8
 
     # 'equal' with a known 8 byte size uses the generic loop and tail code

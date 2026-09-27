@@ -1933,9 +1933,10 @@ func main() {
            "addi t0, a2, 2047\nsw zero, 0(t0)\nsw zero, 4(t0)\nsw zero, "
            "8(t0)\nsw zero, 12(t0)\n");
     address_output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 19, 4);
+    // above 16 stores the loop keeps the code small and stores the tail
+    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 67, 4);
     assert(address_output.str() ==
-           "addi t0, a2, 0\nli t1, 4\n1:\nsw zero, 0(t0)\naddi t0, t0, 4\naddi "
+           "addi t0, a2, 0\nli t1, 16\n1:\nsw zero, 0(t0)\naddi t0, t0, 4\naddi "
            "t1, t1, -1\nbnez t1, 1b\nsh zero, 0(t0)\nsb zero, 2(t0)\n");
     address_output.str({});
     backend.finish();

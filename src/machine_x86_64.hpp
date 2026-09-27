@@ -1000,6 +1000,8 @@ class machine_x86_64 final : public machine {
         assert(frame_address.is_memory());
         assert(frame_size_bytes.is_immediate());
 
+        comment(src_loc_tk, indent, "frame capacity check (--checks=frame)");
+
         const operand start{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
@@ -1096,12 +1098,14 @@ class machine_x86_64 final : public machine {
             reg_line_num =
                 alloc_scratch_register(src_loc_tk, indent, *default_type_);
 
-            comment(src_loc_tk, indent, "line number");
+            comment(src_loc_tk, indent, "line number (--checks=line)");
             mov(src_loc_tk, indent, reg_line_num,
                 immediate(src_loc_tk.at_line()));
         }
 
         if (options.lower) {
+            comment(src_loc_tk, indent, "lower bound (--checks=lower)");
+
             // a negative count passes 'start + count' but spans the address
             // space
             for (const operand* value : {&reg_to_check, &reg_count}) {
@@ -1115,6 +1119,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (options.upper) {
+            comment(src_loc_tk, indent, "upper bound (--checks=upper)");
             compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
                                 reg_count);
 
@@ -1128,7 +1133,6 @@ class machine_x86_64 final : public machine {
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
         if (not with_line) {
-            assembler_.add_separator_newline();
             assembler_.label(0, "baz_bounds_panic");
             emit_panic_exit();
 

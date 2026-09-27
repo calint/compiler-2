@@ -1291,6 +1291,62 @@ class machine_rv32i : public machine {
         return lowered;
     }
 
+    auto zero_unrolled(const token& src_loc_tk, const size_t indent,
+                       const operand& destination, const size_t size_bytes,
+                       const size_t width) -> void {
+
+        const operand address{
+            unrolled_address(src_loc_tk, indent, destination, size_bytes)};
+
+        for_each_part(
+            size_bytes, width,
+            [&](const size_t part_size_bytes, const size_t offset) -> void {
+                assembler_.store(indent, store_op(part_size_bytes), "zero",
+                                 address.displacement() +
+                                     static_cast<int64_t>(offset),
+                                 address.base_register());
+            });
+    }
+
+    auto zero_with_loop(const token& src_loc_tk, const size_t indent,
+                        const operand& destination, const size_t size_bytes,
+                        const size_t width) -> void {
+
+        const operand dst_pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        const operand remaining{
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        address_of(src_loc_tk, indent, dst_pointer, destination);
+
+        copy_value(src_loc_tk, indent, remaining,
+                   operand::imm(std::format("{}", size_bytes / width),
+                                default_type()));
+
+        assembler_.label(indent, "1");
+        assembler_.store(indent, store_op(width), "zero", 0,
+                         dst_pointer.base_register());
+
+        assembler_.addi(indent, dst_pointer.base_register(),
+                        dst_pointer.base_register(), width);
+
+        assembler_.addi(indent, remaining.base_register(),
+                        remaining.base_register(), -1);
+
+        assembler_.bnez(indent, remaining.base_register(), "1b");
+        // the known tail needs no runtime tests or additional scratch
+        // registers
+        const size_t tail_bytes{size_bytes % width};
+        if ((tail_bytes & 2U) != 0) {
+            assembler_.sh(indent, "zero", 0, dst_pointer.base_register());
+        }
+        if ((tail_bytes & 1U) != 0) {
+            assembler_.sb(indent, "zero", tail_bytes & 2U,
+                          dst_pointer.base_register());
+        }
+    }
+
     // a store of constant bytes at 'offset' with 'size_bytes' of 1, 2 or 4
     struct byte_part {
         size_t offset{};
@@ -2656,56 +2712,22 @@ class machine_rv32i : public machine {
         const size_t width{
             bulk_width(access_alignment(destination, alignment))};
 
-        constexpr size_t direct_store_limit{16};
-        if (size_bytes <= direct_store_limit) {
-            const operand address{
-                unrolled_address(src_loc_tk, indent, destination, size_bytes)};
+        size_t store_count{};
+        for_each_part(size_bytes, width,
+                      [&store_count](const size_t, const size_t) -> void {
+                          ++store_count;
+                      });
 
-            for_each_part(
-                size_bytes, width,
-                [&](const size_t part_size_bytes, const size_t offset) -> void {
-                    assembler_.store(indent, store_op(part_size_bytes), "zero",
-                                     address.displacement() +
-                                         static_cast<int64_t>(offset),
-                                     address.base_register());
-                });
+        // stores run faster than the loop's 4 instructions per word, the cap
+        // only bounds the code size
+        constexpr size_t max_unrolled_stores{16};
+        if (store_count <= max_unrolled_stores) {
+            zero_unrolled(src_loc_tk, indent, destination, size_bytes, width);
 
             return;
         }
 
-        const operand dst_pointer{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        const operand remaining{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        address_of(src_loc_tk, indent, dst_pointer, destination);
-
-        copy_value(src_loc_tk, indent, remaining,
-                   operand::imm(std::format("{}", size_bytes / width),
-                                default_type()));
-
-        assembler_.label(indent, "1");
-        assembler_.store(indent, store_op(width), "zero", 0,
-                         dst_pointer.base_register());
-
-        assembler_.addi(indent, dst_pointer.base_register(),
-                        dst_pointer.base_register(), width);
-
-        assembler_.addi(indent, remaining.base_register(),
-                        remaining.base_register(), -1);
-
-        assembler_.bnez(indent, remaining.base_register(), "1b");
-        // the known tail needs no runtime tests or additional scratch
-        // registers
-        const size_t tail_bytes{size_bytes % width};
-        if ((tail_bytes & 2U) != 0) {
-            assembler_.sh(indent, "zero", 0, dst_pointer.base_register());
-        }
-        if ((tail_bytes & 1U) != 0) {
-            assembler_.sb(indent, "zero", tail_bytes & 2U,
-                          dst_pointer.base_register());
-        }
+        zero_with_loop(src_loc_tk, indent, destination, size_bytes, width);
     }
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
@@ -3215,6 +3237,8 @@ class machine_rv32i : public machine {
         assert(frame_address.index_register().empty());
         assert(frame_size_bytes.is_immediate());
 
+        comment(src_loc_tk, indent, "frame capacity check (--checks=frame)");
+
         const address_scope scope{*this, frame_address, frame_size_bytes};
         const operand start{
             alloc_scratch_register(src_loc_tk, indent, default_type())};
@@ -3313,16 +3337,19 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "bounds check");
 
         if (options.lower) {
+            comment(src_loc_tk, indent, "lower bound (--checks=lower)");
             check_lower_bounds(indent, index, reg_count, not options.upper);
         }
 
         if (options.upper) {
+            comment(src_loc_tk, indent, "upper bound (--checks=upper)");
             check_upper_bound(src_loc_tk, indent, index, array_count, allow_end,
                               reg_count, options.lower);
         }
 
         assembler_.label(indent, "1");
         if (options.with_line) {
+            comment(src_loc_tk, indent, "line number (--checks=line)");
             assembler_.li(indent, "a0", src_loc_tk.at_line());
         }
         branch(indent, "baz_bounds_panic");

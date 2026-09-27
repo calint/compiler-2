@@ -141,12 +141,14 @@ class program final {
         tc.exit_block();
 
         if (tc.is_frame_check()) {
-            x.comment({}, 0, "");
+            x.comment({}, 0, "frame overflow handler (--checks=frame)");
             x.emit_frame_overflow_handler();
         }
 
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
-            x.comment({}, 0, "");
+            x.comment({}, 0,
+                      "bounds failure handler (--checks=upper or "
+                      "--checks=lower)");
             x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
         }
 

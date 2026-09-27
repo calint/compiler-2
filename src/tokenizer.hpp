@@ -3,27 +3,12 @@
 // refactored: pointer-free implementation
 
 #include <cassert>
-#include <exception>
 #include <string>
 #include <string_view>
 #include <utility>
 
+#include "compiler_exception.hpp"
 #include "token.hpp"
-
-class tokenizer_exception final : public std::exception {
-  public:
-    std::string msg;
-    size_t line;
-    size_t start_index;
-
-    tokenizer_exception(const size_t line_number, const size_t index,
-                        std::string message)
-        : msg{std::move(message)}, line{line_number}, start_index{index} {}
-
-    [[nodiscard]] auto what() const noexcept -> const char* override {
-        return msg.c_str();
-    }
-};
 
 class tokenizer final {
     std::string_view src_str_; // used for easier debugging with 'pos'
@@ -189,8 +174,7 @@ class tokenizer final {
             if (is_next_char('\\')) {
                 // read the escaped character
                 if (is_eos()) {
-                    throw tokenizer_exception{at_line_, char_ix_,
-                                              "unterminated string"};
+                    throw compiler_exception{*this, "unterminated string"};
                 }
                 (void)next_char();
                 continue;
@@ -201,8 +185,7 @@ class tokenizer final {
             }
 
             if (is_eos()) {
-                throw tokenizer_exception{at_line_, char_ix_,
-                                          "unterminated string"};
+                throw compiler_exception{*this, "unterminated string"};
             }
             (void)next_char();
         }
@@ -227,8 +210,9 @@ class tokenizer final {
             // points at the opening quote since the end of the line is
             // reported as column 0
             if (is_eos() or is_peek_char('\n')) {
-                throw tokenizer_exception{at_line, bgn_ix,
-                                          "unterminated character literal"};
+                throw compiler_exception{
+                    token{"", bgn_ix, "", bgn_ix, "", at_line, false},
+                    "unterminated character literal"};
             }
 
             const char ch{next_char()};
@@ -325,3 +309,10 @@ class tokenizer final {
         pos_ = src_str_.substr(char_ix_);
     }
 };
+
+// declared in 'compiler_exception.hpp'
+inline compiler_exception::compiler_exception(const tokenizer& tz,
+                                              std::string message)
+    : msg{std::move(message)}, line{tz.cur_line()},
+      start_index{tz.cur_char_index_in_source()},
+      end_index{tz.cur_char_index_in_source()} {}
