@@ -65,8 +65,9 @@
 [ ] a 'read' into a 'bool' array stores any byte, but copying a 'bool'
     ('is_bool_copy') relies on 0 or 1; reject 'bool' arrays in 'read'
     => for now the user ensures a 'read' into a 'bool' array stores only 0 or 1
-[ ] specify device memory size and error if code size + dat size + max used
+[x] specify device memory size and error if code size + dat size + max used
     vars + stack size overflows it
+    => rv32i-fpga: image + '--vars' + '--stack' must fit the 8 MiB memory
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
     => plan (big: new machine interface method, several files)
        [ ] parse a string token or an identifier for the 'array_copy' source

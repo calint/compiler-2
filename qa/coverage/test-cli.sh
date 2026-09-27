@@ -97,6 +97,34 @@ CLI_JUMP_OPTIMIZATIONS() {
     echo "ok (jumps to next: 2, inverted: 1; jumps $raw_count -> $optimized_count; both exit 0)"
 }
 
+CLI_FPGA_MEMORY() {
+    echo -n "cli rv32i-fpga memory size: "
+    local memory_size=$((0x800000)) stack_size=$((0x10000))
+    "$BIN" --target=rv32i-fpga 430.baz >gen.s 2>err
+    [[ ! -s err ]]
+    # the variables follow the image at the next 16 byte boundary
+    local image_size vars_fit
+    image_size=$(stat -c %s gen-rv32i.bin)
+    vars_fit=$((memory_size - stack_size - (image_size + 15) / 16 * 16))
+    "$BIN" --target=rv32i-fpga --vars=$vars_fit 430.baz >gen.s 2>err
+    [[ ! -s err ]]
+    rm -f gen-rv32i.bin
+    set +e
+    "$BIN" --target=rv32i-fpga --vars=$((vars_fit + 16)) 430.baz >gen.s 2>err
+    local exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
+    grep -Fq "exceeds the $memory_size B of device memory" err
+    set +e
+    "$BIN" --target=rv32i-fpga --stack=$((memory_size + 16)) 430.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "the stack $((memory_size + 16)) B" err
+    echo "ok (image $image_size B, vars up to $vars_fit B)"
+}
+
 CLI --vars=65536 0 --help
 CLI --vars=0x10000 0 --help
 CLI --vars= 1 --help
@@ -124,5 +152,6 @@ CLI --target=unknown 1 --help
 CLI_TARGETS
 CLI_REPRODUCE_SOURCE
 CLI_JUMP_OPTIMIZATIONS
+CLI_FPGA_MEMORY
 
-rm -f gen.s diff.baz out err
+rm -f gen.s diff.baz out err gen-rv32i.bin

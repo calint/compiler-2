@@ -10,6 +10,7 @@
 #include "assembler_rv32i.hpp"
 #include "decouple.hpp"
 #include "machine_rv32i.hpp"
+#include "panic_exception.hpp"
 
 // runs the flat image loaded at address 0 on the fpga or its emulator,
 // input and output go through the memory mapped uart
@@ -25,6 +26,8 @@ class machine_rv32i_fpga final : public machine_rv32i {
     static constexpr int memory_end_upper_{0x800};
     // 'lui' places the immediate in the upper 20 bits
     static constexpr uint32_t lui_shift_{12};
+    static constexpr uint32_t memory_size_bytes_{uint32_t{memory_end_upper_}
+                                                 << lui_shift_};
     // the comment prints the address as two 16 bit halves
     static constexpr uint32_t half_bits_{16};
     static constexpr uint32_t half_mask_{0xffff};
@@ -38,6 +41,7 @@ class machine_rv32i_fpga final : public machine_rv32i {
     static constexpr std::array<std::string_view, 3> write_clobbered_{
         "a3", "a4", "a5"};
 
+    size_t stack_size_bytes_{};
     bool read_used_{};
     bool write_used_{};
     bool exit_used_{};
@@ -45,8 +49,10 @@ class machine_rv32i_fpga final : public machine_rv32i {
   public:
     machine_rv32i_fpga(std::ostream& os_ref, const std::string_view source,
                        const jump_mode jumps,
-                       const std::string_view binary_file_name)
-        : machine_rv32i{os_ref, source, jumps, binary_file_name} {}
+                       const std::string_view binary_file_name,
+                       const size_t stack_size_bytes)
+        : machine_rv32i{os_ref, source, jumps, binary_file_name},
+          stack_size_bytes_{stack_size_bytes} {}
 
     auto start() -> void override {
         read_used_ = false;
@@ -60,13 +66,11 @@ class machine_rv32i_fpga final : public machine_rv32i {
 
         ::assembler_rv32i& x{assembler()};
 
-        const uint32_t memory_end{uint32_t{memory_end_upper_} << lui_shift_};
-
         // 'std::format' has no digit separators so the halves are printed
         // apart
         x.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
-                                 memory_end >> half_bits_,
-                                 memory_end & half_mask_));
+                                 memory_size_bytes_ >> half_bits_,
+                                 memory_size_bytes_ & half_mask_));
 
         x.lui(0, "sp", memory_end_upper_);
         x.add_separator_newline();
@@ -99,6 +103,22 @@ class machine_rv32i_fpga final : public machine_rv32i {
     }
 
   protected:
+    // the stack below the end of memory may not reach into the variables,
+    // how much of it is used at runtime is not checked
+    auto check_memory_end(const size_t memory_end_address) const
+        -> void override {
+
+        if (stack_size_bytes_ <= memory_size_bytes_ and
+            memory_end_address <= memory_size_bytes_ - stack_size_bytes_) {
+            return;
+        }
+
+        throw panic_exception{std::format(
+            "code, data and variables use {} B and the stack {} B, "
+            "which exceeds the {} B of device memory",
+            memory_end_address, stack_size_bytes_, memory_size_bytes_)};
+    }
+
     // the routines return through a7 so the call costs no more registers
     // than the system call
     auto emit_read_call(const size_t indent) -> void override {

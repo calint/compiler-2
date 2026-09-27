@@ -68,7 +68,9 @@ compiler writes the binary image itself.
       `virt` machine use `--target=rv32i-qemu` (option `--stack=SIZE` sets
       the stack size, default: 65536, multiple of 16)
     * to compile a bare-metal image `gen-rv32i.bin` and run it in the fpga
-      soft core emulator use `--target=rv32i-fpga`
+      soft core emulator use `--target=rv32i-fpga` (the stack grows down
+      from the end of the 8 MiB memory, compilation fails when code, data,
+      variables and `--stack=SIZE` do not fit)
 * to run the tests `qa/coverage/test-all.sh` and see coverage report in
   `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)

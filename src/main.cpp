@@ -89,8 +89,9 @@ auto main(const int argc, const char** const argv) -> int {
             std::println("                      Must be a multiple of {}",
                          vars_alignment);
 
-            std::println("  --stack=SIZE        Set rv32i-qemu stack size "
-                         "(default: 0x10000/65536)");
+            std::println(
+                "  --stack=SIZE        Set rv32i-qemu and rv32i-fpga stack "
+                "size (default: 0x10000/65536)");
 
             std::println("                      Must be a multiple of {}",
                          stack_alignment);
@@ -238,7 +239,7 @@ auto main(const int argc, const char** const argv) -> int {
                 parser_output, src, jumps, "gen-rv32i.bin", stack_size_bytes);
         } else if (target == "rv32i-fpga") {
             backend = std::make_unique<machine_rv32i_fpga>(
-                parser_output, src, jumps, "gen-rv32i.bin");
+                parser_output, src, jumps, "gen-rv32i.bin", stack_size_bytes);
         } else {
             throw panic_exception{std::format("unknown target '{}'", target)};
         }

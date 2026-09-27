@@ -1349,6 +1349,12 @@ class machine_rv32i : public machine {
         assembler_.ecall(indent);
     }
 
+    // devices with a fixed memory size reject images that do not fit, an
+    // operating system loads the program where it has room
+    virtual auto
+    check_memory_end([[maybe_unused]] const size_t memory_end_address) const
+        -> void {}
+
     // i/o routines replacing system calls return through a7 and change only
     // 'clobbered' besides a0, so the call keeps just the live ones like a
     // system call does
@@ -1594,8 +1600,12 @@ class machine_rv32i : public machine {
             return;
         }
 
+        // the check precedes any output so a failing build writes nothing
+        assembler_.resolve_jumps();
+        check_memory_end(assembler_.memory_end_address());
+
         if (binary_file_name_.empty()) {
-            assembler_.resolve_and_write(os);
+            assembler_.write_resolved(os);
 
             return;
         }
@@ -1606,7 +1616,7 @@ class machine_rv32i : public machine {
                 std::format("cannot write '{}'", binary_file_name_)};
         }
 
-        assembler_.resolve_and_write(os, binary);
+        assembler_.write_resolved(os, binary);
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {

@@ -1696,19 +1696,6 @@ class assembler_rv32i final : public assembler {
         }
     }
 
-    auto resolve_jumps() -> void {
-        assert(not is_capturing());
-
-        const std::unordered_map<std::string_view, size_t> labels{
-            label_lines()};
-
-        // sizes only grow, so this ends once every jump reaches its target
-        bool grown{true};
-        while (grown) {
-            grown = grow_out_of_reach(labels);
-        }
-    }
-
     auto write_text(std::ostream& os) const -> void {
         size_t skip_count{};
         for (const line& l : lines()) {
@@ -2489,17 +2476,41 @@ class assembler_rv32i final : public assembler {
                    });
     }
 
-    auto resolve_and_write(std::ostream& os) -> void {
-        resolve_jumps();
+    auto resolve_jumps() -> void {
+        assert(not is_capturing());
+
+        const std::unordered_map<std::string_view, size_t> labels{
+            label_lines()};
+
+        // sizes only grow, so this ends once every jump reaches its target
+        bool grown{true};
+        while (grown) {
+            grown = grow_out_of_reach(labels);
+        }
+    }
+
+    // the address after the bss section, valid once jumps are resolved
+    [[nodiscard]] auto memory_end_address() const -> size_t {
+        const image_layout image{layout_image()};
+        const size_t bss{section_index(section::bss)};
+
+        return image.bases.at(bss) + image.sizes.at(bss);
+    }
+
+    auto write_resolved(std::ostream& os) -> void {
         write_text(os);
         clear();
     }
 
     // 'binary' receives the sections as one image from address zero
-    auto resolve_and_write(std::ostream& os, std::ostream& binary) -> void {
-        resolve_jumps();
+    auto write_resolved(std::ostream& os, std::ostream& binary) -> void {
         write_text(os);
         write_image(binary);
         clear();
+    }
+
+    auto resolve_and_write(std::ostream& os) -> void {
+        resolve_jumps();
+        write_resolved(os);
     }
 };
