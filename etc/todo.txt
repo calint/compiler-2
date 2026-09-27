@@ -4,6 +4,22 @@
 [x] opus 5.5 ai review and bug-hunt
 [x] opus untangle nested if/else, apply early returns and consolidate repeated
     code into helpers
+    [x] dead code removed: 'jump_optimizer.hpp' (replaced by
+        'assembler::optimize_jumps'), unused members of 'toc' and 'stmt_if',
+        'tokenizer::structurals_'
+    [x] one helper for what parsing and compiling both registered:
+        'stmt_def_func', 'stmt_def_var', 'stmt_def_dat', 'stmt_builtin_foo'
+    [x] long functions split: 'stmt_call::compile_noninline',
+        'tokenizer::next_token', 'toc::add_var', 'expr_type' constructor,
+        the statement dispatch in 'stmt_block' and 'program'
+    [x] repeated code shared: 'toc' frame lookups and frame exits, bounds
+        check options, zeroing of unlisted elements, x86 qword registers and
+        'lea' into memory, rv32i register allocation, main.cpp error output
+    [x] 'machine_rv32i_bare_metal' shared by the qemu and fpga targets
+    => left: 'stmt_identifier::compile_lea' (own item below), the large
+       backend files get reviewed when new work touches them
+    => every step verified with identical assembly and binaries on all
+       targets and modes
 [o] main.cpp: make an option --bin that decides the name of the binary for rv32i
     backends. evaluate the possibility to run nasm from inside the
     assembler_x86_64 so it also uses the --bin option which is by default name
@@ -152,16 +168,13 @@
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
 [ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
-[ ] 'machine_rv32i_qemu' and 'machine_rv32i_fpga' repeat the same members and
+[x] 'machine_rv32i_qemu' and 'machine_rv32i_fpga' repeat the same members and
     methods, only the uart access, the stack setup and the exit routine differ
-    => plan (a new header and class, awaiting go-ahead)
-       [ ] 'machine_rv32i_bare_metal' between 'machine_rv32i' and both targets
-           owns 'stack_size_bytes_', the used flags, the character constants,
-           the clobbered register lists, 'exit', 'begin_data',
-           'emit_read_call' and 'emit_write_call'
-       [ ] the read and write routines share their loops, the targets supply
-           the uart wait, load and store as protected virtual functions
-       [ ] parity: identical assembly and images on both targets
+    => 'machine_rv32i_bare_metal' between 'machine_rv32i' and both targets owns
+       the shared state, 'exit', 'begin_data', the i/o calls and the read and
+       write routines. the targets supply 'emit_stack_setup',
+       'emit_exit_routine', 'emit_uart_setup', 'emit_receive_byte' and
+       'emit_transmit_byte'. identical assembly and images on both targets
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
 [ ] reorder locals by alignment, largest first, to reduce padding
