@@ -168,6 +168,39 @@
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
 [ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
+    => on hold (2026-09-27): not worth it for now
+    => assessment (2026-09-27): big, about the size of the rv32i binary work
+       => 'assembler_x86_64' writes text only, no records. needed: records
+          per instruction/data line, register table (number, width, rex,
+          high byte), encoder (rex, 66 prefix, modrm/sib, disp8/disp32, rip
+          relative, imm8/imm32/imm64), jump sizing rel8 -> rel32 to a fixed
+          point, macro expansion, data/times/string/align/resb, 'equ' and
+          '$ - label', layout matching 'baz.ld', elf writer (header, 2
+          program headers, section headers so objcopy works)
+          => roughly +1500..2000 lines in 'assembler_x86_64', ~100 in
+             'machine_x86_64', main, test-coverage.sh, test-cli.sh
+       => interface change: 'immediate' is nasm expression text ('~2',
+          '-~5', "'0'", 'size.func.f', 'vars.end', 'num_buffer + 19'), needs
+          number + unary operations or symbol + addend
+       => nasm -Ox choices to reproduce, verified with nasm 3.02:
+          'mov r64, imm' as 'mov r32' when it fits unsigned 32 bits, else
+          sign-extended imm32, else imm64; 'strict qword' keeps imm64;
+          accumulator short forms ('cmp rax, 1000' is 48 3d); shift by 1
+          uses d1; '[rax * 2]' is split to '[rax + rax]'; 'rbp'/'r13' base
+          needs disp8 0; forward 'equ' constants are sized by value; jumps
+          short when they reach
+       => layout (ld -s -T baz.ld): 2 program headers so text starts at
+          0x4000b0 (file offset 0xb0), data at the next page 0x401000
+          (file offset 0x1000), '.bss.vars' and '.bss' nobits
+       => comparison: the elf will differ from ld's (section headers,
+          .shstrtab), so compare 'llvm-objcopy -O binary' of both plus entry
+          and program headers from 'readelf -lh'
+       => risks: nasm's multipass jump sizing may reach a different fixed
+          point than growing from short in rare cases; fill bytes of
+          alignment gaps in text (nasm 'align' pads with 0x90); x86 code_size
+          becomes bytes, 'count_instructions' keeps choosing versions by
+          lines so the generated assembly stays unchanged
+       => also decides the --bin default name for x86_64 (elf, not '.bin')
 [x] 'machine_rv32i_qemu' and 'machine_rv32i_fpga' repeat the same members and
     methods, only the uart access, the stack setup and the exit routine differ
     => 'machine_rv32i_bare_metal' between 'machine_rv32i' and both targets owns
