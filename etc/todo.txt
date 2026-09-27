@@ -347,6 +347,15 @@ resolved
        test 592 (every run-time count 0 to 9, noinline frame) with its loop
        widths in tests/592.rv32i.widths, tests/590.rv32i.widths 'd'/'e'
        now words
+    => consolidated: class 'bulk_operation' in machine_rv32i.hpp decides the
+       head, unrolled run or loop and tail ('walk_known_size',
+       'walk_from_pointers', 'walk_runtime_count'); 'bulk_zero', 'bulk_copy'
+       and 'bulk_compare' only implement 'do_operation'; a known size now
+       has a tail decided at compile time and one chunk has no loop, so
+       known-size copies and 'equal' shrank (e.g. test 398 257 -> 177
+       instructions, none larger); test-bulk-widths.sh checks the width
+       decision comment ('N-byte accesses[ after a H B head]'), which also
+       covers zero loops and 'equal' without a loop
 [x] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
     uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
     then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead

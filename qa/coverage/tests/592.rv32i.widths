@@ -1,16 +1,19 @@
-118: array_copy(a1, b1, 40): copy 4-byte words
-127: assert(7, equal(p, q)): compare 4-byte words
-129: assert(8, not equal(p, q)): compare 4-byte words
-132: assert(9, not equal(p, q)): compare 4-byte words
-56: array_copy(a, b, n): copy 4-byte words
-58: assert(err, arrays_equal(a, b, n)): compare 4-byte words
-61: assert(err, not arrays_equal(a, b, n)): compare 4-byte words
-62: assert(err, arrays_equal(a, b, n - 1)): compare 4-byte words
-56: array_copy(a, b, n): copy 4-byte words
-58: assert(err, arrays_equal(a, b, n)): compare 4-byte words
-61: assert(err, not arrays_equal(a, b, n)): compare 4-byte words
-62: assert(err, arrays_equal(a, b, n - 1)): compare 4-byte words
-56: array_copy(a, b, n): copy 2-byte halfwords
-58: assert(err, arrays_equal(a, b, n)): compare 2-byte halfwords
-61: assert(err, not arrays_equal(a, b, n)): compare 2-byte halfwords
-62: assert(err, arrays_equal(a, b, n - 1)): compare 2-byte halfwords
+101: var z1[80] i8: 4-byte accesses after a 3 B head
+103: var z2[80] i8: 4-byte accesses after a 1 B head
+105: var z3[80] i8: 4-byte accesses after a 2 B head
+118: array_copy(a1, b1, 40): 4-byte accesses after a 3 B head
+127: assert(7, equal(p, q)): 4-byte accesses after a 3 B head
+129: assert(8, not equal(p, q)): 4-byte accesses after a 3 B head
+132: assert(9, not equal(p, q)): 4-byte accesses after a 3 B head
+56: array_copy(a, b, n): 4-byte accesses after a 2 B head
+58: assert(err, arrays_equal(a, b, n)): 4-byte accesses after a 2 B head
+61: assert(err, not arrays_equal(a, b, n)): 4-byte accesses after a 2 B head
+62: assert(err, arrays_equal(a, b, n - 1)): 4-byte accesses after a 2 B head
+56: array_copy(a, b, n): 4-byte accesses after a 1 B head
+58: assert(err, arrays_equal(a, b, n)): 4-byte accesses after a 1 B head
+61: assert(err, not arrays_equal(a, b, n)): 4-byte accesses after a 1 B head
+62: assert(err, arrays_equal(a, b, n - 1)): 4-byte accesses after a 1 B head
+56: array_copy(a, b, n): 2-byte accesses after a 1 B head
+58: assert(err, arrays_equal(a, b, n)): 2-byte accesses after a 1 B head
+61: assert(err, not arrays_equal(a, b, n)): 2-byte accesses after a 1 B head
+62: assert(err, arrays_equal(a, b, n - 1)): 2-byte accesses after a 1 B head

@@ -1,7 +1,7 @@
 #!/bin/bash
-# checks the access width rv32i picks for each 'array_copy', 'equal' and
-# 'arrays_equal' loop against 'tests/NNN.rv32i.widths' so a loop that loses a
-# proven alignment and falls back to bytes is noticed
+# checks the access width rv32i picks for each zero, copy and compare that is
+# not unrolled against 'tests/NNN.rv32i.widths' so one that loses a proven
+# alignment and falls back to bytes is noticed
 #
 # usage: test-bulk-widths.sh [update]
 #   update  rewrites the expected files from the current compiler
@@ -28,7 +28,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cd "$WORK"
 
-# prints the source line of each bulk loop followed by the loop access chosen
+# prints the source line of each width decision followed by the width and head
 extract() {
     awk '
         FNR == NR {
@@ -37,13 +37,12 @@ extract() {
             next
         }
 
-        # the comment that introduces the loop names its access width
-        match($0, /# \[[0-9]+:[0-9]+\] (copy|compare) (bytes; skip if none|4-byte words|2-byte halfwords)$/) {
-            text = substr($0, RSTART + 3)
-            line = text
+        # the comment that decides the width names it and the head
+        /# \[[0-9]+:[0-9]+\] / && match($0, /[124]-byte accesses( after a [0-9]+ B head)?/) {
+            text = substr($0, RSTART, RLENGTH)
+            line = $0
+            sub(/^[^[]*\[/, "", line)
             sub(/:.*/, "", line)
-            sub(/^[^]]*\] /, "", text)
-            sub(/; skip if none$/, "", text)
             printf "%d: %s: %s\n", line, source[line + 0], text
         }
     ' "$1" -

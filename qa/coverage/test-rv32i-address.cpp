@@ -639,7 +639,7 @@ auto main(const int argc, const char* argv[]) -> int {
         for (const std::string_view text :
              {"t0: source, t1: destination, t2: count",
               "t2: elements to bytes (4 bytes/element)",
-              "t3: copy value, t4: words, t2: tail bytes", "copy 4-byte words",
+              "t4: words, t2: tail bytes", "copy 4-byte words",
               "copy optional 2-byte tail", "copy optional final byte"}) {
             assert(comments.str().contains(std::format("# [2:5] {}\n", text)));
         }
@@ -967,9 +967,9 @@ func main() {
         for (const std::string_view text :
              {"t1: source, t2: destination, t3: count",
               "t3: elements to bytes (4 bytes/element)",
-              "t0: left value/result, t5: right value, t4: words, t3: tail "
-              "bytes",
-              "stop at first mismatch", "compare 4-byte words",
+              "t0: left value/result, t4: right value",
+              "t5: words, t3: tail bytes", "stop at first mismatch",
+              "compare 4-byte words",
               "compare optional 2-byte tail", "compare optional final byte",
               "all matched or empty: true", "mismatch: false"}) {
             assert(output.str().contains(std::format("# {}\n", text)));
@@ -1352,9 +1352,10 @@ func main() {
             backend.end_memory_equal(token{}, 0, 7, 4, result);
         }
         const std::string assembly{shift_output.str()};
+        // a known size takes its tail at offsets, a run-time count advances
         for (const std::string_view instruction : {"lw", "lhu", "lbu"}) {
             assert(assembly.contains(
-                std::format("{} {}, 0(", instruction, result.base_register())));
+                std::format("{} {}, ", instruction, result.base_register())));
         }
         assert(
             assembly.contains(std::format("li {}, 1", result.base_register())));
@@ -1396,10 +1397,14 @@ func main() {
             }
             assert(not assembly.contains("beqz"));
         } else {
+            // the known size decides the tail at compile time
             assert(assembly.contains("lw ") and assembly.contains("sw "));
-            assert(assembly.contains("lhu ") and assembly.contains("sh "));
-            assert(assembly.contains("lbu ") and assembly.contains("sb "));
-            assert(assembly.contains("srli ") and assembly.contains("andi "));
+            assert((assembly.contains("lhu ") and assembly.contains("sh ")) ==
+                   ((size_bytes & 2U) != 0));
+            assert((assembly.contains("lbu ") and assembly.contains("sb ")) ==
+                   ((size_bytes & 1U) != 0));
+            assert(not assembly.contains("srli ") and
+                   not assembly.contains("andi "));
         }
         backend.finish();
         shift_output.str({});
@@ -1936,8 +1941,10 @@ func main() {
     // above 16 stores the loop keeps the code small and stores the tail
     backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 67, 4);
     assert(address_output.str() ==
-           "addi t0, a2, 0\nli t1, 16\n1:\nsw zero, 0(t0)\naddi t0, t0, 4\naddi "
-           "t1, t1, -1\nbnez t1, 1b\nsh zero, 0(t0)\nsb zero, 2(t0)\n");
+           "# zero loop of 4-byte accesses: start word aligned\n"
+           "addi t0, a2, 0\n# zero 4-byte words\nli t1, 16\n1:\nsw zero, "
+           "0(t0)\naddi t0, t0, 4\naddi t1, t1, -1\nbnez t1, 1b\n"
+           "# zero 3 B tail\nsh zero, 0(t0)\nsb zero, 2(t0)\n");
     address_output.str({});
     backend.finish();
 
