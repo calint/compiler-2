@@ -113,9 +113,11 @@ main:
     # [86:5] var nm str
     # [86:9] nm: str (128 B @ [s0 + 132])
     # [86:9] zero 1 * 128 B = 128 B
+    # [86:5] zero loop of 4-byte accesses: start word aligned
     # [86:5] allocate scratch register -> t0
-    # [86:5] allocate scratch register -> t1
     addi t0, s0, 132
+    # [86:5] allocate scratch register -> t1
+    # [86:5] zero 4-byte words
     li t1, 32
     1:
     sw zero, 0(t0)
@@ -147,13 +149,13 @@ main:
     loop.88.5:
         # [89:9] counter = counter + 1
         # [89:19] counter
-        # [89:29] counter + 1
-        # [89:29] src: constant
-        # [89:29] allocate scratch register -> t0
+        # [89:19] counter + 1
+        # [89:19] src: folded constant '+ 1'
+        # [89:19] allocate scratch register -> t0
         lw t0, 128(s0)
         addi t0, t0, 1
         sw t0, 128(s0)
-        # [89:29] free scratch register t0
+        # [89:19] free scratch register t0
         # [90:9] print_num(counter)
         # [90:9] address of argument 'counter' to parameter 'num'
         # [90:9] allocate scratch register -> t0
@@ -248,14 +250,17 @@ main:
                     # [24:34] nbytes
                     lw t1, 260(s0)
                     # [24:34] bounds check
+                    # [24:34] lower bound (--checks=lower)
                     bltz t1, 1f
                     bltz a2, 1f
+                    # [24:34] upper bound (--checks=upper)
                     # [24:34] allocate scratch register -> t2
                     # [24:34] allocate scratch register -> t3
                     add t3, t1, a2
                     li t2, 127
                     bgeu t2, t3, 2f
                     1:
+                    # [24:34] line number (--checks=line)
                     li a0, 24
                     j baz_bounds_panic
                     2:
@@ -285,11 +290,14 @@ main:
                 # [25:22] nbytes
                 lw t0, 260(s0)
                 # [25:22] bounds check
+                # [25:22] lower bound (--checks=lower)
                 bltz t0, 1f
+                # [25:22] upper bound (--checks=upper)
                 # [25:22] allocate scratch register -> t1
                 li t1, 127
                 bltu t0, t1, 2f
                 1:
+                # [25:22] line number (--checks=line)
                 li a0, 25
                 j baz_bounds_panic
                 2:
@@ -315,13 +323,13 @@ main:
                     if.26.16.93.12.code:
                         # [27:17] nbytes = nbytes - 1
                         # [27:26] nbytes
-                        # [27:35] nbytes - 1
-                        # [27:35] src: constant
-                        # [27:35] allocate scratch register -> t0
+                        # [27:26] nbytes - 1
+                        # [27:26] src: folded constant '- 1'
+                        # [27:26] allocate scratch register -> t0
                         lw t0, 260(s0)
                         addi t0, t0, -1
                         sw t0, 260(s0)
-                        # [27:35] free scratch register t0
+                        # [27:26] free scratch register t0
                         # [28:17] write(1, erase)
                         # [28:17] allocate named register a0
                         # [28:17] allocate named register a1
@@ -352,14 +360,17 @@ main:
                 # [32:32] nbytes
                 lw t0, 260(s0)
                 # [32:32] bounds check
+                # [32:32] lower bound (--checks=lower)
                 bltz t0, 1f
                 bltz a2, 1f
+                # [32:32] upper bound (--checks=upper)
                 # [32:32] allocate scratch register -> t1
                 # [32:32] allocate scratch register -> t2
                 add t2, t0, a2
                 li t1, 127
                 bgeu t1, t2, 2f
                 1:
+                # [32:32] line number (--checks=line)
                 li a0, 32
                 j baz_bounds_panic
                 2:
@@ -383,11 +394,14 @@ main:
                 # [33:22] nbytes
                 lw t0, 260(s0)
                 # [33:22] bounds check
+                # [33:22] lower bound (--checks=lower)
                 bltz t0, 1f
+                # [33:22] upper bound (--checks=upper)
                 # [33:22] allocate scratch register -> t1
                 li t1, 127
                 bltu t0, t1, 2f
                 1:
+                # [33:22] line number (--checks=line)
                 li a0, 33
                 j baz_bounds_panic
                 2:
@@ -406,13 +420,13 @@ main:
                 if.33.9.93.12.end:
                 # [34:9] nbytes = nbytes + 1
                 # [34:18] nbytes
-                # [34:27] nbytes + 1
-                # [34:27] src: constant
-                # [34:27] allocate scratch register -> t0
+                # [34:18] nbytes + 1
+                # [34:18] src: folded constant '+ 1'
+                # [34:18] allocate scratch register -> t0
                 lw t0, 260(s0)
                 addi t0, t0, 1
                 sw t0, 260(s0)
-                # [34:27] free scratch register t0
+                # [34:18] free scratch register t0
             j loop.22.5.93.12
             loop.22.5.93.12.end:
             # [36:5] self.len = i8(nbytes)
@@ -490,11 +504,14 @@ main:
                 # [16:25] self.len
                 lb a2, 132(s0)
                 # [16:14] bounds check
+                # [16:14] lower bound (--checks=lower)
                 bltz a2, 1f
+                # [16:14] upper bound (--checks=upper)
                 # [16:14] allocate scratch register -> t0
                 li t0, 127
                 bgeu t0, a2, 2f
                 1:
+                # [16:14] line number (--checks=line)
                 li a0, 16
                 j baz_bounds_panic
                 2:
@@ -559,17 +576,11 @@ func.print_num:
     # [43:5] var buf[buf_count] i8
     # [43:9] buf: i8[20] (20 B @ [s1 + 4])
     # [43:9] zero 20 * 1 B = 20 B
-    # [43:5] allocate scratch register -> t0
-    # [43:5] allocate scratch register -> t1
-    addi t0, s1, 4
-    li t1, 5
-    1:
-    sw zero, 0(t0)
-    addi t0, t0, 4
-    addi t1, t1, -1
-    bnez t1, 1b
-    # [43:5] free scratch register t1
-    # [43:5] free scratch register t0
+    sw zero, 4(s1)
+    sw zero, 8(s1)
+    sw zero, 12(s1)
+    sw zero, 16(s1)
+    sw zero, 20(s1)
     # [44:5] var n = num
     # [44:9] n: i32 (4 B @ [s1 + 24])
     # [44:9] n = num
@@ -629,24 +640,27 @@ func.print_num:
     loop.57.5:
         # [58:9] i = i - 1
         # [58:13] i
-        # [58:17] i - 1
-        # [58:17] src: constant
-        # [58:17] allocate scratch register -> t0
+        # [58:13] i - 1
+        # [58:13] src: folded constant '- 1'
+        # [58:13] allocate scratch register -> t0
         lw t0, 32(s1)
         addi t0, t0, -1
         sw t0, 32(s1)
-        # [58:17] free scratch register t0
+        # [58:13] free scratch register t0
         # [59:9] buf[i] = i8('0' - n % 10)
         # [59:13] allocate scratch register -> t0
         # [59:13] set array index
         # [59:13] i
         lw t0, 32(s1)
         # [59:13] bounds check
+        # [59:13] lower bound (--checks=lower)
         bltz t0, 1f
+        # [59:13] upper bound (--checks=upper)
         # [59:13] allocate scratch register -> t1
         li t1, 20
         bltu t0, t1, 2f
         1:
+        # [59:13] line number (--checks=line)
         li a0, 59
         j baz_bounds_panic
         2:
@@ -654,7 +668,8 @@ func.print_num:
         # [59:18] buf = i8('0' - n % 10)
         # [59:18] = expression
         # [59:18] allocate scratch register -> t1
-            # [59:21] '0'
+            # [59:21] t1 = 48
+            # [59:21] src: folded constant '+ '0''
             li t1, 48
             # [59:29] t1 - n % 10
             # [59:29] src: expression
@@ -706,24 +721,27 @@ func.print_num:
     if.64.8.code:
         # [65:9] i = i - 1
         # [65:13] i
-        # [65:17] i - 1
-        # [65:17] src: constant
-        # [65:17] allocate scratch register -> t0
+        # [65:13] i - 1
+        # [65:13] src: folded constant '- 1'
+        # [65:13] allocate scratch register -> t0
         lw t0, 32(s1)
         addi t0, t0, -1
         sw t0, 32(s1)
-        # [65:17] free scratch register t0
+        # [65:13] free scratch register t0
         # [66:9] buf[i] = '-'
         # [66:13] allocate scratch register -> t0
         # [66:13] set array index
         # [66:13] i
         lw t0, 32(s1)
         # [66:13] bounds check
+        # [66:13] lower bound (--checks=lower)
         bltz t0, 1f
+        # [66:13] upper bound (--checks=upper)
         # [66:13] allocate scratch register -> t1
         li t1, 20
         bltu t0, t1, 2f
         1:
+        # [66:13] line number (--checks=line)
         li a0, 66
         j baz_bounds_panic
         2:
@@ -750,11 +768,14 @@ func.print_num:
         # [71:13] write_pos
         lw t0, 36(s1)
         # [71:13] bounds check
+        # [71:13] lower bound (--checks=lower)
         bltz t0, 1f
+        # [71:13] upper bound (--checks=upper)
         # [71:13] allocate scratch register -> t1
         li t1, 20
         bltu t0, t1, 2f
         1:
+        # [71:13] line number (--checks=line)
         li a0, 71
         j baz_bounds_panic
         2:
@@ -765,11 +786,14 @@ func.print_num:
         # [71:30] i
         lw t1, 32(s1)
         # [71:30] bounds check
+        # [71:30] lower bound (--checks=lower)
         bltz t1, 1f
+        # [71:30] upper bound (--checks=upper)
         # [71:30] allocate scratch register -> t2
         li t2, 20
         bltu t1, t2, 2f
         1:
+        # [71:30] line number (--checks=line)
         li a0, 71
         j baz_bounds_panic
         2:
@@ -786,22 +810,22 @@ func.print_num:
         # [71:9] free scratch register t0
         # [72:9] write_pos = write_pos + 1
         # [72:21] write_pos
-        # [72:33] write_pos + 1
-        # [72:33] src: constant
-        # [72:33] allocate scratch register -> t0
+        # [72:21] write_pos + 1
+        # [72:21] src: folded constant '+ 1'
+        # [72:21] allocate scratch register -> t0
         lw t0, 36(s1)
         addi t0, t0, 1
         sw t0, 36(s1)
-        # [72:33] free scratch register t0
+        # [72:21] free scratch register t0
         # [73:9] i = i + 1
         # [73:13] i
-        # [73:17] i + 1
-        # [73:17] src: constant
-        # [73:17] allocate scratch register -> t0
+        # [73:13] i + 1
+        # [73:13] src: folded constant '+ 1'
+        # [73:13] allocate scratch register -> t0
         lw t0, 32(s1)
         addi t0, t0, 1
         sw t0, 32(s1)
-        # [73:17] free scratch register t0
+        # [73:13] free scratch register t0
         if.74.12:
         # [74:12] ? i == buf_count
         # [74:12] ? i == buf_count
@@ -826,11 +850,14 @@ func.print_num:
     # [77:19] write_pos
     lw a2, 36(s1)
     # [77:14] bounds check
+    # [77:14] lower bound (--checks=lower)
     bltz a2, 1f
+    # [77:14] upper bound (--checks=upper)
     # [77:14] allocate scratch register -> t0
     li t0, 20
     bgeu t0, a2, 2f
     1:
+    # [77:14] line number (--checks=line)
     li a0, 77
     j baz_bounds_panic
     2:
@@ -847,7 +874,7 @@ func.print_num:
     ret
 # free named register s1
 .equ size.func.print_num, 40
-#
+# bounds failure handler (--checks=upper or --checks=lower)
 baz_bounds_panic:
     mv s2, a0
     li a0, 2

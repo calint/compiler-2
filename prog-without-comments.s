@@ -425,9 +425,7 @@ main:
     cmp r14, 2
     cmovge rbp, r13
     jge baz_bounds_panic
-        mov r13, 3
-        add r13, 0
-        add r13, 2
+        mov r13, 5
     cmp qword [rbp + r14 * 8 + 296], r13
     sete r15b
     bool.202.12.end:
@@ -451,9 +449,7 @@ main:
     cmp r14, 2
     cmovge rbp, r13
     jge baz_bounds_panic
-        mov r13, 5
-        add r13, 1
-        add r13, 2
+        mov r13, 8
     cmp qword [rbp + r14 * 8 + 296], r13
     sete r15b
     bool.203.12.end:
@@ -617,8 +613,7 @@ main:
         if.32.24.238.5.end:
     func.assert.238.5.end:
     func.baz.240.9:
-        mov qword [rbp + 360], 1
-        sal qword [rbp + 360], 1
+        mov qword [rbp + 360], 2
     func.baz.240.9.end:
     cmp.241.12:
     cmp qword [rbp + 360], 2
@@ -636,8 +631,7 @@ main:
         if.32.24.241.5.end:
     func.assert.241.5.end:
     func.baz.243.21:
-        mov qword [rbp + 368], 3
-        sal qword [rbp + 368], 1
+        mov qword [rbp + 368], 6
     func.baz.243.21.end:
     mov qword [rbp + 376], 0
     cmp.244.12:

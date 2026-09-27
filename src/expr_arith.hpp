@@ -1,10 +1,16 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstdint>
+#include <format>
 #include <functional>
+#include <limits>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <span>
+#include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -225,11 +231,23 @@ class expr_arith final : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
+        // a single constant is compiled as an identifier with its comments
+        if (is_expression()) {
+            const std::optional<int64_t> value{
+                folded_constant(tc, dst_info.type_ref())};
+
+            if (value) {
+                compile_constant(tc, indent, dst_info, *value,
+                                 statement::trimmed_source(*this));
+
+                return;
+            }
+        }
+
         // is destination a register or a single element without unary ops?
         if (dst_info.is_register() or is_single_plain_element()) {
             // yes, compile without trying with and without scratch register
             do_compile(tc, indent, dst_info);
-
             return;
         }
 
@@ -297,6 +315,37 @@ class expr_arith final : public expression {
 
         // more than 1 element, automatically an expression
         return true;
+    }
+
+    [[nodiscard]] auto folded_constant(const toc& tc,
+                                       const type& width_type) const
+        -> std::optional<int64_t> override {
+
+        std::optional<int64_t> value{
+            element_constant(tc, *exprs_.front(), width_type)};
+
+        for (const auto [o, e] :
+             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
+
+            if (not value) {
+                return std::nullopt;
+            }
+
+            const std::optional<int64_t> rhs{
+                element_constant(tc, *e, width_type)};
+
+            if (not rhs) {
+                return std::nullopt;
+            }
+
+            value = apply_operation(*value, o, *rhs, width_type);
+        }
+
+        if (not value) {
+            return std::nullopt;
+        }
+
+        return wrap_to_width(uops_.evaluate_constant(*value), width_type);
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
@@ -533,6 +582,23 @@ class expr_arith final : public expression {
     auto do_compile(toc& tc, const size_t indent,
                     const ident_info& dst_info) const -> void {
 
+        compile_elements(tc, indent, dst_info);
+
+        // apply unary expressions on destination
+        uops_.compile(tc, indent, dst_info.operand);
+    }
+
+    auto compile_elements(toc& tc, const size_t indent,
+                          const ident_info& dst_info) const -> void {
+
+        const std::optional<merged_constants> merged{
+            merge_constants(tc, dst_info.type_ref())};
+
+        if (merged) {
+            compile_merged(tc, indent, dst_info, *merged);
+            return;
+        }
+
         compile_first_element(tc, indent, dst_info, *exprs_[0]);
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
@@ -542,9 +608,345 @@ class expr_arith final : public expression {
             const statement& s{*e};
             asm_op(tc, indent, o, dst_info, s);
         }
+    }
 
-        // apply unary expressions on destination
-        uops_.compile(tc, indent, dst_info.operand);
+    // an element computed at run time and the operation that applies it
+    struct runtime_element {
+        char op{};
+        const statement* element{};
+    };
+
+    // the constant elements combined into one value applied with 'op'
+    struct merged_constants {
+        char op{};
+        int64_t value{};
+        std::vector<runtime_element> runtime_elements;
+        std::string folded_source; // e.g. '- 3 + c * 2' for the comment
+    };
+
+    // empty when the order of the operations matters or there is no constant
+    // to merge
+    [[nodiscard]] auto merge_constants(const toc& tc,
+                                       const type& width_type) const
+        -> std::optional<merged_constants> {
+
+        if (not is_mergeable()) {
+            return std::nullopt;
+        }
+
+        // the first element is added in an additive list
+        const char list_op{ops_.front() == '-' ? '+' : ops_.front()};
+
+        merged_constants merged{
+            .op{list_op},
+            .value{identity_of(list_op)},
+            .runtime_elements{},
+            .folded_source{},
+        };
+
+        bool has_constant{};
+
+        for (size_t i{}; i < exprs_.size(); ++i) {
+            const char op{i == 0 ? list_op : ops_[i - 1]};
+            const statement& e{*exprs_[i]};
+
+            const std::optional<int64_t> value{
+                element_constant(tc, e, width_type)};
+
+            if (not value) {
+                merged.runtime_elements.push_back({.op{op}, .element{&e}});
+                continue;
+            }
+
+            merged.value = combine(merged.value, op, *value, width_type);
+            has_constant = true;
+
+            if (not merged.folded_source.empty()) {
+                merged.folded_source += ' ';
+            }
+
+            merged.folded_source +=
+                std::format("{} {}", op, statement::trimmed_source(e));
+        }
+
+        if (not has_constant) {
+            return std::nullopt;
+        }
+
+        // 'compile' folds a list of only constants into one immediate
+        assert(not merged.runtime_elements.empty());
+
+        return merged;
+    }
+
+    // a subtracted element cannot lead without a negation so the constant
+    // leads instead: '1 - b + 2' is '3 - b'
+    auto compile_merged(toc& tc, const size_t indent,
+                        const ident_info& dst_info,
+                        const merged_constants& merged) const -> void {
+
+        const std::span<const runtime_element> elements{
+            merged.runtime_elements};
+
+        if (elements.front().op == '-') {
+            compile_constant(tc, indent, dst_info, merged.value,
+                             merged.folded_source);
+
+            for (const runtime_element& e : elements) {
+                asm_op(tc, indent, e.op, dst_info, *e.element);
+            }
+
+            return;
+        }
+
+        compile_first_element(tc, indent, dst_info, *elements.front().element);
+
+        for (const runtime_element& e : elements.subspan(1)) {
+            asm_op(tc, indent, e.op, dst_info, *e.element);
+        }
+
+        // e.g. 'b + 1 - 1'
+        if (merged.value == identity_of(merged.op)) {
+            machine& x{tc.machine()};
+
+            x.comment(tok(), indent,
+                      "src: folded constant '{}' is {} and changes nothing",
+                      merged.folded_source, merged.value);
+
+            return;
+        }
+
+        asm_op_constant(tc, indent, merged.op, dst_info, merged.value,
+                        merged.folded_source);
+    }
+
+    auto compile_constant(toc& tc, const size_t indent,
+                          const ident_info& dst_info, const int64_t value,
+                          const std::string_view folded_source) const -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, "{} = {}", dst_info.id, value);
+        x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
+
+        x.copy_value(tok(), indent, dst_info.operand,
+                     constant_operand(tc, value));
+    }
+
+    auto asm_op_constant(toc& tc, const size_t indent, const char op,
+                         const ident_info& dst_info, const int64_t value,
+                         const std::string_view folded_source) const -> void {
+
+        // 'b - 3' rather than 'b + -3', the most negative value has no
+        // positive counterpart in the width
+        if (op == '+' and value < 0 and
+            value != width_min(dst_info.type_ref())) {
+
+            asm_op_constant(tc, indent, '-', dst_info, -value, folded_source);
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, "{} {} {}", dst_info.id, op, value);
+        x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
+
+        const operand constant{constant_operand(tc, value)};
+
+        switch (op) {
+        case '+':
+        case '-':
+            x.add_subtract(tok(), indent, op, dst_info.operand, constant);
+            return;
+
+        case '*':
+            x.multiply(tok(), indent, dst_info.operand, constant, false);
+            return;
+
+        case '&':
+        case '|':
+        case '^':
+            x.bitwise(tok(), indent, op, dst_info.operand, constant);
+            return;
+
+        default:
+            std::unreachable();
+        }
+    }
+
+    // constants have the default type like literals
+    [[nodiscard]] static auto constant_operand(const toc& tc,
+                                               const int64_t value) -> operand {
+
+        return operand::imm(std::format("{}", value), tc.get_type_default());
+    }
+
+    // constants can move to one end when the order of the operations does not
+    // matter: '+' and '-', only '*' or one bitwise operation
+    [[nodiscard]] auto is_mergeable() const -> bool {
+        if (ops_.empty()) {
+            return false;
+        }
+
+        const char first{ops_.front()};
+        if (first == '*') {
+            return std::ranges::all_of(
+                ops_, [](const char o) -> bool { return o == '*'; });
+        }
+
+        return first == '+' or first == '-' or first == '&' or first == '|' or
+               first == '^';
+    }
+
+    // the constant that leaves a value unchanged
+    [[nodiscard]] static auto identity_of(const char op) -> int64_t {
+        switch (op) {
+        case '+':
+        case '|':
+        case '^':
+            return 0;
+
+        case '*':
+            return 1;
+
+        case '&':
+            return -1;
+
+        default:
+            std::unreachable();
+        }
+    }
+
+    // a constant identifier or a list of constants
+    [[nodiscard]] static auto
+    element_constant(const toc& tc, const statement& e, const type& width_type)
+        -> std::optional<int64_t> {
+
+        if (e.is_expression()) {
+            return e.folded_constant(tc, width_type);
+        }
+
+        const ident_info info{tc.make_ident_info(e)};
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        return wrap_to_width(
+            e.get_unary_ops().evaluate_constant(info.const_value), width_type);
+    }
+
+    // empty when the targets differ at run time: a zero divisor traps, the
+    // most negative value divided by -1 traps or wraps and shift counts
+    // outside the width are masked differently
+    [[nodiscard]] static auto apply_operation(const int64_t lhs, const char op,
+                                              const int64_t rhs,
+                                              const type& width_type)
+        -> std::optional<int64_t> {
+
+        switch (op) {
+        case '/':
+        case '%':
+            if (rhs == 0 or (rhs == -1 and lhs == width_min(width_type))) {
+                return std::nullopt;
+            }
+
+            return wrap_to_width(op == '/' ? lhs / rhs : lhs % rhs, width_type);
+
+        case '<':
+        case '>':
+            if (rhs < 0 or
+                std::cmp_greater_equal(rhs, width_bits(width_type))) {
+                return std::nullopt;
+            }
+
+            return shift_constant(lhs, op, static_cast<uint64_t>(rhs),
+                                  width_type);
+
+        default:
+            return combine(lhs, op, rhs, width_type);
+        }
+    }
+
+    // a count within the width shifts the same on both targets
+    [[nodiscard]] static auto shift_constant(const int64_t lhs, const char op,
+                                             const uint64_t count,
+                                             const type& width_type)
+        -> int64_t {
+
+        const uint64_t bits{static_cast<uint64_t>(lhs)};
+
+        if (op == '<') {
+            return wrap_to_width(static_cast<int64_t>(bits << count),
+                                 width_type);
+        }
+
+        // 'lhs' is sign extended so shifting in its sign bit keeps the width
+        if (lhs < 0) {
+            return static_cast<int64_t>(~(~bits >> count));
+        }
+
+        return static_cast<int64_t>(bits >> count);
+    }
+
+    // operations whose low bits do not depend on higher bits
+    [[nodiscard]] static auto combine(const int64_t lhs, const char op,
+                                      const int64_t rhs, const type& width_type)
+        -> int64_t {
+
+        // unsigned arithmetic wraps like the registers
+        const uint64_t l{static_cast<uint64_t>(lhs)};
+        const uint64_t r{static_cast<uint64_t>(rhs)};
+
+        switch (op) {
+        case '+':
+            return wrap_to_width(static_cast<int64_t>(l + r), width_type);
+
+        case '-':
+            return wrap_to_width(static_cast<int64_t>(l - r), width_type);
+
+        case '*':
+            return wrap_to_width(static_cast<int64_t>(l * r), width_type);
+
+        case '&':
+            return static_cast<int64_t>(l & r);
+
+        case '|':
+            return static_cast<int64_t>(l | r);
+
+        case '^':
+            return static_cast<int64_t>(l ^ r);
+
+        default:
+            std::unreachable();
+        }
+    }
+
+    [[nodiscard]] static auto width_bits(const type& width_type) -> size_t {
+        constexpr size_t byte_bits{8};
+        return width_type.size_bytes() * byte_bits;
+    }
+
+    // e.g. -128 for 'i8'
+    [[nodiscard]] static auto width_min(const type& width_type) -> int64_t {
+        return static_cast<int64_t>(~uint64_t{}
+                                    << (width_bits(width_type) - 1));
+    }
+
+    // the value a register of 'width_type' holds, sign extended
+    [[nodiscard]] static auto wrap_to_width(const int64_t value,
+                                            const type& width_type) -> int64_t {
+
+        const size_t bits{width_bits(width_type)};
+        if (bits >= std::numeric_limits<uint64_t>::digits) {
+            return value;
+        }
+
+        const uint64_t sign_bit{uint64_t{1} << (bits - 1)};
+        const uint64_t low{static_cast<uint64_t>(value) &
+                           ((sign_bit << 1U) - 1U)};
+
+        // flipping and subtracting the sign bit extends it
+        return static_cast<int64_t>((low ^ sign_bit) - sign_bit);
     }
 
     static constexpr char precedence_additive{1};
@@ -676,6 +1078,19 @@ class expr_arith final : public expression {
         machine& x{tc.machine()};
 
         if (src.is_expression()) {
+            // e.g. 'a / (1 + 1)'
+            const std::optional<int64_t> value{
+                src.folded_constant(tc, expression_type)};
+
+            if (value) {
+                x.comment(src.tok(), indent, "src: folded constant '{}'",
+                          statement::trimmed_source(src));
+
+                emit(constant_operand(tc, *value), false);
+
+                return;
+            }
+
             x.comment(src.tok(), indent, "src: expression");
 
             const operand reg{

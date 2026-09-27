@@ -27,8 +27,27 @@ generated assembly, easiest first
        within a word; needs the frontend 'add_constant' callback to pad it
 [ ] constant known at compile: an identifier without an index register can
     compute its offset at compile time ('stmt_identifier::init_reg_offset')
-[ ] constant known at compile: fold constant elements in expressions
+[o] constant known at compile: fold constant elements in expressions
     ('expr_arith', 'expr_bool')
+    => steps 1-4 done (test 593), no merging across nested lists
+    => assessed 2026-09-27: fold at compile, not parse (inline params become
+       constant aliases per expansion; the width is the destination's)
+       1. 'expr_arith::constant_value(tc, width)' (virtual on 'statement',
+          default empty): recursive, unsigned arithmetic, truncate and sign
+          extend to 'width' after each op ('i8 = (100 + 100) / 2' is -28 at
+          run time); not folded: divisor 0, MIN / -1, shift count outside
+          0..bits-1 (run-time behavior differs per target)
+       2. 'expr_arith::compile': whole constant -> one immediate copy
+       3. 'emit_with_source': constant sub-expression -> immediate operand
+          ('b + c * 2' -> 'addi')
+       4. merge constants in flat lists of '+'/'-', only '*', '&', '|', '^'
+          ('b + 3 + c * 2' -> 'b + 11'); constants have no side effects
+       5. 'expr_bool_op::constant_value' and 'resolve_expr' use 1 with the
+          side's own type; 'a < 1 + 1' becomes accepted (now "wider, swap")
+       6. 'expr_any::constant_element_value' uses 1 (needs a width
+          parameter): constant indexes, '{...}' packing, 'array_copy' count,
+          inline argument aliasing ('stmt_identifier', 'stmt_call',
+          'stmt_builtin_array_copy')
 [ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
     field instead of computing the address once
     (etc/codegen-inefficiencies.baz)

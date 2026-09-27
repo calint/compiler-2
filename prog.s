@@ -214,8 +214,8 @@ main:
 ;   [173:9] set array index
 ;   [173:9] ix
     mov r15, qword [rbp + 248]
-;   [173:14] r15 + 1
-;   [173:14] src: constant
+;   [173:9] r15 + 1
+;   [173:9] src: folded constant '+ 1'
     add r15, 1
 ;   [173:9] bounds check
 ;   [173:9] allocate scratch register -> r14
@@ -715,8 +715,8 @@ main:
 ;   [192:24] set array index
 ;   [192:24] ix
     mov r14, qword [rbp + 248]
-;   [192:29] r14 - 1
-;   [192:29] src: constant
+;   [192:24] r14 - 1
+;   [192:24] src: folded constant '- 1'
     sub r14, 1
 ;   [192:24] bounds check
 ;   [192:24] allocate scratch register -> r13
@@ -892,8 +892,8 @@ main:
         mov r14, qword [rbp + 320]
         add qword [r15], r14
 ;       [200:17] free scratch register r14
-;       [200:21] e + n
-;       [200:21] src: constant
+;       [200:13] e + 2
+;       [200:13] src: folded constant '+ n'
         add qword [r15], 2
         foo.199.5.continue:
             add r15, 8
@@ -925,14 +925,9 @@ main:
     jge baz_bounds_panic
 ;   [202:17] free scratch register r13
 ;   [202:23] allocate scratch register -> r13
-;       [202:23] 3
-        mov r13, 3
-;       [202:27] r13 + 0
-;       [202:27] src: constant
-        add r13, 0
-;       [202:31] r13 + 2
-;       [202:31] src: constant
-        add r13, 2
+;       [202:23] r13 = 5
+;       [202:23] src: folded constant '3 + 0 + 2'
+        mov r13, 5
     cmp qword [rbp + r14 * 8 + 296], r13
 ;   [202:12] free scratch register r13
 ;   [202:12] free scratch register r14
@@ -981,14 +976,9 @@ main:
     jge baz_bounds_panic
 ;   [203:17] free scratch register r13
 ;   [203:23] allocate scratch register -> r13
-;       [203:23] 5
-        mov r13, 5
-;       [203:27] r13 + 1
-;       [203:27] src: constant
-        add r13, 1
-;       [203:31] r13 + 2
-;       [203:31] src: constant
-        add r13, 2
+;       [203:23] r13 = 8
+;       [203:23] src: folded constant '5 + 1 + 2'
+        mov r13, 8
     cmp qword [rbp + r14 * 8 + 296], r13
 ;   [203:12] free scratch register r13
 ;   [203:12] free scratch register r14
@@ -1300,8 +1290,8 @@ main:
         mov r15, qword [rbp + 352]
         mov qword [rbp + 360], r15
 ;       [67:11] free scratch register r15
-;       [67:17] res * 2
-;       [67:17] src: constant
+;       [67:11] res * 2
+;       [67:11] src: folded constant '* 2'
         sal qword [rbp + 360], 1
     func.baz.237.13.end:
 ;   [238:5] assert(k == 2)
@@ -1341,12 +1331,9 @@ main:
 ;       [240:9] alias res -> k
 ;       [240:9] alias arg -> 1
 ;       [67:5] res = arg * 2
-;       [67:11] instructions without scratch register 2, with 3
-;       [67:11] arg
-        mov qword [rbp + 360], 1
-;       [67:17] res * 2
-;       [67:17] src: constant
-        sal qword [rbp + 360], 1
+;       [67:11] res = 2
+;       [67:11] src: folded constant 'arg * 2'
+        mov qword [rbp + 360], 2
     func.baz.240.9.end:
 ;   [241:5] assert(k == 2)
 ;   [241:12] allocate scratch register -> r15
@@ -1388,12 +1375,9 @@ main:
 ;       [243:21] alias res -> p0.x (lea: rbp + 368)
 ;       [243:21] alias arg -> 3
 ;       [67:5] res = arg * 2
-;       [67:11] instructions without scratch register 2, with 3
-;       [67:11] arg
-        mov qword [rbp + 368], 3
-;       [67:17] res * 2
-;       [67:17] src: constant
-        sal qword [rbp + 368], 1
+;       [67:11] res = 6
+;       [67:11] src: folded constant 'arg * 2'
+        mov qword [rbp + 368], 6
     func.baz.243.21.end:
 ;   [243:29] copy field 'y'
     mov qword [rbp + 376], 0
@@ -1516,8 +1500,8 @@ main:
 ;   [255:23] allocate scratch register -> r15
 ;   [255:23] x
     mov r15, qword [rbp + 400]
-;   [255:27] r15 * 10
-;   [255:27] src: constant
+;   [255:23] r15 * 10
+;   [255:23] src: folded constant '* 10'
     imul r15, 10
     mov qword [rbp + 416], r15
 ;   [255:23] free scratch register r15
@@ -2511,8 +2495,8 @@ main:
 ;       [303:9] counter = counter + 1
 ;       [303:19] instructions without scratch register 1, with 3
 ;       [303:19] counter
-;       [303:29] counter + 1
-;       [303:29] src: constant
+;       [303:19] counter + 1
+;       [303:19] src: folded constant '+ 1'
         add qword [rbp + 1056], 1
 ;       [304:9] print_num(counter)
 ;       [304:9] address of argument 'counter' to parameter 'num'
@@ -2599,8 +2583,8 @@ main:
             mov r15b, byte [rbp + 1192]
             mov byte [rbp + 1064], r15b
 ;           [80:19] free scratch register r15
-;           [80:28] self.len - 1
-;           [80:28] src: constant
+;           [80:19] self.len - 1
+;           [80:19] src: folded constant '- 1'
             sub byte [rbp + 1064], 1
         func.str.input.307.12.end:
         if.309.12:
@@ -2802,8 +2786,8 @@ func.print_num:
 ;       [127:9] i = i - 1
 ;       [127:13] instructions without scratch register 1, with 3
 ;       [127:13] i
-;       [127:17] i - 1
-;       [127:17] src: constant
+;       [127:13] i - 1
+;       [127:13] src: folded constant '- 1'
         sub qword [rbx + 48], 1
 ;       [128:9] buf[i] = i8('0' - n % 10)
 ;       [128:13] allocate scratch register -> r15
@@ -2826,7 +2810,8 @@ func.print_num:
 ;       [128:18] buf = i8('0' - n % 10)
 ;       [128:18] = expression
 ;       [128:18] allocate scratch register -> r14
-;           [128:21] '0'
+;           [128:21] r14 = 48
+;           [128:21] src: folded constant '+ '0''
             mov r14, 48
 ;           [128:29] r14 - n % 10
 ;           [128:29] src: expression
@@ -2887,8 +2872,8 @@ func.print_num:
 ;       [134:9] i = i - 1
 ;       [134:13] instructions without scratch register 1, with 3
 ;       [134:13] i
-;       [134:17] i - 1
-;       [134:17] src: constant
+;       [134:13] i - 1
+;       [134:13] src: folded constant '- 1'
         sub qword [rbx + 48], 1
 ;       [135:9] buf[i] = '-'
 ;       [135:13] allocate scratch register -> r15
@@ -2964,14 +2949,14 @@ func.print_num:
 ;       [141:9] write_pos = write_pos + 1
 ;       [141:21] instructions without scratch register 1, with 3
 ;       [141:21] write_pos
-;       [141:33] write_pos + 1
-;       [141:33] src: constant
+;       [141:21] write_pos + 1
+;       [141:21] src: folded constant '+ 1'
         add qword [rbx + 56], 1
 ;       [142:9] i = i + 1
 ;       [142:13] instructions without scratch register 1, with 3
 ;       [142:13] i
-;       [142:17] i + 1
-;       [142:17] src: constant
+;       [142:13] i + 1
+;       [142:13] src: folded constant '+ 1'
         add qword [rbx + 48], 1
         if.143.12:
 ;       [143:12] ? i == buf_count

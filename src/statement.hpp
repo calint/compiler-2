@@ -1,7 +1,9 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstdint>
 #include <format>
+#include <optional>
 #include <span>
 #include <sstream>
 #include <string>
@@ -163,6 +165,16 @@ class statement {
     }
 
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
+
+    // the value computed in a register of 'width_type' when known at compile,
+    // empty when computed at run time
+    [[nodiscard]] virtual auto
+    folded_constant([[maybe_unused]] const toc& tc,
+                    [[maybe_unused]] const type& width_type) const
+        -> std::optional<int64_t> {
+
+        return std::nullopt;
+    }
 
     [[nodiscard]] virtual auto produces_boolean() const -> bool {
         return false;
