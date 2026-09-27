@@ -33,23 +33,7 @@ class stmt_def_var final : public statement {
 
         open_bracket_tk_ = tz.is_next_char_token('[');
         if (not open_bracket_tk_.is_empty()) {
-            is_array_ = true;
-
-            array_count_const_ = {tc, tz, 0};
-
-            if (array_count_const_.has_value()) {
-                if (array_count_const_.value() <= 0) {
-                    throw compiler_exception{
-                        array_count_const_.tok(),
-                        "expected a constant array size greater than 0"};
-                }
-                array_count_ = static_cast<size_t>(array_count_const_.value());
-            }
-
-            close_bracket_tk_ = tz.is_next_char_token(']');
-            if (close_bracket_tk_.is_empty()) {
-                throw compiler_exception{tz, "expected ']' after array size"};
-            }
+            parse_array_size(tc, tz);
         }
 
         type_tk_ = tz.next_token();
@@ -71,18 +55,7 @@ class stmt_def_var final : public statement {
 
         // add var to toc without emitting output so the further parsing has the
         // variable declared
-
-        const var_info var{
-            .name{name_tk_.text()},
-            .type_ptr{&tp},
-            .src_loc_tk{name_tk_},
-            .is_array{is_array_},
-            .array_len{array_count_},
-            .reg{},
-            .base_register{},
-        };
-
-        tc.add_var(name_tk_, 0, var, false);
+        tc.add_var(name_tk_, 0, make_var_info(), false);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
@@ -132,17 +105,8 @@ class stmt_def_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const var_info var{
-            .name{name_tk_.text()},
-            .type_ptr{&get_type()},
-            .src_loc_tk{name_tk_},
-            .is_array{is_array_},
-            .array_len{array_count_},
-            .reg{},
-            .base_register{},
-        };
-
-        tc.add_var(name_tk_, indent, var, false);
+        // an unsized array has its size from the initializer by now
+        tc.add_var(name_tk_, indent, make_var_info(), false);
 
         const ident_info& var_dst_info{
             tc.make_ident_info(name_tk_, name_tk_.text())};
@@ -172,5 +136,40 @@ class stmt_def_var final : public statement {
         if (assign_var_) {
             assign_var_->visit_reads(var, reader);
         }
+    }
+
+  private:
+    // e.g. '[4]', or '[]' when the initializer gives the size
+    auto parse_array_size(toc& tc, tokenizer& tz) -> void {
+        is_array_ = true;
+
+        array_count_const_ = {tc, tz, 0};
+
+        if (array_count_const_.has_value()) {
+            if (array_count_const_.value() <= 0) {
+                throw compiler_exception{
+                    array_count_const_.tok(),
+                    "expected a constant array size greater than 0"};
+            }
+
+            array_count_ = static_cast<size_t>(array_count_const_.value());
+        }
+
+        close_bracket_tk_ = tz.is_next_char_token(']');
+        if (close_bracket_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected ']' after array size"};
+        }
+    }
+
+    [[nodiscard]] auto make_var_info() const -> var_info {
+        return {
+            .name{name_tk_.text()},
+            .type_ptr{&get_type()},
+            .src_loc_tk{name_tk_},
+            .is_array{is_array_},
+            .array_len{array_count_},
+            .reg{},
+            .base_register{},
+        };
     }
 };

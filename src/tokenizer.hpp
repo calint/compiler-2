@@ -35,8 +35,6 @@ class tokenizer final {
     static constexpr std::string_view delimiters_{
         " \t\r\n(){}[]=,.:+-*/%&|^<>!#\0"};
 
-    static constexpr std::string_view structurals_{"={}[],:"};
-
   public:
     explicit tokenizer(const std::string_view src_str)
         : src_str_{src_str}, src_{src_str_} {}
@@ -50,71 +48,13 @@ class tokenizer final {
         const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
 
-        // is it a string token?
         if (is_next_char('"')) {
-            while (true) {
-                if (is_next_char('\\')) {
-                    // read the escaped character
-                    if (is_eos()) {
-                        throw tokenizer_exception{at_line_, char_ix_,
-                                                  "unterminated string"};
-                    }
-                    (void)next_char();
-                    continue;
-                }
-                if (is_next_char('"')) {
-                    const size_t end_ix{char_ix_};
-                    const std::string_view ws_after{next_trailing_whitespace()};
-
-                    return token{ws_before,
-                                 bgn_ix,
-                                 src_.substr(bgn_ix + 1, end_ix - bgn_ix - 2),
-                                 end_ix,
-                                 ws_after,
-                                 at_line,
-                                 true};
-
-                    // note: +1 and -2 does not include the leading and trailing
-                    // quotation
-                }
-                if (is_eos()) {
-                    throw tokenizer_exception{at_line_, char_ix_,
-                                              "unterminated string"};
-                }
-                (void)next_char();
-            }
+            return finish_string_token(ws_before, at_line, bgn_ix);
         }
 
-        // a character literal keeps its quotes in the text so it resolves
-        // like a numeric constant, e.g. 'a' or '\n'
         if (is_next_char('\'')) {
-            while (true) {
-                // points at the opening quote since the end of the line is
-                // reported as column 0
-                if (is_eos() or is_peek_char('\n')) {
-                    throw tokenizer_exception{at_line, bgn_ix,
-                                              "unterminated character "
-                                              "literal"};
-                }
-                const char ch{next_char()};
-                if (ch == '\'') {
-                    break;
-                }
-                // the escaped character may be a quote
-                if (ch == '\\' and not is_eos() and not is_peek_char('\n')) {
-                    (void)next_char();
-                }
-            }
-
-            const size_t end_ix{char_ix_};
-            const std::string_view ws_after{next_trailing_whitespace()};
-
-            return {ws_before, bgn_ix,   src_.substr(bgn_ix, end_ix - bgn_ix),
-                    end_ix,    ws_after, at_line,
-                    false};
+            return finish_character_literal_token(ws_before, at_line, bgn_ix);
         }
-
-        // not a string
 
         const std::string_view txt{next_token_str()};
         const size_t end_ix{char_ix_};
@@ -223,6 +163,75 @@ class tokenizer final {
     [[nodiscard]] auto cur_line() const -> size_t { return at_line_; }
 
   private:
+    // the opening quote has been read, the text excludes both quotes
+    [[nodiscard]] auto finish_string_token(const std::string_view ws_before,
+                                           const size_t at_line,
+                                           const size_t bgn_ix) -> token {
+        while (true) {
+            if (is_next_char('\\')) {
+                // read the escaped character
+                if (is_eos()) {
+                    throw tokenizer_exception{at_line_, char_ix_,
+                                              "unterminated string"};
+                }
+                (void)next_char();
+                continue;
+            }
+
+            if (is_next_char('"')) {
+                break;
+            }
+
+            if (is_eos()) {
+                throw tokenizer_exception{at_line_, char_ix_,
+                                          "unterminated string"};
+            }
+            (void)next_char();
+        }
+
+        const size_t end_ix{char_ix_};
+        const std::string_view ws_after{next_trailing_whitespace()};
+
+        return {
+            ws_before, bgn_ix,   src_.substr(bgn_ix + 1, end_ix - bgn_ix - 2),
+            end_ix,    ws_after, at_line,
+            true};
+    }
+
+    // the opening quote has been read, the text keeps both quotes so it
+    // resolves like a numeric constant, e.g. 'a' or '\n'
+    [[nodiscard]] auto
+    finish_character_literal_token(const std::string_view ws_before,
+                                   const size_t at_line, const size_t bgn_ix)
+        -> token {
+
+        while (true) {
+            // points at the opening quote since the end of the line is
+            // reported as column 0
+            if (is_eos() or is_peek_char('\n')) {
+                throw tokenizer_exception{at_line, bgn_ix,
+                                          "unterminated character literal"};
+            }
+
+            const char ch{next_char()};
+            if (ch == '\'') {
+                break;
+            }
+
+            // the escaped character may be a quote
+            if (ch == '\\' and not is_eos() and not is_peek_char('\n')) {
+                (void)next_char();
+            }
+        }
+
+        const size_t end_ix{char_ix_};
+        const std::string_view ws_after{next_trailing_whitespace()};
+
+        return {ws_before, bgn_ix,   src_.substr(bgn_ix, end_ix - bgn_ix),
+                end_ix,    ws_after, at_line,
+                false};
+    }
+
     // comments are part of the whitespace so parsers never see them and
     // 'source_to' reproduces them with the surrounding tokens
     [[nodiscard]] auto next_whitespace() -> std::string_view {

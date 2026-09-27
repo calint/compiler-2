@@ -84,25 +84,8 @@ class program final {
                 }
                 break;
             }
-            if (tk.is_text("func")) {
-                statements_.emplace_back(
-                    std::make_unique<stmt_def_func>(tc_, tk, tz));
-            } else if (tk.is_text("type")) {
-                statements_.emplace_back(
-                    std::make_unique<stmt_def_type>(tc_, tk, tz));
-            } else if (tk.is_text("const")) {
-                statements_.emplace_back(
-                    std::make_unique<stmt_def_const>(tc_, tk, tz));
-            } else if (tk.is_text("dat")) {
-                statements_.emplace_back(
-                    std::make_unique<stmt_def_dat>(tc_, tk, tz));
-            } else if (tk.is_text("var")) {
-                statements_.emplace_back(
-                    std::make_unique<stmt_def_var>(tc_, tk, tz));
-            } else {
-                throw compiler_exception{
-                    tk, std::format("unexpected keyword '{}'", tk.text())};
-            }
+
+            statements_.emplace_back(parse_definition(tc_, tz, tk));
         }
 
         tc_.exit_block();
@@ -207,6 +190,31 @@ class program final {
         tc_.finish();
 
         x.write_assembly(os);
+    }
+
+    // only definitions are allowed at the top level
+    [[nodiscard]] static auto parse_definition(toc& tc, tokenizer& tz,
+                                               const token tk)
+        -> std::unique_ptr<statement> {
+
+        if (tk.is_text("func")) {
+            return std::make_unique<stmt_def_func>(tc, tk, tz);
+        }
+        if (tk.is_text("type")) {
+            return std::make_unique<stmt_def_type>(tc, tk, tz);
+        }
+        if (tk.is_text("const")) {
+            return std::make_unique<stmt_def_const>(tc, tk, tz);
+        }
+        if (tk.is_text("dat")) {
+            return std::make_unique<stmt_def_dat>(tc, tk, tz);
+        }
+        if (tk.is_text("var")) {
+            return std::make_unique<stmt_def_var>(tc, tk, tz);
+        }
+
+        throw compiler_exception{
+            tk, std::format("unexpected keyword '{}'", tk.text())};
     }
 
     // uses the definite-assignment walk for its reachability only

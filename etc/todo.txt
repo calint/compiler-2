@@ -152,6 +152,16 @@
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
 [ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
+[ ] 'machine_rv32i_qemu' and 'machine_rv32i_fpga' repeat the same members and
+    methods, only the uart access, the stack setup and the exit routine differ
+    => plan (a new header and class, awaiting go-ahead)
+       [ ] 'machine_rv32i_bare_metal' between 'machine_rv32i' and both targets
+           owns 'stack_size_bytes_', the used flags, the character constants,
+           the clobbered register lists, 'exit', 'begin_data',
+           'emit_read_call' and 'emit_write_call'
+       [ ] the read and write routines share their loops, the targets supply
+           the uart wait, load and store as protected virtual functions
+       [ ] parity: identical assembly and images on both targets
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
 [ ] reorder locals by alignment, largest first, to reduce padding

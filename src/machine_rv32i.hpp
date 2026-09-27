@@ -133,6 +133,21 @@ class machine_rv32i : public machine {
         return (unavailable_registers_ & register_mask(name)) != 0;
     }
 
+    // named and scratch allocations share one lifo stack
+    auto record_allocation(const token& src_loc_tk, const size_t indent,
+                           const size_t index, const type& type_ref,
+                           const bool named) -> void {
+
+        unavailable_registers_ |= uint32_t{1} << index;
+        allocations_.push_back({
+            .register_index{index},
+            .type_ptr{&type_ref},
+            .source_location{src_loc_tk},
+            .indent{indent},
+            .named{named},
+        });
+    }
+
     static auto validate_scalar(const token& src_loc_tk, const type& value_type)
         -> void {
         if (not value_type.is_builtin() or
@@ -2129,27 +2144,21 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, type_ref);
         for (const size_t index : scratch_registers_) {
-            const uint32_t mask{uint32_t{1} << index};
-            if ((unavailable_registers_ & mask) == 0) {
-                unavailable_registers_ |= mask;
-                allocations_.push_back({
-                    .register_index{index},
-                    .type_ptr{&type_ref},
-                    .source_location{src_loc_tk},
-                    .indent{indent},
-                    .named{},
-                });
-
-                comment(src_loc_tk, indent, "allocate scratch register -> {}",
-                        register_names_.at(index));
-
-                operand result{
-                    make_register_operand(register_names_.at(index), type_ref)};
-
-                result.set_allocation_register(register_names_.at(index));
-
-                return result;
+            if ((unavailable_registers_ & (uint32_t{1} << index)) != 0) {
+                continue;
             }
+
+            record_allocation(src_loc_tk, indent, index, type_ref, false);
+
+            comment(src_loc_tk, indent, "allocate scratch register -> {}",
+                    register_names_.at(index));
+
+            operand result{
+                make_register_operand(register_names_.at(index), type_ref)};
+
+            result.set_allocation_register(register_names_.at(index));
+
+            return result;
         }
 
         throw compiler_exception{src_loc_tk, "out of RV32I scratch registers"};
@@ -2171,15 +2180,8 @@ class machine_rv32i : public machine {
         }
         operand result{make_register_operand(register_name, type_ref)};
         result.set_allocation_register(register_names_.at(index));
-        allocations_.push_back({
-            .register_index{index},
-            .type_ptr{&type_ref},
-            .source_location{src_loc_tk},
-            .indent{indent},
-            .named{true},
-        });
+        record_allocation(src_loc_tk, indent, index, type_ref, true);
 
-        unavailable_registers_ |= mask;
         comment(src_loc_tk, indent, "allocate named register {}",
                 register_names_.at(index));
 
@@ -2586,15 +2588,7 @@ class machine_rv32i : public machine {
     auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
         -> operand override {
 
-        const operand count{begin_bulk(src_loc_tk, indent)};
-
-        const std::array<operand, 3>& registers{bulk_registers_.back()};
-
-        comment(src_loc_tk, indent, "{}: source, {}: destination, {}: count",
-                registers.at(0).base_register(),
-                registers.at(1).base_register(), count.base_register());
-
-        return count;
+        return begin_array_copy(src_loc_tk, indent);
     }
 
     // borrowed pointers avoid a temporary address and final move for indexing

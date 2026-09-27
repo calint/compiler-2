@@ -45,25 +45,7 @@ class stmt_call : public expression {
             return;
         }
 
-        // built-in function
-
-        bool expect_arg{};
-        while (true) {
-            close_paren_tk_ = tz.is_next_char_token(')');
-            if (not close_paren_tk_.is_empty()) {
-                if (expect_arg) {
-                    throw compiler_exception{close_paren_tk_,
-                                             "expected argument after ','"};
-                }
-                break;
-            }
-            args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
-            const token delim_tk{tz.is_next_char_token(',')};
-            expect_arg = not delim_tk.is_empty();
-            if (expect_arg) {
-                arg_delims_tk_.emplace_back(delim_tk);
-            }
-        }
+        parse_builtin_arguments(tc, tz);
     }
 
     // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
@@ -255,103 +237,15 @@ class stmt_call : public expression {
                            const ident_info& dst_info,
                            const stmt_def_func& func) const -> void {
 
-        if (func.returns() and dst_info.is_empty()) {
-            throw compiler_exception{tok(), "return value is discarded"};
-        }
-
-        if (not func.returns() and not dst_info.is_empty()) {
-            throw compiler_exception{tok(), "function does not return a value"};
-        }
-
-        if (not get_unary_ops().is_empty()) {
-            throw compiler_exception{
-                tok(), "unary operators on non-inline calls are unsupported"};
-        }
-
-        if (func.returns()) {
-            if (not dst_info.operand.is_memory()) {
-                throw compiler_exception{
-                    tok(), "result destination must be a memory location"};
-            }
-
-            if (dst_info.is_array) {
-                throw compiler_exception{
-                    tok(), "array result destinations are unsupported"};
-            }
-
-            assert_result_type(dst_info, func);
-        }
-
-        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
-            if (arg.is_expression()) {
-                throw compiler_exception{
-                    arg.tok(), "expression arguments are unsupported"};
-            }
-
-            if (not arg.get_unary_ops().is_empty()) {
-                throw compiler_exception{
-                    arg.tok(), "unary operators on arguments are unsupported"};
-            }
-
-            const ident_info info{tc.make_ident_info(arg)};
-            if (not info.is_var()) {
-                throw compiler_exception{arg.tok(),
-                                         "argument must be a variable"};
-            }
-
-            if (info.is_array and not arg.is_array_element()) {
-                throw compiler_exception{
-                    arg.tok(), "whole-array arguments are unsupported"};
-            }
-
-            if (param.is_array()) {
-                throw compiler_exception{arg.tok(),
-                                         "array parameters are unsupported"};
-            }
-
-            if (&info.type_ref() != &param.get_type()) {
-                throw_parameter_type_mismatch(arg, param, info);
-            }
-        }
+        assert_noninline_call(tc, dst_info, func);
 
         machine& x{tc.machine()};
 
+        // the registers stay allocated until the callee frame is populated
         std::vector<operand> address_registers;
-        std::vector<operand> addresses;
 
-        if (func.returns()) {
-            // start with the result destination
-            operand result_address{dst_info.operand};
-
-            // resolve a pointer slot unless the operand is already resolved
-            if (dst_info.is_pointer and not dst_info.use_operand) {
-
-                const operand pointer{x.alloc_scratch_register(
-                    tok(), indent, tc.get_type_address())};
-
-                // keep the register until the callee frame is populated
-                address_registers.push_back(pointer);
-
-                // load the result address into the pointer register
-                x.copy_value(
-                    tok(), indent, pointer,
-                    operand::mem(result_address, tc.get_type_address()));
-
-                // refer to the result storage through the loaded address
-                result_address = operand::mem(pointer.base_register(), {}, 1, 0,
-                                              dst_info.type_ref());
-            }
-
-            // the result address precedes the argument addresses
-            addresses.push_back(result_address);
-        }
-
-        for (const expr_any& arg : args_) {
-            const ident_info info{tc.make_ident_info(arg)};
-
-            addresses.push_back(
-                tc.get_lea_operand(indent, arg, info, address_registers));
-        }
+        const std::vector<operand> addresses{frame_slot_addresses(
+            tc, indent, dst_info, func, address_registers)};
 
         // start the callee frame after the caller's storage, not on rsp
         // example: caller uses 24 bytes; callee returns a value and takes one
@@ -423,11 +317,13 @@ class stmt_call : public expression {
 
         if (not func.is_inlined()) {
             compile_noninline(tc, indent, dst_info, func);
+
             return;
         }
 
         if (get_unary_ops().is_empty() or not dst_info.operand.is_memory()) {
             compile_inline(tc, indent, dst_info, func);
+
             return;
         }
 
@@ -457,23 +353,14 @@ class stmt_call : public expression {
         // buffer the aliases of arguments and function return
         std::vector<alias_info> aliases_to_add;
 
-        // validate return type
+        assert_result_use(dst_info, func);
+
         const std::optional<func_return_info> ret{func.returns()};
-
-        if (ret and dst_info.is_empty()) {
-            throw compiler_exception{tok(), "return value is discarded"};
-        }
-
-        if (not ret and not dst_info.is_empty()) {
-            throw compiler_exception{tok(), "function does not return a value"};
-        }
 
         // the result names the destination, so the widths must agree
         if (ret) {
             assert_result_type(dst_info, func);
-        }
 
-        if (ret) {
             operand dst_lea{dst_info.use_operand or dst_info.has_lea()
                                 ? dst_info.operand
                                 : operand{}};
@@ -535,9 +422,8 @@ class stmt_call : public expression {
         // apply unary ops to result if present
 
         if (not get_unary_ops().is_empty()) {
-            if (not func.returns()) {
-                std::unreachable();
-            }
+            assert(func.returns());
+
             const func_return_info& return_info{*func.returns()};
             const ident_info& ret_info{
                 tc.make_ident_info(tok(), return_info.ident_tk.text())};
@@ -571,6 +457,131 @@ class stmt_call : public expression {
     }
 
   private:
+    // a result must be stored and a call without one cannot provide it
+    auto assert_result_use(const ident_info& dst_info,
+                           const stmt_def_func& func) const -> void {
+
+        if (func.returns() and dst_info.is_empty()) {
+            throw compiler_exception{tok(), "return value is discarded"};
+        }
+
+        if (not func.returns() and not dst_info.is_empty()) {
+            throw compiler_exception{tok(), "function does not return a value"};
+        }
+    }
+
+    // the callee reaches the result and arguments through their addresses
+    auto assert_noninline_call(const toc& tc, const ident_info& dst_info,
+                               const stmt_def_func& func) const -> void {
+
+        assert_result_use(dst_info, func);
+
+        if (not get_unary_ops().is_empty()) {
+            throw compiler_exception{
+                tok(), "unary operators on non-inline calls are unsupported"};
+        }
+
+        if (func.returns()) {
+            if (not dst_info.operand.is_memory()) {
+                throw compiler_exception{
+                    tok(), "result destination must be a memory location"};
+            }
+
+            if (dst_info.is_array) {
+                throw compiler_exception{
+                    tok(), "array result destinations are unsupported"};
+            }
+
+            assert_result_type(dst_info, func);
+        }
+
+        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
+            assert_noninline_argument(tc, arg, param);
+        }
+    }
+
+    static auto assert_noninline_argument(const toc& tc, const expr_any& arg,
+                                          const stmt_def_func_param& param)
+        -> void {
+
+        if (arg.is_expression()) {
+            throw compiler_exception{arg.tok(),
+                                     "expression arguments are unsupported"};
+        }
+
+        if (not arg.get_unary_ops().is_empty()) {
+            throw compiler_exception{
+                arg.tok(), "unary operators on arguments are unsupported"};
+        }
+
+        const ident_info info{tc.make_ident_info(arg)};
+        if (not info.is_var()) {
+            throw compiler_exception{arg.tok(), "argument must be a variable"};
+        }
+
+        if (info.is_array and not arg.is_array_element()) {
+            throw compiler_exception{arg.tok(),
+                                     "whole-array arguments are unsupported"};
+        }
+
+        if (param.is_array()) {
+            throw compiler_exception{arg.tok(),
+                                     "array parameters are unsupported"};
+        }
+
+        if (&info.type_ref() != &param.get_type()) {
+            throw_parameter_type_mismatch(arg, param, info);
+        }
+    }
+
+    // the result address precedes the argument addresses
+    [[nodiscard]] auto
+    frame_slot_addresses(toc& tc, const size_t indent,
+                         const ident_info& dst_info, const stmt_def_func& func,
+                         std::vector<operand>& address_registers) const
+        -> std::vector<operand> {
+
+        std::vector<operand> addresses;
+
+        if (func.returns()) {
+            addresses.push_back(
+                result_address(tc, indent, dst_info, address_registers));
+        }
+
+        for (const expr_any& arg : args_) {
+            const ident_info info{tc.make_ident_info(arg)};
+
+            addresses.push_back(
+                tc.get_lea_operand(indent, arg, info, address_registers));
+        }
+
+        return addresses;
+    }
+
+    // a result that is itself a pointer slot is reached through the address
+    // loaded from it, unless the operand is already resolved
+    [[nodiscard]] auto
+    result_address(toc& tc, const size_t indent, const ident_info& dst_info,
+                   std::vector<operand>& address_registers) const -> operand {
+
+        if (not dst_info.is_pointer or dst_info.use_operand) {
+            return dst_info.operand;
+        }
+
+        machine& x{tc.machine()};
+
+        const operand pointer{
+            x.alloc_scratch_register(tok(), indent, tc.get_type_address())};
+
+        address_registers.push_back(pointer);
+
+        x.copy_value(tok(), indent, pointer,
+                     operand::mem(dst_info.operand, tc.get_type_address()));
+
+        return operand::mem(pointer.base_register(), {}, 1, 0,
+                            dst_info.type_ref());
+    }
+
     // the result address comes first, then one address per argument
     auto comment_frame_slot(machine& x, const size_t indent,
                             const stmt_def_func& func,
@@ -749,6 +760,31 @@ class stmt_call : public expression {
         args_.front().source_to(os);
         method_dot_tk_.source_to(os);
         tok().source_to(os);
+    }
+
+    // a built-in has no parameter list, so any count of default type
+    // arguments is parsed and the built-in checks the count
+    auto parse_builtin_arguments(toc& tc, tokenizer& tz) -> void {
+        bool expect_arg{};
+        while (true) {
+            close_paren_tk_ = tz.is_next_char_token(')');
+            if (not close_paren_tk_.is_empty()) {
+                if (expect_arg) {
+                    throw compiler_exception{close_paren_tk_,
+                                             "expected argument after ','"};
+                }
+
+                return;
+            }
+
+            args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
+
+            const token delim_tk{tz.is_next_char_token(',')};
+            expect_arg = not delim_tk.is_empty();
+            if (expect_arg) {
+                arg_delims_tk_.emplace_back(delim_tk);
+            }
+        }
     }
 
     // a method receiver is already in 'args_'

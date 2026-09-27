@@ -70,15 +70,7 @@ class type final {
                              const std::string_view name) const
         -> const type_field& {
 
-        for (const type_field& f : fields_) {
-            if (f.name == name) {
-                return f;
-            }
-        }
-
-        throw compiler_exception{
-            src_loc_tk,
-            std::format("field '{}' not found in type '{}'", name, name_)};
+        return fields_[field_index(src_loc_tk, name)];
     }
 
     [[nodiscard]] auto
@@ -160,20 +152,12 @@ class type final {
     field_extent_bytes(const token& src_loc_tk,
                        const std::string_view field_name) const -> size_t {
 
-        for (size_t i{}; i < fields_.size(); ++i) {
-            if (fields_[i].name != field_name) {
-                continue;
-            }
+        const size_t i{field_index(src_loc_tk, field_name)};
 
-            const size_t next_offset{
-                i + 1 < fields_.size() ? fields_[i + 1].offset : size_bytes_};
+        const size_t next_offset{i + 1 < fields_.size() ? fields_[i + 1].offset
+                                                        : size_bytes_};
 
-            return next_offset - fields_[i].offset;
-        }
-
-        throw compiler_exception(
-            src_loc_tk, std::format("field '{}' not found in type '{}'",
-                                    field_name, name_));
+        return next_offset - fields_[i].offset;
     }
 
     [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
@@ -188,5 +172,21 @@ class type final {
 
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
         return fields_;
+    }
+
+  private:
+    [[nodiscard]] auto field_index(const token& src_loc_tk,
+                                   const std::string_view name) const
+        -> size_t {
+
+        for (size_t i{}; i < fields_.size(); ++i) {
+            if (fields_[i].name == name) {
+                return i;
+            }
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("field '{}' not found in type '{}'", name, name_)};
     }
 };

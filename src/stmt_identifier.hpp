@@ -731,11 +731,6 @@ class stmt_identifier : public statement {
         machine& x{tc.machine()};
 
         x.check_bounds(src_loc_tk, indent, index_or_count, array_length,
-                       allow_end, range_count,
-                       {
-                           .upper{tc.is_bounds_check_upper()},
-                           .lower{tc.is_bounds_check_lower()},
-                           .with_line{tc.is_bounds_check_with_line()},
-                       });
+                       allow_end, range_count, tc.bounds_check_options());
     }
 };

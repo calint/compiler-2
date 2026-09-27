@@ -54,31 +54,9 @@ class stmt_def_dat final : public statement {
             throw compiler_exception{name_tk_, "expected name of data"};
         }
 
-        bool is_array{};
-        size_t array_count{};
-
         open_bracket_tk_ = tz.is_next_char_token('[');
-        if (not open_bracket_tk_.is_empty()) {
-            is_array = true;
-
-            array_count_const_ = {tc, tz, 0};
-
-            if (array_count_const_.has_value() and
-                array_count_const_.value() <= 0) {
-
-                throw compiler_exception{
-                    array_count_const_.tok(),
-                    "expected array size to be greater than 0"};
-            }
-
-            array_count = static_cast<size_t>(array_count_const_.value());
-
-            close_bracket_tk_ = tz.is_next_char_token(']');
-            if (close_bracket_tk_.is_empty()) {
-                throw compiler_exception{open_bracket_tk_,
-                                         "expected ']' after array size"};
-            }
-        }
+        const bool is_array{not open_bracket_tk_.is_empty()};
+        const size_t array_count{is_array ? parse_array_size(tc, tz) : 0};
 
         type_tk_ = tz.next_token();
         if (not tc.has_type(type_tk_.text())) {
@@ -99,18 +77,7 @@ class stmt_def_dat final : public statement {
 
         // register the variable without emitting output so it is available
         // during subsequent parsing
-
-        const var_info var{
-            .name{name_tk_.text()},
-            .type_ptr{&tp},
-            .src_loc_tk{name_tk_},
-            .is_array{is_array},
-            .array_len{array_count},
-            .reg{},
-            .base_register{},
-        };
-
-        tc.add_var(name_tk_, 0, var, true);
+        tc.add_var(name_tk_, 0, make_var_info(is_array, array_count), true);
 
         elroot_ = parse_root(tc, tz, tp, is_array, array_count);
 
@@ -149,17 +116,9 @@ class stmt_def_dat final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const var_info var{
-            .name{name_tk_.text()},
-            .type_ptr{&get_type()},
-            .src_loc_tk{name_tk_},
-            .is_array{elroot_.is_array},
-            .array_len{elroot_.array_count},
-            .reg{},
-            .base_register{},
-        };
-
-        tc.add_var(name_tk_, indent, var, true);
+        // an unsized array has its size from the initializer by now
+        tc.add_var(name_tk_, indent,
+                   make_var_info(elroot_.is_array, elroot_.array_count), true);
     }
 
     auto compile_data(toc& tc) const -> void override {
@@ -176,6 +135,42 @@ class stmt_def_dat final : public statement {
     }
 
   private:
+    // e.g. '[4]', or '[]' when the initializer gives the size, which is 0
+    [[nodiscard]] auto parse_array_size(toc& tc, tokenizer& tz) -> size_t {
+        array_count_const_ = {tc, tz, 0};
+
+        if (array_count_const_.has_value() and
+            array_count_const_.value() <= 0) {
+
+            throw compiler_exception{
+                array_count_const_.tok(),
+                "expected array size to be greater than 0"};
+        }
+
+        close_bracket_tk_ = tz.is_next_char_token(']');
+        if (close_bracket_tk_.is_empty()) {
+            throw compiler_exception{open_bracket_tk_,
+                                     "expected ']' after array size"};
+        }
+
+        return static_cast<size_t>(array_count_const_.value());
+    }
+
+    [[nodiscard]] auto make_var_info(const bool is_array,
+                                     const size_t array_count) const
+        -> var_info {
+
+        return {
+            .name{name_tk_.text()},
+            .type_ptr{&get_type()},
+            .src_loc_tk{name_tk_},
+            .is_array{is_array},
+            .array_len{array_count},
+            .reg{},
+            .base_register{},
+        };
+    }
+
     static auto compile_data_rec(toc& tc, const type& tp, const elem& elroot)
         -> void {
 

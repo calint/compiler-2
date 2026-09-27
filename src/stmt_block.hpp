@@ -54,6 +54,44 @@ class stmt_block final : public statement {
                 "for function call"};
     }
 
+    // 'tk' is the first token of the statement
+    [[nodiscard]] static auto parse_statement(toc& tc, tokenizer& tz,
+                                              const token tk)
+        -> std::unique_ptr<statement> {
+
+        if (tk.is_text("var")) {
+            return std::make_unique<stmt_def_var>(tc, tk, tz);
+        }
+        if (tk.is_text("const")) {
+            return std::make_unique<stmt_def_const>(tc, tk, tz);
+        }
+        if (tk.is_text("dat")) {
+            return std::make_unique<stmt_def_dat>(tc, tk, tz);
+        }
+        if (tk.is_text("break")) {
+            return std::make_unique<stmt_break>(tc, tk);
+        }
+        if (tk.is_text("continue")) {
+            return std::make_unique<stmt_continue>(tc, tk);
+        }
+        if (tk.is_text("return")) {
+            return std::make_unique<stmt_return>(tc, tk);
+        }
+        if (tk.is_text("array_copy")) {
+            return std::make_unique<stmt_builtin_array_copy>(tc, tk, tz);
+        }
+
+        // note: solves circular reference problem, 'loop' and 'if' use this
+        //       class
+        if (tk.is_text("loop") or tk.is_text("if") or tk.is_text("foo") or
+            tk.is_text("exit") or tk.is_text("read") or tk.is_text("write")) {
+
+            return create_statement_in_stmt_block(tc, tz, tk);
+        }
+
+        return parse_identifier_statement(tc, tz, tk);
+    }
+
   public:
     // note: without '{', a single statement is allowed unless braces are
     // required
@@ -102,32 +140,8 @@ class stmt_block final : public statement {
                 break;
             }
 
-            if (tk.is_text("var")) {
-                stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));
-            } else if (tk.is_text("const")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_def_const>(tc, tk, tz));
-            } else if (tk.is_text("dat")) {
-                stms_.emplace_back(std::make_unique<stmt_def_dat>(tc, tk, tz));
-            } else if (tk.is_text("break")) {
-                stms_.emplace_back(std::make_unique<stmt_break>(tc, tk));
-            } else if (tk.is_text("continue")) {
-                stms_.emplace_back(std::make_unique<stmt_continue>(tc, tk));
-            } else if (tk.is_text("return")) {
-                stms_.emplace_back(std::make_unique<stmt_return>(tc, tk));
-            } else if (tk.is_text("array_copy")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_builtin_array_copy>(tc, tk, tz));
-            } else if (tk.is_text("loop") or tk.is_text("if") or
-                       tk.is_text("foo") or tk.is_text("exit") or
-                       tk.is_text("read") or tk.is_text("write")) {
+            stms_.emplace_back(parse_statement(tc, tz, tk));
 
-                stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
-                // note: solves circular reference problem
-                //       'loop' and 'if' uses this class
-            } else {
-                stms_.emplace_back(parse_identifier_statement(tc, tz, tk));
-            }
             if (is_one_statement_) {
                 break;
             }

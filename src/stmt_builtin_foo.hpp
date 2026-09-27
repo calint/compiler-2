@@ -32,27 +32,7 @@ class stmt_builtin_foo final : public statement {
 
         const ident_info ii{tc.make_ident_info(ident_)};
         tc.enter_foo("");
-        const var_info var_e{
-            .name{"e"},
-            .type_ptr{&ii.type_ref()},
-            .src_loc_tk{},
-            .reg{},
-            .base_register{},
-        };
-
-        tc.add_var(token{}, 0, var_e, false);
-
-        const var_info var_i{
-            .name{"i"},
-            .type_ptr{&tc.get_type_default()},
-            .src_loc_tk{},
-            .reg{},
-            .base_register{},
-        };
-
-        tc.add_var(token{}, 0, var_i, false);
-
-        tc.add_const(token{}, 0, "n", static_cast<int64_t>(ii.array_len));
+        add_loop_names(tc, 0, token{}, token{}, ii, operand{});
 
         code_ = {tc, tz};
 
@@ -85,37 +65,15 @@ class stmt_builtin_foo final : public statement {
 
         const ident_info ii{tc.make_ident_info(ident_)};
 
-        const var_info var_e{
-            .name{"e"},
-            .type_ptr{&ii.type_ref()},
-            .src_loc_tk{tok()},
-            .reg{reg_iter},
-            .base_register{},
-        };
-
-        tc.add_var(ident_.tok(), indent, var_e, false);
-
-        const var_info var_i{
-            .name{"i"},
-            .type_ptr{&tc.get_type_default()},
-            .src_loc_tk{tok()},
-            .reg{},
-            .base_register{},
-        };
-
-        tc.add_var(ident_.tok(), indent, var_i, false);
+        add_loop_names(tc, indent, ident_.tok(), tok(), ii, reg_iter);
 
         const ident_info var_i_info{tc.make_ident_info(tok(), "i")};
 
-        // add a constant for array size
-        tc.add_const(ident_.tok(), indent, "n",
-                     static_cast<int64_t>(ii.array_len));
-
-        x.comment(ident_.tok(), indent, "initiate iterator {}", var_e.name);
+        x.comment(ident_.tok(), indent, "initiate iterator e");
 
         load_array_address(tc, indent, ii, reg_iter);
 
-        x.comment(ident_.tok(), indent, "initiate counter {}", var_i.name);
+        x.comment(ident_.tok(), indent, "initiate counter i");
         x.copy_value(tok(), indent, var_i_info.operand,
                      operand::imm("0", tc.get_type_default()));
         x.label(indent, loop_label);
@@ -139,6 +97,37 @@ class stmt_builtin_foo final : public statement {
     }
 
   private:
+    // 'e' is the element at the iterator, 'i' the counter and 'n' the array
+    // size, parsing registers them without an iterator register
+    static auto add_loop_names(toc& tc, const size_t indent,
+                               const token& src_loc_tk, const token& decl_tk,
+                               const ident_info& array_info,
+                               const operand& iterator) -> void {
+
+        tc.add_var(src_loc_tk, indent,
+                   {
+                       .name{"e"},
+                       .type_ptr{&array_info.type_ref()},
+                       .src_loc_tk{decl_tk},
+                       .reg{iterator},
+                       .base_register{},
+                   },
+                   false);
+
+        tc.add_var(src_loc_tk, indent,
+                   {
+                       .name{"i"},
+                       .type_ptr{&tc.get_type_default()},
+                       .src_loc_tk{decl_tk},
+                       .reg{},
+                       .base_register{},
+                   },
+                   false);
+
+        tc.add_const(src_loc_tk, indent, "n",
+                     static_cast<int64_t>(array_info.array_len));
+    }
+
     // an indexed or forwarded array needs its address computed
     auto load_array_address(toc& tc, const size_t indent, const ident_info& ii,
                             const operand& reg_iter) const -> void {

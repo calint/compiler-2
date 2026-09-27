@@ -833,6 +833,16 @@ class toc final {
         return bounds_check_lower_;
     }
 
+    [[nodiscard]] auto bounds_check_options() const
+        -> machine::bounds_check_options {
+
+        return {
+            .upper{bounds_check_upper_},
+            .lower{bounds_check_lower_},
+            .with_line{bounds_check_with_line_},
+        };
+    }
+
     [[nodiscard]] auto is_frame_check() const -> bool { return frame_check_; }
 
     [[nodiscard]] auto is_alias_check() const -> bool { return alias_check_; }

@@ -61,6 +61,13 @@ default_binary_file_name(const std::string_view src_file_name,
                                 const size_t stack_size_bytes,
                                 const std::string_view binary_file_name)
     -> std::unique_ptr<machine>;
+
+auto print_usage_error(const std::string_view message) -> void;
+
+auto print_source_error(const std::string_view src_file_name,
+                        const std::string_view src, const size_t line,
+                        const size_t start_index,
+                        const std::string_view message) -> void;
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -170,12 +177,10 @@ examples:
             target = arg.substr(target_option.size());
             if (target != "x86_64" and target != "rv32i" and
                 target != "rv32i-qemu" and target != "rv32i-fpga") {
-                std::println(stderr,
-                             "Invalid target: '{}'. Supported targets are: "
-                             "x86_64, rv32i, rv32i-qemu, rv32i-fpga.",
-                             target);
-
-                std::println(stderr, "Use --help for usage information");
+                print_usage_error(
+                    std::format("Invalid target: '{}'. Supported targets are: "
+                                "x86_64, rv32i, rv32i-qemu, rv32i-fpga.",
+                                target));
 
                 return 1;
             }
@@ -191,8 +196,7 @@ examples:
         } else if (arg.starts_with(bin_option)) {
             binary_file_name = arg.substr(bin_option.size());
             if (binary_file_name.empty()) {
-                std::println(stderr, "Invalid --bin: empty file name");
-                std::println(stderr, "Use --help for usage information");
+                print_usage_error("Invalid --bin: empty file name");
 
                 return 1;
             }
@@ -204,8 +208,7 @@ examples:
             // assume it's the filename
             src_file_name = argument;
         } else {
-            std::println(stderr, "Error: Unknown option: {}", arg);
-            std::println(stderr, "Use --help for usage information");
+            print_usage_error(std::format("Error: Unknown option: {}", arg));
 
             return 1;
         }
@@ -249,18 +252,11 @@ examples:
         prg.build(std::cout);
 
     } catch (const compiler_exception& e) {
-        const auto [line, col]{
-            line_and_col_num_for_char_index(e.line, e.start_index, src)};
-
-        std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, e.msg);
+        print_source_error(src_file_name, src, e.line, e.start_index, e.msg);
 
         return 1;
     } catch (const tokenizer_exception& e) {
-        const auto [line, col]{
-            line_and_col_num_for_char_index(e.line, e.start_index, src)};
-
-        std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col,
-                     e.what());
+        print_source_error(src_file_name, src, e.line, e.start_index, e.what());
 
         return 1;
     } catch (const panic_exception& e) {
@@ -309,17 +305,15 @@ namespace {
             throw std::invalid_argument{std::format("invalid {}", name)};
         }
     } catch (...) {
-        std::println(stderr, "Could not parse {}: \"{}\"", name, text);
-        std::println(stderr, "Use --help for usage information");
+        print_usage_error(
+            std::format("Could not parse {}: \"{}\"", name, text));
 
         return std::nullopt;
     }
 
     if (parsed_size_bytes % alignment != 0) {
-        std::println(stderr, "Invalid {}: '{}' is not a multiple of {}", name,
-                     text, alignment);
-
-        std::println(stderr, "Use --help for usage information");
+        print_usage_error(std::format(
+            "Invalid {}: '{}' is not a multiple of {}", name, text, alignment));
 
         return std::nullopt;
     }
@@ -346,12 +340,10 @@ namespace {
         } else if (option == "alias") {
             parsed.alias = true;
         } else if (not option.empty()) {
-            std::println(std::cerr,
-                         "Invalid --checks option: '{}'. Supported options "
-                         "are: upper, lower, line, frame, alias.",
-                         option);
-
-            std::println(stderr, "Use --help for usage information");
+            print_usage_error(
+                std::format("Invalid --checks option: '{}'. Supported options "
+                            "are: upper, lower, line, frame, alias.",
+                            option));
 
             return std::nullopt;
         }
@@ -400,5 +392,24 @@ default_binary_file_name(const std::string_view src_file_name,
     }
 
     throw panic_exception{std::format("unknown target '{}'", target)};
+}
+
+// every command line error ends with the same hint
+auto print_usage_error(const std::string_view message) -> void {
+    std::println(stderr, "{}", message);
+    std::println(stderr, "Use --help for usage information");
+}
+
+// 'line' and 'start_index' locate the error, the column is derived from them
+auto print_source_error(const std::string_view src_file_name,
+                        const std::string_view src, const size_t line,
+                        const size_t start_index,
+                        const std::string_view message) -> void {
+
+    const auto [line_num,
+                col]{line_and_col_num_for_char_index(line, start_index, src)};
+
+    std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line_num, col,
+                 message);
 }
 } // namespace

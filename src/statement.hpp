@@ -116,7 +116,7 @@ class statement {
         token_.source_to(os);
     }
 
-    // one-line, whitespace-collapsed rendering of 'st's source, suitable for
+    // one-line, whitespace-collapsed rendering of source text, suitable for
     // an assembler comment
     [[nodiscard]] static auto trimmed_source(const std::string_view text)
         -> std::string {

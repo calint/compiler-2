@@ -145,11 +145,7 @@ class stmt_builtin_io final : public stmt_call {
                               toc::make_ident_info_from_register(start));
             x.check_bounds(start_arg.tok(), indent, start,
                            buffer_info.array_len, true, count,
-                           {
-                               .upper{tc.is_bounds_check_upper()},
-                               .lower{tc.is_bounds_check_lower()},
-                               .with_line{tc.is_bounds_check_with_line()},
-                           });
+                           tc.bounds_check_options());
         }
 
         const operand range{has_count and not has_start ? count : operand{}};
