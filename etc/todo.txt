@@ -2,10 +2,29 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [x] opus 5.5 ai review and bug-hunt
-[o] opus untangle nested if/else, apply early returns and consolidate repeated
+[x] opus untangle nested if/else, apply early returns and consolidate repeated
     code into helpers
-[ ] main.cpp: make an option --bin that decides the name of the binary including
-    the nasm generated binary
+[o] main.cpp: make an option --bin that decides the name of the binary for rv32i
+    backends. evaluate the possibility to run nasm from inside the
+    assembler_x86_64 so it also uses the --bin option which is by default name
+    of source-[backend].bin
+    [x] --bin=FILE for rv32i targets, default 'dir/stem-TARGET.bin' next to the
+        source, test suites pass --bin=gen-rv32i.bin
+    [ ] x86_64 binary, evaluation:
+        => running nasm and ld from the compiler is possible with 'posix_spawnp'
+           (no shell so file names cannot inject commands): assembly to a
+           temporary file, 'nasm -f elf64', 'ld -s -T baz.ld'
+        => drawbacks: the compiler then needs nasm and ld at run time and
+           'baz.ld' which lives in the repository (would be embedded and
+           written to a temporary file), tool failures after a successful
+           compile need their own error path, the result is an elf executable
+           so '.bin' misleads, test suites assemble 'gen.s' themselves and
+           would run nasm twice
+        => alternative matching rv32i: 'assembler_x86_64' encodes instructions
+           from records and writes the elf itself (encoding tables, rip
+           relative and absolute references, elf header and 2 program headers)
+           => big: several files and interfaces, awaiting go-ahead
+        => until then nasm stays in the scripts and x86_64 ignores --bin
 [o] local code generation found in the rv32i assessment, examples in
     etc/codegen-inefficiencies.baz
     [ ] a runtime bool argument to an inline function is materialized:

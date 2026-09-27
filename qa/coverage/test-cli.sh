@@ -59,6 +59,25 @@ CLI_TARGETS() {
     [[ ! -s err ]]
     [[ $(grep -Ec '^[[:space:]]*ecall$' gen.s) -eq 0 ]]
     grep -Eq '^[[:space:]]*li t0, 4096$' gen.s
+    rm -f 430-rv32i.bin 430-rv32i-qemu.bin
+    echo ok
+}
+
+CLI_BINARY_NAME() {
+    echo -n "cli binary name: "
+    rm -f 430-rv32i-qemu.bin gen-rv32i.bin
+    # the default is the source without extension followed by the target
+    "$BIN" --target=rv32i-qemu 430.baz >gen.s 2>err
+    [[ ! -s err ]]
+    [[ -s 430-rv32i-qemu.bin ]]
+    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin 430.baz >out 2>err
+    [[ ! -s err ]]
+    cmp -s 430-rv32i-qemu.bin gen-rv32i.bin
+    cmp -s gen.s out
+    rm -f 430-rv32i-qemu.bin gen-rv32i.bin
+    # x86_64 writes no binary
+    "$BIN" --bin=gen-rv32i.bin 430.baz >gen.s 2>err
+    [[ ! -e gen-rv32i.bin ]]
     echo ok
 }
 
@@ -100,24 +119,24 @@ CLI_JUMP_OPTIMIZATIONS() {
 CLI_FPGA_MEMORY() {
     echo -n "cli rv32i-fpga memory size: "
     local memory_size=$((0x800000)) stack_size=$((0x10000))
-    "$BIN" --target=rv32i-fpga 430.baz >gen.s 2>err
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 430.baz >gen.s 2>err
     [[ ! -s err ]]
     # the variables follow the image at the next 16 byte boundary
     local image_size vars_fit
     image_size=$(stat -c %s gen-rv32i.bin)
     vars_fit=$((memory_size - stack_size - (image_size + 15) / 16 * 16))
-    "$BIN" --target=rv32i-fpga --vars=$vars_fit 430.baz >gen.s 2>err
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=$vars_fit 430.baz >gen.s 2>err
     [[ ! -s err ]]
     rm -f gen-rv32i.bin
     set +e
-    "$BIN" --target=rv32i-fpga --vars=$((vars_fit + 16)) 430.baz >gen.s 2>err
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=$((vars_fit + 16)) 430.baz >gen.s 2>err
     local exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
     [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
     grep -Fq "exceeds the $memory_size B of device memory" err
     set +e
-    "$BIN" --target=rv32i-fpga --stack=$((memory_size + 16)) 430.baz >gen.s 2>err
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=$((memory_size + 16)) 430.baz >gen.s 2>err
     exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
@@ -149,7 +168,10 @@ CLI --target=rv32i 0 --help
 CLI --target=rv32i-qemu 0 --help
 CLI --target= 1 --help
 CLI --target=unknown 1 --help
+CLI --bin= 1 --help
+CLI --bin=gen-rv32i.bin 0 --help
 CLI_TARGETS
+CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE
 CLI_JUMP_OPTIMIZATIONS
 CLI_FPGA_MEMORY

@@ -1,13 +1,13 @@
 #!/bin/bash
 # runs a flat rv32i image on the fpga emulator, the image is loaded at 0 and
 # the uart is the terminal
-# usage: run-rv32i-fpga.sh [gen-rv32i.bin]
+# usage: run-roome.sh [roome-rv32i-fpga.bin]
 # the emulator exits with the program's exit code
 set -eu
 cd "$(dirname "$0")"
 
 # a given image is relative to the caller's directory
-IMAGE="$(realpath "${1:-$(dirname "$0")/gen-rv32i.bin}")"
+IMAGE="$(realpath "${1:-$(dirname "$0")/roome-rv32i-fpga.bin}")"
 
 EMULATOR=fpga-emulator/osqa
 if [[ ! -x $EMULATOR ]]; then

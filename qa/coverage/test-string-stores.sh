@@ -100,7 +100,7 @@ for src in "${SOURCES[@]}"; do
 
         expected="$TESTS/$src.$target.stores"
         echo -n "string stores $src $target: "
-        "$BIN" --target="$target" "$TESTS/$src.baz" >gen.s
+        "$BIN" --target="$target" --bin=gen-rv32i.bin "$TESTS/$src.baz" >gen.s
         extract "$TESTS/$src.baz" "$comment" <gen.s >out
 
         if [[ "$MODE" == update ]]; then

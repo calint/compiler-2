@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <iostream>
@@ -50,10 +51,15 @@ struct check_options {
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options>;
 
+[[nodiscard]] auto
+default_binary_file_name(const std::string_view src_file_name,
+                         const std::string_view target) -> std::string;
+
 [[nodiscard]] auto make_backend(const std::string_view target, std::ostream& os,
                                 const std::string_view src,
                                 const assembler::jump_mode jumps,
-                                const size_t stack_size_bytes)
+                                const size_t stack_size_bytes,
+                                const std::string_view binary_file_name)
     -> std::unique_ptr<machine>;
 } // namespace
 
@@ -80,6 +86,8 @@ auto main(const int argc, const char** const argv) -> int {
     check_options checks{};
     bool optimize_jumps{true};
     bool reproduce_source{};
+    // empty until given, the default depends on the source and target
+    std::string_view binary_file_name{};
 
     // parse arguments
     for (const char* argument : args | std::views::drop(1)) {
@@ -89,7 +97,7 @@ auto main(const int argc, const char** const argv) -> int {
             // same layout as the readme usage section which pastes this output
             std::print(R"(usage: {0} [options] [file]
 compiles file (default: prog.baz) to assembly on stdout, rv32i targets also
-write the binary image gen-rv32i.bin
+write a binary image
 
 options:
   --target=MACHINE    x86_64 (default): linux, nasm
@@ -103,6 +111,8 @@ options:
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of {3} (default: {4})
   --checks=LIST       comma separated checks, replaces earlier --checks
+  --bin=FILE          rv32i targets binary image (default: file without
+                      extension followed by -MACHINE.bin)
   --nopt              no jump optimizations
   --reproduce-source  write reproduced source to diff.baz and check that it
                       matches the input
@@ -123,6 +133,7 @@ examples:
   {0} --checks=upper,lower,line,frame prog.baz > prog.s
   {0} --target=rv32i-qemu --stack=0x20000 prog.baz > prog.s
   {0} --target=rv32i-fpga --checks=upper,line prog.baz > prog.s
+  {0} --target=rv32i-qemu --bin=image.bin prog.baz > prog.s
 )",
                        args[0], vars_alignment, default_vars_size_bytes,
                        stack_alignment, default_stack_size_bytes);
@@ -133,6 +144,7 @@ examples:
         constexpr std::string_view stack_option{"--stack="};
         constexpr std::string_view target_option{"--target="};
         constexpr std::string_view checks_option{"--checks="};
+        constexpr std::string_view bin_option{"--bin="};
         constexpr std::string_view nopt_option{"--nopt"};
         if (arg.starts_with(vars_option)) {
             const std::optional<size_t> parsed{
@@ -176,6 +188,14 @@ examples:
             }
 
             checks = *parsed;
+        } else if (arg.starts_with(bin_option)) {
+            binary_file_name = arg.substr(bin_option.size());
+            if (binary_file_name.empty()) {
+                std::println(stderr, "Invalid --bin: empty file name");
+                std::println(stderr, "Use --help for usage information");
+
+                return 1;
+            }
         } else if (arg == nopt_option) {
             optimize_jumps = false;
         } else if (arg == "--reproduce-source") {
@@ -203,8 +223,13 @@ examples:
         // output stream 'build' writes the complete assembly
         null_stream parser_output;
 
-        const std::unique_ptr<machine> backend{
-            make_backend(target, parser_output, src, jumps, stack_size_bytes)};
+        const std::string binary{
+            binary_file_name.empty()
+                ? default_binary_file_name(src_file_name, target)
+                : std::string{binary_file_name}};
+
+        const std::unique_ptr<machine> backend{make_backend(
+            target, parser_output, src, jumps, stack_size_bytes, binary)};
 
         program prg{*backend,     src,          vars_size_bytes,
                     checks.upper, checks.lower, checks.show_line,
@@ -335,29 +360,43 @@ namespace {
     return parsed;
 }
 
+// keeps the directory so the image lands next to its source
+[[nodiscard]] auto
+default_binary_file_name(const std::string_view src_file_name,
+                         const std::string_view target) -> std::string {
+
+    std::filesystem::path path{src_file_name};
+    path.replace_extension();
+
+    return std::format("{}-{}.bin", path.string(), target);
+}
+
 // 'os' receives the output of the parse stage
 [[nodiscard]] auto make_backend(const std::string_view target, std::ostream& os,
                                 const std::string_view src,
                                 const assembler::jump_mode jumps,
-                                const size_t stack_size_bytes)
+                                const size_t stack_size_bytes,
+                                const std::string_view binary_file_name)
     -> std::unique_ptr<machine> {
 
+    // todo: x86_64 writes no binary, see etc/todo.txt
     if (target == "x86_64") {
         return std::make_unique<machine_x86_64>(os, src, jumps);
     }
 
     if (target == "rv32i") {
-        return std::make_unique<machine_rv32i>(os, src, jumps, "gen-rv32i.bin");
+        return std::make_unique<machine_rv32i>(os, src, jumps,
+                                               binary_file_name);
     }
 
     if (target == "rv32i-qemu") {
         return std::make_unique<machine_rv32i_qemu>(
-            os, src, jumps, "gen-rv32i.bin", stack_size_bytes);
+            os, src, jumps, binary_file_name, stack_size_bytes);
     }
 
     if (target == "rv32i-fpga") {
         return std::make_unique<machine_rv32i_fpga>(
-            os, src, jumps, "gen-rv32i.bin", stack_size_bytes);
+            os, src, jumps, binary_file_name, stack_size_bytes);
     }
 
     throw panic_exception{std::format("unknown target '{}'", target)};

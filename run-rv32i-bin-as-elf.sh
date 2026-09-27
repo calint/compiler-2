@@ -1,6 +1,6 @@
 #!/bin/bash
 # runs a flat rv32i image in qemu user mode by wrapping it unchanged in an elf
-# usage: run-rv32i-bin-as-elf.sh [gen-rv32i.bin] [vars size, the compiler's --vars]
+# usage: run-rv32i-bin-as-elf.sh [prog-rv32i.bin] [vars size, the compiler's --vars]
 # tools:
 #   llvm-objcopy: 22.1.8
 #         ld.lld: 22.1.8
@@ -8,7 +8,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-IMAGE="$(realpath "${1:-gen-rv32i.bin}")"
+IMAGE="$(realpath "${1:-prog-rv32i.bin}")"
 # the image ends at the data, the variables area follows it unmapped
 VARS_SIZE="${2:-65536}"
 WORK="$(mktemp -d /tmp/baz-rv32i-image.XXXXXX)"

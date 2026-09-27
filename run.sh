@@ -5,15 +5,19 @@ cd "$(dirname "$0")"
 TARGET=x86_64
 # same default source as the compiler
 SRC=prog.baz
+IMAGE=
 for arg in "$@"; do
     case "$arg" in
     --target=*) TARGET="${arg#--target=}" ;;
+    --bin=*) IMAGE="${arg#--bin=}" ;;
     -*) ;;
     *) SRC="$arg" ;;
     esac
 done
 # keeps a directory part so the binary can be run as a path
 BIN="$(dirname "$SRC")/$(basename "$SRC" .baz)"
+# same default image name as the compiler
+IMAGE="${IMAGE:-$BIN-$TARGET.bin}"
 ASM="$BIN.s"
 ASM_NO_COMMENTS="$BIN-without-comments.s"
 OBJ="$BIN.o"
@@ -60,7 +64,7 @@ fi
 echo $SEP
 if [[ "$TARGET" == rv32i-qemu || "$TARGET" == rv32i-fpga ]]; then
     # the compiler writes the image, no linking needed
-    ls --color -la "$ASM" "$ASM_NO_COMMENTS" gen-rv32i.bin
+    ls --color -la "$ASM" "$ASM_NO_COMMENTS" "$IMAGE"
 elif [[ "$TARGET" == rv32i ]]; then
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj "$ASM" -o "$OBJ"
     ld.lld -m elf32lriscv -e _start -o "$BIN" "$OBJ"
@@ -74,11 +78,11 @@ echo $SEP
 
 set +e # don't stop at errors
 if [[ "$TARGET" == rv32i-qemu ]]; then
-    ./run-rv32i-qemu.sh gen-rv32i.bin
+    ./run-rv32i-qemu.sh "$IMAGE"
 elif [[ "$TARGET" == rv32i ]]; then
     qemu-riscv32 "$BIN"
 elif [[ "$TARGET" == rv32i-fpga ]]; then
-    ./run-rv32i-fpga.sh gen-rv32i.bin
+    ./run-rv32i-fpga.sh "$IMAGE"
 else
     "$BIN"
 fi

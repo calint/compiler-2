@@ -183,7 +183,7 @@ execute_program_errors_to_out() {
 }
 
 compile_and_build() {
-    "$BIN" "$SRC.baz" --target="$MACHINE" $OPTS 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -192,7 +192,7 @@ compile_and_build() {
 }
 
 compile_and_build_no_checks() {
-    "$BIN" "$SRC.baz" --target="$MACHINE" --reproduce-source 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -202,7 +202,7 @@ compile_and_build_no_checks() {
 
 compile_and_build_with_opts() {
     local opts="$1"
-    "$BIN" "$SRC.baz" --target="$MACHINE" $opts --reproduce-source 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $opts --reproduce-source 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -213,7 +213,7 @@ compile_and_build_with_opts() {
 # Common: compile and assemble
 compile_expect_error() {
     set +e
-    "$BIN" "$SRC.baz" --target="$MACHINE" $OPTS >gen.s 2>out
+    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS >gen.s 2>out
     local exit_code=$?
     set -e
     if [[ $exit_code -ne 1 ]]; then
@@ -350,7 +350,7 @@ DIFFPY() {
 # Test with exit code and the jump optimizations as a diff from --nopt
 DIFFNOPT() {
     echo -n "$SRC: "
-    if ! "$BIN" "$SRC.baz" --target="$MACHINE" $OPTS --nopt 2>err >gen-nopt.s; then
+    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS --nopt 2>err >gen-nopt.s; then
         echo "compiler failed. see 'err' and 'gen-nopt.s'" >&2
         exit 1
     fi

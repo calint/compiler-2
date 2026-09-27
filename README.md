@@ -57,7 +57,7 @@ compiler writes the binary image itself.
 ```text
 usage: ./baz [options] [file]
 compiles file (default: prog.baz) to assembly on stdout, rv32i targets also
-write the binary image gen-rv32i.bin
+write a binary image
 
 options:
   --target=MACHINE    x86_64 (default): linux, nasm
@@ -71,6 +71,8 @@ options:
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of 16 (default: 65536)
   --checks=LIST       comma separated checks, replaces earlier --checks
+  --bin=FILE          rv32i targets binary image (default: file without
+                      extension followed by -MACHINE.bin)
   --nopt              no jump optimizations
   --reproduce-source  write reproduced source to diff.baz and check that it
                       matches the input
@@ -91,11 +93,12 @@ examples:
   ./baz --checks=upper,lower,line,frame prog.baz > prog.s
   ./baz --target=rv32i-qemu --stack=0x20000 prog.baz > prog.s
   ./baz --target=rv32i-fpga --checks=upper,line prog.baz > prog.s
+  ./baz --target=rv32i-qemu --bin=image.bin prog.baz > prog.s
 ```
 
 ## Related
 
-* rv32i soft core fpga implementation running `gen-rv32i.bin` compiled with
+* rv32i soft core fpga implementation running the binary image compiled with
   option `--target=rv32i-fpga`
   * <https://github.com/calint/tang-nano-9k--riscv--cache-psram>
   * <https://github.com/calint/tang-nano-20k--riscv--cache-sdram>
@@ -106,9 +109,9 @@ examples:
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
 C/C++ Header                    54           4915           1491          16445
-C++                              1             64             13            288
+C++                              1             70             16            318
 -------------------------------------------------------------------------------
-SUM:                            55           4979           1504          16733
+SUM:                            55           4985           1507          16763
 -------------------------------------------------------------------------------
 ```
 

@@ -9,7 +9,8 @@
 /prog
 /prog-uart
 /roome
-gen-rv32i.bin
+# rv32i images are named after their source and target
+*-rv32i*.bin
 /diff.baz
 /.idea/
 lcov.info
