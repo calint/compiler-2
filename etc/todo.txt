@@ -62,11 +62,19 @@
                assignment fall back, a callee name shadowing a caller name,
                an operand changed in the body before the 'if' keeps its
                value from the call
-    [ ] a bool loaded from memory is normalized again: 'lbu; sltu t0, zero,
+    [-] a bool loaded from memory is normalized again: 'lbu; sltu t0, zero,
         t0', a stored bool is already 0 or 1
-        => not true today: 'read(0, flags)' into a 'bool' array stores any
-           byte, so dropping the 'sltu' needs 'read'/'write' to reject
-           'bool' arrays first (language decision)
+        => not a normalization: 'assert(eq)' passes the shorthand 'eq', a
+           bool expression without a right hand side like 'if eq', which
+           compiles as 'eq != 0'
+        => done: a plain 'bool' identifier into a 'bool' destination without
+           inversion or branch is copied ('is_bool_copy'), 'assert(eq)' is
+           'lbu' instead of 'lbu; sltu'
+        [ ] a non-bool cannot be assigned to a bool, so a bool is always 0
+            or 1, but 'read(0, flags)' into a 'bool' array stores any byte.
+            reject 'bool' arrays in 'read'
+            => for now the user ensures a 'read' into a 'bool' array stores
+               only 0 or 1, the copy above relies on it
     [ ] redundant copies and registers:
         [ ] 'x * 10' begins with 'addi t1, t0, 0' before the shift and add
             sequence

@@ -86,10 +86,10 @@ compiler writes the binary image itself.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           4788           1539          16478
+C/C++ Header                    55           4798           1544          16508
 C++                              1             58             10            273
 -------------------------------------------------------------------------------
-SUM:                            56           4846           1549          16751
+SUM:                            56           4856           1554          16781
 -------------------------------------------------------------------------------
 ```
 
@@ -689,8 +689,7 @@ main:
         sete byte [rbp + 288]
     bool.183.19.end:
     cmp.186.12:
-    cmp byte [rbp + 288], 0
-    setne r15b
+    mov r15b, byte [rbp + 288]
     bool.186.12.end:
     func.assert.186.5:
         if.32.27.186.5:
@@ -1961,7 +1960,7 @@ main:
 ;       [152:5] alias ok -> r15b
         if.32.27.152.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.152.5:
         cmp r15b, 0
         jne if.32.24.152.5.end
@@ -1992,7 +1991,7 @@ main:
 ;       [155:5] alias ok -> r15b
         if.32.27.155.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.155.5:
         cmp r15b, 0
         jne if.32.24.155.5.end
@@ -2014,7 +2013,7 @@ main:
 ;           [161:9] alias ok -> 1
             if.32.27.161.9:
 ;           [32:27] ? not ok
-;           [32:27] ? not ok
+;           [32:27] ? shorthand: not ok
             cmp.32.27.161.9:
 ;           [32:31] const eval to false
             if.32.24.161.9.end:
@@ -2025,7 +2024,7 @@ main:
 ;       [164:5] alias ok -> 1
         if.32.27.164.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.164.5:
 ;       [32:31] const eval to false
         if.32.24.164.5.end:
@@ -2129,7 +2128,7 @@ main:
 ;       [174:5] alias ok -> r15b
         if.32.27.174.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.174.5:
         cmp r15b, 0
         jne if.32.24.174.5.end
@@ -2173,7 +2172,7 @@ main:
 ;       [175:5] alias ok -> r15b
         if.32.27.175.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.175.5:
         cmp r15b, 0
         jne if.32.24.175.5.end
@@ -2264,7 +2263,7 @@ main:
 ;       [178:5] alias ok -> r15b
         if.32.27.178.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.178.5:
         cmp r15b, 0
         jne if.32.24.178.5.end
@@ -2328,7 +2327,7 @@ main:
 ;   [183:9] eq: bool (1 B @ [rbp + 288])
 ;   [183:9] eq = arrays_equal(arr[1], arr1[1], 3)
 ;   [183:19] ? arrays_equal(arr[1], arr1[1], 3)
-;   [183:19] ? arrays_equal(arr[1], arr1[1], 3)
+;   [183:19] ? shorthand: arrays_equal(arr[1], arr1[1], 3)
     cmp.183.19:
 ;       [183:19] arrays_equal(arr[1], arr1[1], 3)
 ;       [183:19] allocate named register rsi
@@ -2398,17 +2397,16 @@ main:
 ;   [186:5] assert(eq)
 ;   [186:12] allocate scratch register -> r15
 ;   [186:12] ? eq
-;   [186:12] ? eq
+;   [186:12] ? shorthand: eq
     cmp.186.12:
-    cmp byte [rbp + 288], 0
-    setne r15b
+    mov r15b, byte [rbp + 288]
     bool.186.12.end:
 ;   [32:6] assert(ok bool)
     func.assert.186.5:
 ;       [186:5] alias ok -> r15b
         if.32.27.186.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.186.5:
         cmp r15b, 0
         jne if.32.24.186.5.end
@@ -2446,7 +2444,7 @@ main:
 ;   [189:5] assert(not arrays_equal(arr, arr1, 4))
 ;   [189:12] allocate scratch register -> r15
 ;   [189:12] ? not arrays_equal(arr, arr1, 4)
-;   [189:12] ? not arrays_equal(arr, arr1, 4)
+;   [189:12] ? shorthand: not arrays_equal(arr, arr1, 4)
     cmp.189.12:
 ;       [189:16] arrays_equal(arr, arr1, 4)
 ;       [189:16] allocate named register rsi
@@ -2494,7 +2492,7 @@ main:
 ;       [189:5] alias ok -> r15b
         if.32.27.189.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.189.5:
         cmp r15b, 0
         jne if.32.24.189.5.end
@@ -2594,7 +2592,7 @@ main:
 ;       [193:5] alias ok -> r15b
         if.32.27.193.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.193.5:
         cmp r15b, 0
         jne if.32.24.193.5.end
@@ -2662,7 +2660,7 @@ main:
 ;       [196:5] alias ok -> r15b
         if.32.27.196.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.196.5:
         cmp r15b, 0
         jne if.32.24.196.5.end
@@ -2749,7 +2747,7 @@ main:
 ;       [202:5] alias ok -> r15b
         if.32.27.202.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.202.5:
         cmp r15b, 0
         jne if.32.24.202.5.end
@@ -2801,7 +2799,7 @@ main:
 ;       [203:5] alias ok -> r15b
         if.32.27.203.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.203.5:
         cmp r15b, 0
         jne if.32.24.203.5.end
@@ -2846,7 +2844,7 @@ main:
 ;       [215:5] alias ok -> r15b
         if.32.27.215.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.215.5:
         cmp r15b, 0
         jne if.32.24.215.5.end
@@ -2874,7 +2872,7 @@ main:
 ;       [216:5] alias ok -> r15b
         if.32.27.216.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.216.5:
         cmp r15b, 0
         jne if.32.24.216.5.end
@@ -2902,7 +2900,7 @@ main:
 ;   [221:5] assert(equal(p, q))
 ;   [221:12] allocate scratch register -> r15
 ;   [221:12] ? equal(p, q)
-;   [221:12] ? equal(p, q)
+;   [221:12] ? shorthand: equal(p, q)
     cmp.221.12:
 ;       [221:12] equal(p, q)
 ;       [221:12] allocate named register rsi
@@ -2924,7 +2922,7 @@ main:
 ;       [221:5] alias ok -> r15b
         if.32.27.221.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.221.5:
         cmp r15b, 0
         jne if.32.24.221.5.end
@@ -2945,7 +2943,7 @@ main:
 ;   [226:5] assert(not equal(p, q))
 ;   [226:12] allocate scratch register -> r15
 ;   [226:12] ? not equal(p, q)
-;   [226:12] ? not equal(p, q)
+;   [226:12] ? shorthand: not equal(p, q)
     cmp.226.12:
 ;       [226:16] equal(p, q)
 ;       [226:16] allocate named register rsi
@@ -2967,7 +2965,7 @@ main:
 ;       [226:5] alias ok -> r15b
         if.32.27.226.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.226.5:
         cmp r15b, 0
         jne if.32.24.226.5.end
@@ -3017,7 +3015,7 @@ main:
 ;       [230:5] alias ok -> r15b
         if.32.27.230.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.230.5:
         cmp r15b, 0
         jne if.32.24.230.5.end
@@ -3065,7 +3063,7 @@ main:
 ;       [234:5] alias ok -> r15b
         if.32.27.234.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.234.5:
         cmp r15b, 0
         jne if.32.24.234.5.end
@@ -3119,7 +3117,7 @@ main:
 ;       [238:5] alias ok -> r15b
         if.32.27.238.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.238.5:
         cmp r15b, 0
         jne if.32.24.238.5.end
@@ -3163,7 +3161,7 @@ main:
 ;       [241:5] alias ok -> r15b
         if.32.27.241.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.241.5:
         cmp r15b, 0
         jne if.32.24.241.5.end
@@ -3212,7 +3210,7 @@ main:
 ;       [244:5] alias ok -> r15b
         if.32.27.244.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.244.5:
         cmp r15b, 0
         jne if.32.24.244.5.end
@@ -3256,7 +3254,7 @@ main:
 ;       [249:5] alias ok -> r15b
         if.32.27.249.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.249.5:
         cmp r15b, 0
         jne if.32.24.249.5.end
@@ -3284,7 +3282,7 @@ main:
 ;       [250:5] alias ok -> r15b
         if.32.27.250.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.250.5:
         cmp r15b, 0
         jne if.32.24.250.5.end
@@ -3346,7 +3344,7 @@ main:
 ;       [256:5] alias ok -> r15b
         if.32.27.256.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.256.5:
         cmp r15b, 0
         jne if.32.24.256.5.end
@@ -3374,7 +3372,7 @@ main:
 ;       [257:5] alias ok -> r15b
         if.32.27.257.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.257.5:
         cmp r15b, 0
         jne if.32.24.257.5.end
@@ -3402,7 +3400,7 @@ main:
 ;       [258:5] alias ok -> r15b
         if.32.27.258.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.258.5:
         cmp r15b, 0
         jne if.32.24.258.5.end
@@ -3455,7 +3453,7 @@ main:
 ;       [262:5] alias ok -> r15b
         if.32.27.262.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.262.5:
         cmp r15b, 0
         jne if.32.24.262.5.end
@@ -3483,7 +3481,7 @@ main:
 ;       [263:5] alias ok -> r15b
         if.32.27.263.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.263.5:
         cmp r15b, 0
         jne if.32.24.263.5.end
@@ -3524,7 +3522,7 @@ main:
 ;       [266:5] alias ok -> r15b
         if.32.27.266.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.266.5:
         cmp r15b, 0
         jne if.32.24.266.5.end
@@ -3552,7 +3550,7 @@ main:
 ;       [267:5] alias ok -> r15b
         if.32.27.267.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.267.5:
         cmp r15b, 0
         jne if.32.24.267.5.end
@@ -3580,7 +3578,7 @@ main:
 ;       [268:5] alias ok -> r15b
         if.32.27.268.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.268.5:
         cmp r15b, 0
         jne if.32.24.268.5.end
@@ -3641,7 +3639,7 @@ main:
 ;       [274:5] alias ok -> r15b
         if.32.27.274.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.274.5:
         cmp r15b, 0
         jne if.32.24.274.5.end
@@ -3718,7 +3716,7 @@ main:
 ;       [276:5] alias ok -> r15b
         if.32.27.276.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.276.5:
         cmp r15b, 0
         jne if.32.24.276.5.end
@@ -3830,7 +3828,7 @@ main:
 ;       [280:5] alias ok -> r15b
         if.32.27.280.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.280.5:
         cmp r15b, 0
         jne if.32.24.280.5.end
@@ -3966,7 +3964,7 @@ main:
 ;       [289:5] alias ok -> r15b
         if.32.27.289.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.289.5:
         cmp r15b, 0
         jne if.32.24.289.5.end
@@ -3984,7 +3982,7 @@ main:
 ;   [290:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) ))
 ;   [290:12] allocate scratch register -> r15
 ;   [290:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) )
-;   [290:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) )
+;   [290:12] ? shorthand: arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) )
     cmp.290.12:
 ;       [290:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds.locations) )
 ;       [290:12] allocate named register rsi
@@ -4068,7 +4066,7 @@ main:
 ;       [290:5] alias ok -> r15b
         if.32.27.290.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.290.5:
         cmp r15b, 0
         jne if.32.24.290.5.end
@@ -4110,7 +4108,7 @@ main:
 ;       [296:5] alias ok -> r15b
         if.32.27.296.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.296.5:
         cmp r15b, 0
         jne if.32.24.296.5.end
@@ -4154,7 +4152,7 @@ main:
 ;       [297:5] alias ok -> r15b
         if.32.27.297.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.297.5:
         cmp r15b, 0
         jne if.32.24.297.5.end
@@ -4198,7 +4196,7 @@ main:
 ;       [298:5] alias ok -> r15b
         if.32.27.298.5:
 ;       [32:27] ? not ok
-;       [32:27] ? not ok
+;       [32:27] ? shorthand: not ok
         cmp.32.27.298.5:
         cmp r15b, 0
         jne if.32.24.298.5.end
@@ -4616,7 +4614,7 @@ func.print_num:
     loop.126.5.end:
     if.133.8:
 ;   [133:8] ? is_negative
-;   [133:8] ? is_negative
+;   [133:8] ? shorthand: is_negative
     cmp.133.8:
     cmp byte [rbx + 40], 0
     je if.133.5.end

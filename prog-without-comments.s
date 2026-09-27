@@ -263,8 +263,7 @@ main:
         sete byte [rbp + 288]
     bool.183.19.end:
     cmp.186.12:
-    cmp byte [rbp + 288], 0
-    setne r15b
+    mov r15b, byte [rbp + 288]
     bool.186.12.end:
     func.assert.186.5:
         if.32.27.186.5:

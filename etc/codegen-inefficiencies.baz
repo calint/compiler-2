@@ -82,7 +82,7 @@ func main() {
     # runtime bool argument: 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
     assert(x == 1)
 
-    # bool loaded from memory: redundant 'sltu t0, zero, t0'
+    # bool shorthand argument: copied with 'lbu', no 'sltu t0, zero, t0'
     var eq bool = x == 1
     assert(eq)
 

@@ -113,8 +113,8 @@ class expr_bool_op final : public statement {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent,
-                  statement::trimmed_source(
-                      *this, "?", inverted ? " 'or' inverted: " : " "));
+                  statement::trimmed_source(*this, "?",
+                                            comment_label("or", inverted)));
 
         x.label(indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
@@ -213,8 +213,8 @@ class expr_bool_op final : public statement {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent,
-                  statement::trimmed_source(
-                      *this, "?", inverted ? " 'and' inverted: " : " "));
+                  statement::trimmed_source(*this, "?",
+                                            comment_label("and", inverted)));
 
         x.label(indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
@@ -487,6 +487,23 @@ class expr_bool_op final : public statement {
                         trimmed_source(lhs), lhs_type.name())};
     }
 
+    // a shorthand is named since its source shows no comparison with 0
+    [[nodiscard]] auto comment_label(const std::string_view list_op,
+                                     const bool inverted) const -> std::string {
+
+        if (inverted and is_shorthand_) {
+            return std::format(" '{}' inverted shorthand: ", list_op);
+        }
+        if (inverted) {
+            return std::format(" '{}' inverted: ", list_op);
+        }
+        if (is_shorthand_) {
+            return " shorthand: ";
+        }
+
+        return " ";
+    }
+
     // the operation that gives the same result with the operands swapped
     [[nodiscard]] static auto mirrored_operation(const std::string_view op)
         -> std::string_view {
@@ -540,6 +557,20 @@ class expr_bool_op final : public statement {
 
         std::vector<operand> allocated_registers;
 
+        // optimization: copy a plain 'bool' instead of evaluating the
+        // shorthand as '!= 0'
+        if (is_bool_copy(tc, lhs, action)) {
+            machine& x{tc.machine()};
+
+            const operand src{
+                resolve_expr(tc, indent, lhs, true, allocated_registers)};
+
+            x.copy_value(tok(), indent, action.destination, src);
+            x.free_scratch_registers(tok(), indent, allocated_registers);
+
+            return;
+        }
+
         operand dst;
         if (lhs.is_expression() and action.destination.is_register() and
             lhs.get_type().name() == action.destination.type_ref().name()) {
@@ -556,6 +587,20 @@ class expr_bool_op final : public statement {
         x.compare_and_branch(tok(), indent, dst,
                              operand::imm("0", tc.get_type_default()), action,
                              allocated_registers);
+    }
+
+    // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
+    // inversion and branches keep the comparison which is shorter on x86
+    [[nodiscard]] static auto
+    is_bool_copy(const toc& tc, const expr_arith& lhs,
+                 const machine::comparison_action& action) -> bool {
+
+        const std::string_view bool_name{tc.get_type_bool().name()};
+
+        return not lhs.is_expression() and lhs.get_unary_ops().is_empty() and
+               lhs.get_type().name() == bool_name and not action.inverted and
+               action.target.empty() and not action.destination.is_empty() and
+               action.destination.type_ref().name() == bool_name;
     }
 
     [[nodiscard]] static auto
