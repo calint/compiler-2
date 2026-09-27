@@ -81,8 +81,6 @@
             'slli t0, t0, 2')
         [ ] the divide call loads the dividend into a scratch register then
             copies it: 'lw t2; addi a0, t2, 0' instead of 'lw a0'
-        [ ] 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per field
-            instead of computing the address once
     [ ] zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
         shorter than the 6 instruction loop; choose by instruction count
     [x] rv32i bounds check with both '--checks=lower,upper': after the lower
@@ -96,12 +94,28 @@
            width when the low bits do not depend on the high bits
            ('keeps_low_bits_when_narrowed'), the store truncates; x86 keeps
            its narrow registers unless the wide version is shorter
+[ ] register allocation optimizations spanning past local scope of 1 machine
+    operation, examples in etc/codegen-inefficiencies.baz
+    [ ] a value is loaded again right after it was stored: 'i = i - 1' ends
+        with 'sw t0, 28(s1)' and 'buf[i]' starts with 'lw t0, 28(s1)';
+        'n = n / 10' then 'if n == 0' is 'sw a0, 24(s1); lw t0, 24(s1)'
+        => needs to know which register still holds a variable between
+           statements
+    [ ] 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per field instead
+        of computing the address once
     [ ] multiply/divide helpers: an expression into memory keeps its value in
         the destination between helper calls, 'sw a0, r; lw a0, r' before
         each next call ('r = a * b * c * d'), and through a scratch register
         each call copies 'addi a0, t0, 0' and back 'addi t0, a0, 0'
         => accumulating in 'a0' across the calls would need register
            targeting for helper operands
+    [ ] registers live across a helper call are saved on the stack:
+        'buf[i] = i8('0' - n % 10)' holds the index in 't0' and '0' in 't1'
+        during the divide call ('addi sp; sw; sw; call; lw; lw; addi sp')
+        => a constant or plain load could be delayed until after the call
+    [ ] a non-inline call saves and restores all 30 registers with
+        'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
+        'print_num(a)'
 [ ] optimizations when constant known at compile
 [o] low priority: code after an unconditional 'exit' is generated, e.g. after
     a constant false 'assert' and the implicit 'exit(0)' after an explicit one
