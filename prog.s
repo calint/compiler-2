@@ -213,6 +213,7 @@ main:
 ;   [173:9] ix
     mov r15, qword [rbp + 248]
 ;   [173:14] r15 + 1
+;   [173:14] src: constant
     add r15, 1
 ;   [173:9] bounds check
 ;   [173:9] allocate scratch register -> r14
@@ -683,6 +684,7 @@ main:
 ;   [192:24] ix
     mov r14, qword [rbp + 248]
 ;   [192:29] r14 - 1
+;   [192:29] src: constant
     sub r14, 1
 ;   [192:24] bounds check
 ;   [192:24] allocate scratch register -> r13
@@ -845,11 +847,13 @@ main:
 ;       [200:13] instructions without scratch register 3, with 4
 ;       [200:13] e
 ;       [200:17] e + i
+;       [200:17] src: operand
 ;       [200:17] allocate scratch register -> r14
         mov r14, qword [rbp + 320]
         add qword [r15], r14
 ;       [200:17] free scratch register r14
 ;       [200:21] e + n
+;       [200:21] src: constant
         add qword [r15], 2
         foo.199.5.continue:
             add r15, 8
@@ -882,8 +886,10 @@ main:
 ;       [202:23] 3
         mov r13, 3
 ;       [202:27] r13 + 0
+;       [202:27] src: constant
         add r13, 0
 ;       [202:31] r13 + 2
+;       [202:31] src: constant
         add r13, 2
     cmp qword [rbp + r14 * 8 + 296], r13
 ;   [202:12] free scratch register r13
@@ -934,8 +940,10 @@ main:
 ;       [203:23] 5
         mov r13, 5
 ;       [203:27] r13 + 1
+;       [203:27] src: constant
         add r13, 1
 ;       [203:31] r13 + 2
+;       [203:31] src: constant
         add r13, 2
     cmp qword [rbp + r14 * 8 + 296], r13
 ;   [203:12] free scratch register r13
@@ -1249,7 +1257,7 @@ main:
         mov qword [rbp + 360], r15
 ;       [67:11] free scratch register r15
 ;       [67:17] res * 2
-;       [67:17] dst is not reg, src is const
+;       [67:17] src: constant
         sal qword [rbp + 360], 1
     func.baz.237.13.end:
 ;   [238:5] assert(k == 2)
@@ -1293,7 +1301,7 @@ main:
 ;       [67:11] arg
         mov qword [rbp + 360], 1
 ;       [67:17] res * 2
-;       [67:17] dst is not reg, src is const
+;       [67:17] src: constant
         sal qword [rbp + 360], 1
     func.baz.240.9.end:
 ;   [241:5] assert(k == 2)
@@ -1340,7 +1348,7 @@ main:
 ;       [67:11] arg
         mov qword [rbp + 368], 3
 ;       [67:17] res * 2
-;       [67:17] dst is not reg, src is const
+;       [67:17] src: constant
         sal qword [rbp + 368], 1
     func.baz.243.21.end:
 ;   [243:29] copy field 'y'
@@ -1465,7 +1473,7 @@ main:
 ;   [255:23] x
     mov r15, qword [rbp + 400]
 ;   [255:27] r15 * 10
-;   [255:27] dst is reg, src is const
+;   [255:27] src: constant
     imul r15, 10
     mov qword [rbp + 416], r15
 ;   [255:23] free scratch register r15
@@ -2403,6 +2411,7 @@ main:
 ;       [304:19] instructions without scratch register 1, with 3
 ;       [304:19] counter
 ;       [304:29] counter + 1
+;       [304:29] src: constant
         add qword [rbp + 1056], 1
 ;       [305:9] print_num(counter)
 ;       [305:9] address of argument 'counter' to parameter 'num'
@@ -2490,6 +2499,7 @@ main:
             mov byte [rbp + 1064], r15b
 ;           [80:19] free scratch register r15
 ;           [80:28] self.len - 1
+;           [80:28] src: constant
             sub byte [rbp + 1064], 1
         func.str.input.308.12.end:
         if.310.12:
@@ -2690,6 +2700,7 @@ func.print_num:
 ;       [127:13] instructions without scratch register 1, with 3
 ;       [127:13] i
 ;       [127:17] i - 1
+;       [127:17] src: constant
         sub qword [rbx + 48], 1
 ;       [128:9] buf[i] = i8('0' - n % 10)
 ;       [128:13] allocate scratch register -> r15
@@ -2713,11 +2724,12 @@ func.print_num:
 ;           [128:21] '0'
             mov r14, 48
 ;           [128:29] r14 - n % 10
+;           [128:29] src: expression
 ;           [128:29] allocate scratch register -> r13
 ;           [128:27] n
             mov r13, qword [rbx + 32]
 ;           [128:31] r13 % 10
-;           [128:31] div const
+;           [128:31] src: constant
 ;           [128:31] allocate named register rax
             mov rax, r13
 ;           [128:31] allocate named register rdx
@@ -2738,7 +2750,7 @@ func.print_num:
 ;       [129:13] instructions without scratch register 5, with 7
 ;       [129:13] n
 ;       [129:17] n / 10
-;       [129:17] div const
+;       [129:17] src: constant
 ;       [129:17] allocate named register rax
         mov rax, qword [rbx + 32]
 ;       [129:17] allocate named register rdx
@@ -2771,6 +2783,7 @@ func.print_num:
 ;       [134:13] instructions without scratch register 1, with 3
 ;       [134:13] i
 ;       [134:17] i - 1
+;       [134:17] src: constant
         sub qword [rbx + 48], 1
 ;       [135:9] buf[i] = '-'
 ;       [135:13] allocate scratch register -> r15
@@ -2841,11 +2854,13 @@ func.print_num:
 ;       [141:21] instructions without scratch register 1, with 3
 ;       [141:21] write_pos
 ;       [141:33] write_pos + 1
+;       [141:33] src: constant
         add qword [rbx + 56], 1
 ;       [142:9] i = i + 1
 ;       [142:13] instructions without scratch register 1, with 3
 ;       [142:13] i
 ;       [142:17] i + 1
+;       [142:17] src: constant
         add qword [rbx + 48], 1
         if.143.12:
 ;       [143:12] ? i == buf_count

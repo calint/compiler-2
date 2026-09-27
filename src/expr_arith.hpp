@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <functional>
 #include <memory>
 #include <ostream>
 #include <span>
@@ -594,11 +595,10 @@ class expr_arith final : public expression {
     static auto asm_op(toc& tc, const size_t indent, const char op,
                        const ident_info& dst, const statement& src) -> void {
 
+        // shifts are stored as one character but written as two
         std::string op_str{op};
-        if (op == '<') {
-            op_str.push_back('<');
-        } else if (op == '>') {
-            op_str.push_back('>');
+        if (op == '<' or op == '>') {
+            op_str.push_back(op);
         }
 
         machine& x{tc.machine()};
@@ -606,60 +606,38 @@ class expr_arith final : public expression {
         x.comment(src.tok(), indent,
                   statement::trimmed_source(src, dst.id, op_str));
 
-        if (op == '=') {
+        switch (op) {
+        case '=':
             asm_op_mov(tc, indent, dst, src);
-
             return;
-        }
-        if (op == '+') {
+
+        case '+':
+        case '-':
             asm_op_add_sub(tc, indent, op, dst, src);
-
             return;
-        }
-        if (op == '-') {
-            asm_op_add_sub(tc, indent, op, dst, src);
 
-            return;
-        }
-        if (op == '*') {
+        case '*':
             asm_op_mul(tc, indent, dst, src);
-
             return;
-        }
-        if (op == '/') {
+
+        case '/':
+        case '%':
             asm_op_div(tc, indent, op, dst, src);
-
             return;
-        }
-        if (op == '%') {
-            asm_op_div(tc, indent, op, dst, src);
 
-            return;
-        }
-        if (op == '&') {
+        case '&':
+        case '|':
+        case '^':
             asm_op_bitwise(tc, indent, op, dst, src);
-
             return;
-        }
-        if (op == '|') {
-            asm_op_bitwise(tc, indent, op, dst, src);
 
-            return;
-        }
-        if (op == '^') {
-            asm_op_bitwise(tc, indent, op, dst, src);
-
-            return;
-        }
-        if (op == '<') {
+        case '<':
+        case '>':
             asm_op_shift(tc, indent, op, dst, src);
-
             return;
-        }
-        if (op == '>') {
-            asm_op_shift(tc, indent, op, dst, src);
 
-            return;
+        default:
+            std::unreachable();
         }
     }
 
@@ -714,73 +692,87 @@ class expr_arith final : public expression {
         return reg;
     }
 
+    // compiles 'src' into an operand the operation accepts, emits the
+    // operation and frees the registers that producing the operand needed
+    static auto emit_with_source(
+        toc& tc, const size_t indent, const statement& src,
+        const type& expression_type, const type& unary_type,
+        const std::function_ref<void(const operand&, bool is_scratch)> emit)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        if (src.is_expression()) {
+            x.comment(src.tok(), indent, "src: expression");
+
+            const operand reg{
+                compile_to_scratch(tc, indent, src, expression_type)};
+
+            emit(reg, true);
+            x.free_scratch_register(src.tok(), indent, reg);
+
+            return;
+        }
+
+        const ident_info src_info{tc.make_ident_info(src)};
+        if (src_info.is_const()) {
+            x.comment(src.tok(), indent, "src: constant");
+            emit(src.make_constant_operand(src_info), false);
+
+            return;
+        }
+
+        std::vector<operand> lea_registers;
+        const operand src_operand{
+            tc.get_lea_operand(indent, src, src_info, lea_registers)};
+
+        if (src.get_unary_ops().is_empty()) {
+            x.comment(src.tok(), indent, "src: operand");
+            emit(src_operand, false);
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
+
+            return;
+        }
+
+        x.comment(src.tok(), indent, "src: operand with unary ops");
+
+        const operand reg{
+            compile_unary_to_scratch(tc, indent, src, src_operand, unary_type)};
+
+        emit(reg, true);
+        x.free_scratch_register(src.tok(), indent, reg);
+        x.free_scratch_registers(src.tok(), indent, lea_registers);
+    }
+
     static auto asm_op_mul(toc& tc, const size_t indent,
                            const ident_info& dst_info, const statement& src)
         -> void {
 
         machine& x{tc.machine()};
 
-        // does 'src' need to be compiled?
-        if (src.is_expression()) {
-            // yes, compile it to a scratch register
-            const operand reg{
-                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
+        // a scratch register factor can be overwritten by the backend
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
+            [&](const operand& factor, const bool is_scratch) -> void {
+                x.multiply(src.tok(), indent, dst_info.operand, factor,
+                           is_scratch);
+            });
+    }
 
-            if (dst_info.is_register() and not dst_info.operand.is_memory()) {
-                x.comment(src.tok(), indent, "imul: expr reg");
-            } else {
-                x.comment(src.tok(), indent, "imul: expr not reg");
-            }
-            x.multiply(src.tok(), indent, dst_info.operand, reg, true);
-            x.free_scratch_register(src.tok(), indent, reg);
+    // a register or memory location, neither computed nor constant
+    [[nodiscard]] static auto is_stored_value(const toc& tc,
+                                              const statement& src) -> bool {
 
-            return;
-        }
+        return not src.is_expression() and
+               not tc.make_ident_info(src).is_const();
+    }
 
-        // not an expression, either a register or memory location, or constant
+    // a lone negation folds into add/sub: 'a - -b' is 'a + b'
+    [[nodiscard]] static auto is_negated_operand(const toc& tc,
+                                                 const statement& src) -> bool {
 
-        const ident_info src_info{tc.make_ident_info(src)};
-
-        const std::string_view dst_kind{dst_info.is_register() ? "reg"
-                                                               : "not reg"};
-
-        if (src_info.is_const()) {
-            x.comment(src.tok(), indent, "dst is {}, src is const", dst_kind);
-            x.multiply(src.tok(), indent, dst_info.operand,
-                       src.make_constant_operand(src_info));
-
-            return;
-        }
-
-        // source is not a constant
-
-        std::vector<operand> lea_registers;
-        const operand src_operand{
-            tc.get_lea_operand(indent, src, src_info, lea_registers)};
-
-        const unary_ops& uops{src.get_unary_ops()};
-        if (uops.is_empty()) {
-            x.comment(src.tok(), indent, "dst is {}, src is not const, no uops",
-                      dst_kind);
-
-            x.multiply(src.tok(), indent, dst_info.operand, src_operand);
-
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
-
-            return;
-        }
-
-        // source is not a constant and unary ops need to be applied
-
-        x.comment(src.tok(), indent, "dst is {}, src is not const, uops",
-                  dst_kind);
-
-        const operand reg{compile_unary_to_scratch(tc, indent, src, src_operand,
-                                                   dst_info.type_ref())};
-
-        x.multiply(src.tok(), indent, dst_info.operand, reg, true);
-        x.free_scratch_register(src.tok(), indent, reg);
-        x.free_scratch_registers(src.tok(), indent, lea_registers);
+        return is_stored_value(tc, src) and
+               src.get_unary_ops().is_only_negated();
     }
 
     static auto asm_op_add_sub(toc& tc, const size_t indent, const char op,
@@ -789,48 +781,14 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        // does 'src' need to be compiled?
-        if (src.is_expression()) {
-            const operand reg{
-                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
+        if (is_negated_operand(tc, src)) {
+            x.comment(src.tok(), indent, "src: negated operand");
 
-            x.add_subtract(src.tok(), indent, op, dst_info.operand, reg);
+            const ident_info src_info{tc.make_ident_info(src)};
+            std::vector<operand> lea_registers;
+            const operand src_operand{
+                tc.get_lea_operand(indent, src, src_info, lea_registers)};
 
-            x.free_scratch_register(src.tok(), indent, reg);
-
-            return;
-        }
-
-        // 'src' is not an expression
-
-        const ident_info src_info{tc.make_ident_info(src)};
-        if (src_info.is_const()) {
-            x.add_subtract(src.tok(), indent, op, dst_info.operand,
-                           src.make_constant_operand(src_info));
-
-            return;
-        }
-
-        // 'src' is not a constant
-
-        std::vector<operand> lea_registers;
-        const operand src_operand{
-            tc.get_lea_operand(indent, src, src_info, lea_registers)};
-
-        const unary_ops& uops{src.get_unary_ops()};
-        if (uops.is_empty()) {
-            x.add_subtract(src.tok(), indent, op, dst_info.operand,
-                           src_operand);
-
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
-
-            return;
-        }
-
-        // has unary ops
-
-        if (uops.is_only_negated()) {
-            // has unary ops
             x.add_subtract(src.tok(), indent, op == '+' ? '-' : '+',
                            dst_info.operand, src_operand);
 
@@ -839,14 +797,11 @@ class expr_arith final : public expression {
             return;
         }
 
-        // multiple unary ops
-
-        const operand reg{compile_unary_to_scratch(tc, indent, src, src_operand,
-                                                   tc.get_type_default())};
-
-        x.add_subtract(src.tok(), indent, op, dst_info.operand, reg);
-        x.free_scratch_register(src.tok(), indent, reg);
-        x.free_scratch_registers(src.tok(), indent, lea_registers);
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
+            [&](const operand& term, const bool) -> void {
+                x.add_subtract(src.tok(), indent, op, dst_info.operand, term);
+            });
     }
 
     static auto asm_op_bitwise(toc& tc, const size_t indent, const char op,
@@ -855,50 +810,11 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        // does 'src' need to be compiled?
-        if (src.is_expression()) {
-            const operand reg{
-                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
-
-            x.bitwise(src.tok(), indent, op, dst_info.operand, reg);
-            x.free_scratch_register(src.tok(), indent, reg);
-
-            return;
-        }
-
-        // 'src' is not an expression
-
-        const ident_info src_info{tc.make_ident_info(src)};
-        if (src_info.is_const()) {
-            x.bitwise(src.tok(), indent, op, dst_info.operand,
-                      src.make_constant_operand(src_info));
-
-            return;
-        }
-
-        // 'src' is not an expression and not a constant, an identifier
-
-        std::vector<operand> lea_registers;
-        const operand src_operand{
-            tc.get_lea_operand(indent, src, src_info, lea_registers)};
-
-        const unary_ops& uops{src.get_unary_ops()};
-        if (uops.is_empty()) {
-            x.bitwise(src.tok(), indent, op, dst_info.operand, src_operand);
-
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
-
-            return;
-        }
-
-        // 'src' is not an expression and not a constant and has unary ops
-
-        const operand reg{compile_unary_to_scratch(tc, indent, src, src_operand,
-                                                   tc.get_type_default())};
-
-        x.bitwise(src.tok(), indent, op, dst_info.operand, reg);
-        x.free_scratch_register(src.tok(), indent, reg);
-        x.free_scratch_registers(src.tok(), indent, lea_registers);
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
+            [&](const operand& value, const bool) -> void {
+                x.bitwise(src.tok(), indent, op, dst_info.operand, value);
+            });
     }
 
     static auto asm_op_shift(toc& tc, const size_t indent, const char op,
@@ -907,57 +823,17 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        // does 'src' need to be compiled?
-        if (src.is_expression()) {
-            x.comment(src.tok(), indent, "shf: expr");
-            const operand count_register{
-                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
-
-            x.shift(src.tok(), indent, op, dst_info.operand, count_register);
-            x.free_scratch_register(src.tok(), indent, count_register);
-
-            return;
+        // the backend reserves a register for the count
+        if (is_stored_value(tc, src)) {
+            x.validate_shift_operand(src.tok(),
+                                     tc.make_ident_info(src).operand);
         }
 
-        // 'src' is not an expression
-
-        const ident_info src_info{tc.make_ident_info(src)};
-        if (src_info.is_const()) {
-            x.comment(src.tok(), indent, "shf: const");
-            x.shift(src.tok(), indent, op, dst_info.operand,
-                    src.make_constant_operand(src_info));
-
-            return;
-        }
-
-        x.validate_shift_operand(src.tok(), src_info.operand);
-
-        // 'src' is not a constant
-
-        std::vector<operand> lea_registers;
-        const operand src_operand{
-            tc.get_lea_operand(indent, src, src_info, lea_registers)};
-
-        const unary_ops& uops{src.get_unary_ops()};
-        if (uops.is_empty()) {
-            x.comment(src.tok(), indent, "shf: not const, no uops");
-            x.shift(src.tok(), indent, op, dst_info.operand, src_operand);
-
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
-
-            return;
-        }
-
-        // unary ops need to be applied on the argument src
-
-        x.comment(src.tok(), indent, "shf: not const, uops");
-
-        const operand count_register{compile_unary_to_scratch(
-            tc, indent, src, src_operand, dst_info.type_ref())};
-
-        x.shift(src.tok(), indent, op, dst_info.operand, count_register);
-        x.free_scratch_register(src.tok(), indent, count_register);
-        x.free_scratch_registers(src.tok(), indent, lea_registers);
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
+            [&](const operand& count, const bool) -> void {
+                x.shift(src.tok(), indent, op, dst_info.operand, count);
+            });
     }
 
     static auto asm_op_div(toc& tc, const size_t indent, const char op,
@@ -966,54 +842,16 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        // does 'src' need to be compiled?
-        if (src.is_expression()) {
-            x.comment(src.tok(), indent, "div expression");
-            const operand reg{
-                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
-
-            x.divide(src.tok(), indent, op, dst_info.operand, reg);
-            x.free_scratch_register(src.tok(), indent, reg);
-
-            return;
+        // the backend reserves registers for division
+        if (is_stored_value(tc, src)) {
+            x.validate_division_operand(src.tok(),
+                                        tc.make_ident_info(src).operand);
         }
 
-        // 'src' is not an expression
-
-        const ident_info src_info{tc.make_ident_info(src)};
-        if (src_info.is_const()) {
-            x.comment(src.tok(), indent, "div const");
-            x.divide(src.tok(), indent, op, dst_info.operand,
-                     src.make_constant_operand(src_info));
-
-            return;
-        }
-
-        x.validate_division_operand(src.tok(), src_info.operand);
-
-        // 'src' is not an expression and not a constant
-
-        std::vector<operand> lea_registers;
-        const operand src_operand{
-            tc.get_lea_operand(indent, src, src_info, lea_registers)};
-
-        const unary_ops& uops{src.get_unary_ops()};
-        if (uops.is_empty()) {
-            x.comment(src.tok(), indent, "div not const, no uops");
-            x.divide(src.tok(), indent, op, dst_info.operand, src_operand);
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
-
-            return;
-        }
-
-        // 'src' is not an expression and not a constant and has unary ops
-
-        x.comment(src.tok(), indent, "div not const, uops");
-        const operand reg{compile_unary_to_scratch(tc, indent, src, src_operand,
-                                                   dst_info.type_ref())};
-
-        x.divide(src.tok(), indent, op, dst_info.operand, reg);
-        x.free_scratch_register(src.tok(), indent, reg);
-        x.free_scratch_registers(src.tok(), indent, lea_registers);
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
+            [&](const operand& divisor, const bool) -> void {
+                x.divide(src.tok(), indent, op, dst_info.operand, divisor);
+            });
     }
 };
