@@ -19,18 +19,13 @@ medium
 --------------------------------------------------------------------------------
 generated assembly, easiest first
 --------------------------------------------------------------------------------
-[ ] register allocation: the scaled index goes into a new register instead of
-    reusing the index register when it is no longer needed ('slli t1, t0, 2'
-    instead of 'slli t0, t0, 2') (etc/codegen-inefficiencies.baz)
-[ ] post processing optimization for: var b=-(-a*-a)
-      mov r15,qword[rbp-8]
-      neg r15
-      neg r15
-      mov qword[rbp-16],r15
-[ ] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
-    uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
-    then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead
-    of a 20 iteration 'sb' loop (etc/codegen-inefficiencies.baz)
+[ ] rv32i: a zero, copy or compare loop at a known offset from s0/s1 inside a
+    word keeps one width throughout; peel 'sb'/'sh' up to the word boundary
+    before the loop, e.g. 'var big[80] i8' at an odd offset loops 80 'sb'
+    => unrolled accesses are peeled ('for_each_aligned_part'); a loop needs
+       the start position in 'bulk_addresses_', a peeled head and the
+       existing tail; 'array_copy'/'arrays_equal' have a run-time count that
+       may be smaller than the head
 [ ] constant known at compile: an identifier without an index register can
     compute its offset at compile time ('stmt_identifier::init_reg_offset')
 [ ] constant known at compile: fold constant elements in expressions
@@ -46,6 +41,25 @@ generated assembly, easiest first
        call saves only those
 [ ] low priority: code after an unconditional 'exit' elsewhere than the end of
     'main' is generated, e.g. after a constant false 'assert'
+[ ] low priority: register allocation: the scaled index goes into a new
+    register instead of reusing the index register when it is no longer
+    needed ('slli t1, t0, 2' instead of 'slli t0, t0, 2')
+    (etc/codegen-inefficiencies.baz)
+    => saves no instructions, only one scratch register briefly within one
+       machine operation; the backend cannot know the index is dead, so the
+       frontend would have to mark operands whose index register it owns
+[ ] low priority: self-cancelling unary ops are all emitted: '--a', '~~a',
+    '-(-a)' give two 'neg'/'not' (x86 on memory: 'neg qword [rbp + 8]'
+    twice), rv32i '-(-(a + 1))' adds 'sw'/'lw' between the two
+    'sub t0, zero, t0'
+    => rare in real code; an assembler peephole could drop adjacent
+       identical 'neg'/'not' pairs on the same operand (x86) and
+       'sub r, zero, r' or 'xori r, r, -1' pairs (rv32i), including across a
+       store and reload of the same address; a frontend alternative (cancel
+       pairs in 'unary_ops' and across a parenthesized single element) was
+       assessed but touches 4 files and a new virtual hook
+    => the old example 'var b=-(-a*-a)' no longer emits 'neg; neg', its
+       remaining cost is algebraic ('-a * -a' is 'a * a', 'a' loaded twice)
 [ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
     compares, then the remaining dword, word and byte compares
 [ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
@@ -317,6 +331,20 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
+    uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
+    then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead
+    of a 20 iteration 'sb' loop (etc/codegen-inefficiencies.baz)
+    => unrolled zero (up to 16 stores), copy (up to 16 bytes) and constant
+       stores take at each offset the widest access that fits and is aligned
+       for every address ('for_each_aligned_part', 'start_of'); 20 bytes at
+       's0 + 329' is 'sb', 'sh', 4 'sw', 'sb'; a copy needs both addresses at
+       the same position within a word to widen; peeled stores count for the
+       zero unroll cap; an assembly comment names the parts and the start
+       when peeling widened them, and a zero loop names the start it did not
+       peel; loops are the open medium item; x86 unchanged; test 591,
+       tests/557.rv32i.stores updated (7 bytes: immediates instead of 'la'
+       and 4 load/store pairs)
 [x] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
     derive a larger alignment from the addresses as 'copy' and 'zero' do
     => 'set_array_copy_source/destination' (also used by
@@ -380,6 +408,7 @@ resolved
        byte count, the cap only bounds code size; 20 bytes word aligned is 5
        'sw', 20 bytes byte aligned (20 'sb') still loops, see the medium item
        about peeling to the word boundary
+       => now peeled: 'sb', 'sh', 4 'sw', 'sb'
 [x] make sure there are comments in the assembler sections that implement nuob
     it should be clear which assembler code belongs to which nuob check
     => both targets: 'check_bounds' comments each part as 'lower bound

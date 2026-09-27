@@ -461,6 +461,7 @@ class machine_x86_64 final : public machine {
 
     auto branch(const size_t indent, const std::string_view target)
         -> void override {
+
         assembler_.jmp(indent, target);
     }
 
@@ -481,12 +482,14 @@ class machine_x86_64 final : public machine {
     auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
               const operand& descriptor, const operand& address,
               const operand& count) -> void override {
+
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count, 0);
     }
 
     auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
                const operand& descriptor, const operand& address,
                const operand& count) -> void override {
+
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count, 1);
     }
 
@@ -938,6 +941,7 @@ class machine_x86_64 final : public machine {
 
     [[nodiscard]] auto frame_base_register() const
         -> std::string_view override {
+
         return "rbx";
     }
 
@@ -961,6 +965,7 @@ class machine_x86_64 final : public machine {
 
     auto call_function(const size_t indent, const std::string_view label,
                        const operand& frame_address) -> void override {
+
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
         assert(frame_address.base_register() != "rsp");
@@ -1022,6 +1027,7 @@ class machine_x86_64 final : public machine {
 
     auto define_constant(const std::string_view name, const size_t value)
         -> void override {
+
         assembler_.define_constant(name, static_cast<int64_t>(value));
     }
 
@@ -1350,6 +1356,7 @@ class machine_x86_64 final : public machine {
                     const operand& dst, const operand& descriptor,
                     const operand& address, const operand& count,
                     const int syscall_number) -> void {
+
         for (const operand* value : {&dst, &descriptor, &address, &count}) {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == size_qword);
@@ -1805,6 +1812,7 @@ class machine_x86_64 final : public machine {
 
     [[nodiscard]] auto address_is_encodable(const operand& value) const
         -> bool {
+
         return not value.is_memory() or
                (std::in_range<int32_t>(value.displacement()) and
                 (value.index_register().empty() or
@@ -1816,6 +1824,7 @@ class machine_x86_64 final : public machine {
                                      const size_t indent, const operand& value,
                                      std::vector<operand>& registers)
         -> operand {
+
         if (address_is_encodable(value)) {
             return value;
         }

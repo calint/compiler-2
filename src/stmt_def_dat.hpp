@@ -457,6 +457,7 @@ class stmt_def_dat final : public statement {
 
     [[nodiscard]] static auto parse_bool_value(const token& tk, const type& tp)
         -> int64_t {
+
         if (tk.is_text("true")) {
             return 1;
         }

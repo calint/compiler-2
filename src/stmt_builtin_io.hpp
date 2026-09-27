@@ -14,6 +14,7 @@ class stmt_builtin_io final : public stmt_call {
   public:
     stmt_builtin_io(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
         : stmt_call{tc, std::move(uops), tk, tz.is_next_char_token('('), tz} {
+
         if (argument_count() < 2 or argument_count() > 4) {
             throw compiler_exception{tok(), "expected 2 to 4 arguments"};
         }
@@ -21,6 +22,7 @@ class stmt_builtin_io final : public stmt_call {
 
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));

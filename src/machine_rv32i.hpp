@@ -132,6 +132,7 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] static auto register_mask(const std::string_view name)
         -> uint32_t {
+
         const size_t index{register_index(name)};
         return index == register_names_.size() ? 0 : uint32_t{1} << index;
     }
@@ -159,6 +160,7 @@ class machine_rv32i : public machine {
 
     static auto validate_scalar(const token& src_loc_tk, const type& value_type)
         -> void {
+
         if (not value_type.is_builtin() or
             (value_type.size_bytes() != 1 and value_type.size_bytes() != 2 and
              value_type.size_bytes() != 4)) {
@@ -415,6 +417,7 @@ class machine_rv32i : public machine {
     lower_address_scaled_index(const token& src_loc_tk, const size_t indent,
                                const operand& address, const operand& result)
         -> operand {
+
         const std::string& base{address.base_register()};
         const std::string& result_name{result.base_register()};
 
@@ -1233,7 +1236,8 @@ class machine_rv32i : public machine {
     //         an index register or a pointer still loops words
     //       * the byte count may be known only at run time, so the tail is
     //         selected by testing its bits
-    //       * an odd start is not peeled to the word boundary (todo item)
+    //       * a loop keeps one width, so a start inside a word is not peeled
+    //         (todo item); unrolled accesses are ('for_each_aligned_part')
 
     [[nodiscard]] auto bulk_loop_width(const token& src_loc_tk,
                                        const size_t indent,
@@ -1302,14 +1306,12 @@ class machine_rv32i : public machine {
     }
 
     // variables and frames start word aligned so a direct offset from their
-    // base can prove more alignment than the type does
-    [[nodiscard]] auto access_alignment(const operand& address,
-                                        const size_t alignment) const
-        -> size_t {
+    // base has a known position within a word
+    [[nodiscard]] auto is_word_based(const operand& address) const -> bool {
 
         // an index register holds a value unknown at compile time
         if (not address.is_memory() or not address.index_register().empty()) {
-            return alignment;
+            return false;
         }
 
         const size_t base{register_index(address.base_register())};
@@ -1322,7 +1324,16 @@ class machine_rv32i : public machine {
 
         // other bases such as loaded pointers or bulk registers may hold any
         // address
-        if (not is_variables_base and not is_frame_base) {
+        return is_variables_base or is_frame_base;
+    }
+
+    // a direct offset from a word aligned base can prove more alignment than
+    // the type does
+    [[nodiscard]] auto access_alignment(const operand& address,
+                                        const size_t alignment) const
+        -> size_t {
+
+        if (not is_word_based(address)) {
             return alignment;
         }
 
@@ -1332,6 +1343,160 @@ class machine_rv32i : public machine {
             static_cast<size_t>(address.displacement()), word_size_bytes_)};
 
         return std::max(alignment, displacement_alignment);
+    }
+
+    // where unrolled accesses start: the address minus 'phase' is aligned to
+    // 'alignment', which is at most a word
+    struct access_start {
+        size_t alignment{};
+        size_t phase{};
+    };
+
+    [[nodiscard]] auto start_of(const operand& address,
+                                const size_t alignment) const -> access_start {
+
+        // without a known base only the type alignment holds, from offset 0
+        if (not is_word_based(address)) {
+            return {
+                .alignment{bulk_width(alignment)},
+                .phase{},
+            };
+        }
+
+        // the low bits of a negative displacement give the same phase
+        return {
+            .alignment{word_size_bytes_},
+            .phase{static_cast<size_t>(address.displacement()) %
+                   word_size_bytes_},
+        };
+    }
+
+    [[nodiscard]] static auto
+    is_aligned_at(const std::span<const access_start> starts,
+                  const size_t offset, const size_t width) -> bool {
+
+        return std::ranges::all_of(
+            starts, [offset, width](const access_start& s) -> bool {
+                return width <= s.alignment and (s.phase + offset) % width == 0;
+            });
+    }
+
+    // each access is the widest that fits the remaining bytes and is aligned
+    // for every address, so an unaligned start takes a byte and a halfword up
+    // to the word boundary, then words, then a halfword and byte tail; from a
+    // phase of 0 this gives the same parts as 'for_each_part'
+    static auto for_each_aligned_part(
+        const size_t size_bytes, const std::span<const access_start> starts,
+        const std::function_ref<void(size_t part_size_bytes, size_t offset)>
+            emit_part) -> void {
+
+        size_t offset{};
+        while (offset < size_bytes) {
+            size_t width{word_size_bytes_};
+            while (width > 1 and (width > size_bytes - offset or
+                                  not is_aligned_at(starts, offset, width))) {
+                width /= 2;
+            }
+
+            emit_part(width, offset);
+            offset += width;
+        }
+    }
+
+    [[nodiscard]] static auto
+    aligned_part_count(const size_t size_bytes,
+                       const std::span<const access_start> starts) -> size_t {
+
+        size_t count{};
+        for_each_aligned_part(
+            size_bytes, starts,
+            [&count](const size_t, const size_t) -> void { ++count; });
+
+        return count;
+    }
+
+    // runs of equal widths, e.g. '1 + 2 + 4 x 4 + 1 B'
+    [[nodiscard]] static auto
+    describe_parts(const size_t size_bytes,
+                   const std::span<const access_start> starts) -> std::string {
+
+        std::vector<std::pair<size_t, size_t>> runs;
+        for_each_aligned_part(
+            size_bytes, starts,
+            [&runs](const size_t width, const size_t) -> void {
+                if (not runs.empty() and runs.back().first == width) {
+                    ++runs.back().second;
+                    return;
+                }
+
+                runs.emplace_back(width, 1);
+            });
+
+        std::string text;
+        for (const auto& [width, count] : runs) {
+            if (not text.empty()) {
+                text += " + ";
+            }
+
+            text += count == 1 ? std::format("{}", width)
+                               : std::format("{} x {}", width, count);
+        }
+
+        return text + " B";
+    }
+
+    [[nodiscard]] static auto describe_start(const access_start& start)
+        -> std::string {
+
+        if (start.phase != 0) {
+            return std::format("{} B past a word boundary", start.phase);
+        }
+
+        if (start.alignment == word_size_bytes_) {
+            return "word aligned";
+        }
+
+        return std::format("{}-byte aligned", start.alignment);
+    }
+
+    // accesses widen after the first only when a start inside a word was
+    // peeled, other sequences keep the uncommented widths of the alignment
+    auto comment_aligned_parts(const token& src_loc_tk, const size_t indent,
+                               const std::string_view verb,
+                               const size_t size_bytes,
+                               const std::span<const access_start> starts)
+        -> void {
+
+        size_t first_width{};
+        size_t widest{};
+        for_each_aligned_part(size_bytes, starts,
+                              [&](const size_t width, const size_t) -> void {
+                                  if (first_width == 0) {
+                                      first_width = width;
+                                  }
+
+                                  widest = std::max(widest, width);
+                              });
+
+        if (widest == first_width) {
+            return;
+        }
+
+        const std::string parts{describe_parts(size_bytes, starts)};
+
+        if (starts.size() == 1) {
+            comment(src_loc_tk, indent,
+                    "{} {}: start {}, widest aligned access at each offset",
+                    verb, parts, describe_start(starts.front()));
+
+            return;
+        }
+
+        comment(src_loc_tk, indent,
+                "{} {}: source {}, destination {}, widest access aligned for "
+                "both at each offset",
+                verb, parts, describe_start(starts.front()),
+                describe_start(starts.back()));
     }
 
     // keeps an unrolled access of 'size_bytes' within the load/store offset
@@ -1359,13 +1524,16 @@ class machine_rv32i : public machine {
 
     auto zero_unrolled(const token& src_loc_tk, const size_t indent,
                        const operand& destination, const size_t size_bytes,
-                       const size_t width) -> void {
+                       const access_start& start) -> void {
+
+        comment_aligned_parts(src_loc_tk, indent, "zero", size_bytes,
+                              std::span{&start, 1});
 
         const operand address{
             unrolled_address(src_loc_tk, indent, destination, size_bytes)};
 
-        for_each_part(
-            size_bytes, width,
+        for_each_aligned_part(
+            size_bytes, std::span{&start, 1},
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 assembler_.store(indent, store_op(part_size_bytes), "zero",
                                  address.displacement() +
@@ -1422,15 +1590,15 @@ class machine_rv32i : public machine {
         bool needs_load{};
     };
 
-    // the widest parts first like the unrolled 'copy'
+    // the widest aligned parts like the unrolled 'copy'
     [[nodiscard]] static auto split_bytes(const std::string_view bytes,
-                                          const size_t width)
+                                          const access_start& start)
         -> std::vector<byte_part> {
 
         std::vector<byte_part> parts;
         int64_t loaded_value{};
-        for_each_part(
-            bytes.size(), width,
+        for_each_aligned_part(
+            bytes.size(), std::span{&start, 1},
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 const int64_t value{
                     little_endian_value(bytes.substr(offset, part_size_bytes))};
@@ -1451,11 +1619,12 @@ class machine_rv32i : public machine {
         return parts;
     }
 
-    // 'copy' of a constant takes 'la' and a load and a store for each part,
-    // above the unroll threshold it loops
+    // 'copy' of a constant takes 'la' and a load and a store for each of its
+    // 'copy_part_count' parts, above the unroll threshold it loops
     [[nodiscard]] static auto
     are_immediates_smaller(const std::span<const byte_part> parts,
-                           const size_t size_bytes) -> bool {
+                           const size_t size_bytes,
+                           const size_t copy_part_count) -> bool {
 
         if (size_bytes > copy_unroll_threshold_bytes_) {
             return false;
@@ -1463,7 +1632,7 @@ class machine_rv32i : public machine {
 
         const size_t copy_size_bytes{
             assembler_rv32i::two_instructions_bytes +
-            (parts.size() * assembler_rv32i::two_instructions_bytes)};
+            (copy_part_count * assembler_rv32i::two_instructions_bytes)};
 
         size_t immediates_size_bytes{};
         for (const byte_part& p : parts) {
@@ -2219,6 +2388,7 @@ class machine_rv32i : public machine {
 
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void override {
+
         // synthetic tokens and standalone backend calls have no source location
         if (src_loc_tk.at_line() == 0 or source_.empty()) {
             assembler_.comment(indent, text);
@@ -2304,6 +2474,7 @@ class machine_rv32i : public machine {
 
     auto free_named_register(const token& src_loc_tk, const size_t indent,
                              const operand& reg) -> void override {
+
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
@@ -2552,6 +2723,7 @@ class machine_rv32i : public machine {
     auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
               const operand& dst, const size_t size_bytes,
               const size_t alignment) -> void override {
+
         if (size_bytes == 0) {
             return;
         }
@@ -2566,6 +2738,16 @@ class machine_rv32i : public machine {
                                 access_alignment(dst, alignment)))};
 
         if (size_bytes <= copy_unroll_threshold_bytes_) {
+            // the pointers of a loop advance together, unrolled accesses can
+            // follow where each address is within its word
+            const std::array<access_start, 2> starts{
+                start_of(src, alignment),
+                start_of(dst, alignment),
+            };
+
+            comment_aligned_parts(src_loc_tk, indent, "copy", size_bytes,
+                                  starts);
+
             // direct offsets avoid two pointer temporaries for ordinary small
             // copies
             const operand src_address{
@@ -2577,8 +2759,8 @@ class machine_rv32i : public machine {
             const operand value{
                 alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-            for_each_part(
-                size_bytes, width,
+            for_each_aligned_part(
+                size_bytes, starts,
                 [&](const size_t part_size_bytes, const size_t offset) -> void {
                     assembler_.load(indent, unsigned_load_op(part_size_bytes),
                                     value.base_register(),
@@ -2621,9 +2803,27 @@ class machine_rv32i : public machine {
 
         const size_t width{bulk_width(access_alignment(dst, alignment))};
 
-        const std::vector<byte_part> parts{split_bytes(bytes, width)};
+        const access_start dst_start{start_of(dst, alignment)};
 
-        if (are_immediates_smaller(parts, bytes.size())) {
+        const std::vector<byte_part> parts{split_bytes(bytes, dst_start)};
+
+        // the word aligned constant is copied with the alignment 'width', so
+        // its parts can be narrower than the stored immediates
+        const std::array<access_start, 2> copy_starts{
+            access_start{
+                .alignment{width},
+                .phase{},
+            },
+            dst_start,
+        };
+
+        const size_t copy_part_count{
+            aligned_part_count(bytes.size(), copy_starts)};
+
+        if (are_immediates_smaller(parts, bytes.size(), copy_part_count)) {
+            comment_aligned_parts(src_loc_tk, indent, "store", bytes.size(),
+                                  std::span{&dst_start, 1});
+
             store_byte_parts(src_loc_tk, indent, parts, dst, bytes.size());
             return;
         }
@@ -2674,17 +2874,20 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto array_copy_destination_register() const
         -> operand override {
+
         return bulk_registers_.back().at(1);
     }
 
     auto set_array_copy_source(const size_t indent, const operand& address)
         -> void override {
+
         record_bulk_address_alignment(address);
         address_of(token{}, indent, bulk_registers_.back().at(0), address);
     }
 
     auto set_array_copy_destination(const size_t indent, const operand& address)
         -> void override {
+
         record_bulk_address_alignment(address);
         address_of(token{}, indent, bulk_registers_.back().at(1), address);
     }
@@ -2692,6 +2895,7 @@ class machine_rv32i : public machine {
     auto end_array_copy(const token& src_loc_tk, const size_t indent,
                         const size_t element_size_bytes, const size_t alignment)
         -> void override {
+
         const std::array<operand, 3>& registers{bulk_registers_.back()};
         comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
                 registers.at(2).base_register(), element_size_bytes);
@@ -2719,11 +2923,13 @@ class machine_rv32i : public machine {
 
     auto set_memory_equal_left(const size_t indent, const operand& address)
         -> void override {
+
         set_array_copy_source(indent, address);
     }
 
     auto set_memory_equal_right(const size_t indent, const operand& address)
         -> void override {
+
         set_array_copy_destination(indent, address);
     }
 
@@ -2731,6 +2937,7 @@ class machine_rv32i : public machine {
                           const size_t size_bytes, const size_t alignment,
                           const operand& dst, const bool inverted = false)
         -> void override {
+
         if (size_bytes > std::numeric_limits<uint32_t>::max()) {
             throw compiler_exception{
                 src_loc_tk, "comparison size exceeds RV32I address range"};
@@ -2748,6 +2955,7 @@ class machine_rv32i : public machine {
                           const size_t element_size_bytes,
                           const size_t alignment, const operand& dst,
                           const bool inverted = false) -> void override {
+
         const std::array<operand, 3>& registers{bulk_registers_.back()};
         {
             const address_scope scope{*this, dst, operand{}};
@@ -2773,21 +2981,30 @@ class machine_rv32i : public machine {
         }
         const address_scope scope{*this, destination, operand{}};
 
-        const size_t width{
-            bulk_width(access_alignment(destination, alignment))};
+        const access_start start{start_of(destination, alignment)};
 
-        size_t store_count{};
-        for_each_part(size_bytes, width,
-                      [&store_count](const size_t, const size_t) -> void {
-                          ++store_count;
-                      });
+        // peeled stores count, so a start inside a word can still unroll
+        const size_t store_count{
+            aligned_part_count(size_bytes, std::span{&start, 1})};
 
         // stores run faster than the loop's 4 instructions per word, the cap
         // only bounds the code size
         constexpr size_t max_unrolled_stores{16};
         if (store_count <= max_unrolled_stores) {
-            zero_unrolled(src_loc_tk, indent, destination, size_bytes, width);
+            zero_unrolled(src_loc_tk, indent, destination, size_bytes, start);
             return;
+        }
+
+        const size_t width{
+            bulk_width(access_alignment(destination, alignment))};
+
+        // the loop keeps one width, so name the start it did not peel
+        if (start.phase != 0) {
+            comment(src_loc_tk, indent,
+                    "zero loop of {}-byte stores: {} stores exceed {}, start "
+                    "{} is not peeled",
+                    width, store_count, max_unrolled_stores,
+                    describe_start(start));
         }
 
         zero_with_loop(src_loc_tk, indent, destination, size_bytes, width);
@@ -3107,6 +3324,7 @@ class machine_rv32i : public machine {
     auto address_of(const token& src_loc_tk, const size_t indent,
                     const operand& dst, const operand& address)
         -> void override {
+
         if (not(dst.is_register() or dst.is_memory()) or
             dst.type_ref().size_bytes() != 4) {
             throw compiler_exception{
@@ -3169,6 +3387,7 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool override {
+
         return std::has_single_bit(size_bytes) and size_bytes <= UINT32_MAX;
     }
 
@@ -3191,6 +3410,7 @@ class machine_rv32i : public machine {
 
     auto exit(const token& src_loc_tk, const size_t indent,
               const operand& exit_code) -> void override {
+
         copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
                    exit_code);
         assembler_.li(indent, "a7", syscall_exit_);
@@ -3205,6 +3425,7 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto is_variables_base(const operand& reg) const
         -> bool override {
+
         return not reg.is_indexed() and
                register_index(reg.base_register()) == s0_register_index;
     }
@@ -3212,6 +3433,7 @@ class machine_rv32i : public machine {
     auto address_of_variable(const token& src_loc_tk, const size_t indent,
                              const operand& dst, const int64_t offset,
                              const type& value_type) -> void override {
+
         address_of(
             src_loc_tk, indent, dst,
             operand::mem(variables_base_register(), {}, 1, offset, value_type));
@@ -3241,6 +3463,7 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto frame_base_register() const
         -> std::string_view override {
+
         return "s1";
     }
 
@@ -3296,6 +3519,7 @@ class machine_rv32i : public machine {
                               const operand& frame_size_bytes,
                               const std::string_view failure_label,
                               const bool enabled = {}) -> void override {
+
         if (not enabled) {
             return;
         }
@@ -3345,6 +3569,7 @@ class machine_rv32i : public machine {
 
     auto define_constant(const std::string_view name, const size_t value)
         -> void override {
+
         if (value > std::numeric_limits<uint32_t>::max()) {
             throw compiler_exception{token{}, "constant exceeds RV32I range"};
         }
@@ -3533,6 +3758,7 @@ class machine_rv32i : public machine {
 
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
+
         label(0, "dat.end");
         // variables are zeroed when defined, so the image does not hold them
         assembler_.switch_section(section::bss);
@@ -3544,6 +3770,7 @@ class machine_rv32i : public machine {
 
     auto emit_data(const size_t element_size_bytes,
                    const data_initializer& value) -> void override {
+
         emit_repeated_data(element_size_bytes, 1, value);
     }
 
@@ -3578,6 +3805,7 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto
     allocated_register_type(const std::string_view name) const -> const type* {
+
         const size_t index{register_index(name)};
         for (const allocation& entry : allocations_) {
             if (entry.register_index == index) {
@@ -3591,6 +3819,7 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto make_register_operand(const std::string_view name,
                                              const type& value_type) const
         -> operand override {
+
         validate_scalar(token{}, value_type);
         const size_t index{register_index(name)};
         if (index == register_names_.size()) {
@@ -3603,6 +3832,7 @@ class machine_rv32i : public machine {
     auto emit_data_array(const size_t element_size_bytes,
                          const std::function_ref<bool(data_initializer&)> next)
         -> void override {
+
         data_initializer value;
         while (next(value)) {
             emit_data(element_size_bytes, value);

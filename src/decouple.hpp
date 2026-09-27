@@ -50,6 +50,7 @@ class expr_any;
 
 [[nodiscard]] inline auto add_storage_size(const size_t base,
                                            const size_t size_bytes) -> size_t {
+
     if (size_bytes > static_cast<size_t>(std::numeric_limits<int64_t>::max()) or
         base > static_cast<size_t>(std::numeric_limits<int64_t>::max()) -
                    size_bytes) {
@@ -62,6 +63,7 @@ class expr_any;
 
 [[nodiscard]] inline auto multiply_storage_size(const size_t size_bytes,
                                                 const size_t count) -> size_t {
+
     if (count != 0 and
         size_bytes >
             static_cast<size_t>(std::numeric_limits<int64_t>::max()) / count) {
@@ -85,6 +87,7 @@ class expr_any;
 // 'alignment'
 [[nodiscard]] inline auto offset_alignment(const size_t offset,
                                            const size_t alignment) -> size_t {
+
     if (offset == 0) {
         return alignment;
     }
@@ -185,6 +188,7 @@ class operand {
 
     [[nodiscard]] static auto mem(const operand& address,
                                   const type& value_type) -> operand {
+
         assert(address.is_memory() or address.is_register());
 
         return mem(address.base_register_, address.index_register_,

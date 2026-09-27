@@ -1917,98 +1917,117 @@ class assembler_rv32i final : public assembler {
 
     auto add(const size_t indent, const std::string_view rd,
              const std::string_view rs1, const std::string_view rs2) -> void {
+
         register_op(indent, op::add, rd, rs1, rs2);
     }
 
     auto sub(const size_t indent, const std::string_view rd,
              const std::string_view rs1, const std::string_view rs2) -> void {
+
         register_op(indent, op::sub, rd, rs1, rs2);
     }
 
     auto sll(const size_t indent, const std::string_view rd,
              const std::string_view rs1, const std::string_view rs2) -> void {
+
         register_op(indent, op::sll, rd, rs1, rs2);
     }
 
     auto slt(const size_t indent, const std::string_view rd,
              const std::string_view rs1, const std::string_view rs2) -> void {
+
         register_op(indent, op::slt, rd, rs1, rs2);
     }
 
     auto sltu(const size_t indent, const std::string_view rd,
               const std::string_view rs1, const std::string_view rs2) -> void {
+
         register_op(indent, op::sltu, rd, rs1, rs2);
     }
 
     auto xor_op(const size_t indent, const std::string_view rd,
                 const std::string_view rs1, const std::string_view rs2)
         -> void {
+
         register_op(indent, op::xor_op, rd, rs1, rs2);
     }
 
     auto srl(const size_t indent, const std::string_view rd,
              const std::string_view rs1, const std::string_view rs2) -> void {
+
         register_op(indent, op::srl, rd, rs1, rs2);
     }
 
     auto sra(const size_t indent, const std::string_view rd,
              const std::string_view rs1, const std::string_view rs2) -> void {
+
         register_op(indent, op::sra, rd, rs1, rs2);
     }
 
     auto or_op(const size_t indent, const std::string_view rd,
                const std::string_view rs1, const std::string_view rs2) -> void {
+
         register_op(indent, op::or_op, rd, rs1, rs2);
     }
 
     auto and_op(const size_t indent, const std::string_view rd,
                 const std::string_view rs1, const std::string_view rs2)
         -> void {
+
         register_op(indent, op::and_op, rd, rs1, rs2);
     }
 
     auto addi(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::addi, rd, rs1, std::move(value));
     }
 
     auto slti(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::slti, rd, rs1, std::move(value));
     }
 
     auto sltiu(const size_t indent, const std::string_view rd,
                const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::sltiu, rd, rs1, std::move(value));
     }
 
     auto xori(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::xori, rd, rs1, std::move(value));
     }
 
     auto ori(const size_t indent, const std::string_view rd,
              const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::ori, rd, rs1, std::move(value));
     }
 
     auto andi(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::andi, rd, rs1, std::move(value));
     }
 
     auto slli(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::slli, rd, rs1, std::move(value));
     }
 
     auto srli(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::srli, rd, rs1, std::move(value));
     }
 
     auto srai(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
+
         immediate_op(indent, op::srai, rd, rs1, std::move(value));
     }
 
@@ -2029,131 +2048,155 @@ class assembler_rv32i final : public assembler {
 
     auto lb(const size_t indent, const std::string_view rd, immediate offset,
             const std::string_view base) -> void {
+
         load(indent, op::lb, rd, std::move(offset), base);
     }
 
     auto lh(const size_t indent, const std::string_view rd, immediate offset,
             const std::string_view base) -> void {
+
         load(indent, op::lh, rd, std::move(offset), base);
     }
 
     auto lw(const size_t indent, const std::string_view rd, immediate offset,
             const std::string_view base) -> void {
+
         load(indent, op::lw, rd, std::move(offset), base);
     }
 
     auto lbu(const size_t indent, const std::string_view rd, immediate offset,
              const std::string_view base) -> void {
+
         load(indent, op::lbu, rd, std::move(offset), base);
     }
 
     auto lhu(const size_t indent, const std::string_view rd, immediate offset,
              const std::string_view base) -> void {
+
         load(indent, op::lhu, rd, std::move(offset), base);
     }
 
     auto sb(const size_t indent, const std::string_view src, immediate offset,
             const std::string_view base) -> void {
+
         store(indent, op::sb, src, std::move(offset), base);
     }
 
     auto sh(const size_t indent, const std::string_view src, immediate offset,
             const std::string_view base) -> void {
+
         store(indent, op::sh, src, std::move(offset), base);
     }
 
     auto sw(const size_t indent, const std::string_view src, immediate offset,
             const std::string_view base) -> void {
+
         store(indent, op::sw, src, std::move(offset), base);
     }
 
     auto beq(const size_t indent, const std::string_view rs1,
              const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::beq, rs1, rs2, target);
     }
 
     auto bne(const size_t indent, const std::string_view rs1,
              const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::bne, rs1, rs2, target);
     }
 
     auto blt(const size_t indent, const std::string_view rs1,
              const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::blt, rs1, rs2, target);
     }
 
     auto bge(const size_t indent, const std::string_view rs1,
              const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::bge, rs1, rs2, target);
     }
 
     auto bltu(const size_t indent, const std::string_view rs1,
               const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::bltu, rs1, rs2, target);
     }
 
     auto bgeu(const size_t indent, const std::string_view rs1,
               const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::bgeu, rs1, rs2, target);
     }
 
     auto bgt(const size_t indent, const std::string_view rs1,
              const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::bgt, rs1, rs2, target);
     }
 
     auto ble(const size_t indent, const std::string_view rs1,
              const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::ble, rs1, rs2, target);
     }
 
     auto bgtu(const size_t indent, const std::string_view rs1,
               const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::bgtu, rs1, rs2, target);
     }
 
     auto bleu(const size_t indent, const std::string_view rs1,
               const std::string_view rs2, const std::string_view target)
         -> void {
+
         branch(indent, op::bleu, rs1, rs2, target);
     }
 
     auto beqz(const size_t indent, const std::string_view rs,
               const std::string_view target) -> void {
+
         branch_zero(indent, op::beqz, rs, target);
     }
 
     auto bnez(const size_t indent, const std::string_view rs,
               const std::string_view target) -> void {
+
         branch_zero(indent, op::bnez, rs, target);
     }
 
     auto bltz(const size_t indent, const std::string_view rs,
               const std::string_view target) -> void {
+
         branch_zero(indent, op::bltz, rs, target);
     }
 
     auto bgez(const size_t indent, const std::string_view rs,
               const std::string_view target) -> void {
+
         branch_zero(indent, op::bgez, rs, target);
     }
 
     auto bgtz(const size_t indent, const std::string_view rs,
               const std::string_view target) -> void {
+
         branch_zero(indent, op::bgtz, rs, target);
     }
 
     auto blez(const size_t indent, const std::string_view rs,
               const std::string_view target) -> void {
+
         branch_zero(indent, op::blez, rs, target);
     }
 

@@ -124,6 +124,7 @@ class machine {
     auto free_named_registers(const token& src_loc_tk, const size_t indent,
                               const std::span<const operand> registers)
         -> void {
+
         for (const operand& reg : registers | std::views::reverse) {
             free_named_register(src_loc_tk, indent, reg);
         }
@@ -198,6 +199,7 @@ class machine {
 
     [[nodiscard]] virtual auto array_copy_destination_register() const
         -> operand {
+
         return {};
     }
 
@@ -392,6 +394,7 @@ class machine {
     template <std::ranges::input_range values_t>
     auto emit_data_array(const size_t element_size_bytes, values_t&& values)
         -> void {
+
         auto&& range{std::forward<values_t>(values)};
         auto current{std::ranges::begin(range)};
         const auto end{std::ranges::end(range)};

@@ -435,6 +435,7 @@ class stmt_call : public expression {
 
     [[nodiscard]] auto argument(const size_t arg_index) const
         -> const statement& {
+
         return args_[arg_index];
     }
 

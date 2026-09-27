@@ -168,6 +168,7 @@ class tokenizer final {
     [[nodiscard]] auto finish_string_token(const std::string_view ws_before,
                                            const size_t at_line,
                                            const size_t bgn_ix) -> token {
+
         while (true) {
             if (is_next_char('\\')) {
                 // read the escaped character

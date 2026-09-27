@@ -602,6 +602,7 @@ class stmt_identifier : public statement {
     [[nodiscard]] static auto
     find_start_element(const std::span<const operand> known_addresses)
         -> size_t {
+
         size_t index{known_addresses.size()};
         while (index != 0) {
             --index;

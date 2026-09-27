@@ -14,15 +14,12 @@
 === 28:     var p padded = {1, "abcdef\n"}
     li t0, 1
     sb t0, 33(s0)
-    la t0, str.28.24
-    lhu t1, 0(t0)
-    sh t1, 34(s0)
-    lhu t1, 2(t0)
-    sh t1, 36(s0)
-    lhu t1, 4(t0)
-    sh t1, 38(s0)
-    lbu t1, 6(t0)
-    sb t1, 40(s0)
+    li t0, 25185
+    sh t0, 34(s0)
+    li t0, 1717920867
+    sw t0, 36(s0)
+    li t0, 10
+    sb t0, 40(s0)
 === 31:     p.text = "xyz\n"
     li t0, 31096
     sh t0, 34(s0)
@@ -59,9 +56,6 @@
     lbu t1, 14(t0)
     sb t1, 78(s0)
 === read-only constants
-.balign 4
-str.28.24:
-.ascii "abcdef\n"
 .balign 4
 str.42.21:
 .ascii "0123456789abcd\n"
