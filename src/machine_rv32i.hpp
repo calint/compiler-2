@@ -81,6 +81,16 @@ class machine_rv32i : public machine {
     std::vector<allocation> allocations_;
     std::vector<std::array<operand, 3>> bulk_registers_;
 
+    // the addresses given to an active bulk operation
+    struct bulk_addresses {
+        // smallest alignment proven, lowered by each address from a word
+        size_t alignment{word_size_bytes_};
+        // a missing address would leave the word alignment unproven
+        size_t count{};
+    };
+
+    std::vector<bulk_addresses> bulk_addresses_;
+
     [[nodiscard]] static auto format_address(const operand& address)
         -> std::string {
 
@@ -1187,6 +1197,7 @@ class machine_rv32i : public machine {
             reg = alloc_scratch_register(src_loc_tk, indent, default_type());
         }
         bulk_registers_.push_back(registers);
+        bulk_addresses_.emplace_back();
 
         return registers.back();
     }
@@ -1197,6 +1208,60 @@ class machine_rv32i : public machine {
             free_scratch_register(src_loc_tk, indent, reg);
         }
         bulk_registers_.pop_back();
+        bulk_addresses_.pop_back();
+    }
+
+    // the pointers advance together so the least aligned address limits the
+    // width; 1 means only the type alignment is known for that address
+    auto record_bulk_address_alignment(const operand& address) -> void {
+        bulk_addresses& addresses{bulk_addresses_.back()};
+        addresses.alignment =
+            std::min(addresses.alignment, access_alignment(address, 1));
+        ++addresses.count;
+    }
+
+    // note: the loop width is decided at compile time
+    //       * the variables base 's0' and a non-inline frame base 's1' are
+    //         word aligned, so an unindexed address from them is as aligned
+    //         as the lowest set bit of its displacement, capped at a word:
+    //         a multiple of 4 loops 'lw'/'sw' with an optional halfword and
+    //         byte tail, 2 more than a multiple of 4 loops 'lhu'/'sh' with an
+    //         optional byte tail, odd loops 'lbu'/'sb'
+    //       * both addresses count and the smaller alignment wins since both
+    //         pointers advance by the same width
+    //       * the type alignment is the minimum, e.g. an 'i32' array through
+    //         an index register or a pointer still loops words
+    //       * the byte count may be known only at run time, so the tail is
+    //         selected by testing its bits
+    //       * an odd start is not peeled to the word boundary (todo item)
+
+    [[nodiscard]] auto bulk_loop_width(const token& src_loc_tk,
+                                       const size_t indent,
+                                       const size_t alignment) -> size_t {
+
+        const bulk_addresses& addresses{bulk_addresses_.back()};
+
+        assert(addresses.count == 2);
+
+        const size_t width{
+            bulk_width(std::max(alignment, addresses.alignment))};
+
+        // name the alignment that decided the width
+        if (addresses.alignment > alignment) {
+            comment(src_loc_tk, indent,
+                    "{}-byte accesses: both addresses {}-byte aligned, type "
+                    "{}-byte aligned",
+                    width, addresses.alignment, alignment);
+
+            return width;
+        }
+
+        comment(src_loc_tk, indent,
+                "{}-byte accesses: type {}-byte aligned, addresses not proven "
+                "more aligned",
+                width, alignment);
+
+        return width;
     }
 
     // registers of a bulk copy or comparison, 'compared' is empty for a copy
@@ -1230,7 +1295,8 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "stop at first mismatch");
     }
 
-    // aligned hardware requires every access to be within the known alignment
+    // aligned hardware requires every access to be within the known alignment:
+    // 1 selects 'lbu'/'sb', 2 'lhu'/'sh', 4 and above 'lw'/'sw'
     [[nodiscard]] static auto bulk_width(const size_t alignment) -> size_t {
         return std::min(alignment, word_size_bytes_);
     }
@@ -1241,6 +1307,7 @@ class machine_rv32i : public machine {
                                         const size_t alignment) const
         -> size_t {
 
+        // an index register holds a value unknown at compile time
         if (not address.is_memory() or not address.index_register().empty()) {
             return alignment;
         }
@@ -1253,11 +1320,14 @@ class machine_rv32i : public machine {
         const bool is_frame_base{frame_base_reserved_ and
                                  base == register_index(frame_base_register())};
 
+        // other bases such as loaded pointers or bulk registers may hold any
+        // address
         if (not is_variables_base and not is_frame_base) {
             return alignment;
         }
 
-        // the low bits of a negative displacement give the same alignment
+        // the lowest set bit of the displacement, capped at a word; the low
+        // bits of a negative displacement give the same alignment
         const size_t displacement_alignment{offset_alignment(
             static_cast<size_t>(address.displacement()), word_size_bytes_)};
 
@@ -1442,7 +1512,7 @@ class machine_rv32i : public machine {
     }
 
     // one 'width' access that compares and branches to '5f' at a mismatch or
-    // copies
+    // copies; 'width' 1, 2 or 4 is 'lbu'/'sb', 'lhu'/'sh' or 'lw'/'sw'
     auto emit_bulk_access(const size_t indent, const bulk_access& access,
                           const size_t width, const bool advance) -> void {
 
@@ -1552,7 +1622,9 @@ class machine_rv32i : public machine {
         }
 
         // aligned accesses take a chunk at a time and the tail uses the
-        // smaller sizes
+        // smaller sizes: after the words at most 3 bytes remain, a halfword
+        // then a byte; after the halfwords at most 1 byte remains; the
+        // pointers stay aligned to 'width' so each tail access is aligned too
         if (width > 1) {
             const std::string_view chunks{width == 4 ? "words" : "halfwords"};
 
@@ -2607,11 +2679,13 @@ class machine_rv32i : public machine {
 
     auto set_array_copy_source(const size_t indent, const operand& address)
         -> void override {
+        record_bulk_address_alignment(address);
         address_of(token{}, indent, bulk_registers_.back().at(0), address);
     }
 
     auto set_array_copy_destination(const size_t indent, const operand& address)
         -> void override {
+        record_bulk_address_alignment(address);
         address_of(token{}, indent, bulk_registers_.back().at(1), address);
     }
 
@@ -2623,7 +2697,8 @@ class machine_rv32i : public machine {
                 registers.at(2).base_register(), element_size_bytes);
         scale_index(src_loc_tk, indent, registers.at(2), element_size_bytes);
         emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
-                       registers.at(1), bulk_width(alignment));
+                       registers.at(1),
+                       bulk_loop_width(src_loc_tk, indent, alignment));
         release_bulk(src_loc_tk, indent);
     }
 
@@ -2663,7 +2738,9 @@ class machine_rv32i : public machine {
         const std::array<operand, 3>& registers{bulk_registers_.back()};
         assembler_.li(indent, registers.at(2).base_register(), size_bytes);
         emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
-                       registers.at(1), bulk_width(alignment), dst, inverted);
+                       registers.at(1),
+                       bulk_loop_width(src_loc_tk, indent, alignment), dst,
+                       inverted);
         release_bulk(src_loc_tk, indent);
     }
 
@@ -2680,7 +2757,8 @@ class machine_rv32i : public machine {
             scale_index(src_loc_tk, indent, registers.at(2),
                         element_size_bytes);
             emit_bulk_loop(src_loc_tk, indent, registers.at(2), registers.at(0),
-                           registers.at(1), bulk_width(alignment), dst,
+                           registers.at(1),
+                           bulk_loop_width(src_loc_tk, indent, alignment), dst,
                            inverted);
         }
         release_bulk(src_loc_tk, indent);

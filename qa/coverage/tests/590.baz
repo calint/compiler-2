@@ -1,0 +1,74 @@
+# rv32i bulk loops use words when the addresses prove more alignment than the
+# type; tails and unaligned addresses keep smaller accesses
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+type rgb { r i8, g i8, b i8 }
+
+type pixel { fg rgb, bg rgb, alpha i8, depth i8 }
+
+func noinline check_frame(n) {
+    var p pixel = {{1, 2, 3}, {4, 5, 6}, 7, 8}
+    var q pixel = p
+    assert(20, equal(p, q))
+
+    q.depth = 0
+    assert(21, not equal(p, q))
+
+    var a[7] i8 = {1, 2, 3, 4, 5, 6, 7}
+    var pad i8
+    var b[7] i8
+    array_copy(a, b, n)
+    assert(22, arrays_equal(a, b, n))
+
+    b[6] = 0
+    assert(23, not arrays_equal(a, b, n))
+    assert(24, arrays_equal(a, b, n - 1))
+    assert(25, pad == 0)
+}
+
+func main() {
+    var n = 7
+    var p pixel = {{1, 2, 3}, {4, 5, 6}, 7, 8}
+    var q pixel = p
+    assert(1, equal(p, q))
+
+    q.bg.g = 0
+    assert(2, not equal(p, q))
+
+    # 'a' and 'b' start word aligned, 'c' follows at an odd offset
+    var a[7] i8 = {1, 2, 3, 4, 5, 6, 7}
+    var pad i8
+    var b[7] i8
+    var c[7] i8
+
+    array_copy(a, b, n)
+    assert(3, arrays_equal(a, b, n))
+
+    b[4] = 0
+    assert(4, not arrays_equal(a, b, n))
+    assert(5, arrays_equal(a, b, 4))
+
+    array_copy(a, c, n)
+    assert(6, arrays_equal(a, c, n))
+
+    c[6] = 0
+    assert(7, not arrays_equal(a, c, n))
+    assert(8, arrays_equal(c, a, n - 1))
+
+    # 'd' and 'e' start 2 bytes past a word boundary
+    var d[7] i8 = {1, 2, 3, 4, 5, 6, 7}
+    var pad2 i8
+    var e[7] i8
+
+    array_copy(d, e, n)
+    assert(10, arrays_equal(d, e, n))
+
+    e[6] = 0
+    assert(11, not arrays_equal(d, e, n))
+    assert(12, arrays_equal(d, e, n - 1))
+    assert(13, pad2 == 0)
+
+    check_frame(n)
+    assert(9, pad == 0)
+}

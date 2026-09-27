@@ -17,39 +17,60 @@ easy
 --------------------------------------------------------------------------------
 medium
 --------------------------------------------------------------------------------
-[ ] compiler memory: peak is about 2 to 3 'assembler::line' (104 bytes) per
-    output line while 'lines_' grows (old and new buffer during the copy),
-    comments are 2 of 3 lines; e.g. 'std::deque' for 'lines_', 'record' as
-    'size_t' with a sentinel instead of 'std::optional' (16 -> 8 bytes)
-[ ] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
-    uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
-    then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead
-    of a 20 iteration 'sb' loop (etc/codegen-inefficiencies.baz)
-[ ] low priority: code after an unconditional 'exit' elsewhere than the end of
-    'main' is generated, e.g. after a constant false 'assert'
-[ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
-    compares, then the remaining dword, word and byte compares
-[ ] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
-    derive a larger alignment from the addresses as 'copy' and 'zero' do
-    => keep the smallest 'access_alignment' of the addresses given to
-       'set_array_copy_source/destination' and 'set_memory_equal_left/right'
-       with the bulk registers, width = max(type alignment, that)
-[ ] reorder locals by alignment, largest first, to reduce padding
+generated assembly, easiest first
+--------------------------------------------------------------------------------
 [ ] register allocation: the scaled index goes into a new register instead of
     reusing the index register when it is no longer needed ('slli t1, t0, 2'
     instead of 'slli t0, t0, 2') (etc/codegen-inefficiencies.baz)
-[ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
-    field instead of computing the address once
-    (etc/codegen-inefficiencies.baz)
-[ ] constant known at compile: an identifier without an index register can
-    compute its offset at compile time ('stmt_identifier::init_reg_offset')
-[ ] constant known at compile: fold constant elements in expressions
-    ('expr_arith', 'expr_bool')
 [ ] post processing optimization for: var b=-(-a*-a)
       mov r15,qword[rbp-8]
       neg r15
       neg r15
       mov qword[rbp-16],r15
+[ ] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
+    uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
+    then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead
+    of a 20 iteration 'sb' loop (etc/codegen-inefficiencies.baz)
+[ ] constant known at compile: an identifier without an index register can
+    compute its offset at compile time ('stmt_identifier::init_reg_offset')
+[ ] constant known at compile: fold constant elements in expressions
+    ('expr_arith', 'expr_bool')
+[ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
+    field instead of computing the address once
+    (etc/codegen-inefficiencies.baz)
+[ ] reorder locals by alignment, largest first, to reduce padding
+[ ] register allocation: a non-inline call saves and restores all 30 registers
+    with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
+    'print_num(a)' (etc/codegen-inefficiencies.baz)
+    => the registers a non-inline function can use could be listed so the
+       call saves only those
+[ ] low priority: code after an unconditional 'exit' elsewhere than the end of
+    'main' is generated, e.g. after a constant false 'assert'
+[ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
+    compares, then the remaining dword, word and byte compares
+[ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
+    class: machine_x86_64
+    method: shift
+    source: src/machine_x86_64.hpp:789
+--------------------------------------------------------------------------------
+other, easiest first
+--------------------------------------------------------------------------------
+[ ] stmt_call: check arguments vs parameters in constructor instead of at
+    compile
+[ ] implement "size_of" for fields
+[ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
+    tests
+[ ] change all array access using [ ] to checked using .at
+[ ] 'equal' on records compares the padding bytes; a record set by a call
+    result keeps whatever padding bytes its storage held
+[ ] rv32i: check loop iteration regarding large span
+[ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
+    => there is a longer jump way +/- 2 GB that can be implemented later
+[ ] compiler memory: peak is about 2 to 3 'assembler::line' (104 bytes) per
+    output line while 'lines_' grows (old and new buffer during the copy),
+    comments are 2 of 3 lines; e.g. 'std::deque' for 'lines_', 'record' as
+    'size_t' with a sentinel instead of 'std::optional' (16 -> 8 bytes)
+[ ] instrumentation to find out max heap and stack usage by the compiler
 [ ] --checks=noub: division by zero traps and MIN / -1 wraps or traps by
     width. check and panic with the line
 [ ] --checks=noub: shift count < 0 or >= width is masked by hardware
@@ -69,20 +90,19 @@ medium
 [ ] UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
     bodies do not count as assigning
-[ ] 'equal' on records compares the padding bytes; a record set by a call
-    result keeps whatever padding bytes its storage held
-[ ] register allocation: a non-inline call saves and restores all 30 registers
-    with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
-    'print_num(a)' (etc/codegen-inefficiencies.baz)
-    => the registers a non-inline function can use could be listed so the
-       call saves only those
-[ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
-    class: machine_x86_64
-    method: shift
-    source: src/machine_x86_64.hpp:789
-[ ] stmt_call: check arguments vs parameters in constructor instead of at
-    compile
-[ ] implement "size_of" for fields
+[ ] lea_path may not be necessary since only most recent lea relevant
+    => also index of where in elems path lea was found
+[ ] re-look at stmt_identifier::compile_lea and make a nicer implementation
+[ ] expr_type has mixed responsibilities, ok?
+    expr_arith: handles expressions that writes the result with one mov
+    expr_bool: handles boolean expressions and also results in one mov
+[ ] consider dropping the visitor pattern in expr_any because lcov does not
+    handle it
+[ ] make an extensive comment file explaining lea, indexing array etc
+[ ] C++ brace initializers offer no performance advantage and the narrowing
+    issues do not exist in this project. they are ugly. ponder switching to =
+[ ] expr_any: deduce expression type to bool or numbers: is_const,
+    is_bool_expression, is_number_expression
 [ ] consider not allowing single statement blocks
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
@@ -97,26 +117,6 @@ medium
       # injected variable 'e1', 'e2', 'e...': current array elements
       e1 = e2
     }
-[ ] expr_any: deduce expression type to bool or numbers: is_const,
-    is_bool_expression, is_number_expression
-[ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
-    => there is a longer jump way +/- 2 GB that can be implemented later
-[ ] rv32i: check loop iteration regarding large span
-[ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
-    tests
-[ ] change all array access using [ ] to checked using .at
-[ ] instrumentation to find out max heap and stack usage by the compiler
-[ ] lea_path may not be necessary since only most recent lea relevant
-    => also index of where in elems path lea was found
-[ ] re-look at stmt_identifier::compile_lea and make a nicer implementation
-[ ] expr_type has mixed responsibilities, ok?
-    expr_arith: handles expressions that writes the result with one mov
-    expr_bool: handles boolean expressions and also results in one mov
-[ ] consider dropping the visitor pattern in expr_any because lcov does not
-    handle it
-[ ] make an extensive comment file explaining lea, indexing array etc
-[ ] C++ brace initializers offer no performance advantage and the narrowing
-    issues do not exist in this project. they are ugly. ponder switching to =
 [ ] consider result being an array
     func make_points() : point[] res {...}
     => confusing. better is func init_points(pts : point[]) {...}
@@ -317,6 +317,16 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
+    derive a larger alignment from the addresses as 'copy' and 'zero' do
+    => 'set_array_copy_source/destination' (also used by
+       'set_memory_equal_left/right') keep the smallest 'access_alignment' of
+       the addresses, the loop width is max(type alignment, that); decided at
+       compile time, addresses built in the bulk registers keep the type
+       alignment; x86 unchanged, rv32i changes in 8 tests; test 590
+       (words, halfwords, bytes; noinline frame) with the loop widths checked
+       by test-bulk-widths.sh against tests/590.rv32i.widths; 'end_*' assert
+       that both addresses were given
 [-] a 'read' into a 'bool' array stores any byte, but copying a 'bool'
     ('is_bool_copy') relies on 0 or 1; reject 'bool' arrays in 'read'
     => kept: the goal is an efficient conversion of any type to and from

@@ -14,4 +14,5 @@ export LLVM_PROFILE_FILE="$PWD/extra-%p.profraw"
 ./test-arena.py
 ./test-rv32i.sh
 ./test-string-stores.sh
+./test-bulk-widths.sh
 ./test-coverage.sh report
