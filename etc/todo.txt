@@ -109,10 +109,13 @@
         each call copies 'addi a0, t0, 0' and back 'addi t0, a0, 0'
         => accumulating in 'a0' across the calls would need register
            targeting for helper operands
-    [ ] registers live across a helper call are saved on the stack:
+    [x] registers live across a helper call are saved on the stack:
         'buf[i] = i8('0' - n % 10)' holds the index in 't0' and '0' in 't1'
         during the divide call ('addi sp; sw; sw; call; lw; lw; addi sp')
-        => a constant or plain load could be delayed until after the call
+        => '.Lbaz_multiply'/'.Lbaz_divide' use 'a2'-'a6' instead of 't0'-'t4',
+           which are allocated last, so live scratch registers are rarely
+           clobbered (helper save areas in the tests 546 -> 378, the rest
+           are other stack uses, 938 fewer lines)
     [ ] a non-inline call saves and restores all 30 registers with
         'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
         'print_num(a)'

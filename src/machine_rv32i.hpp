@@ -764,8 +764,10 @@ class machine_rv32i : public machine {
 
         const uint32_t live{unavailable_registers_};
 
+        // argument registers are allocated last, so the helpers rarely
+        // clobber a live scratch register that would need saving
         constexpr std::array<std::string_view, 8> clobbers{
-            "ra", "a0", "a1", "t0", "t1", "t2", "t3", "t4"};
+            "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6"};
 
         const size_t clobber_count{division ? clobbers.size() : 5};
         std::vector<std::string_view> saved;
@@ -883,15 +885,15 @@ class machine_rv32i : public machine {
         // unused helpers contribute no code
         if (multiply_helper_used_) {
             assembler_.label(0, ".Lbaz_multiply");
-            assembler_.mv(1, "t0", "a0");
+            assembler_.mv(1, "a2", "a0");
             assembler_.li(1, "a0", 0);
             assembler_.beqz(1, "a1", "3f");
             assembler_.label(0, "1");
-            assembler_.andi(1, "t1", "a1", 1);
-            assembler_.beqz(1, "t1", "2f");
-            assembler_.add(1, "a0", "a0", "t0");
+            assembler_.andi(1, "a3", "a1", 1);
+            assembler_.beqz(1, "a3", "2f");
+            assembler_.add(1, "a0", "a0", "a2");
             assembler_.label(0, "2");
-            assembler_.slli(1, "t0", "t0", 1);
+            assembler_.slli(1, "a2", "a2", 1);
             assembler_.srli(1, "a1", "a1", 1);
             assembler_.bnez(1, "a1", "1b");
             assembler_.label(0, "3");
@@ -904,30 +906,30 @@ class machine_rv32i : public machine {
 
             assembler_.label(0, ".Lbaz_divide");
             assembler_.beqz(1, "a1", "5f");
-            assembler_.srai(1, "t2", "a0", sign_shift_);
-            assembler_.srai(1, "t1", "a1", sign_shift_);
-            assembler_.xor_op(1, "a0", "a0", "t2");
-            assembler_.sub(1, "a0", "a0", "t2");
-            assembler_.xor_op(1, "a1", "a1", "t1");
-            assembler_.sub(1, "a1", "a1", "t1");
-            assembler_.xor_op(1, "t1", "t1", "t2");
-            assembler_.li(1, "t0", 0);
-            assembler_.li(1, "t3", divide_steps);
+            assembler_.srai(1, "a4", "a0", sign_shift_);
+            assembler_.srai(1, "a3", "a1", sign_shift_);
+            assembler_.xor_op(1, "a0", "a0", "a4");
+            assembler_.sub(1, "a0", "a0", "a4");
+            assembler_.xor_op(1, "a1", "a1", "a3");
+            assembler_.sub(1, "a1", "a1", "a3");
+            assembler_.xor_op(1, "a3", "a3", "a4");
+            assembler_.li(1, "a2", 0);
+            assembler_.li(1, "a5", divide_steps);
             assembler_.label(0, "1");
-            assembler_.srli(1, "t4", "a0", sign_shift_);
-            assembler_.slli(1, "t0", "t0", 1);
-            assembler_.or_op(1, "t0", "t0", "t4");
+            assembler_.srli(1, "a6", "a0", sign_shift_);
+            assembler_.slli(1, "a2", "a2", 1);
+            assembler_.or_op(1, "a2", "a2", "a6");
             assembler_.slli(1, "a0", "a0", 1);
-            assembler_.bltu(1, "t0", "a1", "2f");
-            assembler_.sub(1, "t0", "t0", "a1");
+            assembler_.bltu(1, "a2", "a1", "2f");
+            assembler_.sub(1, "a2", "a2", "a1");
             assembler_.ori(1, "a0", "a0", 1);
             assembler_.label(0, "2");
-            assembler_.addi(1, "t3", "t3", -1);
-            assembler_.bnez(1, "t3", "1b");
-            assembler_.xor_op(1, "a0", "a0", "t1");
-            assembler_.sub(1, "a0", "a0", "t1");
-            assembler_.xor_op(1, "a1", "t0", "t2");
-            assembler_.sub(1, "a1", "a1", "t2");
+            assembler_.addi(1, "a5", "a5", -1);
+            assembler_.bnez(1, "a5", "1b");
+            assembler_.xor_op(1, "a0", "a0", "a3");
+            assembler_.sub(1, "a0", "a0", "a3");
+            assembler_.xor_op(1, "a1", "a2", "a4");
+            assembler_.sub(1, "a1", "a1", "a4");
             assembler_.ret(1);
             assembler_.label(0, "5");
             assembler_.ebreak(1);
