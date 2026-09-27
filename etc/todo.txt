@@ -1,113 +1,206 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[x] opus 5.5 ai review and bug-hunt
-[x] opus untangle nested if/else, apply early returns and consolidate repeated
-    code into helpers
-    [x] dead code removed: 'jump_optimizer.hpp' (replaced by
-        'assembler::optimize_jumps'), unused members of 'toc' and 'stmt_if',
-        'tokenizer::structurals_'
-    [x] one helper for what parsing and compiling both registered:
-        'stmt_def_func', 'stmt_def_var', 'stmt_def_dat', 'stmt_builtin_foo'
-    [x] long functions split: 'stmt_call::compile_noninline',
-        'tokenizer::next_token', 'toc::add_var', 'expr_type' constructor,
-        the statement dispatch in 'stmt_block' and 'program'
-    [x] repeated code shared: 'toc' frame lookups and frame exits, bounds
-        check options, zeroing of unlisted elements, x86 qword registers and
-        'lea' into memory, rv32i register allocation, main.cpp error output
-    [x] 'machine_rv32i_bare_metal' shared by the qemu and fpga targets
-    => left: 'stmt_identifier::compile_lea' (own item below), the large
-       backend files get reviewed when new work touches them
-    => every step verified with identical assembly and binaries on all
-       targets and modes
-[o] main.cpp: make an option --bin that decides the name of the binary for rv32i
-    backends. evaluate the possibility to run nasm from inside the
-    assembler_x86_64 so it also uses the --bin option which is by default name
-    of source-[backend].bin
-    [x] --bin=FILE for rv32i targets, default 'dir/stem-TARGET.bin' next to the
-        source, test suites pass --bin=gen-rv32i.bin
-    [ ] x86_64 binary, evaluation:
-        => running nasm and ld from the compiler is possible with 'posix_spawnp'
-           (no shell so file names cannot inject commands): assembly to a
-           temporary file, 'nasm -f elf64', 'ld -s -T baz.ld'
-        => drawbacks: the compiler then needs nasm and ld at run time and
-           'baz.ld' which lives in the repository (would be embedded and
-           written to a temporary file), tool failures after a successful
-           compile need their own error path, the result is an elf executable
-           so '.bin' misleads, test suites assemble 'gen.s' themselves and
-           would run nasm twice
-        => alternative matching rv32i: 'assembler_x86_64' encodes instructions
-           from records and writes the elf itself (encoding tables, rip
-           relative and absolute references, elf header and 2 program headers)
-           => big: several files and interfaces, awaiting go-ahead
-        => until then nasm stays in the scripts and x86_64 ignores --bin
-[o] local code generation found in the rv32i assessment, examples in
-    etc/codegen-inefficiencies.baz
-    [ ] a runtime bool argument to an inline function is materialized:
-        'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
-        (or 'bnez' against 0)
-        => plan (big: several files and interfaces, awaiting go-ahead)
-           => the argument cannot be compiled at the 'if' in the body: names
-              resolve in the callee's scope and an argument is a value taken
-              at the call before the body runs
-           [ ] a 'bool' parameter given a single comparison 'a op b' (no
-               'and'/'or', not a shorthand) evaluates 'a' and a non-constant
-               'b' into scratch registers at the call and binds the parameter
-               to { lhs register, op, rhs operand } instead of 0/1; the
-               registers stay allocated until the body ends
-           [ ] 'alias_info' and 'ident_info' carry the optional comparison,
-               'toc' name resolution returns it
-           [ ] a shorthand on the parameter ('if ok', 'if not ok',
-               'ok and ...') calls 'compare_and_branch' with the bound
-               operands, inversion combined as today
-           [ ] only when every read in the body is such a whole condition and
-               the parameter is never assigned, otherwise materialized as
-               today; needs a visitor that tells condition reads from value
-               reads
-           [ ] expected: rv32i 'lw; li; bne', 'x == 0' as 'lw; bnez'
-           [ ] tests on both targets: condition-only use, value use and
-               assignment fall back, a callee name shadowing a caller name,
-               an operand changed in the body before the 'if'
-    [ ] zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
-        shorter than the 6 instruction loop; choose by instruction count
-[ ] register allocation optimizations spanning past local scope of 1 machine
-    operation, examples in etc/codegen-inefficiencies.baz
-    [ ] a value is loaded again right after it was stored: 'i = i - 1' ends
-        with 'sw t0, 28(s1)' and 'buf[i]' starts with 'lw t0, 28(s1)'
-        => needs to know which register still holds a variable between
-           statements
-    [ ] the scaled index goes into a new register instead of reusing the
-        index register when it is no longer needed ('slli t1, t0, 2' instead
-        of 'slli t0, t0, 2')
-    [ ] an operand is loaded into a scratch register then copied to where the
-        next operation needs it: 'lw t2; addi a0, t2, 0' before the divide
-        call instead of 'lw a0', the syscall count 'addi a2, t0, 0'
-    [ ] 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per field instead
-        of computing the address once
-    [ ] multiply/divide helper chains ('r = a * b * c * d') pass the value
-        through memory ('sw a0, r; lw a0, r') or a scratch register
-        ('addi a0, t0, 0' and back) between the calls
-        => needs register targeting for helper operands
-    [ ] a non-inline call saves and restores all 30 registers with
-        'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
-        'print_num(a)'
-        => the registers a non-inline function can use could be listed so the
-           call saves only those
-[ ] optimizations when constant known at compile
-    [ ] fold constant elements in expressions ('expr_arith', 'expr_bool')
-    [ ] an identifier without an index register can compute its offset at
-        compile time ('stmt_identifier::init_reg_offset')
-    [ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
-        compares, then the remaining dword, word and byte compares
-[o] low priority: code after an unconditional 'exit' is generated, e.g. after
-    a constant false 'assert'
-    => done for the end of 'main' ('program::is_end_reachable')
+easy
+--------------------------------------------------------------------------------
+[ ] validate that put_back_token argument matches source text before rewinding
+    class: tokenizer
+    method: put_back_token
+    source: src/tokenizer.hpp:99
+[ ] document invariant that expr_any::identifier cannot be empty at call sites
+    class: expr_any
+    method: identifier
+    source: src/expr_any.hpp:228
+[ ] document why expr_any routes non-braced array assignment to expr_type
+    class: expr_any
+    method: expr_any (constructor)
+    source: src/expr_any.hpp:70
+[ ] examine NOLINTNEXTLINE annotations and try to fix
+[ ] formalize builtin type size mapping, 'toc' and 'machine_x86_64' each have
+    a 'builtin_type_for_size_bytes'
+    source: src/toc.hpp:1021, src/machine_x86_64.hpp:2372
+[ ] etc/run-test with peak memory usage and inspect why some test cases use so
+    much more memory than other
+[ ] why is the binary so big although in-line is turned off in make.sh?
+[ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
+    the emulator with the dividend in a0 as exit code
+[ ] --checks=noub enables all the noub checks: today 'upper', 'lower', 'frame'
+    and 'alias', later the remaining '--checks=noub:' items
 [ ] a 'read' into a 'bool' array stores any byte, but copying a 'bool'
     ('is_bool_copy') relies on 0 or 1; reject 'bool' arrays in 'read'
     => for now the user ensures a 'read' into a 'bool' array stores only 0 or 1
-[x] specify device memory size and error if code size + dat size + max used
-    vars + stack size overflows it
-    => rv32i-fpga: image + '--vars' + '--stack' must fit the 8 MiB memory
+[ ] allow trailing comma at type definition. e.g.,
+    type object {
+        pos : point,
+        color : i32,
+    }
+[ ] let i=1 creates a constant
+[ ] add test coverage for built-in/non-expression/non-constant array copy path
+    in type assignment
+    class: expr_type
+    method: compile_assign
+    source: src/decouple_impl.hpp:366
+[ ] validate destination array size against source array size during type
+    assignment copy
+    class: expr_type
+    method: compile_assign
+    source: src/decouple_impl.hpp:382
+[ ] rv32i: zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
+    shorter than the 6 instruction loop; choose by instruction count
+    (etc/codegen-inefficiencies.baz)
+[ ] variable argument count in read/write might be confusing. consider requiring
+    all arguments
+[ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
+[ ] some improvements (performance wise) of toc::indent using a buffer on the
+    stack
+    => do perf tests first using etc/perf.sh
+[ ] lut: change to map
+    => keep it simple for now
+[ ] rename compiler_exception
+[ ] remove panic_exception
+
+--------------------------------------------------------------------------------
+medium
+--------------------------------------------------------------------------------
+[ ] low priority: code after an unconditional 'exit' elsewhere than the end of
+    'main' is generated, e.g. after a constant false 'assert'
+[ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
+    compares, then the remaining dword, word and byte compares
+[ ] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
+    derive a larger alignment from the addresses as 'copy' and 'zero' do
+    => keep the smallest 'access_alignment' of the addresses given to
+       'set_array_copy_source/destination' and 'set_memory_equal_left/right'
+       with the bulk registers, width = max(type alignment, that)
+[ ] reorder locals by alignment, largest first, to reduce padding
+[ ] register allocation: the scaled index goes into a new register instead of
+    reusing the index register when it is no longer needed ('slli t1, t0, 2'
+    instead of 'slli t0, t0, 2') (etc/codegen-inefficiencies.baz)
+[ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
+    field instead of computing the address once
+    (etc/codegen-inefficiencies.baz)
+[ ] constant known at compile: an identifier without an index register can
+    compute its offset at compile time ('stmt_identifier::init_reg_offset')
+[ ] constant known at compile: fold constant elements in expressions
+    ('expr_arith', 'expr_bool')
+[ ] post processing optimization for: var b=-(-a*-a)
+      mov r15,qword[rbp-8]
+      neg r15
+      neg r15
+      mov qword[rbp-16],r15
+[ ] --checks=noub: division by zero traps and MIN / -1 wraps or traps by
+    width. check and panic with the line
+[ ] --checks=noub: shift count < 0 or >= width is masked by hardware
+    differently per width ('i8 1 << 9' is 0, 'i32 1 << 33' is 2). check or
+    define
+[ ] --checks=noub: overlapping 'array_copy': check ranges at run-time or
+    define as memmove, warn when it can be detected at compile time
+[ ] --checks=noub: system stack overflow in deep non-inline recursion
+    segfaults before the frame check. check 'rsp'/'sp' or depth at each call
+[ ] --checks=alias: accept disjoint constant paths by comparing byte ranges
+    (137.baz-140.baz, 294.baz, 418.baz)
+[ ] --checks=alias: accept shared arguments when the callee assigns neither
+    parameter (128.baz-133.baz, 414.baz)
+[ ] --checks=alias: route inline builtin results through a scratch register
+    instead of rejecting (077.baz, 135.baz, 394.baz, 397.baz, 485.baz)
+    => then re-enable 485.baz
+[ ] UB detection: conservative rejections: a write through a runtime index
+    covers nothing, 'array_copy' into a result is not an assignment, 'foo'
+    bodies do not count as assigning
+[ ] 'equal' on records compares the padding bytes; a record set by a call
+    result keeps whatever padding bytes its storage held
+[ ] register allocation: a non-inline call saves and restores all 30 registers
+    with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
+    'print_num(a)' (etc/codegen-inefficiencies.baz)
+    => the registers a non-inline function can use could be listed so the
+       call saves only those
+[ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
+    class: machine_x86_64
+    method: shift
+    source: src/machine_x86_64.hpp:789
+[ ] stmt_call: check arguments vs parameters in constructor instead of at
+    compile
+[ ] implement "size_of" for fields
+[ ] consider not allowing single statement blocks
+[ ] should if str == "abc" be supported?
+    => an argument is that it is a magic string and should be dat
+[ ] const allowed in function declaration and code
+    foo(ix : const i32) { const x = ix }
+[ ] func f(p : point const) const is default. same as "func f(p : point)"
+[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
+[ ] break: exit current block instead of just loop?
+[ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
+[ ] a way to specify a range in the array: foo arr(bgn_index, len, i_start)
+[ ] foo arr1, arr2, ... {
+      # injected variable 'e1', 'e2', 'e...': current array elements
+      e1 = e2
+    }
+[ ] expr_any: deduce expression type to bool or numbers: is_const,
+    is_bool_expression, is_number_expression
+[ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
+    => there is a longer jump way +/- 2 GB that can be implemented later
+[ ] rv32i: check loop iteration regarding large span
+[ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
+    tests
+[ ] change all array access using [ ] to checked using .at
+[ ] instrumentation to find out max heap and stack usage by the compiler
+[ ] lea_path may not be necessary since only most recent lea relevant
+    => also index of where in elems path lea was found
+[ ] re-look at stmt_identifier::compile_lea and make a nicer implementation
+[ ] expr_type has mixed responsibilities, ok?
+    expr_arith: handles expressions that writes the result with one mov
+    expr_bool: handles boolean expressions and also results in one mov
+[ ] consider dropping the visitor pattern in expr_any because lcov does not
+    handle it
+[ ] make an extensive comment file explaining lea, indexing array etc
+[ ] C++ brace initializers offer no performance advantage and the narrowing
+    issues do not exist in this project. they are ugly. ponder switching to =
+[ ] consider result being an array
+    func make_points() : point[] res {...}
+    => confusing. better is func init_points(pts : point[]) {...}
+
+--------------------------------------------------------------------------------
+hard
+--------------------------------------------------------------------------------
+[ ] register allocation: a value is loaded again right after it was stored:
+    'i = i - 1' ends with 'sw t0, 28(s1)' and 'buf[i]' starts with
+    'lw t0, 28(s1)' (etc/codegen-inefficiencies.baz)
+    => needs to know which register still holds a variable between
+       statements
+[ ] register allocation: an operand is loaded into a scratch register then
+    copied to where the next operation needs it: 'lw t2; addi a0, t2, 0'
+    before the divide call instead of 'lw a0', the syscall count
+    'addi a2, t0, 0' (etc/codegen-inefficiencies.baz)
+[ ] register allocation: multiply/divide helper chains ('r = a * b * c * d')
+    pass the value through memory ('sw a0, r; lw a0, r') or a scratch register
+    ('addi a0, t0, 0' and back) between the calls
+    (etc/codegen-inefficiencies.baz)
+    => needs register targeting for helper operands
+[ ] x86 register utilization: 109.baz, 082.baz, 104.baz
+[ ] a runtime bool argument to an inline function is materialized:
+    'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
+    (or 'bnez' against 0) (etc/codegen-inefficiencies.baz)
+    => plan (big: several files and interfaces, awaiting go-ahead)
+       => the argument cannot be compiled at the 'if' in the body: names
+          resolve in the callee's scope and an argument is a value taken
+          at the call before the body runs
+       [ ] a 'bool' parameter given a single comparison 'a op b' (no
+           'and'/'or', not a shorthand) evaluates 'a' and a non-constant
+           'b' into scratch registers at the call and binds the parameter
+           to { lhs register, op, rhs operand } instead of 0/1; the
+           registers stay allocated until the body ends
+       [ ] 'alias_info' and 'ident_info' carry the optional comparison,
+           'toc' name resolution returns it
+       [ ] a shorthand on the parameter ('if ok', 'if not ok',
+           'ok and ...') calls 'compare_and_branch' with the bound
+           operands, inversion combined as today
+       [ ] only when every read in the body is such a whole condition and
+           the parameter is never assigned, otherwise materialized as
+           today; needs a visitor that tells condition reads from value
+           reads
+       [ ] expected: rv32i 'lw; li; bne', 'x == 0' as 'lw; bnez'
+       [ ] tests on both targets: condition-only use, value use and
+           assignment fall back, a callee name shadowing a caller name,
+           an operand changed in the body before the 'if'
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
     => plan (big: new machine interface method, several files)
        [ ] parse a string token or an identifier for the 'array_copy' source
@@ -130,45 +223,74 @@
        [ ] tests on both targets: runtime copy and compare, errors for a
            non-'i8' destination, a count above the string length and the
            empty string
-[o] --checks=noub: a program either behaves as defined or panics with a line
-    => viable: no heap, no pointer type, no casts, no raw registers
-    [o] 'read'/'write' take an array and a checked count
-        [ ] a partial 'read'/'write' can end inside a record and the start
-            argument cannot resume there. for elements larger than 1 byte,
-            repeat the syscall until the current record is complete, not
-            the whole count, so line input still returns
-            => result stays in bytes, always a multiple of the element size
-            => end of file or an error inside a record returns the error
-            => remainder is an 'and' for power of 2 sizes, other sizes need
-               a division that conflicts with the syscall registers on x86
-               and uses the helper on rv32i
-            => test with 'DIFFINP2' input split inside a record
-    [ ] system stack overflow in deep non-inline recursion segfaults before
-        the frame check. check 'rsp'/'sp' or depth at each call
-    [ ] division by zero traps and MIN / -1 wraps or traps by width. check
-        and panic with the line
-    [ ] shift count < 0 or >= width is masked by hardware differently per
-        width ('i8 1 << 9' is 0, 'i32 1 << 33' is 2). check or define
-    [ ] signed overflow wraps. define wrapping as the semantics or add
-        --checks=overflow (x86 'jo', rv32i several instructions)
-    [ ] overlapping 'array_copy': check ranges at run-time or define as
-        memmove, warn when it can be detected at compile time
-    [o] aliasing of results and by-reference arguments, see 'UB detection'
-        below. reject or check addresses at the call
-        [ ] accept disjoint constant paths by comparing byte ranges
-            (137.baz-140.baz, 294.baz, 418.baz)
-        [ ] route inline builtin results through a scratch register instead
-            of rejecting (077.baz, 135.baz, 394.baz, 397.baz, 485.baz)
-        [ ] accept shared arguments when the callee assigns neither
-            parameter (128.baz-133.baz, 414.baz)
-        [ ] runtime address check or a frame temporary for the remaining
-            record and non-inline results with runtime indexes
-        [ ] re-enable 485.baz
-    [ ] --checks=noub enables all of the above
-[ ] should if str == "abc" be supported?
-    => an argument is that it is a magic string and should be dat
-[ ] consider creating binary from assembler_x86_64 like assembler_rv32i does
+[ ] --checks=noub: a partial 'read'/'write' can end inside a record and the
+    start argument cannot resume there. for elements larger than 1 byte,
+    repeat the syscall until the current record is complete, not the whole
+    count, so line input still returns
+    => result stays in bytes, always a multiple of the element size
+    => end of file or an error inside a record returns the error
+    => remainder is an 'and' for power of 2 sizes, other sizes need a
+       division that conflicts with the syscall registers on x86 and uses
+       the helper on rv32i
+    => test with 'DIFFINP2' input split inside a record
+[ ] --checks=noub: signed overflow wraps. define wrapping as the semantics or
+    add --checks=overflow (x86 'jo', rv32i several instructions)
+[ ] --checks=alias: runtime address check or a frame temporary for the
+    remaining record and non-inline results with runtime indexes
+[ ] UB detection: result aliases a by-reference argument: 'x = f(x)',
+    'p = swap(p)' (485.baz, inline and noinline). reject when the callee
+    reads that parameter after writing its result: per-function summary of
+    such parameters plus a call-site overlap check using identifier byte
+    ranges (runtime indexes may overlap). valid today: 135.baz,
+    137.baz-140.baz, 394.baz read before writing
+[ ] UB detection: two by-reference parameters bound to the same variable,
+    e.g. 'g(q, q)' where 'g' writes one and reads the other. inside inline
+    functions the destination-read checks compare names, so 'res' and 'p'
+    referring to the same caller variable are not detected
+[ ] UB detection: consider accepting partial results when the caller's
+    destination is already initialized (call-site coverage summary)
+    => prog.baz 'object_init' sets only 'res.pos.y' and is rejected
+[ ] allow record literals and record call results as arguments, e.g.
+    'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
+    caller's frame. rejected today with "argument 1 cannot be a temporary"
+    (501.baz, 502.baz)
+[ ] consider making widening explicit too, today only narrowing needs
+    'i8(...)' etc. e.g. 'var y i32 = 1 + low(x)' with 'low' returning i8 is
+    rejected as a result type mismatch, 'i32(low(x))' is required
+    => prototype: requiring equal widths in the 3 width checks rejects 40+
+       tests (first error per file)
+    => exempt array indexes (most rejections), fitting constants and 'void'
+       calls ('void' counts as a 0 byte builtin)
+    => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
+       compile on rv32i. a target-neutral conversion such as 'int(...)' is
+       needed to widen to the default type portably
+[ ] func f(p : point copy) copies point to callee stack
+[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
+[ ] string type
+      var str = "hello world"
+      var len = str.len
+[ ] consider allowing function definitions in functions
+[ ] consider a var type that can be viewed from enclosing functions
+[ ] make the operand the base way of addressing memory with 64 bit offset and
+    machine dependent index register scalings then lower the writing and
+    reading to machine specific capabilities
+
+--------------------------------------------------------------------------------
+too hard right now
+--------------------------------------------------------------------------------
+[ ] x86_64: create the binary from 'assembler_x86_64' like 'assembler_rv32i'
+    does, so the --bin option also applies to x86_64
     => on hold (2026-09-27): not worth it for now
+    => until then nasm stays in the scripts and x86_64 ignores --bin
+    => running nasm and ld from the compiler is possible with 'posix_spawnp'
+       (no shell so file names cannot inject commands): assembly to a
+       temporary file, 'nasm -f elf64', 'ld -s -T baz.ld'
+       => drawbacks: the compiler then needs nasm and ld at run time and
+          'baz.ld' which lives in the repository (would be embedded and
+          written to a temporary file), tool failures after a successful
+          compile need their own error path, the result is an elf executable
+          so '.bin' misleads, test suites assemble 'gen.s' themselves and
+          would run nasm twice
     => assessment (2026-09-27): big, about the size of the rv32i binary work
        => 'assembler_x86_64' writes text only, no records. needed: records
           per instruction/data line, register table (number, width, rex,
@@ -201,6 +323,38 @@
           becomes bytes, 'count_instructions' keeps choosing versions by
           lines so the generated assembly stays unchanged
        => also decides the --bin default name for x86_64 (elf, not '.bin')
+[ ] consider making a verilog cpu that implements just the subset of x86 used
+    instead of a rv32i backend
+    => more registers, more scalings of operand index register, more
+       displacement, more branch offset
+[ ] consider refactoring to 1 pass compiler making compiling in constructor
+    constructor(os data,os code,indent)
+[ ] simple LSP supporting rename
+[ ] support for float and double?
+[ ] support avx512 operations
+[ ] limited integration with some C functions from stdlib
+[ ] declare external C functions
+
+--------------------------------------------------------------------------------
+resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
+--------------------------------------------------------------------------------
+[x] opus 5.5 ai review and bug-hunt
+[x] main.cpp: --bin=FILE for rv32i targets, default 'dir/stem-TARGET.bin' next
+    to the source, test suites pass --bin=gen-rv32i.bin
+    => x86_64 ignores --bin, see the open 'assembler_x86_64' binary item
+[x] code after an unconditional 'exit' at the end of 'main' is not generated
+    ('program::is_end_reachable')
+[x] toc::get_stack_size -> keep track of it with a member variable
+    => each frame keeps 'allocated_stack_size_bytes_'
+[x] rv32i emit_most_efficient should know the instruction count on synthesized
+    instructions such as "li"
+    => 'assembler_rv32i::emit_smaller' compares 'total_size_bytes', which sizes
+       'li' by its value
+[x] fix todo sprinkled in the source
+    => the remaining source todos refer to items in this file
+[x] specify device memory size and error if code size + dat size + max used
+    vars + stack size overflows it
+    => rv32i-fpga: image + '--vars' + '--stack' must fit the 8 MiB memory
 [x] 'machine_rv32i_qemu' and 'machine_rv32i_fpga' repeat the same members and
     methods, only the uart access, the stack setup and the exit routine differ
     => 'machine_rv32i_bare_metal' between 'machine_rv32i' and both targets owns
@@ -208,169 +362,24 @@
        write routines. the targets supply 'emit_stack_setup',
        'emit_exit_routine', 'emit_uart_setup', 'emit_receive_byte' and
        'emit_transmit_byte'. identical assembly and images on both targets
-[ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
-    the emulator with the dividend in a0 as exit code
-[ ] reorder locals by alignment, largest first, to reduce padding
-[ ] rv32i: 'array_copy', 'equal' and 'arrays_equal' use only the type alignment;
-    derive a larger alignment from the addresses as 'copy' and 'zero' do
-    => keep the smallest 'access_alignment' of the addresses given to
-       'set_array_copy_source/destination' and 'set_memory_equal_left/right'
-       with the bulk registers, width = max(type alignment, that)
-[ ] 'equal' on records compares the padding bytes; a record set by a call
-    result keeps whatever padding bytes its storage held
-[ ] variable argument count in read/write might be confusing. consider requiring
-    all arguments
-[ ] allow record literals and record call results as arguments, e.g.
-    'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
-    caller's frame. rejected today with "argument 1 cannot be a temporary"
-    (501.baz, 502.baz)
-[ ] consider making widening explicit too, today only narrowing needs
-    'i8(...)' etc. e.g. 'var y i32 = 1 + low(x)' with 'low' returning i8 is
-    rejected as a result type mismatch, 'i32(low(x))' is required
-    => prototype: requiring equal widths in the 3 width checks rejects 40+
-       tests (first error per file)
-    => exempt array indexes (most rejections), fitting constants and 'void'
-       calls ('void' counts as a 0 byte builtin)
-    => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
-       compile on rv32i. a target-neutral conversion such as 'int(...)' is
-       needed to widen to the default type portably
-[ ] re-look at stmt_identifier::compile_lea and make a nicer implementation
-[ ] consider not allowing single statement blocks
-[ ] rv32i emit_most_efficient should know the instruction count on synthesized
-    instructions such as "li"
-[ ] UB detection, what remains:
-    [ ] result aliases a by-reference argument: 'x = f(x)', 'p = swap(p)'
-        (485.baz, inline and noinline). reject when the callee reads that
-        parameter after writing its result: per-function summary of such
-        parameters plus a call-site overlap check using identifier byte
-        ranges (runtime indexes may overlap). valid today: 135.baz, 137.baz-140.baz,
-        394.baz read before writing
-    [ ] two by-reference parameters bound to the same variable, e.g. 'g(q, q)'
-        where 'g' writes one and reads the other. inside inline functions the
-        destination-read checks compare names, so 'res' and 'p' referring to
-        the same caller variable are not detected
-    [ ] conservative rejections: a write through a runtime index covers
-        nothing, 'array_copy' into a result is not an assignment, 'foo'
-        bodies do not count as assigning
-    [ ] prog.baz 'object_init' sets only 'res.pos.y' and is rejected
-    [ ] consider accepting partial results when the caller's destination is
-        already initialized (call-site coverage summary)
-[ ] x86 register utilization: 109.baz, 082.baz, 104.baz
-[ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
-    => there is a longer jump way +/- 2 GB that can be implemented later
-[ ] rv32i: check loop iteration regarding large span
-[ ]  lift the possible ai generated tests in test-rv32i.sh to end-to-end
-     .baz tests 
-[ ] change all array access using [ ] to checked using .at
-[ ]  make the operand the base way of addressing memory with 64 bit offset and
-     machine dependent index register scalings then lower the writing and
-     reading to machine specific capabilities
-[ ] consider making a verilog cpu that implements just the subset of x86 used
-    instead of a rv32i backend
-    => more registers, more scalings of operand index register, more 
-       displacement, more branch offset
-[ ] remove panic_exception
-[ ] consider allowing function definitions in functions
-[ ] consider a var type that can be viewed from enclosing functions
-[ ] a way to specify a range in the array: foo arr(bgn_index, len, i_start)
-[ ] foo arr1, arr2, ... {
-      # injected variable 'e1', 'e2', 'e...': current array elements
-      e1 = e2
-    }
-[ ] transferred source todo items (2026-09-18)
-    [ ] formalize builtin type size mapping
-        class: toc
-        method: get_builtin_type_for_size
-        source: src/toc.hpp:756
-    [ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
-        class: expr_ops_list
-        method: asm_op_shift
-        source: src/expr_ops_list.hpp:835
-    [ ] validate destination array size against source array size during type assignment copy
-        class: expr_type_value
-        method: compile_assign
-        source: src/decouple_impl.hpp:272
-    [ ] add test coverage for built-in/non-expression/non-constant array copy path in type assignment
-        class: expr_type_value
-        method: compile_assign
-        source: src/decouple_impl.hpp:343
-    [ ] document why expr_any routes non-braced array assignment to expr_type_value
-        class: expr_any
-        method: expr_any (constructor)
-        source: src/expr_any.hpp:55
-    [ ] document invariant that expr_any::identifier cannot be empty at call sites
-        class: expr_any
-        method: identifier
-        source: src/expr_any.hpp:169
-    [ ] validate that put_back_token argument matches source text before rewinding
-        class: tokenizer
-        method: put_back_token
-        source: src/tokenizer.hpp:126
-[ ] consider dropping the visitor pattern in expr_any because lcov does not
-    handle it
-[ ] allow trailing comma at type definition. e.g.,
-    type object {
-        pos : point,
-        color : i32,
-    }
-[ ] expr_type_value has mixed responsibilities, ok?
-    expr_ops_list: handles expressions that writes the result with one mov
-    expr_bool_ops_list: handles boolean expressions and also results in one mov
-[ ] fix todo sprinkled in the source
-[ ] consider result being an array
-    func make_points() : point[] res {...}
-    => confusing. better is func init_points(pts : point[]) {...}
-[ ] make an extensive comment file explaining lea, indexing array etc
-[ ] examine NOLINTNEXTLINE annotations and try to fix
-[ ] const allowed in function declaration and code
-    foo(ix : const i32) { const x = ix }
-[ ] some improvements (performance wise) of toc::indent using a buffer on the
-    stack
-    => do perf tests first using etc/perf.sh
-[ ] implement "size_of" for fields
-[ ] lut: change to map
-    => keep it simple for now
-[ ] etc/run-test with peak memory usage and inspect why some test cases use so
-    much more memory than other
-[ ] toc::get_stack_size -> keep track of it with a member variable
-[ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
-[ ] instrumentation to find out max heap and stack usage by the compiler
-[ ] stmt_call: check arguments vs parameters in constructor instead of at
-    compile
-[ ] support for float and double?
-[ ] support avx512 operations
-[ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
-[ ] limited integration with some C functions from stdlib
-[ ] declare external C functions
-[ ] rename compiler_exception
-[ ] break: exit current block instead of just loop?
-[ ] lea_path may not be necessary since only most recent lea relevant
-    => also index of where in elems path lea was found
-[ ] C++ brace initializers offer no performance advantage and the narrowing
-    issues do not exist in this project. they are ugly. ponder switching to =
-[ ] consider refactoring to 1 pass compiler making compiling in constructor
-    constructor(os data,os code,indent)
-[ ] simple LSP supporting rename
-[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
-[ ] func f(p : point copy) copies point to callee stack
-[ ] func f(p : point const) const is default. same as "func f(p : point)"
-[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
-[ ] string type
-      var str = "hello world"
-      var len = str.len
-[ ] expr_any: deduce expression type to bool or numbers
-[ ]   is_const, is_bool_expression, is_number_expression
-[ ] let i=1 creates a constant
-[ ] post processing optimization for: var b=-(-a*-a)
-      mov r15,qword[rbp-8]
-      neg r15
-      neg r15
-      mov qword[rbp-16],r15
-[ ] why is the binary so big although in-line is turned off in make.sh?
-
---------------------------------------------------------------------------------
-resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
---------------------------------------------------------------------------------
+[x] opus untangle nested if/else, apply early returns and consolidate repeated
+    code into helpers
+    [x] dead code removed: 'jump_optimizer.hpp' (replaced by
+        'assembler::optimize_jumps'), unused members of 'toc' and 'stmt_if',
+        'tokenizer::structurals_'
+    [x] one helper for what parsing and compiling both registered:
+        'stmt_def_func', 'stmt_def_var', 'stmt_def_dat', 'stmt_builtin_foo'
+    [x] long functions split: 'stmt_call::compile_noninline',
+        'tokenizer::next_token', 'toc::add_var', 'expr_type' constructor,
+        the statement dispatch in 'stmt_block' and 'program'
+    [x] repeated code shared: 'toc' frame lookups and frame exits, bounds
+        check options, zeroing of unlisted elements, x86 qword registers and
+        'lea' into memory, rv32i register allocation, main.cpp error output
+    [x] 'machine_rv32i_bare_metal' shared by the qemu and fpga targets
+    => left: 'stmt_identifier::compile_lea' (own item below), the large
+       backend files get reviewed when new work touches them
+    => every step verified with identical assembly and binaries on all
+       targets and modes
 [x] local code generation found in the rv32i assessment, completed parts
     [x] unary ops and narrowing on a memory destination copied first, then
         loaded, modified and stored: 'var a = -x' was 'lw; sw; lw; sub; sw'
