@@ -867,7 +867,15 @@ class toc final {
     [[nodiscard]] auto make_ident_info(const statement& st) const
         -> ident_info {
 
-        return make_ident_info_or_throw(st.tok(), st.identifier());
+        ident_info info{make_ident_info_or_throw(st.tok(), st.identifier())};
+
+        // the name refers to the declared array, 'ps[1]' accesses one element
+        if (st.is_array_element()) {
+            info.is_array = false;
+            info.array_len = 0;
+        }
+
+        return info;
     }
 
     [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
@@ -1015,19 +1023,6 @@ class toc final {
         });
 
         return string_constants_.back().label;
-    }
-
-    [[nodiscard]] auto
-    builtin_type_for_size_bytes(const size_t size_bytes) const -> const type& {
-
-        for (const char* const name : {"i64", "i32", "i16", "i8"}) {
-            const type& value_type{*types_.get_const_ref(name).type_ptr};
-            if (size_bytes == value_type.size_bytes()) {
-                return value_type;
-            }
-        }
-
-        std::unreachable();
     }
 
     // blocks and loops belong to the function frame below them

@@ -88,10 +88,6 @@ class stmt_assign_var final : public statement {
         var_dst_info.operand = tc.get_lea_operand(indent, stmt_ident_,
                                                   var_dst_info, lea_registers);
         var_dst_info.is_pointer = false;
-        if (stmt_ident_.is_array_element()) {
-            var_dst_info.is_array = false;
-            var_dst_info.array_len = 0;
-        }
 
         expr_.compile(tc, indent, var_dst_info);
         x.free_scratch_registers(tok(), indent, lea_registers);

@@ -519,7 +519,7 @@ class stmt_call : public expression {
             throw compiler_exception{arg.tok(), "argument must be a variable"};
         }
 
-        if (info.is_array and not arg.is_array_element()) {
+        if (info.is_array) {
             throw compiler_exception{arg.tok(),
                                      "whole-array arguments are unsupported"};
         }
@@ -833,7 +833,7 @@ class stmt_call : public expression {
 
                 // an element would give the parameter the whole array's
                 // length, pass the array and a start index instead
-                if (not arg_info.is_array or arg.is_array_element()) {
+                if (not arg_info.is_array) {
                     throw compiler_exception{
                         arg.tok(), std::format("parameter {} requires an array",
                                                i + 1 - first_argument_index())};

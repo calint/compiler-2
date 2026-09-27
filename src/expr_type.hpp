@@ -27,10 +27,14 @@ class expr_type final : public statement {
     std::vector<token> expr_delims_tk_;
     token close_brace_tk_;
 
+    // only a whole array destination may copy a whole array source
+    bool is_array_destination_{};
+
   public:
     // out-of-line: parses 'expr_any' items and creates the 'stmt_call' or
     // 'stmt_identifier'
-    expr_type(toc& tc, tokenizer& tz, const type& tp);
+    expr_type(toc& tc, tokenizer& tz, const type& tp,
+              const bool is_array_destination);
 
     // out-of-line: a method receiver that has already been parsed
     explicit expr_type(std::shared_ptr<stmt_identifier> receiver);

@@ -76,7 +76,7 @@ class unary_ops final {
                 break;
 
             case '~':
-                v = ~v; // NOLINT(hicpp-signed-bitwise)
+                v = static_cast<int64_t>(~static_cast<uint64_t>(v));
                 break;
 
             default:

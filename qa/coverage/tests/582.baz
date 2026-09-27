@@ -1,0 +1,6 @@
+# 'array_length' of an indexed element
+
+func main() {
+    var ps[3] i32
+    var n = array_length(ps[1])
+}

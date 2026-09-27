@@ -150,8 +150,9 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 // note: constructor is implemented here (rather than in the header) because
 //       it needs the 'expr_any' definition, which would otherwise create a
 //       circular include between 'expr_type.hpp' and 'expr_any.hpp'
-expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp)
-    : statement{tz.next_token()} {
+expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
+                     const bool is_array_destination)
+    : statement{tz.next_token()}, is_array_destination_{is_array_destination} {
 
     set_type(tp);
 
@@ -375,6 +376,15 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
 
         assert(dst_type.name() == src_info.type_ref().name());
 
+        // the copy size comes from the source, a whole array would overflow
+        if (src_info.is_array and not is_array_destination_) {
+            throw compiler_exception{tok(), "source must not be an array"};
+        }
+
+        if (is_array_destination_ and not src_info.is_array) {
+            throw compiler_exception{tok(), "source must be an array"};
+        }
+
         std::vector<operand> allocated_registers;
         const operand src_op{
             tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
@@ -491,23 +501,14 @@ auto expr_type::write_builtin_field(toc& tc, const size_t indent,
         return;
     }
 
+    // an array field is parsed as an array 'expr_any' which is an expression
+    assert(not field.is_array);
+
     const ident_info src_info{tc.make_ident_info(src)};
 
     if (src_info.is_const()) {
         x.copy_value(src.tok(), indent, dst_operand,
                      src.make_constant_operand(src_info));
-
-        return;
-    }
-
-    // note: never reached because when 'src' is an array,
-    //       'expr_any::is_expression()' returns true and takes the
-    //       expression path above
-
-    if (field.is_array) {
-        validate_array_assignment(src.tok(), field, src_info);
-        x.copy(src.tok(), indent, src_info.operand, dst_op, field.size_bytes,
-               field.type().alignment());
 
         return;
     }
@@ -555,6 +556,11 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
                                      const type_field& field,
                                      const ident_info& dst_info,
                                      operand& dst_op) -> void {
+
+    // the copy size comes from the source so it must match the field
+    if (field.is_array and src.is_array_identifier()) {
+        validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
+    }
 
     // one assignment fills a record or copies a whole array identifier
     if (not field.is_array or src.is_array_identifier()) {

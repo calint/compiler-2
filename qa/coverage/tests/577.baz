@@ -1,0 +1,27 @@
+# a record copied from an indexed array element copies one element and leaves
+# the bytes after the destination untouched
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type point { x i32, y i32 }
+
+type line { pts[2] point }
+
+func main() {
+    var ps[3] point = { { 1, 2 }, { 3, 4 }, { 5, 6 } }
+    var q point = ps[1]
+    var guard1 i32 = 77
+    var l line = { { ps[2], ps[0] } }
+    var r point = l.pts[1]
+    var guard2 i32 = 88
+    q = ps[2]
+    r = l.pts[0]
+    assert(1, q.x == 5)
+    assert(2, q.y == 6)
+    assert(3, r.x == 5)
+    assert(4, r.y == 6)
+    assert(5, guard1 == 77)
+    assert(6, guard2 == 88)
+    assert(7, l.pts[1].x == 1)
+    assert(8, ps[0].y == 2)
+}

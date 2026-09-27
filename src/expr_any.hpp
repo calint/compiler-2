@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-29
 
+#include <cassert>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -66,7 +67,9 @@ class expr_any final : public statement {
 
         open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty()) {
-            vars_.emplace_back(expr_type{tc, tz, tp});
+            // 'expr_type' copies the whole array as bytes, 'expr_arith' would
+            // read a single scalar
+            vars_.emplace_back(expr_type{tc, tz, tp, true});
             is_identifier_ = true;
 
             return;
@@ -225,7 +228,11 @@ class expr_any final : public statement {
         });
     }
 
+    // only string and '{}' initializers leave 'vars_' empty, callers ask
+    // arrays only when 'is_array_identifier' and arguments are never arrays
     [[nodiscard]] auto identifier() const -> std::string_view override {
+        assert(not vars_.empty());
+
         return vars_[0].visit([](const auto& expression) -> std::string_view {
             return expression.identifier();
         });
@@ -501,7 +508,7 @@ class expr_any final : public statement {
         if (not tp.is_builtin()) {
             // destination is not a built-in (register) value
             // assume assign type value
-            return expr_type{tc, tz, tp};
+            return expr_type{tc, tz, tp, false};
         }
 
         if (tp.name() == tc.get_type_bool().name()) {

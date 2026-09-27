@@ -1,0 +1,8 @@
+# a record array field copied from an array of another size
+
+type point { x i32, y i32 }
+type line { pts[2] point }
+func main() {
+    var ps[3] point
+    var l line = { ps }
+}

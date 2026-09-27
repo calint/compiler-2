@@ -58,8 +58,13 @@ class token final {
         return not ws_left_.empty();
     }
 
-    [[nodiscard]] auto total_length_in_chars() const -> size_t {
-        return ws_left_.length() + text_.length() + ws_right_.length();
+    // the indexes include the quotes that string token text excludes
+    [[nodiscard]] auto source_begin_index() const -> size_t {
+        return start_ix_ - ws_left_.length();
+    }
+
+    [[nodiscard]] auto source_end_index() const -> size_t {
+        return end_ix_ + ws_right_.length();
     }
 
     [[nodiscard]] auto is_string() const -> bool { return is_str_; }

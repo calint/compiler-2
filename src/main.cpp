@@ -70,7 +70,6 @@ auto print_source_error(const std::string_view src_file_name,
                         const std::string_view message) -> void;
 } // namespace
 
-// NOLINTNEXTLINE(bugprone-exception-escape)
 auto main(const int argc, const char** const argv) -> int {
 
 #pragma clang diagnostic push

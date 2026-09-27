@@ -3,22 +3,13 @@
 --------------------------------------------------------------------------------
 easy
 --------------------------------------------------------------------------------
-[ ] validate that put_back_token argument matches source text before rewinding
-    class: tokenizer
-    method: put_back_token
-    source: src/tokenizer.hpp:99
-[ ] document invariant that expr_any::identifier cannot be empty at call sites
-    class: expr_any
-    method: identifier
-    source: src/expr_any.hpp:228
-[ ] document why expr_any routes non-braced array assignment to expr_type
-    class: expr_any
-    method: expr_any (constructor)
-    source: src/expr_any.hpp:70
-[ ] examine NOLINTNEXTLINE annotations and try to fix
-[ ] formalize builtin type size mapping, 'toc' and 'machine_x86_64' each have
-    a 'builtin_type_for_size_bytes'
-    source: src/toc.hpp:1021, src/machine_x86_64.hpp:2372
+[ ] a whole array assigned to a built-in scalar reads the first element:
+    'var x i32 = arr' and '{ arr }' for an 'i32' field are accepted, records
+    reject it with "source must not be an array"
+    => decide: reject like records or keep as shorthand for 'arr[0]'
+[ ] rv32i: zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
+    shorter than the 6 instruction loop; choose by instruction count
+    (etc/codegen-inefficiencies.baz)
 [ ] etc/run-test with peak memory usage and inspect why some test cases use so
     much more memory than other
 [ ] why is the binary so big although in-line is turned off in make.sh?
@@ -34,20 +25,6 @@ easy
         pos : point,
         color : i32,
     }
-[ ] let i=1 creates a constant
-[ ] add test coverage for built-in/non-expression/non-constant array copy path
-    in type assignment
-    class: expr_type
-    method: compile_assign
-    source: src/decouple_impl.hpp:366
-[ ] validate destination array size against source array size during type
-    assignment copy
-    class: expr_type
-    method: compile_assign
-    source: src/decouple_impl.hpp:382
-[ ] rv32i: zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
-    shorter than the 6 instruction loop; choose by instruction count
-    (etc/codegen-inefficiencies.baz)
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
@@ -58,6 +35,10 @@ easy
     => keep it simple for now
 [ ] rename compiler_exception
 [ ] remove panic_exception
+[o] examine NOLINTNEXTLINE annotations and try to fix
+    => 'main' and 'unary_ops' suppressions removed; left: the
+       'misc-definitions-in-headers' block in 'decouple_impl.hpp', either
+       'inline' on its 22 definitions or keep the block
 
 --------------------------------------------------------------------------------
 medium
@@ -157,6 +138,22 @@ medium
 [ ] consider result being an array
     func make_points() : point[] res {...}
     => confusing. better is func init_points(pts : point[]) {...}
+[ ] 'let i = expr': read-only variable initialized by a runtime expression
+    (not a compile-time 'const')
+    plan:
+    - parse like 'var' (optional type, arrays, record literals), initializer
+      required; 'let' becomes a keyword in 'stmt_block' and 'program'
+    - storage and initialization reuse 'stmt_def_var', 'var_info' gets
+      'is_read_only' carried through 'ident_info' and aliases
+    - reject every write path at compile: assignment (incl. fields and
+      elements), 'read' destination, 'array_copy' destination, noninline
+      arguments (passed by reference), inline arguments whose parameter the
+      callee writes (aliases write caller storage; needs a 'visit_writes'
+      next to 'visit_reads'), method receivers written through 'self'
+    - 'const' stays for compile-time values; a 'let' with a constant
+      initializer is still a variable
+    - tree-sitter grammar, source reproduction, tests: run, each rejected
+      write path as COMPERR, reproduce-source
 
 --------------------------------------------------------------------------------
 hard
@@ -336,8 +333,32 @@ too hard right now
 [ ] declare external C functions
 
 --------------------------------------------------------------------------------
-resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
+resolved
 --------------------------------------------------------------------------------
+[x] validate destination array size against source array size during type
+    assignment copy
+    => 'expr_type' knows from parsing whether its destination is a whole
+       array; 'compile_assign' rejects whole array sources for single
+       records and single elements for arrays, record array fields validate
+       the size ('validate_array_assignment'); indexed sources such as 'ps[1]'
+       and 'l.pts[1]' copied the whole array size (overflow), now one
+       element; tests 577-581
+[-] add test coverage for built-in/non-expression/non-constant array copy path
+    in type assignment
+    => unreachable: an array field is parsed as an array 'expr_any' whose
+       'is_expression' is true, the dead branch in
+       'expr_type::write_builtin_field' is replaced by an assert
+[x] formalize builtin type size mapping, 'toc' and 'machine_x86_64' each have
+    a 'builtin_type_for_size_bytes'
+    => the 'toc' copy had no callers and was removed, 'machine_x86_64' owns
+       the mapping
+[x] document why expr_any routes non-braced array assignment to expr_type
+    => 'expr_type' copies the whole array as bytes, 'expr_arith' reads a scalar
+[x] document invariant that expr_any::identifier cannot be empty at call sites
+    => comment and assert on non-empty 'vars_'
+[x] validate that put_back_token argument matches source text before rewinding
+    => asserts the token ends at the current position and its text matches
+       the source, rewinds by source indexes so string quotes are counted
 [x] opus 5.5 ai review and bug-hunt
 [x] main.cpp: --bin=FILE for rv32i targets, default 'dir/stem-TARGET.bin' next
     to the source, test suites pass --bin=gen-rv32i.bin
