@@ -1261,14 +1261,11 @@ class machine_rv32i : public machine {
 
         std::vector<byte_part> parts;
         int64_t loaded_value{};
-        size_t offset{};
-        for (const size_t w : {size_t{4}, size_t{2}, size_t{1}}) {
-            if (w > width) {
-                continue;
-            }
-            while (bytes.size() - offset >= w) {
+        for_each_part(
+            bytes.size(), width,
+            [&](const size_t part_size_bytes, const size_t offset) -> void {
                 const int64_t value{
-                    little_endian_value(bytes.substr(offset, w))};
+                    little_endian_value(bytes.substr(offset, part_size_bytes))};
 
                 const bool needs_load{value != 0 and value != loaded_value};
                 if (needs_load) {
@@ -1277,13 +1274,11 @@ class machine_rv32i : public machine {
 
                 parts.push_back({
                     .offset{offset},
-                    .size_bytes{w},
+                    .size_bytes{part_size_bytes},
                     .value{value},
                     .needs_load{needs_load},
                 });
-                offset += w;
-            }
-        }
+            });
 
         return parts;
     }
@@ -2340,24 +2335,21 @@ class machine_rv32i : public machine {
             const operand value{
                 alloc_scratch_register(src_loc_tk, indent, default_type())};
 
-            size_t offset{};
-            for (const size_t w : {size_t{4}, size_t{2}, size_t{1}}) {
-                if (w > width) {
-                    continue;
-                }
-                while (size_bytes - offset >= w) {
-                    assembler_.load(indent, unsigned_load_op(w),
+            for_each_part(
+                size_bytes, width,
+                [&](const size_t part_size_bytes, const size_t offset) -> void {
+                    assembler_.load(indent, unsigned_load_op(part_size_bytes),
                                     value.base_register(),
                                     src_address.displacement() +
                                         static_cast<int64_t>(offset),
                                     src_address.base_register());
-                    assembler_.store(indent, store_op(w), value.base_register(),
+
+                    assembler_.store(indent, store_op(part_size_bytes),
+                                     value.base_register(),
                                      dst_address.displacement() +
                                          static_cast<int64_t>(offset),
                                      dst_address.base_register());
-                    offset += w;
-                }
-            }
+                });
 
             return;
         }
@@ -2550,19 +2542,14 @@ class machine_rv32i : public machine {
             const operand address{
                 unrolled_address(src_loc_tk, indent, destination, size_bytes)};
 
-            size_t offset{};
-            for (const size_t w : {size_t{4}, size_t{2}, size_t{1}}) {
-                if (w > width) {
-                    continue;
-                }
-                while (size_bytes - offset >= w) {
-                    assembler_.store(indent, store_op(w), "zero",
+            for_each_part(
+                size_bytes, width,
+                [&](const size_t part_size_bytes, const size_t offset) -> void {
+                    assembler_.store(indent, store_op(part_size_bytes), "zero",
                                      address.displacement() +
                                          static_cast<int64_t>(offset),
                                      address.base_register());
-                    offset += w;
-                }
-            }
+                });
 
             return;
         }

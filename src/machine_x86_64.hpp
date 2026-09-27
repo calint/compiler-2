@@ -523,28 +523,16 @@ class machine_x86_64 final : public machine {
                 threshold_for_rep_movs_size_bytes);
 
         reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
-        size_t remaining_size_bytes{size_bytes};
-        int64_t offset{};
-        operand dst_operand{dst};
-        for (size_t width_size_bytes{size_qword}; width_size_bytes >= size_byte;
-             width_size_bytes /= 2) {
-
-            while (remaining_size_bytes >= width_size_bytes) {
-                const operand reg{sized_register("rax", width_size_bytes)};
-                operand part{sized_memory(src, width_size_bytes)};
-                part.increment_offset(offset);
-                mov(src_loc_tk, indent, reg, part);
+        for_each_part(
+            size_bytes, size_qword,
+            [&](const size_t part_size_bytes, const size_t offset) -> void {
+                const operand reg{sized_register("rax", part_size_bytes)};
+                mov(src_loc_tk, indent, reg,
+                    memory_part(src, part_size_bytes, offset));
                 mov(src_loc_tk, indent,
-                    sized_memory(dst_operand, width_size_bytes), reg);
+                    memory_part(dst, part_size_bytes, offset), reg);
+            });
 
-                remaining_size_bytes -= width_size_bytes;
-                if (remaining_size_bytes != 0) {
-                    offset += address_offset(width_size_bytes);
-                    dst_operand.increment_offset(
-                        address_offset(width_size_bytes));
-                }
-            }
-        }
         release_named_register(src_loc_tk, indent, "rax");
     }
 
@@ -574,19 +562,14 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "size <= {} B, use immediates",
                 threshold_for_rep_movs_size_bytes);
 
-        size_t offset{};
-        for (const size_t width_size_bytes :
-             {size_dword, size_word, size_byte}) {
-            while (bytes.size() - offset >= width_size_bytes) {
-                operand part{sized_memory(dst, width_size_bytes)};
-                part.increment_offset(address_offset(offset));
-                mov(src_loc_tk, indent, part,
+        for_each_part(
+            bytes.size(), size_dword,
+            [&](const size_t part_size_bytes, const size_t offset) -> void {
+                mov(src_loc_tk, indent,
+                    memory_part(dst, part_size_bytes, offset),
                     immediate(little_endian_value(
-                        bytes.substr(offset, width_size_bytes))));
-
-                offset += width_size_bytes;
-            }
-        }
+                        bytes.substr(offset, part_size_bytes))));
+            });
     }
 
     [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
@@ -715,22 +698,12 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "size <= {} B, use mov",
                 threshold_for_rep_stos_size_bytes);
 
-        size_t remaining_size_bytes{size_bytes};
-        operand dst_operand{dst};
-        for (size_t width_size_bytes{size_qword}; width_size_bytes >= size_byte;
-             width_size_bytes /= 2) {
-
-            while (remaining_size_bytes >= width_size_bytes) {
+        for_each_part(
+            size_bytes, size_qword,
+            [&](const size_t part_size_bytes, const size_t offset) -> void {
                 mov(src_loc_tk, indent,
-                    sized_memory(dst_operand, width_size_bytes), immediate(0));
-
-                remaining_size_bytes -= width_size_bytes;
-                if (remaining_size_bytes != 0) {
-                    dst_operand.increment_offset(
-                        address_offset(width_size_bytes));
-                }
-            }
-        }
+                    memory_part(dst, part_size_bytes, offset), immediate(0));
+            });
     }
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
@@ -1522,6 +1495,17 @@ class machine_x86_64 final : public machine {
         }
 
         return value;
+    }
+
+    // an unrolled part of 'address'
+    [[nodiscard]] auto memory_part(const operand& address,
+                                   const size_t part_size_bytes,
+                                   const size_t offset) const -> operand {
+
+        operand part{sized_memory(address, part_size_bytes)};
+        part.increment_offset(address_offset(offset));
+
+        return part;
     }
 
     [[nodiscard]] static auto same_operand(const operand& lhs,

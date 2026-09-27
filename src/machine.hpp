@@ -410,6 +410,22 @@ class machine {
     }
 
   protected:
+    // unrolled accesses take the widest parts first so each narrower width
+    // covers at most one remaining part
+    static auto for_each_part(
+        const size_t size_bytes, const size_t widest_size_bytes,
+        const std::function_ref<void(size_t part_size_bytes, size_t offset)>
+            emit_part) -> void {
+
+        size_t offset{};
+        for (size_t w{widest_size_bytes}; w != 0; w /= 2) {
+            while (size_bytes - offset >= w) {
+                emit_part(w, offset);
+                offset += w;
+            }
+        }
+    }
+
     // a word is sign extended so its bits fit a signed 32-bit immediate
     [[nodiscard]] static auto little_endian_value(const std::string_view bytes)
         -> int64_t {
