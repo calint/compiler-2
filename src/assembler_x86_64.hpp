@@ -212,7 +212,6 @@ class assembler_x86_64 final : public assembler {
     auto comment(const size_t indent, const std::string_view text) -> void {
         if (text.empty()) {
             add_text(comment_start(indent));
-
             return;
         }
 
@@ -352,7 +351,6 @@ class assembler_x86_64 final : public assembler {
 
         if (address.explicit_displacement) {
             s += std::format(" + {}", address.displacement);
-
             return s;
         }
 
@@ -613,7 +611,6 @@ class assembler_x86_64 final : public assembler {
         -> bool override {
 
         const std::string_view code{code_part(text)};
-
         return not code.empty() and code.back() == ':';
     }
 
@@ -621,7 +618,6 @@ class assembler_x86_64 final : public assembler {
         -> bool {
 
         const size_t first{text.find_first_not_of(" \t\n\r\f\v")};
-
         return first == std::string_view::npos or text[first] == ';';
     }
 

@@ -215,7 +215,6 @@ class expr_bool_op final : public statement {
 
         if (not is_shorthand_) {
             resolve_cmp(tc, indent, lhs_, rhs_, action);
-
             return std::nullopt;
         }
 
@@ -260,14 +259,12 @@ class expr_bool_op final : public statement {
 
         if (not is_shorthand_) {
             is_expression_ = true;
-
             return;
         }
 
         // shorthand expressions
         if (lhs_.is_expression()) {
             is_expression_ = true;
-
             return;
         }
 

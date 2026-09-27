@@ -123,7 +123,6 @@ class machine_rv32i : public machine {
     [[nodiscard]] static auto register_mask(const std::string_view name)
         -> uint32_t {
         const size_t index{register_index(name)};
-
         return index == register_names_.size() ? 0 : uint32_t{1} << index;
     }
 
@@ -207,7 +206,6 @@ class machine_rv32i : public machine {
 
         if (code == op::j) {
             assembler_.resolved_jump(indent, target, far_jump_register());
-
             return;
         }
 
@@ -461,6 +459,7 @@ class machine_rv32i : public machine {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == word_size);
         }
+
         assert(register_index(dst.base_register()) == register_index("a0"));
         assert(register_index(descriptor.base_register()) ==
                register_index("a0"));
@@ -771,7 +770,6 @@ class machine_rv32i : public machine {
             yields_constant(instruction, *constant, width)) {
 
             store_constant_result(src_loc_tk, indent, destination, *constant);
-
             return;
         }
 
@@ -793,7 +791,6 @@ class machine_rv32i : public machine {
             (instruction == op::sub or instruction == op::xor_op)) {
 
             store_constant_result(src_loc_tk, indent, destination, 0);
-
             return;
         }
 
@@ -937,7 +934,6 @@ class machine_rv32i : public machine {
 
         if (constant.has_value()) {
             assembler_.li(indent, right.base_register(), *constant);
-
             return right;
         }
 
@@ -1719,7 +1715,6 @@ class machine_rv32i : public machine {
         // branch-only comparisons do not need a materialized boolean
         if (action.destination.is_empty()) {
             emit_comparison_branch(indent, operation, left, right, action);
-
             return;
         }
 
@@ -1882,7 +1877,6 @@ class machine_rv32i : public machine {
         // inequality is a nonzero test, not a second boolean inversion
         if (unequal) {
             assembler_.sltu(indent, result, "zero", tested);
-
             return;
         }
 
@@ -1904,7 +1898,6 @@ class machine_rv32i : public machine {
         // nonzero small constants fit directly in xori
         if (immediate.has_value()) {
             assembler_.xori(indent, result, left.base_register(), *immediate);
-
             return result;
         }
 
@@ -1931,7 +1924,6 @@ class machine_rv32i : public machine {
         // encodable thresholds avoid materializing a constant register
         if (immediate.has_value()) {
             assembler_.slti(indent, result, left.base_register(), *immediate);
-
             return;
         }
 
@@ -1957,7 +1949,6 @@ class machine_rv32i : public machine {
 
         if (reg_count.is_empty()) {
             check_negative(index, is_last);
-
             return;
         }
 
@@ -1982,7 +1973,6 @@ class machine_rv32i : public machine {
         assembler_.li(indent, limit.base_register(), array_count);
         if (allow_end) {
             assembler_.bgeu(indent, limit.base_register(), top, "2f");
-
             return;
         }
 
@@ -2000,7 +1990,6 @@ class machine_rv32i : public machine {
         // failed it when enabled
         if (reg_count.is_empty() and not lower_checked) {
             assembler_.bltz(indent, index, "2f");
-
             return std::string{index};
         }
 
@@ -2016,7 +2005,6 @@ class machine_rv32i : public machine {
         // after the lower checks both are below 2^31, so the sum cannot wrap
         if (lower_checked) {
             assembler_.add(indent, top, index, reg_count.base_register());
-
             return top;
         }
 
@@ -2080,7 +2068,6 @@ class machine_rv32i : public machine {
 
         if (saved.empty()) {
             assembler_.call(indent, label, "a7");
-
             return;
         }
 
@@ -2163,7 +2150,6 @@ class machine_rv32i : public machine {
         // synthetic tokens and standalone backend calls have no source location
         if (src_loc_tk.at_line() == 0 or source_.empty()) {
             assembler_.comment(indent, text);
-
             return;
         }
 
@@ -2253,8 +2239,11 @@ class machine_rv32i : public machine {
                                const operand& reg) -> void override {
 
         assert(not allocations_.empty());
+
         const size_t index{register_index(reg.allocation_register())};
+
         assert(allocations_.back().register_index == index);
+
         // named and scratch allocations share the same lifo pool
         comment(src_loc_tk, indent, "free {} register {}",
                 allocations_.back().named ? "named" : "scratch",
@@ -2302,7 +2291,6 @@ class machine_rv32i : public machine {
 
         if (binary_file_name_.empty()) {
             assembler_.write_resolved(os);
-
             return;
         }
 
@@ -2354,7 +2342,6 @@ class machine_rv32i : public machine {
         // known constants are truncated and extended before emission
         if (constant.has_value()) {
             store_constant_result(src_loc_tk, indent, dst, *constant);
-
             return;
         }
 
@@ -2566,7 +2553,6 @@ class machine_rv32i : public machine {
 
         if (are_immediates_smaller(parts, bytes.size())) {
             store_byte_parts(src_loc_tk, indent, parts, dst, bytes.size());
-
             return;
         }
 
@@ -2723,7 +2709,6 @@ class machine_rv32i : public machine {
         constexpr size_t max_unrolled_stores{16};
         if (store_count <= max_unrolled_stores) {
             zero_unrolled(src_loc_tk, indent, destination, size_bytes, width);
-
             return;
         }
 
@@ -2745,6 +2730,7 @@ class machine_rv32i : public machine {
         -> void override {
 
         assert(operation == '&' or operation == '|' or operation == '^');
+
         op instruction{op::xor_op};
         if (operation == '&') {
             instruction = op::and_op;
@@ -2920,6 +2906,7 @@ class machine_rv32i : public machine {
         -> void override {
 
         assert(operation == '<' or operation == '>');
+
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_shift_operand(src_loc_tk, count);
         if (not(dst.is_register() or dst.is_memory())) {
@@ -2948,7 +2935,6 @@ class machine_rv32i : public machine {
             (operation == '<' or dst.type_ref().name() == "bool")) {
 
             store_constant_result(src_loc_tk, indent, dst, 0);
-
             return;
         }
 
@@ -3014,6 +3000,7 @@ class machine_rv32i : public machine {
                 const operand& divisor) -> void override {
 
         assert(operation == '/' or operation == '%');
+
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_division_operand(src_loc_tk, divisor);
         // division requires a writable quotient or remainder destination
@@ -3069,6 +3056,7 @@ class machine_rv32i : public machine {
                const operand& destination) -> void override {
 
         assert(operation == '-' or operation == '~');
+
         validate_scalar(token{}, destination.type_ref());
         if (not(destination.is_register() or destination.is_memory())) {
             throw compiler_exception{token{},
@@ -3233,6 +3221,7 @@ class machine_rv32i : public machine {
         if (not enabled) {
             return;
         }
+
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
         assert(frame_size_bytes.is_immediate());

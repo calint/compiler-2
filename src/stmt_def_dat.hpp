@@ -176,7 +176,6 @@ class stmt_def_dat final : public statement {
 
         if (not elroot.is_array) {
             compile_data_elem(tc, tp, elroot);
-
             return;
         }
 
@@ -187,7 +186,6 @@ class stmt_def_dat final : public statement {
 
         if (elroot.tk.is_string()) {
             compile_data_builtin(tc, tp, elroot);
-
             return;
         }
 
@@ -222,7 +220,6 @@ class stmt_def_dat final : public statement {
 
         if (tp.is_builtin()) {
             compile_data_builtin(tc, tp, elroot);
-
             return;
         }
 
@@ -275,7 +272,6 @@ class stmt_def_dat final : public statement {
             x.comment(elroot.tk, 0, "{}", tp.name());
             if (elroot.tk.text().empty()) {
                 x.emit_data(tp.size_bytes(), {});
-
                 return;
             }
 
@@ -482,7 +478,6 @@ class stmt_def_dat final : public statement {
         el.tk = tz.next_token();
         if (&tp == &tc.get_type_bool()) {
             el.value = parse_bool_value(el.tk, tp);
-
             return el;
         }
 
@@ -559,20 +554,17 @@ class stmt_def_dat final : public statement {
 
         if (not tp.is_builtin()) {
             print_source_type(os, tp, elroot);
-
             return;
         }
 
         if (not elroot.is_array) {
             elroot.source_to(os);
-
             return;
         }
 
         // special case for string
         if (elroot.tk.is_string()) {
             elroot.tk.source_to(os);
-
             return;
         }
 

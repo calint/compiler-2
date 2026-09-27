@@ -213,6 +213,7 @@ class operand {
 
     void set_allocation_register(const std::string_view name) {
         assert(is_register());
+
         allocation_register_ = name;
     }
 

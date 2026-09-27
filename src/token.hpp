@@ -33,7 +33,6 @@ class token final {
     auto source_to(std::ostream& os) const -> void {
         if (not is_str_) {
             std::print(os, "{}{}{}", ws_left_, text_, ws_right_);
-
             return;
         }
 

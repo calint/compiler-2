@@ -41,7 +41,6 @@ class stmt_call : public expression {
 
         if (not tc.is_func_builtin(func_name_)) {
             parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_));
-
             return;
         }
 
@@ -317,13 +316,11 @@ class stmt_call : public expression {
 
         if (not func.is_inlined()) {
             compile_noninline(tc, indent, dst_info, func);
-
             return;
         }
 
         if (get_unary_ops().is_empty() or not dst_info.operand.is_memory()) {
             compile_inline(tc, indent, dst_info, func);
-
             return;
         }
 
@@ -591,7 +588,6 @@ class stmt_call : public expression {
 
         if (func.returns() and slot_index == 0) {
             x.comment(tok(), indent, "result address in callee frame");
-
             return;
         }
 
@@ -756,7 +752,6 @@ class stmt_call : public expression {
     auto source_callee_to(std::ostream& os) const -> void {
         if (not is_method()) {
             expression::source_to(os);
-
             return;
         }
 

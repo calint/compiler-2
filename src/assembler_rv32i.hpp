@@ -379,7 +379,6 @@ class assembler_rv32i final : public assembler {
         -> bool override {
 
         const std::string_view code{code_part(text)};
-
         return not code.empty() and code.back() == ':';
     }
 
@@ -525,14 +524,12 @@ class assembler_rv32i final : public assembler {
 
         if (not l.jump or l.code_size == one_instruction_bytes) {
             std::println(os, "{}", l.text);
-
             return;
         }
 
         const std::string_view indent{leading_whitespace(l.text)};
         if (not is_conditional(*l.jump)) {
             write_long_jump(os, indent, l);
-
             return;
         }
 
@@ -1549,7 +1546,6 @@ class assembler_rv32i final : public assembler {
         if (std::ranges::all_of(
                 data.values, [](const int64_t v) -> bool { return v == 0; })) {
             write_zeros(os, data_size_bytes(data));
-
             return;
         }
 
@@ -2325,7 +2321,6 @@ class assembler_rv32i final : public assembler {
     auto comment(const size_t indent, const std::string_view text) -> void {
         if (text.empty()) {
             add_text(indentation(indent) + "#");
-
             return;
         }
 
@@ -2386,7 +2381,6 @@ class assembler_rv32i final : public assembler {
         for (macro& m : macros_) {
             if (m.name == name) {
                 m.body = std::move(body);
-
                 return;
             }
         }

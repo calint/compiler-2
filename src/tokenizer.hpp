@@ -52,7 +52,6 @@ class tokenizer final {
         const std::string_view ws_before{next_whitespace()};
         if (not is_peek_char(ch)) {
             move_back(ws_before.size());
-
             return {};
         }
 
@@ -98,7 +97,6 @@ class tokenizer final {
 
     [[nodiscard]] auto next_whitespace_token() -> token {
         const size_t at_line{at_line_};
-
         return {next_whitespace(), char_ix_, "", char_ix_, "", at_line, false};
     }
 

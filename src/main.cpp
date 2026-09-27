@@ -197,7 +197,6 @@ examples:
             binary_file_name = arg.substr(bin_option.size());
             if (binary_file_name.empty()) {
                 print_usage_error("Invalid --bin: empty file name");
-
                 return 1;
             }
         } else if (arg == nopt_option) {
@@ -209,7 +208,6 @@ examples:
             src_file_name = argument;
         } else {
             print_usage_error(std::format("Error: Unknown option: {}", arg));
-
             return 1;
         }
     }
@@ -253,19 +251,15 @@ examples:
 
     } catch (const compiler_exception& e) {
         print_source_error(src_file_name, src, e.line, e.start_index, e.msg);
-
         return 1;
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
-
         return 1;
     } catch (const std::overflow_error& e) {
         std::println(stderr, "\n{}", e.what());
-
         return 1;
     } catch (...) {
         std::println(stderr, "\nunknown exception");
-
         return 1;
     }
 }
@@ -273,7 +267,9 @@ examples:
 namespace {
 [[nodiscard]] auto read_file_to_string(const char* const file_name)
     -> std::string {
+
     std::ifstream fs{file_name};
+
     if (not fs.is_open()) {
         throw panic_exception{std::format("cannot open file '{}'", file_name)};
     }

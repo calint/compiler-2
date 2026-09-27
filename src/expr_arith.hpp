@@ -238,7 +238,6 @@ class expr_arith final : public expression {
         // writing the destination early would change what later elements read
         if (reads_destination_early(dst_info)) {
             compile_through_scratch(tc, indent, dst_info);
-
             return;
         }
 
@@ -525,7 +524,6 @@ class expr_arith final : public expression {
 
         if (first.is_identifier()) {
             first.compile(tc, indent, dst_info);
-
             return;
         }
 

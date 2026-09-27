@@ -39,7 +39,6 @@ class stmt_const final : public statement {
 
         if (tc.has_const(literal_tk_.text())) {
             value_ = uops_.evaluate_constant(tc.get_const(literal_tk_.text()));
-
             return;
         }
 

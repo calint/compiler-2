@@ -166,7 +166,6 @@ class stmt_identifier : public statement {
 
         if (info.is_const()) {
             assert_constant_fits(info, dst_type);
-
             return;
         }
 
@@ -424,7 +423,6 @@ class stmt_identifier : public statement {
         const token open_bracket_tk{tz.is_next_char_token('[')};
         if (open_bracket_tk.is_empty()) {
             elems_.emplace_back(tk, token{}, nullptr, token{});
-
             return;
         }
 
@@ -531,7 +529,6 @@ class stmt_identifier : public statement {
             std::cmp_greater_equal(*index, array_info.array_len)) {
 
             is_exact_access_ = false;
-
             return;
         }
 

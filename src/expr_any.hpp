@@ -47,7 +47,6 @@ class expr_any final : public statement {
         // the basic case
         if (not is_array) {
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
-
             return;
         }
 
@@ -150,13 +149,11 @@ class expr_any final : public statement {
         // the base case
         if (is_identifier_ or not is_array_) {
             compile_variant(tc, indent, dst_info, tok(), vars_[0]);
-
             return;
         }
 
         if (is_string()) {
             compile_string(tc, indent, dst_info);
-
             return;
         }
 
@@ -563,7 +560,6 @@ class expr_any final : public statement {
         // stored comparisons would change what later elements read
         if (dst_info.is_register() or not e.reads_var(dst_info.root_id())) {
             compile_bool_list(tc, indent, src_loc_tk, e, dst_info.operand);
-
             return;
         }
 

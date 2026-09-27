@@ -26,7 +26,6 @@ class stmt_continue final : public statement {
 
         if (tc.is_in_loop_block()) {
             x.branch(indent, loop_label);
-
             return;
         }
 

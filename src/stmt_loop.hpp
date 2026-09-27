@@ -48,7 +48,6 @@ class stmt_loop final : public statement {
         // without a 'break' only 'return' or 'exit' leave the loop
         if (not breaks) {
             flow.end_path();
-
             return;
         }
 

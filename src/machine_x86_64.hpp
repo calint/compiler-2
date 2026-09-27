@@ -257,7 +257,6 @@ class machine_x86_64 final : public machine {
 
         if (src_loc_tk.at_line() == 0) {
             assembler_.comment(indent, text);
-
             return;
         }
 
@@ -429,7 +428,6 @@ class machine_x86_64 final : public machine {
 
         if (address.is_empty()) {
             comment(src_loc_tk, indent, "alias {} -> {}", from, to);
-
             return;
         }
 
@@ -710,17 +708,14 @@ class machine_x86_64 final : public machine {
         switch (operation) {
         case '&':
             emit_op(src_loc_tk, indent, op::and_op, dst, src);
-
             return;
 
         case '|':
             emit_op(src_loc_tk, indent, op::or_op, dst, src);
-
             return;
 
         case '^':
             emit_op(src_loc_tk, indent, op::xor_op, dst, src);
-
             return;
 
         default:
@@ -755,7 +750,6 @@ class machine_x86_64 final : public machine {
 
         if (product.is_register()) {
             imul(src_loc_tk, indent, product, factor);
-
             return;
         }
 
@@ -796,7 +790,6 @@ class machine_x86_64 final : public machine {
 
         if (count.is_immediate()) {
             emit_op(src_loc_tk, indent, code, dst, count);
-
             return;
         }
 
@@ -867,12 +860,10 @@ class machine_x86_64 final : public machine {
         switch (operation) {
         case '~':
             not_op(indent, dst);
-
             return;
 
         case '-':
             neg(indent, dst);
-
             return;
 
         default:
@@ -1363,6 +1354,7 @@ class machine_x86_64 final : public machine {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == size_qword);
         }
+
         assert(dst.base_register() == "rax");
         assert(descriptor.base_register() == "rdi");
         assert(address.base_register() == "rsi");
@@ -1387,7 +1379,6 @@ class machine_x86_64 final : public machine {
 
         if (dst.is_register()) {
             lea(indent, dst, address, explicit_displacement);
-
             return;
         }
 
@@ -1536,7 +1527,6 @@ class machine_x86_64 final : public machine {
 
         if ((unavailable_registers_ & register_bit(reg)) == 0) {
             push_allocation(src_loc_tk, reg, type_ref, true);
-
             return;
         }
 
@@ -1796,7 +1786,6 @@ class machine_x86_64 final : public machine {
         const condition cc{inverted ? condition::ne : condition::e};
         if (dst.is_register()) {
             setcc(indent, cc, sized_register(dst, size_byte));
-
             return;
         }
         setcc(indent, cc, sized_memory(dst, size_byte));
@@ -1911,7 +1900,6 @@ class machine_x86_64 final : public machine {
 
         if (address_is_encodable(dst) and address_is_encodable(src)) {
             emit(dst, src);
-
             return;
         }
 
@@ -1984,11 +1972,13 @@ class machine_x86_64 final : public machine {
 
     auto push(const size_t indent, const operand& src) -> void {
         assert(src.is_register() and src.type_ref().size_bytes() == size_qword);
+
         assembler_.instruction(indent, op::push, to_argument(src));
     }
 
     auto pop(const size_t indent, const operand& dst) -> void {
         assert(dst.is_register() and dst.type_ref().size_bytes() == size_qword);
+
         assembler_.instruction(indent, op::pop, to_argument(dst));
     }
 
@@ -2078,7 +2068,6 @@ class machine_x86_64 final : public machine {
 
         if (dst_size_bytes == src_size_bytes) {
             emit(indent, code, dst_op, src_op);
-
             return;
         }
 
@@ -2095,12 +2084,10 @@ class machine_x86_64 final : public machine {
             }
             if (code == op::mov) {
                 emit(indent, op::movsx, dst_op, src_op);
-
                 return;
             }
             if (code == op::sal or code == op::sar) {
                 emit(indent, code, dst_op, src_op);
-
                 return;
             }
             // the scratch register must match 'dst' so the op has equal-size
@@ -2120,9 +2107,9 @@ class machine_x86_64 final : public machine {
 
         if (src_op.is_register()) {
             emit(indent, code, dst_op, sized_register(src_op, dst_size_bytes));
-
             return;
         }
+
         assert(dst_op.is_register() and src_op.is_memory());
 
         emit(indent, code, dst_op, sized_memory(src_op, dst_size_bytes));
@@ -2174,7 +2161,6 @@ class machine_x86_64 final : public machine {
             divisor.type_ref().size_bytes() == size_qword) {
 
             idiv(indent, divisor);
-
             return;
         }
 
@@ -2208,13 +2194,11 @@ class machine_x86_64 final : public machine {
         // 'xor' is the shorter idiom but cannot target memory
         if (multiplier == 0 and product.is_register()) {
             xor_op(indent, product, product);
-
             return true;
         }
 
         if (multiplier == 0) {
             mov(src_loc_tk, indent, product, immediate(0));
-
             return true;
         }
 
@@ -2225,7 +2209,6 @@ class machine_x86_64 final : public machine {
         // all low bits set is multiplication by minus one at this width
         if (multiplier == mask) {
             neg(indent, product);
-
             return true;
         }
 
@@ -2259,7 +2242,6 @@ class machine_x86_64 final : public machine {
 
         if (reg_count.is_empty()) {
             cmp(indent, reg_to_check, immediate(array_count));
-
             return;
         }
 

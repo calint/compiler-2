@@ -61,7 +61,6 @@ class stmt_builtin_io final : public stmt_call {
 
         if (tok().is_text("read")) {
             x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
-
             return;
         }
 

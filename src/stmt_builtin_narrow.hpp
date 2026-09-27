@@ -115,7 +115,6 @@ class stmt_builtin_narrow final : public expression {
 
             if (dst_info.is_register()) {
                 compile_in_destination(tc, indent, dst_info);
-
                 return;
             }
 

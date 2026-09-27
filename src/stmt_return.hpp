@@ -23,7 +23,6 @@ class stmt_return final : public statement {
 
         if (not tc.is_inlined_func()) {
             x.return_function(indent);
-
             return;
         }
 

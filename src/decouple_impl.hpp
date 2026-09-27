@@ -159,7 +159,6 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // note: token name would be empty at the '{x, y}' type of statement
     if (is_make_copy()) {
         parse_copy_source(tc, tz, tp);
-
         return;
     }
 
@@ -264,14 +263,12 @@ auto expr_type::assert_call_type(const type& tp) const -> void {
 auto expr_type::source_to(std::ostream& os) const -> void {
     if (stmt_call_) {
         stmt_call_->source_to(os);
-
         return;
     }
 
     // identifier case: base statement already emitted token text
     if (is_make_copy()) {
         stmt_ident_->source_to(os);
-
         return;
     }
 
@@ -304,7 +301,6 @@ auto expr_type::compile(toc& tc, const size_t indent,
 
     if (stmt_call_) {
         stmt_call_->compile(tc, indent, dst_info);
-
         return;
     }
 
