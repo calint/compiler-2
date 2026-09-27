@@ -23,11 +23,7 @@ class stmt_builtin_equal final : public expression {
         : expression{tk, std::move(uops)},
           open_paren_tk_{tz.is_next_char_token('(')} {
 
-        if (not statement::get_unary_ops().is_empty()) {
-            throw compiler_exception{
-                tok(),
-                "this built-in function does not accept unary operations"};
-        }
+        assert_no_unary_ops();
 
         set_type(tc.get_type_bool());
 

@@ -470,7 +470,7 @@ class machine_x86_64 final : public machine {
         std::vector<operand> saved;
         for (const std::string_view name : {"rcx", "r11"}) {
             if (allocated_register_type(name) != nullptr) {
-                saved.push_back(make_register_operand(name, *type_i64_));
+                saved.push_back(qword_register(name));
                 push(indent, saved.back());
             }
         }
@@ -582,15 +582,13 @@ class machine_x86_64 final : public machine {
     auto set_array_copy_source(const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, machine_x86_64::make_register_operand("rsi", *type_i64_),
-            address);
+        lea(indent, qword_register("rsi"), address);
     }
 
     auto set_array_copy_destination(const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, machine_x86_64::make_register_operand("rdi", *type_i64_),
-            address);
+        lea(indent, qword_register("rdi"), address);
     }
 
     auto end_array_copy(const token& src_loc_tk, const size_t indent,
@@ -598,10 +596,8 @@ class machine_x86_64 final : public machine {
                         [[maybe_unused]] const size_t alignment)
         -> void override {
 
-        scale_by_element_size_bytes(
-            src_loc_tk, indent,
-            machine_x86_64::make_register_operand("rcx", *type_i64_),
-            element_size_bytes);
+        scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
+                                    element_size_bytes);
 
         assembler_.instruction(indent, op::rep_movsb);
         release_bulk_registers(src_loc_tk, indent);
@@ -616,15 +612,13 @@ class machine_x86_64 final : public machine {
     auto set_memory_equal_left(const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, machine_x86_64::make_register_operand("rsi", *type_i64_),
-            address);
+        lea(indent, qword_register("rsi"), address);
     }
 
     auto set_memory_equal_right(const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, machine_x86_64::make_register_operand("rdi", *type_i64_),
-            address);
+        lea(indent, qword_register("rdi"), address);
     }
 
     auto end_memory_equal(const token& src_loc_tk, const size_t indent,
@@ -645,9 +639,7 @@ class machine_x86_64 final : public machine {
             compare = op::repe_cmpsw;
             count /= size_word;
         }
-        mov(src_loc_tk, indent,
-            machine_x86_64::make_register_operand("rcx", *type_i64_),
-            immediate(count));
+        mov(src_loc_tk, indent, qword_register("rcx"), immediate(count));
         assembler_.instruction(indent, compare);
         release_bulk_registers(src_loc_tk, indent);
         store_equal_result(indent, dst, inverted);
@@ -659,13 +651,10 @@ class machine_x86_64 final : public machine {
                           const operand& dst, const bool inverted = false)
         -> void override {
 
-        scale_by_element_size_bytes(
-            src_loc_tk, indent,
-            machine_x86_64::make_register_operand("rcx", *type_i64_),
-            element_size_bytes);
+        scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
+                                    element_size_bytes);
 
-        test(indent, machine_x86_64::make_register_operand("rcx", *type_i64_),
-             machine_x86_64::make_register_operand("rcx", *type_i64_));
+        test(indent, qword_register("rcx"), qword_register("rcx"));
         assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk_registers(src_loc_tk, indent);
         store_equal_result(indent, dst, inverted);
@@ -682,10 +671,8 @@ class machine_x86_64 final : public machine {
             xor_op(indent,
                    machine_x86_64::make_register_operand("al", *type_i8_),
                    machine_x86_64::make_register_operand("al", *type_i8_));
-            lea(indent,
-                machine_x86_64::make_register_operand("rdi", *type_i64_), dst);
-            mov(src_loc_tk, indent,
-                machine_x86_64::make_register_operand("rcx", *type_i64_),
+            lea(indent, qword_register("rdi"), dst);
+            mov(src_loc_tk, indent, qword_register("rcx"),
                 immediate(size_bytes));
             assembler_.instruction(indent, op::rep_stosb);
             release_named_register(src_loc_tk, indent, "rcx");
@@ -841,8 +828,7 @@ class machine_x86_64 final : public machine {
         assert(operation == '/' or operation == '%');
 
         reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
-        mov(src_loc_tk, indent,
-            machine_x86_64::make_register_operand("rax", *type_i64_), dst);
+        mov(src_loc_tk, indent, qword_register("rax"), dst);
 
         reserve_named_register(src_loc_tk, indent, "rdx", *default_type_);
         assembler_.instruction(indent, op::cqo);
@@ -850,8 +836,7 @@ class machine_x86_64 final : public machine {
         emit_signed_divide(src_loc_tk, indent, divisor);
 
         mov(src_loc_tk, indent, dst,
-            machine_x86_64::make_register_operand(
-                operation == '/' ? "rax" : "rdx", *type_i64_));
+            qword_register(operation == '/' ? "rax" : "rdx"));
 
         release_named_register(src_loc_tk, indent, "rdx");
         release_named_register(src_loc_tk, indent, "rax");
@@ -873,19 +858,7 @@ class machine_x86_64 final : public machine {
                     const operand& dst, const operand& address)
         -> void override {
 
-        if (dst.is_register()) {
-            lea(indent, dst, address);
-
-            return;
-        }
-
-        const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
-
-        lea(indent, reg, address);
-        mov(src_loc_tk, indent, dst, reg);
-
-        free_scratch_register(src_loc_tk, indent, reg);
+        lea_into(src_loc_tk, indent, dst, address, false);
     }
 
     auto unary(const size_t indent, const char operation, const operand& dst)
@@ -924,13 +897,9 @@ class machine_x86_64 final : public machine {
     auto exit(const token& src_loc_tk, const size_t indent,
               const operand& exit_code) -> void override {
 
-        copy_value(src_loc_tk, indent,
-                   machine_x86_64::make_register_operand("rdi", *type_i64_),
-                   exit_code);
+        copy_value(src_loc_tk, indent, qword_register("rdi"), exit_code);
 
-        mov(src_loc_tk, indent,
-            machine_x86_64::make_register_operand("rax", *type_i64_),
-            immediate(syscall_exit));
+        mov(src_loc_tk, indent, qword_register("rax"), immediate(syscall_exit));
 
         syscall(indent);
     }
@@ -955,18 +924,8 @@ class machine_x86_64 final : public machine {
         const operand address{
             operand::mem(variables_base_register_, {}, 1, offset, value_type)};
 
-        if (dst.is_register()) {
-            lea(indent, dst, address, true);
-            return;
-        }
-
-        const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
-
-        lea(indent, reg, address, true);
-        mov(src_loc_tk, indent, dst, reg);
-
-        free_scratch_register(src_loc_tk, indent, reg);
+        // keeps 'rbp + 0' visible in the output
+        lea_into(src_loc_tk, indent, dst, address, true);
     }
 
     auto reserve_variables_base() -> void override {
@@ -1409,6 +1368,34 @@ class machine_x86_64 final : public machine {
         invoke_syscall(indent);
     }
 
+    // e.g. the fixed registers of 'rep movsb' and syscalls
+    [[nodiscard]] auto qword_register(const std::string_view name) const
+        -> operand {
+
+        return make_register_operand(name, *type_i64_);
+    }
+
+    // 'lea' writes only registers so a memory destination takes the address
+    // through a scratch register
+    auto lea_into(const token& src_loc_tk, const size_t indent,
+                  const operand& dst, const operand& address,
+                  const bool explicit_displacement) -> void {
+
+        if (dst.is_register()) {
+            lea(indent, dst, address, explicit_displacement);
+
+            return;
+        }
+
+        const operand reg{
+            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
+        lea(indent, reg, address, explicit_displacement);
+        mov(src_loc_tk, indent, dst, reg);
+
+        free_scratch_register(src_loc_tk, indent, reg);
+    }
+
     [[nodiscard]] auto sized_register(const std::string_view name,
                                       const size_t size_bytes) const
         -> operand {
@@ -1684,13 +1671,9 @@ class machine_x86_64 final : public machine {
         reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
         reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
 
-        load_source_address(
-            machine_x86_64::make_register_operand("rsi", *type_i64_));
-        lea(indent, machine_x86_64::make_register_operand("rdi", *type_i64_),
-            dst);
-        mov(src_loc_tk, indent,
-            machine_x86_64::make_register_operand("rcx", *type_i64_),
-            immediate(size_bytes));
+        load_source_address(qword_register("rsi"));
+        lea(indent, qword_register("rdi"), dst);
+        mov(src_loc_tk, indent, qword_register("rcx"), immediate(size_bytes));
 
         assembler_.instruction(indent, op::rep_movsb);
 
@@ -2258,9 +2241,7 @@ class machine_x86_64 final : public machine {
                                 const operand& reg_line_num) -> void {
 
         if (not reg_line_num.is_empty()) {
-            cmovcc(indent, failed,
-                   machine_x86_64::make_register_operand("rbp", *type_i64_),
-                   reg_line_num);
+            cmovcc(indent, failed, qword_register("rbp"), reg_line_num);
         }
 
         assembler_.jcc(indent, failed, "baz_bounds_panic");

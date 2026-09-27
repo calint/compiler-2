@@ -86,41 +86,12 @@ class stmt_def_func final : public statement {
         // register variables without emitting output so that the function body
         // can be parsed
 
-        if (returns_) {
-            // declare the return variable
-            const token& ret_tk{returns_->ident_tk};
-
-            if (ret_tk.text().empty()) {
-                throw compiler_exception{ret_tk,
-                                         "expected return reference name"};
-            }
-
-            const var_info var{
-                .name{ret_tk.text()},
-                .type_ptr{&get_type()},
-                .src_loc_tk{ret_tk},
-                .reg{},
-                .base_register{},
-            };
-
-            tc.add_var(ret_tk, 0, var, false);
+        if (returns_ and returns_->ident_tk.text().empty()) {
+            throw compiler_exception{returns_->ident_tk,
+                                     "expected return reference name"};
         }
 
-        for (const stmt_def_func_param& param : params_) {
-            const type& param_type{param.get_type()};
-            const std::string_view param_name{param.name()};
-
-            const var_info var{
-                .name{param_name},
-                .type_ptr{&param_type},
-                .src_loc_tk{param.tok()},
-                .is_array{param.is_array()},
-                .reg{},
-                .base_register{},
-            };
-
-            tc.add_var(param.tok(), 0, var, false);
-        }
+        add_signature_vars(tc, 0, false);
 
         code_ = {tc, tz, true};
 
@@ -206,30 +177,7 @@ class stmt_def_func final : public statement {
 
         x.reserve_frame_base();
         tc.enter_func(name(), returns_, {}, {}, false, x.frame_base_register());
-        if (returns_) {
-            tc.add_var(returns_->ident_tk, indent + 1,
-                       {
-                           .name{returns_->ident_tk.text()},
-                           .type_ptr{&get_type()},
-                           .src_loc_tk{returns_->ident_tk},
-                           .is_pointer{true},
-                           .reg{},
-                           .base_register{},
-                       },
-                       false);
-        }
-        for (const stmt_def_func_param& param : params_) {
-            tc.add_var(param.tok(), indent + 1,
-                       {
-                           .name{param.name()},
-                           .type_ptr{&param.get_type()},
-                           .src_loc_tk{param.tok()},
-                           .is_pointer{true},
-                           .reg{},
-                           .base_register{},
-                       },
-                       false);
-        }
+        add_signature_vars(tc, indent + 1, true);
         code_.compile(tc, indent, ident_info::make_empty());
         x.return_function(indent + 1);
         const size_t frame_size_bytes{tc.peak_frame_size_bytes()};
@@ -268,6 +216,39 @@ class stmt_def_func final : public statement {
     }
 
   private:
+    // a non-inline body reaches the result and the arguments through pointer
+    // slots in its frame
+    auto add_signature_vars(toc& tc, const size_t indent,
+                            const bool is_pointer) const -> void {
+
+        if (returns_) {
+            tc.add_var(returns_->ident_tk, indent,
+                       {
+                           .name{returns_->ident_tk.text()},
+                           .type_ptr{&get_type()},
+                           .src_loc_tk{returns_->ident_tk},
+                           .is_pointer{is_pointer},
+                           .reg{},
+                           .base_register{},
+                       },
+                       false);
+        }
+
+        for (const stmt_def_func_param& param : params_) {
+            tc.add_var(param.tok(), indent,
+                       {
+                           .name{param.name()},
+                           .type_ptr{&param.get_type()},
+                           .src_loc_tk{param.tok()},
+                           .is_array{param.is_array()},
+                           .is_pointer{is_pointer},
+                           .reg{},
+                           .base_register{},
+                       },
+                       false);
+        }
+    }
+
     // 'name [type]' of the returned value, without a name the type is void
     auto parse_returns(toc& tc, tokenizer& tz) -> void {
         const token ident_tk{tz.next_token()};

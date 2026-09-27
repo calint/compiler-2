@@ -102,7 +102,36 @@ class expr_type final : public statement {
         assert_items_not_reading(dst, 0);
     }
 
+    // unlisted elements are zero like unlisted fields, returns the zeroed size
+    static auto zero_remaining_elements(toc& tc, const size_t indent,
+                                        const token& src_loc_tk,
+                                        const operand& dst,
+                                        const type& element_type,
+                                        const size_t remaining_count)
+        -> size_t {
+
+        if (remaining_count == 0) {
+            return 0;
+        }
+
+        machine& x{tc.machine()};
+
+        const size_t size_bytes{
+            multiply_storage_size(element_type.size_bytes(), remaining_count)};
+
+        x.comment(src_loc_tk, indent,
+                  "zero remaining elements: {} * {} B = {} B", remaining_count,
+                  element_type.size_bytes(), size_bytes);
+
+        x.zero(src_loc_tk, indent, dst, size_bytes, element_type.alignment());
+
+        return size_bytes;
+    }
+
   private:
+    // out-of-line: creates the 'stmt_call' or 'stmt_identifier'
+    auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
+
     // out-of-line: calls 'stmt_call'
     auto assert_call_type(const type& tp) const -> void;
 

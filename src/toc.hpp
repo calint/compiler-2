@@ -22,8 +22,6 @@
 #include "type.hpp"
 
 class stmt_def_func;
-class stmt_def_field;
-class stmt_def_type;
 
 struct func_info {
     token src_loc_tk;           // token for position in the source
@@ -469,9 +467,8 @@ class toc final {
             add_storage_size(padding_bytes, var_size_bytes)};
 
         if (not is_dat) {
-            const size_t used_size_bytes{
-                vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_};
-            if (allocated_size_bytes > vars_capacity_bytes_ - used_size_bytes) {
+            if (allocated_size_bytes >
+                vars_capacity_bytes_ - used_vars_size_bytes()) {
                 throw compiler_exception{
                     src_loc_tk,
                     std::format("variable '{}' would overflow allocated vars "
@@ -494,33 +491,11 @@ class toc final {
 
         // stats
         if (not is_dat) {
-            usage_max_vars_size_bytes_ = std::max(
-                vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_,
-                usage_max_vars_size_bytes_);
+            usage_max_vars_size_bytes_ =
+                std::max(used_vars_size_bytes(), usage_max_vars_size_bytes_);
         }
 
-        // comment the resolved name
-        const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
-
-        ::machine& x{machine()};
-
-        std::string text{
-            std::format("{}: {}", var.name, name_info.type_ref().name())};
-
-        if (var.array_len) {
-            text += std::format("[{}]", var.array_len);
-        }
-        if (not var.reg.is_empty()) {
-            x.comment(src_loc_tk, indent, "{} ({})", text,
-                      var.reg.base_register());
-
-            return;
-        }
-        x.comment_variable(
-            src_loc_tk, indent, text,
-            multiply_storage_size(name_info.type_ref().size_bytes(),
-                                  name_info.is_array ? name_info.array_len : 1),
-            name_info.operand);
+        comment_var(src_loc_tk, indent, var);
     }
 
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
@@ -559,13 +534,7 @@ class toc final {
     }
 
     [[nodiscard]] auto is_inlined_func() const -> bool {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_func()) {
-                return frm.is_inlined_func();
-            }
-        }
-
-        std::unreachable();
+        return current_func_frame().is_inlined_func();
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
@@ -613,64 +582,28 @@ class toc final {
         refresh_usage();
     }
 
-    auto exit_foo(const std::string_view name) -> void {
-        const frame& frm{frames_.back()};
+    auto exit_foo([[maybe_unused]] const std::string_view name) -> void {
+        assert(frames_.back().is_foo() and frames_.back().is_name(name));
 
-        assert(frm.is_foo() and frm.is_name(name));
-
-        vars_size_bytes_ -= frm.allocated_stack_size_bytes();
-        frames_.pop_back();
-        if (frames_.empty()) {
-
-            assert(vars_size_bytes_ == 0);
-
-            vars_entry_gap_applied_ = false;
-        }
+        pop_frame();
     }
 
     auto exit_block() -> void {
-        const frame& frm{frames_.back()};
+        assert(frames_.back().is_block());
 
-        assert(frm.is_block());
-
-        vars_size_bytes_ -= frm.allocated_stack_size_bytes();
-        frames_.pop_back();
-        if (frames_.empty()) {
-
-            assert(vars_size_bytes_ == 0);
-
-            vars_entry_gap_applied_ = false;
-        }
+        pop_frame();
     }
 
-    auto exit_func(const std::string_view name) -> void {
-        const frame& frm{frames_.back()};
+    auto exit_func([[maybe_unused]] const std::string_view name) -> void {
+        assert(frames_.back().is_func() and frames_.back().is_name(name));
 
-        assert(frm.is_func() and frm.is_name(name));
-
-        vars_size_bytes_ -= frm.allocated_stack_size_bytes();
-        frames_.pop_back();
-        if (frames_.empty()) {
-
-            assert(vars_size_bytes_ == 0);
-
-            vars_entry_gap_applied_ = false;
-        }
+        pop_frame();
     }
 
-    auto exit_loop(const std::string_view name) -> void {
-        const frame& frm{frames_.back()};
+    auto exit_loop([[maybe_unused]] const std::string_view name) -> void {
+        assert(frames_.back().is_loop() and frames_.back().is_name(name));
 
-        assert(frm.is_loop() and frm.is_name(name));
-
-        vars_size_bytes_ -= frm.allocated_stack_size_bytes();
-        frames_.pop_back();
-        if (frames_.empty()) {
-
-            assert(vars_size_bytes_ == 0);
-
-            vars_entry_gap_applied_ = false;
-        }
+        pop_frame();
     }
 
     auto reset_usage() -> void {
@@ -700,32 +633,15 @@ class toc final {
     }
 
     [[nodiscard]] auto get_call_path() const -> std::string_view {
-
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_func()) {
-                return frm.call_path();
-            }
-        }
-
-        std::unreachable();
+        return current_func_frame().call_path();
     }
 
     [[nodiscard]] auto get_const(const std::string_view name) const -> int64_t {
+        const const_info* const c{find_const(name)};
 
-        for (const frame& f : frames_ | std::views::reverse) {
-            if (f.has_const(name)) {
-                return f.get_const(name).value;
-            }
-            if (f.is_func()) {
-                break;
-            }
-        }
+        assert(c != nullptr);
 
-        if (frames_.front().has_const(name)) {
-            return frames_.front().get_const(name).value;
-        }
-
-        std::unreachable();
+        return c->value;
     }
 
     [[nodiscard]] auto get_data() const
@@ -767,22 +683,11 @@ class toc final {
                                          const std::string_view name) const
         -> const stmt_def_func& {
 
-        if (not funcs_.has(name)) {
-            throw compiler_exception{
-                src_loc_tk, std::format("function '{}' not found", name)};
-        }
-
-        return *funcs_.get_const_ref(name).def;
+        return *get_func_info_or_throw(src_loc_tk, name).def;
     }
 
     [[nodiscard]] auto get_func_return_label() const -> std::string_view {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_func()) {
-                return frm.func_ret_label();
-            }
-        }
-
-        std::unreachable();
+        return current_func_frame().func_ret_label();
     }
 
     [[nodiscard]] auto
@@ -790,12 +695,7 @@ class toc final {
                                   const std::string_view name) const
         -> const type& {
 
-        if (not funcs_.has(name)) {
-            throw compiler_exception{
-                src_loc_tk, std::format("function '{}' not found", name)};
-        }
-
-        return *funcs_.get_const_ref(name).type_ptr;
+        return *get_func_info_or_throw(src_loc_tk, name).type_ptr;
     }
 
     [[nodiscard]] auto get_lea_operand(const size_t indent,
@@ -877,16 +777,7 @@ class toc final {
     }
 
     [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
-        for (const frame& f : frames_ | std::views::reverse) {
-            if (f.has_const(name)) {
-                return true;
-            }
-            if (f.is_func()) {
-                break;
-            }
-        }
-
-        return frames_.front().has_const(name);
+        return find_const(name) != nullptr;
     }
 
     [[nodiscard]] auto
@@ -1006,23 +897,6 @@ class toc final {
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
-    }
-
-    [[nodiscard]] auto get_stack_size_bytes() const -> size_t {
-        return vars_size_bytes_;
-    }
-
-    [[nodiscard]] static auto
-    field_offset_in_type(const type& tp, const std::string_view field_name)
-        -> size_t {
-
-        for (const type_field& f : tp.fields()) {
-            if (f.name == field_name) {
-                return f.offset;
-            }
-        }
-
-        std::unreachable();
     }
 
     [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
@@ -1146,14 +1020,95 @@ class toc final {
         std::unreachable();
     }
 
-    [[nodiscard]] auto is_in_main() const -> bool {
+    // blocks and loops belong to the function frame below them
+    [[nodiscard]] auto current_func_frame() const -> const frame& {
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
-                return frm.name() == "main";
+                return frm;
             }
         }
 
         std::unreachable();
+    }
+
+    // constants of the current function, then the global ones, not those of
+    // the calling functions
+    [[nodiscard]] auto find_const(const std::string_view name) const
+        -> const const_info* {
+
+        for (const frame& f : frames_ | std::views::reverse) {
+            if (f.has_const(name)) {
+                return &f.get_const(name);
+            }
+            if (f.is_func()) {
+                break;
+            }
+        }
+
+        if (frames_.front().has_const(name)) {
+            return &frames_.front().get_const(name);
+        }
+
+        return nullptr;
+    }
+
+    [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,
+                                              const std::string_view name) const
+        -> const func_info& {
+
+        if (not funcs_.has(name)) {
+            throw compiler_exception{
+                src_loc_tk, std::format("function '{}' not found", name)};
+        }
+
+        return funcs_.get_const_ref(name);
+    }
+
+    // the root frame applies the dat var gap again when it is entered anew
+    auto pop_frame() -> void {
+        vars_size_bytes_ -= frames_.back().allocated_stack_size_bytes();
+        frames_.pop_back();
+        if (not frames_.empty()) {
+            return;
+        }
+
+        assert(vars_size_bytes_ == 0);
+
+        vars_entry_gap_applied_ = false;
+    }
+
+    // bytes of variables, without the dats and the gap after them
+    [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
+        return vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_;
+    }
+
+    // the resolved name shows where the variable is stored
+    auto comment_var(const token& src_loc_tk, const size_t indent,
+                     const var_info& var) -> void {
+
+        const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
+
+        ::machine& x{machine()};
+
+        std::string text{
+            std::format("{}: {}", var.name, name_info.type_ref().name())};
+
+        if (var.array_len) {
+            text += std::format("[{}]", var.array_len);
+        }
+
+        if (not var.reg.is_empty()) {
+            x.comment(src_loc_tk, indent, "{} ({})", text,
+                      var.reg.base_register());
+
+            return;
+        }
+
+        x.comment_variable(
+            src_loc_tk, indent, text,
+            multiply_storage_size(name_info.type_ref().size_bytes(),
+                                  name_info.is_array ? name_info.array_len : 1),
+            name_info.operand);
     }
 
     // reviewed: 2026-09-09

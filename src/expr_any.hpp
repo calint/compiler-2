@@ -147,6 +147,7 @@ class expr_any final : public statement {
         // the base case
         if (is_identifier_ or not is_array_) {
             compile_variant(tc, indent, dst_info, tok(), vars_[0]);
+
             return;
         }
 
@@ -175,22 +176,9 @@ class expr_any final : public statement {
 
         compile_elements(tc, indent, cur_dst_info);
 
-        const size_t remaining_count{array_count - vars_.size()};
-        if (remaining_count == 0) {
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        const size_t size_bytes{multiply_storage_size(
-            cur_dst_info.type_ref().size_bytes(), remaining_count)};
-
-        x.comment(tok(), indent, "zero remaining elements: {} * {} B = {} B",
-                  remaining_count, cur_dst_info.type_ref().size_bytes(),
-                  size_bytes);
-
-        x.zero(tok(), indent, cur_dst_info.operand, size_bytes,
-               cur_dst_info.type_ref().alignment());
+        expr_type::zero_remaining_elements(
+            tc, indent, tok(), cur_dst_info.operand, cur_dst_info.type_ref(),
+            array_count - vars_.size());
     }
 
     [[nodiscard]] auto is_array_element() const -> bool override {
@@ -258,19 +246,12 @@ class expr_any final : public statement {
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override {
 
-        if (is_array_) {
-            for (const expr_variant& e : vars_) {
-                e.visit([&var, &reader](const auto& expression) -> void {
-                    expression.visit_reads(var, reader);
-                });
-            }
-
-            return;
+        // a non-array expression is the single element
+        for (const expr_variant& e : vars_) {
+            e.visit([&var, &reader](const auto& expression) -> void {
+                expression.visit_reads(var, reader);
+            });
         }
-
-        vars_[0].visit([&var, &reader](const auto& expression) -> void {
-            expression.visit_reads(var, reader);
-        });
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
@@ -537,48 +518,54 @@ class expr_any final : public statement {
                                 const token src_loc_tk, const expr_variant& exp)
         -> void {
 
-        exp.visit(overloaded{
-            [&](const expr_arith& e) -> void {
-                // the value boundary is where a wider source loses bits
-                e.assert_not_narrowed(tc, dst_info.type_ref());
-                e.compile(tc, indent, dst_info);
-            },
-            [&](const expr_type& e) -> void {
-                e.compile(tc, indent, dst_info);
-            },
-            [&](const expr_bool& e) -> void {
-                machine& x{tc.machine()};
+        exp.visit(overloaded{[&](const expr_arith& e) -> void {
+                                 // the value boundary is where a wider source
+                                 // loses bits
+                                 e.assert_not_narrowed(tc, dst_info.type_ref());
+                                 e.compile(tc, indent, dst_info);
+                             },
+                             [&](const expr_type& e) -> void {
+                                 e.compile(tc, indent, dst_info);
+                             },
+                             [&](const expr_bool& e) -> void {
+                                 compile_bool(tc, indent, dst_info, src_loc_tk,
+                                              e);
+                             }});
+    }
 
-                // if not expression assign to destination
-                if (not e.is_expression()) {
-                    const ident_info& src_info{tc.make_ident_info(e)};
-                    if (not src_info.is_const()) {
-                        std::unreachable();
-                    }
-                    x.copy_value(
-                        src_loc_tk, indent, dst_info.operand,
-                        operand::imm(std::format("{}", src_info.const_value),
-                                     src_info.type_ref()));
-                    return;
-                }
+    static auto compile_bool(toc& tc, const size_t indent,
+                             const ident_info& dst_info,
+                             const token& src_loc_tk, const expr_bool& e)
+        -> void {
 
-                // stored comparisons would change what later elements read
-                if (dst_info.is_register() or
-                    not e.reads_var(dst_info.root_id())) {
+        machine& x{tc.machine()};
 
-                    compile_bool_list(tc, indent, src_loc_tk, e,
-                                      dst_info.operand);
+        // e.g. 'true' or a named constant
+        if (not e.is_expression()) {
+            const ident_info& src_info{tc.make_ident_info(e)};
 
-                    return;
-                }
+            assert(src_info.is_const());
 
-                const operand reg{x.alloc_scratch_register(
-                    src_loc_tk, indent, dst_info.type_ref())};
+            x.copy_value(src_loc_tk, indent, dst_info.operand,
+                         operand::imm(std::format("{}", src_info.const_value),
+                                      src_info.type_ref()));
 
-                compile_bool_list(tc, indent, src_loc_tk, e, reg);
-                x.copy_value(src_loc_tk, indent, dst_info.operand, reg);
-                x.free_scratch_register(src_loc_tk, indent, reg);
-            }});
+            return;
+        }
+
+        // stored comparisons would change what later elements read
+        if (dst_info.is_register() or not e.reads_var(dst_info.root_id())) {
+            compile_bool_list(tc, indent, src_loc_tk, e, dst_info.operand);
+
+            return;
+        }
+
+        const operand reg{
+            x.alloc_scratch_register(src_loc_tk, indent, dst_info.type_ref())};
+
+        compile_bool_list(tc, indent, src_loc_tk, e, reg);
+        x.copy_value(src_loc_tk, indent, dst_info.operand, reg);
+        x.free_scratch_register(src_loc_tk, indent, reg);
     }
 
     static auto compile_bool_list(toc& tc, const size_t indent,

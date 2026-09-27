@@ -638,24 +638,18 @@ class expr_arith final : public expression {
         }
     }
 
+    // 'compile_first_element' copies identifiers itself
     static auto asm_op_mov(toc& tc, const size_t indent,
                            const ident_info& dst_info, const statement& src)
         -> void {
 
+        assert(src.is_expression());
+
         machine& x{tc.machine()};
 
-        x.comment(src.tok(), indent, "{}",
-                  src.is_expression() ? "= expression" : "");
+        x.comment(src.tok(), indent, "= expression");
 
-        // does 'src' need to be compiled?
-        if (src.is_expression()) {
-            // yes, compile with destination to 'dst'
-            src.compile(tc, indent, dst_info);
-
-            return;
-        }
-
-        std::unreachable();
+        src.compile(tc, indent, dst_info);
     }
 
     [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,

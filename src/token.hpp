@@ -18,7 +18,7 @@ class token final {
     size_t end_ix_{};           // token text end index in source
     std::string_view ws_right_; // whitespace right of token text
     size_t at_line_{};          // line number in the source
-    bool is_str_{};             // true if 'stmt_def_field' was a string
+    bool is_str_{};             // true if the text is a string literal
 
   public:
     token(const std::string_view ws_left, const size_t start_ix,

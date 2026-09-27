@@ -96,17 +96,18 @@ class stmt_if final : public statement {
         for (size_t branch_index{}; branch_index < branch_count;
              ++branch_index) {
             const stmt_if_branch& if_branch{branches_[branch_index]};
-            std::string jmp_if_false{label_else_branch};
-            std::string jmp_if_done{label_after_if};
-            if (branch_index < branch_count - 1) {
-                // if branch is false jump to next if
-                jmp_if_false = branches_[branch_index + 1].if_bgn_label(tc);
-            } else if (else_code_.is_empty()) {
-                // if the last branch and no 'else', then no need to jump to
-                // 'after_if' after the code of the branch has been executed.
-                // just continue
-                jmp_if_done = "";
-            }
+            const bool is_last_branch{branch_index == branch_count - 1};
+
+            // a false condition continues at the next branch or the 'else'
+            const std::string jmp_if_false{
+                is_last_branch ? label_else_branch
+                               : branches_[branch_index + 1].if_bgn_label(tc)};
+
+            // the last branch without an 'else' continues after the 'if'
+            // without a jump
+            const std::string jmp_if_done{
+                is_last_branch and else_code_.is_empty() ? "" : label_after_if};
+
             // compile the condition which might return that the condition was a
             // constant evaluation
             if (const std::optional<bool> const_eval{if_branch.compile_branch(
@@ -128,10 +129,6 @@ class stmt_if final : public statement {
         }
 
         x.label(indent, label_after_if);
-    }
-
-    [[nodiscard]] auto else_block() const -> const stmt_block& {
-        return else_code_;
     }
 
     // every path starts at the 'if' and afterwards only what all paths

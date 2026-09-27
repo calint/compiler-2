@@ -155,46 +155,13 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp)
 
     set_type(tp);
 
-    // is it an identifier or a function call?
     // note: token name would be empty at the '{x, y}' type of statement
-
-    if (not tok().text().empty()) {
-        // yes, e.g. obj.pos = p
-
-        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-            stmt_call_ =
-                std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
-
-            assert_call_type(tp);
-
-            return;
-        }
-
-        stmt_identifier si{tc, unary_ops{}, tok(), tz};
-
-        // e.g. o.pos = lst.first()
-        if (si.is_method_receiver()) {
-            stmt_call_ =
-                std::make_shared<stmt_call>(tc, unary_ops{}, std::move(si), tz);
-
-            assert_call_type(tp);
-
-            return;
-        }
-
-        stmt_ident_ = std::make_shared<stmt_identifier>(std::move(si));
-
-        // check that an identifier type matches the expected type
-        const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
-
-        if (tp.name() != src_info.type_ref().name()) {
-            throw compiler_exception{
-                tok(), std::format("expected type '{}', got '{}'", tp.name(),
-                                   src_info.type_ref().name())};
-        }
+    if (is_make_copy()) {
+        parse_copy_source(tc, tz, tp);
 
         return;
     }
+
     // e.g. obj.pos = {x, y}
     open_brace_tk_ = tz.is_next_char_token('{');
     if (open_brace_tk_.is_empty()) {
@@ -242,6 +209,41 @@ expr_type::expr_type(std::shared_ptr<stmt_identifier> receiver)
     : statement{receiver->first_token()}, stmt_ident_{std::move(receiver)} {
 
     set_type(stmt_ident_->get_type());
+}
+
+// declared in 'expr_type.hpp'
+// e.g. 'obj.pos = p', 'obj.pos = f()' or 'o.pos = lst.first()'
+auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
+    -> void {
+
+    if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
+        stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
+
+        assert_call_type(tp);
+
+        return;
+    }
+
+    stmt_identifier si{tc, unary_ops{}, tok(), tz};
+
+    if (si.is_method_receiver()) {
+        stmt_call_ =
+            std::make_shared<stmt_call>(tc, unary_ops{}, std::move(si), tz);
+
+        assert_call_type(tp);
+
+        return;
+    }
+
+    stmt_ident_ = std::make_shared<stmt_identifier>(std::move(si));
+
+    const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
+
+    if (tp.name() != src_info.type_ref().name()) {
+        throw compiler_exception{
+            tok(), std::format("expected type '{}', got '{}'", tp.name(),
+                               src_info.type_ref().name())};
+    }
 }
 
 // declared in 'expr_type.hpp'
@@ -567,21 +569,11 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
                                            dst_op);
     }
 
-    // unlisted elements are zero like unlisted fields
-    const size_t remaining_count{field.array_count - src.element_count()};
-    if (remaining_count == 0) {
-        return;
-    }
+    const size_t zeroed_size_bytes{
+        zero_remaining_elements(tc, indent, src.tok(), dst_op, field.type(),
+                                field.array_count - src.element_count())};
 
-    const size_t size_bytes{
-        multiply_storage_size(field.type().size_bytes(), remaining_count)};
-
-    machine& x{tc.machine()};
-
-    x.comment(src.tok(), indent, "zero remaining elements: {} * {} B = {} B",
-              remaining_count, field.type().size_bytes(), size_bytes);
-    x.zero(src.tok(), indent, dst_op, size_bytes, field.type().alignment());
-    dst_op.increment_offset(address_offset(size_bytes));
+    dst_op.increment_offset(address_offset(zeroed_size_bytes));
 }
 
 // declared in 'expr_type.hpp'
