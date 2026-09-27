@@ -98,3 +98,11 @@
         mov r15, 2
     cmp r15, qword [rbp + 8]
     jle if.91.5.end
+=== 97:     if b < 2 + 2 { # folds
+    cmp qword [rbp + 8], 4
+    jge if.97.5.end
+=== 100:     if h < 50 + 50 { # folds
+    cmp byte [rbp + 24], 100
+    jge if.100.5.end
+=== 103:     if 1 + 1 != 2 { # folds
+=== 106:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds

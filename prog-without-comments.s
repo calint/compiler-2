@@ -425,8 +425,7 @@ main:
     cmp r14, 2
     cmovge rbp, r13
     jge baz_bounds_panic
-        mov r13, 5
-    cmp qword [rbp + r14 * 8 + 296], r13
+    cmp qword [rbp + r14 * 8 + 296], 5
     sete r15b
     bool.202.12.end:
     func.assert.202.5:
@@ -449,8 +448,7 @@ main:
     cmp r14, 2
     cmovge rbp, r13
     jge baz_bounds_panic
-        mov r13, 8
-    cmp qword [rbp + r14 * 8 + 296], r13
+    cmp qword [rbp + r14 * 8 + 296], 8
     sete r15b
     bool.203.12.end:
     func.assert.203.5:

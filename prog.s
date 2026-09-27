@@ -924,12 +924,8 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
 ;   [202:17] free scratch register r13
-;   [202:23] allocate scratch register -> r13
-;       [202:23] r13 = 5
-;       [202:23] src: folded constant '3 + 0 + 2'
-        mov r13, 5
-    cmp qword [rbp + r14 * 8 + 296], r13
-;   [202:12] free scratch register r13
+;   [202:23] src: folded constant '3 + 0 + 2'
+    cmp qword [rbp + r14 * 8 + 296], 5
 ;   [202:12] free scratch register r14
     sete r15b
     bool.202.12.end:
@@ -975,12 +971,8 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
 ;   [203:17] free scratch register r13
-;   [203:23] allocate scratch register -> r13
-;       [203:23] r13 = 8
-;       [203:23] src: folded constant '5 + 1 + 2'
-        mov r13, 8
-    cmp qword [rbp + r14 * 8 + 296], r13
-;   [203:12] free scratch register r13
+;   [203:23] src: folded constant '5 + 1 + 2'
+    cmp qword [rbp + r14 * 8 + 296], 8
 ;   [203:12] free scratch register r14
     sete r15b
     bool.203.12.end:

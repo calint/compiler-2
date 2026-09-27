@@ -27,13 +27,17 @@ generated assembly, easiest first
        within a word; needs the frontend 'add_constant' callback to pad it
 [ ] constant known at compile: an identifier without an index register can
     compute its offset at compile time ('stmt_identifier::init_reg_offset')
-[ ] constant known at compile: comparisons and other users of constants use
+[ ] constant known at compile: other users of constants use
     'statement::folded_constant'
-    => 'expr_bool_op::constant_value' and 'resolve_expr' with the side's own
-       type; 'a < 1 + 1' becomes accepted (now "wider, swap")
     => 'expr_any::constant_element_value' (needs a width parameter):
        constant indexes, '{...}' packing, 'array_copy' count, inline argument
        aliasing ('stmt_identifier', 'stmt_call', 'stmt_builtin_array_copy')
+[ ] constant known at compile: a comparison with a constant left side and a
+    run-time right side mirrors the operation ('1 + 1 > b' -> 'b < 2') so
+    the constant becomes an immediate instead of a scratch register copy
+    => x86 one instruction less, rv32i same count ('li' either way)
+    => 'expr_bool_op::resolve_cmp', reuse 'mirrored_operation'; the
+       "wider, swap" check then applies to the swapped sides
 [ ] low priority: constant folding leftovers in 'expr_arith'
     => a leading lone negation '-x + 23' could be '23 - x', one instruction
        less on x86 (rv32i same count, one register more), try both with
@@ -364,6 +368,13 @@ resolved
     => test 593 checks values against run-time computation;
        test-constant-folding.sh checks the instructions of lines marked
        '# folds' against tests/593.{x86_64,rv32i}.folds
+[x] constant known at compile: comparisons use 'statement::folded_constant'
+    => 'expr_bool_op::side_constant' folds each side with its own type, used
+       by 'constant_value' and 'resolve_expr'
+    => a constant right side is an immediate, "src: folded constant '...'";
+       'a < 1 + 1' is accepted (was "wider, swap") when the value fits 'a'
+    => a constant left side is still a scratch register copy, see the open
+       item on mirroring the operation
 [x] rv32i: a zero, copy or compare loop at a known offset from s0/s1 inside a
     word keeps one width throughout; peel 'sb'/'sh' up to the word boundary
     before the loop, e.g. 'var big[80] i8' at an odd offset loops 80 'sb'

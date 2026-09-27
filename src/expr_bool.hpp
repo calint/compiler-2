@@ -139,35 +139,21 @@ class expr_bool_op final : public statement {
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<bool> {
 
-        if (lhs_.is_expression()) {
+        const std::optional<int64_t> lhs_value{side_constant(tc, lhs_)};
+        if (not lhs_value) {
             return std::nullopt;
         }
-
-        const ident_info& lhs_info{tc.make_ident_info(lhs_)};
-        if (not lhs_info.is_const()) {
-            return std::nullopt;
-        }
-
-        const int64_t lhs_value{
-            lhs_.get_unary_ops().evaluate_constant(lhs_info.const_value)};
 
         if (is_shorthand_) {
-            return (lhs_value != 0) != is_not_;
+            return (*lhs_value != 0) != is_not_;
         }
 
-        if (rhs_.is_expression()) {
+        const std::optional<int64_t> rhs_value{side_constant(tc, rhs_)};
+        if (not rhs_value) {
             return std::nullopt;
         }
 
-        const ident_info& rhs_info{tc.make_ident_info(rhs_)};
-        if (not rhs_info.is_const()) {
-            return std::nullopt;
-        }
-
-        const int64_t rhs_value{
-            rhs_.get_unary_ops().evaluate_constant(rhs_info.const_value)};
-
-        return eval_constant(lhs_value, op_, rhs_value) != is_not_;
+        return eval_constant(*lhs_value, op_, *rhs_value) != is_not_;
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
@@ -283,6 +269,24 @@ class expr_bool_op final : public statement {
         is_expression_ = true;
     }
 
+    // a side computed at run time in a register of its own type, so a
+    // constant list folds at that width
+    [[nodiscard]] static auto side_constant(const toc& tc,
+                                            const expr_arith& side)
+        -> std::optional<int64_t> {
+
+        if (side.is_expression()) {
+            return side.folded_constant(tc, side.get_type());
+        }
+
+        const ident_info& info{tc.make_ident_info(side)};
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        return side.get_unary_ops().evaluate_constant(info.const_value);
+    }
+
     [[nodiscard]] static auto eval_constant(const int64_t lh,
                                             const std::string_view op,
                                             const int64_t rh) -> bool {
@@ -353,9 +357,11 @@ class expr_bool_op final : public statement {
                     mirrored_operation(op), trimmed_source(lhs))};
         }
 
-        const int64_t value{rhs.get_unary_ops().evaluate_constant(
-            tc.make_ident_info(rhs).const_value)};
+        const std::optional<int64_t> constant{side_constant(tc, rhs)};
 
+        assert(constant);
+
+        const int64_t value{*constant};
         if (fits_size_bytes(value, lhs_type.size_bytes())) {
             return;
         }
@@ -513,8 +519,26 @@ class expr_bool_op final : public statement {
                  const bool is_lhs, std::vector<operand>& allocated_registers)
         -> operand {
 
-        if (expr.is_expression()) {
+        // the comparison needs its left operand in a register, 'compile'
+        // folds a constant list into one copy
+        if (expr.is_expression() and is_lhs) {
             return compile_to_scratch(tc, indent, expr, allocated_registers);
+        }
+
+        if (expr.is_expression()) {
+            const std::optional<int64_t> value{side_constant(tc, expr)};
+            if (not value) {
+                return compile_to_scratch(tc, indent, expr,
+                                          allocated_registers);
+            }
+
+            machine& x{tc.machine()};
+
+            x.comment(expr.tok(), indent, "src: folded constant '{}'",
+                      statement::trimmed_source(expr));
+
+            return operand::imm(std::format("{}", *value),
+                                tc.get_type_default());
         }
 
         const ident_info expr_info{tc.make_scalar_ident_info(expr)};

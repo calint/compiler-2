@@ -110,10 +110,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5144           1596          16864
+C/C++ Header                    54           5149           1600          16879
 C++                              1             66             19            329
 -------------------------------------------------------------------------------
-SUM:                            55           5210           1615          17193
+SUM:                            55           5215           1619          17208
 -------------------------------------------------------------------------------
 ```
 
@@ -874,8 +874,7 @@ main:
     cmp r14, 2
     cmovge rbp, r13
     jge baz_bounds_panic
-        mov r13, 5
-    cmp qword [rbp + r14 * 8 + 296], r13
+    cmp qword [rbp + r14 * 8 + 296], 5
     sete r15b
     bool.202.12.end:
     func.assert.202.5:
@@ -898,8 +897,7 @@ main:
     cmp r14, 2
     cmovge rbp, r13
     jge baz_bounds_panic
-        mov r13, 8
-    cmp qword [rbp + r14 * 8 + 296], r13
+    cmp qword [rbp + r14 * 8 + 296], 8
     sete r15b
     bool.203.12.end:
     func.assert.203.5:
@@ -2802,12 +2800,8 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
 ;   [202:17] free scratch register r13
-;   [202:23] allocate scratch register -> r13
-;       [202:23] r13 = 5
-;       [202:23] src: folded constant '3 + 0 + 2'
-        mov r13, 5
-    cmp qword [rbp + r14 * 8 + 296], r13
-;   [202:12] free scratch register r13
+;   [202:23] src: folded constant '3 + 0 + 2'
+    cmp qword [rbp + r14 * 8 + 296], 5
 ;   [202:12] free scratch register r14
     sete r15b
     bool.202.12.end:
@@ -2853,12 +2847,8 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
 ;   [203:17] free scratch register r13
-;   [203:23] allocate scratch register -> r13
-;       [203:23] r13 = 8
-;       [203:23] src: folded constant '5 + 1 + 2'
-        mov r13, 8
-    cmp qword [rbp + r14 * 8 + 296], r13
-;   [203:12] free scratch register r13
+;   [203:23] src: folded constant '5 + 1 + 2'
+    cmp qword [rbp + r14 * 8 + 296], 8
 ;   [203:12] free scratch register r14
     sete r15b
     bool.203.12.end:

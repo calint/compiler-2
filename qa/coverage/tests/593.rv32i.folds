@@ -109,3 +109,13 @@
         li t0, 2
     lw t1, 4(s0)
     bge t1, t0, if.91.5.end
+=== 97:     if b < 2 + 2 { # folds
+    lw t0, 4(s0)
+    li t1, 4
+    bge t0, t1, if.97.5.end
+=== 100:     if h < 50 + 50 { # folds
+    lb t0, 12(s0)
+    li t1, 100
+    bge t0, t1, if.100.5.end
+=== 103:     if 1 + 1 != 2 { # folds
+=== 106:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds
