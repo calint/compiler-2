@@ -1,0 +1,23 @@
+# data initializers at the limits of their signed types are stored as written
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type limits {
+    low i16,
+    high i16
+}
+
+dat bytes[] i8 = {-128, 127, ~127, '\x7f'}
+dat words limits = {-32768, ~-32768}
+dat dwords[2] i32 = {-2147483648, 2147483647}
+
+func main() {
+    assert(1, bytes[0] == -128)
+    assert(2, bytes[1] == 127)
+    assert(3, bytes[2] == -128)
+    assert(4, bytes[3] == 127)
+    assert(5, words.low == -32768)
+    assert(6, words.high == 32767)
+    assert(7, dwords[0] == -2147483648)
+    assert(8, dwords[1] == 2147483647)
+}

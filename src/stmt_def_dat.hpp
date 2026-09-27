@@ -512,7 +512,15 @@ class stmt_def_dat final : public statement {
         }
         el.value = ii.const_value;
 
-        return el;
+        // the assembler would truncate the value or warn about it
+        const int64_t value{el.uops.evaluate_constant(el.value)};
+        if (fits_size_bytes(value, tp.size_bytes())) {
+            return el;
+        }
+
+        throw compiler_exception{
+            el.tk, std::format("constant '{}{}' does not fit '{}'",
+                               el.uops.to_string(), el.tk.text(), tp.name())};
     }
 
     [[nodiscard]] static auto parse_type(const toc& tc, tokenizer& tz,

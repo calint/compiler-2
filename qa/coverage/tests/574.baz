@@ -1,0 +1,12 @@
+# a record data field is checked after its unary operations
+
+type limits {
+    low i16,
+    high i16
+}
+
+dat words limits = {-32768, ~32768}
+
+func main() {
+    exit(words.low)
+}

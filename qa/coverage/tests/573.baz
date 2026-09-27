@@ -1,0 +1,7 @@
+# an array data element outside the signed range of its type is rejected
+
+dat bytes[] i8 = {-128, 127, 128}
+
+func main() {
+    exit(bytes[0])
+}

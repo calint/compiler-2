@@ -76,8 +76,6 @@
             => for now the user ensures a 'read' into a 'bool' array stores
                only 0 or 1, the copy above relies on it
     [ ] redundant copies and registers:
-        [ ] 'x * 10' begins with 'addi t1, t0, 0' before the shift and add
-            sequence
         [ ] the scaled index goes into a new register instead of reusing the
             scratch register holding the index ('slli t1, t0, 2' instead of
             'slli t0, t0, 2')
@@ -85,12 +83,6 @@
             copies it: 'lw t2; addi a0, t2, 0' instead of 'lw a0'
         [ ] 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per field
             instead of computing the address once
-    [o] code after an unconditional 'exit' is generated, e.g. after a
-        constant false 'assert' and the implicit 'exit(0)' after an explicit
-        one at the end of 'main'
-        => done for the end of 'main': 'program::is_end_reachable' walks the
-           body with 'trace_assignment' and skips 'end_main' when every path
-           exits or returns
     [ ] zeroing uses the loop above 16 bytes, but 20 bytes (5 'sw') is
         shorter than the 6 instruction loop; choose by instruction count
     [x] rv32i bounds check with both '--checks=lower,upper': after the lower
@@ -110,25 +102,13 @@
         each call copies 'addi a0, t0, 0' and back 'addi t0, a0, 0'
         => accumulating in 'a0' across the calls would need register
            targeting for helper operands
-[ ] constant folding in 'expr_arith': constant elements are computed at run
-    time, e.g. 'arr3[0] == 3 + 0 + 2' is 'li t2, 3; addi t2, t2, 2' then
-    'xor' instead of 'xori t0, t0, 5', and 'array_length(arr2) == 2' is
-    'li t1, 2; xori t0, t1, 2; sltiu' although both sides are known
-    => fold only runs of constants that do not change evaluation order or
-       precedence, e.g. 'x + 3 + 2' but not 'x * 3 + 2' into 'x * 5'
-    => the folded value must stay free of ub (same checks as the existing
-       constant evaluation)
-[ ] constant array indexes are computed at run time on both targets:
-    'arr[1]' is 'li t1, 1; slli t0, t1, 2; add t0, t0, s0; lw t0, 212(t0)'
-    instead of 'lw t0, 216(s0)'; 'o3[1].pos.y' takes 7 instructions (x12
-    by shift and subtract), 'worlds[1].locations[1] = 0xffee' 9 instead of 2
-    => 'expr_any::constant_value' already detects the index (see
-       'narrow_to_element'), fold 'index * element size' into the
-       displacement instead of 'compile_checked_index' and check the bounds
-       at compile time
-    => a constant part of a runtime index, e.g. 'arr[ix + 1]', and the field
-       offset after an indexed base ('addi t0, t0, 384') can also go into the
-       final displacement
+[ ] optimizations when constant known at compile
+[o] low priority: code after an unconditional 'exit' is generated, e.g. after
+    a constant false 'assert' and the implicit 'exit(0)' after an explicit one
+    at the end of 'main'
+    => done for the end of 'main': 'program::is_end_reachable' walks the body
+       with 'trace_assignment' and skips 'end_main' when every path exits or
+       returns
 [ ] specify device memory size and error if code size + dat size + max used
     vars + stack size overflows it
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
@@ -229,16 +209,6 @@
     => keep the smallest 'access_alignment' of the addresses given to
        'set_array_copy_source/destination' and 'set_memory_equal_left/right'
        with the bulk registers, width = max(type alignment, that)
-[ ] 'arrays_equal'/'equal' with a known size could compare unrolled like
-    'array_copy' with a constant count
-[ ] 'array_copy(a, b, array_length(a))' still loops: 'array_length' and
-    'array_size_of' are expressions, not constants
-[ ] 'array_copy' with a constant count and constant indexes still checks the
-    range at run time, it could be checked at compile time
-[ ] rv32i: above the unroll threshold a copy of known size still tests the
-    word/half/byte tail at run time
-    => the redundant 'addi t1, t0, 0' after 'la' in a copy from read-only data
-       is fixed: 'copy_bytes' loops from the label pointer ('emit_copy_loop')
 [ ] 'equal' on records compares the padding bytes; a record set by a call
     result keeps whatever padding bytes its storage held
 [x] when reading trailing whitespace stop at newline
@@ -263,9 +233,6 @@
 [ ] consider not allowing single statement blocks
 [ ] rv32i emit_most_efficient should know the instruction count on synthesized
     instructions such as "li"
-[ ] rv32i constant multiply by a negative constant ends with 'sub r, zero, r'.
-    when the last digit is a subtract with no trailing shift, fold the
-    negation into it: 'x * -7' as 'slli t0, t1, 3' + 'sub t0, t1, t0'
 [ ] UB detection, what remains:
     [ ] result aliases a by-reference argument: 'x = f(x)', 'p = swap(p)'
         (485.baz, inline and noinline). reject when the callee reads that
@@ -285,11 +252,16 @@
     [ ] prog.baz 'object_init' sets only 'res.pos.y' and is rejected
     [ ] consider accepting partial results when the caller's destination is
         already initialized (call-site coverage summary)
-[ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
+[x] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
     sign-extends loads
-[ ] numbers such as i8 : 255 cause problems when cmp because value is moved
+    => comparisons, assignments, arguments and '{...}' literals already
+       reject constants outside the signed range of the type
+    => 'dat' initializers were not checked (nasm warned and truncated), now
+       rejected in 'stmt_def_dat::parse_builtin' after unary ops (572-575)
+[x] numbers such as i8 : 255 cause problems when cmp because value is moved
     to unspecified register size with sign extension
     => 255 is outside the range of i8: -128 -> 127
+    => rejected, see above
 [ ] x86 register utilization: 109.baz, 082.baz, 104.baz
 [ ] rv32i alignment issues
     => works in qemu for now that does not require alignment
@@ -299,8 +271,6 @@
 [ ]  lift the possible ai generated tests in test-rv32i.sh to end-to-end
      .baz tests 
 [ ] change all array access using [ ] to checked using .at
-[ ] rv32i constant masks: use shifts where they avoid a scratch register
-[ ] rv32i: shorten negative constant multiplication and specialize constant division
 [ ]  make the operand the base way of addressing memory with 64 bit offset and
      machine dependent index register scalings then lower the writing and
      reading to machine specific capabilities
