@@ -73,59 +73,46 @@ auto main(const int argc, const char** const argv) -> int {
         const std::string_view arg{argument};
 
         if (arg == "--help" or arg == "-h") {
-            const std::string_view prg{args[0]};
-            std::println("Usage: {} [OPTIONS] [filename]", prg);
-            std::println("");
-            std::println("Options:");
-            std::println("  --target=MACHINE    x86_64 (default), rv32i, "
-                         "rv32i-qemu or rv32i-fpga");
-            std::println("  --vars=SIZE         Set variable storage size "
-                         "(default: "
-                         "0x10000/65536)");
+            // same layout as the readme usage section which pastes this output
+            std::print(R"(usage: {0} [options] [file]
+compiles file (default: prog.baz) to assembly on stdout, rv32i targets also
+write the binary image gen-rv32i.bin
 
-            std::println(
-                "                      Supports decimal and hex (0x prefix) ");
+options:
+  --target=MACHINE    x86_64 (default): linux, nasm
+                      rv32i: linux, llvm assembler, qemu user mode
+                      rv32i-qemu: bare-metal image for the qemu virt machine
+                      rv32i-fpga: bare-metal image for the fpga soft core,
+                        stack grows down from the end of the 8 mib memory,
+                        fails when code, data, variables and stack do not fit
+  --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
+                      multiple of {1} (default: {2})
+  --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
+                      hex, must be a multiple of {3} (default: {4})
+  --checks=LIST       comma separated checks, replaces earlier --checks
+  --nopt              no jump optimizations
+  --reproduce-source  write reproduced source to diff.baz and check that it
+                      matches the input
+  --help, -h          this help
 
-            std::println("                      Must be a multiple of {}",
-                         vars_alignment);
+checks:
+  upper  runtime upper array bounds, often enough to also catch negative
+         indexes
+  lower  runtime lower array bounds
+  line   report line number on failed bounds check
+  frame  runtime non-inlined function frame capacity
+  alias  compile time rejection of calls where a result or argument may
+         share storage
 
-            std::println(
-                "  --stack=SIZE        Set rv32i-qemu and rv32i-fpga stack "
-                "size (default: 0x10000/65536)");
-
-            std::println("                      Must be a multiple of {}",
-                         stack_alignment);
-
-            std::println("  --checks=TYPE       Enable runtime checks:");
-            std::println(
-                "                        upper - check upper array bounds");
-
-            std::println(
-                "                        lower - check lower array bounds");
-
-            std::println("                         line - report line number");
-            std::println("                        frame - check function frame "
-                         "capacity");
-            std::println("                        alias - reject calls where a "
-                         "result or argument may share storage");
-
-            std::println(" upper,lower,line,frame,alias - all");
-            std::println("  --nopt              No jump optimizations");
-            std::println("  --reproduce-source  Write reproduced source to "
-                         "diff.baz and check it matches the input");
-
-            std::println("  --help, -h          Show this help message");
-            std::println("");
-            std::println("Arguments:");
-            std::println(
-                "  filename            Source file (default: prog.baz)");
-
-            std::println("");
-            std::println("Examples:");
-            std::println("  {} myfile.baz", prg);
-            std::println("  {} --vars=131072 --checks=upper prog.baz", prg);
-            std::println("  {} --checks=upper,lower,line prog.baz", prg);
-            std::println("  {} --checks=upper prog.baz", prg);
+examples:
+  {0} prog.baz > prog.s
+  {0} --vars=0x40000 --checks=upper prog.baz > prog.s
+  {0} --checks=upper,lower,line,frame prog.baz > prog.s
+  {0} --target=rv32i-qemu --stack=0x20000 prog.baz > prog.s
+  {0} --target=rv32i-fpga --checks=upper,line prog.baz > prog.s
+)",
+                       args[0], vars_alignment, default_vars_size_bytes,
+                       stack_alignment, default_stack_size_bytes);
 
             return 0;
         }

@@ -38,43 +38,60 @@ compiler writes the binary image itself.
 
 ## Howto
 
-* to compile the compiler, then compile and run `prog.baz` run `./make.sh`
-  (`./make.sh build` only compiles the compiler)
-* after that use `./run.sh myprogram.baz` to compile, assemble and run a
-  program, `./run.sh` alone uses `prog.baz`
-  * writes `myprogram.s`, `myprogram-without-comments.s`, `myprogram.o` and the
-    binary `myprogram`
-  * optional parameters: _variable storage size_, _bounds check_, with _line number
-    information_ and _jump optimizations_ e.g:
-    * `./run.sh myprogram.baz --vars=262144`: reserves 262144 bytes for
-      variables, no runtime checks
-    * `./run.sh myprogram.baz --vars=262144 --checks=upper`: checks upper
-      bounds without line number information and is often enough to ensure
-      catching negative values (faster)
-    * `./run.sh myprogram.baz --vars=262144 --checks=upper,line`: checks
-      upper bounds with line number information
-    * `./run.sh myprogram.baz --vars=262144 --checks=upper,lower,line`: checks
-      bounds with line number information
-    * option `--vars=SIZE` reserves variable storage in bytes (default: 65536,
-      decimal or `0x` hex, positive multiple of 16)
-    * option `--checks=TYPE` also accepts `frame` (non-inlined function frame
-      capacity) and `alias` (calls where a result or argument may share
-      storage)
-    * option `--nopt` disables post processing jump optimizations
-    * option `--reproduce-source` writes reproduced source to `diff.baz`
-      and checks that it matches the input
-    * to compile for rv32i and run in QEMU user mode use `--target=rv32i`
-    * to compile a bare-metal image `gen-rv32i.bin` and run it on the QEMU
-      `virt` machine use `--target=rv32i-qemu` (option `--stack=SIZE` sets
-      the stack size, default: 65536, multiple of 16)
-    * to compile a bare-metal image `gen-rv32i.bin` and run it in the fpga
-      soft core emulator use `--target=rv32i-fpga` (the stack grows down
-      from the end of the 8 MiB memory, compilation fails when code, data,
-      variables and `--stack=SIZE` do not fit)
-* to run the tests `qa/coverage/test-all.sh` and see coverage report in
+* `./make.sh` compiles the compiler then compiles and runs `prog.baz`,
+  `./make.sh build` only compiles the compiler
+* `./run.sh [options] [NAME.baz]` compiles, assembles and runs `NAME.baz`
+  (default: `prog.baz`) passing options to `baz`, writes `NAME.s` and
+  `NAME-without-comments.s`, x86_64 and rv32i also `NAME.o` and the binary
+  `NAME`, rv32i targets run in qemu user mode, the qemu virt machine or the
+  fpga soft core emulator
+  * `./run.sh myprogram.baz --checks=upper,line`
+  * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
+* `qa/coverage/test-all.sh` runs the tests, coverage report in
   `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
 * todo list of planned fixes and features in `etc/todo.txt`
+
+## Usage
+
+```text
+usage: ./baz [options] [file]
+compiles file (default: prog.baz) to assembly on stdout, rv32i targets also
+write the binary image gen-rv32i.bin
+
+options:
+  --target=MACHINE    x86_64 (default): linux, nasm
+                      rv32i: linux, llvm assembler, qemu user mode
+                      rv32i-qemu: bare-metal image for the qemu virt machine
+                      rv32i-fpga: bare-metal image for the fpga soft core,
+                        stack grows down from the end of the 8 mib memory,
+                        fails when code, data, variables and stack do not fit
+  --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
+                      multiple of 16 (default: 65536)
+  --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
+                      hex, must be a multiple of 16 (default: 65536)
+  --checks=LIST       comma separated checks, replaces earlier --checks
+  --nopt              no jump optimizations
+  --reproduce-source  write reproduced source to diff.baz and check that it
+                      matches the input
+  --help, -h          this help
+
+checks:
+  upper  runtime upper array bounds, often enough to also catch negative
+         indexes
+  lower  runtime lower array bounds
+  line   report line number on failed bounds check
+  frame  runtime non-inlined function frame capacity
+  alias  compile time rejection of calls where a result or argument may
+         share storage
+
+examples:
+  ./baz prog.baz > prog.s
+  ./baz --vars=0x40000 --checks=upper prog.baz > prog.s
+  ./baz --checks=upper,lower,line,frame prog.baz > prog.s
+  ./baz --target=rv32i-qemu --stack=0x20000 prog.baz > prog.s
+  ./baz --target=rv32i-fpga --checks=upper,line prog.baz > prog.s
+```
 
 ## Related
 
@@ -89,9 +106,9 @@ compiler writes the binary image itself.
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
 C/C++ Header                    55           4809           1555          16549
-C++                              1             58             10            274
+C++                              1             51             11            267
 -------------------------------------------------------------------------------
-SUM:                            56           4867           1565          16823
+SUM:                            56           4860           1566          16816
 -------------------------------------------------------------------------------
 ```
 

@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[x] opus 5.5 ai review and bug-hunt
 [o] local code generation found in the rv32i assessment, examples in
     etc/codegen-inefficiencies.baz
     [ ] a runtime bool argument to an inline function is materialized:
@@ -341,7 +342,6 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
         argument shares its root variable with another by-reference
         argument, or a non-inline parameter meets a global (526.baz-532.baz)
         => conservative: rejects 26 tests and prog.baz
-[x] opus 5.5 ai review and bug-hunt
 [x] immediate value can maximum be 32 bit. handle that at initiation of var
     => see 'handle case where x86_64 cannot load immediate 64 bit value'
 [x] does not work: var s1: i8[] = "hello world"

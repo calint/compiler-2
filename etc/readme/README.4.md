@@ -1,6 +1,5 @@
 ```
 
-## With comments
+## Generates
 
 ```nasm
-
