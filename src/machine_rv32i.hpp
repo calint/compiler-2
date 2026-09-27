@@ -3504,10 +3504,22 @@ class machine_rv32i : public machine {
         // frees the registers allocated with the operation
         address_scope allocations;
 
-        // labels 1 to 4 and 7 belong to the walks, a false exit branches
-        // forward to '5', which the subclass places in 'finish'
-        static constexpr std::string_view false_exit_label{"5"};
-        static constexpr std::string_view false_exit_branch{"5f"};
+        // a numeric local label as defined and as a branch refers to it
+        struct local_label {
+            std::string_view name;
+            std::string_view reference;
+        };
+
+        // every local label of the walks and of a subclass 'finish', listed
+        // together so none is used twice
+        static constexpr local_label chunk_loop{.name{"1"}, .reference{"1b"}};
+        static constexpr local_label after_chunks{.name{"2"}, .reference{"2f"}};
+        static constexpr local_label after_halfword{.name{"3"},
+                                                    .reference{"3f"}};
+        static constexpr local_label walk_end{.name{"4"}, .reference{"4f"}};
+        static constexpr local_label false_exit{.name{"5"}, .reference{"5f"}};
+        static constexpr local_label result_end{.name{"6"}, .reference{"6f"}};
+        static constexpr local_label after_head{.name{"7"}, .reference{"7f"}};
 
         // parameters differ from the members they initialize
         bulk_operation(machine_rv32i& backend_in, const token& src_loc_tk_in,
@@ -3537,7 +3549,7 @@ class machine_rv32i : public machine {
         auto walk_from_pointers(const operand& src_pointer,
                                 const operand& dst_pointer,
                                 const operand& count, const size_t size_bytes,
-                                const std::span<const access_start> starts,
+                                const std::array<access_start, 2>& starts,
                                 const size_t alignment) -> void {
 
             known_size_walk{*this}.from_pointers(
@@ -3551,7 +3563,7 @@ class machine_rv32i : public machine {
         auto walk_runtime_count(const operand& src_pointer,
                                 const operand& dst_pointer,
                                 const operand& count,
-                                const std::span<const access_start> starts,
+                                const std::array<access_start, 2>& starts,
                                 const size_t alignment) -> void {
 
             runtime_count_walk{*this}.from_pointers(
@@ -3590,11 +3602,27 @@ class machine_rv32i : public machine {
                             std::forward<args_t>(args)...);
         }
 
-        // the addresses or pointers a walk advances together, 'src' is empty
-        // for zero
+        // the addresses or pointers a walk advances together
         struct src_dst {
             operand src;
             operand dst;
+
+            // 'to' applied to each operand present, zero has no source
+            template <typename function_t>
+            [[nodiscard]] auto map(const function_t& to) const -> src_dst {
+                const auto present = [&to](const operand& value) -> operand {
+                    if (value.is_empty()) {
+                        return {};
+                    }
+
+                    return to(value);
+                };
+
+                return {
+                    .src{present(src)},
+                    .dst{present(dst)},
+                };
+            }
         };
 
         // what both walks share: one access, advancing the pointers, a loop of
@@ -3621,14 +3649,9 @@ class machine_rv32i : public machine {
                 size_t width{};
             };
 
-            // zero has no source
-            [[nodiscard]] static auto at_offset(const operand& address,
+            [[nodiscard]] static auto offset_by(const operand& address,
                                                 const size_t offset)
                 -> operand {
-
-                if (address.is_empty()) {
-                    return {};
-                }
 
                 operand moved{address};
                 moved.increment_offset(static_cast<int64_t>(offset));
@@ -3640,8 +3663,12 @@ class machine_rv32i : public machine {
             auto access(const size_t width, const src_dst& addresses,
                         const size_t offset = 0) -> void {
 
-                operation.do_operation(width, at_offset(addresses.src, offset),
-                                       at_offset(addresses.dst, offset));
+                const src_dst moved{
+                    addresses.map([offset](const operand& address) -> operand {
+                        return offset_by(address, offset);
+                    })};
+
+                operation.do_operation(width, moved.src, moved.dst);
             }
 
             // unrolled accesses at offsets from the addresses
@@ -3660,19 +3687,10 @@ class machine_rv32i : public machine {
             [[nodiscard]] auto addresses_of(const src_dst& pointers) const
                 -> src_dst {
 
-                const auto at = [this](const operand& pointer) -> operand {
-                    if (pointer.is_empty()) {
-                        return {};
-                    }
-
+                return pointers.map([this](const operand& pointer) -> operand {
                     return operand::mem(pointer.base_register(), {}, 1, 0,
                                         operation.backend.default_type());
-                };
-
-                return {
-                    .src{at(pointers.src)},
-                    .dst{at(pointers.dst)},
-                };
+                });
             }
 
             auto advance(const src_dst& pointers, const size_t size_bytes)
@@ -3693,12 +3711,13 @@ class machine_rv32i : public machine {
             auto emit_chunk_loop(const src_dst& pointers, const operand& chunks,
                                  const size_t width) -> void {
 
-                assembler.label(indent, "1");
+                assembler.label(indent, chunk_loop.name);
                 access(width, addresses_of(pointers));
                 advance(pointers, width);
                 assembler.addi(indent, chunks.base_register(),
                                chunks.base_register(), -1);
-                assembler.bnez(indent, chunks.base_register(), "1b");
+                assembler.bnez(indent, chunks.base_register(),
+                               chunk_loop.reference);
             }
 
             // the widest width that every start reaches after the same head of
@@ -3733,15 +3752,15 @@ class machine_rv32i : public machine {
                 };
             }
 
-            // pointers may hold any address, so 'starts' from 'start_of' with
-            // alignment 1 gain the type 'alignment' here
+            // pointers may hold any address, so their starts from 'start_of'
+            // with alignment 1 gain the type 'alignment' here
             [[nodiscard]] auto
-            plan_pointer_loop(const std::span<const access_start> starts,
+            plan_pointer_loop(const std::array<access_start, 2>& starts,
                               const size_t alignment,
                               const size_t max_head_size_bytes) const
                 -> loop_start {
 
-                std::vector<access_start> typed{starts.begin(), starts.end()};
+                std::array<access_start, 2> typed{starts};
                 for (access_start& s : typed) {
                     s.alignment = std::max(s.alignment, bulk_width(alignment));
                 }
@@ -3749,31 +3768,38 @@ class machine_rv32i : public machine {
                 const loop_start start{
                     plan_loop_start(typed, max_head_size_bytes)};
 
+                explain_width(start, typed, alignment);
+
+                return start;
+            }
+
+            // names what decided the width of a pointer loop
+            auto explain_width(const loop_start& start,
+                               const std::array<access_start, 2>& starts,
+                               const size_t alignment) const -> void {
+
                 if (start.head_size_bytes != 0) {
                     operation.comment(
                         "{}-byte accesses after a {} B head: addresses {} and "
                         "{}",
                         start.width, start.head_size_bytes,
-                        describe_start(typed.front()),
-                        describe_start(typed.back()));
+                        describe_start(starts.front()),
+                        describe_start(starts.back()));
 
-                    return start;
+                    return;
                 }
 
-                // name the alignment that decided the width
                 if (start.width > alignment) {
                     operation.comment("{}-byte accesses: both addresses "
                                       "{}-byte aligned, type {}-byte aligned",
                                       start.width, start.width, alignment);
 
-                    return start;
+                    return;
                 }
 
                 operation.comment("{}-byte accesses: type {}-byte aligned, "
                                   "addresses not proven more aligned",
                                   start.width, alignment);
-
-                return start;
             }
 
             [[nodiscard]] auto describe_loop(const size_t width) const
@@ -3806,15 +3832,46 @@ class machine_rv32i : public machine {
                 const size_t part_count{aligned_part_count(size_bytes, starts)};
 
                 if (operation.unrolls(size_bytes, part_count)) {
-                    operation.backend.comment_aligned_parts(
-                        operation.src_loc_tk, indent, operation.verb,
-                        size_bytes, starts);
-
-                    emit_parts(size_bytes, starts,
-                               direct(addresses, size_bytes));
-
+                    emit_unrolled(addresses, size_bytes, starts);
                     return;
                 }
+
+                emit_loop(addresses, size_bytes, starts);
+            }
+
+            auto from_pointers(const src_dst& pointers, const operand& count,
+                               const size_t size_bytes,
+                               const std::array<access_start, 2>& starts,
+                               const size_t alignment) -> void {
+
+                const address_scope scope{operation.backend, pointers.dst,
+                                          pointers.src};
+
+                // the known size limits the head
+                const loop_start start{
+                    plan_pointer_loop(starts, alignment, size_bytes)};
+
+                emit_pointer_head(pointers, start);
+                emit_counted_loop(pointers, count,
+                                  size_bytes - start.head_size_bytes,
+                                  start.width);
+            }
+
+            auto emit_unrolled(const src_dst& addresses,
+                               const size_t size_bytes,
+                               const std::span<const access_start> starts)
+                -> void {
+
+                operation.backend.comment_aligned_parts(operation.src_loc_tk,
+                                                        indent, operation.verb,
+                                                        size_bytes, starts);
+
+                emit_parts(size_bytes, starts, direct(addresses, size_bytes));
+            }
+
+            // the head at direct offsets, then pointers from the boundary
+            auto emit_loop(const src_dst& addresses, const size_t size_bytes,
+                           const std::span<const access_start> starts) -> void {
 
                 const loop_start loop{plan_loop_start(starts, size_bytes)};
 
@@ -3844,65 +3901,29 @@ class machine_rv32i : public machine {
                                   loop.width);
             }
 
-            auto from_pointers(const src_dst& pointers, const operand& count,
-                               const size_t size_bytes,
-                               const std::span<const access_start> starts,
-                               const size_t alignment) -> void {
-
-                const address_scope scope{operation.backend, pointers.dst,
-                                          pointers.src};
-
-                // the known size limits the head
-                const loop_start start{
-                    plan_pointer_loop(starts, alignment, size_bytes)};
-
-                emit_pointer_head(pointers, start);
-                emit_counted_loop(pointers, count,
-                                  size_bytes - start.head_size_bytes,
-                                  start.width);
-            }
-
             // offsets that reach 'reach_bytes' past each address
             [[nodiscard]] auto direct(const src_dst& addresses,
                                       const size_t reach_bytes) -> src_dst {
 
-                const auto lowered = [&](const operand& address) -> operand {
-                    if (address.is_empty()) {
-                        return {};
-                    }
-
+                return addresses.map([&](const operand& address) -> operand {
                     return operation.backend.unrolled_address(
                         operation.src_loc_tk, indent, address, reach_bytes);
-                };
-
-                return {
-                    .src{lowered(addresses.src)},
-                    .dst{lowered(addresses.dst)},
-                };
+                });
             }
 
             // pointer registers holding the addresses plus 'offset'
             [[nodiscard]] auto load_pointers(const src_dst& addresses,
                                              const size_t offset) -> src_dst {
 
-                const auto load = [&](const operand& address) -> operand {
-                    if (address.is_empty()) {
-                        return {};
-                    }
-
+                return addresses.map([&](const operand& address) -> operand {
                     const operand pointer{operation.scratch_register()};
 
                     operation.backend.address_of(operation.src_loc_tk, indent,
                                                  pointer,
-                                                 at_offset(address, offset));
+                                                 offset_by(address, offset));
 
                     return pointer;
-                };
-
-                return {
-                    .src{load(addresses.src)},
-                    .dst{load(addresses.dst)},
-                };
+                });
             }
 
             // 'size_bytes' from pointers at a 'width' boundary
@@ -3985,7 +4006,7 @@ class machine_rv32i : public machine {
             using walk::walk;
 
             auto from_pointers(const src_dst& pointers, const operand& count,
-                               const std::span<const access_start> starts,
+                               const std::array<access_start, 2>& starts,
                                const size_t alignment) -> void {
 
                 const address_scope scope{operation.backend, pointers.dst,
@@ -3995,57 +4016,36 @@ class machine_rv32i : public machine {
                 const loop_start start{plan_pointer_loop(
                     starts, alignment, std::numeric_limits<size_t>::max())};
 
-                const size_t width{start.width};
-
                 // without a known alignment every access is a byte
-                if (width == 1) {
-                    operation.comment("{}; skip if none", describe_loop(1));
-                    assembler.beqz(indent, count.base_register(), "4f");
-                    emit_chunk_loop(pointers, count, 1);
-                    assembler.label(indent, "4");
-
+                if (start.width == 1) {
+                    emit_byte_loop(pointers, count);
                     return;
                 }
 
                 // also the scratch of the head check and the halfword tail test
                 const operand chunks{operation.scratch_register()};
 
-                operation.comment(
-                    "{}: {}, {}: tail bytes", chunks.base_register(),
-                    width == 4 ? "words" : "halfwords", count.base_register());
+                operation.comment("{}: {}, {}: tail bytes",
+                                  chunks.base_register(),
+                                  start.width == 4 ? "words" : "halfwords",
+                                  count.base_register());
 
                 emit_checked_head(pointers, count, chunks,
                                   start.head_size_bytes);
 
-                operation.comment(
-                    "split bytes into chunks and tail; skip loop if none");
-                assembler.srli(indent, chunks.base_register(),
-                               count.base_register(), std::countr_zero(width));
-                assembler.andi(indent, count.base_register(),
-                               count.base_register(), width - 1);
-                assembler.beqz(indent, chunks.base_register(), "2f");
-                operation.comment("{}", describe_loop(width));
-                emit_chunk_loop(pointers, chunks, width);
-                assembler.label(indent, "2");
+                emit_chunks(pointers, count, chunks, start.width);
+                emit_tail(pointers, count, chunks, start.width);
+            }
 
-                // after words at most 3 bytes remain, bit 1 selects a halfword
-                if (width == 4) {
-                    operation.comment("{} optional 2-byte tail",
-                                      operation.verb);
-                    assembler.andi(indent, chunks.base_register(),
-                                   count.base_register(), 2);
-                    assembler.beqz(indent, chunks.base_register(), "3f");
-                    access(2, addresses_of(pointers));
-                    advance(pointers, 2);
-                    assembler.label(indent, "3");
-                    assembler.andi(indent, count.base_register(),
-                                   count.base_register(), 1);
-                }
+            // 'count' may be zero
+            auto emit_byte_loop(const src_dst& pointers, const operand& count)
+                -> void {
 
-                operation.comment("{} optional final byte", operation.verb);
-                assembler.beqz(indent, count.base_register(), "4f");
-                access(1, addresses_of(pointers));
-                assembler.label(indent, "4");
+                operation.comment("{}; skip if none", describe_loop(1));
+                assembler.beqz(indent, count.base_register(),
+                               walk_end.reference);
+                emit_chunk_loop(pointers, count, 1);
+                assembler.label(indent, walk_end.name);
             }
 
             // each head access first checks that the count still covers it,
@@ -4068,13 +4068,15 @@ class machine_rv32i : public machine {
                     }
 
                     if (width == 1) {
-                        assembler.beqz(indent, count.base_register(), "7f");
+                        assembler.beqz(indent, count.base_register(),
+                                       after_head.reference);
                     }
 
                     if (width == 2) {
                         assembler.sltiu(indent, scratch.base_register(),
                                         count.base_register(), 2);
-                        assembler.bnez(indent, scratch.base_register(), "7f");
+                        assembler.bnez(indent, scratch.base_register(),
+                                       after_head.reference);
                     }
 
                     access(width, addresses_of(pointers));
@@ -4084,7 +4086,52 @@ class machine_rv32i : public machine {
                                    -static_cast<int64_t>(width));
                 }
 
-                assembler.label(indent, "7");
+                assembler.label(indent, after_head.name);
+            }
+
+            // the loop takes 'count' divided into chunks, 'count' keeps the
+            // tail bytes
+            auto emit_chunks(const src_dst& pointers, const operand& count,
+                             const operand& chunks, const size_t width)
+                -> void {
+
+                operation.comment(
+                    "split bytes into chunks and tail; skip loop if none");
+                assembler.srli(indent, chunks.base_register(),
+                               count.base_register(), std::countr_zero(width));
+                assembler.andi(indent, count.base_register(),
+                               count.base_register(), width - 1);
+                assembler.beqz(indent, chunks.base_register(),
+                               after_chunks.reference);
+                operation.comment("{}", describe_loop(width));
+                emit_chunk_loop(pointers, chunks, width);
+                assembler.label(indent, after_chunks.name);
+            }
+
+            // after words at most 3 bytes remain, bit 1 selects a halfword and
+            // bit 0 the final byte
+            auto emit_tail(const src_dst& pointers, const operand& count,
+                           const operand& scratch, const size_t width) -> void {
+
+                if (width == 4) {
+                    operation.comment("{} optional 2-byte tail",
+                                      operation.verb);
+                    assembler.andi(indent, scratch.base_register(),
+                                   count.base_register(), 2);
+                    assembler.beqz(indent, scratch.base_register(),
+                                   after_halfword.reference);
+                    access(2, addresses_of(pointers));
+                    advance(pointers, 2);
+                    assembler.label(indent, after_halfword.name);
+                    assembler.andi(indent, count.base_register(),
+                                   count.base_register(), 1);
+                }
+
+                operation.comment("{} optional final byte", operation.verb);
+                assembler.beqz(indent, count.base_register(),
+                               walk_end.reference);
+                access(1, addresses_of(pointers));
+                assembler.label(indent, walk_end.name);
             }
         };
     };
@@ -4183,7 +4230,7 @@ class machine_rv32i : public machine {
                            dst.base_register());
 
             assembler.bne(indent, left.base_register(), right.base_register(),
-                          false_exit_branch);
+                          false_exit.reference);
         }
 
         // every access matched or the range was empty, unless a mismatch
@@ -4191,11 +4238,11 @@ class machine_rv32i : public machine {
         auto finish() -> void override {
             comment("all matched or empty: {}", inverted ? "false" : "true");
             assembler.li(indent, left.base_register(), inverted ? 0 : 1);
-            assembler.j(indent, "6f");
-            assembler.label(indent, false_exit_label);
+            assembler.j(indent, result_end.reference);
+            assembler.label(indent, false_exit.name);
             comment("mismatch: {}", inverted ? "true" : "false");
             assembler.li(indent, left.base_register(), inverted ? 1 : 0);
-            assembler.label(indent, "6");
+            assembler.label(indent, result_end.name);
             if (not reuse_result) {
                 backend.copy_value(src_loc_tk, indent, result, left);
             }
