@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
+[ ] a ways to split code in multiple files while keeping the unity build
 [ ] local code generation found in the survey of all coverage tests on both
     targets (2026-09-28), illustrated in etc/codegen-inefficiencies.baz;
     site counts are occurrences in the tests
