@@ -1,0 +1,113 @@
+# 'equal' of a known size compares the qwords, then the remaining dword, word
+# and byte; a difference in any byte of any part makes it false
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func fill(a[] i8) {
+    var i = 0
+    loop {
+        if i == array_length(a) break
+        a[i] = i8(i + 1)
+        i = i + 1
+    }
+}
+
+# 'a' and 'b' are equal, then differ in each byte in turn
+func check(err, a[] i8, b[] i8) {
+    fill(a)
+    fill(b)
+    assert(err, equal(a, b))
+    var i = 0
+    loop {
+        if i == array_length(b) break
+        b[i] = 0
+        assert(err, not equal(a, b))
+        b[i] = a[i]
+        assert(err, equal(a, b))
+        i = i + 1
+    }
+}
+
+# 28 B: 3 qwords, then a dword holding 'w', 'b' and the padding
+type tail { d1 i32, d2 i32, d3 i32, d4 i32, d5 i32, d6 i32, w i16, b i8 }
+
+func main() {
+    # only the dword, word and byte parts
+    var a1[1] i8
+    var b1[1] i8
+    check(1, a1, b1)
+    var a2[2] i8
+    var b2[2] i8
+    check(2, a2, b2)
+    var a3[3] i8
+    var b3[3] i8
+    check(3, a3, b3)
+    var a4[4] i8
+    var b4[4] i8
+    check(4, a4, b4)
+    var a7[7] i8
+    var b7[7] i8
+    check(7, a7, b7)
+
+    # single qword compares
+    var a8[8] i8
+    var b8[8] i8
+    check(8, a8, b8)
+    var a15[15] i8
+    var b15[15] i8
+    check(15, a15, b15)
+    var a16[16] i8
+    var b16[16] i8
+    check(16, a16, b16)
+    var a23[23] i8
+    var b23[23] i8
+    check(23, a23, b23)
+
+    # 'repe cmpsq' then the remaining parts
+    var a24[24] i8
+    var b24[24] i8
+    check(24, a24, b24)
+    var a29[29] i8
+    var b29[29] i8
+    check(29, a29, b29)
+    var a31[31] i8
+    var b31[31] i8
+    check(31, a31, b31)
+    var a40[40] i8
+    var b40[40] i8
+    check(40, a40, b40)
+
+    var p tail = {1, 2, 3, 4, 5, 6, 7, 8}
+    var q tail = p
+    assert(50, equal(p, q))
+    q.d1 = 0
+    assert(51, not equal(p, q))
+    q = p
+    q.d6 = 0
+    assert(52, not equal(p, q))
+    q = p
+    q.w = 0
+    assert(53, not equal(p, q))
+    q = p
+    q.b = 0
+    assert(54, not equal(p, q))
+    q = p
+    assert(55, equal(p, q))
+
+    # 'test-equal-compares.sh' checks the instructions of these lines against
+    # 'tests/598.x86_64.compares'
+    assert(60, equal(a1, b1)) # compares
+    assert(61, equal(a2, b2)) # compares
+    assert(62, equal(a3, b3)) # compares
+    assert(63, equal(a4, b4)) # compares
+    assert(64, equal(a7, b7)) # compares
+    assert(65, equal(a8, b8)) # compares
+    assert(66, equal(a15, b15)) # compares
+    assert(67, equal(a16, b16)) # compares
+    assert(68, equal(a23, b23)) # compares
+    assert(69, equal(a24, b24)) # compares
+    assert(70, equal(a29, b29)) # compares
+    assert(71, equal(a31, b31)) # compares
+    assert(72, equal(a40, b40)) # compares
+    assert(73, equal(p, q)) # compares
+}

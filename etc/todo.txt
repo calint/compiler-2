@@ -3,8 +3,6 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
-    compares, then the remaining dword, word and byte compares
 [ ] rv32i: a constant above 16 bytes stored at an address inside a word
     ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
     offset) loops bytes: the constant is word aligned and the destination is
@@ -338,6 +336,10 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
+    compares, then the remaining dword, word and byte compares
+    => up to 2 qwords use single 'cmpsq' without loading 'rcx'; each part
+       after the first follows 'jne .Lbaz_equal.N' to the result (test 598)
 [x] constant known at compile: a comparison with a constant left side and a
     run-time right side mirrors the operation ('1 + 1 > b' -> 'b < 2') so
     the constant becomes an immediate instead of a scratch register copy

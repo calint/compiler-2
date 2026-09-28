@@ -948,8 +948,10 @@ main:
         lea rsi, [rbp + 312]
 ;       [221:21] q
         lea rdi, [rbp + 328]
-        mov rcx, 2
-        repe cmpsq
+        cmpsq
+        jne .Lbaz_equal.0
+        cmpsq
+        .Lbaz_equal.0:
 ;       [221:12] free named register rcx
 ;       [221:12] free named register rdi
 ;       [221:12] free named register rsi
@@ -991,8 +993,10 @@ main:
         lea rsi, [rbp + 312]
 ;       [226:25] q
         lea rdi, [rbp + 328]
-        mov rcx, 2
-        repe cmpsq
+        cmpsq
+        jne .Lbaz_equal.1
+        cmpsq
+        .Lbaz_equal.1:
 ;       [226:16] free named register rcx
 ;       [226:16] free named register rdi
 ;       [226:16] free named register rsi

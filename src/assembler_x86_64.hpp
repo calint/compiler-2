@@ -60,6 +60,10 @@ class assembler_x86_64 final : public assembler {
         repe_cmpsw,
         repe_cmpsd,
         repe_cmpsq,
+        cmpsb,
+        cmpsw,
+        cmpsd,
+        cmpsq,
     };
 
     // suffixes of 'jcc', 'setcc' and 'cmovcc', 'nz' is spelled apart from
@@ -398,7 +402,7 @@ class assembler_x86_64 final : public assembler {
         size_t operand_count{};
     };
 
-    static constexpr size_t op_count{std::to_underlying(op::repe_cmpsq) + 1};
+    static constexpr size_t op_count{std::to_underlying(op::cmpsq) + 1};
 
     // the table is inside a function because 'op_info' default member
     // initializers are usable only once the class is complete
@@ -436,6 +440,10 @@ class assembler_x86_64 final : public assembler {
             {.mnemonic{"repe cmpsw"}, .operand_count{}},
             {.mnemonic{"repe cmpsd"}, .operand_count{}},
             {.mnemonic{"repe cmpsq"}, .operand_count{}},
+            {.mnemonic{"cmpsb"}, .operand_count{}},
+            {.mnemonic{"cmpsw"}, .operand_count{}},
+            {.mnemonic{"cmpsd"}, .operand_count{}},
+            {.mnemonic{"cmpsq"}, .operand_count{}},
         }};
 
         return infos.at(std::to_underlying(code));

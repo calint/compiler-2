@@ -441,8 +441,10 @@ main:
     cmp.221.12:
         lea rsi, [rbp + 312]
         lea rdi, [rbp + 328]
-        mov rcx, 2
-        repe cmpsq
+        cmpsq
+        jne .Lbaz_equal.0
+        cmpsq
+        .Lbaz_equal.0:
         sete r15b
     bool.221.12.end:
     func.assert.221.5:
@@ -460,8 +462,10 @@ main:
     cmp.226.12:
         lea rsi, [rbp + 312]
         lea rdi, [rbp + 328]
-        mov rcx, 2
-        repe cmpsq
+        cmpsq
+        jne .Lbaz_equal.1
+        cmpsq
+        .Lbaz_equal.1:
         setne r15b
     bool.226.12.end:
     func.assert.226.5:

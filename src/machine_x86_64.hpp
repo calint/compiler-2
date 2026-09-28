@@ -53,6 +53,8 @@ class machine_x86_64 final : public machine {
 
     static constexpr size_t threshold_for_rep_stos_size_bytes{32};
     static constexpr size_t threshold_for_rep_movs_size_bytes{16};
+    // up to this many qwords single compares cost less than loading 'rcx'
+    static constexpr size_t threshold_for_repe_cmpsq_count{2};
     static constexpr int syscall_exit{60};
     static constexpr int panic_exit_code{255};
 
@@ -185,6 +187,8 @@ class machine_x86_64 final : public machine {
     bool frame_base_reserved_{};
     std::vector<allocation> allocations_;
     size_t usage_max_scratch_regs_{};
+    // numbers the labels after the parts of a memory compare
+    size_t equal_label_count_{};
 
     std::string_view source_;
 
@@ -628,20 +632,32 @@ class machine_x86_64 final : public machine {
                           const operand& dst, const bool inverted = false)
         -> void override {
 
-        op compare{op::repe_cmpsb};
-        size_t count{size_bytes};
-        if ((count % size_qword) == 0) {
-            compare = op::repe_cmpsq;
-            count /= size_qword;
-        } else if ((count % size_dword) == 0) {
-            compare = op::repe_cmpsd;
-            count /= size_dword;
-        } else if ((count % size_word) == 0) {
-            compare = op::repe_cmpsw;
-            count /= size_word;
+        const std::vector<op> compares{memory_equal_compares(size_bytes)};
+
+        assert(not compares.empty());
+
+        if (compares.front() == op::repe_cmpsq) {
+            mov(src_loc_tk, indent, qword_register("rcx"),
+                immediate(size_bytes / size_qword));
         }
-        mov(src_loc_tk, indent, qword_register("rcx"), immediate(count));
-        assembler_.instruction(indent, compare);
+
+        // a part that differs decides the result, so the rest is skipped
+        std::string end_label;
+        if (compares.size() > 1) {
+            end_label = std::format(".Lbaz_equal.{}", equal_label_count_++);
+        }
+
+        for (const auto [i, compare] : std::views::enumerate(compares)) {
+            if (i != 0) {
+                assembler_.jcc(indent, condition::ne, end_label);
+            }
+            assembler_.instruction(indent, compare);
+        }
+
+        if (not end_label.empty()) {
+            assembler_.label(indent, end_label);
+        }
+
         release_bulk_registers(src_loc_tk, indent);
         store_equal_result(indent, dst, inverted);
     }
@@ -1679,6 +1695,45 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(indent, op::rep_movsb);
 
         release_bulk_registers(src_loc_tk, indent);
+    }
+
+    // the qwords, then the remaining dword, word and byte
+    [[nodiscard]] static auto memory_equal_compares(const size_t size_bytes)
+        -> std::vector<op> {
+
+        std::vector<op> compares;
+        size_t remaining_bytes{size_bytes};
+        if (size_bytes / size_qword > threshold_for_repe_cmpsq_count) {
+            compares.push_back(op::repe_cmpsq);
+            remaining_bytes %= size_qword;
+        }
+
+        for_each_part(remaining_bytes, size_qword,
+                      [&](const size_t part_size_bytes,
+                          [[maybe_unused]] const size_t offset) -> void {
+                          compares.push_back(string_compare(part_size_bytes));
+                      });
+
+        return compares;
+    }
+
+    [[nodiscard]] static auto string_compare(const size_t size_bytes) -> op {
+        switch (size_bytes) {
+        case size_qword:
+            return op::cmpsq;
+
+        case size_dword:
+            return op::cmpsd;
+
+        case size_word:
+            return op::cmpsw;
+
+        case size_byte:
+            return op::cmpsb;
+
+        default:
+            std::unreachable();
+        }
     }
 
     auto scale_by_element_size_bytes(const token& src_loc_tk,

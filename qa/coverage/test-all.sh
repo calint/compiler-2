@@ -16,4 +16,5 @@ export LLVM_PROFILE_FILE="$PWD/extra-%p.profraw"
 ./test-string-stores.sh
 ./test-bulk-widths.sh
 ./test-constant-folding.sh
+./test-equal-compares.sh
 ./test-coverage.sh report

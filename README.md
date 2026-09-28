@@ -110,10 +110,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5222           1626          17098
+C/C++ Header                    54           5237           1630          17142
 C++                              1             66             19            329
 -------------------------------------------------------------------------------
-SUM:                            55           5288           1645          17427
+SUM:                            55           5303           1649          17471
 -------------------------------------------------------------------------------
 ```
 
@@ -890,8 +890,10 @@ main:
     cmp.221.12:
         lea rsi, [rbp + 312]
         lea rdi, [rbp + 328]
-        mov rcx, 2
-        repe cmpsq
+        cmpsq
+        jne .Lbaz_equal.0
+        cmpsq
+        .Lbaz_equal.0:
         sete r15b
     bool.221.12.end:
     func.assert.221.5:
@@ -909,8 +911,10 @@ main:
     cmp.226.12:
         lea rsi, [rbp + 312]
         lea rdi, [rbp + 328]
-        mov rcx, 2
-        repe cmpsq
+        cmpsq
+        jne .Lbaz_equal.1
+        cmpsq
+        .Lbaz_equal.1:
         setne r15b
     bool.226.12.end:
     func.assert.226.5:
@@ -2618,8 +2622,10 @@ main:
         lea rsi, [rbp + 312]
 ;       [221:21] q
         lea rdi, [rbp + 328]
-        mov rcx, 2
-        repe cmpsq
+        cmpsq
+        jne .Lbaz_equal.0
+        cmpsq
+        .Lbaz_equal.0:
 ;       [221:12] free named register rcx
 ;       [221:12] free named register rdi
 ;       [221:12] free named register rsi
@@ -2661,8 +2667,10 @@ main:
         lea rsi, [rbp + 312]
 ;       [226:25] q
         lea rdi, [rbp + 328]
-        mov rcx, 2
-        repe cmpsq
+        cmpsq
+        jne .Lbaz_equal.1
+        cmpsq
+        .Lbaz_equal.1:
 ;       [226:16] free named register rcx
 ;       [226:16] free named register rdi
 ;       [226:16] free named register rsi
