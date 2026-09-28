@@ -1,9 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+queued, easiest first
+--------------------------------------------------------------------------------
+[ ] constant known at compile: a comparison with a constant left side and a
+    run-time right side mirrors the operation ('1 + 1 > b' -> 'b < 2') so
+    the constant becomes an immediate instead of a scratch register copy
+    => x86 one instruction less, rv32i same count ('li' either way)
+    => 'expr_bool_op::resolve_cmp', reuse 'mirrored_operation'; the
+       "wider, swap" check then applies to the swapped sides
+[ ] constant known at compile: other users of constants use
+    'statement::folded_constant'
+    => 'expr_any::constant_element_value' (needs a width parameter):
+       constant indexes, '{...}' packing, 'array_copy' count, inline argument
+       aliasing ('stmt_identifier', 'stmt_call', 'stmt_builtin_array_copy')
+[ ] review opus generated code regarding constant folding in expr_arith
+
+--------------------------------------------------------------------------------
 easy
 --------------------------------------------------------------------------------
-[ ] review opus generated code regarding constant folding in expr_arith
 [ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
     the emulator with the dividend in a0 as exit code
 [ ] variable argument count in read/write might be confusing. consider requiring
@@ -20,25 +35,14 @@ medium
 --------------------------------------------------------------------------------
 generated assembly, easiest first
 --------------------------------------------------------------------------------
+[ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
+    compares, then the remaining dword, word and byte compares
 [ ] rv32i: a constant above 16 bytes stored at an address inside a word
     ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
     offset) loops bytes: the constant is word aligned and the destination is
     not, so no head reaches a common boundary
     => the constant could be laid out starting at the destination's position
        within a word; needs the frontend 'add_constant' callback to pad it
-[ ] constant known at compile: an identifier without an index register can
-    compute its offset at compile time ('stmt_identifier::init_reg_offset')
-[ ] constant known at compile: other users of constants use
-    'statement::folded_constant'
-    => 'expr_any::constant_element_value' (needs a width parameter):
-       constant indexes, '{...}' packing, 'array_copy' count, inline argument
-       aliasing ('stmt_identifier', 'stmt_call', 'stmt_builtin_array_copy')
-[ ] constant known at compile: a comparison with a constant left side and a
-    run-time right side mirrors the operation ('1 + 1 > b' -> 'b < 2') so
-    the constant becomes an immediate instead of a scratch register copy
-    => x86 one instruction less, rv32i same count ('li' either way)
-    => 'expr_bool_op::resolve_cmp', reuse 'mirrored_operation'; the
-       "wider, swap" check then applies to the swapped sides
 [ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
     field instead of computing the address once
     (etc/codegen-inefficiencies.baz)
@@ -69,8 +73,6 @@ generated assembly, easiest first
        assessed but touches 4 files and a new virtual hook
     => the old example 'var b=-(-a*-a)' no longer emits 'neg; neg', its
        remaining cost is algebraic ('-a * -a' is 'a * a', 'a' loaded twice)
-[ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
-    compares, then the remaining dword, word and byte compares
 [ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
     class: machine_x86_64
     method: shift
@@ -340,6 +342,15 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] constant known at compile: an identifier without an index register can
+    compute its offset at compile time ('stmt_identifier::init_reg_offset')
+    => 'stmt_identifier::compile_lea' adds a constant index to the
+       displacement; with a range count ('array_copy') the index keeps its
+       run-time register and 'index + count' check (test 595 '# folds')
+    => a constant index out of bounds is a compile error (index == size
+       allowed as a range start), tests 119, 120, 309, 310, 327, 329, 332,
+       596; option-specific bounds tests 312, 313, 321, 322, 331 now use a
+       run-time index
 [x] constant known at compile: fold constant elements in expressions
     ('expr_arith')
     => folded at compile, not parse: inline parameters become constant

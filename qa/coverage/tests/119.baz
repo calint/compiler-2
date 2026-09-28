@@ -1,4 +1,4 @@
-# bounds check overflow
+# constant index past the end is rejected at compile
 
 func assert(expr bool) { if not expr exit(1) }
 

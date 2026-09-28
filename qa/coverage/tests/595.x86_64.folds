@@ -1,0 +1,19 @@
+=== 15:     res = arr[two] # folds
+            movsx r14, dword [rbp + 8]
+=== 20:     arr[2] = 5 # folds
+    mov dword [rbp + 8], 5
+=== 21:     arr[3] = arr[2] + 1 # folds
+    mov r15d, dword [rbp + 8]
+    mov dword [rbp + 12], r15d
+    add dword [rbp + 12], 1
+=== 26:     shapes[1].pts[two].y = 7 # folds
+    mov dword [rbp + 68], 7
+=== 27:     shapes[1].id = 3 # folds
+    mov byte [rbp + 44], 3
+=== 33:     shapes[i].pts[1].x = 9 # folds
+    mov r15, qword [rbp + 72]
+    imul r15, 28
+    mov dword [rbp + r15 + 28], 9
+=== 35:     shapes[0].pts[i].x = 11 # folds
+    mov r15, qword [rbp + 72]
+    mov dword [rbp + r15 * 8 + 20], 11

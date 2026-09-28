@@ -1,4 +1,4 @@
-# unary negative index
+# unary negative constant index is rejected at compile
 
 func main() {
     var values[8] i8

@@ -1,4 +1,4 @@
-# array-parameter upper-bound failure
+# constant index past the end of an array argument is rejected at compile
 
 func legacy_write(values[] i8) {
     values[8] = 1

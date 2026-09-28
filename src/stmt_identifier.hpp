@@ -384,6 +384,25 @@ class stmt_identifier : public statement {
                 continue;
             }
 
+            const operand range_count{is_last_elem ? reg_count : operand{}};
+
+            const std::optional<int64_t> constant_index{
+                cur_elem.array_index_expr->constant_value(tc)};
+
+            if (constant_index) {
+                assert_index_in_bounds(cur_elem, cur_info, *constant_index,
+                                       not range_count.is_empty());
+            }
+
+            // with a range count the run-time check covers 'index + count'
+            if (constant_index and range_count.is_empty()) {
+                address.increment_offset(
+                    address_offset(static_cast<size_t>(*constant_index) *
+                                   cur_info.type_ref().size_bytes()));
+
+                continue;
+            }
+
             // an operand holds one index, so an earlier one is folded first
             if (not address.index_register().empty()) {
                 address = operand::mem(
@@ -395,8 +414,7 @@ class stmt_identifier : public statement {
 
             address = add_index(tc, cur_elem.array_index_expr->tok(), indent,
                                 allocated_registers, cur_elem, cur_info,
-                                is_last_elem ? reg_count : operand{}, address,
-                                index_register);
+                                range_count, address, index_register);
         }
 
         return operand::mem(address, *parent_type);
@@ -524,22 +542,20 @@ class stmt_identifier : public statement {
     auto narrow_to_element(toc& tc, const expr_any& index_expr,
                            const ident_info& array_info) -> void {
 
-        const std::optional<int64_t> index{index_expr.constant_value(tc)};
-        if (not index or *index < 0 or
-            std::cmp_greater_equal(*index, array_info.array_len)) {
+        const std::optional<size_t> index{
+            in_range_constant_index(tc, index_expr, array_info)};
 
+        if (not index) {
             is_exact_access_ = false;
             return;
         }
 
         const size_t element_size_bytes{array_info.type_ref().size_bytes()};
 
-        const size_t element_offset{static_cast<size_t>(*index) *
-                                    element_size_bytes};
+        const size_t element_offset{*index * element_size_bytes};
 
         // the last element keeps the padding after the array
-        const bool is_last_element{
-            std::cmp_equal(*index, array_info.array_len - 1)};
+        const bool is_last_element{*index == array_info.array_len - 1};
 
         access_range_ = {
             .offset{access_range_.offset + element_offset},
@@ -547,6 +563,43 @@ class stmt_identifier : public statement {
                             ? access_range_.size_bytes - element_offset
                             : element_size_bytes},
         };
+    }
+
+    // empty when the index is computed at run time or is out of range
+    [[nodiscard]] static auto
+    in_range_constant_index(const toc& tc, const expr_any& index_expr,
+                            const ident_info& array_info)
+        -> std::optional<size_t> {
+
+        const std::optional<int64_t> index{index_expr.constant_value(tc)};
+        if (not index or *index < 0 or
+            std::cmp_greater_equal(*index, array_info.array_len)) {
+
+            return std::nullopt;
+        }
+
+        return static_cast<size_t>(*index);
+    }
+
+    // the array size is known at compile, also for an inlined array argument,
+    // so a constant index out of bounds is always a bug
+    static auto assert_index_in_bounds(const ident_elem& elem,
+                                       const ident_info& array_info,
+                                       const int64_t index,
+                                       const bool allow_end) -> void {
+
+        const bool is_past_end{
+            allow_end ? std::cmp_greater(index, array_info.array_len)
+                      : std::cmp_greater_equal(index, array_info.array_len)};
+
+        if (index >= 0 and not is_past_end) {
+            return;
+        }
+
+        throw compiler_exception{
+            elem.array_index_expr->tok(),
+            std::format("index {} is out of bounds for array '{}' of size {}",
+                        index, elem.name_tk.text(), array_info.array_len)};
     }
 
     [[nodiscard]] static auto storage_size_bytes(const ident_info& info)

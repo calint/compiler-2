@@ -1,1 +1,2 @@
-panic: bounds at line 5
+
+332.baz:5:12: index -1 is out of bounds for array 'values' of size 8

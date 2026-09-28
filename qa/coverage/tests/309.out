@@ -1,1 +1,2 @@
-panic: bounds at line 7
+
+309.baz:7:12: index 2 is out of bounds for array 'groups' of size 2

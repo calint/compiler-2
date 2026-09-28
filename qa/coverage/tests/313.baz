@@ -2,5 +2,6 @@
 
 func main() {
     var arr[8] i8
-    arr[8] = 1
+    var index = 8
+    arr[index] = 1
 }

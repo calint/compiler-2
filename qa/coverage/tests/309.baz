@@ -1,4 +1,4 @@
-# invalid outer nested index
+# constant outer nested index out of bounds is rejected at compile
 
 type group { values[2] i8 }
 
