@@ -623,6 +623,7 @@ main:
     cmovge rbp, r13
     jge baz_bounds_panic
 ;   [192:24] free scratch register r13
+;   [192:16] instructions without scratch register 6, with 7
 ;   [62:6] inv(i i32) res i32
     func.inv.192.16:
 ;       [192:16] alias res -> arr (lea: rbp + r15 * 4 + 232)
@@ -635,9 +636,9 @@ main:
         mov dword [rbp + r15 * 4 + 232], r13d
 ;       [63:12] free scratch register r13
         not dword [rbp + r15 * 4 + 232]
-;       [192:16] free scratch register r14
     func.inv.192.16.end:
     not dword [rbp + r15 * 4 + 232]
+;       [192:16] free scratch register r14
 ;   [192:5] free scratch register r15
 ;   [193:5] assert(arr[ix] == 2)
 ;   [193:12] allocate scratch register -> r15

@@ -3,12 +3,7 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[ ] rv32i: an indexed reference argument such as 'set(o3[ix])' repeats
-    'add t1, s0, t0' per access in the inlined body, like the result did
-    => fold the lea in 'make_reference_alias' into one register when it is
-       shorter; the arguments are built in a loop, so 'emit_most_efficient'
-       around the whole body does not fit directly
-[ ] rv32i: the folded result address includes the displacement
+[ ] rv32i: the folded result and argument addresses include the displacement
     ('add t1, s0, t0; addi t1, t1, 28'); keeping it in the operand
     ('sw t2, 28(t1)') saves the 'addi'
 [ ] reorder locals by alignment, largest first, to reduce padding
@@ -341,6 +336,17 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] rv32i: an indexed reference argument such as 'set(o3[ix])' repeats
+    'add t1, s0, t0' per access in the inlined body, like the result did
+    => fold the lea in 'make_reference_alias' into one register when it is
+       shorter; the arguments are built in a loop, so 'emit_most_efficient'
+       around the whole body does not fit directly
+    => the argument aliases are built once, then when any has an index
+       register the body is tried as is and with every indexed argument
+       address in a new register
+       ('compile_inline_body_with_address_registers'); the argument
+       registers are freed after both versions. also shorter on x86 when the
+       body indexes into the argument (109, 110)
 [x] a way to optimize the push/pop around noinline functions.
     toc.capture_register_allocations
     compile the body

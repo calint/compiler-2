@@ -321,64 +321,43 @@ class stmt_call : public expression {
         // scratch registers stay allocated until the inlined body is compiled
         std::vector<operand> allocated_registers;
 
+        // the result alias has its own address choice in 'compile'
+        const size_t first_argument_alias{aliases_to_add.size()};
+
         // process each argument
         for (const auto [arg, param] : std::views::zip(args_, func.params())) {
             aliases_to_add.push_back(make_argument_alias(tc, indent, arg, param,
                                                          allocated_registers));
         }
 
-        // create unique labels for inlined functions
-        const std::string_view call_path{tc.get_call_path()};
-        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
-        const std::string new_call_path{
-            call_path.empty() ? src_loc
-                              : std::format("{}.{}", src_loc, call_path)};
+        const bool has_indexed_argument{std::ranges::any_of(
+            aliases_to_add | std::views::drop(first_argument_alias),
+            is_indexed_reference)};
 
-        const std::string call_label{
-            std::format("{}.{}", func.body_label(), new_call_path)};
+        if (not has_indexed_argument) {
+            compile_inline_body(tc, indent, dst_info, func, aliases_to_add,
+                                allocated_registers);
 
-        const std::string ret_jmp_label{std::format("{}.end", call_label)};
-
-        func.source_def_comment_to(x, indent);
-
-        x.label(indent, call_label);
-
-        // enter function scope
-
-        tc.enter_func(func.name(), func.returns(), new_call_path,
-                      ret_jmp_label);
-
-        // add aliases
-        for (const alias_info& e : aliases_to_add) {
-            x.comment_alias(tok(), indent + 1, e.from, e.to, e.lea);
-            tc.add_alias(e);
+            return;
         }
 
-        // compile inlined code
-        func.code().compile(tc, indent, dst_info);
+        // without base + index addressing each access to an indexed argument
+        // adds base and index again, computing the address once can be
+        // shorter
+        x.emit_most_efficient(
+            tok(), indent,
+            [&] -> void {
+                compile_inline_body(tc, indent, dst_info, func, aliases_to_add,
+                                    {});
+            },
+            [&] -> void {
+                compile_inline_body_with_address_registers(
+                    tc, indent, dst_info, func, aliases_to_add,
+                    first_argument_alias);
+            });
 
-        // free allocated registers in reverse order
-        for (const operand& r : allocated_registers | std::views::reverse) {
-            x.free_scratch_register(tok(), indent + 1, r);
-        }
-
-        // provide the exit label for 'return' to jump to
-
-        x.label(indent, ret_jmp_label);
-
-        // apply unary ops to result if present
-
-        if (not get_unary_ops().is_empty()) {
-            assert(func.returns());
-
-            const func_return_info& return_info{*func.returns()};
-            const ident_info& ret_info{
-                tc.make_ident_info(tok(), return_info.ident_tk.text())};
-
-            get_unary_ops().compile(tc, indent, ret_info.operand);
-        }
-
-        tc.exit_func(func.name());
+        // freed after both versions since both use the argument registers
+        free_in_reverse(x, tok(), indent + 1, allocated_registers);
     }
 
     auto compile_noninline(toc& tc, const size_t indent,
@@ -565,6 +544,99 @@ class stmt_call : public expression {
         }
 
         x.comment(tok(), indent, "address of indexed result '{}'", dst_info.id);
+    }
+
+    // the registers are freed before the exit label
+    auto
+    compile_inline_body(toc& tc, const size_t indent,
+                        const ident_info& dst_info, const stmt_def_func& func,
+                        const std::span<const alias_info> aliases_to_add,
+                        const std::span<const operand> registers_to_free) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        // create unique labels for inlined functions
+        const std::string_view call_path{tc.get_call_path()};
+        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
+        const std::string new_call_path{
+            call_path.empty() ? src_loc
+                              : std::format("{}.{}", src_loc, call_path)};
+
+        const std::string call_label{
+            std::format("{}.{}", func.body_label(), new_call_path)};
+
+        const std::string ret_jmp_label{std::format("{}.end", call_label)};
+
+        func.source_def_comment_to(x, indent);
+
+        x.label(indent, call_label);
+
+        // enter function scope
+
+        tc.enter_func(func.name(), func.returns(), new_call_path,
+                      ret_jmp_label);
+
+        // add aliases
+        for (const alias_info& e : aliases_to_add) {
+            x.comment_alias(tok(), indent + 1, e.from, e.to, e.lea);
+            tc.add_alias(e);
+        }
+
+        // compile inlined code
+        func.code().compile(tc, indent, dst_info);
+
+        free_in_reverse(x, tok(), indent + 1, registers_to_free);
+
+        // provide the exit label for 'return' to jump to
+
+        x.label(indent, ret_jmp_label);
+
+        // apply unary ops to result if present
+
+        if (not get_unary_ops().is_empty()) {
+            assert(func.returns());
+
+            const func_return_info& return_info{*func.returns()};
+            const ident_info& ret_info{
+                tc.make_ident_info(tok(), return_info.ident_tk.text())};
+
+            get_unary_ops().compile(tc, indent, ret_info.operand);
+        }
+
+        tc.exit_func(func.name());
+    }
+
+    // a new register per argument because the index register may belong to
+    // an enclosing alias that is used after the call
+    auto compile_inline_body_with_address_registers(
+        toc& tc, const size_t indent, const ident_info& dst_info,
+        const stmt_def_func& func, std::vector<alias_info> aliases_to_add,
+        const size_t first_argument_alias) const -> void {
+
+        machine& x{tc.machine()};
+
+        std::vector<operand> address_registers;
+
+        for (alias_info& alias :
+             aliases_to_add | std::views::drop(first_argument_alias)) {
+
+            if (not is_indexed_reference(alias)) {
+                continue;
+            }
+
+            const operand address{
+                x.alloc_scratch_register(tok(), indent, tc.get_type_address())};
+
+            address_registers.push_back(address);
+
+            x.comment(tok(), indent, "address of parameter '{}'", alias.from);
+            x.address_of(tok(), indent, address, alias.lea);
+            alias.lea = operand::mem(address, alias.lea.type_ref());
+        }
+
+        compile_inline_body(tc, indent, dst_info, func, aliases_to_add,
+                            address_registers);
     }
 
     // a new register because the index register may belong to an enclosing
@@ -795,6 +867,23 @@ class stmt_call : public expression {
         if (&info.type_ref() != &param.get_type()) {
             throw_parameter_type_mismatch(arg, param, info);
         }
+    }
+
+    static auto free_in_reverse(machine& x, const token& src_loc_tk,
+                                const size_t indent,
+                                const std::span<const operand> registers)
+        -> void {
+
+        for (const operand& r : registers | std::views::reverse) {
+            x.free_scratch_register(src_loc_tk, indent, r);
+        }
+    }
+
+    // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
+    [[nodiscard]] static auto is_indexed_reference(const alias_info& alias)
+        -> bool {
+
+        return alias.lea.is_memory() and not alias.lea.index_register().empty();
     }
 
     // the inlined body reaches an argument through its storage, its constant
