@@ -3,9 +3,6 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[ ] rv32i: the folded result and argument addresses include the displacement
-    ('add t1, s0, t0; addi t1, t1, 28'); keeping it in the operand
-    ('sw t2, 28(t1)') saves the 'addi'
 [ ] reorder locals by alignment, largest first, to reduce padding
 [ ] rv32i: a constant above 16 bytes stored at an address inside a word
     ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
@@ -336,6 +333,11 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] rv32i: the folded result and argument addresses include the displacement
+    ('add t1, s0, t0; addi t1, t1, 28'); keeping it in the operand
+    ('sw t2, 28(t1)') saves the 'addi'
+    => both forms are tried: a kept displacement can push field offsets past
+       the 12-bit immediate range and cost a 'lui'/'add' per access (109)
 [x] rv32i: an indexed reference argument such as 'set(o3[ix])' repeats
     'add t1, s0, t0' per access in the inlined body, like the result did
     => fold the lea in 'make_reference_alias' into one register when it is

@@ -137,8 +137,11 @@ class stmt_call : public expression {
                 tok(), indent,
                 [&] -> void { compile_inline(tc, indent, dst_info, func); },
                 [&] -> void {
-                    compile_inline_with_address_register(tc, indent, dst_info,
-                                                         func);
+                    emit_most_efficient_address(
+                        x, indent, [&](const bool keeps) -> void {
+                            compile_inline_with_address_register(
+                                tc, indent, dst_info, func, keeps);
+                        });
                 });
 
             return;
@@ -351,9 +354,12 @@ class stmt_call : public expression {
                                     {});
             },
             [&] -> void {
-                compile_inline_body_with_address_registers(
-                    tc, indent, dst_info, func, aliases_to_add,
-                    first_argument_alias);
+                emit_most_efficient_address(
+                    x, indent, [&](const bool keeps) -> void {
+                        compile_inline_body_with_address_registers(
+                            tc, indent, dst_info, func, aliases_to_add,
+                            first_argument_alias, keeps);
+                    });
             });
 
         // freed after both versions since both use the argument registers
@@ -612,7 +618,8 @@ class stmt_call : public expression {
     auto compile_inline_body_with_address_registers(
         toc& tc, const size_t indent, const ident_info& dst_info,
         const stmt_def_func& func, std::vector<alias_info> aliases_to_add,
-        const size_t first_argument_alias) const -> void {
+        const size_t first_argument_alias, const bool keeps_displacement) const
+        -> void {
 
         machine& x{tc.machine()};
 
@@ -631,8 +638,8 @@ class stmt_call : public expression {
             address_registers.push_back(address);
 
             x.comment(tok(), indent, "address of parameter '{}'", alias.from);
-            x.address_of(tok(), indent, address, alias.lea);
-            alias.lea = operand::mem(address, alias.lea.type_ref());
+            alias.lea = load_indexed_address(x, indent, address, alias.lea,
+                                             keeps_displacement);
         }
 
         compile_inline_body(tc, indent, dst_info, func, aliases_to_add,
@@ -641,9 +648,9 @@ class stmt_call : public expression {
 
     // a new register because the index register may belong to an enclosing
     // alias that is used after the call
-    auto compile_inline_with_address_register(toc& tc, const size_t indent,
-                                              const ident_info& dst_info,
-                                              const stmt_def_func& func) const
+    auto compile_inline_with_address_register(
+        toc& tc, const size_t indent, const ident_info& dst_info,
+        const stmt_def_func& func, const bool keeps_displacement) const
         -> void {
 
         machine& x{tc.machine()};
@@ -653,11 +660,9 @@ class stmt_call : public expression {
 
         comment_result_address(tc, indent, dst_info);
 
-        x.address_of(tok(), indent, address, dst_info.operand);
-
         ident_info address_info{dst_info};
-        address_info.operand =
-            operand::mem(address, dst_info.operand.type_ref());
+        address_info.operand = load_indexed_address(
+            x, indent, address, dst_info.operand, keeps_displacement);
 
         compile_inline(tc, indent, address_info, func);
 
@@ -672,6 +677,19 @@ class stmt_call : public expression {
         }
 
         return std::format("argument {}", index + 1 - first_argument_index());
+    }
+
+    // the address register holds the address with or without the
+    // displacement, the first is shorter when the accesses exceed the load
+    // and store immediate range
+    auto emit_most_efficient_address(
+        machine& x, const size_t indent,
+        const std::function_ref<void(bool keeps_displacement)> emit) const
+        -> void {
+
+        x.emit_most_efficient(
+            tok(), indent, [&] -> void { emit(false); },
+            [&] -> void { emit(true); });
     }
 
     // the receiver is not counted as an argument
@@ -705,6 +723,29 @@ class stmt_call : public expression {
 
     [[nodiscard]] auto is_method() const -> bool {
         return not method_dot_tk_.is_empty();
+    }
+
+    // a displacement kept in the operand saves adding it to the address, e.g.
+    // 'add t1, s0, t0' and '28(t1)' without 'addi t1, t1, 28', but offsets
+    // beyond the load and store immediate range then cost more per access
+    [[nodiscard]] auto load_indexed_address(machine& x, const size_t indent,
+                                            const operand& dst,
+                                            const operand& location,
+                                            const bool keeps_displacement) const
+        -> operand {
+
+        if (not keeps_displacement) {
+            x.address_of(tok(), indent, dst, location);
+            return operand::mem(dst, location.type_ref());
+        }
+
+        x.address_of(tok(), indent, dst,
+                     operand::mem(location.base_register(),
+                                  location.index_register(), location.scale(),
+                                  0, location.type_ref()));
+
+        return operand::mem(dst.base_register(), {}, 1, location.displacement(),
+                            location.type_ref());
     }
 
     // a method receiver is already in 'args_'
