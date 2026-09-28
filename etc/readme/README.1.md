@@ -16,23 +16,26 @@ compiler writes the binary image itself.
 
 ## Supports
 
-* built-in integer types (64, 32, 16, 8 bit)
+* built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64)
 * built-in boolean type
 * user defined types
 * data
-* variables
+* variables with the type deduced from the initializer
 * constants
 * arrays
 * array iteration
-* string and character literals
-* optional bounds checking at runtime
-  * optional line number
+* string, character, record and array literals
+* opt-in checks against undefined behavior
+  * array bounds at runtime, optionally reporting the line number
+  * non-inlined function frame capacity at runtime
+  * compile time rejection of calls where a result or argument may share
+    storage
 * inlined functions
 * limited support for non-inlined functions
-* methods on user defined types
+* methods and constructors on user defined types
 * partial ub-free support
-* keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
-  `continue`, `break`, `return`, `self`
+* keywords: `func`, `noinline`, `type`, `dat`, `var`, `const`, `foo`, `loop`,
+  `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`, `not`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
   `write`, `exit`, `i`, `i8`, `i16`, `i32`, `i64`
 
@@ -43,10 +46,12 @@ compiler writes the binary image itself.
 * `./run.sh [options] [NAME.baz]` compiles, assembles and runs `NAME.baz`
   (default: `prog.baz`) passing options to `baz`, writes `NAME.s` and
   `NAME-without-comments.s`, x86_64 and rv32i also `NAME.o` and the binary
-  `NAME`, rv32i targets run in qemu user mode, the qemu virt machine or the
-  fpga soft core emulator
+  `NAME`, rv32i-qemu and rv32i-fpga the image `NAME-TARGET.bin`, rv32i targets
+  run in qemu user mode, the qemu virt machine or the fpga soft core emulator
   * `./run.sh myprogram.baz --checks=upper,line`
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
+* `tutorial.baz` is a tour of the language from the easiest to the most
+  difficult concepts
 * `qa/coverage/test-all.sh` runs the tests, coverage report in
   `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
