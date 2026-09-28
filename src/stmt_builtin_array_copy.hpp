@@ -59,6 +59,10 @@ class stmt_builtin_array_copy final : public statement {
 
     stmt_builtin_array_copy() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         open_paren_tk_.source_to(os);

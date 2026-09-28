@@ -133,6 +133,66 @@ class operand {
   public:
     operand() = default;
 
+    [[nodiscard]] auto allocation_register() const -> const std::string& {
+        return allocation_register_;
+    }
+
+    [[nodiscard]] auto base_register() const -> const std::string& {
+        return base_register_;
+    }
+
+    [[nodiscard]] auto displacement() const -> int64_t { return displacement_; }
+
+    [[nodiscard]] auto immediate() const -> const std::string& {
+        return immediate_;
+    }
+
+    void increment_offset(const int64_t offset) {
+        assert(is_memory());
+
+        displacement_ = add_address_offset(displacement_, offset);
+    }
+
+    [[nodiscard]] auto index_register() const -> const std::string& {
+        return index_register_;
+    }
+
+    [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::empty; }
+
+    [[nodiscard]] auto is_immediate() const -> bool {
+        return kind_ == kind::immediate;
+    }
+
+    [[nodiscard]] auto is_indexed() const -> bool {
+        return not index_register_.empty() or displacement_ != 0;
+    }
+
+    [[nodiscard]] auto is_memory() const -> bool {
+        return kind_ == kind::memory;
+    }
+
+    [[nodiscard]] auto is_register() const -> bool {
+        return kind_ == kind::reg;
+    }
+
+    [[nodiscard]] auto scale() const -> uint64_t { return scale_; }
+
+    void set_allocation_register(const std::string_view name) {
+        assert(is_register());
+
+        allocation_register_ = name;
+    }
+
+    [[nodiscard]] auto type_ref() const -> const type& {
+        assert(type_ptr_);
+
+        return *type_ptr_;
+    }
+
+    //
+    // statics
+    //
+
     [[nodiscard]] static auto imm(std::string value, const type& value_type)
         -> operand {
 
@@ -144,21 +204,6 @@ class operand {
         result.kind_ = kind::immediate;
         result.type_ptr_ = &value_type;
         result.immediate_ = std::move(value);
-
-        return result;
-    }
-
-    [[nodiscard]] static auto reg(const std::string_view name,
-                                  const type& value_type) -> operand {
-
-        if (name.empty()) {
-            throw std::invalid_argument{"operand text must not be empty"};
-        }
-
-        operand result;
-        result.kind_ = kind::reg;
-        result.type_ptr_ = &value_type;
-        result.base_register_ = name;
 
         return result;
     }
@@ -195,60 +240,19 @@ class operand {
                    address.scale_, address.displacement_, value_type);
     }
 
-    [[nodiscard]] auto allocation_register() const -> const std::string& {
-        return allocation_register_;
-    }
+    [[nodiscard]] static auto reg(const std::string_view name,
+                                  const type& value_type) -> operand {
 
-    [[nodiscard]] auto base_register() const -> const std::string& {
-        return base_register_;
-    }
+        if (name.empty()) {
+            throw std::invalid_argument{"operand text must not be empty"};
+        }
 
-    [[nodiscard]] auto index_register() const -> const std::string& {
-        return index_register_;
-    }
+        operand result;
+        result.kind_ = kind::reg;
+        result.type_ptr_ = &value_type;
+        result.base_register_ = name;
 
-    [[nodiscard]] auto immediate() const -> const std::string& {
-        return immediate_;
-    }
-
-    [[nodiscard]] auto displacement() const -> int64_t { return displacement_; }
-
-    [[nodiscard]] auto scale() const -> uint64_t { return scale_; }
-
-    void set_allocation_register(const std::string_view name) {
-        assert(is_register());
-
-        allocation_register_ = name;
-    }
-
-    void increment_offset(const int64_t offset) {
-        assert(is_memory());
-
-        displacement_ = add_address_offset(displacement_, offset);
-    }
-
-    [[nodiscard]] auto type_ref() const -> const type& {
-        assert(type_ptr_);
-
-        return *type_ptr_;
-    }
-
-    [[nodiscard]] auto is_register() const -> bool {
-        return kind_ == kind::reg;
-    }
-
-    [[nodiscard]] auto is_memory() const -> bool {
-        return kind_ == kind::memory;
-    }
-
-    [[nodiscard]] auto is_immediate() const -> bool {
-        return kind_ == kind::immediate;
-    }
-
-    [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::empty; }
-
-    [[nodiscard]] auto is_indexed() const -> bool {
-        return not index_register_.empty() or displacement_ != 0;
+        return result;
     }
 };
 
@@ -265,8 +269,10 @@ struct var_info {
 };
 
 struct ident_info {
+  private:
     enum class kind : uint8_t { EMPTY, CONST, VAR, REGISTER };
 
+  public:
     std::string id;
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
@@ -280,76 +286,65 @@ struct ident_info {
     bool use_operand{}; // operand overrides any location calculation
     kind kind{};
 
-    [[nodiscard]] static auto make_empty() -> ident_info {
-        return {
-            .id{},
-            .elem_path{},
-            .type_path{},
-            .lea_path{},
-            .operand{},
-        };
+    [[nodiscard]] auto has_lea() const -> bool {
+        return std::ranges::any_of(lea_path, [](const ::operand& lea) -> bool {
+            return not lea.is_empty();
+        });
     }
 
-    [[nodiscard]] static auto make_register(const std::string_view ident,
-                                            const ::operand& reg)
-        -> ident_info {
+    void increment_offset(const int64_t n) {
+        assert(validate_invariants());
 
-        assert(not ident.empty());
-        assert(reg.is_register());
+        offset = add_address_offset(offset, n);
 
-        return {
-            .id{ident},
-            .elem_path{reg.base_register()},
-            .type_path{&reg.type_ref()},
-            .lea_path{::operand{}},
-            .operand{reg},
-            .kind{kind::REGISTER},
-        };
+        assert(offset >= 0);
+
+        operand.increment_offset(n);
+
+        assert(validate_invariants());
     }
 
-    [[nodiscard]] static auto make_const(const std::string_view ident,
-                                         const std::string_view elem,
-                                         const type& tp, const int64_t value)
-        -> ident_info {
+    [[nodiscard]] auto is_const() const -> bool { return kind == kind::CONST; }
 
-        assert(not ident.empty());
-        assert(not elem.empty());
+    [[nodiscard]] auto is_empty() const -> bool { return kind == kind::EMPTY; }
 
-        return {
-            .id{ident},
-            .elem_path{std::string{elem}},
-            .type_path{&tp},
-            .lea_path{::operand{}},
-            .operand{},
-            .const_value{value},
-            .kind{kind::CONST},
-        };
+    [[nodiscard]] auto is_register() const -> bool {
+        return kind == kind::REGISTER;
     }
 
-    [[nodiscard]] static auto
-    make_var(std::string ident, std::vector<std::string> elem_path,
-             std::vector<const type*> type_path, const ::operand& op,
-             const int64_t offset, const size_t array_len, const bool is_array,
-             const bool is_pointer = {}) -> ident_info {
+    [[nodiscard]] auto is_var() const -> bool { return kind == kind::VAR; }
 
-        assert(not ident.empty());
-        assert(not elem_path.empty());
-        assert(elem_path.size() == type_path.size());
+    void pop() {
+        assert(validate_invariants());
 
-        const size_t lea_count{elem_path.size()};
+        id.resize(id.rfind('.'));
+        elem_path.pop_back();
+        type_path.pop_back();
+        lea_path.pop_back();
 
-        return {
-            .id{std::move(ident)},
-            .elem_path{std::move(elem_path)},
-            .type_path{std::move(type_path)},
-            .lea_path{lea_count, ::operand{}},
-            .operand{op},
-            .offset{offset},
-            .array_len{array_len},
-            .is_array{is_array},
-            .is_pointer{is_pointer},
-            .kind{kind::VAR},
-        };
+        assert(validate_invariants());
+    }
+
+    void push(std::string path_elem, const type* const tp, ::operand lea) {
+        assert(validate_invariants());
+
+        id += "." + path_elem;
+        elem_path.emplace_back(std::move(path_elem));
+        type_path.emplace_back(tp);
+        lea_path.emplace_back(std::move(lea));
+
+        assert(validate_invariants());
+    }
+
+    // variable name without the field path
+    [[nodiscard]] auto root_id() const -> std::string_view {
+        return std::string_view{id}.substr(0, id.find('.'));
+    }
+
+    [[nodiscard]] auto type_ref() const -> const type& {
+        assert(validate_invariants());
+
+        return *type_path.back();
     }
 
     [[nodiscard]] auto validate_invariants() const -> bool {
@@ -382,65 +377,80 @@ struct ident_info {
         return is_var();
     }
 
-    [[nodiscard]] auto is_const() const -> bool { return kind == kind::CONST; }
+    //
+    // statics
+    //
 
-    [[nodiscard]] auto is_register() const -> bool {
-        return kind == kind::REGISTER;
+    [[nodiscard]] static auto make_const(const std::string_view ident,
+                                         const std::string_view elem,
+                                         const type& tp, const int64_t value)
+        -> ident_info {
+
+        assert(not ident.empty());
+        assert(not elem.empty());
+
+        return {
+            .id{ident},
+            .elem_path{std::string{elem}},
+            .type_path{&tp},
+            .lea_path{::operand{}},
+            .operand{},
+            .const_value{value},
+            .kind{kind::CONST},
+        };
     }
 
-    [[nodiscard]] auto is_var() const -> bool { return kind == kind::VAR; }
-
-    [[nodiscard]] auto is_empty() const -> bool { return kind == kind::EMPTY; }
-
-    // variable name without the field path
-    [[nodiscard]] auto root_id() const -> std::string_view {
-        return std::string_view{id}.substr(0, id.find('.'));
+    [[nodiscard]] static auto make_empty() -> ident_info {
+        return {
+            .id{},
+            .elem_path{},
+            .type_path{},
+            .lea_path{},
+            .operand{},
+        };
     }
 
-    [[nodiscard]] auto has_lea() const -> bool {
-        return std::ranges::any_of(lea_path, [](const ::operand& lea) -> bool {
-            return not lea.is_empty();
-        });
+    [[nodiscard]] static auto make_register(const std::string_view ident,
+                                            const ::operand& reg)
+        -> ident_info {
+
+        assert(not ident.empty());
+        assert(reg.is_register());
+
+        return {
+            .id{ident},
+            .elem_path{reg.base_register()},
+            .type_path{&reg.type_ref()},
+            .lea_path{::operand{}},
+            .operand{reg},
+            .kind{kind::REGISTER},
+        };
     }
 
-    [[nodiscard]] auto type_ref() const -> const type& {
-        assert(validate_invariants());
+    [[nodiscard]] static auto
+    make_var(std::string ident, std::vector<std::string> elem_path,
+             std::vector<const type*> type_path, const ::operand& op,
+             const int64_t offset, const size_t array_len, const bool is_array,
+             const bool is_pointer = {}) -> ident_info {
 
-        return *type_path.back();
-    }
+        assert(not ident.empty());
+        assert(not elem_path.empty());
+        assert(elem_path.size() == type_path.size());
 
-    void push(std::string path_elem, const type* const tp, ::operand lea) {
-        assert(validate_invariants());
+        const size_t lea_count{elem_path.size()};
 
-        id += "." + path_elem;
-        elem_path.emplace_back(std::move(path_elem));
-        type_path.emplace_back(tp);
-        lea_path.emplace_back(std::move(lea));
-
-        assert(validate_invariants());
-    }
-
-    void pop() {
-        assert(validate_invariants());
-
-        id.resize(id.rfind('.'));
-        elem_path.pop_back();
-        type_path.pop_back();
-        lea_path.pop_back();
-
-        assert(validate_invariants());
-    }
-
-    void increment_offset(const int64_t n) {
-        assert(validate_invariants());
-
-        offset = add_address_offset(offset, n);
-
-        assert(offset >= 0);
-
-        operand.increment_offset(n);
-
-        assert(validate_invariants());
+        return {
+            .id{std::move(ident)},
+            .elem_path{std::move(elem_path)},
+            .type_path{std::move(type_path)},
+            .lea_path{lea_count, ::operand{}},
+            .operand{op},
+            .offset{offset},
+            .array_len{array_len},
+            .is_array{is_array},
+            .is_pointer{is_pointer},
+            .kind{kind::VAR},
+        };
     }
 };
 

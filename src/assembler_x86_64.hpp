@@ -73,31 +73,6 @@ class assembler_x86_64 final : public assembler {
     // 'variables' is the uninitialized section after the data
     enum class section : uint8_t { text, rodata, data, bss, variables };
 
-    // nasm expression text, a number or symbols such as frame sizes
-    struct immediate {
-        std::string expression;
-        // keeps a 64-bit field for an address placed by the linker
-        bool strict_qword{};
-
-        immediate() = default;
-
-        // numbers of any integer type keep call sites free of conversions
-        template <std::integral integral_t>
-        explicit(false) immediate(const integral_t value)
-            : expression{std::format("{}", value)} {}
-
-        [[nodiscard]] static auto of_expression(const std::string_view text,
-                                                const bool strict_qword = {})
-            -> immediate {
-
-            immediate result;
-            result.expression = text;
-            result.strict_qword = strict_qword;
-
-            return result;
-        }
-    };
-
     // '[symbol + base + index * scale + displacement]', zero 'size_bytes'
     // leaves the width to the other operand
     struct memory {
@@ -110,19 +85,9 @@ class assembler_x86_64 final : public assembler {
         // writes a zero displacement such as 'rbp + 0'
         bool explicit_displacement{};
 
-        [[nodiscard]] static auto of_symbol(const std::string_view name)
-            -> memory {
-
-            return {
-                .symbol{name},
-                .base{},
-                .index{},
-                .scale{},
-                .displacement{},
-                .size_bytes{},
-                .explicit_displacement{},
-            };
-        }
+        //
+        // statics
+        //
 
         [[nodiscard]] static auto of_base(const std::string_view base,
                                           const size_t size_bytes = {})
@@ -138,6 +103,49 @@ class assembler_x86_64 final : public assembler {
                 .explicit_displacement{},
             };
         }
+
+        [[nodiscard]] static auto of_symbol(const std::string_view name)
+            -> memory {
+
+            return {
+                .symbol{name},
+                .base{},
+                .index{},
+                .scale{},
+                .displacement{},
+                .size_bytes{},
+                .explicit_displacement{},
+            };
+        }
+    };
+
+    // nasm expression text, a number or symbols such as frame sizes
+    struct immediate {
+        // numbers of any integer type keep call sites free of conversions
+        template <std::integral integral_t>
+        explicit(false) immediate(const integral_t value)
+            : expression{std::format("{}", value)} {}
+
+        immediate() = default;
+
+        std::string expression;
+        // keeps a 64-bit field for an address placed by the linker
+        bool strict_qword{};
+
+        //
+        // statics
+        //
+
+        [[nodiscard]] static auto of_expression(const std::string_view text,
+                                                const bool strict_qword = {})
+            -> immediate {
+
+            immediate result;
+            result.expression = text;
+            result.strict_qword = strict_qword;
+
+            return result;
+        }
     };
 
     // a register by name, memory or an immediate
@@ -148,6 +156,98 @@ class assembler_x86_64 final : public assembler {
         int64_t value{};
         std::string_view unary_operations;
     };
+
+  private:
+    static constexpr size_t size_qword{8};
+    static constexpr size_t size_dword{4};
+    static constexpr size_t size_word{2};
+    static constexpr size_t size_byte{1};
+
+    struct op_info {
+        std::string_view mnemonic;
+        size_t operand_count{};
+    };
+
+    static constexpr size_t op_count{std::to_underlying(op::cmpsq) + 1};
+
+  public:
+    auto align(const size_t size_bytes) -> void {
+        add_text(std::format("align {}", size_bytes));
+    }
+
+    auto bits64() -> void { add_text("bits 64"); }
+
+    auto call(const size_t indent, const std::string_view target) -> void {
+        add_text(std::format("{}call {}", indentation(indent), target));
+    }
+
+    auto cmovcc(const size_t indent, const condition cc, const argument& dst,
+                const argument& src) -> void {
+
+        add_text(std::format("{}cmov{} {}, {}", indentation(indent),
+                             condition_suffix(cc), argument_text(dst),
+                             argument_text(src)));
+    }
+
+    auto comment(const size_t indent, const std::string_view text) -> void {
+        if (text.empty()) {
+            add_text(comment_start(indent));
+            return;
+        }
+
+        add_text(std::format("{} {}", comment_start(indent), text));
+    }
+
+    // 'line' and 'column' locate the source the comment is about
+    auto comment(const size_t indent, const size_t line, const size_t column,
+                 const std::string_view text) -> void {
+
+        add_text(std::format("{}[{}:{}] {}", comment_start(indent), line,
+                             column, text));
+    }
+
+    auto data(const size_t element_size_bytes,
+              const std::span<const data_value> values) -> void {
+
+        std::string text{
+            std::format("{} ", data_directive(element_size_bytes))};
+        std::string_view separator;
+        for (const data_value& value : values) {
+            text += std::format("{}{}{}", separator, value.unary_operations,
+                                value.value);
+            separator = ", ";
+        }
+
+        add_text(std::move(text));
+    }
+
+    auto default_rel() -> void { add_text("default rel"); }
+
+    auto define_constant(const std::string_view name, const int64_t value)
+        -> void {
+
+        add_text(std::format("{} equ {}", name, value));
+    }
+
+    // the bytes from label 'start' to this line
+    auto define_length(const std::string_view name,
+                       const std::string_view start) -> void {
+
+        add_text(std::format("{} equ $ - {}", name, start));
+    }
+
+    // writes the lines 'emit_body' adds between '%macro' and '%endmacro'
+    auto define_macro(const std::string_view name,
+                      const std::function_ref<void()> emit_body) -> void {
+
+        add_text(std::format("%macro {} 0", name));
+        emit_body();
+        add_text("%endmacro");
+    }
+
+    auto global(const std::string_view name) -> void {
+        add_text(std::format("global {}", name));
+    }
 
     auto instruction(const size_t indent, const op code) -> void {
         assert(info(code).operand_count == 0);
@@ -174,27 +274,6 @@ class assembler_x86_64 final : public assembler {
                              argument_text(src)));
     }
 
-    auto setcc(const size_t indent, const condition cc, const argument& dst)
-        -> void {
-
-        add_text(std::format("{}set{} {}", indentation(indent),
-                             condition_suffix(cc), argument_text(dst)));
-    }
-
-    auto cmovcc(const size_t indent, const condition cc, const argument& dst,
-                const argument& src) -> void {
-
-        add_text(std::format("{}cmov{} {}, {}", indentation(indent),
-                             condition_suffix(cc), argument_text(dst),
-                             argument_text(src)));
-    }
-
-    // jumps go to the base as jumps so they can be optimized
-    auto jmp(const size_t indent, const std::string_view target) -> void {
-        add_jump(std::format("{}jmp {}", indentation(indent), target), "jmp",
-                 {}, target, {});
-    }
-
     auto jcc(const size_t indent, const condition cc,
              const std::string_view target) -> void {
 
@@ -204,90 +283,15 @@ class assembler_x86_64 final : public assembler {
                  mnemonic, {}, target, {});
     }
 
-    auto call(const size_t indent, const std::string_view target) -> void {
-        add_text(std::format("{}call {}", indentation(indent), target));
+    // jumps go to the base as jumps so they can be optimized
+    auto jmp(const size_t indent, const std::string_view target) -> void {
+        add_jump(std::format("{}jmp {}", indentation(indent), target), "jmp",
+                 {}, target, {});
     }
 
     auto label(const size_t indent, const std::string_view name) -> void {
         add_label(std::string{name},
                   std::format("{}{}:", indentation(indent), name));
-    }
-
-    auto comment(const size_t indent, const std::string_view text) -> void {
-        if (text.empty()) {
-            add_text(comment_start(indent));
-            return;
-        }
-
-        add_text(std::format("{} {}", comment_start(indent), text));
-    }
-
-    // 'line' and 'column' locate the source the comment is about
-    auto comment(const size_t indent, const size_t line, const size_t column,
-                 const std::string_view text) -> void {
-
-        add_text(std::format("{}[{}:{}] {}", comment_start(indent), line,
-                             column, text));
-    }
-
-    auto default_rel() -> void { add_text("default rel"); }
-
-    auto bits64() -> void { add_text("bits 64"); }
-
-    auto global(const std::string_view name) -> void {
-        add_text(std::format("global {}", name));
-    }
-
-    // sizes only count in code, so code must be in the text section
-    auto switch_section(const section which) -> void {
-        set_code_section(which == section::text);
-
-        add_text(std::string{section_directive(which)});
-    }
-
-    // writes the lines 'emit_body' adds between '%macro' and '%endmacro'
-    auto define_macro(const std::string_view name,
-                      const std::function_ref<void()> emit_body) -> void {
-
-        add_text(std::format("%macro {} 0", name));
-        emit_body();
-        add_text("%endmacro");
-    }
-
-    auto use_macro(const size_t indent, const std::string_view name) -> void {
-        add_text(indentation(indent) + std::string{name});
-    }
-
-    auto align(const size_t size_bytes) -> void {
-        add_text(std::format("align {}", size_bytes));
-    }
-
-    auto define_constant(const std::string_view name, const int64_t value)
-        -> void {
-
-        add_text(std::format("{} equ {}", name, value));
-    }
-
-    // the bytes from label 'start' to this line
-    auto define_length(const std::string_view name,
-                       const std::string_view start) -> void {
-
-        add_text(std::format("{} equ $ - {}", name, start));
-    }
-
-    auto data(const size_t element_size_bytes,
-              const std::span<const data_value> values) -> void {
-
-        std::string text{
-            std::format("{} ", data_directive(element_size_bytes))};
-        std::string_view separator;
-        for (const data_value& value : values) {
-            text += std::format("{}{}{}", separator, value.unary_operations,
-                                value.value);
-            separator = ", ";
-        }
-
-        add_text(std::move(text));
     }
 
     auto repeated_data(const size_t element_size_bytes, const size_t count,
@@ -297,6 +301,26 @@ class assembler_x86_64 final : public assembler {
         add_text(std::format("times {} {} {}{}", count,
                              data_directive(element_size_bytes),
                              unary_operations, value));
+    }
+
+    // nasm rejects a single reservation above the signed 32-bit range
+    auto reserve(const size_t size_bytes) -> void {
+        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
+
+        size_t remaining{size_bytes};
+        while (remaining > max_chunk) {
+            add_text(std::format("resb {}", max_chunk));
+            remaining -= max_chunk;
+        }
+
+        add_text(std::format("resb {}", remaining));
+    }
+
+    auto setcc(const size_t indent, const condition cc, const argument& dst)
+        -> void {
+
+        add_text(std::format("{}set{} {}", indentation(indent),
+                             condition_suffix(cc), argument_text(dst)));
     }
 
     // 'text' keeps its escapes such as '\n', nasm interprets them in
@@ -317,18 +341,20 @@ class assembler_x86_64 final : public assembler {
         add_text(std::move(line));
     }
 
-    // nasm rejects a single reservation above the signed 32-bit range
-    auto reserve(const size_t size_bytes) -> void {
-        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
+    // sizes only count in code, so code must be in the text section
+    auto switch_section(const section which) -> void {
+        set_code_section(which == section::text);
 
-        size_t remaining{size_bytes};
-        while (remaining > max_chunk) {
-            add_text(std::format("resb {}", max_chunk));
-            remaining -= max_chunk;
-        }
-
-        add_text(std::format("resb {}", remaining));
+        add_text(std::string{section_directive(which)});
     }
+
+    auto use_macro(const size_t indent, const std::string_view name) -> void {
+        add_text(indentation(indent) + std::string{name});
+    }
+
+    //
+    // statics
+    //
 
     // the text between the brackets, also used in comments
     [[nodiscard]] static auto address_text(const memory& address)
@@ -392,17 +418,162 @@ class assembler_x86_64 final : public assembler {
     }
 
   private:
-    static constexpr size_t size_qword{8};
-    static constexpr size_t size_dword{4};
-    static constexpr size_t size_word{2};
-    static constexpr size_t size_byte{1};
+    //
+    // overridden methods
+    //
 
-    struct op_info {
-        std::string_view mnemonic;
-        size_t operand_count{};
-    };
+    [[nodiscard]] auto comment_prefix() const -> std::string_view override {
+        return ";";
+    }
 
-    static constexpr size_t op_count{std::to_underlying(op::cmpsq) + 1};
+    [[nodiscard]] auto format_jump(const jump_info& jump) const
+        -> std::string override {
+
+        return std::format("{} {}", jump.mnemonic, jump.target);
+    }
+
+    [[nodiscard]] auto
+    inverse_branch_mnemonic(const std::string_view mnemonic) const
+        -> std::optional<std::string_view> override {
+
+        constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
+            pairs{{
+                {"je", "jne"},
+                {"jg", "jle"},
+                {"jge", "jl"},
+            }};
+
+        for (const auto& [first, second] : pairs) {
+            if (mnemonic == first) {
+                return second;
+            }
+            if (mnemonic == second) {
+                return first;
+            }
+        }
+
+        return std::nullopt;
+    }
+
+    [[nodiscard]] auto is_label_text(const std::string_view text) const
+        -> bool override {
+
+        const std::string_view code{code_part(text)};
+        return not code.empty() and code.back() == ':';
+    }
+
+    // every instruction or directive counts as one
+    [[nodiscard]] auto text_code_size(const std::string_view text) const
+        -> size_t override {
+
+        const std::string_view code{code_part(text)};
+        if (code.empty() or code.back() == ':' or
+            code.starts_with("section ")) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    [[nodiscard]] auto unconditional_jump_mnemonic() const
+        -> std::string_view override {
+
+        return "jmp";
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto argument_text(const argument& value)
+        -> std::string {
+
+        if (const std::string_view* const name{
+                std::get_if<std::string_view>(&value)}) {
+            return std::string{*name};
+        }
+
+        if (const immediate* const number{std::get_if<immediate>(&value)}) {
+            if (number->strict_qword) {
+                return std::format("strict qword {}", number->expression);
+            }
+
+            return number->expression;
+        }
+
+        const memory& address{std::get<memory>(value)};
+        if (address.size_bytes == 0) {
+            return std::format("[{}]", address_text(address));
+        }
+
+        return std::format("{} [{}]", size_specifier(address.size_bytes),
+                           address_text(address));
+    }
+
+    [[nodiscard]] static auto code_part(const std::string_view text)
+        -> std::string_view {
+
+        const std::string_view code{text.substr(0, text.find(';'))};
+        const size_t first{code.find_first_not_of(" \t")};
+        if (first == std::string_view::npos) {
+            return {};
+        }
+
+        return code.substr(first, code.find_last_not_of(" \t") - first + 1);
+    }
+
+    // the marker replaces the first spaces of the indentation
+    [[nodiscard]] static auto comment_start(const size_t indent)
+        -> std::string {
+
+        std::string text{";"};
+        if (indent != 0) {
+            text += "   ";
+        }
+        for (size_t i{1}; i < indent; ++i) {
+            text += "    ";
+        }
+
+        return text;
+    }
+
+    [[nodiscard]] static auto condition_suffix(const condition cc)
+        -> std::string_view {
+
+        // indexed by 'condition'
+        constexpr std::array<std::string_view, 10> suffixes{
+            "e", "ne", "l", "le", "g", "ge", "a", "b", "s", "nz"};
+
+        return suffixes.at(std::to_underlying(cc));
+    }
+
+    [[nodiscard]] static auto data_directive(const size_t element_size_bytes)
+        -> std::string_view {
+
+        switch (element_size_bytes) {
+        case size_qword:
+            return "dq";
+
+        case size_dword:
+            return "dd";
+
+        case size_word:
+            return "dw";
+
+        case size_byte:
+            return "db";
+
+        default:
+            std::unreachable();
+        }
+    }
+
+    [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
+        std::string text;
+        text.resize(indent * 4, ' ');
+
+        return text;
+    }
 
     // the table is inside a function because 'op_info' default member
     // initializers are usable only once the class is complete
@@ -449,14 +620,11 @@ class assembler_x86_64 final : public assembler {
         return infos.at(std::to_underlying(code));
     }
 
-    [[nodiscard]] static auto condition_suffix(const condition cc)
-        -> std::string_view {
+    [[nodiscard]] static auto is_comment_or_blank(const std::string_view text)
+        -> bool {
 
-        // indexed by 'condition'
-        constexpr std::array<std::string_view, 10> suffixes{
-            "e", "ne", "l", "le", "g", "ge", "a", "b", "s", "nz"};
-
-        return suffixes.at(std::to_underlying(cc));
+        const size_t first{text.find_first_not_of(" \t\n\r\f\v")};
+        return first == std::string_view::npos or text[first] == ';';
     }
 
     [[nodiscard]] static auto section_directive(const section which)
@@ -472,27 +640,6 @@ class assembler_x86_64 final : public assembler {
         };
 
         return directives.at(std::to_underlying(which));
-    }
-
-    [[nodiscard]] static auto data_directive(const size_t element_size_bytes)
-        -> std::string_view {
-
-        switch (element_size_bytes) {
-        case size_qword:
-            return "dq";
-
-        case size_dword:
-            return "dd";
-
-        case size_word:
-            return "dw";
-
-        case size_byte:
-            return "db";
-
-        default:
-            std::unreachable();
-        }
     }
 
     [[nodiscard]] static auto size_specifier(const size_t size_bytes)
@@ -514,130 +661,5 @@ class assembler_x86_64 final : public assembler {
         default:
             std::unreachable();
         }
-    }
-
-    [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
-        std::string text;
-        text.resize(indent * 4, ' ');
-
-        return text;
-    }
-
-    // the marker replaces the first spaces of the indentation
-    [[nodiscard]] static auto comment_start(const size_t indent)
-        -> std::string {
-
-        std::string text{";"};
-        if (indent != 0) {
-            text += "   ";
-        }
-        for (size_t i{1}; i < indent; ++i) {
-            text += "    ";
-        }
-
-        return text;
-    }
-
-    [[nodiscard]] static auto argument_text(const argument& value)
-        -> std::string {
-
-        if (const std::string_view* const name{
-                std::get_if<std::string_view>(&value)}) {
-            return std::string{*name};
-        }
-
-        if (const immediate* const number{std::get_if<immediate>(&value)}) {
-            if (number->strict_qword) {
-                return std::format("strict qword {}", number->expression);
-            }
-
-            return number->expression;
-        }
-
-        const memory& address{std::get<memory>(value)};
-        if (address.size_bytes == 0) {
-            return std::format("[{}]", address_text(address));
-        }
-
-        return std::format("{} [{}]", size_specifier(address.size_bytes),
-                           address_text(address));
-    }
-
-    [[nodiscard]] auto unconditional_jump_mnemonic() const
-        -> std::string_view override {
-
-        return "jmp";
-    }
-
-    [[nodiscard]] auto
-    inverse_branch_mnemonic(const std::string_view mnemonic) const
-        -> std::optional<std::string_view> override {
-
-        constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
-            pairs{{
-                {"je", "jne"},
-                {"jg", "jle"},
-                {"jge", "jl"},
-            }};
-
-        for (const auto& [first, second] : pairs) {
-            if (mnemonic == first) {
-                return second;
-            }
-            if (mnemonic == second) {
-                return first;
-            }
-        }
-
-        return std::nullopt;
-    }
-
-    [[nodiscard]] auto format_jump(const jump_info& jump) const
-        -> std::string override {
-
-        return std::format("{} {}", jump.mnemonic, jump.target);
-    }
-
-    [[nodiscard]] auto comment_prefix() const -> std::string_view override {
-        return ";";
-    }
-
-    // every instruction or directive counts as one
-    [[nodiscard]] auto text_code_size(const std::string_view text) const
-        -> size_t override {
-
-        const std::string_view code{code_part(text)};
-        if (code.empty() or code.back() == ':' or
-            code.starts_with("section ")) {
-            return 0;
-        }
-
-        return 1;
-    }
-
-    [[nodiscard]] auto is_label_text(const std::string_view text) const
-        -> bool override {
-
-        const std::string_view code{code_part(text)};
-        return not code.empty() and code.back() == ':';
-    }
-
-    [[nodiscard]] static auto is_comment_or_blank(const std::string_view text)
-        -> bool {
-
-        const size_t first{text.find_first_not_of(" \t\n\r\f\v")};
-        return first == std::string_view::npos or text[first] == ';';
-    }
-
-    [[nodiscard]] static auto code_part(const std::string_view text)
-        -> std::string_view {
-
-        const std::string_view code{text.substr(0, text.find(';'))};
-        const size_t first{code.find_first_not_of(" \t")};
-        if (first == std::string_view::npos) {
-            return {};
-        }
-
-        return code.substr(first, code.find_last_not_of(" \t") - first + 1);
     }
 };

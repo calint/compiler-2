@@ -3,7 +3,8 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[o] review opus generated code regarding constant folding in expr_arith
+[x] generate a script to organize c++ source
+[x] review opus generated code regarding constant folding in expr_arith
     => steered towards cognitively easier algorithm done in passes with simple
        and well defined purpose skipping the more complicated state machine
        approach; a bug in the initial algorithm was found and fixed in the

@@ -67,6 +67,10 @@ class stmt_def_type final : public statement {
 
     stmt_def_type() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);

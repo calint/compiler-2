@@ -19,11 +19,25 @@ class stmt_if_branch final : public statement {
 
     stmt_if_branch() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         bol_.source_to(os);
         code_.source_to(os);
     }
+
+    // the condition is read before the branch code runs
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        bol_.assert_var_not_used(flow.var, flow.assigned);
+        code_.trace_assignment(flow);
+    }
+
+    //
+    // class methods
+    //
 
     [[nodiscard]] auto
     compile_branch(toc& tc, const size_t indent,
@@ -69,11 +83,5 @@ class stmt_if_branch final : public statement {
     // expression
     [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
         return tc.create_unique_label(tok(), "if");
-    }
-
-    // the condition is read before the branch code runs
-    auto trace_assignment(assignment_flow& flow) const -> void override {
-        bol_.assert_var_not_used(flow.var, flow.assigned);
-        code_.trace_assignment(flow);
     }
 };

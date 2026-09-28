@@ -67,13 +67,21 @@ class stmt_const final : public statement {
 
     stmt_const() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         uops_.source_to(os);
         literal_tk_.source_to(os);
     }
 
-    [[nodiscard]] auto value() const -> int64_t { return value_; }
+    //
+    // class methods
+    //
 
     [[nodiscard]] auto has_value() const -> bool { return has_value_; }
+
+    [[nodiscard]] auto value() const -> int64_t { return value_; }
 };

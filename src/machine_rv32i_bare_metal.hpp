@@ -37,26 +37,9 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         : machine_rv32i{os_ref, source, jumps, binary_file_name},
           stack_size_bytes_{stack_size_bytes} {}
 
-    auto start() -> void override {
-        read_used_ = false;
-        write_used_ = false;
-        exit_used_ = false;
-
-        machine_rv32i::start();
-
-        // no operating system sets up a stack
-        emit_stack_setup(assembler());
-    }
-
-    auto exit(const token& src_loc_tk, const size_t indent,
-              const operand& exit_code) -> void override {
-
-        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
-                   exit_code);
-
-        branch(indent, ".Lbaz_exit");
-        exit_used_ = true;
-    }
+    //
+    // overridden methods
+    //
 
     // only the routines the program calls are emitted
     auto begin_data(const size_t alignment) -> void override {
@@ -75,10 +58,31 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         machine_rv32i::begin_data(alignment);
     }
 
-  protected:
-    [[nodiscard]] auto stack_size_bytes() const -> size_t {
-        return stack_size_bytes_;
+    auto exit(const token& src_loc_tk, const size_t indent,
+              const operand& exit_code) -> void override {
+
+        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
+                   exit_code);
+
+        branch(indent, ".Lbaz_exit");
+        exit_used_ = true;
     }
+
+    auto start() -> void override {
+        read_used_ = false;
+        write_used_ = false;
+        exit_used_ = false;
+
+        machine_rv32i::start();
+
+        // no operating system sets up a stack
+        emit_stack_setup(assembler());
+    }
+
+  protected:
+    //
+    // overridden methods
+    //
 
     // the routines return through a7 so the call costs no more registers
     // than the system call
@@ -92,21 +96,37 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         write_used_ = true;
     }
 
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto stack_size_bytes() const -> size_t {
+        return stack_size_bytes_;
+    }
+
   private:
-    virtual auto emit_stack_setup(assembler_rv32i& a) const -> void = 0;
+    //
+    // virtual methods
+    //
 
     // '.Lbaz_exit' ends the program with the exit code in a0
     virtual auto emit_exit_routine(assembler_rv32i& a) const -> void = 0;
 
-    // prepares a3 for 'emit_receive_byte' and 'emit_transmit_byte'
-    virtual auto emit_uart_setup(assembler_rv32i& a) const -> void = 0;
-
     // waits for a byte and loads it into a4, may change only a4
     virtual auto emit_receive_byte(assembler_rv32i& a) const -> void = 0;
+
+    virtual auto emit_stack_setup(assembler_rv32i& a) const -> void = 0;
 
     // waits until the uart is ready and sends the byte at a5, may change
     // only a4
     virtual auto emit_transmit_byte(assembler_rv32i& a) const -> void = 0;
+
+    // prepares a3 for 'emit_receive_byte' and 'emit_transmit_byte'
+    virtual auto emit_uart_setup(assembler_rv32i& a) const -> void = 0;
+
+    //
+    // class methods
+    //
 
     // reads until a newline or the count is reached, a0 receives the count
     // and ctrl-d ends the read without being stored like at a terminal

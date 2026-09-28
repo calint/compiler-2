@@ -40,6 +40,10 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
                                    stack_size_bytes} {}
 
   protected:
+    //
+    // overridden methods
+    //
+
     // the stack below the end of memory may not reach into the variables,
     // how much of it is used at runtime is not checked
     auto check_memory_end(const size_t memory_end_address) const
@@ -57,6 +61,25 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     }
 
   private:
+    //
+    // overridden methods
+    //
+
+    // the emulator exits at 'ebreak' with a0 as its status, the loop halts
+    // hardware that continues
+    auto emit_exit_routine(assembler_rv32i& a) const -> void override {
+        a.label(0, ".Lbaz_exit");
+        a.label(0, "1");
+        a.ebreak(1);
+        a.j(1, "1b");
+    }
+
+    auto emit_receive_byte(assembler_rv32i& a) const -> void override {
+        a.label(0, "2");
+        a.lw(1, "a4", uart_in_offset_, "zero");
+        a.beq(1, "a4", "a3", "2b");
+    }
+
     // the stack grows down from the end of memory
     auto emit_stack_setup(assembler_rv32i& a) const -> void override {
         // 'std::format' has no digit separators so the halves are printed
@@ -69,16 +92,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         a.add_separator_newline();
     }
 
-    auto emit_uart_setup(assembler_rv32i& a) const -> void override {
-        a.li(1, "a3", uart_idle_);
-    }
-
-    auto emit_receive_byte(assembler_rv32i& a) const -> void override {
-        a.label(0, "2");
-        a.lw(1, "a4", uart_in_offset_, "zero");
-        a.beq(1, "a4", "a3", "2b");
-    }
-
     auto emit_transmit_byte(assembler_rv32i& a) const -> void override {
         a.label(0, "2");
         a.lw(1, "a4", uart_out_offset_, "zero");
@@ -87,12 +100,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         a.sw(1, "a4", uart_out_offset_, "zero");
     }
 
-    // the emulator exits at 'ebreak' with a0 as its status, the loop halts
-    // hardware that continues
-    auto emit_exit_routine(assembler_rv32i& a) const -> void override {
-        a.label(0, ".Lbaz_exit");
-        a.label(0, "1");
-        a.ebreak(1);
-        a.j(1, "1b");
+    auto emit_uart_setup(assembler_rv32i& a) const -> void override {
+        a.li(1, "a3", uart_idle_);
     }
 };

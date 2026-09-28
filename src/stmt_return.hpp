@@ -13,6 +13,10 @@ class stmt_return final : public statement {
 
     stmt_return() = default;
 
+    //
+    // overridden methods
+    //
+
     auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {

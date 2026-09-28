@@ -93,10 +93,15 @@ class program final {
         assert_functions_set_return_value(tc_.get_func_defs());
     }
 
-    auto source_to(std::ostream& os) const -> void {
-        for (const std::unique_ptr<statement>& s : statements_) {
-            s->source_to(os);
-        }
+    auto build(std::ostream& os) -> void {
+        machine& x{tc_.machine()};
+
+        x.start();
+        compile(tc_, 0);
+        x.finish();
+        tc_.finish();
+
+        x.write_assembly(os);
     }
 
     auto compile(toc& tc, const size_t indent) const -> void {
@@ -183,15 +188,55 @@ class program final {
         x.reserve_variables(alignment, vars_size_bytes_);
     }
 
-    auto build(std::ostream& os) -> void {
-        machine& x{tc_.machine()};
+    auto source_to(std::ostream& os) const -> void {
+        for (const std::unique_ptr<statement>& s : statements_) {
+            s->source_to(os);
+        }
+    }
 
-        x.start();
-        compile(tc_, 0);
-        x.finish();
-        tc_.finish();
+    //
+    // statics
+    //
 
-        x.write_assembly(os);
+    static auto assert_functions_set_return_value(
+        const std::span<const stmt_def_func* const>& funcs) -> void {
+
+        for (const stmt_def_func* f : funcs) {
+            const std::optional<func_return_info> ret_info{f->returns()};
+            if (not ret_info) {
+                continue;
+            }
+
+            assignment_flow flow{
+                .var{ret_info->ident_tk.text()},
+                .func_tk{f->tok()},
+                .assigned{field_coverage{ret_info->type_ptr->size_bytes()}},
+                .at_breaks{},
+                .is_reachable{true},
+            };
+
+            f->code().trace_assignment(flow);
+
+            // the end of the body returns like a 'return' statement
+            flow.assert_set_at_return();
+        }
+    }
+
+    // uses the definite-assignment walk for its reachability only
+    [[nodiscard]] static auto is_end_reachable(const stmt_def_func& func)
+        -> bool {
+
+        assignment_flow flow{
+            .var{},
+            .func_tk{func.tok()},
+            .assigned{field_coverage{0}},
+            .at_breaks{},
+            .is_reachable{true},
+        };
+
+        func.code().trace_assignment(flow);
+
+        return flow.is_reachable;
     }
 
     // only definitions are allowed at the top level
@@ -217,46 +262,5 @@ class program final {
 
         throw compiler_exception{
             tk, std::format("unexpected keyword '{}'", tk.text())};
-    }
-
-    // uses the definite-assignment walk for its reachability only
-    [[nodiscard]] static auto is_end_reachable(const stmt_def_func& func)
-        -> bool {
-
-        assignment_flow flow{
-            .var{},
-            .func_tk{func.tok()},
-            .assigned{field_coverage{0}},
-            .at_breaks{},
-            .is_reachable{true},
-        };
-
-        func.code().trace_assignment(flow);
-
-        return flow.is_reachable;
-    }
-
-    static auto assert_functions_set_return_value(
-        const std::span<const stmt_def_func* const>& funcs) -> void {
-
-        for (const stmt_def_func* f : funcs) {
-            const std::optional<func_return_info> ret_info{f->returns()};
-            if (not ret_info) {
-                continue;
-            }
-
-            assignment_flow flow{
-                .var{ret_info->ident_tk.text()},
-                .func_tk{f->tok()},
-                .assigned{field_coverage{ret_info->type_ptr->size_bytes()}},
-                .at_breaks{},
-                .is_reachable{true},
-            };
-
-            f->code().trace_assignment(flow);
-
-            // the end of the body returns like a 'return' statement
-            flow.assert_set_at_return();
-        }
     }
 };

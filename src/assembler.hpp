@@ -58,14 +58,7 @@ class assembler {
     // 'as_emitted' writes directly, 'resolved' buffers without optimizing
     enum class jump_mode : uint8_t { as_emitted, resolved, optimized };
 
-    // changes made by 'optimize_jumps', added by 'add_optimization_counts'
-    struct optimization_counts {
-        size_t jumps_to_next{};
-        size_t unreachable_jumps{};
-        size_t same_outcome_branches{};
-        size_t inverted_branches{};
-    };
-
+  protected:
     struct jump_info {
         std::string mnemonic;
         // operands before the target, empty when the target is the only one
@@ -75,6 +68,7 @@ class assembler {
         std::string scratch;
     };
 
+  public:
     struct line {
         std::string text;
         std::string label;
@@ -88,69 +82,30 @@ class assembler {
         std::optional<size_t> record;
     };
 
+  private:
+    // changes made by 'optimize_jumps', added by 'add_optimization_counts'
+    struct optimization_counts {
+        size_t jumps_to_next{};
+        size_t unreachable_jumps{};
+        size_t same_outcome_branches{};
+        size_t inverted_branches{};
+    };
+
+    std::vector<line> lines_;
+    // versions being emitted by 'capture', innermost last
+    std::vector<std::vector<line>> captures_;
+    bool code_section_{true};
+    optimization_counts optimizations_;
+    std::ostream* direct_output_{};
+
+  public:
     assembler() = default;
     assembler(const assembler&) = delete;
     assembler(assembler&&) = delete;
     auto operator=(const assembler&) -> assembler& = delete;
     auto operator=(assembler&&) -> assembler& = delete;
+
     virtual ~assembler() = default;
-
-    // lines are written to 'os' as they are added, or buffered when null
-    auto set_direct_output(std::ostream* const os) -> void {
-        direct_output_ = os;
-    }
-
-    [[nodiscard]] auto direct_output() const -> std::ostream* {
-        return direct_output_;
-    }
-
-    [[nodiscard]] auto is_buffering() const -> bool {
-        return direct_output_ == nullptr;
-    }
-
-    // a blank line that separates parts of the output
-    auto add_separator_newline() -> void { add_text(""); }
-
-    // lines added by 'emit' are kept apart so a version can be chosen
-    [[nodiscard]] auto capture(const std::function_ref<void()> emit)
-        -> std::vector<line> {
-
-        captures_.emplace_back();
-        emit();
-        std::vector<line> captured{std::move(captures_.back())};
-        captures_.pop_back();
-
-        return captured;
-    }
-
-    auto append(std::vector<line> lines) -> void {
-        std::ranges::move(lines, std::back_inserter(current_lines()));
-    }
-
-    // removes jumps that change nothing and turns a branch over a jump into
-    // the inverse branch, repeating because each change can enable another
-    auto optimize_jumps() -> void {
-        assert(captures_.empty());
-
-        const std::unordered_map<std::string_view, size_t> labels{
-            label_lines()};
-
-        const std::unordered_set<std::string_view> named{
-            labels_named_outside_jumps(labels)};
-
-        bool changed{true};
-        while (changed) {
-            changed = false;
-
-            // removed jumps no longer reference their targets
-            const std::unordered_set<std::string_view> referenced{
-                referenced_labels(labels, named)};
-
-            for (size_t index{}; index < lines_.size(); ++index) {
-                changed = optimize_jump(index, labels, referenced) or changed;
-            }
-        }
-    }
 
     // adds the optimization counts as comments aligned with the usage
     // statistics that follow
@@ -178,6 +133,63 @@ class assembler {
         optimizations_ = {};
     }
 
+    // a blank line that separates parts of the output
+    auto add_separator_newline() -> void { add_text(""); }
+
+    auto append(std::vector<line> lines) -> void {
+        std::ranges::move(lines, std::back_inserter(current_lines()));
+    }
+
+    // lines added by 'emit' are kept apart so a version can be chosen
+    [[nodiscard]] auto capture(const std::function_ref<void()> emit)
+        -> std::vector<line> {
+
+        captures_.emplace_back();
+        emit();
+        std::vector<line> captured{std::move(captures_.back())};
+        captures_.pop_back();
+
+        return captured;
+    }
+
+    [[nodiscard]] auto direct_output() const -> std::ostream* {
+        return direct_output_;
+    }
+
+    [[nodiscard]] auto is_buffering() const -> bool {
+        return direct_output_ == nullptr;
+    }
+
+    // removes jumps that change nothing and turns a branch over a jump into
+    // the inverse branch, repeating because each change can enable another
+    auto optimize_jumps() -> void {
+        assert(captures_.empty());
+
+        const std::unordered_map<std::string_view, size_t> labels{
+            label_lines()};
+
+        const std::unordered_set<std::string_view> named{
+            labels_named_outside_jumps(labels)};
+
+        bool changed{true};
+        while (changed) {
+            changed = false;
+
+            // removed jumps no longer reference their targets
+            const std::unordered_set<std::string_view> referenced{
+                referenced_labels(labels, named)};
+
+            for (size_t index{}; index < lines_.size(); ++index) {
+                changed = optimize_jump(index, labels, referenced) or changed;
+            }
+        }
+    }
+
+    // lines are written to 'os' as they are added, or buffered when null
+    auto set_direct_output(std::ostream* const os) -> void {
+        direct_output_ = os;
+    }
+
     // writes the lines as they are, far jumps are left to the caller
     auto write(std::ostream& os) -> void {
         assert(captures_.empty());
@@ -191,9 +203,67 @@ class assembler {
     }
 
   protected:
-    // code sizes and entries only count in code
-    auto set_code_section(const bool code_section) -> void {
-        code_section_ = code_section;
+    // 'mnemonic' is the unconditional jump or a branch taking 'operands'
+    auto add_jump(std::string text, const std::string_view mnemonic,
+                  const std::string_view operands,
+                  const std::string_view target, const std::string_view scratch,
+                  const std::optional<size_t> record = std::nullopt) -> void {
+
+        if (write_directly(text)) {
+            return;
+        }
+
+        const size_t code_size{text_code_size(text)};
+
+        current_lines().push_back({
+            .text{std::move(text)},
+            .label{},
+            .jump{std::make_unique<jump_info>(jump_info{
+                .mnemonic{std::string{mnemonic}},
+                .operands{std::string{operands}},
+                .target{std::string{target}},
+                .scratch{std::string{scratch}},
+            })},
+            .code_size{code_size},
+            .entry{},
+            .removed{},
+            .record{record},
+        });
+    }
+
+    auto add_label(std::string name, std::string text) -> void {
+        if (write_directly(text)) {
+            return;
+        }
+
+        current_lines().push_back({
+            .text{std::move(text)},
+            .label{std::move(name)},
+            .jump{},
+            .code_size{},
+            .entry{code_section_},
+            .removed{},
+            .record{},
+        });
+    }
+
+    // a line whose size and structured form the target already knows
+    auto add_record_line(std::string text, const size_t code_size,
+                         const std::optional<size_t> record) -> void {
+
+        if (write_directly(text)) {
+            return;
+        }
+
+        current_lines().push_back({
+            .text{std::move(text)},
+            .label{},
+            .jump{},
+            .code_size{code_section_ ? code_size : 0},
+            .entry{},
+            .removed{},
+            .record{record},
+        });
     }
 
     auto add_text(std::string text) -> void {
@@ -231,75 +301,6 @@ class assembler {
         });
     }
 
-    auto add_label(std::string name, std::string text) -> void {
-        if (write_directly(text)) {
-            return;
-        }
-
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{std::move(name)},
-            .jump{},
-            .code_size{},
-            .entry{code_section_},
-            .removed{},
-            .record{},
-        });
-    }
-
-    // 'mnemonic' is the unconditional jump or a branch taking 'operands'
-    auto add_jump(std::string text, const std::string_view mnemonic,
-                  const std::string_view operands,
-                  const std::string_view target, const std::string_view scratch,
-                  const std::optional<size_t> record = std::nullopt) -> void {
-
-        if (write_directly(text)) {
-            return;
-        }
-
-        const size_t code_size{text_code_size(text)};
-
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{},
-            .jump{std::make_unique<jump_info>(jump_info{
-                .mnemonic{std::string{mnemonic}},
-                .operands{std::string{operands}},
-                .target{std::string{target}},
-                .scratch{std::string{scratch}},
-            })},
-            .code_size{code_size},
-            .entry{},
-            .removed{},
-            .record{record},
-        });
-    }
-
-    // a line whose size and structured form the target already knows
-    auto add_record_line(std::string text, const size_t code_size,
-                         const std::optional<size_t> record) -> void {
-
-        if (write_directly(text)) {
-            return;
-        }
-
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{},
-            .jump{},
-            .code_size{code_section_ ? code_size : 0},
-            .entry{},
-            .removed{},
-            .record{record},
-        });
-    }
-
-    [[nodiscard]] auto lines() -> std::vector<line>& { return lines_; }
-
-    [[nodiscard]] auto lines() const -> const std::vector<line>& {
-        return lines_;
-    }
-
     [[nodiscard]] auto is_capturing() const -> bool {
         return not captures_.empty();
     }
@@ -321,6 +322,21 @@ class assembler {
         return labels;
     }
 
+    [[nodiscard]] auto lines() -> std::vector<line>& { return lines_; }
+
+    [[nodiscard]] auto lines() const -> const std::vector<line>& {
+        return lines_;
+    }
+
+    // code sizes and entries only count in code
+    auto set_code_section(const bool code_section) -> void {
+        code_section_ = code_section;
+    }
+
+    //
+    // statics
+    //
+
     [[nodiscard]] static auto leading_whitespace(const std::string_view text)
         -> std::string_view {
 
@@ -328,46 +344,35 @@ class assembler {
     }
 
   private:
-    std::vector<line> lines_;
-    // versions being emitted by 'capture', innermost last
-    std::vector<std::vector<line>> captures_;
-    bool code_section_{true};
-    optimization_counts optimizations_;
-    std::ostream* direct_output_{};
+    //
+    // virtual methods
+    //
 
-    [[nodiscard]] auto write_directly(const std::string_view text) const
-        -> bool {
+    [[nodiscard]] virtual auto comment_prefix() const -> std::string_view = 0;
 
-        if (direct_output_ == nullptr) {
-            return false;
-        }
-
-        std::println(*direct_output_, "{}", text);
-
-        return true;
-    }
-
-    // every other jump is a conditional branch
-    [[nodiscard]] virtual auto unconditional_jump_mnemonic() const
-        -> std::string_view = 0;
+    // the jump instruction without indentation
+    [[nodiscard]] virtual auto format_jump(const jump_info& jump) const
+        -> std::string = 0;
 
     // the branch taken exactly when 'mnemonic' is not taken
     [[nodiscard]] virtual auto
     inverse_branch_mnemonic(std::string_view mnemonic) const
         -> std::optional<std::string_view> = 0;
 
-    // the jump instruction without indentation
-    [[nodiscard]] virtual auto format_jump(const jump_info& jump) const
-        -> std::string = 0;
-
-    [[nodiscard]] virtual auto comment_prefix() const -> std::string_view = 0;
+    [[nodiscard]] virtual auto is_label_text(std::string_view text) const
+        -> bool = 0;
 
     // zero for labels, comments and directives that emit no code
     [[nodiscard]] virtual auto text_code_size(std::string_view text) const
         -> size_t = 0;
 
-    [[nodiscard]] virtual auto is_label_text(std::string_view text) const
-        -> bool = 0;
+    // every other jump is a conditional branch
+    [[nodiscard]] virtual auto unconditional_jump_mnemonic() const
+        -> std::string_view = 0;
+
+    //
+    // class methods
+    //
 
     [[nodiscard]] auto current_lines() -> std::vector<line>& {
         if (captures_.empty()) {
@@ -375,124 +380,6 @@ class assembler {
         }
 
         return captures_.back();
-    }
-
-    [[nodiscard]] static auto
-    destination(const std::unordered_map<std::string_view, size_t>& labels,
-                const jump_info& jump) -> std::optional<size_t> {
-
-        const auto found{labels.find(jump.target)};
-        if (found == labels.end()) {
-            return std::nullopt;
-        }
-
-        return found->second;
-    }
-
-    // labels, comments, other sections and removed lines emit no code
-    [[nodiscard]] auto next_instruction(size_t index) const -> size_t {
-        while (index < lines_.size() and lines_[index].code_size == 0) {
-            ++index;
-        }
-
-        return index;
-    }
-
-    // labels named by lines other than jumps e.g. calls, addresses and
-    // '.globl', these keep their references while jumps are optimized
-    [[nodiscard]] auto labels_named_outside_jumps(
-        const std::unordered_map<std::string_view, size_t>& labels) const
-        -> std::unordered_set<std::string_view> {
-
-        std::unordered_set<std::string_view> named;
-        for (const line& l : lines_) {
-            if (l.removed or l.jump or not l.label.empty()) {
-                continue;
-            }
-
-            add_named_labels(l.text, labels, named);
-        }
-
-        return named;
-    }
-
-    // comments naming a label only keep it referenced, which is safe
-    static auto
-    add_named_labels(const std::string_view text,
-                     const std::unordered_map<std::string_view, size_t>& labels,
-                     std::unordered_set<std::string_view>& named) -> void {
-
-        size_t begin{};
-        while (begin < text.size()) {
-            if (not is_symbol_char(text[begin])) {
-                ++begin;
-                continue;
-            }
-
-            size_t end{begin};
-            while (end < text.size() and is_symbol_char(text[end])) {
-                ++end;
-            }
-
-            // the key views the label line, which outlives the optimization
-            const auto found{labels.find(text.substr(begin, end - begin))};
-            if (found != labels.end()) {
-                named.insert(found->first);
-            }
-
-            begin = end;
-        }
-    }
-
-    [[nodiscard]] static auto is_symbol_char(const char ch) -> bool {
-        return std::isalnum(static_cast<unsigned char>(ch)) != 0 or ch == '_' or
-               ch == '.' or ch == '$';
-    }
-
-    // a jump target is viewed through the label map because inverting a
-    // branch replaces its target string
-    [[nodiscard]] auto referenced_labels(
-        const std::unordered_map<std::string_view, size_t>& labels,
-        const std::unordered_set<std::string_view>& named) const
-        -> std::unordered_set<std::string_view> {
-
-        std::unordered_set<std::string_view> referenced{named};
-        for (const line& l : lines_) {
-            if (not l.jump) {
-                continue;
-            }
-
-            const auto found{labels.find(l.jump->target)};
-            if (found != labels.end()) {
-                referenced.insert(found->first);
-            }
-        }
-
-        return referenced;
-    }
-
-    // text labels and numeric labels, named by references such as '1b', are
-    // entries without a lookup
-    [[nodiscard]] static auto
-    is_enterable(const line& l,
-                 const std::unordered_set<std::string_view>& referenced)
-        -> bool {
-
-        if (not l.entry) {
-            return false;
-        }
-
-        if (l.label.empty() or is_numeric(l.label)) {
-            return true;
-        }
-
-        return referenced.contains(l.label);
-    }
-
-    [[nodiscard]] static auto is_numeric(const std::string_view text) -> bool {
-        return std::ranges::all_of(text, [](const char ch) -> bool {
-            return std::isdigit(static_cast<unsigned char>(ch)) != 0;
-        });
     }
 
     // a label in between would let execution enter between the two jumps
@@ -521,12 +408,6 @@ class assembler {
         return std::nullopt;
     }
 
-    static auto remove(line& l) -> void {
-        l.jump.reset();
-        l.code_size = 0;
-        l.removed = true;
-    }
-
     // branches without an inverse are kept
     [[nodiscard]] auto invert(line& l, std::string target) const -> bool {
         jump_info& jump{*l.jump};
@@ -542,6 +423,33 @@ class assembler {
         l.text = std::string{leading_whitespace(l.text)} + format_jump(jump);
 
         return true;
+    }
+
+    // labels named by lines other than jumps e.g. calls, addresses and
+    // '.globl', these keep their references while jumps are optimized
+    [[nodiscard]] auto labels_named_outside_jumps(
+        const std::unordered_map<std::string_view, size_t>& labels) const
+        -> std::unordered_set<std::string_view> {
+
+        std::unordered_set<std::string_view> named;
+        for (const line& l : lines_) {
+            if (l.removed or l.jump or not l.label.empty()) {
+                continue;
+            }
+
+            add_named_labels(l.text, labels, named);
+        }
+
+        return named;
+    }
+
+    // labels, comments, other sections and removed lines emit no code
+    [[nodiscard]] auto next_instruction(size_t index) const -> size_t {
+        while (index < lines_.size() and lines_[index].code_size == 0) {
+            ++index;
+        }
+
+        return index;
     }
 
     [[nodiscard]] auto
@@ -616,5 +524,118 @@ class assembler {
         ++optimizations_.inverted_branches;
 
         return true;
+    }
+
+    // a jump target is viewed through the label map because inverting a
+    // branch replaces its target string
+    [[nodiscard]] auto referenced_labels(
+        const std::unordered_map<std::string_view, size_t>& labels,
+        const std::unordered_set<std::string_view>& named) const
+        -> std::unordered_set<std::string_view> {
+
+        std::unordered_set<std::string_view> referenced{named};
+        for (const line& l : lines_) {
+            if (not l.jump) {
+                continue;
+            }
+
+            const auto found{labels.find(l.jump->target)};
+            if (found != labels.end()) {
+                referenced.insert(found->first);
+            }
+        }
+
+        return referenced;
+    }
+
+    [[nodiscard]] auto write_directly(const std::string_view text) const
+        -> bool {
+
+        if (direct_output_ == nullptr) {
+            return false;
+        }
+
+        std::println(*direct_output_, "{}", text);
+
+        return true;
+    }
+
+    //
+    // statics
+    //
+
+    // comments naming a label only keep it referenced, which is safe
+    static auto
+    add_named_labels(const std::string_view text,
+                     const std::unordered_map<std::string_view, size_t>& labels,
+                     std::unordered_set<std::string_view>& named) -> void {
+
+        size_t begin{};
+        while (begin < text.size()) {
+            if (not is_symbol_char(text[begin])) {
+                ++begin;
+                continue;
+            }
+
+            size_t end{begin};
+            while (end < text.size() and is_symbol_char(text[end])) {
+                ++end;
+            }
+
+            // the key views the label line, which outlives the optimization
+            const auto found{labels.find(text.substr(begin, end - begin))};
+            if (found != labels.end()) {
+                named.insert(found->first);
+            }
+
+            begin = end;
+        }
+    }
+
+    [[nodiscard]] static auto
+    destination(const std::unordered_map<std::string_view, size_t>& labels,
+                const jump_info& jump) -> std::optional<size_t> {
+
+        const auto found{labels.find(jump.target)};
+        if (found == labels.end()) {
+            return std::nullopt;
+        }
+
+        return found->second;
+    }
+
+    // text labels and numeric labels, named by references such as '1b', are
+    // entries without a lookup
+    [[nodiscard]] static auto
+    is_enterable(const line& l,
+                 const std::unordered_set<std::string_view>& referenced)
+        -> bool {
+
+        if (not l.entry) {
+            return false;
+        }
+
+        if (l.label.empty() or is_numeric(l.label)) {
+            return true;
+        }
+
+        return referenced.contains(l.label);
+    }
+
+    [[nodiscard]] static auto is_numeric(const std::string_view text) -> bool {
+        return std::ranges::all_of(text, [](const char ch) -> bool {
+            return std::isdigit(static_cast<unsigned char>(ch)) != 0;
+        });
+    }
+
+    [[nodiscard]] static auto is_symbol_char(const char ch) -> bool {
+        return std::isalnum(static_cast<unsigned char>(ch)) != 0 or ch == '_' or
+               ch == '.' or ch == '$';
+    }
+
+    static auto remove(line& l) -> void {
+        l.jump.reset();
+        l.code_size = 0;
+        l.removed = true;
     }
 };

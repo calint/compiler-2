@@ -44,6 +44,25 @@ class expr_arith final : public expression {
     //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
     bool is_implied_subexpression_{};
 
+    // an operation of the list being folded: an element, or merged constants
+    // when 'element' is null
+    struct step {
+        char op{};
+        const statement* element{};
+        std::optional<int64_t> value; // set when the step is a constant
+        std::string folded_source;    // e.g. '* 3 * 2' for the comment
+    };
+
+    static constexpr char precedence_additive{1};
+    static constexpr char precedence_multiplicative{2};
+    static constexpr char precedence_bitwise_or{3};
+    static constexpr char precedence_bitwise_and{4};
+    static constexpr char precedence_bitwise_xor{5};
+    static constexpr char precedence_shift{6};
+
+    // higher than the highest precedence
+    static constexpr char initial_precedence{7};
+
   public:
     expr_arith(toc& tc, tokenizer& tz, const bool in_args = false,
                const bool enclosed = false, const token open_paren_tk = {},
@@ -204,6 +223,10 @@ class expr_arith final : public expression {
 
     expr_arith() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);
         if (enclosed_) {
@@ -266,9 +289,22 @@ class expr_arith final : public expression {
             [&] -> void { compile_through_scratch(tc, indent, dst_info); });
     }
 
-    [[nodiscard]] auto produces_boolean() const -> bool override {
-        return uops_.is_empty() and exprs_.size() == 1 and
-               exprs_.front()->produces_boolean();
+    // each element is computed at the width of the destination
+    auto assert_not_narrowed(const toc& tc, const type& dst_type) const
+        -> void override {
+
+        exprs_.front()->assert_not_narrowed(tc, dst_type);
+
+        for (const auto [o, e] :
+             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
+
+            // a shift count is not stored in the destination
+            if (o == '<' or o == '>') {
+                continue;
+            }
+
+            e->assert_not_narrowed(tc, dst_type);
+        }
     }
 
     auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
@@ -279,42 +315,19 @@ class expr_arith final : public expression {
         exprs_.front()->compile_boolean(tc, indent, dst, inverted);
     }
 
-    [[nodiscard]] auto is_array_element() const -> bool override {
-        return exprs_.size() == 1 and exprs_.front()->is_array_element();
-    }
+    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
+                                   const token& src_loc_tk,
+                                   std::vector<operand>& allocated_registers,
+                                   const operand& reg_count,
+                                   const std::span<const operand> lea_path,
+                                   const operand& address_register) const
+        -> operand override {
 
-    [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(exprs_.size() == 1);
 
-        return exprs_[0]->identifier();
-    }
-
-    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        // is this list one element?
-        if (exprs_.size() == 1) {
-            // then the unary ops are on the first element
-            return exprs_[0]->get_unary_ops();
-        }
-
-        // in the multi-element list, unary ops for all are on the current list
-        // element
-        return uops_;
-    }
-
-    [[nodiscard]] auto is_expression() const -> bool override {
-        // if unary operators on the list then it will need to compile the
-        // expression
-        if (not uops_.is_empty()) {
-            return true;
-        }
-
-        // if only 1 element, then it decides if it is an expression
-        if (exprs_.size() == 1) {
-            return exprs_[0]->is_expression();
-        }
-
-        // more than 1 element, automatically an expression
-        return true;
+        return exprs_[0]->compile_lea(tc, indent, src_loc_tk,
+                                      allocated_registers, reg_count, lea_path,
+                                      address_register);
     }
 
     [[nodiscard]] auto folded_constant(const toc& tc,
@@ -348,22 +361,52 @@ class expr_arith final : public expression {
         return wrap_to_width(uops_.evaluate_constant(*value), width_type);
     }
 
-    [[nodiscard]] auto is_indexed() const -> bool override {
-        assert(exprs_.size() == 1);
+    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
+        // is this list one element?
+        if (exprs_.size() == 1) {
+            // then the unary ops are on the first element
+            return exprs_[0]->get_unary_ops();
+        }
 
-        return exprs_[0]->is_indexed();
+        // in the multi-element list, unary ops for all are on the current list
+        // element
+        return uops_;
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    [[nodiscard]] auto identifier() const -> std::string_view override {
+        assert(exprs_.size() == 1);
 
-        for (const std::unique_ptr<statement>& e : exprs_) {
-            e->visit_reads(var, reader);
+        return exprs_[0]->identifier();
+    }
+
+    [[nodiscard]] auto is_array_element() const -> bool override {
+        return exprs_.size() == 1 and exprs_.front()->is_array_element();
+    }
+
+    [[nodiscard]] auto is_expression() const -> bool override {
+        // if unary operators on the list then it will need to compile the
+        // expression
+        if (not uops_.is_empty()) {
+            return true;
         }
+
+        // if only 1 element, then it decides if it is an expression
+        if (exprs_.size() == 1) {
+            return exprs_[0]->is_expression();
+        }
+
+        // more than 1 element, automatically an expression
+        return true;
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
         return exprs_.size() == 1 and exprs_[0]->is_identifier();
+    }
+
+    [[nodiscard]] auto is_indexed() const -> bool override {
+        assert(exprs_.size() == 1);
+
+        return exprs_[0]->is_indexed();
     }
 
     // '/', '%' and '>>' read the high bits of their operands
@@ -383,38 +426,22 @@ class expr_arith final : public expression {
         return true;
     }
 
-    // each element is computed at the width of the destination
-    auto assert_not_narrowed(const toc& tc, const type& dst_type) const
-        -> void override {
+    [[nodiscard]] auto produces_boolean() const -> bool override {
+        return uops_.is_empty() and exprs_.size() == 1 and
+               exprs_.front()->produces_boolean();
+    }
 
-        exprs_.front()->assert_not_narrowed(tc, dst_type);
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
-        for (const auto [o, e] :
-             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
-
-            // a shift count is not stored in the destination
-            if (o == '<' or o == '>') {
-                continue;
-            }
-
-            e->assert_not_narrowed(tc, dst_type);
+        for (const std::unique_ptr<statement>& e : exprs_) {
+            e->visit_reads(var, reader);
         }
     }
 
-    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
-                                   const token& src_loc_tk,
-                                   std::vector<operand>& allocated_registers,
-                                   const operand& reg_count,
-                                   const std::span<const operand> lea_path,
-                                   const operand& address_register) const
-        -> operand override {
-
-        assert(exprs_.size() == 1);
-
-        return exprs_[0]->compile_lea(tc, indent, src_loc_tk,
-                                      allocated_registers, reg_count, lea_path,
-                                      address_register);
-    }
+    //
+    // statics
+    //
 
     // the caller frees the returned register
     [[nodiscard]] static auto
@@ -434,435 +461,6 @@ class expr_arith final : public expression {
     }
 
   private:
-    // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
-    [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
-                                            const bool in_args)
-        -> std::unique_ptr<statement> {
-
-        // read the unary ops before checking for open parenthesis
-        unary_ops uo{tz};
-
-        // the unary ops apply to the whole sub-expression
-        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-            return std::make_unique<expr_arith>(tc, tz, in_args, true, t, false,
-                                                std::move(uo));
-        }
-
-        // the element reads its own unary ops: '[-a] + b'
-        uo.put_back(tz);
-
-        return create_statement_in_expr_arith(tc, tz);
-    }
-    // unary ops on a memory destination are a load, modify and store on a
-    // load/store machine where a scratch register can be shorter, other single
-    // elements such as calls are not compiled twice
-    [[nodiscard]] auto is_single_plain_element() const -> bool {
-        if (exprs_.size() != 1) {
-            return false;
-        }
-
-        const statement& e{*exprs_.front()};
-        if (not e.is_identifier()) {
-            return true;
-        }
-
-        return uops_.is_empty() and e.get_unary_ops().is_empty();
-    }
-
-    // a plain first element is copied before anything writes the destination
-    [[nodiscard]] auto reads_destination_early(const ident_info& dst_info) const
-        -> bool {
-
-        const std::string_view root{dst_info.root_id()};
-
-        if (not exprs_.front()->is_identifier() and
-            exprs_.front()->reads_var(root)) {
-
-            return true;
-        }
-
-        return std::ranges::any_of(
-            exprs_ | std::views::drop(1),
-            [root](const std::unique_ptr<statement>& e) -> bool {
-                return e->reads_var(root);
-            });
-    }
-
-    // the destination keeps its value until the whole expression is computed
-    auto compile_through_scratch(toc& tc, const size_t indent,
-                                 const ident_info& dst_info) const -> void {
-
-        const type& dst_type{dst_info.type_ref()};
-
-        if (not can_compute_wide(tc, dst_info)) {
-            compile_through_scratch_as(tc, indent, dst_info, dst_type);
-            return;
-        }
-
-        // a target without narrow register operations normalizes a narrow
-        // register after each operation, a wide register needs only the store
-        machine& x{tc.machine()};
-
-        x.emit_most_efficient(
-            tok(), indent,
-            [&] -> void {
-                compile_through_scratch_as(tc, indent, dst_info, dst_type);
-            },
-            [&] -> void {
-                compile_through_scratch_as(tc, indent, dst_info,
-                                           tc.get_type_default());
-            });
-    }
-
-    auto compile_through_scratch_as(toc& tc, const size_t indent,
-                                    const ident_info& dst_info,
-                                    const type& scratch_type) const -> void {
-
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register(tok(), indent, scratch_type)};
-
-        do_compile(tc, indent, toc::make_ident_info_from_register(reg));
-
-        x.copy_value(tok(), indent, dst_info.operand, reg);
-
-        x.free_scratch_register(tok(), indent, reg);
-    }
-
-    // a narrow memory destination truncates when stored, which gives the same
-    // value when the low bits do not depend on the high bits
-    [[nodiscard]] auto can_compute_wide(const toc& tc,
-                                        const ident_info& dst_info) const
-        -> bool {
-
-        if (not dst_info.operand.is_memory()) {
-            return false;
-        }
-
-        if (dst_info.type_ref().size_bytes() >=
-            tc.get_type_default().size_bytes()) {
-            return false;
-        }
-
-        return keeps_low_bits_when_narrowed();
-    }
-
-    auto validate_arithmetic_operands(const toc& tc) const -> void {
-        if (ops_.empty()) {
-            return;
-        }
-
-        for (const std::unique_ptr<statement>& expr : exprs_) {
-            const type& expr_type{expr->is_identifier()
-                                      ? tc.make_ident_info(*expr).type_ref()
-                                      : expr->get_type()};
-
-            if (expr_type.name() == tc.get_type_bool().name()) {
-                throw compiler_exception{
-                    expr->tok(),
-                    "boolean values cannot be arithmetic operands"};
-            }
-        }
-    }
-
-    // an identifier copies itself, anything else is assigned with '='
-    static auto compile_first_element(toc& tc, const size_t indent,
-                                      const ident_info& dst_info,
-                                      const statement& first) -> void {
-
-        if (first.is_identifier()) {
-            first.compile(tc, indent, dst_info);
-            return;
-        }
-
-        asm_op(tc, indent, '=', dst_info, first);
-    }
-
-    auto do_compile(toc& tc, const size_t indent,
-                    const ident_info& dst_info) const -> void {
-
-        compile_elements(tc, indent, dst_info);
-
-        // apply unary expressions on destination
-        uops_.compile(tc, indent, dst_info.operand);
-    }
-
-    // an operation of the list being folded: an element, or merged constants
-    // when 'element' is null
-    struct step {
-        char op{};
-        const statement* element{};
-        std::optional<int64_t> value; // set when the step is a constant
-        std::string folded_source;    // e.g. '* 3 * 2' for the comment
-    };
-
-    // a nested list is folded when it is compiled as an element:
-    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
-    auto compile_elements(toc& tc, const size_t indent,
-                          const ident_info& dst_info) const -> void {
-
-        const type& width_type{dst_info.type_ref()};
-
-        std::vector<step> steps{make_steps(tc, width_type)};
-        steps = merge_commutative_constants(steps, width_type);
-        steps = merge_divisors(steps, width_type);
-        lead_with_constant(tc, steps);
-
-        compile_first_step(tc, indent, dst_info, steps.front());
-
-        for (const step& s : std::span{steps}.subspan(1)) {
-            compile_step(tc, indent, dst_info, s);
-        }
-    }
-
-    [[nodiscard]] static auto is_commutative(const char op) -> bool {
-        return op == '+' or op == '-' or op == '*' or op == '&' or op == '|' or
-               op == '^';
-    }
-
-    // the first element is added in an additive list and a factor in a list
-    // led by '*' or a bitwise operation, otherwise it is the dividend or the
-    // shifted value
-    [[nodiscard]] auto first_op() const -> char {
-        if (ops_.empty()) {
-            return '=';
-        }
-
-        const char first{ops_.front()};
-        if (first == '-') {
-            return '+';
-        }
-
-        return is_commutative(first) ? first : '=';
-    }
-
-    // pass 0: one step per element with the constant value of the element
-    //   'a * 3 * 2 / 3 / 2 * 4'  =>  '* a' '* 3' '* 2' '/ 3' '/ 2' '* 4'
-    [[nodiscard]] auto make_steps(const toc& tc, const type& width_type) const
-        -> std::vector<step> {
-
-        std::vector<step> steps;
-
-        for (size_t i{}; i < exprs_.size(); ++i) {
-            const char op{i == 0 ? first_op() : ops_[i - 1]};
-            const statement& e{*exprs_[i]};
-
-            steps.push_back({
-                .op{op},
-                .element{&e},
-                .value{element_constant(tc, e, width_type)},
-                .folded_source{
-                    std::format("{} {}", op, statement::trimmed_source(e))},
-            });
-        }
-
-        return steps;
-    }
-
-    // pass 1: the constants of a run of '+' and '-', of '*' or of one bitwise
-    // operation merge into one constant at the end of the run, '/' and '%'
-    // end a run since moving a constant across them changes the result, a
-    // lower precedence operation continues the list left to right and starts
-    // a new run
-    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 3 * 2 / 3 / 2 * 4 + 8'
-    //   'a * 3 * 2 / 3 / 2 * 4'          =>  'a * 6 / 3 / 2 * 4'
-    //   '2 * b * 3 / c'                  =>  'b * 6 / c'
-    //   'b & 7 & 13'                     =>  'b & 5'
-    //   'b & 1 | 2 | 4'                  =>  'b & 1 | 6'
-    //   'b * 2 - 3 + c + 4'              =>  'b * 2 + c + 1'
-    [[nodiscard]] static auto
-    merge_commutative_constants(const std::span<const step> steps,
-                                const type& width_type) -> std::vector<step> {
-
-        // a dividend or a divisor is a run of its own
-        const auto same_run{[](const step& a, const step& b) -> bool {
-            return is_commutative(a.op) and is_commutative(b.op) and
-                   precedence_for_op(a.op) == precedence_for_op(b.op);
-        }};
-
-        std::vector<step> merged;
-
-        for (const std::span<const step> run :
-             steps | std::views::chunk_by(same_run)) {
-
-            merge_run(merged, run, width_type);
-        }
-
-        return merged;
-    }
-
-    static auto merge_run(std::vector<step>& merged,
-                          const std::span<const step> run,
-                          const type& width_type) -> void {
-
-        // subtracted constants are subtracted from an added constant
-        const char op{run.front().op == '-' ? '+' : run.front().op};
-
-        if (not is_commutative(op)) {
-            merged.append_range(run);
-            return;
-        }
-
-        step constant{
-            .op{op},
-            .element{},
-            .value{identity_of(op)},
-            .folded_source{},
-        };
-
-        bool has_constant{};
-
-        for (const step& s : run) {
-            if (not s.value) {
-                merged.push_back(s);
-                continue;
-            }
-
-            constant.value =
-                combine(*constant.value, s.op, *s.value, width_type);
-
-            append_source(constant, s);
-            has_constant = true;
-        }
-
-        if (has_constant) {
-            merged.push_back(std::move(constant));
-        }
-    }
-
-    // pass 2: consecutive constant divisors merge into their product
-    //   'a * 6 / 3 / 2 * 4'  =>  'a * 6 / 6 * 4'
-    //   'b / 2 / c / 3'      =>  'b / 2 / c / 3'
-    [[nodiscard]] static auto merge_divisors(const std::span<const step> steps,
-                                             const type& width_type)
-        -> std::vector<step> {
-
-        std::vector<step> merged;
-
-        for (const step& s : steps) {
-            const std::optional<int64_t> product{
-                merged.empty() ? std::nullopt
-                               : merged_divisor(merged.back(), s, width_type)};
-
-            if (not product) {
-                merged.push_back(s);
-                continue;
-            }
-
-            step& divisor{merged.back()};
-            divisor.element = nullptr;
-            divisor.value = product;
-            append_source(divisor, s);
-        }
-
-        return merged;
-    }
-
-    // a divisor of 0 or -1 is left to run time where it traps or wraps
-    [[nodiscard]] static auto mergeable_divisor(const step& s)
-        -> std::optional<int64_t> {
-
-        if (s.op != '/' or not s.value or *s.value == 0 or *s.value == -1) {
-            return std::nullopt;
-        }
-
-        return s.value;
-    }
-
-    // '(b / m) / n' is 'b / (m * n)' while the product fits the width
-    [[nodiscard]] static auto merged_divisor(const step& divisor,
-                                             const step& next,
-                                             const type& width_type)
-        -> std::optional<int64_t> {
-
-        const std::optional<int64_t> m{mergeable_divisor(divisor)};
-        const std::optional<int64_t> n{mergeable_divisor(next)};
-
-        if (not m or not n) {
-            return std::nullopt;
-        }
-
-        const int64_t product{combine(*m, '*', *n, width_type)};
-
-        // a wrapped product divided back differs from the divisor
-        if (product / *n != *m) {
-            return std::nullopt;
-        }
-
-        return product;
-    }
-
-    static auto append_source(step& merged, const step& s) -> void {
-        if (not merged.folded_source.empty()) {
-            merged.folded_source += ' ';
-        }
-
-        merged.folded_source += s.folded_source;
-    }
-
-    // pass 3: a subtracted or negated first element needs a negation so the
-    // merged constant of an additive list leads instead, a zero constant adds
-    // nothing so negating in place is shorter
-    //   '- b + 3'  =>  '3 - b'   from '1 - b + 2'
-    //   '-b + 23'  =>  '23 - b'
-    //   '- b + 0'  =>  '- b + 0' from '2 - b - 2'
-    static auto lead_with_constant(const toc& tc, std::vector<step>& steps)
-        -> void {
-
-        const step& first{steps.front()};
-        const step& last{steps.back()};
-
-        // only a merged constant has no element
-        if (last.element != nullptr or last.op != '+' or last.value == 0) {
-            return;
-        }
-
-        const bool is_negated{first.op == '+' and first.element != nullptr and
-                              is_negated_operand(tc, *first.element)};
-
-        if (first.op != '-' and not is_negated) {
-            return;
-        }
-
-        std::ranges::rotate(steps, steps.end() - 1);
-    }
-
-    auto compile_first_step(toc& tc, const size_t indent,
-                            const ident_info& dst_info, const step& first) const
-        -> void {
-
-        // e.g. '2 * 3 / b' or '3 - b'
-        if (first.element == nullptr and first.value) {
-            compile_constant(tc, indent, dst_info, *first.value,
-                             first.folded_source);
-
-            return;
-        }
-
-        compile_first_element(tc, indent, dst_info, *first.element);
-
-        // only a zero constant leaves a subtracted element first: '2 - b - 2'
-        if (first.op == '-') {
-            machine& x{tc.machine()};
-
-            x.unary(indent, '-', dst_info.operand);
-        }
-    }
-
-    auto compile_step(toc& tc, const size_t indent, const ident_info& dst_info,
-                      const step& s) const -> void {
-
-        if (s.element == nullptr and s.value) {
-            apply_merged_constant(tc, indent, s.op, dst_info, *s.value,
-                                  s.folded_source);
-
-            return;
-        }
-
-        asm_op(tc, indent, s.op, dst_info, *s.element);
-    }
-
     // e.g. 'b + 1 - 1' or 'b / 1 / 1' apply nothing
     auto apply_merged_constant(toc& tc, const size_t indent, const char op,
                                const ident_info& dst_info, const int64_t value,
@@ -880,19 +478,6 @@ class expr_arith final : public expression {
         }
 
         asm_op_constant(tc, indent, op, dst_info, value, folded_source);
-    }
-
-    auto compile_constant(toc& tc, const size_t indent,
-                          const ident_info& dst_info, const int64_t value,
-                          const std::string_view folded_source) const -> void {
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, "{} = {}", dst_info.id, value);
-        x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
-
-        x.copy_value(tok(), indent, dst_info.operand,
-                     constant_operand(tc, value));
     }
 
     auto asm_op_constant(toc& tc, const size_t indent, const char op,
@@ -940,49 +525,244 @@ class expr_arith final : public expression {
         }
     }
 
-    // constants have the default type like literals
-    [[nodiscard]] static auto constant_operand(const toc& tc,
-                                               const int64_t value) -> operand {
+    // a narrow memory destination truncates when stored, which gives the same
+    // value when the low bits do not depend on the high bits
+    [[nodiscard]] auto can_compute_wide(const toc& tc,
+                                        const ident_info& dst_info) const
+        -> bool {
 
-        return operand::imm(std::format("{}", value), tc.get_type_default());
+        if (not dst_info.operand.is_memory()) {
+            return false;
+        }
+
+        if (dst_info.type_ref().size_bytes() >=
+            tc.get_type_default().size_bytes()) {
+            return false;
+        }
+
+        return keeps_low_bits_when_narrowed();
     }
 
-    // the constant that leaves a value unchanged
-    [[nodiscard]] static auto identity_of(const char op) -> int64_t {
-        switch (op) {
-        case '+':
-        case '|':
-        case '^':
-            return 0;
+    auto compile_constant(toc& tc, const size_t indent,
+                          const ident_info& dst_info, const int64_t value,
+                          const std::string_view folded_source) const -> void {
 
-        case '*':
-        case '/':
-            return 1;
+        machine& x{tc.machine()};
 
-        case '&':
-            return -1;
+        x.comment(tok(), indent, "{} = {}", dst_info.id, value);
+        x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
 
-        default:
-            std::unreachable();
+        x.copy_value(tok(), indent, dst_info.operand,
+                     constant_operand(tc, value));
+    }
+
+    // a nested list is folded when it is compiled as an element:
+    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
+    auto compile_elements(toc& tc, const size_t indent,
+                          const ident_info& dst_info) const -> void {
+
+        const type& width_type{dst_info.type_ref()};
+
+        std::vector<step> steps{make_steps(tc, width_type)};
+        steps = merge_commutative_constants(steps, width_type);
+        steps = merge_divisors(steps, width_type);
+        lead_with_constant(tc, steps);
+
+        compile_first_step(tc, indent, dst_info, steps.front());
+
+        for (const step& s : std::span{steps}.subspan(1)) {
+            compile_step(tc, indent, dst_info, s);
         }
     }
 
-    // a constant identifier or a list of constants
-    [[nodiscard]] static auto
-    element_constant(const toc& tc, const statement& e, const type& width_type)
-        -> std::optional<int64_t> {
+    auto compile_first_step(toc& tc, const size_t indent,
+                            const ident_info& dst_info, const step& first) const
+        -> void {
 
-        if (e.is_expression()) {
-            return e.folded_constant(tc, width_type);
+        // e.g. '2 * 3 / b' or '3 - b'
+        if (first.element == nullptr and first.value) {
+            compile_constant(tc, indent, dst_info, *first.value,
+                             first.folded_source);
+
+            return;
         }
 
-        const ident_info info{tc.make_ident_info(e)};
-        if (not info.is_const()) {
-            return std::nullopt;
+        compile_first_element(tc, indent, dst_info, *first.element);
+
+        // only a zero constant leaves a subtracted element first: '2 - b - 2'
+        if (first.op == '-') {
+            machine& x{tc.machine()};
+
+            x.unary(indent, '-', dst_info.operand);
+        }
+    }
+
+    auto compile_step(toc& tc, const size_t indent, const ident_info& dst_info,
+                      const step& s) const -> void {
+
+        if (s.element == nullptr and s.value) {
+            apply_merged_constant(tc, indent, s.op, dst_info, *s.value,
+                                  s.folded_source);
+
+            return;
         }
 
-        return wrap_to_width(
-            e.get_unary_ops().evaluate_constant(info.const_value), width_type);
+        asm_op(tc, indent, s.op, dst_info, *s.element);
+    }
+
+    // the destination keeps its value until the whole expression is computed
+    auto compile_through_scratch(toc& tc, const size_t indent,
+                                 const ident_info& dst_info) const -> void {
+
+        const type& dst_type{dst_info.type_ref()};
+
+        if (not can_compute_wide(tc, dst_info)) {
+            compile_through_scratch_as(tc, indent, dst_info, dst_type);
+            return;
+        }
+
+        // a target without narrow register operations normalizes a narrow
+        // register after each operation, a wide register needs only the store
+        machine& x{tc.machine()};
+
+        x.emit_most_efficient(
+            tok(), indent,
+            [&] -> void {
+                compile_through_scratch_as(tc, indent, dst_info, dst_type);
+            },
+            [&] -> void {
+                compile_through_scratch_as(tc, indent, dst_info,
+                                           tc.get_type_default());
+            });
+    }
+
+    auto compile_through_scratch_as(toc& tc, const size_t indent,
+                                    const ident_info& dst_info,
+                                    const type& scratch_type) const -> void {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(tok(), indent, scratch_type)};
+
+        do_compile(tc, indent, toc::make_ident_info_from_register(reg));
+
+        x.copy_value(tok(), indent, dst_info.operand, reg);
+
+        x.free_scratch_register(tok(), indent, reg);
+    }
+
+    auto do_compile(toc& tc, const size_t indent,
+                    const ident_info& dst_info) const -> void {
+
+        compile_elements(tc, indent, dst_info);
+
+        // apply unary expressions on destination
+        uops_.compile(tc, indent, dst_info.operand);
+    }
+
+    // the first element is added in an additive list and a factor in a list
+    // led by '*' or a bitwise operation, otherwise it is the dividend or the
+    // shifted value
+    [[nodiscard]] auto first_op() const -> char {
+        if (ops_.empty()) {
+            return '=';
+        }
+
+        const char first{ops_.front()};
+        if (first == '-') {
+            return '+';
+        }
+
+        return is_commutative(first) ? first : '=';
+    }
+
+    // unary ops on a memory destination are a load, modify and store on a
+    // load/store machine where a scratch register can be shorter, other single
+    // elements such as calls are not compiled twice
+    [[nodiscard]] auto is_single_plain_element() const -> bool {
+        if (exprs_.size() != 1) {
+            return false;
+        }
+
+        const statement& e{*exprs_.front()};
+        if (not e.is_identifier()) {
+            return true;
+        }
+
+        return uops_.is_empty() and e.get_unary_ops().is_empty();
+    }
+
+    // pass 0: one step per element with the constant value of the element
+    //   'a * 3 * 2 / 3 / 2 * 4'  =>  '* a' '* 3' '* 2' '/ 3' '/ 2' '* 4'
+    [[nodiscard]] auto make_steps(const toc& tc, const type& width_type) const
+        -> std::vector<step> {
+
+        std::vector<step> steps;
+
+        for (size_t i{}; i < exprs_.size(); ++i) {
+            const char op{i == 0 ? first_op() : ops_[i - 1]};
+            const statement& e{*exprs_[i]};
+
+            steps.push_back({
+                .op{op},
+                .element{&e},
+                .value{element_constant(tc, e, width_type)},
+                .folded_source{
+                    std::format("{} {}", op, statement::trimmed_source(e))},
+            });
+        }
+
+        return steps;
+    }
+
+    // a plain first element is copied before anything writes the destination
+    [[nodiscard]] auto reads_destination_early(const ident_info& dst_info) const
+        -> bool {
+
+        const std::string_view root{dst_info.root_id()};
+
+        if (not exprs_.front()->is_identifier() and
+            exprs_.front()->reads_var(root)) {
+
+            return true;
+        }
+
+        return std::ranges::any_of(
+            exprs_ | std::views::drop(1),
+            [root](const std::unique_ptr<statement>& e) -> bool {
+                return e->reads_var(root);
+            });
+    }
+
+    auto validate_arithmetic_operands(const toc& tc) const -> void {
+        if (ops_.empty()) {
+            return;
+        }
+
+        for (const std::unique_ptr<statement>& expr : exprs_) {
+            const type& expr_type{expr->is_identifier()
+                                      ? tc.make_ident_info(*expr).type_ref()
+                                      : expr->get_type()};
+
+            if (expr_type.name() == tc.get_type_bool().name()) {
+                throw compiler_exception{
+                    expr->tok(),
+                    "boolean values cannot be arithmetic operands"};
+            }
+        }
+    }
+
+    //
+    // statics
+    //
+
+    static auto append_source(step& merged, const step& s) -> void {
+        if (not merged.folded_source.empty()) {
+            merged.folded_source += ' ';
+        }
+
+        merged.folded_source += s.folded_source;
     }
 
     // empty when the targets differ at run time: a zero divisor traps, the
@@ -1016,128 +796,6 @@ class expr_arith final : public expression {
             return combine(lhs, op, rhs, width_type);
         }
     }
-
-    // a count within the width shifts the same on both targets
-    [[nodiscard]] static auto shift_constant(const int64_t lhs, const char op,
-                                             const uint64_t count,
-                                             const type& width_type)
-        -> int64_t {
-
-        const uint64_t bits{static_cast<uint64_t>(lhs)};
-
-        if (op == '<') {
-            return wrap_to_width(static_cast<int64_t>(bits << count),
-                                 width_type);
-        }
-
-        // 'lhs' is sign extended so shifting in its sign bit keeps the width
-        if (lhs < 0) {
-            return static_cast<int64_t>(~(~bits >> count));
-        }
-
-        return static_cast<int64_t>(bits >> count);
-    }
-
-    // operations whose low bits do not depend on higher bits
-    [[nodiscard]] static auto combine(const int64_t lhs, const char op,
-                                      const int64_t rhs, const type& width_type)
-        -> int64_t {
-
-        // unsigned arithmetic wraps like the registers
-        const uint64_t l{static_cast<uint64_t>(lhs)};
-        const uint64_t r{static_cast<uint64_t>(rhs)};
-
-        switch (op) {
-        case '+':
-            return wrap_to_width(static_cast<int64_t>(l + r), width_type);
-
-        case '-':
-            return wrap_to_width(static_cast<int64_t>(l - r), width_type);
-
-        case '*':
-            return wrap_to_width(static_cast<int64_t>(l * r), width_type);
-
-        case '&':
-            return static_cast<int64_t>(l & r);
-
-        case '|':
-            return static_cast<int64_t>(l | r);
-
-        case '^':
-            return static_cast<int64_t>(l ^ r);
-
-        default:
-            std::unreachable();
-        }
-    }
-
-    [[nodiscard]] static auto width_bits(const type& width_type) -> size_t {
-        constexpr size_t byte_bits{8};
-        return width_type.size_bytes() * byte_bits;
-    }
-
-    // e.g. -128 for 'i8'
-    [[nodiscard]] static auto width_min(const type& width_type) -> int64_t {
-        return static_cast<int64_t>(~uint64_t{}
-                                    << (width_bits(width_type) - 1));
-    }
-
-    // the value a register of 'width_type' holds, sign extended
-    [[nodiscard]] static auto wrap_to_width(const int64_t value,
-                                            const type& width_type) -> int64_t {
-
-        const size_t bits{width_bits(width_type)};
-        if (bits >= std::numeric_limits<uint64_t>::digits) {
-            return value;
-        }
-
-        const uint64_t sign_bit{uint64_t{1} << (bits - 1)};
-        const uint64_t low{static_cast<uint64_t>(value) &
-                           ((sign_bit << 1U) - 1U)};
-
-        // flipping and subtracting the sign bit extends it
-        return static_cast<int64_t>((low ^ sign_bit) - sign_bit);
-    }
-
-    static constexpr char precedence_additive{1};
-    static constexpr char precedence_multiplicative{2};
-    static constexpr char precedence_bitwise_or{3};
-    static constexpr char precedence_bitwise_and{4};
-    static constexpr char precedence_bitwise_xor{5};
-    static constexpr char precedence_shift{6};
-
-    // higher value higher precedence
-    [[nodiscard]] static auto precedence_for_op(const char ch) -> uint8_t {
-        switch (ch) {
-        case '+':
-        case '-':
-            return precedence_additive;
-
-        case '*':
-        case '/':
-        case '%':
-            return precedence_multiplicative;
-
-        case '|':
-            return precedence_bitwise_or;
-
-        case '&':
-            return precedence_bitwise_and;
-
-        case '^':
-            return precedence_bitwise_xor;
-
-        case '<': // shift left
-        case '>': // shift right
-            return precedence_shift;
-
-        default:
-            std::unreachable();
-        }
-    }
-
-    // higher than the highest precedence
-    static constexpr char initial_precedence{7};
 
     static auto asm_op(toc& tc, const size_t indent, const char op,
                        const ident_info& dst, const statement& src) -> void {
@@ -1188,6 +846,67 @@ class expr_arith final : public expression {
         }
     }
 
+    static auto asm_op_add_sub(toc& tc, const size_t indent, const char op,
+                               const ident_info& dst_info, const statement& src)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        if (is_negated_operand(tc, src)) {
+            x.comment(src.tok(), indent, "src: negated operand");
+
+            const ident_info src_info{tc.make_scalar_ident_info(src)};
+            std::vector<operand> lea_registers;
+            const operand src_operand{
+                tc.get_lea_operand(indent, src, src_info, lea_registers)};
+
+            x.add_subtract(src.tok(), indent, op == '+' ? '-' : '+',
+                           dst_info.operand, src_operand);
+
+            x.free_scratch_registers(src.tok(), indent, lea_registers);
+
+            return;
+        }
+
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
+            [&](const operand& term, const bool) -> void {
+                x.add_subtract(src.tok(), indent, op, dst_info.operand, term);
+            });
+    }
+
+    static auto asm_op_bitwise(toc& tc, const size_t indent, const char op,
+                               const ident_info& dst_info, const statement& src)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
+            [&](const operand& value, const bool) -> void {
+                x.bitwise(src.tok(), indent, op, dst_info.operand, value);
+            });
+    }
+
+    static auto asm_op_div(toc& tc, const size_t indent, const char op,
+                           const ident_info& dst_info, const statement& src)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        // the backend reserves registers for division
+        if (is_stored_value(tc, src)) {
+            x.validate_division_operand(src.tok(),
+                                        tc.make_ident_info(src).operand);
+        }
+
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
+            [&](const operand& divisor, const bool) -> void {
+                x.divide(src.tok(), indent, op, dst_info.operand, divisor);
+            });
+    }
+
     // 'compile_first_element' copies identifiers itself
     static auto asm_op_mov(toc& tc, const size_t indent,
                            const ident_info& dst_info, const statement& src)
@@ -1200,6 +919,86 @@ class expr_arith final : public expression {
         x.comment(src.tok(), indent, "= expression");
 
         src.compile(tc, indent, dst_info);
+    }
+
+    static auto asm_op_mul(toc& tc, const size_t indent,
+                           const ident_info& dst_info, const statement& src)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        // a scratch register factor can be overwritten by the backend
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
+            [&](const operand& factor, const bool is_scratch) -> void {
+                x.multiply(src.tok(), indent, dst_info.operand, factor,
+                           is_scratch);
+            });
+    }
+
+    static auto asm_op_shift(toc& tc, const size_t indent, const char op,
+                             const ident_info& dst_info, const statement& src)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        // the backend reserves a register for the count
+        if (is_stored_value(tc, src)) {
+            x.validate_shift_operand(src.tok(),
+                                     tc.make_ident_info(src).operand);
+        }
+
+        emit_with_source(
+            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
+            [&](const operand& count, const bool) -> void {
+                x.shift(src.tok(), indent, op, dst_info.operand, count);
+            });
+    }
+
+    // operations whose low bits do not depend on higher bits
+    [[nodiscard]] static auto combine(const int64_t lhs, const char op,
+                                      const int64_t rhs, const type& width_type)
+        -> int64_t {
+
+        // unsigned arithmetic wraps like the registers
+        const uint64_t l{static_cast<uint64_t>(lhs)};
+        const uint64_t r{static_cast<uint64_t>(rhs)};
+
+        switch (op) {
+        case '+':
+            return wrap_to_width(static_cast<int64_t>(l + r), width_type);
+
+        case '-':
+            return wrap_to_width(static_cast<int64_t>(l - r), width_type);
+
+        case '*':
+            return wrap_to_width(static_cast<int64_t>(l * r), width_type);
+
+        case '&':
+            return static_cast<int64_t>(l & r);
+
+        case '|':
+            return static_cast<int64_t>(l | r);
+
+        case '^':
+            return static_cast<int64_t>(l ^ r);
+
+        default:
+            std::unreachable();
+        }
+    }
+
+    // an identifier copies itself, anything else is assigned with '='
+    static auto compile_first_element(toc& tc, const size_t indent,
+                                      const ident_info& dst_info,
+                                      const statement& first) -> void {
+
+        if (first.is_identifier()) {
+            first.compile(tc, indent, dst_info);
+            return;
+        }
+
+        asm_op(tc, indent, '=', dst_info, first);
     }
 
     [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
@@ -1215,6 +1014,31 @@ class expr_arith final : public expression {
         src.compile(tc, indent, toc::make_ident_info_from_register(reg));
 
         return reg;
+    }
+
+    // constants have the default type like literals
+    [[nodiscard]] static auto constant_operand(const toc& tc,
+                                               const int64_t value) -> operand {
+
+        return operand::imm(std::format("{}", value), tc.get_type_default());
+    }
+
+    // a constant identifier or a list of constants
+    [[nodiscard]] static auto
+    element_constant(const toc& tc, const statement& e, const type& width_type)
+        -> std::optional<int64_t> {
+
+        if (e.is_expression()) {
+            return e.folded_constant(tc, width_type);
+        }
+
+        const ident_info info{tc.make_ident_info(e)};
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        return wrap_to_width(
+            e.get_unary_ops().evaluate_constant(info.const_value), width_type);
     }
 
     // compiles 'src' into an operand the operation accepts, emits the
@@ -1282,27 +1106,29 @@ class expr_arith final : public expression {
         x.free_scratch_registers(src.tok(), indent, lea_registers);
     }
 
-    static auto asm_op_mul(toc& tc, const size_t indent,
-                           const ident_info& dst_info, const statement& src)
-        -> void {
+    // the constant that leaves a value unchanged
+    [[nodiscard]] static auto identity_of(const char op) -> int64_t {
+        switch (op) {
+        case '+':
+        case '|':
+        case '^':
+            return 0;
 
-        machine& x{tc.machine()};
+        case '*':
+        case '/':
+            return 1;
 
-        // a scratch register factor can be overwritten by the backend
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
-            [&](const operand& factor, const bool is_scratch) -> void {
-                x.multiply(src.tok(), indent, dst_info.operand, factor,
-                           is_scratch);
-            });
+        case '&':
+            return -1;
+
+        default:
+            std::unreachable();
+        }
     }
 
-    // a register or memory location, neither computed nor constant
-    [[nodiscard]] static auto is_stored_value(const toc& tc,
-                                              const statement& src) -> bool {
-
-        return not src.is_expression() and
-               not tc.make_ident_info(src).is_const();
+    [[nodiscard]] static auto is_commutative(const char op) -> bool {
+        return op == '+' or op == '-' or op == '*' or op == '&' or op == '|' or
+               op == '^';
     }
 
     // a lone negation folds into add/sub: 'a - -b' is 'a + b'
@@ -1313,83 +1139,270 @@ class expr_arith final : public expression {
                src.get_unary_ops().is_only_negated();
     }
 
-    static auto asm_op_add_sub(toc& tc, const size_t indent, const char op,
-                               const ident_info& dst_info, const statement& src)
+    // a register or memory location, neither computed nor constant
+    [[nodiscard]] static auto is_stored_value(const toc& tc,
+                                              const statement& src) -> bool {
+
+        return not src.is_expression() and
+               not tc.make_ident_info(src).is_const();
+    }
+
+    // pass 3: a subtracted or negated first element needs a negation so the
+    // merged constant of an additive list leads instead, a zero constant adds
+    // nothing so negating in place is shorter
+    //   '- b + 3'  =>  '3 - b'   from '1 - b + 2'
+    //   '-b + 23'  =>  '23 - b'
+    //   '- b + 0'  =>  '- b + 0' from '2 - b - 2'
+    static auto lead_with_constant(const toc& tc, std::vector<step>& steps)
         -> void {
 
-        machine& x{tc.machine()};
+        const step& first{steps.front()};
+        const step& last{steps.back()};
 
-        if (is_negated_operand(tc, src)) {
-            x.comment(src.tok(), indent, "src: negated operand");
-
-            const ident_info src_info{tc.make_scalar_ident_info(src)};
-            std::vector<operand> lea_registers;
-            const operand src_operand{
-                tc.get_lea_operand(indent, src, src_info, lea_registers)};
-
-            x.add_subtract(src.tok(), indent, op == '+' ? '-' : '+',
-                           dst_info.operand, src_operand);
-
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
-
+        // only a merged constant has no element
+        if (last.element != nullptr or last.op != '+' or last.value == 0) {
             return;
         }
 
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
-            [&](const operand& term, const bool) -> void {
-                x.add_subtract(src.tok(), indent, op, dst_info.operand, term);
-            });
-    }
+        const bool is_negated{first.op == '+' and first.element != nullptr and
+                              is_negated_operand(tc, *first.element)};
 
-    static auto asm_op_bitwise(toc& tc, const size_t indent, const char op,
-                               const ident_info& dst_info, const statement& src)
-        -> void {
-
-        machine& x{tc.machine()};
-
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
-            [&](const operand& value, const bool) -> void {
-                x.bitwise(src.tok(), indent, op, dst_info.operand, value);
-            });
-    }
-
-    static auto asm_op_shift(toc& tc, const size_t indent, const char op,
-                             const ident_info& dst_info, const statement& src)
-        -> void {
-
-        machine& x{tc.machine()};
-
-        // the backend reserves a register for the count
-        if (is_stored_value(tc, src)) {
-            x.validate_shift_operand(src.tok(),
-                                     tc.make_ident_info(src).operand);
+        if (first.op != '-' and not is_negated) {
+            return;
         }
 
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
-            [&](const operand& count, const bool) -> void {
-                x.shift(src.tok(), indent, op, dst_info.operand, count);
-            });
+        std::ranges::rotate(steps, steps.end() - 1);
     }
 
-    static auto asm_op_div(toc& tc, const size_t indent, const char op,
-                           const ident_info& dst_info, const statement& src)
-        -> void {
+    // pass 1: the constants of a run of '+' and '-', of '*' or of one bitwise
+    // operation merge into one constant at the end of the run, '/' and '%'
+    // end a run since moving a constant across them changes the result, a
+    // lower precedence operation continues the list left to right and starts
+    // a new run
+    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 3 * 2 / 3 / 2 * 4 + 8'
+    //   'a * 3 * 2 / 3 / 2 * 4'          =>  'a * 6 / 3 / 2 * 4'
+    //   '2 * b * 3 / c'                  =>  'b * 6 / c'
+    //   'b & 7 & 13'                     =>  'b & 5'
+    //   'b & 1 | 2 | 4'                  =>  'b & 1 | 6'
+    //   'b * 2 - 3 + c + 4'              =>  'b * 2 + c + 1'
+    [[nodiscard]] static auto
+    merge_commutative_constants(const std::span<const step> steps,
+                                const type& width_type) -> std::vector<step> {
 
-        machine& x{tc.machine()};
+        // a dividend or a divisor is a run of its own
+        const auto same_run{[](const step& a, const step& b) -> bool {
+            return is_commutative(a.op) and is_commutative(b.op) and
+                   precedence_for_op(a.op) == precedence_for_op(b.op);
+        }};
 
-        // the backend reserves registers for division
-        if (is_stored_value(tc, src)) {
-            x.validate_division_operand(src.tok(),
-                                        tc.make_ident_info(src).operand);
+        std::vector<step> merged;
+
+        for (const std::span<const step> run :
+             steps | std::views::chunk_by(same_run)) {
+
+            merge_run(merged, run, width_type);
         }
 
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
-            [&](const operand& divisor, const bool) -> void {
-                x.divide(src.tok(), indent, op, dst_info.operand, divisor);
-            });
+        return merged;
+    }
+
+    // pass 2: consecutive constant divisors merge into their product
+    //   'a * 6 / 3 / 2 * 4'  =>  'a * 6 / 6 * 4'
+    //   'b / 2 / c / 3'      =>  'b / 2 / c / 3'
+    [[nodiscard]] static auto merge_divisors(const std::span<const step> steps,
+                                             const type& width_type)
+        -> std::vector<step> {
+
+        std::vector<step> merged;
+
+        for (const step& s : steps) {
+            const std::optional<int64_t> product{
+                merged.empty() ? std::nullopt
+                               : merged_divisor(merged.back(), s, width_type)};
+
+            if (not product) {
+                merged.push_back(s);
+                continue;
+            }
+
+            step& divisor{merged.back()};
+            divisor.element = nullptr;
+            divisor.value = product;
+            append_source(divisor, s);
+        }
+
+        return merged;
+    }
+
+    static auto merge_run(std::vector<step>& merged,
+                          const std::span<const step> run,
+                          const type& width_type) -> void {
+
+        // subtracted constants are subtracted from an added constant
+        const char op{run.front().op == '-' ? '+' : run.front().op};
+
+        if (not is_commutative(op)) {
+            merged.append_range(run);
+            return;
+        }
+
+        step constant{
+            .op{op},
+            .element{},
+            .value{identity_of(op)},
+            .folded_source{},
+        };
+
+        bool has_constant{};
+
+        for (const step& s : run) {
+            if (not s.value) {
+                merged.push_back(s);
+                continue;
+            }
+
+            constant.value =
+                combine(*constant.value, s.op, *s.value, width_type);
+
+            append_source(constant, s);
+            has_constant = true;
+        }
+
+        if (has_constant) {
+            merged.push_back(std::move(constant));
+        }
+    }
+
+    // a divisor of 0 or -1 is left to run time where it traps or wraps
+    [[nodiscard]] static auto mergeable_divisor(const step& s)
+        -> std::optional<int64_t> {
+
+        if (s.op != '/' or not s.value or *s.value == 0 or *s.value == -1) {
+            return std::nullopt;
+        }
+
+        return s.value;
+    }
+
+    // '(b / m) / n' is 'b / (m * n)' while the product fits the width
+    [[nodiscard]] static auto merged_divisor(const step& divisor,
+                                             const step& next,
+                                             const type& width_type)
+        -> std::optional<int64_t> {
+
+        const std::optional<int64_t> m{mergeable_divisor(divisor)};
+        const std::optional<int64_t> n{mergeable_divisor(next)};
+
+        if (not m or not n) {
+            return std::nullopt;
+        }
+
+        const int64_t product{combine(*m, '*', *n, width_type)};
+
+        // a wrapped product divided back differs from the divisor
+        if (product / *n != *m) {
+            return std::nullopt;
+        }
+
+        return product;
+    }
+
+    // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
+    [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
+                                            const bool in_args)
+        -> std::unique_ptr<statement> {
+
+        // read the unary ops before checking for open parenthesis
+        unary_ops uo{tz};
+
+        // the unary ops apply to the whole sub-expression
+        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
+            return std::make_unique<expr_arith>(tc, tz, in_args, true, t, false,
+                                                std::move(uo));
+        }
+
+        // the element reads its own unary ops: '[-a] + b'
+        uo.put_back(tz);
+
+        return create_statement_in_expr_arith(tc, tz);
+    }
+
+    // higher value higher precedence
+    [[nodiscard]] static auto precedence_for_op(const char ch) -> uint8_t {
+        switch (ch) {
+        case '+':
+        case '-':
+            return precedence_additive;
+
+        case '*':
+        case '/':
+        case '%':
+            return precedence_multiplicative;
+
+        case '|':
+            return precedence_bitwise_or;
+
+        case '&':
+            return precedence_bitwise_and;
+
+        case '^':
+            return precedence_bitwise_xor;
+
+        case '<': // shift left
+        case '>': // shift right
+            return precedence_shift;
+
+        default:
+            std::unreachable();
+        }
+    }
+
+    // a count within the width shifts the same on both targets
+    [[nodiscard]] static auto shift_constant(const int64_t lhs, const char op,
+                                             const uint64_t count,
+                                             const type& width_type)
+        -> int64_t {
+
+        const uint64_t bits{static_cast<uint64_t>(lhs)};
+
+        if (op == '<') {
+            return wrap_to_width(static_cast<int64_t>(bits << count),
+                                 width_type);
+        }
+
+        // 'lhs' is sign extended so shifting in its sign bit keeps the width
+        if (lhs < 0) {
+            return static_cast<int64_t>(~(~bits >> count));
+        }
+
+        return static_cast<int64_t>(bits >> count);
+    }
+
+    [[nodiscard]] static auto width_bits(const type& width_type) -> size_t {
+        constexpr size_t byte_bits{8};
+        return width_type.size_bytes() * byte_bits;
+    }
+
+    // e.g. -128 for 'i8'
+    [[nodiscard]] static auto width_min(const type& width_type) -> int64_t {
+        return static_cast<int64_t>(~uint64_t{}
+                                    << (width_bits(width_type) - 1));
+    }
+
+    // the value a register of 'width_type' holds, sign extended
+    [[nodiscard]] static auto wrap_to_width(const int64_t value,
+                                            const type& width_type) -> int64_t {
+
+        const size_t bits{width_bits(width_type)};
+        if (bits >= std::numeric_limits<uint64_t>::digits) {
+            return value;
+        }
+
+        const uint64_t sign_bit{uint64_t{1} << (bits - 1)};
+        const uint64_t low{static_cast<uint64_t>(value) &
+                           ((sign_bit << 1U) - 1U)};
+
+        // flipping and subtracting the sign bit extends it
+        return static_cast<int64_t>((low ^ sign_bit) - sign_bit);
     }
 };

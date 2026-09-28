@@ -17,6 +17,10 @@ class stmt_builtin_exit final : public stmt_call {
         set_type(tc.get_type_void());
     }
 
+    //
+    // overridden methods
+    //
+
     auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {

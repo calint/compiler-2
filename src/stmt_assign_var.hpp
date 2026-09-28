@@ -39,6 +39,10 @@ class stmt_assign_var final : public statement {
 
     stmt_assign_var() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         // note: all the source info is in 'stmt_ident_'
         // statement::source_to(os);
@@ -93,7 +97,11 @@ class stmt_assign_var final : public statement {
         x.free_scratch_registers(tok(), indent, lea_registers);
     }
 
-    [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
+    // the value is read before the destination is written
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        assert_var_not_used(flow.var, flow.assigned);
+        stmt_ident_.record_assignment(flow);
+    }
 
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override {
@@ -102,11 +110,11 @@ class stmt_assign_var final : public statement {
         stmt_ident_.visit_index_reads(var, reader);
     }
 
-    // the value is read before the destination is written
-    auto trace_assignment(assignment_flow& flow) const -> void override {
-        assert_var_not_used(flow.var, flow.assigned);
-        stmt_ident_.record_assignment(flow);
-    }
+    //
+    // class methods
+    //
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+
+    [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 };

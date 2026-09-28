@@ -78,6 +78,10 @@ class expr_bool_op final : public statement {
 
     expr_bool_op() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         for (const token& e : nots_) {
@@ -93,23 +97,26 @@ class expr_bool_op final : public statement {
         rhs_.source_to(os);
     }
 
-    // returns an optional bool, and if defined the expression evaluated to
-    // the value of the optional
-    [[nodiscard]] auto compile_or(toc& tc, const size_t indent,
-                                  const std::string_view jmp_to_if_true,
-                                  const bool inverted, const operand& dst) const
-        -> std::optional<bool> {
+    [[nodiscard]] auto identifier() const -> std::string_view override {
+        assert(not is_expression_);
 
-        return compile_element(tc, indent, "or", inverted,
-                               {
-                                   .operation{op_},
-                                   .inverted{inverted != is_not_},
-                                   .destination{dst},
-                                   .target{jmp_to_if_true},
-                                   .branch_on_true{true},
-                               },
-                               true);
+        return lhs_.identifier();
     }
+
+    [[nodiscard]] auto is_expression() const -> bool override {
+        return is_expression_;
+    }
+
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
+
+        lhs_.visit_reads(var, reader);
+        rhs_.visit_reads(var, reader);
+    }
+
+    //
+    // class methods
+    //
 
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
                                    const std::string_view jmp_to_if_false,
@@ -128,10 +135,22 @@ class expr_bool_op final : public statement {
                                branch_required);
     }
 
-    [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
-        -> std::string {
+    // returns an optional bool, and if defined the expression evaluated to
+    // the value of the optional
+    [[nodiscard]] auto compile_or(toc& tc, const size_t indent,
+                                  const std::string_view jmp_to_if_true,
+                                  const bool inverted, const operand& dst) const
+        -> std::optional<bool> {
 
-        return tc.create_unique_label(tok(), "cmp");
+        return compile_element(tc, indent, "or", inverted,
+                               {
+                                   .operation{op_},
+                                   .inverted{inverted != is_not_},
+                                   .destination{dst},
+                                   .target{jmp_to_if_true},
+                                   .branch_on_true{true},
+                               },
+                               true);
     }
 
     // the value 'compile' would find without emitting code, empty when
@@ -156,24 +175,47 @@ class expr_bool_op final : public statement {
         return eval_constant(*lhs_value, op_, *rhs_value) != is_not_;
     }
 
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(not is_expression_);
+    [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
+        -> std::string {
 
-        return lhs_.identifier();
-    }
-
-    [[nodiscard]] auto is_expression() const -> bool override {
-        return is_expression_;
-    }
-
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
-
-        lhs_.visit_reads(var, reader);
-        rhs_.visit_reads(var, reader);
+        return tc.create_unique_label(tok(), "cmp");
     }
 
   private:
+    // a shorthand is named since its source shows no comparison with 0
+    [[nodiscard]] auto comment_label(const std::string_view list_op,
+                                     const bool inverted) const -> std::string {
+
+        if (inverted and is_shorthand_) {
+            return std::format(" '{}' inverted shorthand: ", list_op);
+        }
+        if (inverted) {
+            return std::format(" '{}' inverted: ", list_op);
+        }
+        if (is_shorthand_) {
+            return " shorthand: ";
+        }
+
+        return " ";
+    }
+
+    // a constant emits no comparison, only the short-circuit branch
+    auto compile_constant(toc& tc, const size_t indent, const bool value,
+                          const machine::comparison_action& action) const
+        -> bool {
+
+        machine& x{tc.machine()};
+
+        x.comment(lhs_.tok(), indent, "const eval to {}",
+                  (value ? "true" : "false"));
+
+        if (value == action.branch_on_true) {
+            x.branch(indent, action.target);
+        }
+
+        return value;
+    }
+
     // an 'or' element branches when true and an 'and' element when false
     [[nodiscard]] auto compile_element(toc& tc, const size_t indent,
                                        const std::string_view list_op,
@@ -224,101 +266,6 @@ class expr_bool_op final : public statement {
         return std::nullopt;
     }
 
-    // a constant emits no comparison, only the short-circuit branch
-    auto compile_constant(toc& tc, const size_t indent, const bool value,
-                          const machine::comparison_action& action) const
-        -> bool {
-
-        machine& x{tc.machine()};
-
-        x.comment(lhs_.tok(), indent, "const eval to {}",
-                  (value ? "true" : "false"));
-
-        if (value == action.branch_on_true) {
-            x.branch(indent, action.target);
-        }
-
-        return value;
-    }
-
-    auto resolve_if_op_is_expression() -> void {
-        // is it a negated expression?
-        if (is_not_) {
-            // yes, then it is an expression
-            is_expression_ = true;
-
-            return;
-        }
-
-        if (not is_shorthand_) {
-            is_expression_ = true;
-            return;
-        }
-
-        // shorthand expressions
-        if (lhs_.is_expression()) {
-            is_expression_ = true;
-            return;
-        }
-
-        // if not expression, then it is a single statement and identifier is
-        // valid
-        const std::string_view id{lhs_.identifier()};
-        // is it a boolean value?
-        if (id == "true" or id == "false") {
-            // yes, not an expression
-            is_expression_ = false;
-
-            return;
-        }
-
-        // not a boolean value thus a variable
-        is_expression_ = true;
-    }
-
-    // a side computed at run time in a register of its own type, so a
-    // constant list folds at that width
-    [[nodiscard]] static auto side_constant(const toc& tc,
-                                            const expr_arith& side)
-        -> std::optional<int64_t> {
-
-        if (side.is_expression()) {
-            return side.folded_constant(tc, side.get_type());
-        }
-
-        const ident_info& info{tc.make_ident_info(side)};
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        return side.get_unary_ops().evaluate_constant(info.const_value);
-    }
-
-    [[nodiscard]] static auto eval_constant(const int64_t lh,
-                                            const std::string_view op,
-                                            const int64_t rh) -> bool {
-
-        if (op == "==") {
-            return lh == rh;
-        }
-        if (op == "!=") {
-            return lh != rh;
-        }
-        if (op == "<") {
-            return lh < rh;
-        }
-        if (op == "<=") {
-            return lh <= rh;
-        }
-        if (op == ">") {
-            return lh > rh;
-        }
-        if (op == ">=") {
-            return lh >= rh;
-        }
-        std::unreachable();
-    }
-
     auto resolve_cmp(toc& tc, const size_t indent, const expr_arith& lhs,
                      const expr_arith& rhs,
                      const machine::comparison_action& action) const -> void {
@@ -337,83 +284,6 @@ class expr_bool_op final : public statement {
 
         x.compare_and_branch(tok(), indent, dst, src, action,
                              allocated_registers);
-    }
-
-    // the backends compare at the width of 'lhs' which would truncate 'rhs'
-    static auto assert_rhs_fits_lhs(toc& tc, const expr_arith& lhs,
-                                    const expr_arith& rhs,
-                                    const std::string_view op,
-                                    const operand& lhs_op,
-                                    const operand& rhs_op) -> void {
-
-        const type& lhs_type{lhs_op.type_ref()};
-
-        if (not rhs_op.is_immediate()) {
-            const type& rhs_type{rhs_op.type_ref()};
-            if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
-                return;
-            }
-
-            throw compiler_exception{
-                rhs.tok(),
-                std::format(
-                    "'{}' of type '{}' is wider than '{}' of type '{}', "
-                    "swap the operands: '{} {} {}'",
-                    trimmed_source(rhs), rhs_type.name(), trimmed_source(lhs),
-                    lhs_type.name(), trimmed_source(rhs),
-                    mirrored_operation(op), trimmed_source(lhs))};
-        }
-
-        const std::optional<int64_t> constant{side_constant(tc, rhs)};
-
-        assert(constant);
-
-        const int64_t value{*constant};
-        if (fits_size_bytes(value, lhs_type.size_bytes())) {
-            return;
-        }
-
-        throw compiler_exception{
-            rhs.tok(),
-            std::format("constant '{}' does not fit '{}' of type '{}'", value,
-                        trimmed_source(lhs), lhs_type.name())};
-    }
-
-    // a shorthand is named since its source shows no comparison with 0
-    [[nodiscard]] auto comment_label(const std::string_view list_op,
-                                     const bool inverted) const -> std::string {
-
-        if (inverted and is_shorthand_) {
-            return std::format(" '{}' inverted shorthand: ", list_op);
-        }
-        if (inverted) {
-            return std::format(" '{}' inverted: ", list_op);
-        }
-        if (is_shorthand_) {
-            return " shorthand: ";
-        }
-
-        return " ";
-    }
-
-    // the operation that gives the same result with the operands swapped
-    [[nodiscard]] static auto mirrored_operation(const std::string_view op)
-        -> std::string_view {
-
-        if (op == "<") {
-            return ">";
-        }
-        if (op == "<=") {
-            return ">=";
-        }
-        if (op == ">") {
-            return "<";
-        }
-        if (op == ">=") {
-            return "<=";
-        }
-
-        return op;
     }
 
     auto resolve_cmp_shorthand(toc& tc, const size_t indent,
@@ -473,23 +343,123 @@ class expr_bool_op final : public statement {
                              allocated_registers);
     }
 
-    // the value compared with 0, matching types avoid narrowing before the
-    // in-place truth test
-    [[nodiscard]] static auto
-    truth_test_operand(toc& tc, const size_t indent, const expr_arith& lhs,
-                       const machine::comparison_action& action,
-                       std::vector<operand>& allocated_registers) -> operand {
+    auto resolve_if_op_is_expression() -> void {
+        // is it a negated expression?
+        if (is_not_) {
+            // yes, then it is an expression
+            is_expression_ = true;
 
-        if (lhs.is_expression() and action.destination.is_register() and
-            lhs.get_type().name() == action.destination.type_ref().name()) {
-
-            lhs.compile(tc, indent + 1,
-                        toc::make_ident_info_from_register(action.destination));
-
-            return action.destination;
+            return;
         }
 
-        return resolve_expr(tc, indent, lhs, true, allocated_registers);
+        if (not is_shorthand_) {
+            is_expression_ = true;
+            return;
+        }
+
+        // shorthand expressions
+        if (lhs_.is_expression()) {
+            is_expression_ = true;
+            return;
+        }
+
+        // if not expression, then it is a single statement and identifier is
+        // valid
+        const std::string_view id{lhs_.identifier()};
+        // is it a boolean value?
+        if (id == "true" or id == "false") {
+            // yes, not an expression
+            is_expression_ = false;
+
+            return;
+        }
+
+        // not a boolean value thus a variable
+        is_expression_ = true;
+    }
+
+    //
+    // statics
+    //
+
+    // the backends compare at the width of 'lhs' which would truncate 'rhs'
+    static auto assert_rhs_fits_lhs(toc& tc, const expr_arith& lhs,
+                                    const expr_arith& rhs,
+                                    const std::string_view op,
+                                    const operand& lhs_op,
+                                    const operand& rhs_op) -> void {
+
+        const type& lhs_type{lhs_op.type_ref()};
+
+        if (not rhs_op.is_immediate()) {
+            const type& rhs_type{rhs_op.type_ref()};
+            if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
+                return;
+            }
+
+            throw compiler_exception{
+                rhs.tok(),
+                std::format(
+                    "'{}' of type '{}' is wider than '{}' of type '{}', "
+                    "swap the operands: '{} {} {}'",
+                    trimmed_source(rhs), rhs_type.name(), trimmed_source(lhs),
+                    lhs_type.name(), trimmed_source(rhs),
+                    mirrored_operation(op), trimmed_source(lhs))};
+        }
+
+        const std::optional<int64_t> constant{side_constant(tc, rhs)};
+
+        assert(constant);
+
+        const int64_t value{*constant};
+        if (fits_size_bytes(value, lhs_type.size_bytes())) {
+            return;
+        }
+
+        throw compiler_exception{
+            rhs.tok(),
+            std::format("constant '{}' does not fit '{}' of type '{}'", value,
+                        trimmed_source(lhs), lhs_type.name())};
+    }
+
+    [[nodiscard]] static auto
+    compile_to_scratch(toc& tc, const size_t indent, const expr_arith& expr,
+                       std::vector<operand>& allocated_registers) -> operand {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
+
+        allocated_registers.emplace_back(reg);
+        expr.compile(tc, indent + 1, toc::make_ident_info_from_register(reg));
+
+        return reg;
+    }
+
+    [[nodiscard]] static auto eval_constant(const int64_t lh,
+                                            const std::string_view op,
+                                            const int64_t rh) -> bool {
+
+        if (op == "==") {
+            return lh == rh;
+        }
+        if (op == "!=") {
+            return lh != rh;
+        }
+        if (op == "<") {
+            return lh < rh;
+        }
+        if (op == "<=") {
+            return lh <= rh;
+        }
+        if (op == ">") {
+            return lh > rh;
+        }
+        if (op == ">=") {
+            return lh >= rh;
+        }
+        std::unreachable();
     }
 
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
@@ -506,19 +476,24 @@ class expr_bool_op final : public statement {
                action.destination.type_ref().name() == bool_name;
     }
 
-    [[nodiscard]] static auto
-    compile_to_scratch(toc& tc, const size_t indent, const expr_arith& expr,
-                       std::vector<operand>& allocated_registers) -> operand {
+    // the operation that gives the same result with the operands swapped
+    [[nodiscard]] static auto mirrored_operation(const std::string_view op)
+        -> std::string_view {
 
-        machine& x{tc.machine()};
+        if (op == "<") {
+            return ">";
+        }
+        if (op == "<=") {
+            return ">=";
+        }
+        if (op == ">") {
+            return "<";
+        }
+        if (op == ">=") {
+            return "<=";
+        }
 
-        const operand reg{
-            x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
-
-        allocated_registers.emplace_back(reg);
-        expr.compile(tc, indent + 1, toc::make_ident_info_from_register(reg));
-
-        return reg;
+        return op;
     }
 
     [[nodiscard]] static auto
@@ -574,6 +549,43 @@ class expr_bool_op final : public statement {
         allocated_registers.emplace_back(reg);
 
         return reg;
+    }
+
+    // a side computed at run time in a register of its own type, so a
+    // constant list folds at that width
+    [[nodiscard]] static auto side_constant(const toc& tc,
+                                            const expr_arith& side)
+        -> std::optional<int64_t> {
+
+        if (side.is_expression()) {
+            return side.folded_constant(tc, side.get_type());
+        }
+
+        const ident_info& info{tc.make_ident_info(side)};
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        return side.get_unary_ops().evaluate_constant(info.const_value);
+    }
+
+    // the value compared with 0, matching types avoid narrowing before the
+    // in-place truth test
+    [[nodiscard]] static auto
+    truth_test_operand(toc& tc, const size_t indent, const expr_arith& lhs,
+                       const machine::comparison_action& action,
+                       std::vector<operand>& allocated_registers) -> operand {
+
+        if (lhs.is_expression() and action.destination.is_register() and
+            lhs.get_type().name() == action.destination.type_ref().name()) {
+
+            lhs.compile(tc, indent + 1,
+                        toc::make_ident_info_from_register(action.destination));
+
+            return action.destination;
+        }
+
+        return resolve_expr(tc, indent, lhs, true, allocated_registers);
     }
 };
 
@@ -651,6 +663,10 @@ class expr_bool final : public statement {
 
     expr_bool() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         not_tk_.source_to(os);
@@ -687,6 +703,13 @@ class expr_bool final : public statement {
                            dst);
     }
 
+    [[nodiscard]] auto identifier() const -> std::string_view override {
+        assert(bools_.size() == 1);
+
+        return bools_[0].visit(
+            [](const auto& e) -> std::string_view { return e.identifier(); });
+    }
+
     // assumes callers only query this when expression status is relevant
     [[nodiscard]] auto is_expression() const -> bool override {
         // is there more than 1 bool in the list?
@@ -708,12 +731,19 @@ class expr_bool final : public statement {
             [](const auto& e) -> bool { return e.is_expression(); });
     }
 
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(bools_.size() == 1);
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
 
-        return bools_[0].visit(
-            [](const auto& e) -> std::string_view { return e.identifier(); });
+        for (const element& e : bools_) {
+            e.visit([&var, &reader](const auto& item) -> void {
+                item.visit_reads(var, reader);
+            });
+        }
     }
+
+    //
+    // class methods
+    //
 
     // decided at compile time only by constants before any run-time element,
     // a later short-circuit still needs the earlier elements evaluated
@@ -742,95 +772,7 @@ class expr_bool final : public statement {
         return (not is_or) != invert;
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
-
-        for (const element& e : bools_) {
-            e.visit([&var, &reader](const auto& item) -> void {
-                item.visit_reads(var, reader);
-            });
-        }
-    }
-
   private:
-    // a comparison or a parenthesized list, either may follow 'not'
-    auto parse_element(toc& tc, tokenizer& tz) -> void {
-        // a speculative parse may need to start over from here
-        const token rewind_pos_tk{tz.cur_position_token()};
-
-        // a token that is not 'not' is put back and becomes the whitespace
-        token maybe_not_tk{tz.next_token()};
-        if (not maybe_not_tk.is_text("not")) {
-            tz.put_back_token(maybe_not_tk);
-            maybe_not_tk = tz.next_whitespace_token();
-        }
-
-        const token pos_tk{tz.cur_position_token()};
-        const token open_paren_tk{tz.is_next_char_token('(')};
-
-        // 'expr_bool_op' parses the 'not' itself
-        if (open_paren_tk.is_empty()) {
-            tz.put_back_token(maybe_not_tk);
-            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
-
-            return;
-        }
-
-        // '(t1 + t2) > 3' parses as a list but is a comparison
-        expr_bool bol{tc, pos_tk, tz, true, maybe_not_tk, open_paren_tk};
-
-        // an operator after ')' means the parentheses belonged to an operand
-        if (std::string_view{"<>=!+-*/%&|^"}.contains(
-                tz.peek_char_after_whitespace())) {
-
-            tz.rewind_to_position(rewind_pos_tk);
-            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
-
-            return;
-        }
-
-        bools_.emplace_back(std::move(bol));
-    }
-
-    [[nodiscard]] auto compile_rec(toc& tc, const size_t indent,
-                                   const std::string_view jmp_to_if_false,
-                                   const std::string_view jmp_to_if_true,
-                                   const bool inverted,
-                                   const operand& dst) const
-        -> std::optional<bool> {
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent,
-                  statement::trimmed_source(*this, "?",
-                                            inverted ? " inverted: " : " "));
-
-        // invert, according to De Morgan's laws
-        const bool invert{inverted ? not not_tk_.is_text("not")
-                                   : not_tk_.is_text("not")};
-
-        bool has_runtime_element{};
-
-        const size_t last_index{bools_.size() - 1};
-        for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
-            const std::optional<bool> const_eval{
-                compile_inner_element(tc, indent, expr_index, jmp_to_if_false,
-                                      jmp_to_if_true, invert, dst)};
-
-            if (not const_eval) {
-                has_runtime_element = true;
-                continue;
-            }
-
-            if (is_short_circuit(*const_eval, expr_index, invert)) {
-                return *const_eval;
-            }
-        }
-
-        return compile_last_element(tc, indent, jmp_to_if_false, jmp_to_if_true,
-                                    invert, dst, has_runtime_element);
-    }
-
     // an element that does not decide the list continues at the next element
     [[nodiscard]] auto
     compile_inner_element(toc& tc, const size_t indent, const size_t expr_index,
@@ -909,6 +851,119 @@ class expr_bool final : public statement {
         return std::nullopt;
     }
 
+    [[nodiscard]] auto compile_rec(toc& tc, const size_t indent,
+                                   const std::string_view jmp_to_if_false,
+                                   const std::string_view jmp_to_if_true,
+                                   const bool inverted,
+                                   const operand& dst) const
+        -> std::optional<bool> {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent,
+                  statement::trimmed_source(*this, "?",
+                                            inverted ? " inverted: " : " "));
+
+        // invert, according to De Morgan's laws
+        const bool invert{inverted ? not not_tk_.is_text("not")
+                                   : not_tk_.is_text("not")};
+
+        bool has_runtime_element{};
+
+        const size_t last_index{bools_.size() - 1};
+        for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
+            const std::optional<bool> const_eval{
+                compile_inner_element(tc, indent, expr_index, jmp_to_if_false,
+                                      jmp_to_if_true, invert, dst)};
+
+            if (not const_eval) {
+                has_runtime_element = true;
+                continue;
+            }
+
+            if (is_short_circuit(*const_eval, expr_index, invert)) {
+                return *const_eval;
+            }
+        }
+
+        return compile_last_element(tc, indent, jmp_to_if_false, jmp_to_if_true,
+                                    invert, dst, has_runtime_element);
+    }
+
+    // earlier elements jump to the label that begins a nested list
+    [[nodiscard]] auto compile_with_label(
+        toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
+        const std::string_view jmp_to_if_true, const bool inverted,
+        const operand& dst) const -> std::optional<bool> {
+
+        machine& x{tc.machine()};
+
+        x.label(indent, create_cmp_bgn_label(tc));
+
+        return compile_rec(tc, indent, jmp_to_if_false, jmp_to_if_true,
+                           inverted, dst);
+    }
+
+    [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
+        -> std::string {
+
+        return tc.create_unique_label(tok(), "cmp");
+    }
+
+    // inversion swaps 'and' and 'or' according to De Morgan's laws
+    [[nodiscard]] auto is_effective_or(const size_t op_index,
+                                       const bool invert) const -> bool {
+
+        return ops_[op_index].is_text("or") != invert;
+    }
+
+    // a constant false ends an 'and' list and a constant true ends an 'or' list
+    [[nodiscard]] auto is_short_circuit(const bool const_eval,
+                                        const size_t op_index,
+                                        const bool invert) const -> bool {
+
+        return const_eval == is_effective_or(op_index, invert);
+    }
+
+    // a comparison or a parenthesized list, either may follow 'not'
+    auto parse_element(toc& tc, tokenizer& tz) -> void {
+        // a speculative parse may need to start over from here
+        const token rewind_pos_tk{tz.cur_position_token()};
+
+        // a token that is not 'not' is put back and becomes the whitespace
+        token maybe_not_tk{tz.next_token()};
+        if (not maybe_not_tk.is_text("not")) {
+            tz.put_back_token(maybe_not_tk);
+            maybe_not_tk = tz.next_whitespace_token();
+        }
+
+        const token pos_tk{tz.cur_position_token()};
+        const token open_paren_tk{tz.is_next_char_token('(')};
+
+        // 'expr_bool_op' parses the 'not' itself
+        if (open_paren_tk.is_empty()) {
+            tz.put_back_token(maybe_not_tk);
+            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
+
+            return;
+        }
+
+        // '(t1 + t2) > 3' parses as a list but is a comparison
+        expr_bool bol{tc, pos_tk, tz, true, maybe_not_tk, open_paren_tk};
+
+        // an operator after ')' means the parentheses belonged to an operand
+        if (std::string_view{"<>=!+-*/%&|^"}.contains(
+                tz.peek_char_after_whitespace())) {
+
+            tz.rewind_to_position(rewind_pos_tk);
+            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
+
+            return;
+        }
+
+        bools_.emplace_back(std::move(bol));
+    }
+
     // a constant last element decides the list only if all earlier elements
     // were constants or it short-circuits the list
     [[nodiscard]] auto resolve_last_constant(
@@ -937,40 +992,9 @@ class expr_bool final : public statement {
         return std::nullopt;
     }
 
-    // earlier elements jump to the label that begins a nested list
-    [[nodiscard]] auto compile_with_label(
-        toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
-        const std::string_view jmp_to_if_true, const bool inverted,
-        const operand& dst) const -> std::optional<bool> {
-
-        machine& x{tc.machine()};
-
-        x.label(indent, create_cmp_bgn_label(tc));
-
-        return compile_rec(tc, indent, jmp_to_if_false, jmp_to_if_true,
-                           inverted, dst);
-    }
-
-    // inversion swaps 'and' and 'or' according to De Morgan's laws
-    [[nodiscard]] auto is_effective_or(const size_t op_index,
-                                       const bool invert) const -> bool {
-
-        return ops_[op_index].is_text("or") != invert;
-    }
-
-    // a constant false ends an 'and' list and a constant true ends an 'or' list
-    [[nodiscard]] auto is_short_circuit(const bool const_eval,
-                                        const size_t op_index,
-                                        const bool invert) const -> bool {
-
-        return const_eval == is_effective_or(op_index, invert);
-    }
-
-    [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
-        -> std::string {
-
-        return tc.create_unique_label(tok(), "cmp");
-    }
+    //
+    // statics
+    //
 
     [[nodiscard]] static auto create_cmp_label_from(const toc& tc,
                                                     const element& var)

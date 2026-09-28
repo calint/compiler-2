@@ -115,6 +115,10 @@ class expr_any final : public statement {
 
     expr_any() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         string_tk_.source_to(os);
@@ -181,60 +185,6 @@ class expr_any final : public statement {
             array_count - vars_.size());
     }
 
-    [[nodiscard]] auto is_array_element() const -> bool override {
-        if (is_array_ or vars_.size() != 1) {
-            return false;
-        }
-
-        return vars_[0].visit([](const auto& expression) -> bool {
-            return expression.is_array_element();
-        });
-    }
-
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
-
-    [[nodiscard]] auto is_array_identifier() const -> bool {
-        return is_array_ and is_identifier_;
-    }
-
-    [[nodiscard]] auto is_empty() const -> bool {
-        return vars_.empty() and not is_string();
-    }
-
-    [[nodiscard]] auto is_string() const -> bool {
-        return string_tk_.is_string();
-    }
-
-    [[nodiscard]] auto is_expression() const -> bool override {
-        if (is_array_) {
-            return true;
-        }
-
-        return vars_[0].visit([](const auto& expression) -> bool {
-            return expression.is_expression();
-        });
-    }
-
-    [[nodiscard]] auto is_indexed() const -> bool override {
-        if (is_array_) {
-            return false;
-        }
-
-        return vars_[0].visit([](const auto& expression) -> bool {
-            return expression.is_indexed();
-        });
-    }
-
-    // only string and '{}' initializers leave 'vars_' empty, callers ask
-    // arrays only when 'is_array_identifier' and arguments are never arrays
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(not vars_.empty());
-
-        return vars_[0].visit([](const auto& expression) -> std::string_view {
-            return expression.identifier();
-        });
-    }
-
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 
@@ -244,40 +194,6 @@ class expr_any final : public statement {
 
         vars_[0].visit([&](const auto& expression) -> void {
             expression.assert_not_narrowed(tc, dst_type);
-        });
-    }
-
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
-
-        // a non-array expression is the single element
-        for (const expr_variant& e : vars_) {
-            e.visit([&var, &reader](const auto& expression) -> void {
-                expression.visit_reads(var, reader);
-            });
-        }
-    }
-
-    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        if (is_array_) {
-            return statement::get_unary_ops();
-        }
-
-        return vars_[0].visit([](const auto& expression) -> const unary_ops& {
-            return expression.get_unary_ops();
-        });
-
-        // note: 'expr_type' does not have 'unary_ops' and cannot be
-        //       an argument in call
-    }
-
-    [[nodiscard]] auto is_identifier() const -> bool override {
-        if (is_identifier_) {
-            return true;
-        }
-
-        return vars_[0].visit([](const auto& expression) -> bool {
-            return expression.is_identifier();
         });
     }
 
@@ -296,13 +212,105 @@ class expr_any final : public statement {
         });
     }
 
+    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
+        if (is_array_) {
+            return statement::get_unary_ops();
+        }
+
+        return vars_[0].visit([](const auto& expression) -> const unary_ops& {
+            return expression.get_unary_ops();
+        });
+
+        // note: 'expr_type' does not have 'unary_ops' and cannot be
+        //       an argument in call
+    }
+
+    // only string and '{}' initializers leave 'vars_' empty, callers ask
+    // arrays only when 'is_array_identifier' and arguments are never arrays
+    [[nodiscard]] auto identifier() const -> std::string_view override {
+        assert(not vars_.empty());
+
+        return vars_[0].visit([](const auto& expression) -> std::string_view {
+            return expression.identifier();
+        });
+    }
+
+    [[nodiscard]] auto is_array_element() const -> bool override {
+        if (is_array_ or vars_.size() != 1) {
+            return false;
+        }
+
+        return vars_[0].visit([](const auto& expression) -> bool {
+            return expression.is_array_element();
+        });
+    }
+
+    [[nodiscard]] auto is_expression() const -> bool override {
+        if (is_array_) {
+            return true;
+        }
+
+        return vars_[0].visit([](const auto& expression) -> bool {
+            return expression.is_expression();
+        });
+    }
+
+    [[nodiscard]] auto is_identifier() const -> bool override {
+        if (is_identifier_) {
+            return true;
+        }
+
+        return vars_[0].visit([](const auto& expression) -> bool {
+            return expression.is_identifier();
+        });
+    }
+
+    [[nodiscard]] auto is_indexed() const -> bool override {
+        if (is_array_) {
+            return false;
+        }
+
+        return vars_[0].visit([](const auto& expression) -> bool {
+            return expression.is_indexed();
+        });
+    }
+
+    [[nodiscard]] auto tok() const -> const token& override {
+        if (is_string()) {
+            return string_tk_;
+        }
+
+        if (vars_.empty()) {
+            return statement::tok();
+        }
+
+        return vars_[0].visit([](const auto& expression) -> const token& {
+            return expression.tok();
+        });
+    }
+
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
+
+        // a non-array expression is the single element
+        for (const expr_variant& e : vars_) {
+            e.visit([&var, &reader](const auto& expression) -> void {
+                expression.visit_reads(var, reader);
+            });
+        }
+    }
+
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+
     [[nodiscard]] auto as_expr_type(const size_t index = 0) const
         -> const expr_type& {
 
         return get<expr_type>(vars_[index]);
     }
-
-    [[nodiscard]] auto element_count() const -> size_t { return vars_.size(); }
 
     auto assert_record_value_not_reading(
         const expr_type::record_destination& dst) const -> void {
@@ -313,8 +321,6 @@ class expr_any final : public statement {
 
         as_expr_type().assert_not_reading(dst);
     }
-
-    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
     // e.g. '-2' or a named constant, empty when computed at run time
     [[nodiscard]] auto constant_value(const toc& tc) const
@@ -340,31 +346,52 @@ class expr_any final : public statement {
         return constant_element_value(tc, e);
     }
 
-    [[nodiscard]] auto tok() const -> const token& override {
-        if (is_string()) {
-            return string_tk_;
-        }
+    [[nodiscard]] auto element_count() const -> size_t { return vars_.size(); }
 
-        if (vars_.empty()) {
-            return statement::tok();
-        }
+    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
-        return vars_[0].visit([](const auto& expression) -> const token& {
-            return expression.tok();
-        });
+    [[nodiscard]] auto is_array_identifier() const -> bool {
+        return is_array_ and is_identifier_;
+    }
+
+    [[nodiscard]] auto is_empty() const -> bool {
+        return vars_.empty() and not is_string();
+    }
+
+    [[nodiscard]] auto is_string() const -> bool {
+        return string_tk_.is_string();
     }
 
   private:
-    // an unsized destination e.g. a parameter 's[]' has the size of the
-    // argument which is known only at compile
-    [[nodiscard]] auto destination_array_count(const ident_info& dst_info) const
-        -> size_t {
+    // constant elements are stored like a string so the backend can pack them
+    // into wider immediates or copy them from read-only data, 'dst_info'
+    // advances past the listed elements
+    auto compile_elements(toc& tc, const size_t indent,
+                          ident_info& dst_info) const -> void {
 
-        if (is_unsized_destination_) {
-            return dst_info.array_len;
+        machine& x{tc.machine()};
+
+        const std::optional<std::string> bytes{
+            constant_bytes(tc, dst_info.type_ref())};
+
+        if (bytes) {
+            x.copy_bytes(open_brace_tk_, indent, *bytes, dst_info.operand,
+                         dst_info.type_ref().alignment(), [&]() -> std::string {
+                             return tc.add_bytes_constant(open_brace_tk_,
+                                                          *bytes);
+                         });
+
+            dst_info.operand.increment_offset(address_offset(bytes->size()));
+
+            return;
         }
 
-        return array_count_;
+        for (const auto [i, e] : std::views::enumerate(vars_)) {
+            x.comment(tok(), indent, "[{}]", i);
+            compile_variant(tc, indent, dst_info, tok(), e);
+            dst_info.operand.increment_offset(
+                address_offset(dst_info.type_ref().size_bytes()));
+        }
     }
 
     // the string is stored and the rest of the array is zeroed like unlisted
@@ -418,37 +445,6 @@ class expr_any final : public statement {
                dst_info.type_ref().alignment());
     }
 
-    // constant elements are stored like a string so the backend can pack them
-    // into wider immediates or copy them from read-only data, 'dst_info'
-    // advances past the listed elements
-    auto compile_elements(toc& tc, const size_t indent,
-                          ident_info& dst_info) const -> void {
-
-        machine& x{tc.machine()};
-
-        const std::optional<std::string> bytes{
-            constant_bytes(tc, dst_info.type_ref())};
-
-        if (bytes) {
-            x.copy_bytes(open_brace_tk_, indent, *bytes, dst_info.operand,
-                         dst_info.type_ref().alignment(), [&]() -> std::string {
-                             return tc.add_bytes_constant(open_brace_tk_,
-                                                          *bytes);
-                         });
-
-            dst_info.operand.increment_offset(address_offset(bytes->size()));
-
-            return;
-        }
-
-        for (const auto [i, e] : std::views::enumerate(vars_)) {
-            x.comment(tok(), indent, "[{}]", i);
-            compile_variant(tc, indent, dst_info, tok(), e);
-            dst_info.operand.increment_offset(
-                address_offset(dst_info.type_ref().size_bytes()));
-        }
-    }
-
     // the little endian bytes of the elements, empty when an element is not a
     // constant or there are no elements to store
     [[nodiscard]] auto constant_bytes(const toc& tc,
@@ -480,62 +476,21 @@ class expr_any final : public statement {
         return bytes;
     }
 
-    // 'bool' and record elements are not packed
-    [[nodiscard]] static auto constant_element_value(const toc& tc,
-                                                     const expr_variant& e)
-        -> std::optional<int64_t> {
+    // an unsized destination e.g. a parameter 's[]' has the size of the
+    // argument which is known only at compile
+    [[nodiscard]] auto destination_array_count(const ident_info& dst_info) const
+        -> size_t {
 
-        const expr_arith* const arith{std::get_if<expr_arith>(&e)};
-        if (arith == nullptr or arith->is_expression()) {
-            return std::nullopt;
+        if (is_unsized_destination_) {
+            return dst_info.array_len;
         }
 
-        const ident_info info{tc.make_ident_info(*arith)};
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        return arith->get_unary_ops().evaluate_constant(info.const_value);
+        return array_count_;
     }
 
-    [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
-                                            const type& tp, const bool in_args)
-        -> expr_variant {
-
-        if (not tp.is_builtin()) {
-            // destination is not a built-in (register) value
-            // assume assign type value
-            return expr_type{tc, tz, tp, false};
-        }
-
-        if (tp.name() == tc.get_type_bool().name()) {
-            // destination is boolean
-            return expr_bool{tc, tz.next_whitespace_token(), tz};
-        }
-
-        // destination is a built-in (register) value
-        return expr_arith{tc, tz, in_args};
-    }
-
-    static auto compile_variant(toc& tc, const size_t indent,
-                                const ident_info& dst_info,
-                                const token src_loc_tk, const expr_variant& exp)
-        -> void {
-
-        exp.visit(overloaded{[&](const expr_arith& e) -> void {
-                                 // the value boundary is where a wider source
-                                 // loses bits
-                                 e.assert_not_narrowed(tc, dst_info.type_ref());
-                                 e.compile(tc, indent, dst_info);
-                             },
-                             [&](const expr_type& e) -> void {
-                                 e.compile(tc, indent, dst_info);
-                             },
-                             [&](const expr_bool& e) -> void {
-                                 compile_bool(tc, indent, dst_info, src_loc_tk,
-                                              e);
-                             }});
-    }
+    //
+    // statics
+    //
 
     static auto compile_bool(toc& tc, const size_t indent,
                              const ident_info& dst_info,
@@ -592,5 +547,62 @@ class expr_any final : public statement {
         if (const_eval) {
             x.store_boolean(src_loc_tk, indent, dst, *const_eval);
         }
+    }
+
+    static auto compile_variant(toc& tc, const size_t indent,
+                                const ident_info& dst_info,
+                                const token src_loc_tk, const expr_variant& exp)
+        -> void {
+
+        exp.visit(overloaded{[&](const expr_arith& e) -> void {
+                                 // the value boundary is where a wider source
+                                 // loses bits
+                                 e.assert_not_narrowed(tc, dst_info.type_ref());
+                                 e.compile(tc, indent, dst_info);
+                             },
+                             [&](const expr_type& e) -> void {
+                                 e.compile(tc, indent, dst_info);
+                             },
+                             [&](const expr_bool& e) -> void {
+                                 compile_bool(tc, indent, dst_info, src_loc_tk,
+                                              e);
+                             }});
+    }
+
+    // 'bool' and record elements are not packed
+    [[nodiscard]] static auto constant_element_value(const toc& tc,
+                                                     const expr_variant& e)
+        -> std::optional<int64_t> {
+
+        const expr_arith* const arith{std::get_if<expr_arith>(&e)};
+        if (arith == nullptr or arith->is_expression()) {
+            return std::nullopt;
+        }
+
+        const ident_info info{tc.make_ident_info(*arith)};
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        return arith->get_unary_ops().evaluate_constant(info.const_value);
+    }
+
+    [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
+                                            const type& tp, const bool in_args)
+        -> expr_variant {
+
+        if (not tp.is_builtin()) {
+            // destination is not a built-in (register) value
+            // assume assign type value
+            return expr_type{tc, tz, tp, false};
+        }
+
+        if (tp.name() == tc.get_type_bool().name()) {
+            // destination is boolean
+            return expr_bool{tc, tz.next_whitespace_token(), tz};
+        }
+
+        // destination is a built-in (register) value
+        return expr_arith{tc, tz, in_args};
     }
 };

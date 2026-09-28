@@ -20,3 +20,13 @@ a.out
 perf.data
 perf.data.old
 perf-report.txt
+# python caches of the lint scripts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# editor swap and backup files
+*.swp
+*.swo
+*~

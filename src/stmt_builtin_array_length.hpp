@@ -37,6 +37,10 @@ class stmt_builtin_array_length final : public expression {
 
     stmt_builtin_array_length() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
         open_paren_tk_.source_to(os);

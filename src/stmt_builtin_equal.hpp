@@ -49,9 +49,9 @@ class stmt_builtin_equal final : public expression {
 
     stmt_builtin_equal() = default;
 
-    [[nodiscard]] auto produces_boolean() const -> bool override {
-        return true;
-    }
+    //
+    // overridden methods
+    //
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
@@ -126,6 +126,10 @@ class stmt_builtin_equal final : public expression {
 
         x.end_memory_equal(tok(), indent, size_bytes,
                            lhs_info.type_ref().alignment(), dst, inverted);
+    }
+
+    [[nodiscard]] auto produces_boolean() const -> bool override {
+        return true;
     }
 
     auto visit_reads(const std::string_view var,

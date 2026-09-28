@@ -86,6 +86,10 @@ class stmt_def_dat final : public statement {
 
     stmt_def_dat() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
@@ -135,6 +139,21 @@ class stmt_def_dat final : public statement {
     }
 
   private:
+    [[nodiscard]] auto make_var_info(const bool is_array,
+                                     const size_t array_count) const
+        -> var_info {
+
+        return {
+            .name{name_tk_.text()},
+            .type_ptr{&get_type()},
+            .src_loc_tk{name_tk_},
+            .is_array{is_array},
+            .array_len{array_count},
+            .reg{},
+            .base_register{},
+        };
+    }
+
     // e.g. '[4]', or '[]' when the initializer gives the size, which is 0
     [[nodiscard]] auto parse_array_size(toc& tc, tokenizer& tz) -> size_t {
         array_count_const_ = {tc, tz, 0};
@@ -156,112 +175,34 @@ class stmt_def_dat final : public statement {
         return static_cast<size_t>(array_count_const_.value());
     }
 
-    [[nodiscard]] auto make_var_info(const bool is_array,
-                                     const size_t array_count) const
-        -> var_info {
+    // without an initializer only the shape is known and the data is zero
+    [[nodiscard]] auto parse_root(toc& tc, tokenizer& tz, const type& tp,
+                                  const bool is_array,
+                                  const size_t array_count) const -> elem {
 
-        return {
-            .name{name_tk_.text()},
-            .type_ptr{&get_type()},
-            .src_loc_tk{name_tk_},
-            .is_array{is_array},
-            .array_len{array_count},
-            .reg{},
-            .base_register{},
-        };
+        if (not has_init_) {
+            elem el{};
+            el.is_array = is_array;
+            el.array_count = array_count;
+
+            return el;
+        }
+
+        elem el{parse_elem(tc, tz, type_tk_, tp, is_array, array_count)};
+
+        if (el.is_array and el.array_count == 0 and not el.tk.is_string() and
+            el.elems.empty()) {
+
+            throw compiler_exception{name_tk_,
+                                     "empty arrays require a specified size"};
+        }
+
+        return el;
     }
 
-    static auto compile_data_rec(toc& tc, const type& tp, const elem& elroot)
-        -> void {
-
-        if (not elroot.is_array) {
-            compile_data_elem(tc, tp, elroot);
-            return;
-        }
-
-        // array
-
-        // special case for a string
-        // note: only i8[] can be initialized with a string token
-
-        if (elroot.tk.is_string()) {
-            compile_data_builtin(tc, tp, elroot);
-            return;
-        }
-
-        // regular arrays
-
-        machine& x{tc.machine()};
-
-        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_count);
-
-        for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
-            x.comment(e.tk, 0, "[{}]", i);
-            compile_data_elem(tc, tp, e);
-        }
-
-        // zero out the remaining array elements
-
-        const size_t remaining_count{elroot.array_count - elroot.elems.size()};
-
-        if (remaining_count == 0) {
-            return;
-        }
-
-        x.comment(elroot.tk, 0, "pad {} '{}' of size {}", remaining_count,
-                  tp.name(), tp.size_bytes());
-
-        x.emit_zero_data(
-            multiply_storage_size(tp.size_bytes(), remaining_count));
-    }
-
-    static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)
-        -> void {
-
-        if (tp.is_builtin()) {
-            compile_data_builtin(tc, tp, elroot);
-            return;
-        }
-
-        // user-defined type
-
-        machine& x{tc.machine()};
-
-        // bytes of the record emitted so far, fields in order then padding
-        size_t written_bytes{};
-
-        const std::span<const type_field> flds{tp.fields()};
-        for (const auto [e, f] : std::views::zip(elroot.elems, flds)) {
-            const size_t padding_bytes{f.offset - written_bytes};
-            if (padding_bytes != 0) {
-                x.comment(e.tk, 0, "padding {} B", padding_bytes);
-                x.emit_zero_data(padding_bytes);
-            }
-
-            written_bytes = f.offset + f.size_bytes;
-
-            if (f.type().is_builtin()) {
-                compile_data_builtin(tc, f.type(), e);
-                continue;
-            }
-
-            compile_data_rec(tc, f.type(), e);
-        }
-
-        // zero out remaining fields and the padding after the last field
-
-        const size_t size_bytes{tp.size_bytes() - written_bytes};
-        if (size_bytes == 0) {
-            return;
-        }
-
-        const std::string_view what{elroot.elems.size() == flds.size()
-                                        ? "padding"
-                                        : "remaining fields"};
-
-        x.comment(elroot.tk, 0, "zero {}: {} B", what, size_bytes);
-        x.emit_zero_data(size_bytes);
-    }
+    //
+    // statics
+    //
 
     static auto compile_data_builtin(toc& tc, const type& tp,
                                      const elem& elroot) -> void {
@@ -325,38 +266,96 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    [[nodiscard]] static auto parse_elem(const toc& tc, tokenizer& tz,
-                                         const token src_loc_tk, const type& tp,
-                                         const bool is_array,
-                                         const size_t array_count) -> elem {
+    static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)
+        -> void {
 
-        if (not is_array) {
-            if (tp.is_builtin()) {
-                return parse_builtin(tc, tz, tp);
+        if (tp.is_builtin()) {
+            compile_data_builtin(tc, tp, elroot);
+            return;
+        }
+
+        // user-defined type
+
+        machine& x{tc.machine()};
+
+        // bytes of the record emitted so far, fields in order then padding
+        size_t written_bytes{};
+
+        const std::span<const type_field> flds{tp.fields()};
+        for (const auto [e, f] : std::views::zip(elroot.elems, flds)) {
+            const size_t padding_bytes{f.offset - written_bytes};
+            if (padding_bytes != 0) {
+                x.comment(e.tk, 0, "padding {} B", padding_bytes);
+                x.emit_zero_data(padding_bytes);
             }
 
-            // user-defined type
+            written_bytes = f.offset + f.size_bytes;
 
-            return parse_type(tc, tz, tp);
+            if (f.type().is_builtin()) {
+                compile_data_builtin(tc, f.type(), e);
+                continue;
+            }
+
+            compile_data_rec(tc, f.type(), e);
+        }
+
+        // zero out remaining fields and the padding after the last field
+
+        const size_t size_bytes{tp.size_bytes() - written_bytes};
+        if (size_bytes == 0) {
+            return;
+        }
+
+        const std::string_view what{elroot.elems.size() == flds.size()
+                                        ? "padding"
+                                        : "remaining fields"};
+
+        x.comment(elroot.tk, 0, "zero {}: {} B", what, size_bytes);
+        x.emit_zero_data(size_bytes);
+    }
+
+    static auto compile_data_rec(toc& tc, const type& tp, const elem& elroot)
+        -> void {
+
+        if (not elroot.is_array) {
+            compile_data_elem(tc, tp, elroot);
+            return;
         }
 
         // array
 
-        // special case for string
-        if (tp.is_builtin()) {
-            const token tk{tz.next_token()};
-            if (tk.is_string()) {
-                elem el{};
-                el.is_array = is_array;
-                el.tk = tk;
-                el.array_count = string_array_count(tk, tp, array_count);
+        // special case for a string
+        // note: only i8[] can be initialized with a string token
 
-                return el;
-            }
-            tz.put_back_token(tk);
+        if (elroot.tk.is_string()) {
+            compile_data_builtin(tc, tp, elroot);
+            return;
         }
 
-        return parse_array(tc, tz, src_loc_tk, tp, array_count);
+        // regular arrays
+
+        machine& x{tc.machine()};
+
+        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_count);
+
+        for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
+            x.comment(e.tk, 0, "[{}]", i);
+            compile_data_elem(tc, tp, e);
+        }
+
+        // zero out the remaining array elements
+
+        const size_t remaining_count{elroot.array_count - elroot.elems.size()};
+
+        if (remaining_count == 0) {
+            return;
+        }
+
+        x.comment(elroot.tk, 0, "pad {} '{}' of size {}", remaining_count,
+                  tp.name(), tp.size_bytes());
+
+        x.emit_zero_data(
+            multiply_storage_size(tp.size_bytes(), remaining_count));
     }
 
     // '{' elements '}', only an array of built-ins may be empty
@@ -430,31 +429,6 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    // without an initializer only the shape is known and the data is zero
-    [[nodiscard]] auto parse_root(toc& tc, tokenizer& tz, const type& tp,
-                                  const bool is_array,
-                                  const size_t array_count) const -> elem {
-
-        if (not has_init_) {
-            elem el{};
-            el.is_array = is_array;
-            el.array_count = array_count;
-
-            return el;
-        }
-
-        elem el{parse_elem(tc, tz, type_tk_, tp, is_array, array_count)};
-
-        if (el.is_array and el.array_count == 0 and not el.tk.is_string() and
-            el.elems.empty()) {
-
-            throw compiler_exception{name_tk_,
-                                     "empty arrays require a specified size"};
-        }
-
-        return el;
-    }
-
     [[nodiscard]] static auto parse_bool_value(const token& tk, const type& tp)
         -> int64_t {
 
@@ -498,6 +472,40 @@ class stmt_def_dat final : public statement {
         throw compiler_exception{
             el.tk, std::format("constant '{}{}' does not fit '{}'",
                                el.uops.to_string(), el.tk.text(), tp.name())};
+    }
+
+    [[nodiscard]] static auto parse_elem(const toc& tc, tokenizer& tz,
+                                         const token src_loc_tk, const type& tp,
+                                         const bool is_array,
+                                         const size_t array_count) -> elem {
+
+        if (not is_array) {
+            if (tp.is_builtin()) {
+                return parse_builtin(tc, tz, tp);
+            }
+
+            // user-defined type
+
+            return parse_type(tc, tz, tp);
+        }
+
+        // array
+
+        // special case for string
+        if (tp.is_builtin()) {
+            const token tk{tz.next_token()};
+            if (tk.is_string()) {
+                elem el{};
+                el.is_array = is_array;
+                el.tk = tk;
+                el.array_count = string_array_count(tk, tp, array_count);
+
+                return el;
+            }
+            tz.put_back_token(tk);
+        }
+
+        return parse_array(tc, tz, src_loc_tk, tp, array_count);
     }
 
     [[nodiscard]] static auto parse_type(const toc& tc, tokenizer& tz,
@@ -550,6 +558,21 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
+    // '{' items separated by their delimiters '}'
+    static auto print_source_braced(
+        std::ostream& os, const elem& elroot,
+        const std::function_ref<void(size_t, const elem&)> print_item) -> void {
+
+        elroot.open_brace_tk_.source_to(os);
+        for (size_t i{}; i < elroot.elems.size(); ++i) {
+            if (i != 0) {
+                elroot.elem_delims_tk_[i - 1].source_to(os);
+            }
+            print_item(i, elroot.elems[i]);
+        }
+        elroot.close_brace_tk_.source_to(os);
+    }
+
     static auto print_source_elem(std::ostream& os, const type& tp,
                                   const elem& elroot) -> void {
 
@@ -572,21 +595,6 @@ class stmt_def_dat final : public statement {
         print_source_braced(
             os, elroot,
             [&os](const size_t, const elem& e) -> void { e.source_to(os); });
-    }
-
-    // '{' items separated by their delimiters '}'
-    static auto print_source_braced(
-        std::ostream& os, const elem& elroot,
-        const std::function_ref<void(size_t, const elem&)> print_item) -> void {
-
-        elroot.open_brace_tk_.source_to(os);
-        for (size_t i{}; i < elroot.elems.size(); ++i) {
-            if (i != 0) {
-                elroot.elem_delims_tk_[i - 1].source_to(os);
-            }
-            print_item(i, elroot.elems[i]);
-        }
-        elroot.close_brace_tk_.source_to(os);
     }
 
     static auto print_source_type(std::ostream& os, const type& tp,

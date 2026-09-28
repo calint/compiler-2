@@ -21,6 +21,15 @@ class stmt_loop final : public statement {
 
     stmt_loop() = default;
 
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+        code_.source_to(os);
+    }
+
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
@@ -35,11 +44,6 @@ class stmt_loop final : public statement {
         x.branch(indent, lbl);
         x.label(indent, std::format("{}.end", lbl));
         tc.exit_loop(lbl);
-    }
-
-    auto source_to(std::ostream& os) const -> void override {
-        statement::source_to(os);
-        code_.source_to(os);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

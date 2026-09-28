@@ -85,205 +85,9 @@ class stmt_call : public expression {
 
     stmt_call() = default;
 
-    [[nodiscard]] auto compile_builtin_arguments(
-        toc& tc, const size_t indent,
-        const std::span<const std::string_view> registers) const
-        -> std::vector<operand> {
-
-        assert(registers.size() == args_.size());
-
-        machine& x{tc.machine()};
-
-        std::vector<operand> args;
-        args.reserve(registers.size());
-
-        for (size_t index{}; index < registers.size(); ++index) {
-
-            args.push_back(x.alloc_named_register(
-                tok(), indent, registers[index], tc.get_type_default()));
-
-            argument(index).compile(
-                tc, indent, toc::make_ident_info_from_register(args.back()));
-        }
-
-        return args;
-    }
-
-    auto assert_result_type(const ident_info& dst_info,
-                            const stmt_def_func& func) const -> void {
-
-        if (&dst_info.type_ref() == &func.get_type()) {
-            return;
-        }
-
-        const std::string message{
-            std::format("result type mismatch: function returns '{}', "
-                        "destination is '{}'",
-                        func.get_type().name(), dst_info.type_ref().name())};
-
-        // a non-inline result needs a memory destination, not the register
-        // the conversion computes into
-        if (not func.is_inlined()) {
-            throw compiler_exception{tok(), message};
-        }
-
-        throw compiler_exception{tok(),
-                                 std::format("{}, use '{}(...)'", message,
-                                             dst_info.type_ref().name())};
-    }
-
-    [[noreturn]] static auto
-    throw_parameter_type_mismatch(const expr_any& arg,
-                                  const stmt_def_func_param& param,
-                                  const ident_info& info) -> void {
-
-        throw compiler_exception{
-            arg.tok(),
-            std::format("parameter '{}': required '{}', got '{}'", param.name(),
-                        param.get_type().name(), info.type_ref().name())};
-    }
-
-    static auto assert_alias_type(const toc& tc, const expr_any& arg,
-                                  const stmt_def_func_param& param) -> void {
-
-        const ident_info info{tc.make_ident_info(arg)};
-
-        // constants and registers are values, not storage
-        if (not info.is_var()) {
-            return;
-        }
-
-        if (&info.type_ref() == &param.get_type()) {
-            return;
-        }
-
-        throw_parameter_type_mismatch(arg, param, info);
-    }
-
-    // compares resolved variable roots, so any overlap of fields or elements
-    // counts as shared
-    [[nodiscard]] static auto may_share_storage(const toc& tc,
-                                                const ident_info& lhs,
-                                                const ident_info& rhs) -> bool {
-
-        const std::string_view lhs_root{lhs.elem_path.front()};
-        const std::string_view rhs_root{rhs.elem_path.front()};
-
-        if (lhs_root == rhs_root) {
-            return true;
-        }
-
-        // a non-inline parameter points into its caller's storage, which can
-        // be a global the callee also names directly. two parameters cannot
-        // share storage because their own call site was checked
-        if (lhs.is_pointer and tc.is_global_var(rhs_root)) {
-            return true;
-        }
-
-        return rhs.is_pointer and tc.is_global_var(lhs_root);
-    }
-
-    // the callee writes a result or by-reference parameter in place, so
-    // storage shared with another reference could be read after it changed
-    auto assert_no_shared_storage(const toc& tc,
-                                  const ident_info& dst_info) const -> void {
-
-        if (not tc.is_alias_check()) {
-            return;
-        }
-
-        std::vector<std::pair<size_t, ident_info>> references;
-
-        for (size_t i{}; i < args_.size(); ++i) {
-            const expr_any& arg{args_[i]};
-
-            // expressions and unary operators pass a copied value
-            if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
-                continue;
-            }
-
-            ident_info info{tc.make_ident_info(arg)};
-
-            // constants pass their value
-            if (not info.is_var()) {
-                continue;
-            }
-
-            if (dst_info.is_var() and may_share_storage(tc, dst_info, info)) {
-                throw compiler_exception{
-                    arg.tok(),
-                    std::format("{} may share storage with the result "
-                                "destination, use a separate variable",
-                                describe_argument(i))};
-            }
-
-            for (const auto& [other_index, other] : references) {
-                if (may_share_storage(tc, other, info)) {
-                    throw compiler_exception{
-                        arg.tok(),
-                        std::format("{} may share storage with {}, use a "
-                                    "separate variable",
-                                    describe_argument(i),
-                                    describe_argument(other_index))};
-                }
-            }
-
-            references.emplace_back(i, std::move(info));
-        }
-    }
-
-    auto compile_noninline(toc& tc, const size_t indent,
-                           const ident_info& dst_info,
-                           const stmt_def_func& func) const -> void {
-
-        assert_noninline_call(tc, dst_info, func);
-
-        machine& x{tc.machine()};
-
-        // the registers stay allocated until the callee frame is populated
-        std::vector<operand> address_registers;
-
-        const std::vector<operand> addresses{frame_slot_addresses(
-            tc, indent, dst_info, func, address_registers)};
-
-        // start the callee frame after the caller's storage, not on rsp
-        // example: caller uses 24 bytes; callee returns a value and takes one
-        // argument
-        //
-        // rbx      +------------------------+
-        //          | caller's storage       | 24 bytes
-        // rbx + 24 +------------------------+ <- frame_address; callee's rbx
-        //          | result address         | 8 bytes
-        //          +------------------------+
-        //          | argument address       | 8 bytes
-        //          +------------------------+
-        //          | callee's locals        |
-        //          +------------------------+
-        //
-        // root calls use rbp instead of rbx as the base
-        const operand frame_address{tc.next_frame_address()};
-
-        x.check_frame_capacity(
-            tok(), indent, frame_address,
-            operand::imm(func.frame_size_label(), tc.get_type_address()),
-            "baz_frame_overflow", tc.is_frame_check());
-
-        // write pointers into the callee frame: result (if any), then arguments
-        // each slot holds an address, not the value stored at that address
-        operand slot{frame_address};
-
-        for (const auto [i, addr] : std::views::enumerate(addresses)) {
-            comment_frame_slot(x, indent, func, static_cast<size_t>(i));
-
-            x.address_of(tok(), indent, slot, addr);
-
-            slot.increment_offset(address_offset(x.address_size_bytes()));
-        }
-
-        x.free_scratch_registers(tok(), indent, address_registers);
-
-        x.call_function(indent, func.body_label(), frame_address);
-    }
+    //
+    // overridden methods
+    //
 
     auto source_to(std::ostream& os) const -> void override {
         source_callee_to(os);
@@ -339,6 +143,129 @@ class stmt_call : public expression {
                 x.copy_value(tok(), indent, dst_info.operand, reg);
                 x.free_scratch_register(tok(), indent, reg);
             });
+    }
+
+    // reported at the call because an inlined result aliases the destination
+    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
+                             const type& dst_type) const -> void override {
+
+        assert_own_type_not_narrowed(dst_type);
+    }
+
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
+
+        for (const expr_any& e : args_) {
+            e.visit_reads(var, reader);
+        }
+    }
+
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto argument(const size_t arg_index) const
+        -> const statement& {
+
+        return args_[arg_index];
+    }
+
+    [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
+
+    // the callee writes a result or by-reference parameter in place, so
+    // storage shared with another reference could be read after it changed
+    auto assert_no_shared_storage(const toc& tc,
+                                  const ident_info& dst_info) const -> void {
+
+        if (not tc.is_alias_check()) {
+            return;
+        }
+
+        std::vector<std::pair<size_t, ident_info>> references;
+
+        for (size_t i{}; i < args_.size(); ++i) {
+            const expr_any& arg{args_[i]};
+
+            // expressions and unary operators pass a copied value
+            if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
+                continue;
+            }
+
+            ident_info info{tc.make_ident_info(arg)};
+
+            // constants pass their value
+            if (not info.is_var()) {
+                continue;
+            }
+
+            if (dst_info.is_var() and may_share_storage(tc, dst_info, info)) {
+                throw compiler_exception{
+                    arg.tok(),
+                    std::format("{} may share storage with the result "
+                                "destination, use a separate variable",
+                                describe_argument(i))};
+            }
+
+            for (const auto& [other_index, other] : references) {
+                if (may_share_storage(tc, other, info)) {
+                    throw compiler_exception{
+                        arg.tok(),
+                        std::format("{} may share storage with {}, use a "
+                                    "separate variable",
+                                    describe_argument(i),
+                                    describe_argument(other_index))};
+                }
+            }
+
+            references.emplace_back(i, std::move(info));
+        }
+    }
+
+    auto assert_result_type(const ident_info& dst_info,
+                            const stmt_def_func& func) const -> void {
+
+        if (&dst_info.type_ref() == &func.get_type()) {
+            return;
+        }
+
+        const std::string message{
+            std::format("result type mismatch: function returns '{}', "
+                        "destination is '{}'",
+                        func.get_type().name(), dst_info.type_ref().name())};
+
+        // a non-inline result needs a memory destination, not the register
+        // the conversion computes into
+        if (not func.is_inlined()) {
+            throw compiler_exception{tok(), message};
+        }
+
+        throw compiler_exception{tok(),
+                                 std::format("{}, use '{}(...)'", message,
+                                             dst_info.type_ref().name())};
+    }
+
+    [[nodiscard]] auto compile_builtin_arguments(
+        toc& tc, const size_t indent,
+        const std::span<const std::string_view> registers) const
+        -> std::vector<operand> {
+
+        assert(registers.size() == args_.size());
+
+        machine& x{tc.machine()};
+
+        std::vector<operand> args;
+        args.reserve(registers.size());
+
+        for (size_t index{}; index < registers.size(); ++index) {
+
+            args.push_back(x.alloc_named_register(
+                tok(), indent, registers[index], tc.get_type_default()));
+
+            argument(index).compile(
+                tc, indent, toc::make_ident_info_from_register(args.back()));
+        }
+
+        return args;
     }
 
     auto compile_inline(toc& tc, const size_t indent,
@@ -433,43 +360,115 @@ class stmt_call : public expression {
         tc.exit_func(func.name());
     }
 
-    [[nodiscard]] auto argument(const size_t arg_index) const
-        -> const statement& {
+    auto compile_noninline(toc& tc, const size_t indent,
+                           const ident_info& dst_info,
+                           const stmt_def_func& func) const -> void {
 
-        return args_[arg_index];
-    }
+        assert_noninline_call(tc, dst_info, func);
 
-    [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
+        machine& x{tc.machine()};
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+        // the registers stay allocated until the callee frame is populated
+        std::vector<operand> address_registers;
 
-        for (const expr_any& e : args_) {
-            e.visit_reads(var, reader);
+        const std::vector<operand> addresses{frame_slot_addresses(
+            tc, indent, dst_info, func, address_registers)};
+
+        // start the callee frame after the caller's storage, not on rsp
+        // example: caller uses 24 bytes; callee returns a value and takes one
+        // argument
+        //
+        // rbx      +------------------------+
+        //          | caller's storage       | 24 bytes
+        // rbx + 24 +------------------------+ <- frame_address; callee's rbx
+        //          | result address         | 8 bytes
+        //          +------------------------+
+        //          | argument address       | 8 bytes
+        //          +------------------------+
+        //          | callee's locals        |
+        //          +------------------------+
+        //
+        // root calls use rbp instead of rbx as the base
+        const operand frame_address{tc.next_frame_address()};
+
+        x.check_frame_capacity(
+            tok(), indent, frame_address,
+            operand::imm(func.frame_size_label(), tc.get_type_address()),
+            "baz_frame_overflow", tc.is_frame_check());
+
+        // write pointers into the callee frame: result (if any), then arguments
+        // each slot holds an address, not the value stored at that address
+        operand slot{frame_address};
+
+        for (const auto [i, addr] : std::views::enumerate(addresses)) {
+            comment_frame_slot(x, indent, func, static_cast<size_t>(i));
+
+            x.address_of(tok(), indent, slot, addr);
+
+            slot.increment_offset(address_offset(x.address_size_bytes()));
         }
+
+        x.free_scratch_registers(tok(), indent, address_registers);
+
+        x.call_function(indent, func.body_label(), frame_address);
     }
 
-    // reported at the call because an inlined result aliases the destination
-    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
-                             const type& dst_type) const -> void override {
+    //
+    // statics
+    //
 
-        assert_own_type_not_narrowed(dst_type);
+    static auto assert_alias_type(const toc& tc, const expr_any& arg,
+                                  const stmt_def_func_param& param) -> void {
+
+        const ident_info info{tc.make_ident_info(arg)};
+
+        // constants and registers are values, not storage
+        if (not info.is_var()) {
+            return;
+        }
+
+        if (&info.type_ref() == &param.get_type()) {
+            return;
+        }
+
+        throw_parameter_type_mismatch(arg, param, info);
+    }
+
+    // compares resolved variable roots, so any overlap of fields or elements
+    // counts as shared
+    [[nodiscard]] static auto may_share_storage(const toc& tc,
+                                                const ident_info& lhs,
+                                                const ident_info& rhs) -> bool {
+
+        const std::string_view lhs_root{lhs.elem_path.front()};
+        const std::string_view rhs_root{rhs.elem_path.front()};
+
+        if (lhs_root == rhs_root) {
+            return true;
+        }
+
+        // a non-inline parameter points into its caller's storage, which can
+        // be a global the callee also names directly. two parameters cannot
+        // share storage because their own call site was checked
+        if (lhs.is_pointer and tc.is_global_var(rhs_root)) {
+            return true;
+        }
+
+        return rhs.is_pointer and tc.is_global_var(lhs_root);
+    }
+
+    [[noreturn]] static auto
+    throw_parameter_type_mismatch(const expr_any& arg,
+                                  const stmt_def_func_param& param,
+                                  const ident_info& info) -> void {
+
+        throw compiler_exception{
+            arg.tok(),
+            std::format("parameter '{}': required '{}', got '{}'", param.name(),
+                        param.get_type().name(), info.type_ref().name())};
     }
 
   private:
-    // a result must be stored and a call without one cannot provide it
-    auto assert_result_use(const ident_info& dst_info,
-                           const stmt_def_func& func) const -> void {
-
-        if (func.returns() and dst_info.is_empty()) {
-            throw compiler_exception{tok(), "return value is discarded"};
-        }
-
-        if (not func.returns() and not dst_info.is_empty()) {
-            throw compiler_exception{tok(), "function does not return a value"};
-        }
-    }
-
     // the callee reaches the result and arguments through their addresses
     auto assert_noninline_call(const toc& tc, const ident_info& dst_info,
                                const stmt_def_func& func) const -> void {
@@ -499,6 +498,207 @@ class stmt_call : public expression {
             assert_noninline_argument(tc, arg, param);
         }
     }
+
+    // a result must be stored and a call without one cannot provide it
+    auto assert_result_use(const ident_info& dst_info,
+                           const stmt_def_func& func) const -> void {
+
+        if (func.returns() and dst_info.is_empty()) {
+            throw compiler_exception{tok(), "return value is discarded"};
+        }
+
+        if (not func.returns() and not dst_info.is_empty()) {
+            throw compiler_exception{tok(), "function does not return a value"};
+        }
+    }
+
+    // the result address comes first, then one address per argument
+    auto comment_frame_slot(machine& x, const size_t indent,
+                            const stmt_def_func& func,
+                            const size_t slot_index) const -> void {
+
+        if (func.returns() and slot_index == 0) {
+            x.comment(tok(), indent, "result address in callee frame");
+            return;
+        }
+
+        const size_t arg_idx{slot_index - (func.returns() ? 1 : 0)};
+
+        x.comment(tok(), indent, "address of argument '{}' to parameter '{}'",
+                  statement::trimmed_source(args_[arg_idx]),
+                  func.params()[arg_idx].name());
+    }
+
+    [[nodiscard]] auto describe_argument(const size_t index) const
+        -> std::string {
+
+        if (index < first_argument_index()) {
+            return "receiver";
+        }
+
+        return std::format("argument {}", index + 1 - first_argument_index());
+    }
+
+    // the receiver is not counted as an argument
+    [[nodiscard]] auto first_argument_index() const -> size_t {
+        return is_method() ? 1 : 0;
+    }
+
+    // the result address precedes the argument addresses
+    [[nodiscard]] auto
+    frame_slot_addresses(toc& tc, const size_t indent,
+                         const ident_info& dst_info, const stmt_def_func& func,
+                         std::vector<operand>& address_registers) const
+        -> std::vector<operand> {
+
+        std::vector<operand> addresses;
+
+        if (func.returns()) {
+            addresses.push_back(
+                result_address(tc, indent, dst_info, address_registers));
+        }
+
+        for (const expr_any& arg : args_) {
+            const ident_info info{tc.make_ident_info(arg)};
+
+            addresses.push_back(
+                tc.get_lea_operand(indent, arg, info, address_registers));
+        }
+
+        return addresses;
+    }
+
+    [[nodiscard]] auto is_method() const -> bool {
+        return not method_dot_tk_.is_empty();
+    }
+
+    // a method receiver is already in 'args_'
+    auto parse_arguments(toc& tc, tokenizer& tz, const stmt_def_func& func)
+        -> void {
+
+        const std::span<const stmt_def_func_param> params{func.params()};
+        const size_t first{args_.size()};
+
+        args_.reserve(params.size());
+
+        for (size_t i{first}; i < params.size(); ++i) {
+            if (i != first) {
+                const token t{tz.is_next_char_token(',')};
+                if (t.is_empty()) {
+                    throw compiler_exception{tz,
+                                             std::format("expected {} ('{}')",
+                                                         describe_argument(i),
+                                                         params[i].name())};
+                }
+                arg_delims_tk_.emplace_back(t);
+            }
+
+            args_.emplace_back(tc, tz, params[i].get_type(), true, false, 0);
+        }
+
+        close_paren_tk_ = tz.is_next_char_token(')');
+        if (close_paren_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected ')' after arguments"};
+        }
+
+        for (size_t i{}; i < args_.size(); ++i) {
+            const expr_any& arg{args_[i]};
+            const stmt_def_func_param& param{params[i]};
+
+            // todo: literals and call results need a temporary to be
+            //       passed, see etc/todo.txt
+            if (not param.get_type().is_builtin() and not arg.is_identifier()) {
+                throw compiler_exception{arg.tok(),
+                                         std::format("{} cannot be a temporary",
+                                                     describe_argument(i))};
+            }
+
+            if (param.is_array()) {
+                const ident_info arg_info{tc.make_ident_info(arg)};
+
+                // an element would give the parameter the whole array's
+                // length, pass the array and a start index instead
+                if (not arg_info.is_array) {
+                    throw compiler_exception{
+                        arg.tok(), std::format("parameter {} requires an array",
+                                               i + 1 - first_argument_index())};
+                }
+
+                continue;
+            }
+
+            // the alias would make the parameter name the whole array
+            if (arg.is_identifier()) {
+                toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
+            }
+        }
+    }
+
+    // a built-in has no parameter list, so any count of default type
+    // arguments is parsed and the built-in checks the count
+    auto parse_builtin_arguments(toc& tc, tokenizer& tz) -> void {
+        bool expect_arg{};
+        while (true) {
+            close_paren_tk_ = tz.is_next_char_token(')');
+            if (not close_paren_tk_.is_empty()) {
+                if (expect_arg) {
+                    throw compiler_exception{close_paren_tk_,
+                                             "expected argument after ','"};
+                }
+
+                return;
+            }
+
+            args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
+
+            const token delim_tk{tz.is_next_char_token(',')};
+            expect_arg = not delim_tk.is_empty();
+            if (expect_arg) {
+                arg_delims_tk_.emplace_back(delim_tk);
+            }
+        }
+    }
+
+    // a result that is itself a pointer slot is reached through the address
+    // loaded from it, unless the operand is already resolved
+    [[nodiscard]] auto
+    result_address(toc& tc, const size_t indent, const ident_info& dst_info,
+                   std::vector<operand>& address_registers) const -> operand {
+
+        if (not dst_info.is_pointer or dst_info.use_operand) {
+            return dst_info.operand;
+        }
+
+        machine& x{tc.machine()};
+
+        const operand pointer{
+            x.alloc_scratch_register(tok(), indent, tc.get_type_address())};
+
+        address_registers.push_back(pointer);
+
+        x.copy_value(tok(), indent, pointer,
+                     operand::mem(dst_info.operand, tc.get_type_address()));
+
+        return operand::mem(pointer.base_register(), {}, 1, 0,
+                            dst_info.type_ref());
+    }
+
+    // e.g. 'foo' or 'lst.add'
+    auto source_callee_to(std::ostream& os) const -> void {
+        if (not is_method()) {
+            expression::source_to(os);
+            return;
+        }
+
+        get_unary_ops().source_to(os);
+        args_.front().source_to(os);
+        method_dot_tk_.source_to(os);
+        tok().source_to(os);
+    }
+
+    //
+    // statics
+    //
 
     static auto assert_noninline_argument(const toc& tc, const expr_any& arg,
                                           const stmt_def_func_param& param)
@@ -532,71 +732,6 @@ class stmt_call : public expression {
         if (&info.type_ref() != &param.get_type()) {
             throw_parameter_type_mismatch(arg, param, info);
         }
-    }
-
-    // the result address precedes the argument addresses
-    [[nodiscard]] auto
-    frame_slot_addresses(toc& tc, const size_t indent,
-                         const ident_info& dst_info, const stmt_def_func& func,
-                         std::vector<operand>& address_registers) const
-        -> std::vector<operand> {
-
-        std::vector<operand> addresses;
-
-        if (func.returns()) {
-            addresses.push_back(
-                result_address(tc, indent, dst_info, address_registers));
-        }
-
-        for (const expr_any& arg : args_) {
-            const ident_info info{tc.make_ident_info(arg)};
-
-            addresses.push_back(
-                tc.get_lea_operand(indent, arg, info, address_registers));
-        }
-
-        return addresses;
-    }
-
-    // a result that is itself a pointer slot is reached through the address
-    // loaded from it, unless the operand is already resolved
-    [[nodiscard]] auto
-    result_address(toc& tc, const size_t indent, const ident_info& dst_info,
-                   std::vector<operand>& address_registers) const -> operand {
-
-        if (not dst_info.is_pointer or dst_info.use_operand) {
-            return dst_info.operand;
-        }
-
-        machine& x{tc.machine()};
-
-        const operand pointer{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_address())};
-
-        address_registers.push_back(pointer);
-
-        x.copy_value(tok(), indent, pointer,
-                     operand::mem(dst_info.operand, tc.get_type_address()));
-
-        return operand::mem(pointer.base_register(), {}, 1, 0,
-                            dst_info.type_ref());
-    }
-
-    // the result address comes first, then one address per argument
-    auto comment_frame_slot(machine& x, const size_t indent,
-                            const stmt_def_func& func,
-                            const size_t slot_index) const -> void {
-
-        if (func.returns() and slot_index == 0) {
-            x.comment(tok(), indent, "result address in callee frame");
-            return;
-        }
-
-        const size_t arg_idx{slot_index - (func.returns() ? 1 : 0)};
-
-        x.comment(tok(), indent, "address of argument '{}' to parameter '{}'",
-                  statement::trimmed_source(args_[arg_idx]),
-                  func.params()[arg_idx].name());
     }
 
     // the inlined body reaches an argument through its storage, its constant
@@ -663,6 +798,30 @@ class stmt_call : public expression {
                                          reg);
     }
 
+    // a constant lets the inlined body be decided at compile time
+    [[nodiscard]] static auto
+    make_expression_alias(toc& tc, const size_t indent, const expr_any& arg,
+                          const stmt_def_func_param& param,
+                          std::vector<operand>& allocated_registers)
+        -> alias_info {
+
+        const std::optional<int64_t> value{arg.constant_value(tc)};
+        if (value) {
+            return make_value_alias(param, std::format("{}", *value));
+        }
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
+
+        allocated_registers.push_back(reg);
+        arg.compile(tc, indent, toc::make_ident_info_from_register(reg));
+
+        return alias_info::make_register(param.identifier(), param.get_type(),
+                                         reg);
+    }
+
     // an indexed argument keeps its computed address, e.g. [rbp + r14 * 4 +
     // 205] or [r15 + r14] or simply [r15]
     [[nodiscard]] static auto
@@ -692,30 +851,6 @@ class stmt_call : public expression {
         };
     }
 
-    // a constant lets the inlined body be decided at compile time
-    [[nodiscard]] static auto
-    make_expression_alias(toc& tc, const size_t indent, const expr_any& arg,
-                          const stmt_def_func_param& param,
-                          std::vector<operand>& allocated_registers)
-        -> alias_info {
-
-        const std::optional<int64_t> value{arg.constant_value(tc)};
-        if (value) {
-            return make_value_alias(param, std::format("{}", *value));
-        }
-
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
-
-        allocated_registers.push_back(reg);
-        arg.compile(tc, indent, toc::make_ident_info_from_register(reg));
-
-        return alias_info::make_register(param.identifier(), param.get_type(),
-                                         reg);
-    }
-
     [[nodiscard]] static auto make_value_alias(const stmt_def_func_param& param,
                                                const std::string_view to)
         -> alias_info {
@@ -728,124 +863,5 @@ class stmt_call : public expression {
             .register_operand{},
             .is_element{},
         };
-    }
-
-    [[nodiscard]] auto is_method() const -> bool {
-        return not method_dot_tk_.is_empty();
-    }
-
-    // the receiver is not counted as an argument
-    [[nodiscard]] auto first_argument_index() const -> size_t {
-        return is_method() ? 1 : 0;
-    }
-
-    [[nodiscard]] auto describe_argument(const size_t index) const
-        -> std::string {
-
-        if (index < first_argument_index()) {
-            return "receiver";
-        }
-
-        return std::format("argument {}", index + 1 - first_argument_index());
-    }
-
-    // e.g. 'foo' or 'lst.add'
-    auto source_callee_to(std::ostream& os) const -> void {
-        if (not is_method()) {
-            expression::source_to(os);
-            return;
-        }
-
-        get_unary_ops().source_to(os);
-        args_.front().source_to(os);
-        method_dot_tk_.source_to(os);
-        tok().source_to(os);
-    }
-
-    // a built-in has no parameter list, so any count of default type
-    // arguments is parsed and the built-in checks the count
-    auto parse_builtin_arguments(toc& tc, tokenizer& tz) -> void {
-        bool expect_arg{};
-        while (true) {
-            close_paren_tk_ = tz.is_next_char_token(')');
-            if (not close_paren_tk_.is_empty()) {
-                if (expect_arg) {
-                    throw compiler_exception{close_paren_tk_,
-                                             "expected argument after ','"};
-                }
-
-                return;
-            }
-
-            args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
-
-            const token delim_tk{tz.is_next_char_token(',')};
-            expect_arg = not delim_tk.is_empty();
-            if (expect_arg) {
-                arg_delims_tk_.emplace_back(delim_tk);
-            }
-        }
-    }
-
-    // a method receiver is already in 'args_'
-    auto parse_arguments(toc& tc, tokenizer& tz, const stmt_def_func& func)
-        -> void {
-
-        const std::span<const stmt_def_func_param> params{func.params()};
-        const size_t first{args_.size()};
-
-        args_.reserve(params.size());
-
-        for (size_t i{first}; i < params.size(); ++i) {
-            if (i != first) {
-                const token t{tz.is_next_char_token(',')};
-                if (t.is_empty()) {
-                    throw compiler_exception{tz,
-                                             std::format("expected {} ('{}')",
-                                                         describe_argument(i),
-                                                         params[i].name())};
-                }
-                arg_delims_tk_.emplace_back(t);
-            }
-
-            args_.emplace_back(tc, tz, params[i].get_type(), true, false, 0);
-        }
-
-        close_paren_tk_ = tz.is_next_char_token(')');
-        if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ')' after arguments"};
-        }
-
-        for (size_t i{}; i < args_.size(); ++i) {
-            const expr_any& arg{args_[i]};
-            const stmt_def_func_param& param{params[i]};
-
-            // todo: literals and call results need a temporary to be
-            //       passed, see etc/todo.txt
-            if (not param.get_type().is_builtin() and not arg.is_identifier()) {
-                throw compiler_exception{arg.tok(),
-                                         std::format("{} cannot be a temporary",
-                                                     describe_argument(i))};
-            }
-
-            if (param.is_array()) {
-                const ident_info arg_info{tc.make_ident_info(arg)};
-
-                // an element would give the parameter the whole array's
-                // length, pass the array and a start index instead
-                if (not arg_info.is_array) {
-                    throw compiler_exception{
-                        arg.tok(), std::format("parameter {} requires an array",
-                                               i + 1 - first_argument_index())};
-                }
-
-                continue;
-            }
-
-            // the alias would make the parameter name the whole array
-            if (arg.is_identifier()) {
-                toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
-            }
-        }
     }
 };

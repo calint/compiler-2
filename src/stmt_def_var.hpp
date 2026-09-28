@@ -80,6 +80,10 @@ class stmt_def_var final : public statement {
 
     stmt_def_var() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
@@ -138,6 +142,18 @@ class stmt_def_var final : public statement {
     }
 
   private:
+    [[nodiscard]] auto make_var_info() const -> var_info {
+        return {
+            .name{name_tk_.text()},
+            .type_ptr{&get_type()},
+            .src_loc_tk{name_tk_},
+            .is_array{is_array_},
+            .array_len{array_count_},
+            .reg{},
+            .base_register{},
+        };
+    }
+
     // e.g. '[4]', or '[]' when the initializer gives the size
     auto parse_array_size(toc& tc, tokenizer& tz) -> void {
         is_array_ = true;
@@ -158,17 +174,5 @@ class stmt_def_var final : public statement {
         if (close_bracket_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ']' after array size"};
         }
-    }
-
-    [[nodiscard]] auto make_var_info() const -> var_info {
-        return {
-            .name{name_tk_.text()},
-            .type_ptr{&get_type()},
-            .src_loc_tk{name_tk_},
-            .is_array{is_array_},
-            .array_len{array_count_},
-            .reg{},
-            .base_register{},
-        };
     }
 };

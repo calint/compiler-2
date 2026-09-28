@@ -16,6 +16,10 @@ class stmt_break final : public statement {
 
     stmt_break() = default;
 
+    //
+    // overridden methods
+    //
+
     auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {

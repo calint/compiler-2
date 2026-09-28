@@ -4,12 +4,21 @@ cd "$(dirname "$0")"
 
 cd ..
 
+# qa/lint/fix-source.py --apply
+echo clang tidy
+qa/lint/clang-tidy.sh fix
+echo organize source
+qa/lint/format-source.py --apply
+echo clang format
 clang-format -i --style=file src/*
-qa/lint/clang-tidy.sh
+echo build with -O3
 ./make.sh build -O3
+echo run tests
 qa/coverage/test-coverage.sh --target=x86 run
 qa/coverage/test-coverage.sh --target=rv32i run
 qa/coverage/test-coverage.sh --target=rv32i-qemu run
 qa/coverage/test-coverage.sh --target=rv32i-fpga run
+echo run program to generate source
 ./run.sh prog.baz --vars=131072 --checks=upper,lower,line
+echo make readme
 etc/readme/make.sh

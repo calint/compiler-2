@@ -24,8 +24,67 @@ class tokenizer final {
     explicit tokenizer(const std::string_view src_str)
         : src_str_{src_str}, src_{src_str_} {}
 
+    [[nodiscard]] auto cur_char_index_in_source() const -> size_t {
+        return char_ix_;
+    }
+
+    [[nodiscard]] auto cur_line() const -> size_t { return at_line_; }
+
+    // returns a token, which is a marker at the current position with empty
+    // name and whitespace
+    [[nodiscard]] auto cur_position_token() const -> token {
+        return {"", char_ix_, "", char_ix_, "", at_line_, false};
+    }
+
     [[nodiscard]] auto is_eos() const -> bool {
         return char_ix_ >= src_.size();
+    }
+
+    [[nodiscard]] auto is_next_char(const char ch) -> bool {
+        if (not is_peek_char(ch)) {
+            return false;
+        }
+
+        return next_char();
+    }
+
+    [[nodiscard]] auto is_next_char_token(const char ch) -> token {
+        const std::string_view ws_before{next_whitespace()};
+        if (not is_peek_char(ch)) {
+            move_back(ws_before.size());
+            return {};
+        }
+
+        const size_t at_line{at_line_};
+        const size_t bgn_ix{char_ix_};
+        const std::string_view txt{src_.substr(char_ix_, 1)};
+        ++char_ix_;
+        const size_t end_ix{char_ix_};
+        const std::string_view ws_after{next_trailing_whitespace()};
+
+        return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
+    }
+
+    [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
+        return not is_eos() and src_[char_ix_] == ch;
+    }
+
+    [[nodiscard]] auto is_peek_char2(const char ch) const -> bool {
+        return char_ix_ + 1 < src_.size() and src_[char_ix_ + 1] == ch;
+    }
+
+    [[nodiscard]] auto next_char() -> char {
+        assert(not is_eos());
+
+        // note: just for easier debugging
+        const char ch{src_[char_ix_]};
+        ++char_ix_;
+        if (ch == '\n') {
+            ++at_line_;
+        }
+        pos_ = src_str_.substr(char_ix_);
+
+        return ch;
     }
 
     [[nodiscard]] auto next_token() -> token {
@@ -48,72 +107,9 @@ class tokenizer final {
         return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
     }
 
-    [[nodiscard]] auto is_next_char_token(const char ch) -> token {
-        const std::string_view ws_before{next_whitespace()};
-        if (not is_peek_char(ch)) {
-            move_back(ws_before.size());
-            return {};
-        }
-
-        const size_t at_line{at_line_};
-        const size_t bgn_ix{char_ix_};
-        const std::string_view txt{src_.substr(char_ix_, 1)};
-        ++char_ix_;
-        const size_t end_ix{char_ix_};
-        const std::string_view ws_after{next_trailing_whitespace()};
-
-        return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
-    }
-
-    // returns a token, which is a marker at the current position with empty
-    // name and whitespace
-    [[nodiscard]] auto cur_position_token() const -> token {
-        return {"", char_ix_, "", char_ix_, "", at_line_, false};
-    }
-
-    auto rewind_to_position(const token& pos_tk) -> void {
-        const size_t new_pos{pos_tk.start_index()};
-
-        assert(new_pos <= src_.size());
-
-        const size_t n{char_ix_ - new_pos};
-        move_back(n);
-    }
-
-    // only the last read token can be put back, otherwise the rewind lands
-    // at an unrelated position
-    auto put_back_token(const token& t) -> void {
-        assert(t.source_end_index() == char_ix_);
-        assert(is_token_text_at_source(t));
-
-        move_back(char_ix_ - t.source_begin_index());
-    }
-
-    auto put_back_char(const char ch) -> void {
-        assert(char_ix_ > 0 and src_[char_ix_ - 1] == ch);
-
-        move_back(1);
-    }
-
     [[nodiscard]] auto next_whitespace_token() -> token {
         const size_t at_line{at_line_};
         return {next_whitespace(), char_ix_, "", char_ix_, "", at_line, false};
-    }
-
-    [[nodiscard]] auto is_next_char(const char ch) -> bool {
-        if (not is_peek_char(ch)) {
-            return false;
-        }
-
-        return next_char();
-    }
-
-    [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
-        return not is_eos() and src_[char_ix_] == ch;
-    }
-
-    [[nodiscard]] auto is_peek_char2(const char ch) const -> bool {
-        return char_ix_ + 1 < src_.size() and src_[char_ix_ + 1] == ch;
     }
 
     [[nodiscard]] auto peek_char() const -> char {
@@ -130,38 +126,64 @@ class tokenizer final {
         return ch;
     }
 
-    [[nodiscard]] auto next_char() -> char {
-        assert(not is_eos());
+    auto put_back_char(const char ch) -> void {
+        assert(char_ix_ > 0 and src_[char_ix_ - 1] == ch);
 
-        // note: just for easier debugging
-        const char ch{src_[char_ix_]};
-        ++char_ix_;
-        if (ch == '\n') {
-            ++at_line_;
-        }
-        pos_ = src_str_.substr(char_ix_);
-
-        return ch;
+        move_back(1);
     }
 
-    [[nodiscard]] auto cur_char_index_in_source() const -> size_t {
-        return char_ix_;
+    // only the last read token can be put back, otherwise the rewind lands
+    // at an unrelated position
+    auto put_back_token(const token& t) -> void {
+        assert(t.source_end_index() == char_ix_);
+        assert(is_token_text_at_source(t));
+
+        move_back(char_ix_ - t.source_begin_index());
     }
 
-    [[nodiscard]] auto cur_line() const -> size_t { return at_line_; }
+    auto rewind_to_position(const token& pos_tk) -> void {
+        const size_t new_pos{pos_tk.start_index()};
+
+        assert(new_pos <= src_.size());
+
+        const size_t n{char_ix_ - new_pos};
+        move_back(n);
+    }
 
   private:
-    // string token text excludes the quotes
-    [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {
-        const std::string_view src{
-            src_.substr(t.start_index(), t.end_index() - t.start_index())};
+    // the opening quote has been read, the text keeps both quotes so it
+    // resolves like a numeric constant, e.g. 'a' or '\n'
+    [[nodiscard]] auto
+    finish_character_literal_token(const std::string_view ws_before,
+                                   const size_t at_line, const size_t bgn_ix)
+        -> token {
 
-        if (not t.is_string()) {
-            return src == t.text();
+        while (true) {
+            // points at the opening quote since the end of the line is
+            // reported as column 0
+            if (is_eos() or is_peek_char('\n')) {
+                throw compiler_exception{
+                    token{"", bgn_ix, "", bgn_ix, "", at_line, false},
+                    "unterminated character literal"};
+            }
+
+            const char ch{next_char()};
+            if (ch == '\'') {
+                break;
+            }
+
+            // the escaped character may be a quote
+            if (ch == '\\' and not is_eos() and not is_peek_char('\n')) {
+                (void)next_char();
+            }
         }
 
-        return src.size() == t.text().size() + 2 and
-               src.substr(1, t.text().size()) == t.text();
+        const size_t end_ix{char_ix_};
+        const std::string_view ws_after{next_trailing_whitespace()};
+
+        return {ws_before, bgn_ix,   src_.substr(bgn_ix, end_ix - bgn_ix),
+                end_ix,    ws_after, at_line,
+                false};
     }
 
     // the opening quote has been read, the text excludes both quotes
@@ -198,39 +220,59 @@ class tokenizer final {
             true};
     }
 
-    // the opening quote has been read, the text keeps both quotes so it
-    // resolves like a numeric constant, e.g. 'a' or '\n'
-    [[nodiscard]] auto
-    finish_character_literal_token(const std::string_view ws_before,
-                                   const size_t at_line, const size_t bgn_ix)
-        -> token {
+    // string token text excludes the quotes
+    [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {
+        const std::string_view src{
+            src_.substr(t.start_index(), t.end_index() - t.start_index())};
 
-        while (true) {
-            // points at the opening quote since the end of the line is
-            // reported as column 0
-            if (is_eos() or is_peek_char('\n')) {
-                throw compiler_exception{
-                    token{"", bgn_ix, "", bgn_ix, "", at_line, false},
-                    "unterminated character literal"};
-            }
+        if (not t.is_string()) {
+            return src == t.text();
+        }
 
-            const char ch{next_char()};
-            if (ch == '\'') {
-                break;
-            }
+        return src.size() == t.text().size() + 2 and
+               src.substr(1, t.text().size()) == t.text();
+    }
 
-            // the escaped character may be a quote
-            if (ch == '\\' and not is_eos() and not is_peek_char('\n')) {
-                (void)next_char();
+    auto move_back(size_t nchars) -> void {
+        assert(char_ix_ >= nchars);
+
+        while (nchars--) {
+            --char_ix_;
+            if (src_[char_ix_] == '\n') {
+                --at_line_;
             }
         }
 
-        const size_t end_ix{char_ix_};
-        const std::string_view ws_after{next_trailing_whitespace()};
+        pos_ = src_str_.substr(char_ix_);
+    }
 
-        return {ws_before, bgn_ix,   src_.substr(bgn_ix, end_ix - bgn_ix),
-                end_ix,    ws_after, at_line,
-                false};
+    [[nodiscard]] auto next_token_str() -> std::string_view {
+        if (is_eos()) {
+            return "";
+        }
+
+        const size_t bgn_ix{char_ix_};
+        const size_t delimiter{src_.find_first_of(delimiters_, char_ix_)};
+        char_ix_ =
+            delimiter == std::string_view::npos ? src_.size() : delimiter;
+        const size_t len{char_ix_ - bgn_ix};
+
+        return src_.substr(bgn_ix, len);
+    }
+
+    // the next line's indentation and comments belong to the next token, the
+    // whitespace at the end of the source stays with the last token
+    [[nodiscard]] auto next_trailing_whitespace() -> std::string_view {
+        const size_t bgn_ix{char_ix_};
+        const size_t len{next_whitespace().size()};
+        const size_t newline{src_.substr(bgn_ix, len).find('\n')};
+        if (is_eos() or newline == std::string_view::npos) {
+            return src_.substr(bgn_ix, len);
+        }
+
+        move_back(len - newline - 1);
+
+        return src_.substr(bgn_ix, newline + 1);
     }
 
     // comments are part of the whitespace so parsers never see them and
@@ -260,52 +302,10 @@ class tokenizer final {
         return src_.substr(bgn_ix, len);
     }
 
-    // the next line's indentation and comments belong to the next token, the
-    // whitespace at the end of the source stays with the last token
-    [[nodiscard]] auto next_trailing_whitespace() -> std::string_view {
-        const size_t bgn_ix{char_ix_};
-        const size_t len{next_whitespace().size()};
-        const size_t newline{src_.substr(bgn_ix, len).find('\n')};
-        if (is_eos() or newline == std::string_view::npos) {
-            return src_.substr(bgn_ix, len);
-        }
-
-        move_back(len - newline - 1);
-
-        return src_.substr(bgn_ix, newline + 1);
-    }
-
     // the newline is left for 'next_whitespace' so it counts the line
     auto skip_to_end_of_line() -> void {
         const size_t newline{src_.find('\n', char_ix_)};
         char_ix_ = newline == std::string_view::npos ? src_.size() : newline;
-    }
-
-    [[nodiscard]] auto next_token_str() -> std::string_view {
-        if (is_eos()) {
-            return "";
-        }
-
-        const size_t bgn_ix{char_ix_};
-        const size_t delimiter{src_.find_first_of(delimiters_, char_ix_)};
-        char_ix_ =
-            delimiter == std::string_view::npos ? src_.size() : delimiter;
-        const size_t len{char_ix_ - bgn_ix};
-
-        return src_.substr(bgn_ix, len);
-    }
-
-    auto move_back(size_t nchars) -> void {
-        assert(char_ix_ >= nchars);
-
-        while (nchars--) {
-            --char_ix_;
-            if (src_[char_ix_] == '\n') {
-                --at_line_;
-            }
-        }
-
-        pos_ = src_str_.substr(char_ix_);
     }
 };
 

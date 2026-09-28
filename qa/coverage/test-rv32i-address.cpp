@@ -487,10 +487,10 @@ auto main(const int argc, const char* argv[]) -> int {
 
         // equal sizes keep the version without scratch in direct and buffered
         // output
-        for (const machine_rv32i::jump_mode jumps :
-             {machine_rv32i::jump_mode::as_emitted,
-              machine_rv32i::jump_mode::resolved,
-              machine_rv32i::jump_mode::optimized}) {
+        for (const assembler::jump_mode jumps :
+             {assembler::jump_mode::as_emitted,
+              assembler::jump_mode::resolved,
+              assembler::jump_mode::optimized}) {
             std::ostringstream output;
             machine_rv32i backend{output, {}, jumps};
             backend.set_builtin_types(integer64, integer, half, byte, boolean,
@@ -524,7 +524,7 @@ auto main(const int argc, const char* argv[]) -> int {
     {
         // the backend's jumps and labels reach the optimizer
         std::ostringstream output;
-        machine_rv32i backend{output, {}, machine_rv32i::jump_mode::optimized};
+        machine_rv32i backend{output, {}, assembler::jump_mode::optimized};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -648,7 +648,7 @@ auto main(const int argc, const char* argv[]) -> int {
     if (argc > 1 and std::string_view{argv[1]} == "noninline") {
         // hand-written lines are interleaved with the backend's output
         machine_rv32i backend{
-            std::cout, {}, machine_rv32i::jump_mode::as_emitted};
+            std::cout, {}, assembler::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -710,7 +710,7 @@ auto main(const int argc, const char* argv[]) -> int {
     if (argc > 1 and std::string_view{argv[1]} == "frame-checks") {
         // hand-written lines are interleaved with the backend's output
         machine_rv32i backend{
-            std::cout, {}, machine_rv32i::jump_mode::as_emitted};
+            std::cout, {}, assembler::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -768,7 +768,7 @@ auto main(const int argc, const char* argv[]) -> int {
     if (argc > 1 and std::string_view{argv[1]} == "long-loop") {
         // hand-written lines are interleaved with the backend's output
         machine_rv32i backend{
-            std::cout, {}, machine_rv32i::jump_mode::as_emitted};
+            std::cout, {}, assembler::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -802,8 +802,8 @@ auto main(const int argc, const char* argv[]) -> int {
         machine_rv32i backend{std::cout,
                               {},
                               mode == "far-jumps"
-                                  ? machine_rv32i::jump_mode::resolved
-                                  : machine_rv32i::jump_mode::optimized};
+                                  ? assembler::jump_mode::resolved
+                                  : assembler::jump_mode::optimized};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -914,8 +914,8 @@ auto main(const int argc, const char* argv[]) -> int {
         machine_rv32i compiler{std::cout,
                                {},
                                mode == "far-foo"
-                                   ? machine_rv32i::jump_mode::resolved
-                                   : machine_rv32i::jump_mode::optimized};
+                                   ? assembler::jump_mode::resolved
+                                   : assembler::jump_mode::optimized};
 
         program prg{compiler, source, 4096, false, false, false};
         prg.build(std::cout);

@@ -100,9 +100,93 @@ class stmt_def_func final : public statement {
 
     stmt_def_func() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         source_def_to(os, false);
         code_.source_to(os);
+    }
+
+    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
+                 [[maybe_unused]] const ident_info& dst_info) const
+        -> void override {}
+
+    //
+    // class methods
+    //
+
+    // 'func' is a keyword so no user name or internal label starts with 'func.'
+    [[nodiscard]] auto body_label() const -> std::string {
+        return std::format("func.{}", name());
+    }
+
+    [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
+
+    [[nodiscard]] auto compile_body(toc& tc, const size_t indent) const
+        -> size_t {
+
+        assert(not is_inlined());
+
+        for (const stmt_def_func_param& param : params_) {
+            if (param.is_array()) {
+                throw compiler_exception{
+                    param.tok(),
+                    "non-inline functions require non-array parameters"};
+            }
+        }
+
+        machine& x{tc.machine()};
+
+        x.reserve_frame_base();
+        tc.enter_func(name(), returns_, {}, {}, false, x.frame_base_register());
+        add_signature_vars(tc, indent + 1, true);
+        code_.compile(tc, indent, ident_info::make_empty());
+        x.return_function(indent + 1);
+        const size_t frame_size_bytes{tc.peak_frame_size_bytes()};
+        tc.exit_func(name());
+        x.release_frame_base();
+
+        return frame_size_bytes;
+    }
+
+    // a suffix could collide with a method body, e.g. 'func.list.size' of
+    // function 'list' and method 'list.size'
+    [[nodiscard]] auto frame_size_label() const -> std::string {
+        return std::format("size.{}", body_label());
+    }
+
+    [[nodiscard]] auto is_inlined() const -> bool {
+        return noinline_tk_.is_empty();
+    }
+
+    [[nodiscard]] auto is_method() const -> bool {
+        return not method_dot_tk_.is_empty();
+    }
+
+    [[nodiscard]] auto name() const -> std::string_view { return name_; }
+
+    [[nodiscard]] auto param(const size_t ix) const
+        -> const stmt_def_func_param& {
+
+        return params_[ix];
+    }
+
+    [[nodiscard]] auto params() const -> std::span<const stmt_def_func_param> {
+        return params_;
+    }
+
+    [[nodiscard]] auto returns() const
+        -> const std::optional<func_return_info>& {
+
+        return returns_;
+    }
+
+    auto source_def_comment_to(machine& x, const size_t indent) const -> void {
+        std::stringstream ss;
+        source_def_to(ss, true);
+        x.comment(name_tk_, indent, "{}", statement::trimmed_source(ss.view()));
     }
 
     auto source_def_to(std::ostream& os, const bool summary) const -> void {
@@ -139,82 +223,6 @@ class stmt_def_func final : public statement {
         }
     }
 
-    auto source_def_comment_to(machine& x, const size_t indent) const -> void {
-        std::stringstream ss;
-        source_def_to(ss, true);
-        x.comment(name_tk_, indent, "{}", statement::trimmed_source(ss.view()));
-    }
-
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
-        -> void override {}
-
-    // 'func' is a keyword so no user name or internal label starts with 'func.'
-    [[nodiscard]] auto body_label() const -> std::string {
-        return std::format("func.{}", name());
-    }
-
-    // a suffix could collide with a method body, e.g. 'func.list.size' of
-    // function 'list' and method 'list.size'
-    [[nodiscard]] auto frame_size_label() const -> std::string {
-        return std::format("size.{}", body_label());
-    }
-
-    [[nodiscard]] auto compile_body(toc& tc, const size_t indent) const
-        -> size_t {
-
-        assert(not is_inlined());
-
-        for (const stmt_def_func_param& param : params_) {
-            if (param.is_array()) {
-                throw compiler_exception{
-                    param.tok(),
-                    "non-inline functions require non-array parameters"};
-            }
-        }
-
-        machine& x{tc.machine()};
-
-        x.reserve_frame_base();
-        tc.enter_func(name(), returns_, {}, {}, false, x.frame_base_register());
-        add_signature_vars(tc, indent + 1, true);
-        code_.compile(tc, indent, ident_info::make_empty());
-        x.return_function(indent + 1);
-        const size_t frame_size_bytes{tc.peak_frame_size_bytes()};
-        tc.exit_func(name());
-        x.release_frame_base();
-
-        return frame_size_bytes;
-    }
-
-    [[nodiscard]] auto is_inlined() const -> bool {
-        return noinline_tk_.is_empty();
-    }
-
-    [[nodiscard]] auto returns() const
-        -> const std::optional<func_return_info>& {
-
-        return returns_;
-    }
-
-    [[nodiscard]] auto param(const size_t ix) const
-        -> const stmt_def_func_param& {
-
-        return params_[ix];
-    }
-
-    [[nodiscard]] auto params() const -> std::span<const stmt_def_func_param> {
-        return params_;
-    }
-
-    [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
-
-    [[nodiscard]] auto name() const -> std::string_view { return name_; }
-
-    [[nodiscard]] auto is_method() const -> bool {
-        return not method_dot_tk_.is_empty();
-    }
-
   private:
     // a non-inline body reaches the result and the arguments through pointer
     // slots in its frame
@@ -247,30 +255,6 @@ class stmt_def_func final : public statement {
                        },
                        false);
         }
-    }
-
-    // 'name [type]' of the returned value, without a name the type is void
-    auto parse_returns(toc& tc, tokenizer& tz) -> void {
-        const token ident_tk{tz.next_token()};
-        if (ident_tk.text().empty()) {
-            tz.put_back_token(ident_tk);
-            set_type(tc.get_type_void());
-
-            return;
-        }
-
-        token type_tk{tz.next_token()};
-        if (not tc.has_type(type_tk.text())) {
-            tz.put_back_token(type_tk);
-            type_tk = {};
-        }
-
-        const type& tp{type_tk.is_empty()
-                           ? tc.get_type_default()
-                           : tc.get_type_or_throw(type_tk, type_tk.text())};
-
-        returns_.emplace(type_tk, ident_tk, &tp);
-        set_type(tp);
     }
 
     // 'name_tk_' is the receiver type, the method gets an implicit first
@@ -314,5 +298,29 @@ class stmt_def_func final : public statement {
         };
 
         params_.emplace_back(self_tk, receiver_type);
+    }
+
+    // 'name [type]' of the returned value, without a name the type is void
+    auto parse_returns(toc& tc, tokenizer& tz) -> void {
+        const token ident_tk{tz.next_token()};
+        if (ident_tk.text().empty()) {
+            tz.put_back_token(ident_tk);
+            set_type(tc.get_type_void());
+
+            return;
+        }
+
+        token type_tk{tz.next_token()};
+        if (not tc.has_type(type_tk.text())) {
+            tz.put_back_token(type_tk);
+            type_tk = {};
+        }
+
+        const type& tp{type_tk.is_empty()
+                           ? tc.get_type_default()
+                           : tc.get_type_or_throw(type_tk, type_tk.text())};
+
+        returns_.emplace(type_tk, ident_tk, &tp);
+        set_type(tp);
     }
 };

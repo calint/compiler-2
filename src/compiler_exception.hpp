@@ -11,11 +11,6 @@ class tokenizer;
 
 class compiler_exception final : public std::exception {
   public:
-    std::string msg;
-    size_t line{};
-    size_t start_index{};
-    size_t end_index{};
-
     compiler_exception(const token& src_loc_tk, std::string message)
         : msg{std::move(message)}, line{src_loc_tk.at_line()},
           start_index{src_loc_tk.start_index()},
@@ -23,6 +18,15 @@ class compiler_exception final : public std::exception {
 
     // defined in 'tokenizer.hpp'
     compiler_exception(const tokenizer& tz, std::string message);
+
+    std::string msg;
+    size_t line{};
+    size_t start_index{};
+    size_t end_index{};
+
+    //
+    // overridden methods
+    //
 
     [[nodiscard]] auto what() const noexcept -> const char* override {
         return msg.c_str();

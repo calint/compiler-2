@@ -35,6 +35,33 @@ class unary_ops final {
 
     unary_ops() = default;
 
+    // implemented in 'decouple_impl.hpp'
+    // solves circular reference: unary_ops -> toc -> statement -> unary_ops
+    auto compile(toc& tc, const size_t indent, const operand& dst_info) const
+        -> void;
+
+    [[nodiscard]] auto evaluate_constant(int64_t v) const -> int64_t {
+        for (const char op : ops_ | std::views::reverse) {
+            switch (op) {
+            case '-':
+                // unsigned negation wraps like the run-time instruction
+                v = static_cast<int64_t>(-static_cast<uint64_t>(v));
+                break;
+
+            case '~':
+                v = static_cast<int64_t>(~static_cast<uint64_t>(v));
+                break;
+
+            default:
+                std::unreachable();
+            }
+        }
+
+        return v;
+    }
+
+    [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
+
     [[nodiscard]] auto is_only_negated() const -> bool {
         return ops_.size() == 1 and ops_.back() == '-';
     }
@@ -56,34 +83,7 @@ class unary_ops final {
         std::print(os, "{}", to_string());
     }
 
-    // implemented in 'decouple_impl.hpp'
-    // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-    auto compile(toc& tc, const size_t indent, const operand& dst_info) const
-        -> void;
-
-    [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
-
     [[nodiscard]] auto to_string() const -> std::string_view {
         return {ops_.begin(), ops_.end()};
-    }
-
-    [[nodiscard]] auto evaluate_constant(int64_t v) const -> int64_t {
-        for (const char op : ops_ | std::views::reverse) {
-            switch (op) {
-            case '-':
-                // unsigned negation wraps like the run-time instruction
-                v = static_cast<int64_t>(-static_cast<uint64_t>(v));
-                break;
-
-            case '~':
-                v = static_cast<int64_t>(~static_cast<uint64_t>(v));
-                break;
-
-            default:
-                std::unreachable();
-            }
-        }
-
-        return v;
     }
 };

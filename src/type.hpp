@@ -46,33 +46,6 @@ class type final {
 
     type() = default;
 
-    // fields are placed at offsets aligned to their type and the size is
-    // rounded up so that array elements stay aligned
-    auto add_field([[maybe_unused]] const token& src_loc_tk,
-                   const std::string_view name, const type& tp,
-                   const bool is_array, const size_t array_count) -> void {
-
-        const size_t total_size_bytes{
-            multiply_storage_size(tp.size_bytes_, is_array ? array_count : 1)};
-
-        const size_t offset{
-            align_storage_size(fields_end_bytes_, tp.alignment_)};
-
-        fields_.emplace_back(std::string{name}, &tp, offset, total_size_bytes,
-                             array_count, is_array);
-
-        fields_end_bytes_ = add_storage_size(offset, total_size_bytes);
-        alignment_ = std::max(alignment_, tp.alignment_);
-        size_bytes_ = align_storage_size(fields_end_bytes_, alignment_);
-    }
-
-    [[nodiscard]] auto field(const token& src_loc_tk,
-                             const std::string_view name) const
-        -> const type_field& {
-
-        return fields_[field_index(src_loc_tk, name)];
-    }
-
     [[nodiscard]] auto
     accessor(const token& src_loc_tk, const std::string_view ident,
              const std::vector<std::string>& path, const var_info& var,
@@ -121,6 +94,48 @@ class type final {
                                     is_array, var.is_pointer);
     }
 
+    // fields are placed at offsets aligned to their type and the size is
+    // rounded up so that array elements stay aligned
+    auto add_field([[maybe_unused]] const token& src_loc_tk,
+                   const std::string_view name, const type& tp,
+                   const bool is_array, const size_t array_count) -> void {
+
+        const size_t total_size_bytes{
+            multiply_storage_size(tp.size_bytes_, is_array ? array_count : 1)};
+
+        const size_t offset{
+            align_storage_size(fields_end_bytes_, tp.alignment_)};
+
+        fields_.emplace_back(std::string{name}, &tp, offset, total_size_bytes,
+                             array_count, is_array);
+
+        fields_end_bytes_ = add_storage_size(offset, total_size_bytes);
+        alignment_ = std::max(alignment_, tp.alignment_);
+        size_bytes_ = align_storage_size(fields_end_bytes_, alignment_);
+    }
+
+    [[nodiscard]] auto alignment() const -> size_t { return alignment_; }
+
+    [[nodiscard]] auto field(const token& src_loc_tk,
+                             const std::string_view name) const
+        -> const type_field& {
+
+        return fields_[field_index(src_loc_tk, name)];
+    }
+
+    // the field and the padding after it up to the next field or the end
+    [[nodiscard]] auto
+    field_extent_bytes(const token& src_loc_tk,
+                       const std::string_view field_name) const -> size_t {
+
+        const size_t i{field_index(src_loc_tk, field_name)};
+
+        const size_t next_offset{i + 1 < fields_.size() ? fields_[i + 1].offset
+                                                        : size_bytes_};
+
+        return next_offset - fields_[i].offset;
+    }
+
     [[nodiscard]] auto
     field_offset(const token& src_loc_tk,
                  const std::span<const std::string> path) const -> size_t {
@@ -147,32 +162,17 @@ class type final {
         return field(src_loc_tk, field_name).offset;
     }
 
-    // the field and the padding after it up to the next field or the end
-    [[nodiscard]] auto
-    field_extent_bytes(const token& src_loc_tk,
-                       const std::string_view field_name) const -> size_t {
-
-        const size_t i{field_index(src_loc_tk, field_name)};
-
-        const size_t next_offset{i + 1 < fields_.size() ? fields_[i + 1].offset
-                                                        : size_bytes_};
-
-        return next_offset - fields_[i].offset;
+    [[nodiscard]] auto fields() const -> std::span<const type_field> {
+        return fields_;
     }
 
-    [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
-
-    [[nodiscard]] auto alignment() const -> size_t { return alignment_; }
+    [[nodiscard]] auto is_builtin() const -> bool { return is_builtin_; }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
     auto set_name(const std::string_view name) -> void { name_ = name; }
 
-    [[nodiscard]] auto is_builtin() const -> bool { return is_builtin_; }
-
-    [[nodiscard]] auto fields() const -> std::span<const type_field> {
-        return fields_;
-    }
+    [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
 
   private:
     [[nodiscard]] auto field_index(const token& src_loc_tk,

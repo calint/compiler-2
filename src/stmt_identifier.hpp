@@ -123,128 +123,13 @@ class stmt_identifier : public statement {
 
     stmt_identifier() = default;
 
-    [[nodiscard]] auto first_token() const -> const token& {
-        return elems_[0].name_tk;
-    }
-
-    [[nodiscard]] auto is_method_receiver() const -> bool {
-        return not method_name_tk_.is_empty();
-    }
-
-    [[nodiscard]] auto method_dot_token() const -> const token& {
-        return method_dot_tk_;
-    }
-
-    [[nodiscard]] auto method_name_token() const -> const token& {
-        return method_name_tk_;
-    }
-
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        return path_as_string_;
-    }
-
-    [[nodiscard]] auto is_indexed() const -> bool override {
-        return is_indexed_;
-    }
-
-    [[nodiscard]] auto is_identifier() const -> bool override { return true; }
-
-    // the low bytes are at the start address of the storage
-    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
-        return true;
-    }
-
-    auto assert_not_narrowed(const toc& tc, const type& dst_type) const
-        -> void override {
-
-        // records are copied whole and cannot narrow
-        if (not dst_type.is_builtin()) {
-            return;
-        }
-
-        const ident_info info{tc.make_ident_info(*this)};
-
-        if (info.is_const()) {
-            assert_constant_fits(info, dst_type);
-            return;
-        }
-
-        const type& src_type{info.type_ref()};
-
-        if (not src_type.is_builtin() or
-            src_type.size_bytes() <= dst_type.size_bytes()) {
-
-            return;
-        }
-
-        throw_narrowed(first_token(), trimmed_source(*this), src_type,
-                       dst_type);
-    }
-
-    [[nodiscard]] auto access_range() const -> field_coverage::range {
-        return access_range_;
-    }
-
-    [[nodiscard]] auto is_exact_access() const -> bool {
-        return is_exact_access_;
-    }
-
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
-
-        // a path such as 'p.y' reads its root variable
-        if (first_token().is_text(var)) {
-            reader(first_token(), path_text(), access_range_);
-        }
-
-        visit_index_reads(var, reader);
-    }
-
-    // index expressions are read even when the path is written
-    auto visit_index_reads(const std::string_view var,
-                           const read_visitor reader) const -> void {
-
-        for (const ident_elem& e : elems_) {
-            if (e.array_index_expr) {
-                e.array_index_expr->visit_reads(var, reader);
-            }
-        }
-    }
-
-    // a runtime index does not prove which element is written
-    auto record_assignment(assignment_flow& flow) const -> void {
-        if (not first_token().is_text(flow.var) or not is_exact_access_) {
-            return;
-        }
-
-        flow.assigned.add(access_range_);
-    }
+    //
+    // overridden methods
+    //
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
         path_source_to(os);
-    }
-
-    // the path as written, with indexes but without unary operators
-    [[nodiscard]] auto path_text() const -> std::string {
-        std::stringstream ss;
-        path_source_to(ss);
-
-        return statement::trimmed_source(ss.view());
-    }
-
-    auto path_source_to(std::ostream& os) const -> void {
-        if (elems_.empty()) {
-            return;
-        }
-
-        elems_.front().source_to(os);
-        for (const auto [d, e] :
-             std::views::zip(elem_delims_tk_, elems_ | std::views::drop(1))) {
-
-            d.source_to(os);
-            e.source_to(os);
-        }
     }
 
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
@@ -275,36 +160,31 @@ class stmt_identifier : public statement {
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+    auto assert_not_narrowed(const toc& tc, const type& dst_type) const
+        -> void override {
 
-    [[nodiscard]] auto is_array_element() const -> bool override {
-        return not elems_.empty() and elems_.back().array_index_expr != nullptr;
-    }
+        // records are copied whole and cannot narrow
+        if (not dst_type.is_builtin()) {
+            return;
+        }
 
-    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+        const ident_info info{tc.make_ident_info(*this)};
 
-    // 'use' runs while the scratch registers that build the address are still
-    // allocated, then they are freed
-    auto
-    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                    const std::span<const operand> lea_path,
-                    const operand& reg_count, const operand& address_register,
-                    const std::function_ref<void(const operand&)> use) const
-        -> void {
+        if (info.is_const()) {
+            assert_constant_fits(info, dst_type);
+            return;
+        }
 
-        machine& x{tc.machine()};
+        const type& src_type{info.type_ref()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        if (not src_type.is_builtin() or
+            src_type.size_bytes() <= dst_type.size_bytes()) {
 
-        std::vector<operand> allocated_registers;
+            return;
+        }
 
-        const operand address{compile_lea(tc, indent, first_token(),
-                                          allocated_registers, reg_count,
-                                          lea_path, address_register)};
-
-        use(address);
-
-        x.free_scratch_registers(src_loc_tk, indent, allocated_registers);
+        throw_narrowed(first_token(), trimmed_source(*this), src_type,
+                       dst_type);
     }
 
     // * using 'lea_path' which depends on the call-stack builds and
@@ -420,7 +300,153 @@ class stmt_identifier : public statement {
         return operand::mem(address, *parent_type);
     }
 
+    [[nodiscard]] auto identifier() const -> std::string_view override {
+        return path_as_string_;
+    }
+
+    [[nodiscard]] auto is_array_element() const -> bool override {
+        return not elems_.empty() and elems_.back().array_index_expr != nullptr;
+    }
+
+    [[nodiscard]] auto is_identifier() const -> bool override { return true; }
+
+    [[nodiscard]] auto is_indexed() const -> bool override {
+        return is_indexed_;
+    }
+
+    // the low bytes are at the start address of the storage
+    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
+        return true;
+    }
+
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override {
+
+        // a path such as 'p.y' reads its root variable
+        if (first_token().is_text(var)) {
+            reader(first_token(), path_text(), access_range_);
+        }
+
+        visit_index_reads(var, reader);
+    }
+
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto access_range() const -> field_coverage::range {
+        return access_range_;
+    }
+
+    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+
+    // 'use' runs while the scratch registers that build the address are still
+    // allocated, then they are freed
+    auto
+    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                    const std::span<const operand> lea_path,
+                    const operand& reg_count, const operand& address_register,
+                    const std::function_ref<void(const operand&)> use) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, statement::trimmed_source(*this));
+
+        std::vector<operand> allocated_registers;
+
+        const operand address{compile_lea(tc, indent, first_token(),
+                                          allocated_registers, reg_count,
+                                          lea_path, address_register)};
+
+        use(address);
+
+        x.free_scratch_registers(src_loc_tk, indent, allocated_registers);
+    }
+
+    [[nodiscard]] auto first_token() const -> const token& {
+        return elems_[0].name_tk;
+    }
+
+    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    [[nodiscard]] auto is_exact_access() const -> bool {
+        return is_exact_access_;
+    }
+
+    [[nodiscard]] auto is_method_receiver() const -> bool {
+        return not method_name_tk_.is_empty();
+    }
+
+    [[nodiscard]] auto method_dot_token() const -> const token& {
+        return method_dot_tk_;
+    }
+
+    [[nodiscard]] auto method_name_token() const -> const token& {
+        return method_name_tk_;
+    }
+
+    auto path_source_to(std::ostream& os) const -> void {
+        if (elems_.empty()) {
+            return;
+        }
+
+        elems_.front().source_to(os);
+        for (const auto [d, e] :
+             std::views::zip(elem_delims_tk_, elems_ | std::views::drop(1))) {
+
+            d.source_to(os);
+            e.source_to(os);
+        }
+    }
+
+    // the path as written, with indexes but without unary operators
+    [[nodiscard]] auto path_text() const -> std::string {
+        std::stringstream ss;
+        path_source_to(ss);
+
+        return statement::trimmed_source(ss.view());
+    }
+
+    // a runtime index does not prove which element is written
+    auto record_assignment(assignment_flow& flow) const -> void {
+        if (not first_token().is_text(flow.var) or not is_exact_access_) {
+            return;
+        }
+
+        flow.assigned.add(access_range_);
+    }
+
+    // index expressions are read even when the path is written
+    auto visit_index_reads(const std::string_view var,
+                           const read_visitor reader) const -> void {
+
+        for (const ident_elem& e : elems_) {
+            if (e.array_index_expr) {
+                e.array_index_expr->visit_reads(var, reader);
+            }
+        }
+    }
+
   private:
+    // only signed types exist so a constant must fit the signed range
+    auto assert_constant_fits(const ident_info& info,
+                              const type& dst_type) const -> void {
+
+        const int64_t value{
+            get_unary_ops().evaluate_constant(info.const_value)};
+
+        if (fits_size_bytes(value, dst_type.size_bytes())) {
+            return;
+        }
+
+        throw compiler_exception{
+            first_token(),
+            std::format("constant '{}' does not fit '{}', use '{}(...)'",
+                        trimmed_source(*this), dst_type.name(),
+                        dst_type.name())};
+    }
+
     // 'ps.x' does not mean 'ps[0].x'
     auto assert_element_selected(const toc& tc, const token& tk) const -> void {
 
@@ -434,6 +460,47 @@ class stmt_identifier : public statement {
 
         throw compiler_exception{
             tk, std::format("array '{}' must be indexed", path_as_string_)};
+    }
+
+    // 'name_tk' after the path so far names a method of the path's type
+    [[nodiscard]] auto is_method_name(const toc& tc, const token& path_tk,
+                                      const token& name_tk) const -> bool {
+
+        if (tc.is_func(path_as_string_)) {
+            return false;
+        }
+
+        const ident_info info{tc.make_ident_info(path_tk, path_as_string_)};
+
+        return tc.is_func(
+            std::format("{}.{}", info.type_ref().name(), name_tk.text()));
+    }
+
+    // an unknown element leaves the whole array as the accessed range
+    auto narrow_to_element(toc& tc, const expr_any& index_expr,
+                           const ident_info& array_info) -> void {
+
+        const std::optional<size_t> index{
+            in_range_constant_index(tc, index_expr, array_info)};
+
+        if (not index) {
+            is_exact_access_ = false;
+            return;
+        }
+
+        const size_t element_size_bytes{array_info.type_ref().size_bytes()};
+
+        const size_t element_offset{*index * element_size_bytes};
+
+        // the last element keeps the padding after the array
+        const bool is_last_element{*index == array_info.array_len - 1};
+
+        access_range_ = {
+            .offset{access_range_.offset + element_offset},
+            .size_bytes{is_last_element
+                            ? access_range_.size_bytes - element_offset
+                            : element_size_bytes},
+        };
     }
 
     // a path element with an optional '[index]'
@@ -458,37 +525,6 @@ class stmt_identifier : public statement {
 
         elems_.back().open_bracket_tk = open_bracket_tk;
         elems_.back().close_bracket_tk = close_bracket_tk;
-    }
-    // 'name_tk' after the path so far names a method of the path's type
-    [[nodiscard]] auto is_method_name(const toc& tc, const token& path_tk,
-                                      const token& name_tk) const -> bool {
-
-        if (tc.is_func(path_as_string_)) {
-            return false;
-        }
-
-        const ident_info info{tc.make_ident_info(path_tk, path_as_string_)};
-
-        return tc.is_func(
-            std::format("{}.{}", info.type_ref().name(), name_tk.text()));
-    }
-
-    // only signed types exist so a constant must fit the signed range
-    auto assert_constant_fits(const ident_info& info,
-                              const type& dst_type) const -> void {
-
-        const int64_t value{
-            get_unary_ops().evaluate_constant(info.const_value)};
-
-        if (fits_size_bytes(value, dst_type.size_bytes())) {
-            return;
-        }
-
-        throw compiler_exception{
-            first_token(),
-            std::format("constant '{}' does not fit '{}', use '{}(...)'",
-                        trimmed_source(*this), dst_type.name(),
-                        dst_type.name())};
     }
 
     auto resolve_access_range(toc& tc) -> void {
@@ -538,80 +574,9 @@ class stmt_identifier : public statement {
         }
     }
 
-    // an unknown element leaves the whole array as the accessed range
-    auto narrow_to_element(toc& tc, const expr_any& index_expr,
-                           const ident_info& array_info) -> void {
-
-        const std::optional<size_t> index{
-            in_range_constant_index(tc, index_expr, array_info)};
-
-        if (not index) {
-            is_exact_access_ = false;
-            return;
-        }
-
-        const size_t element_size_bytes{array_info.type_ref().size_bytes()};
-
-        const size_t element_offset{*index * element_size_bytes};
-
-        // the last element keeps the padding after the array
-        const bool is_last_element{*index == array_info.array_len - 1};
-
-        access_range_ = {
-            .offset{access_range_.offset + element_offset},
-            .size_bytes{is_last_element
-                            ? access_range_.size_bytes - element_offset
-                            : element_size_bytes},
-        };
-    }
-
-    // empty when the index is computed at run time or is out of range
-    [[nodiscard]] static auto
-    in_range_constant_index(const toc& tc, const expr_any& index_expr,
-                            const ident_info& array_info)
-        -> std::optional<size_t> {
-
-        const std::optional<int64_t> index{index_expr.constant_value(tc)};
-        if (not index or *index < 0 or
-            std::cmp_greater_equal(*index, array_info.array_len)) {
-
-            return std::nullopt;
-        }
-
-        return static_cast<size_t>(*index);
-    }
-
-    // the array size is known at compile, also for an inlined array argument,
-    // so a constant index out of bounds is always a bug
-    static auto assert_index_in_bounds(const ident_elem& elem,
-                                       const ident_info& array_info,
-                                       const int64_t index,
-                                       const bool allow_end) -> void {
-
-        const bool is_past_end{
-            allow_end ? std::cmp_greater(index, array_info.array_len)
-                      : std::cmp_greater_equal(index, array_info.array_len)};
-
-        if (index >= 0 and not is_past_end) {
-            return;
-        }
-
-        throw compiler_exception{
-            elem.array_index_expr->tok(),
-            std::format("index {} is out of bounds for array '{}' of size {}",
-                        index, elem.name_tk.text(), array_info.array_len)};
-    }
-
-    [[nodiscard]] static auto storage_size_bytes(const ident_info& info)
-        -> size_t {
-
-        if (not info.is_array) {
-            return info.type_ref().size_bytes();
-        }
-
-        return multiply_storage_size(info.type_ref().size_bytes(),
-                                     info.array_len);
-    }
+    //
+    // statics
+    //
 
     // adds the element index of 'cur_elem' to 'address', which has no index
     // yet, keeping its base and displacement
@@ -652,6 +617,59 @@ class stmt_identifier : public statement {
                             address.displacement(), cur_info.type_ref());
     }
 
+    // the array size is known at compile, also for an inlined array argument,
+    // so a constant index out of bounds is always a bug
+    static auto assert_index_in_bounds(const ident_elem& elem,
+                                       const ident_info& array_info,
+                                       const int64_t index,
+                                       const bool allow_end) -> void {
+
+        const bool is_past_end{
+            allow_end ? std::cmp_greater(index, array_info.array_len)
+                      : std::cmp_greater_equal(index, array_info.array_len)};
+
+        if (index >= 0 and not is_past_end) {
+            return;
+        }
+
+        throw compiler_exception{
+            elem.array_index_expr->tok(),
+            std::format("index {} is out of bounds for array '{}' of size {}",
+                        index, elem.name_tk.text(), array_info.array_len)};
+    }
+
+    static auto
+    check_array_bounds(toc& tc, const size_t indent, const token& src_loc_tk,
+                       const operand& index_or_count, const size_t array_length,
+                       const bool allow_end, const operand& range_count = {})
+        -> void {
+
+        machine& x{tc.machine()};
+
+        x.check_bounds(src_loc_tk, indent, index_or_count, array_length,
+                       allow_end, range_count, tc.bounds_check_options());
+    }
+
+    [[nodiscard]] static auto
+    compile_checked_index(toc& tc, const size_t indent,
+                          const expr_any& index_expr, operand index_register,
+                          const size_t array_length, const operand& range_count)
+        -> operand {
+
+        machine& x{tc.machine()};
+
+        x.comment(index_expr.tok(), indent, "set array index");
+
+        index_expr.compile(tc, indent,
+                           toc::make_ident_info_from_register(index_register));
+
+        check_array_bounds(tc, indent, index_expr.tok(), index_register,
+                           array_length, not range_count.is_empty(),
+                           range_count);
+
+        return index_register;
+    }
+
     [[nodiscard]] static auto
     find_start_element(const std::span<const operand> known_addresses)
         -> size_t {
@@ -665,43 +683,6 @@ class stmt_identifier : public statement {
         }
 
         return 0;
-    }
-
-    [[nodiscard]] static auto
-    load_pointer(toc& tc, const size_t indent, const token& src_loc_tk,
-                 std::vector<operand>& allocated_registers,
-                 const operand& pointer_slot) -> operand {
-
-        machine& x{tc.machine()};
-
-        const operand pointer_register{x.alloc_scratch_register(
-            src_loc_tk, indent, tc.get_type_address())};
-
-        allocated_registers.push_back(pointer_register);
-
-        x.copy_value(src_loc_tk, indent, pointer_register,
-                     operand::mem(pointer_slot, tc.get_type_address()));
-
-        return operand::mem(pointer_register, tc.get_type_address());
-    }
-
-    // an inlined argument's known address, a loaded pointer or the storage
-    [[nodiscard]] static auto
-    start_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                  std::vector<operand>& allocated_registers,
-                  const operand& known_address, const ident_info& storage)
-        -> operand {
-
-        if (not known_address.is_empty()) {
-            return known_address;
-        }
-
-        if (storage.is_pointer) {
-            return load_pointer(tc, indent, src_loc_tk, allocated_registers,
-                                storage.operand);
-        }
-
-        return storage.operand;
     }
 
     // computes 'address' into a register so another index can be added
@@ -769,35 +750,67 @@ class stmt_identifier : public statement {
         return folded_into;
     }
 
+    // empty when the index is computed at run time or is out of range
     [[nodiscard]] static auto
-    compile_checked_index(toc& tc, const size_t indent,
-                          const expr_any& index_expr, operand index_register,
-                          const size_t array_length, const operand& range_count)
-        -> operand {
+    in_range_constant_index(const toc& tc, const expr_any& index_expr,
+                            const ident_info& array_info)
+        -> std::optional<size_t> {
 
-        machine& x{tc.machine()};
+        const std::optional<int64_t> index{index_expr.constant_value(tc)};
+        if (not index or *index < 0 or
+            std::cmp_greater_equal(*index, array_info.array_len)) {
 
-        x.comment(index_expr.tok(), indent, "set array index");
+            return std::nullopt;
+        }
 
-        index_expr.compile(tc, indent,
-                           toc::make_ident_info_from_register(index_register));
-
-        check_array_bounds(tc, indent, index_expr.tok(), index_register,
-                           array_length, not range_count.is_empty(),
-                           range_count);
-
-        return index_register;
+        return static_cast<size_t>(*index);
     }
 
-    static auto
-    check_array_bounds(toc& tc, const size_t indent, const token& src_loc_tk,
-                       const operand& index_or_count, const size_t array_length,
-                       const bool allow_end, const operand& range_count = {})
-        -> void {
+    [[nodiscard]] static auto
+    load_pointer(toc& tc, const size_t indent, const token& src_loc_tk,
+                 std::vector<operand>& allocated_registers,
+                 const operand& pointer_slot) -> operand {
 
         machine& x{tc.machine()};
 
-        x.check_bounds(src_loc_tk, indent, index_or_count, array_length,
-                       allow_end, range_count, tc.bounds_check_options());
+        const operand pointer_register{x.alloc_scratch_register(
+            src_loc_tk, indent, tc.get_type_address())};
+
+        allocated_registers.push_back(pointer_register);
+
+        x.copy_value(src_loc_tk, indent, pointer_register,
+                     operand::mem(pointer_slot, tc.get_type_address()));
+
+        return operand::mem(pointer_register, tc.get_type_address());
+    }
+
+    // an inlined argument's known address, a loaded pointer or the storage
+    [[nodiscard]] static auto
+    start_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                  std::vector<operand>& allocated_registers,
+                  const operand& known_address, const ident_info& storage)
+        -> operand {
+
+        if (not known_address.is_empty()) {
+            return known_address;
+        }
+
+        if (storage.is_pointer) {
+            return load_pointer(tc, indent, src_loc_tk, allocated_registers,
+                                storage.operand);
+        }
+
+        return storage.operand;
+    }
+
+    [[nodiscard]] static auto storage_size_bytes(const ident_info& info)
+        -> size_t {
+
+        if (not info.is_array) {
+            return info.type_ref().size_bytes();
+        }
+
+        return multiply_storage_size(info.type_ref().size_bytes(),
+                                     info.array_len);
     }
 };

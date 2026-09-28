@@ -22,12 +22,7 @@ class type;
 
 class machine {
   public:
-    machine() = default;
-    machine(const machine&) = delete;
-    machine(machine&&) = delete;
-    auto operator=(const machine&) -> machine& = delete;
-    auto operator=(machine&&) -> machine& = delete;
-    virtual ~machine() = default;
+    enum class builtin_function : uint8_t { read, write, exit };
 
     struct comparison_action {
         // '==', '!=', '<', '<=', '>' or '>='
@@ -63,8 +58,6 @@ class machine {
         std::string text;
     };
 
-    enum class builtin_function : uint8_t { read, write, exit };
-
     struct builtin_function_registers {
         // argument register names in parameter order
         std::span<const std::string_view> arguments;
@@ -73,106 +66,112 @@ class machine {
         std::string_view result;
     };
 
-    [[nodiscard]] virtual auto
-    registers_for_builtin_function(const builtin_function function) const
-        -> builtin_function_registers = 0;
+    machine() = default;
+    machine(const machine&) = delete;
+    machine(machine&&) = delete;
+    auto operator=(const machine&) -> machine& = delete;
+    auto operator=(machine&&) -> machine& = delete;
 
-    [[nodiscard]] virtual auto default_type() const -> const type& = 0;
+    virtual ~machine() = default;
 
-    virtual auto set_builtin_types(const type& t_i64, const type& t_i32,
-                                   const type& t_i16, const type& t_i8,
-                                   const type& t_bool, const type& t_void)
+    //
+    // virtual methods
+    //
+
+    virtual auto add_subtract(const token& src_loc_tk, const size_t indent,
+                              const char operation, const operand& dst,
+                              const operand& src) -> void = 0;
+
+    virtual auto address_of(const token& src_loc_tk, const size_t indent,
+                            const operand& dst, const operand& address)
         -> void = 0;
 
-    virtual auto comment(const token& src_loc_tk, const size_t indent,
-                         const std::string_view text) -> void = 0;
+    virtual auto address_of_variable(const token& src_loc_tk,
+                                     const size_t indent, const operand& dst,
+                                     const int64_t offset,
+                                     const type& value_type) -> void = 0;
 
-    // emits both versions and keeps the one with less code, the first on ties
-    virtual auto
-    emit_most_efficient(const token& src_loc_tk, const size_t indent,
-                        const std::function_ref<void()> emit_without_scratch,
-                        const std::function_ref<void()> emit_with_scratch)
-        -> void = 0;
+    [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
 
-    [[nodiscard]] virtual auto alloc_scratch_register(const token& src_loc_tk,
-                                                      const size_t indent,
-                                                      const type& type_ref)
-        -> operand = 0;
+    virtual auto advance_array_iteration(
+        const size_t indent, const operand& iterator, const operand& counter,
+        const size_t element_size_bytes, const size_t array_count,
+        const std::string_view loop_label) -> void = 0;
 
     [[nodiscard]] virtual auto
     alloc_named_register(const token& src_loc_tk, const size_t indent,
                          const std::string_view register_name,
                          const type& type_ref) -> operand = 0;
 
-    virtual auto free_named_register(const token& src_loc_tk,
-                                     const size_t indent, const operand& reg)
-        -> void = 0;
+    [[nodiscard]] virtual auto alloc_scratch_register(const token& src_loc_tk,
+                                                      const size_t indent,
+                                                      const type& type_ref)
+        -> operand = 0;
 
-    virtual auto free_scratch_register(const token& src_loc_tk,
-                                       const size_t indent, const operand& reg)
-        -> void = 0;
+    [[nodiscard]] virtual auto array_copy_destination_register() const
+        -> operand {
 
-    auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
-                                const std::span<const operand> registers)
-        -> void {
-
-        for (const operand& r : registers | std::views::reverse) {
-            free_scratch_register(src_loc_tk, indent, r);
-        }
+        return {};
     }
 
-    auto free_named_registers(const token& src_loc_tk, const size_t indent,
-                              const std::span<const operand> registers)
-        -> void {
-
-        for (const operand& reg : registers | std::views::reverse) {
-            free_named_register(src_loc_tk, indent, reg);
-        }
+    // an empty operand keeps address preparation independent of backend setup
+    [[nodiscard]] virtual auto array_copy_source_register() const -> operand {
+        return {};
     }
 
-    virtual auto finish() -> void = 0;
+    [[nodiscard]] virtual auto begin_array_copy(const token& src_loc_tk,
+                                                const size_t indent)
+        -> operand = 0;
 
-    // 'as_emitted' output was already written, so nothing is buffered
-    virtual auto write_assembly(std::ostream& os) -> void = 0;
+    virtual auto begin_data(const size_t alignment) -> void = 0;
 
-    [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
+    virtual auto begin_memory_equal(const token& src_loc_tk,
+                                    const size_t indent) -> operand = 0;
 
-    virtual auto copy_value(const token& src_loc_tk, const size_t indent,
-                            const operand& dst, const operand& src) -> void = 0;
+    virtual auto bitwise(const token& src_loc_tk, const size_t indent,
+                         const char operation, const operand& dst,
+                         const operand& src) -> void = 0;
 
-    virtual auto comment_variable(const token& src_loc_tk, const size_t indent,
-                                  const std::string_view text,
-                                  const size_t size_bytes,
-                                  const operand& address) -> void = 0;
+    virtual auto branch(const size_t indent, const std::string_view target)
+        -> void = 0;
+
+    virtual auto call_function(const size_t indent,
+                               const std::string_view label,
+                               const operand& frame_address) -> void = 0;
+
+    [[nodiscard]] virtual auto
+    can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
+
+    virtual auto check_bounds(const token& src_loc_tk, const size_t indent,
+                              const operand& reg_to_check,
+                              const size_t array_count, const bool allow_end,
+                              const operand& reg_count,
+                              const bounds_check_options& options) -> void = 0;
+
+    virtual auto check_frame_capacity(const token& src_loc_tk,
+                                      const size_t indent,
+                                      const operand& frame_address,
+                                      const operand& frame_size_bytes,
+                                      const std::string_view failure_label,
+                                      const bool enabled = {}) -> void = 0;
+
+    virtual auto comment(const token& src_loc_tk, const size_t indent,
+                         const std::string_view text) -> void = 0;
 
     virtual auto comment_alias(const token& src_loc_tk, const size_t indent,
                                const std::string_view from,
                                const std::string_view to,
                                const operand& address) -> void = 0;
 
+    virtual auto comment_variable(const token& src_loc_tk, const size_t indent,
+                                  const std::string_view text,
+                                  const size_t size_bytes,
+                                  const operand& address) -> void = 0;
+
     virtual auto compare_and_branch(
         const token& src_loc_tk, const size_t indent, const operand& lhs,
         const operand& rhs, const comparison_action& action,
         const std::span<const operand> scratch_registers_to_free) -> void = 0;
-
-    virtual auto branch(const size_t indent, const std::string_view target)
-        -> void = 0;
-
-    virtual auto invoke_syscall(const size_t indent) -> void = 0;
-
-    virtual auto read(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const operand& descriptor,
-                      const operand& address, const operand& count) -> void = 0;
-
-    virtual auto write(const token& src_loc_tk, const size_t indent,
-                       const operand& dst, const operand& descriptor,
-                       const operand& address, const operand& count)
-        -> void = 0;
-
-    virtual auto advance_array_iteration(
-        const size_t indent, const operand& iterator, const operand& counter,
-        const size_t element_size_bytes, const size_t array_count,
-        const std::string_view loop_label) -> void = 0;
 
     // 'alignment' is the alignment known for both addresses
     virtual auto copy(const token& src_loc_tk, const size_t indent,
@@ -188,33 +187,97 @@ class machine {
                             const std::function_ref<std::string()> add_constant)
         -> void = 0;
 
-    [[nodiscard]] virtual auto begin_array_copy(const token& src_loc_tk,
-                                                const size_t indent)
-        -> operand = 0;
+    virtual auto copy_value(const token& src_loc_tk, const size_t indent,
+                            const operand& dst, const operand& src) -> void = 0;
 
-    // an empty operand keeps address preparation independent of backend setup
-    [[nodiscard]] virtual auto array_copy_source_register() const -> operand {
-        return {};
-    }
+    [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
 
-    [[nodiscard]] virtual auto array_copy_destination_register() const
-        -> operand {
+    [[nodiscard]] virtual auto default_type() const -> const type& = 0;
 
-        return {};
-    }
+    virtual auto define_constant(const std::string_view name,
+                                 const size_t value) -> void = 0;
 
-    virtual auto set_array_copy_source(const size_t indent,
-                                       const operand& address) -> void = 0;
+    virtual auto divide(const token& src_loc_tk, const size_t indent,
+                        const char operation, const operand& dst,
+                        const operand& divisor) -> void = 0;
 
-    virtual auto set_array_copy_destination(const size_t indent,
-                                            const operand& address) -> void = 0;
+    virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
+
+    virtual auto emit_data(const size_t element_size_bytes,
+                           const data_initializer& value) -> void = 0;
+
+    virtual auto
+    emit_data_array(const size_t element_size_bytes,
+                    const std::function_ref<bool(data_initializer&)> next)
+        -> void = 0;
+
+    // prints 'panic: frame overflow' to stderr and exits with 255
+    virtual auto emit_frame_overflow_handler() -> void = 0;
+
+    // emits both versions and keeps the one with less code, the first on ties
+    virtual auto
+    emit_most_efficient(const token& src_loc_tk, const size_t indent,
+                        const std::function_ref<void()> emit_without_scratch,
+                        const std::function_ref<void()> emit_with_scratch)
+        -> void = 0;
+
+    virtual auto emit_repeated_data(const size_t element_size_bytes,
+                                    const size_t count,
+                                    const data_initializer& value) const
+        -> void = 0;
+
+    // leaves the code section current
+    virtual auto
+    emit_string_constants(const std::span<const string_constant> strings)
+        -> void = 0;
+
+    virtual auto emit_string_data(const std::string_view value) -> void = 0;
+
+    virtual auto emit_zero_data(const size_t size_bytes) const -> void = 0;
 
     virtual auto end_array_copy(const token& src_loc_tk, const size_t indent,
                                 const size_t element_size_bytes,
                                 const size_t alignment) -> void = 0;
 
-    virtual auto begin_memory_equal(const token& src_loc_tk,
-                                    const size_t indent) -> operand = 0;
+    virtual auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
+                                  const size_t element_size_bytes,
+                                  const size_t alignment, const operand& dst,
+                                  const bool inverted = false) -> void = 0;
+
+    virtual auto end_main() -> void = 0;
+
+    virtual auto end_memory_equal(const token& src_loc_tk, const size_t indent,
+                                  const size_t size_bytes,
+                                  const size_t alignment, const operand& dst,
+                                  const bool inverted = false) -> void = 0;
+
+    virtual auto exit(const token& src_loc_tk, const size_t indent,
+                      const operand& exit_code) -> void = 0;
+
+    virtual auto finish() -> void = 0;
+
+    [[nodiscard]] virtual auto frame_base_register() const
+        -> std::string_view = 0;
+
+    virtual auto free_named_register(const token& src_loc_tk,
+                                     const size_t indent, const operand& reg)
+        -> void = 0;
+
+    virtual auto free_scratch_register(const token& src_loc_tk,
+                                       const size_t indent, const operand& reg)
+        -> void = 0;
+
+    virtual auto invoke_syscall(const size_t indent) -> void = 0;
+
+    [[nodiscard]] virtual auto is_variables_base(const operand& reg) const
+        -> bool = 0;
+
+    virtual auto label(const size_t indent, const std::string_view label)
+        -> void = 0;
+
+    [[nodiscard]] virtual auto
+    make_register_operand(const std::string_view name,
+                          const type& value_type) const -> operand = 0;
 
     [[nodiscard]] virtual auto memory_equal_left_register() const -> operand {
         return {};
@@ -224,162 +287,90 @@ class machine {
         return {};
     }
 
+    virtual auto multiply(const token& src_loc_tk, const size_t indent,
+                          const operand& product, const operand& factor,
+                          const bool reuse_source = false) -> void = 0;
+
+    virtual auto read(const token& src_loc_tk, const size_t indent,
+                      const operand& dst, const operand& descriptor,
+                      const operand& address, const operand& count) -> void = 0;
+
+    [[nodiscard]] virtual auto
+    registers_for_builtin_function(const builtin_function function) const
+        -> builtin_function_registers = 0;
+
+    virtual auto release_frame_base() -> void = 0;
+
+    virtual auto release_variables_base() -> void = 0;
+
+    virtual auto reserve_frame_base() -> void = 0;
+
+    virtual auto reserve_variables(const size_t alignment,
+                                   const size_t size_bytes) -> void = 0;
+
+    virtual auto reserve_variables_base() -> void = 0;
+
+    virtual auto return_function(const size_t indent) -> void = 0;
+
+    virtual auto scale_index(const token& src_loc_tk, const size_t indent,
+                             const operand& index,
+                             const size_t element_size_bytes) -> void = 0;
+
+    virtual auto set_array_copy_destination(const size_t indent,
+                                            const operand& address) -> void = 0;
+
+    virtual auto set_array_copy_source(const size_t indent,
+                                       const operand& address) -> void = 0;
+
+    virtual auto set_builtin_types(const type& t_i64, const type& t_i32,
+                                   const type& t_i16, const type& t_i8,
+                                   const type& t_bool, const type& t_void)
+        -> void = 0;
+
     virtual auto set_memory_equal_left(const size_t indent,
                                        const operand& address) -> void = 0;
 
     virtual auto set_memory_equal_right(const size_t indent,
                                         const operand& address) -> void = 0;
 
-    virtual auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                                  const size_t size_bytes,
-                                  const size_t alignment, const operand& dst,
-                                  const bool inverted = false) -> void = 0;
-
-    virtual auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
-                                  const size_t element_size_bytes,
-                                  const size_t alignment, const operand& dst,
-                                  const bool inverted = false) -> void = 0;
-
-    virtual auto zero(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const size_t size_bytes,
-                      const size_t alignment) -> void = 0;
-
-    virtual auto add_subtract(const token& src_loc_tk, const size_t indent,
-                              const char operation, const operand& dst,
-                              const operand& src) -> void = 0;
-
-    virtual auto bitwise(const token& src_loc_tk, const size_t indent,
-                         const char operation, const operand& dst,
-                         const operand& src) -> void = 0;
-
-    virtual auto multiply(const token& src_loc_tk, const size_t indent,
-                          const operand& product, const operand& factor,
-                          const bool reuse_source = false) -> void = 0;
-
-    virtual auto validate_shift_operand(const token& src_loc_tk,
-                                        const operand& count) const -> void = 0;
-
     virtual auto shift(const token& src_loc_tk, const size_t indent,
                        const char operation, const operand& dst,
                        const operand& count) -> void = 0;
 
-    virtual auto validate_division_operand(const token& src_loc_tk,
-                                           const operand& divisor) const
-        -> void = 0;
-
-    virtual auto divide(const token& src_loc_tk, const size_t indent,
-                        const char operation, const operand& dst,
-                        const operand& divisor) -> void = 0;
+    virtual auto start() -> void = 0;
 
     virtual auto store_boolean(const token& src_loc_tk, const size_t indent,
                                const operand& dst, const bool value)
         -> void = 0;
 
-    virtual auto label(const size_t indent, const std::string_view label)
-        -> void = 0;
-
-    virtual auto address_of(const token& src_loc_tk, const size_t indent,
-                            const operand& dst, const operand& address)
-        -> void = 0;
-
     virtual auto unary(const size_t indent, const char operation,
                        const operand& dst) -> void = 0;
 
-    [[nodiscard]] virtual auto
-    can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
+    virtual auto validate_division_operand(const token& src_loc_tk,
+                                           const operand& divisor) const
+        -> void = 0;
 
-    virtual auto scale_index(const token& src_loc_tk, const size_t indent,
-                             const operand& index,
-                             const size_t element_size_bytes) -> void = 0;
-
-    virtual auto exit(const token& src_loc_tk, const size_t indent,
-                      const operand& exit_code) -> void = 0;
+    virtual auto validate_shift_operand(const token& src_loc_tk,
+                                        const operand& count) const -> void = 0;
 
     [[nodiscard]] virtual auto variables_base_register() const
         -> std::string_view = 0;
 
-    [[nodiscard]] virtual auto is_variables_base(const operand& reg) const
-        -> bool = 0;
-
-    virtual auto address_of_variable(const token& src_loc_tk,
-                                     const size_t indent, const operand& dst,
-                                     const int64_t offset,
-                                     const type& value_type) -> void = 0;
-
-    virtual auto reserve_variables_base() -> void = 0;
-
-    virtual auto release_variables_base() -> void = 0;
-
-    [[nodiscard]] virtual auto frame_base_register() const
-        -> std::string_view = 0;
-
-    virtual auto reserve_frame_base() -> void = 0;
-
-    virtual auto release_frame_base() -> void = 0;
-
-    virtual auto call_function(const size_t indent,
-                               const std::string_view label,
-                               const operand& frame_address) -> void = 0;
-
-    virtual auto return_function(const size_t indent) -> void = 0;
-
-    virtual auto define_constant(const std::string_view name,
-                                 const size_t value) -> void = 0;
-
-    virtual auto check_frame_capacity(const token& src_loc_tk,
-                                      const size_t indent,
-                                      const operand& frame_address,
-                                      const operand& frame_size_bytes,
-                                      const std::string_view failure_label,
-                                      const bool enabled = {}) -> void = 0;
-
-    virtual auto start() -> void = 0;
-
-    virtual auto end_main() -> void = 0;
-
-    virtual auto check_bounds(const token& src_loc_tk, const size_t indent,
-                              const operand& reg_to_check,
-                              const size_t array_count, const bool allow_end,
-                              const operand& reg_count,
-                              const bounds_check_options& options) -> void = 0;
-
-    virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
-
-    // prints 'panic: frame overflow' to stderr and exits with 255
-    virtual auto emit_frame_overflow_handler() -> void = 0;
-
-    // leaves the code section current
-    virtual auto
-    emit_string_constants(const std::span<const string_constant> strings)
+    virtual auto write(const token& src_loc_tk, const size_t indent,
+                       const operand& dst, const operand& descriptor,
+                       const operand& address, const operand& count)
         -> void = 0;
 
-    [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
+    // 'as_emitted' output was already written, so nothing is buffered
+    virtual auto write_assembly(std::ostream& os) -> void = 0;
 
-    virtual auto begin_data(const size_t alignment) -> void = 0;
+    virtual auto zero(const token& src_loc_tk, const size_t indent,
+                      const operand& dst, const size_t size_bytes,
+                      const size_t alignment) -> void = 0;
 
-    virtual auto reserve_variables(const size_t alignment,
-                                   const size_t size_bytes) -> void = 0;
-
-    virtual auto emit_data(const size_t element_size_bytes,
-                           const data_initializer& value) -> void = 0;
-
-    virtual auto emit_string_data(const std::string_view value) -> void = 0;
-
-    virtual auto emit_zero_data(const size_t size_bytes) const -> void = 0;
-
-    virtual auto emit_repeated_data(const size_t element_size_bytes,
-                                    const size_t count,
-                                    const data_initializer& value) const
-        -> void = 0;
-
-    [[nodiscard]] virtual auto
-    make_register_operand(const std::string_view name,
-                          const type& value_type) const -> operand = 0;
-
-    virtual auto
-    emit_data_array(const size_t element_size_bytes,
-                    const std::function_ref<bool(data_initializer&)> next)
-        -> void = 0;
+    //
+    // class methods
+    //
 
     template <typename... args_t>
     auto comment(const token& src_loc_tk, const size_t indent,
@@ -412,7 +403,29 @@ class machine {
                         std::function_ref<bool(data_initializer&)>{next});
     }
 
+    auto free_named_registers(const token& src_loc_tk, const size_t indent,
+                              const std::span<const operand> registers)
+        -> void {
+
+        for (const operand& reg : registers | std::views::reverse) {
+            free_named_register(src_loc_tk, indent, reg);
+        }
+    }
+
+    auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
+                                const std::span<const operand> registers)
+        -> void {
+
+        for (const operand& r : registers | std::views::reverse) {
+            free_scratch_register(src_loc_tk, indent, r);
+        }
+    }
+
   protected:
+    //
+    // statics
+    //
+
     // unrolled accesses take the widest parts first so each narrower width
     // covers at most one remaining part
     static auto for_each_part(
@@ -427,21 +440,6 @@ class machine {
                 offset += w;
             }
         }
-    }
-
-    // a word is sign extended so its bits fit a signed 32-bit immediate
-    [[nodiscard]] static auto little_endian_value(const std::string_view bytes)
-        -> int64_t {
-
-        constexpr size_t byte_bits{8};
-
-        uint32_t bits{};
-        for (size_t i{}; i < bytes.size(); ++i) {
-            bits |= uint32_t{static_cast<unsigned char>(bytes[i])}
-                    << (byte_bits * i);
-        }
-
-        return std::bit_cast<int32_t>(bits);
     }
 
     // immediates are decimal numbers prefixed by unary '-' and '~' operators
@@ -481,5 +479,20 @@ class machine {
         }
 
         return bits;
+    }
+
+    // a word is sign extended so its bits fit a signed 32-bit immediate
+    [[nodiscard]] static auto little_endian_value(const std::string_view bytes)
+        -> int64_t {
+
+        constexpr size_t byte_bits{8};
+
+        uint32_t bits{};
+        for (size_t i{}; i < bytes.size(); ++i) {
+            bits |= uint32_t{static_cast<unsigned char>(bytes[i])}
+                    << (byte_bits * i);
+        }
+
+        return std::bit_cast<int32_t>(bits);
     }
 };

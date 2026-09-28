@@ -58,6 +58,10 @@ class stmt_def_func_param final : public statement {
 
     stmt_def_func_param() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         if (is_implicit_) {
             return;
@@ -73,7 +77,11 @@ class stmt_def_func_param final : public statement {
         }
     }
 
-    [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
+    //
+    // class methods
+    //
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 };

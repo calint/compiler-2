@@ -57,6 +57,10 @@ class stmt_if final : public statement {
 
     stmt_if() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         // output first branch
@@ -150,16 +154,9 @@ class stmt_if final : public statement {
     }
 
   private:
-    static auto trace_path(const statement& path, const field_coverage& entry,
-                           assignment_flow& flow, field_coverage& merged,
-                           bool& is_reachable) -> void {
-
-        flow.assigned = entry;
-        flow.is_reachable = true;
-        path.trace_assignment(flow);
-        merged.intersect(flow.assigned);
-        is_reachable = is_reachable or flow.is_reachable;
-    }
+    //
+    // statics
+    //
 
     [[nodiscard]] static auto create_label_else_branch(
         const stmt_block& else_code, const std::string_view if_label,
@@ -170,5 +167,16 @@ class stmt_if final : public statement {
         }
 
         return std::format("{}.else", if_label);
+    }
+
+    static auto trace_path(const statement& path, const field_coverage& entry,
+                           assignment_flow& flow, field_coverage& merged,
+                           bool& is_reachable) -> void {
+
+        flow.assigned = entry;
+        flow.is_reachable = true;
+        path.trace_assignment(flow);
+        merged.intersect(flow.assigned);
+        is_reachable = is_reachable or flow.is_reachable;
     }
 };

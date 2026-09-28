@@ -51,48 +51,15 @@ class stmt_builtin_narrow final : public expression {
 
     stmt_builtin_narrow() = default;
 
-    [[nodiscard]] static auto is_builtin_name(const std::string_view name)
-        -> bool {
-
-        return name == "i8" or name == "i16" or name == "i32" or name == "i64";
-    }
+    //
+    // overridden methods
+    //
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
         open_paren_tk_.source_to(os);
         arg_.source_to(os);
         close_paren_tk_.source_to(os);
-    }
-
-    [[nodiscard]] auto is_expression() const -> bool override {
-        return folded_.empty();
-    }
-
-    // a folded literal is a constant, and constants are identifiers
-    [[nodiscard]] auto is_identifier() const -> bool override {
-        return not folded_.empty();
-    }
-
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(not folded_.empty());
-
-        return folded_;
-    }
-
-    // the unary ops are part of 'folded_'
-    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        static const unary_ops none{};
-
-        if (not folded_.empty()) {
-            return none;
-        }
-
-        return expression::get_unary_ops();
-    }
-
-    // the builtin computes its own width before the destination narrows it
-    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
-        return true;
     }
 
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
@@ -140,10 +107,51 @@ class stmt_builtin_narrow final : public expression {
         assert_own_type_not_narrowed(dst_type);
     }
 
+    // the unary ops are part of 'folded_'
+    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
+        static const unary_ops none{};
+
+        if (not folded_.empty()) {
+            return none;
+        }
+
+        return expression::get_unary_ops();
+    }
+
+    [[nodiscard]] auto identifier() const -> std::string_view override {
+        assert(not folded_.empty());
+
+        return folded_;
+    }
+
+    [[nodiscard]] auto is_expression() const -> bool override {
+        return folded_.empty();
+    }
+
+    // a folded literal is a constant, and constants are identifiers
+    [[nodiscard]] auto is_identifier() const -> bool override {
+        return not folded_.empty();
+    }
+
+    // the builtin computes its own width before the destination narrows it
+    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
+        return true;
+    }
+
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override {
 
         arg_.visit_reads(var, reader);
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto is_builtin_name(const std::string_view name)
+        -> bool {
+
+        return name == "i8" or name == "i16" or name == "i32" or name == "i64";
     }
 
   private:

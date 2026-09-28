@@ -54,6 +54,10 @@ class stmt_def_type_field final : public statement {
 
     stmt_def_type_field() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         if (is_array_) {
@@ -66,6 +70,14 @@ class stmt_def_type_field final : public statement {
         }
     }
 
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+
+    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 
     [[nodiscard]] auto type_str() const -> std::string_view {
@@ -73,8 +85,4 @@ class stmt_def_type_field final : public statement {
     }
 
     [[nodiscard]] auto type_token() const -> const token& { return type_tk_; }
-
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
-
-    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 };

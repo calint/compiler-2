@@ -19,14 +19,6 @@ template <class T> class lut final {
     std::vector<elem> elems_;
 
   public:
-    [[nodiscard]] auto has(const std::string_view key) const -> bool {
-        return std::ranges::contains(elems_, key, &elem::key);
-    }
-
-    auto put(std::string key, T data) -> void {
-        elems_.emplace_back(std::move(key), std::move(data));
-    }
-
     // note: for clarity, get_const_ref instead of overloading get_ref
     [[nodiscard]] auto get_const_ref(const std::string_view key) const
         -> const T& {
@@ -37,5 +29,13 @@ template <class T> class lut final {
             }
         }
         throw panic_exception{std::format("element not found: {}", key)};
+    }
+
+    [[nodiscard]] auto has(const std::string_view key) const -> bool {
+        return std::ranges::contains(elems_, key, &elem::key);
+    }
+
+    auto put(std::string key, T data) -> void {
+        elems_.emplace_back(std::move(key), std::move(data));
     }
 };

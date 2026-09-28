@@ -27,6 +27,134 @@ class stmt_block final : public statement {
     token close_brace_tk_;
     bool is_one_statement_{};
 
+  public:
+    // note: without '{', a single statement is allowed unless braces are
+    // required
+    stmt_block(toc& tc, tokenizer& tz, const bool braces_required = false)
+        : statement{tz.cur_position_token()},
+          open_brace_tk_{tz.is_next_char_token('{')} {
+
+        set_type(tc.get_type_void());
+
+        if (open_brace_tk_.is_empty()) {
+            if (braces_required) {
+                throw compiler_exception{tz, "expected '{' to begin block"};
+            }
+            is_one_statement_ = true;
+        }
+
+        tc.enter_block();
+        while (true) {
+            // is it the end of the block?
+            close_brace_tk_ = tz.is_next_char_token('}');
+            if (not close_brace_tk_.is_empty() and is_one_statement_) {
+                throw compiler_exception{
+                    close_brace_tk_,
+                    "unexpected '}' in single statement block"};
+            }
+
+            if (not close_brace_tk_.is_empty()) {
+                break;
+            }
+
+            // is it a subblock?
+            if (const token t{tz.is_next_char_token('{')}; not t.is_empty()) {
+                tz.put_back_token(t);
+                stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
+                continue;
+            }
+
+            const token tk{tz.next_token()};
+
+            // no more tokens in the block?
+            if (tk.is_empty() and not is_one_statement_) {
+                throw compiler_exception{tz, "expected '}' to close block"};
+            }
+
+            if (tk.is_empty()) {
+                break;
+            }
+
+            stms_.emplace_back(parse_statement(tc, tz, tk));
+
+            if (is_one_statement_) {
+                break;
+            }
+        }
+        tc.exit_block();
+    }
+
+    stmt_block() = default;
+
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override {
+        if (not is_one_statement_) {
+            open_brace_tk_.source_to(os);
+        }
+        for (const std::unique_ptr<statement>& s : stms_) {
+            s->source_to(os);
+        }
+        if (not is_one_statement_) {
+            close_brace_tk_.source_to(os);
+        }
+    }
+
+    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+        -> void override {
+
+        tc.enter_block();
+        for (const std::unique_ptr<statement>& s : stms_) {
+            s->compile(tc, indent + 1, dst_info);
+        }
+        tc.exit_block();
+    }
+
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        for (const std::unique_ptr<statement>& s : stms_) {
+            s->trace_assignment(flow);
+
+            // statements after 'return', 'break', 'continue' or 'exit' never
+            // run
+            if (not flow.is_reachable) {
+                return;
+            }
+        }
+    }
+
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
+
+    // every iteration starts with at least the coverage at loop entry
+    // returns the coverage common to every 'break' of this loop body
+    [[nodiscard]] auto trace_loop_body(assignment_flow& flow) const
+        -> std::optional<field_coverage> {
+
+        const field_coverage entry{flow.assigned};
+        std::optional<field_coverage> outer_breaks{
+            std::exchange(flow.at_breaks, std::nullopt)};
+
+        trace_assignment(flow);
+
+        std::optional<field_coverage> breaks{
+            std::exchange(flow.at_breaks, std::move(outer_breaks))};
+
+        flow.assigned = entry;
+        flow.is_reachable = true;
+
+        return breaks;
+    }
+
+  private:
+    //
+    // statics
+    //
+
     // a method call, an assignment or a function call
     // note: 'unary_ops' not allowed before destination identifier
     [[nodiscard]] static auto parse_identifier_statement(toc& tc, tokenizer& tz,
@@ -91,119 +219,4 @@ class stmt_block final : public statement {
 
         return parse_identifier_statement(tc, tz, tk);
     }
-
-  public:
-    // note: without '{', a single statement is allowed unless braces are
-    // required
-    stmt_block(toc& tc, tokenizer& tz, const bool braces_required = false)
-        : statement{tz.cur_position_token()},
-          open_brace_tk_{tz.is_next_char_token('{')} {
-
-        set_type(tc.get_type_void());
-
-        if (open_brace_tk_.is_empty()) {
-            if (braces_required) {
-                throw compiler_exception{tz, "expected '{' to begin block"};
-            }
-            is_one_statement_ = true;
-        }
-
-        tc.enter_block();
-        while (true) {
-            // is it the end of the block?
-            close_brace_tk_ = tz.is_next_char_token('}');
-            if (not close_brace_tk_.is_empty() and is_one_statement_) {
-                throw compiler_exception{
-                    close_brace_tk_,
-                    "unexpected '}' in single statement block"};
-            }
-
-            if (not close_brace_tk_.is_empty()) {
-                break;
-            }
-
-            // is it a subblock?
-            if (const token t{tz.is_next_char_token('{')}; not t.is_empty()) {
-                tz.put_back_token(t);
-                stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
-                continue;
-            }
-
-            const token tk{tz.next_token()};
-
-            // no more tokens in the block?
-            if (tk.is_empty() and not is_one_statement_) {
-                throw compiler_exception{tz, "expected '}' to close block"};
-            }
-
-            if (tk.is_empty()) {
-                break;
-            }
-
-            stms_.emplace_back(parse_statement(tc, tz, tk));
-
-            if (is_one_statement_) {
-                break;
-            }
-        }
-        tc.exit_block();
-    }
-
-    stmt_block() = default;
-
-    auto source_to(std::ostream& os) const -> void override {
-        if (not is_one_statement_) {
-            open_brace_tk_.source_to(os);
-        }
-        for (const std::unique_ptr<statement>& s : stms_) {
-            s->source_to(os);
-        }
-        if (not is_one_statement_) {
-            close_brace_tk_.source_to(os);
-        }
-    }
-
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
-        -> void override {
-
-        tc.enter_block();
-        for (const std::unique_ptr<statement>& s : stms_) {
-            s->compile(tc, indent + 1, dst_info);
-        }
-        tc.exit_block();
-    }
-
-    auto trace_assignment(assignment_flow& flow) const -> void override {
-        for (const std::unique_ptr<statement>& s : stms_) {
-            s->trace_assignment(flow);
-
-            // statements after 'return', 'break', 'continue' or 'exit' never
-            // run
-            if (not flow.is_reachable) {
-                return;
-            }
-        }
-    }
-
-    // every iteration starts with at least the coverage at loop entry
-    // returns the coverage common to every 'break' of this loop body
-    [[nodiscard]] auto trace_loop_body(assignment_flow& flow) const
-        -> std::optional<field_coverage> {
-
-        const field_coverage entry{flow.assigned};
-        std::optional<field_coverage> outer_breaks{
-            std::exchange(flow.at_breaks, std::nullopt)};
-
-        trace_assignment(flow);
-
-        std::optional<field_coverage> breaks{
-            std::exchange(flow.at_breaks, std::move(outer_breaks))};
-
-        flow.assigned = entry;
-        flow.is_reachable = true;
-
-        return breaks;
-    }
-
-    [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
 };

@@ -41,33 +41,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     }
 
   private:
-    // the stack follows the variables
-    auto emit_stack_setup(assembler_rv32i& a) const -> void override {
-        a.la(0, "sp", "vars.end");
-        a.li(0, "t0", stack_size_bytes());
-        a.add(0, "sp", "sp", "t0");
-    }
-
-    auto emit_uart_setup(assembler_rv32i& a) const -> void override {
-        a.lui(1, "a3", uart_upper_);
-    }
-
-    auto emit_receive_byte(assembler_rv32i& a) const -> void override {
-        a.label(0, "2");
-        a.lbu(1, "a4", line_status_offset_, "a3");
-        a.andi(1, "a4", "a4", line_status_data_ready_);
-        a.beqz(1, "a4", "2b");
-        a.lbu(1, "a4", 0, "a3");
-    }
-
-    auto emit_transmit_byte(assembler_rv32i& a) const -> void override {
-        a.label(0, "2");
-        a.lbu(1, "a4", line_status_offset_, "a3");
-        a.andi(1, "a4", "a4", line_status_transmit_empty_);
-        a.beqz(1, "a4", "2b");
-        a.lbu(1, "a4", 0, "a5");
-        a.sb(1, "a4", 0, "a3");
-    }
+    //
+    // overridden methods
+    //
 
     // ends qemu with the exit code a0 as its status
     auto emit_exit_routine(assembler_rv32i& a) const -> void override {
@@ -80,5 +56,33 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         // qemu shuts down after the store completes
         a.label(0, "1");
         a.j(1, "1b");
+    }
+
+    auto emit_receive_byte(assembler_rv32i& a) const -> void override {
+        a.label(0, "2");
+        a.lbu(1, "a4", line_status_offset_, "a3");
+        a.andi(1, "a4", "a4", line_status_data_ready_);
+        a.beqz(1, "a4", "2b");
+        a.lbu(1, "a4", 0, "a3");
+    }
+
+    // the stack follows the variables
+    auto emit_stack_setup(assembler_rv32i& a) const -> void override {
+        a.la(0, "sp", "vars.end");
+        a.li(0, "t0", stack_size_bytes());
+        a.add(0, "sp", "sp", "t0");
+    }
+
+    auto emit_transmit_byte(assembler_rv32i& a) const -> void override {
+        a.label(0, "2");
+        a.lbu(1, "a4", line_status_offset_, "a3");
+        a.andi(1, "a4", "a4", line_status_transmit_empty_);
+        a.beqz(1, "a4", "2b");
+        a.lbu(1, "a4", 0, "a5");
+        a.sb(1, "a4", 0, "a3");
+    }
+
+    auto emit_uart_setup(assembler_rv32i& a) const -> void override {
+        a.lui(1, "a3", uart_upper_);
     }
 };

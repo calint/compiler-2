@@ -44,6 +44,10 @@ struct alias_info {
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
 
+    //
+    // statics
+    //
+
     [[nodiscard]] static auto make_register(const std::string_view name,
                                             const type& alias_type,
                                             const operand& reg) -> alias_info {
@@ -67,6 +71,10 @@ struct const_info {
 };
 
 class frame final {
+  public:
+    enum class frame_type : uint8_t { FUNC, BLOCK, LOOP, FOO };
+
+  private:
     // optional name
     std::string_view name_;
 
@@ -97,10 +105,6 @@ class frame final {
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
-  public:
-    enum class frame_type : uint8_t { FUNC, BLOCK, LOOP, FOO };
-
-  private:
     frame_type type_{frame_type::FUNC}; // frame type
     bool is_inlined_{true};
     std::string_view storage_base_register_;
@@ -116,23 +120,6 @@ class frame final {
           func_ret_label_{std::move(func_ret_label)}, func_ret_{func_ret_info},
           type_{frm_type}, is_inlined_{is_inlined},
           storage_base_register_{storage_base_register} {}
-
-    [[nodiscard]] auto storage_base_register() const -> std::string_view {
-        return storage_base_register_;
-    }
-
-    auto record_storage_size_bytes(const size_t size_bytes) -> void {
-        assert(not storage_base_register_.empty());
-
-        peak_storage_size_bytes_ =
-            std::max(peak_storage_size_bytes_, size_bytes);
-    }
-
-    [[nodiscard]] auto peak_storage_size_bytes() const -> size_t {
-        assert(not storage_base_register_.empty());
-
-        return peak_storage_size_bytes_;
-    }
 
     auto add_alias(const alias_info& ai) -> void {
         aliases_.put(std::string{ai.from}, ai);
@@ -158,12 +145,6 @@ class frame final {
     [[nodiscard]] auto allocated_stack_size_bytes() const -> size_t {
         return add_storage_size(allocated_stack_size_bytes_,
                                 stack_padding_size_bytes_);
-    }
-
-    auto set_padding_between_dats_and_vars(const size_t size_bytes) -> void {
-        assert(stack_padding_size_bytes_ == 0);
-
-        stack_padding_size_bytes_ = size_bytes;
     }
 
     [[nodiscard]] auto call_path() const -> std::string_view {
@@ -212,6 +193,10 @@ class frame final {
         return type_ == frame_type::BLOCK;
     }
 
+    [[nodiscard]] auto is_foo() const -> bool {
+        return type_ == frame_type::FOO;
+    }
+
     [[nodiscard]] auto is_func() const -> bool {
         return type_ == frame_type::FUNC;
     }
@@ -226,27 +211,39 @@ class frame final {
         return type_ == frame_type::LOOP;
     }
 
-    [[nodiscard]] auto is_foo() const -> bool {
-        return type_ == frame_type::FOO;
-    }
-
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
         return name_ == name;
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
+
+    [[nodiscard]] auto peak_storage_size_bytes() const -> size_t {
+        assert(not storage_base_register_.empty());
+
+        return peak_storage_size_bytes_;
+    }
+
+    auto record_storage_size_bytes(const size_t size_bytes) -> void {
+        assert(not storage_base_register_.empty());
+
+        peak_storage_size_bytes_ =
+            std::max(peak_storage_size_bytes_, size_bytes);
+    }
+
+    auto set_padding_between_dats_and_vars(const size_t size_bytes) -> void {
+        assert(stack_padding_size_bytes_ == 0);
+
+        stack_padding_size_bytes_ = size_bytes;
+    }
+
+    [[nodiscard]] auto storage_base_register() const -> std::string_view {
+        return storage_base_register_;
+    }
 };
 
 class ident_path final {
     std::string id_;
     std::vector<std::string> path_;
-
-    auto refresh_path() -> void {
-        path_.clear();
-        for (auto part : id_ | std::views::split('.')) {
-            path_.emplace_back(part.begin(), part.end());
-        }
-    }
 
   public:
     explicit ident_path(std::string id) : id_{std::move(id)} {
@@ -255,6 +252,11 @@ class ident_path final {
         refresh_path();
 
         assert(not path_.empty());
+    }
+
+    auto append(const std::string_view path_elem) -> void {
+        id_ = std::format("{}.{}", id_, path_elem);
+        refresh_path();
     }
 
     [[nodiscard]] auto base() const -> std::string_view {
@@ -269,14 +271,16 @@ class ident_path final {
 
     [[nodiscard]] auto str() const -> const std::string& { return id_; }
 
-    auto append(const std::string_view path_elem) -> void {
-        id_ = std::format("{}.{}", id_, path_elem);
-        refresh_path();
+  private:
+    auto refresh_path() -> void {
+        path_.clear();
+        for (auto part : id_ | std::views::split('.')) {
+            path_.emplace_back(part.begin(), part.end());
+        }
     }
 };
 
 class toc final {
-
     struct type_info {
         token src_loc_tk;
         const type* type_ptr;
@@ -317,14 +321,17 @@ class toc final {
           bounds_check_lower_{bounds_check_lower}, frame_check_{frame_check},
           alias_check_{alias_check} {}
 
-    [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
-
-    [[nodiscard]] auto machine() const -> const ::machine& {
-        return machine_.get();
-    }
-
     auto add_alias(const alias_info& ai) -> void {
         frames_.back().add_alias(ai);
+    }
+
+    // e.g. the packed elements of a constant '{...}' initializer
+    [[nodiscard]] auto add_bytes_constant(const token& src_loc_tk,
+                                          const std::string_view bytes)
+        -> std::string {
+
+        return add_read_only_constant("init", src_loc_tk,
+                                      token::encode_string(bytes));
     }
 
     auto add_const(const token& src_loc_tk, const size_t indent,
@@ -396,6 +403,14 @@ class toc final {
         if (func_def) {
             func_defs_.emplace_back(func_def);
         }
+    }
+
+    // identical strings share the label of the first one compiled
+    [[nodiscard]] auto add_string_constant(const token& string_tk)
+        -> std::string {
+
+        return add_read_only_constant("str", string_tk,
+                                      std::string{string_tk.text()});
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
@@ -501,6 +516,16 @@ class toc final {
         comment_var(src_loc_tk, indent, var);
     }
 
+    [[nodiscard]] auto bounds_check_options() const
+        -> machine::bounds_check_options {
+
+        return {
+            .upper{bounds_check_upper_},
+            .lower{bounds_check_lower_},
+            .with_line{bounds_check_with_line_},
+        };
+    }
+
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
                                            const std::string_view prefix) const
         -> std::string {
@@ -520,6 +545,11 @@ class toc final {
         refresh_usage();
     }
 
+    auto enter_foo(const std::string_view name) -> void {
+        frames_.emplace_back(name, frame::frame_type::FOO);
+        refresh_usage();
+    }
+
     auto enter_func(const std::string_view name,
                     const std::optional<func_return_info>& returns,
                     const std::string_view call_path = {},
@@ -536,63 +566,19 @@ class toc final {
         refresh_usage();
     }
 
-    [[nodiscard]] auto is_inlined_func() const -> bool {
-        return current_func_frame().is_inlined_func();
-    }
-
-    [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (not frm.storage_base_register().empty()) {
-                return frm.peak_storage_size_bytes();
-            }
-        }
-
-        std::unreachable();
-    }
-
-    // a callee frame starts aligned for any variable it holds
-    [[nodiscard]] auto next_frame_address() const -> operand {
-        const size_t frame_alignment{machine_.get().address_size_bytes()};
-
-        size_t local_size_bytes{};
-        for (const frame& frm : frames_ | std::views::reverse) {
-            local_size_bytes = add_storage_size(
-                local_size_bytes, frm.allocated_stack_size_bytes());
-            if (not frm.storage_base_register().empty()) {
-                return operand::mem(frm.storage_base_register(), {}, 1,
-                                    address_offset(align_storage_size(
-                                        local_size_bytes, frame_alignment)),
-                                    get_type_address());
-            }
-        }
-
-        const size_t root_size_bytes{add_storage_size(
-            vars_size_bytes_, vars_entry_gap_applied_ ? 0 : vars_entry_gap_)};
-
-        return operand::mem(machine_.get().variables_base_register(), {}, 1,
-                            address_offset(align_storage_size(root_size_bytes,
-                                                              frame_alignment)),
-                            get_type_address());
-    }
-
     auto enter_loop(const std::string_view name) -> void {
         frames_.emplace_back(name, frame::frame_type::LOOP);
         refresh_usage();
     }
 
-    auto enter_foo(const std::string_view name) -> void {
-        frames_.emplace_back(name, frame::frame_type::FOO);
-        refresh_usage();
-    }
-
-    auto exit_foo([[maybe_unused]] const std::string_view name) -> void {
-        assert(frames_.back().is_foo() and frames_.back().is_name(name));
+    auto exit_block() -> void {
+        assert(frames_.back().is_block());
 
         pop_frame();
     }
 
-    auto exit_block() -> void {
-        assert(frames_.back().is_block());
+    auto exit_foo([[maybe_unused]] const std::string_view name) -> void {
+        assert(frames_.back().is_foo() and frames_.back().is_name(name));
 
         pop_frame();
     }
@@ -607,14 +593,6 @@ class toc final {
         assert(frames_.back().is_loop() and frames_.back().is_name(name));
 
         pop_frame();
-    }
-
-    auto reset_usage() -> void {
-        assert(frames_.empty());
-        assert(vars_size_bytes_ == 0);
-
-        usage_max_frame_count_ = 0;
-        usage_max_vars_size_bytes_ = 0;
     }
 
     auto finish() -> void {
@@ -651,29 +629,6 @@ class toc final {
         -> const std::vector<const statement*>& {
 
         return data_;
-    }
-
-    // identical strings share the label of the first one compiled
-    [[nodiscard]] auto add_string_constant(const token& string_tk)
-        -> std::string {
-
-        return add_read_only_constant("str", string_tk,
-                                      std::string{string_tk.text()});
-    }
-
-    // e.g. the packed elements of a constant '{...}' initializer
-    [[nodiscard]] auto add_bytes_constant(const token& src_loc_tk,
-                                          const std::string_view bytes)
-        -> std::string {
-
-        return add_read_only_constant("init", src_loc_tk,
-                                      token::encode_string(bytes));
-    }
-
-    [[nodiscard]] auto get_string_constants() const
-        -> std::span<const machine::string_constant> {
-
-        return string_constants_;
     }
 
     [[nodiscard]] auto get_func_defs() const
@@ -731,18 +686,15 @@ class toc final {
         std::unreachable();
     }
 
-    [[nodiscard]] auto is_in_loop_block() const -> bool {
+    [[nodiscard]] auto get_string_constants() const
+        -> std::span<const machine::string_constant> {
 
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_foo()) {
-                return false;
-            }
-            if (frm.is_loop()) {
-                return true;
-            }
-        }
+        return string_constants_;
+    }
 
-        std::unreachable();
+    [[nodiscard]] auto get_type_address() const -> const type& {
+        return get_type_or_throw(
+            token{}, machine_.get().address_size_bytes() == 4 ? "i32" : "i64");
     }
 
     [[nodiscard]] auto get_type_bool() const -> const type& {
@@ -751,15 +703,6 @@ class toc final {
 
     [[nodiscard]] auto get_type_default() const -> const type& {
         return machine_.get().default_type();
-    }
-
-    [[nodiscard]] auto get_type_address() const -> const type& {
-        return get_type_or_throw(
-            token{}, machine_.get().address_size_bytes() == 4 ? "i32" : "i64");
-    }
-
-    [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
-        return types_.has(std::string{name});
     }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
@@ -824,6 +767,16 @@ class toc final {
         std::unreachable();
     }
 
+    [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
+        return types_.has(std::string{name});
+    }
+
+    [[nodiscard]] auto is_alias_check() const -> bool { return alias_check_; }
+
+    [[nodiscard]] auto is_bounds_check_lower() const -> bool {
+        return bounds_check_lower_;
+    }
+
     [[nodiscard]] auto is_bounds_check_upper() const -> bool {
         return bounds_check_upper_;
     }
@@ -832,30 +785,7 @@ class toc final {
         return bounds_check_with_line_;
     }
 
-    [[nodiscard]] auto is_bounds_check_lower() const -> bool {
-        return bounds_check_lower_;
-    }
-
-    [[nodiscard]] auto bounds_check_options() const
-        -> machine::bounds_check_options {
-
-        return {
-            .upper{bounds_check_upper_},
-            .lower{bounds_check_lower_},
-            .with_line{bounds_check_with_line_},
-        };
-    }
-
     [[nodiscard]] auto is_frame_check() const -> bool { return frame_check_; }
-
-    [[nodiscard]] auto is_alias_check() const -> bool { return alias_check_; }
-
-    // a local with the same name shadows it, so this may report a local
-    [[nodiscard]] auto is_global_var(const std::string_view name) const
-        -> bool {
-
-        return frames_.front().has_var(name);
-    }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name);
@@ -867,6 +797,37 @@ class toc final {
         return funcs_.get_const_ref(name).def == nullptr;
     }
 
+    // a local with the same name shadows it, so this may report a local
+    [[nodiscard]] auto is_global_var(const std::string_view name) const
+        -> bool {
+
+        return frames_.front().has_var(name);
+    }
+
+    [[nodiscard]] auto is_in_loop_block() const -> bool {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_foo()) {
+                return false;
+            }
+            if (frm.is_loop()) {
+                return true;
+            }
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto is_inlined_func() const -> bool {
+        return current_func_frame().is_inlined_func();
+    }
+
+    [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
+
+    [[nodiscard]] auto machine() const -> const ::machine& {
+        return machine_.get();
+    }
+
     [[nodiscard]] auto make_ident_info(const statement& st) const
         -> ident_info {
 
@@ -874,6 +835,13 @@ class toc final {
         return as_element_if(
             st.is_array_element(),
             make_ident_info_or_throw(st.tok(), st.identifier()));
+    }
+
+    [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
+                                       const std::string_view ident) const
+        -> ident_info {
+
+        return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
     // a whole array is not read as its first element
@@ -886,29 +854,47 @@ class toc final {
         return info;
     }
 
-    static auto assert_not_whole_array(const statement& st,
-                                       const ident_info& info) -> void {
+    // a callee frame starts aligned for any variable it holds
+    [[nodiscard]] auto next_frame_address() const -> operand {
+        const size_t frame_alignment{machine_.get().address_size_bytes()};
 
-        if (not info.is_array) {
-            return;
+        size_t local_size_bytes{};
+        for (const frame& frm : frames_ | std::views::reverse) {
+            local_size_bytes = add_storage_size(
+                local_size_bytes, frm.allocated_stack_size_bytes());
+            if (not frm.storage_base_register().empty()) {
+                return operand::mem(frm.storage_base_register(), {}, 1,
+                                    address_offset(align_storage_size(
+                                        local_size_bytes, frame_alignment)),
+                                    get_type_address());
+            }
         }
 
-        throw compiler_exception{
-            st.tok(),
-            std::format("array '{}' must be indexed", st.identifier())};
+        const size_t root_size_bytes{add_storage_size(
+            vars_size_bytes_, vars_entry_gap_applied_ ? 0 : vars_entry_gap_)};
+
+        return operand::mem(machine_.get().variables_base_register(), {}, 1,
+                            address_offset(align_storage_size(root_size_bytes,
+                                                              frame_alignment)),
+                            get_type_address());
     }
 
-    [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
-                                       const std::string_view ident) const
-        -> ident_info {
+    [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (not frm.storage_base_register().empty()) {
+                return frm.peak_storage_size_bytes();
+            }
+        }
 
-        return make_ident_info_or_throw(src_loc_tk, ident);
+        std::unreachable();
     }
 
-    [[nodiscard]] static auto make_ident_info_from_register(const operand& reg)
-        -> ident_info {
+    auto reset_usage() -> void {
+        assert(frames_.empty());
+        assert(vars_size_bytes_ == 0);
 
-        return ident_info::make_register(reg.base_register(), reg);
+        usage_max_frame_count_ = 0;
+        usage_max_vars_size_bytes_ = 0;
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
@@ -935,6 +921,66 @@ class toc final {
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
+    }
+
+    //
+    // statics
+    //
+
+    static auto assert_not_whole_array(const statement& st,
+                                       const ident_info& info) -> void {
+
+        if (not info.is_array) {
+            return;
+        }
+
+        throw compiler_exception{
+            st.tok(),
+            std::format("array '{}' must be indexed", st.identifier())};
+    }
+
+    // the tokenizer keeps the quotes in the text of a character literal
+    [[nodiscard]] static auto is_character_literal(const std::string_view str)
+        -> bool {
+
+        return str.size() >= 2 and str.starts_with('\'') and
+               str.ends_with('\'');
+    }
+
+    [[nodiscard]] static auto make_ident_info_from_register(const operand& reg)
+        -> ident_info {
+
+        return ident_info::make_register(reg.base_register(), reg);
+    }
+
+    // the value is the byte, e.g. 'a' is 97 and '\xff' is 255
+    [[nodiscard]] static auto parse_character(const token& src_loc_tk,
+                                              const std::string_view str)
+        -> int64_t {
+
+        assert(is_character_literal(str));
+
+        const std::string_view body{str.substr(1, str.size() - 2)};
+
+        if (body.size() == 1 and body[0] != '\\') {
+            return static_cast<unsigned char>(body[0]);
+        }
+
+        if (not body.starts_with('\\')) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("character literal {} must contain one character",
+                            str)};
+        }
+
+        const std::optional<char> decoded{token::decode_escape(body.substr(1))};
+        if (not decoded) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("unsupported escape in character literal {}", str)};
+        }
+
+        return static_cast<unsigned char>(*decoded);
     }
 
     [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
@@ -979,52 +1025,7 @@ class toc final {
         return std::nullopt;
     }
 
-    // the tokenizer keeps the quotes in the text of a character literal
-    [[nodiscard]] static auto is_character_literal(const std::string_view str)
-        -> bool {
-
-        return str.size() >= 2 and str.starts_with('\'') and
-               str.ends_with('\'');
-    }
-
-    // the value is the byte, e.g. 'a' is 97 and '\xff' is 255
-    [[nodiscard]] static auto parse_character(const token& src_loc_tk,
-                                              const std::string_view str)
-        -> int64_t {
-
-        assert(is_character_literal(str));
-
-        const std::string_view body{str.substr(1, str.size() - 2)};
-
-        if (body.size() == 1 and body[0] != '\\') {
-            return static_cast<unsigned char>(body[0]);
-        }
-
-        if (not body.starts_with('\\')) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("character literal {} must contain one character",
-                            str)};
-        }
-
-        const std::optional<char> decoded{token::decode_escape(body.substr(1))};
-        if (not decoded) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("unsupported escape in character literal {}", str)};
-        }
-
-        return static_cast<unsigned char>(*decoded);
-    }
-
   private:
-    // variable name without the field path
-    [[nodiscard]] static auto root_id_of(const std::string_view id)
-        -> std::string_view {
-
-        return id.substr(0, id.find('.'));
-    }
-
     // identical text shares the label of the first constant added
     [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
                                               const token& src_loc_tk,
@@ -1043,6 +1044,35 @@ class toc final {
         });
 
         return string_constants_.back().label;
+    }
+
+    // the resolved name shows where the variable is stored
+    auto comment_var(const token& src_loc_tk, const size_t indent,
+                     const var_info& var) -> void {
+
+        const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
+
+        ::machine& x{machine()};
+
+        std::string text{
+            std::format("{}: {}", var.name, name_info.type_ref().name())};
+
+        if (var.array_len) {
+            text += std::format("[{}]", var.array_len);
+        }
+
+        if (not var.reg.is_empty()) {
+            x.comment(src_loc_tk, indent, "{} ({})", text,
+                      var.reg.base_register());
+
+            return;
+        }
+
+        x.comment_variable(
+            src_loc_tk, indent, text,
+            multiply_storage_size(name_info.type_ref().size_bytes(),
+                                  name_info.is_array ? name_info.array_len : 1),
+            name_info.operand);
     }
 
     // blocks and loops belong to the function frame below them
@@ -1089,51 +1119,139 @@ class toc final {
         return funcs_.get_const_ref(name);
     }
 
-    // the root frame applies the dat var gap again when it is entered anew
-    auto pop_frame() -> void {
-        vars_size_bytes_ -= frames_.back().allocated_stack_size_bytes();
-        frames_.pop_back();
-        if (not frames_.empty()) {
-            return;
+    [[nodiscard]] auto
+    make_ident_info_const_or_empty(const token& src_loc_tk,
+                                   const std::string_view ident,
+                                   const ident_path& id) const -> ident_info {
+
+        // is 'id' an integer?
+        if (const std::optional<int64_t> value{
+                parse_constant(src_loc_tk, id.str())};
+            value) {
+
+            return ident_info::make_const(ident, id.str(), get_type_default(),
+                                          *value);
         }
 
-        assert(vars_size_bytes_ == 0);
+        // is it a boolean constant?
+        if (id.base() == "true") {
+            return ident_info::make_const(ident, id.str(), get_type_default(),
+                                          1);
+        }
 
-        vars_entry_gap_applied_ = false;
+        if (id.base() == "false") {
+            return ident_info::make_const(ident, id.str(), get_type_default(),
+                                          0);
+        }
+
+        // is 'id' a constant?
+        if (has_const(id.str())) {
+            return ident_info::make_const(ident, id.str(), get_type_default(),
+                                          get_const(id.str()));
+        }
+
+        // not resolved, return empty info
+        return ident_info::make_empty();
     }
 
-    // bytes of variables, without the dats and the gap after them
-    [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
-        return vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_;
+    [[nodiscard]] auto make_ident_info_from_frame(
+        const frame& frm, const token& src_loc_tk, const std::string_view ident,
+        const ident_path& id, std::vector<operand> lea_path) const
+        -> ident_info {
+
+        // try function scope
+        if (frm.has_var(id.base())) {
+            return make_ident_info_from_var_info(
+                src_loc_tk, ident, id, frm.get_var_const_ref(id.base()),
+                std::move(lea_path));
+        }
+
+        // try global scope
+        if (frames_.front().has_var(id.base())) {
+            return make_ident_info_from_var_info(
+                src_loc_tk, ident, id,
+                frames_.front().get_var_const_ref(id.base()), lea_path);
+        }
+
+        // try constant
+        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
     }
 
-    // the resolved name shows where the variable is stored
-    auto comment_var(const token& src_loc_tk, const size_t indent,
-                     const var_info& var) -> void {
+    [[nodiscard]] auto make_ident_info_from_var_info(
+        const token& src_loc_tk, const std::string_view ident,
+        const ident_path& id, const var_info& var,
+        std::vector<operand> lea_path) const -> ident_info {
 
-        const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
+        ident_info ii{
+            var.type_ptr->accessor(src_loc_tk, ident, id.path(), var,
+                                   machine_.get().variables_base_register())};
 
-        ::machine& x{machine()};
+        lea_path.resize(id.path().size());
+        // note: pad with empty for the remaining elements in the id path
 
-        std::string text{
-            std::format("{}: {}", var.name, name_info.type_ref().name())};
+        std::ranges::reverse(lea_path);
+        // note: reverse it since it was constructed while traversing
+        //       upwards in the frame stack but 'elem_path' and 'type_path'
+        //       are ordered from the top down
 
-        if (var.array_len) {
-            text += std::format("[{}]", var.array_len);
+        ii.lea_path = lea_path;
+
+        if (not ii.type_ref().is_builtin()) {
+            return ii;
         }
 
-        if (not var.reg.is_empty()) {
-            x.comment(src_loc_tk, indent, "{} ({})", text,
-                      var.reg.base_register());
+        // identifier is built-in type
 
-            return;
+        // find the first element from the top that has a 'lea' and get
+        // accessor relative to that
+
+        operand lea;
+        size_t lea_index{ii.elem_path.size()};
+        while (lea_index--) {
+            if (not ii.lea_path[lea_index].is_empty()) {
+                lea = ii.lea_path[lea_index];
+                break;
+            }
         }
 
-        x.comment_variable(
-            src_loc_tk, indent, text,
-            multiply_storage_size(name_info.type_ref().size_bytes(),
-                                  name_info.is_array ? name_info.array_len : 1),
-            name_info.operand);
+        if (lea.is_empty()) {
+            return ii;
+        }
+
+        // identifier has lea, construct operand
+
+        // example of resulting data structure:
+        //
+        // type string { len : i8, data : i8[127] }
+        // type room { name : string, description : string, note : string }
+        // type world { rooms : room[128] }
+        //
+        // id path     |  type  |  lea          |
+        // ------------|--------|---------------|
+        // wld         | world  | -             |
+        // rooms[2]    | room   | r15           |
+        // description | string | -             |
+        // data        | i8     | r15 + 129     |
+        //
+        // the indexing in 'rooms' is done at runtime thus the memory
+        // location of 'rooms[2]' cannot be deduced statically, thus the
+        // last lea encountered is the starting point when accessing
+        // identifiers
+
+        // start from the lea address and calculate offset to referred field
+        const std::span<std::string> elem_path_from_lea{
+            std::span{ii.elem_path}.subspan(lea_index)};
+
+        // navigate to referred element and get offset
+        const size_t offset{ii.type_path[lea_index]->field_offset(
+            src_loc_tk, elem_path_from_lea)};
+
+        ii.operand = operand::mem(lea, ii.type_ref());
+        if (offset != 0) {
+            ii.operand.increment_offset(address_offset(offset));
+        }
+
+        return ii;
     }
 
     // reviewed: 2026-09-09
@@ -1247,154 +1365,6 @@ class toc final {
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);
     }
 
-    [[nodiscard]] static auto as_element_if(const bool is_element,
-                                            ident_info info) -> ident_info {
-
-        if (not is_element) {
-            return info;
-        }
-
-        info.is_array = false;
-        info.array_len = 0;
-
-        return info;
-    }
-
-    [[nodiscard]] auto make_ident_info_from_frame(
-        const frame& frm, const token& src_loc_tk, const std::string_view ident,
-        const ident_path& id, std::vector<operand> lea_path) const
-        -> ident_info {
-
-        // try function scope
-        if (frm.has_var(id.base())) {
-            return make_ident_info_from_var_info(
-                src_loc_tk, ident, id, frm.get_var_const_ref(id.base()),
-                std::move(lea_path));
-        }
-
-        // try global scope
-        if (frames_.front().has_var(id.base())) {
-            return make_ident_info_from_var_info(
-                src_loc_tk, ident, id,
-                frames_.front().get_var_const_ref(id.base()), lea_path);
-        }
-
-        // try constant
-        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
-    }
-
-    [[nodiscard]] auto make_ident_info_from_var_info(
-        const token& src_loc_tk, const std::string_view ident,
-        const ident_path& id, const var_info& var,
-        std::vector<operand> lea_path) const -> ident_info {
-
-        ident_info ii{
-            var.type_ptr->accessor(src_loc_tk, ident, id.path(), var,
-                                   machine_.get().variables_base_register())};
-
-        lea_path.resize(id.path().size());
-        // note: pad with empty for the remaining elements in the id path
-
-        std::ranges::reverse(lea_path);
-        // note: reverse it since it was constructed while traversing
-        //       upwards in the frame stack but 'elem_path' and 'type_path'
-        //       are ordered from the top down
-
-        ii.lea_path = lea_path;
-
-        if (not ii.type_ref().is_builtin()) {
-            return ii;
-        }
-
-        // identifier is built-in type
-
-        // find the first element from the top that has a 'lea' and get
-        // accessor relative to that
-
-        operand lea;
-        size_t lea_index{ii.elem_path.size()};
-        while (lea_index--) {
-            if (not ii.lea_path[lea_index].is_empty()) {
-                lea = ii.lea_path[lea_index];
-                break;
-            }
-        }
-
-        if (lea.is_empty()) {
-            return ii;
-        }
-
-        // identifier has lea, construct operand
-
-        // example of resulting data structure:
-        //
-        // type string { len : i8, data : i8[127] }
-        // type room { name : string, description : string, note : string }
-        // type world { rooms : room[128] }
-        //
-        // id path     |  type  |  lea          |
-        // ------------|--------|---------------|
-        // wld         | world  | -             |
-        // rooms[2]    | room   | r15           |
-        // description | string | -             |
-        // data        | i8     | r15 + 129     |
-        //
-        // the indexing in 'rooms' is done at runtime thus the memory
-        // location of 'rooms[2]' cannot be deduced statically, thus the
-        // last lea encountered is the starting point when accessing
-        // identifiers
-
-        // start from the lea address and calculate offset to referred field
-        const std::span<std::string> elem_path_from_lea{
-            std::span{ii.elem_path}.subspan(lea_index)};
-
-        // navigate to referred element and get offset
-        const size_t offset{ii.type_path[lea_index]->field_offset(
-            src_loc_tk, elem_path_from_lea)};
-
-        ii.operand = operand::mem(lea, ii.type_ref());
-        if (offset != 0) {
-            ii.operand.increment_offset(address_offset(offset));
-        }
-
-        return ii;
-    }
-
-    [[nodiscard]] auto
-    make_ident_info_const_or_empty(const token& src_loc_tk,
-                                   const std::string_view ident,
-                                   const ident_path& id) const -> ident_info {
-
-        // is 'id' an integer?
-        if (const std::optional<int64_t> value{
-                parse_constant(src_loc_tk, id.str())};
-            value) {
-
-            return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          *value);
-        }
-
-        // is it a boolean constant?
-        if (id.base() == "true") {
-            return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          1);
-        }
-
-        if (id.base() == "false") {
-            return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          0);
-        }
-
-        // is 'id' a constant?
-        if (has_const(id.str())) {
-            return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          get_const(id.str()));
-        }
-
-        // not resolved, return empty info
-        return ident_info::make_empty();
-    }
-
     // helper: call make_ident_info_or_empty and throw if unresolved
     [[nodiscard]] auto
     make_ident_info_or_throw(const token& src_loc_tk,
@@ -1410,8 +1380,50 @@ class toc final {
             src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
     }
 
+    // the root frame applies the dat var gap again when it is entered anew
+    auto pop_frame() -> void {
+        vars_size_bytes_ -= frames_.back().allocated_stack_size_bytes();
+        frames_.pop_back();
+        if (not frames_.empty()) {
+            return;
+        }
+
+        assert(vars_size_bytes_ == 0);
+
+        vars_entry_gap_applied_ = false;
+    }
+
     auto refresh_usage() -> void {
         usage_max_frame_count_ =
             std::max(frames_.size(), usage_max_frame_count_);
+    }
+
+    // bytes of variables, without the dats and the gap after them
+    [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
+        return vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_;
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto as_element_if(const bool is_element,
+                                            ident_info info) -> ident_info {
+
+        if (not is_element) {
+            return info;
+        }
+
+        info.is_array = false;
+        info.array_len = 0;
+
+        return info;
+    }
+
+    // variable name without the field path
+    [[nodiscard]] static auto root_id_of(const std::string_view id)
+        -> std::string_view {
+
+        return id.substr(0, id.find('.'));
     }
 };

@@ -31,6 +31,15 @@ class expr_type final : public statement {
     bool is_array_destination_{};
 
   public:
+    // bytes of the variable a record value is written into
+    struct record_destination {
+        std::string_view root;
+        field_coverage::range range;
+
+        // false when a runtime index leaves the element unknown
+        bool is_exact{};
+    };
+
     // out-of-line: parses 'expr_any' items and creates the 'stmt_call' or
     // 'stmt_identifier'
     expr_type(toc& tc, tokenizer& tz, const type& tp,
@@ -40,37 +49,19 @@ class expr_type final : public statement {
     explicit expr_type(std::shared_ptr<stmt_identifier> receiver);
 
     expr_type() = default;
+
+    //
+    // overridden methods
+    //
+
     // note: copy and assignment constructor will not compile if used
 
     // out-of-line: calls 'stmt_call', 'stmt_identifier' and 'expr_any'
     auto source_to(std::ostream& os) const -> void override;
 
-    [[nodiscard]] auto is_make_copy() const -> bool {
-        return not tok().text().empty();
-        // note: if token is empty then it is an expression of a type '{ ... }'
-        //       otherwise e.g. 'p = pt'
-    }
-
     // out-of-line: calls 'stmt_call'
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override;
-
-    // out-of-line: calls 'stmt_call', 'stmt_identifier' and 'expr_any'
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override;
-
-    [[nodiscard]] auto is_identifier() const -> bool override {
-        return stmt_ident_ != nullptr;
-    }
-
-    // out-of-line: calls 'stmt_identifier'
-    [[nodiscard]] auto is_indexed() const -> bool override;
-
-    // out-of-line: calls 'stmt_identifier'
-    [[nodiscard]] auto is_array_element() const -> bool override;
-
-    // out-of-line: calls 'stmt_identifier'
-    [[nodiscard]] auto identifier() const -> std::string_view override;
 
     // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
@@ -81,14 +72,26 @@ class expr_type final : public statement {
                                    const operand& address_register) const
         -> operand override;
 
-    // bytes of the variable a record value is written into
-    struct record_destination {
-        std::string_view root;
-        field_coverage::range range;
+    // out-of-line: calls 'stmt_identifier'
+    [[nodiscard]] auto identifier() const -> std::string_view override;
 
-        // false when a runtime index leaves the element unknown
-        bool is_exact{};
-    };
+    // out-of-line: calls 'stmt_identifier'
+    [[nodiscard]] auto is_array_element() const -> bool override;
+
+    [[nodiscard]] auto is_identifier() const -> bool override {
+        return stmt_ident_ != nullptr;
+    }
+
+    // out-of-line: calls 'stmt_identifier'
+    [[nodiscard]] auto is_indexed() const -> bool override;
+
+    // out-of-line: calls 'stmt_call', 'stmt_identifier' and 'expr_any'
+    auto visit_reads(const std::string_view var,
+                     const read_visitor reader) const -> void override;
+
+    //
+    // class methods
+    //
 
     // the fields are written in order so later items must not read earlier
     // fields of the destination
@@ -105,6 +108,16 @@ class expr_type final : public statement {
 
         assert_items_not_reading(dst, 0);
     }
+
+    [[nodiscard]] auto is_make_copy() const -> bool {
+        return not tok().text().empty();
+        // note: if token is empty then it is an expression of a type '{ ... }'
+        //       otherwise e.g. 'p = pt'
+    }
+
+    //
+    // statics
+    //
 
     // unlisted elements are zero like unlisted fields, returns the zeroed size
     static auto zero_remaining_elements(toc& tc, const size_t indent,
@@ -133,15 +146,45 @@ class expr_type final : public statement {
     }
 
   private:
-    // out-of-line: creates the 'stmt_call' or 'stmt_identifier'
-    auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
-
     // out-of-line: calls 'stmt_call'
     auto assert_call_type(const type& tp) const -> void;
 
     // out-of-line: calls 'expr_any'
     auto assert_items_not_reading(const record_destination& dst,
                                   const size_t record_offset) const -> void;
+
+    // out-of-line: calls 'expr_any'
+    auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
+                        const ident_info& dst_info, operand& dst_op) const
+        -> void;
+
+    // out-of-line: creates the 'stmt_call' or 'stmt_identifier'
+    auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
+
+    // out-of-line: calls 'expr_any'
+    auto write_builtin_field(toc& tc, const size_t indent, const expr_any& src,
+                             const type_field& field, ident_info& dst_info,
+                             const operand& dst_op) const -> void;
+
+    // padding is zeroed too so that records compare equal byte by byte
+    auto zero_unwritten(toc& tc, const size_t indent,
+                        const std::string_view what, const size_t size_bytes,
+                        const size_t alignment, operand& dst_op) const -> void {
+
+        if (size_bytes == 0) {
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, "zero {}: {} B", what, size_bytes);
+        x.zero(tok(), indent, dst_op, size_bytes, alignment);
+        dst_op.increment_offset(address_offset(size_bytes));
+    }
+
+    //
+    // statics
+    //
 
     static auto assert_item_not_reading(const statement& item,
                                         const record_destination& dst,
@@ -194,8 +237,9 @@ class expr_type final : public statement {
         -> void;
 
     // out-of-line: calls 'expr_any'
-    auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
-                        const ident_info& dst_info, operand& dst_op) const
+    static auto compile_builtin_field(toc& tc, const size_t indent,
+                                      const expr_any& src,
+                                      const operand& src_op, const operand& dst)
         -> void;
 
     // out-of-line: calls 'expr_any'
@@ -204,33 +248,6 @@ class expr_type final : public statement {
                                      const type_field& field,
                                      const ident_info& dst_info,
                                      operand& dst_op) -> void;
-
-    // out-of-line: calls 'expr_any'
-    auto write_builtin_field(toc& tc, const size_t indent, const expr_any& src,
-                             const type_field& field, ident_info& dst_info,
-                             const operand& dst_op) const -> void;
-
-    // out-of-line: calls 'expr_any'
-    static auto compile_builtin_field(toc& tc, const size_t indent,
-                                      const expr_any& src,
-                                      const operand& src_op, const operand& dst)
-        -> void;
-
-    // padding is zeroed too so that records compare equal byte by byte
-    auto zero_unwritten(toc& tc, const size_t indent,
-                        const std::string_view what, const size_t size_bytes,
-                        const size_t alignment, operand& dst_op) const -> void {
-
-        if (size_bytes == 0) {
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, "zero {}: {} B", what, size_bytes);
-        x.zero(tok(), indent, dst_op, size_bytes, alignment);
-        dst_op.increment_offset(address_offset(size_bytes));
-    }
 
     static auto validate_array_assignment(const token& src_loc_tk,
                                           const type_field& fld,

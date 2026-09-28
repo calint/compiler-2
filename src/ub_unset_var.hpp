@@ -35,15 +35,6 @@ class field_coverage final {
 
     field_coverage() = default;
 
-    [[nodiscard]] static auto full(const size_t size_bytes) -> field_coverage {
-        field_coverage coverage{size_bytes};
-        coverage.add({.offset{}, .size_bytes{size_bytes}});
-
-        return coverage;
-    }
-
-    [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
-
     auto add(const range assigned) -> void {
         if (assigned.size_bytes == 0) {
             return;
@@ -66,10 +57,6 @@ class field_coverage final {
         });
     }
 
-    [[nodiscard]] auto is_full() const -> bool {
-        return covers({.offset{}, .size_bytes{size_bytes_}});
-    }
-
     // keeps only the bytes assigned on both paths
     auto intersect(const field_coverage& other) -> void {
         std::vector<range> common;
@@ -87,6 +74,23 @@ class field_coverage final {
 
         ranges_ = std::move(common);
         normalize();
+    }
+
+    [[nodiscard]] auto is_full() const -> bool {
+        return covers({.offset{}, .size_bytes{size_bytes_}});
+    }
+
+    [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto full(const size_t size_bytes) -> field_coverage {
+        field_coverage coverage{size_bytes};
+        coverage.add({.offset{}, .size_bytes{size_bytes}});
+
+        return coverage;
     }
 
   private:

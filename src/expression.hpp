@@ -11,6 +11,10 @@ class expression : public statement {
 
     expression() = default;
 
+    //
+    // overridden methods
+    //
+
     [[nodiscard]] auto is_expression() const -> bool override { return true; }
 
   protected:

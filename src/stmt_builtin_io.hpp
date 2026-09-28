@@ -20,6 +20,10 @@ class stmt_builtin_io final : public stmt_call {
         }
     }
 
+    //
+    // overridden methods
+    //
+
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
@@ -58,17 +62,6 @@ class stmt_builtin_io final : public stmt_call {
     }
 
   private:
-    auto emit_call(machine& x, const size_t indent, const operand& result,
-                   const std::vector<operand>& args) const -> void {
-
-        if (tok().is_text("read")) {
-            x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
-            return;
-        }
-
-        x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
-    }
-
     // an address would bypass the bounds check, so only arrays are accepted
     auto assert_array_buffer(const toc& tc) const -> void {
         const statement& buffer{argument(1)};
@@ -171,5 +164,16 @@ class stmt_builtin_io final : public stmt_call {
         x.multiply(tok(), indent, count, element_size_bytes);
 
         return args;
+    }
+
+    auto emit_call(machine& x, const size_t indent, const operand& result,
+                   const std::vector<operand>& args) const -> void {
+
+        if (tok().is_text("read")) {
+            x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
+            return;
+        }
+
+        x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
     }
 };

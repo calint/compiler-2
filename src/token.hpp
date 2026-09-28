@@ -30,31 +30,22 @@ class token final {
 
     token() = default;
 
-    auto source_to(std::ostream& os) const -> void {
-        if (not is_str_) {
-            std::print(os, "{}{}{}", ws_left_, text_, ws_right_);
-            return;
-        }
-
-        std::print(os, "{}\"{}\"{}", ws_left_, text_, ws_right_);
-    }
-
-    [[nodiscard]] auto is_text(const std::string_view s) const -> bool {
-        return text_ == s;
-    }
-
-    [[nodiscard]] auto text() const -> std::string_view { return text_; }
-
-    [[nodiscard]] auto start_index() const -> size_t { return start_ix_; }
+    [[nodiscard]] auto at_line() const -> size_t { return at_line_; }
 
     [[nodiscard]] auto end_index() const -> size_t { return end_ix_; }
+
+    [[nodiscard]] auto has_whitespace_before() const -> bool {
+        return not ws_left_.empty();
+    }
 
     [[nodiscard]] auto is_empty() const -> bool {
         return ws_left_.empty() and text_.empty() and ws_right_.empty();
     }
 
-    [[nodiscard]] auto has_whitespace_before() const -> bool {
-        return not ws_left_.empty();
+    [[nodiscard]] auto is_string() const -> bool { return is_str_; }
+
+    [[nodiscard]] auto is_text(const std::string_view s) const -> bool {
+        return text_ == s;
     }
 
     // the indexes include the quotes that string token text excludes
@@ -66,9 +57,16 @@ class token final {
         return end_ix_ + ws_right_.length();
     }
 
-    [[nodiscard]] auto is_string() const -> bool { return is_str_; }
+    auto source_to(std::ostream& os) const -> void {
+        if (not is_str_) {
+            std::print(os, "{}{}{}", ws_left_, text_, ws_right_);
+            return;
+        }
 
-    [[nodiscard]] auto at_line() const -> size_t { return at_line_; }
+        std::print(os, "{}\"{}\"{}", ws_left_, text_, ws_right_);
+    }
+
+    [[nodiscard]] auto start_index() const -> size_t { return start_ix_; }
 
     [[nodiscard]] auto string_size_bytes() const -> size_t {
         size_t len{};
@@ -84,6 +82,12 @@ class token final {
 
         return len;
     }
+
+    [[nodiscard]] auto text() const -> std::string_view { return text_; }
+
+    //
+    // statics
+    //
 
     // 'escape' is the text after the backslash, e.g. "n" or "x41"
     // shared by string data and character literals so both accept the same
@@ -192,6 +196,10 @@ class token final {
     }
 
   private:
+    //
+    // statics
+    //
+
     [[nodiscard]] static auto decode_hex_escape(const std::string_view digits)
         -> std::optional<char> {
 

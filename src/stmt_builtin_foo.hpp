@@ -41,6 +41,10 @@ class stmt_builtin_foo final : public statement {
 
     stmt_builtin_foo() = default;
 
+    //
+    // overridden methods
+    //
+
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         ident_.source_to(os);
@@ -97,6 +101,31 @@ class stmt_builtin_foo final : public statement {
     }
 
   private:
+    // an indexed or forwarded array needs its address computed
+    auto load_array_address(toc& tc, const size_t indent, const ident_info& ii,
+                            const operand& reg_iter) const -> void {
+
+        machine& x{tc.machine()};
+
+        if (not ii.has_lea() and not ident_.is_indexed()) {
+            x.address_of(tok(), indent, reg_iter, ii.operand);
+            return;
+        }
+
+        std::vector<operand> allocated_registers;
+
+        const operand op{ident_.compile_lea(
+            tc, indent, tok(), allocated_registers, {}, ii.lea_path, {})};
+
+        x.address_of(tok(), indent, reg_iter, op);
+
+        x.free_scratch_registers(tok(), indent, allocated_registers);
+    }
+
+    //
+    // statics
+    //
+
     // 'e' is the element at the iterator, 'i' the counter and 'n' the array
     // size, parsing registers them without an iterator register
     static auto add_loop_names(toc& tc, const size_t indent,
@@ -126,26 +155,5 @@ class stmt_builtin_foo final : public statement {
 
         tc.add_const(src_loc_tk, indent, "n",
                      static_cast<int64_t>(array_info.array_len));
-    }
-
-    // an indexed or forwarded array needs its address computed
-    auto load_array_address(toc& tc, const size_t indent, const ident_info& ii,
-                            const operand& reg_iter) const -> void {
-
-        machine& x{tc.machine()};
-
-        if (not ii.has_lea() and not ident_.is_indexed()) {
-            x.address_of(tok(), indent, reg_iter, ii.operand);
-            return;
-        }
-
-        std::vector<operand> allocated_registers;
-
-        const operand op{ident_.compile_lea(
-            tc, indent, tok(), allocated_registers, {}, ii.lea_path, {})};
-
-        x.address_of(tok(), indent, reg_iter, op);
-
-        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 };
