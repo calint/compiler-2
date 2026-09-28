@@ -407,6 +407,98 @@ func constructors() {
 }
 
 #
+# arrays in user types
+#
+
+type stack {
+    items i[4],
+    count,
+}
+# a field can be an array, its size is part of the type
+
+func stack.push(v) {
+    self.items[self.count] = v
+    self.count = self.count + 1
+}
+
+func stack.pop() res {
+    self.count = self.count - 1
+    res = self.items[self.count]
+}
+
+func sum_all(arr i[]) res {
+    res = 0
+    foo arr {
+        res = res + e
+    }
+}
+
+func arrays_in_types() {
+    var s = stack{{7, 8}, 2}
+    assert(s.items[1] == 8 and s.items[2] == 0 and s.count == 2)
+    # a nested array literal initializes the field, missing elements are
+    # zeroed
+
+    s.push(9)
+    assert(s.count == 3 and s.items[2] == 9)
+    assert(s.pop() == 9)
+    assert(s.count == 2)
+    # methods index the field with run-time values
+
+    assert(array_length(s.items) == 4)
+    assert(sum_all(s.items) == 7 + 8 + 9)
+    # the field works like any array with built-ins, 'foo' and array
+    # arguments, 'pop' left 9 in the array
+
+    var copy = s
+    copy.items[0] = 0
+    assert(s.items[0] == 7 and not equal(s, copy))
+    # copying a record copies its array fields
+}
+
+#
+# data
+#
+
+dat powers = i[]{1, 2, 4, 8}
+dat calls = 0
+dat home = point{10, 20}
+dat history = stack{{1, 2}, 2}
+# data can have any type declared before it, including arrays and user types
+# with array fields
+# 'dat' is only allowed at the top level and the initializer is made of
+# constants, 'dat twice = calls' is a compile error
+
+func count_call() {
+    calls = calls + 1
+}
+# data is global, any function can read and assign it
+
+func data() {
+    assert(powers[3] == 8)
+    powers[0] = 3
+    assert(powers[0] == 3)
+    # data is indexed and assigned like variables
+
+    count_call()
+    count_call()
+    assert(calls == 2)
+    # the value is kept between calls, unlike variables of functions that are
+    # initialized at every call
+
+    home.move(1, 1)
+    assert(home.x == 11 and home.y == 21)
+    history.push(3)
+    assert(history.items[2] == 3 and history.count == 3)
+    # methods work on data of user types
+
+    var local = powers
+    local[1] = 0
+    assert(powers[1] == 2)
+    # initializing a variable from data copies it
+}
+
+#
 # non-inlined functions
 #
 
@@ -482,6 +574,8 @@ func main() {
     user_types()
     methods()
     constructors()
+    arrays_in_types()
+    data()
     non_inlined()
     checks()
 }
