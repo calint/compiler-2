@@ -202,7 +202,7 @@ class stmt_def_dat final : public statement {
 
         if (is_array_literal(tc, tk, tz)) {
             type_tk_ = tk;
-            set_type(array_literal_type(tc, tk));
+            set_type(named_type(tc, tk));
 
             return parse_array_literal(tc, tz);
         }

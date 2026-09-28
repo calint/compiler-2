@@ -1,4 +1,4 @@
 # a string cannot exceed the size of its data field
 
-type p { s[2] i8 }
+type p { s i8[2] }
 func main() { dat x = p{"abc"} }

@@ -1,5 +1,5 @@
 # a return inside 'foo' skips the result assignment
-func first(values[] i32) res {
+func first(values i32[]) res {
     foo values {
         return
     }

@@ -2,15 +2,15 @@ func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-type world { locations[4] }
+type world { locations i[4] }
 
-type exits {  from[4] i32, to[4] i32 }
+type exits {  from i32[4], to i32[4] }
 
-type line { points[2] point }
+type line { points point[2] }
 
-type string { data[128] i8 }
+type string { data i8[128] }
 
-type entity { messages[8] string }
+type entity { messages string[8] }
 
 dat    pt0 = point{ -1 }
 dat    pt1 = point{  }

@@ -5,18 +5,18 @@ func assert(expr bool) {
 type vec3 { x i32, y i32, z i32 }
 
 type mesh {
-    vertices[8] vec3,
-    indices[12] i32,
+    vertices vec3[8],
+    indices i32[12],
     id i32
 }
 
 type scene {
-    meshes[4] mesh,
+    meshes mesh[4],
     time
 }
 
 type world {
-    scenes[3] scene
+    scenes scene[3]
 }
 
 func init_mesh(m mesh, id_val i32) {

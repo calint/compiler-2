@@ -516,7 +516,7 @@ class expr_any final : public statement {
             return;
         }
 
-        if (array_literal_type(tc, tk).name() != tp.name()) {
+        if (named_type(tc, tk).name() != tp.name()) {
             throw compiler_exception{tk,
                                      std::format("expected type '{}', got '{}'",
                                                  tp.name(), tk.text())};

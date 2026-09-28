@@ -6,7 +6,7 @@
 func assert(err, expr bool) { if not expr exit(err) }
 
 type holder {
-    values[2],
+    values i[2],
     tag
 }
 

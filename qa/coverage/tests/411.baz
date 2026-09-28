@@ -12,7 +12,7 @@ type node {
 }
 
 type world {
-    nodes[3] node
+    nodes node[3]
 }
 
 func bump(a node) {

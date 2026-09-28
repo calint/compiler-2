@@ -3,7 +3,7 @@
 func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
-type holder { points[2] point }
+type holder { points point[2] }
 
 func set_x(p point) {
     p.x = 9

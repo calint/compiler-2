@@ -1,7 +1,7 @@
 func assert(expr bool) { if not expr exit(1) }
 
 
-func fez(val[] i32) res i32 {
+func fez(val i32[]) res i32 {
     res = val[2] << (val[1] + val[1]) 
 }
 

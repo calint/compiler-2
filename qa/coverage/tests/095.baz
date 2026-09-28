@@ -4,7 +4,7 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(str[] i8, len) {
+func print(str i8[], len) {
     write(1, str, len)
 }
 

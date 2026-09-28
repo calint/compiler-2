@@ -2,7 +2,7 @@ func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-type msgpoint {  msg[128] i8, pt point }
+type msgpoint {  msg i8[128], pt point }
 
 func main() {
     var x = -1

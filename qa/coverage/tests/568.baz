@@ -2,7 +2,7 @@
 
 type list {
     count,
-    items[4]
+    items i[4]
 }
 
 func list.append(other list) {

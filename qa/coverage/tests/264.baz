@@ -1,6 +1,6 @@
 # hexadecimal string escape decoding
 
-func print(str[] i8, len) {
+func print(str i8[], len) {
     write(1, str, len)
 }
 

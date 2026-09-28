@@ -4,7 +4,7 @@ func assert(x bool) { if not x exit(1) }
 
 type str {
     len i8,
-    data[4] i8
+    data i8[4]
 }
 
 type location {

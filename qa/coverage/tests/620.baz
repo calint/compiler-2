@@ -4,7 +4,7 @@ type point {x, y}
 
 type str {
     len i8,
-    data[127] i8,
+    data i8[127],
 }
 
 dat hello = "hello\n"            # i8 array of 6

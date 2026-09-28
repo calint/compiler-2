@@ -1,7 +1,7 @@
 # foo indexes an array of user types in a user-type field
 
 type point { x, y }
-type item { data[2] point }
+type item { data point[2] }
 
 dat values =
     item[3]{

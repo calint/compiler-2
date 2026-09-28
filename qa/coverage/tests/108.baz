@@ -5,15 +5,15 @@ func assert(expr bool) {
 }
 
 type flags {
-    data[8] i8
+    data i8[8]
 }
 
 type world {
     time,
-    flgs[4] flags
+    flgs flags[4]
 }
 
-func foozi(data[] i8) {
+func foozi(data i8[]) {
     assert(array_length(data) == 8)
 }
 

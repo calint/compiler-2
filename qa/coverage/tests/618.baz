@@ -1,6 +1,6 @@
 # an unsized array parameter has no size for a copy in a new variable
 
-func f(s[] i8) {
+func f(s i8[]) {
     var c = s
 }
 

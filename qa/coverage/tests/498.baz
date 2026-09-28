@@ -1,7 +1,7 @@
 # a record literal assigns every element of an array-of-records field
 func assert(ok bool, code) { if not ok exit(code) }
 type point { x, y }
-type box { corners[2] point, tag }
+type box { corners point[2], tag }
 func main() {
     var b = box{ { {1, 2}, {3, 4} }, 5 }
     assert(b.corners[0].y == 2, 1)

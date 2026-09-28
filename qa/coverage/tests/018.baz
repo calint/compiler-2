@@ -1,16 +1,16 @@
 dat hello="hello\n"
 dat world="world\n"
 
-func print(str[] i8, len) {
+func print(str i8[], len) {
     write(1, str, len)
 }
 
-func foozi(world[] i8){
+func foozi(world i8[]){
     var len=array_length(world)
     print(world,len-1)
 }
 
-func bar(n,x,hello[] i8){
+func bar(n,x,hello i8[]){
     var i=x
     loop{
         var b=2

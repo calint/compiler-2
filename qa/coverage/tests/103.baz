@@ -5,14 +5,14 @@ func assert(expr bool) {
 }
 
 type link {
-    name[64] i8,
+    name i8[64],
     name_len i8
 }
 
 type location {
-    name[64] i8,
+    name i8[64],
     name_len i8,
-    links[4] link
+    links link[4]
 }
 
 type world {

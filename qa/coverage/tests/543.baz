@@ -19,12 +19,12 @@ type packed {
 type outer {
     flag bool,
     inner mixed,
-    names[3] i8,
-    items[2] mixed
+    names i8[3],
+    items mixed[2]
 }
 
 type holder {
-    vals[3] i8,
+    vals i8[3],
     n i32
 }
 

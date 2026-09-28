@@ -4,21 +4,21 @@
 func assert(err, ok bool) { if not ok exit(err) }
 
 type name {
-    text[8] i8,
+    text i8[8],
     len i32
 }
 
 type team {
     lead name,
-    members[2] name,
-    motto[24] i8
+    members name[2],
+    motto i8[24]
 }
 
 dat expected_motto = "strings longer than 16!\n"
 dat cleared = i8[3]{}
 
 # an unsized parameter takes the size of the argument
-func greet(dst[] i8) {
+func greet(dst i8[]) {
     dst = "hi"
 }
 

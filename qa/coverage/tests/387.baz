@@ -1,8 +1,8 @@
 # foo and increment both index through nested user types
 
 type point { x, y }
-type data_holder { data[3] point }
-type item { something[2] data_holder }
+type data_holder { data point[3] }
+type item { something data_holder[2] }
 
 dat values =
     item[2]{

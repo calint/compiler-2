@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 # Shared Baz helpers. A failed assertion exits with its numbered error code.
 # item occupies 13 bytes: one i8 tag plus three i32 values, without field padding.
 COMMON = """func assert(err, condition bool) { if not condition exit(err) }
-type item { tag i8, values[3] i32 }
+type item { tag i8, values i32[3] }
 func bump(value item) { value.values[2] = value.values[2] + 1 }
 """
 # Runtime checks: the first local is zeroed; sibling blocks re-zero storage;
@@ -171,7 +171,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
          "func middle() { var middle_local = i8[5]{} leaf() }\n",
          "var local = i8[3]{}\nmiddle()\nmiddle()", 15),
         # Two aligned records: 2 * (1 + 3 padding + 3 * 4) = 32.
-        ("structured-array", "type record { tag i8, values[3] i32 }\n",
+        ("structured-array", "type record { tag i8, values i32[3] }\n",
          "var records = record[2]{}", 32),
     ]
     for name, data_source in statistics_layouts:
@@ -261,7 +261,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
 
     # byte fields keep the unaligned boundary offsets such as 2047
     for offset in (2047, 2048, 8196, 2147483647, 2147483648, 2147483656):
-        source = f"""type large {{ padding[{offset}] i8, value i8, next i8 }}
+        source = f"""type large {{ padding i8[{offset}], value i8, next i8 }}
 func noinline update(value i8) {{ value = value + 1 }}
 func main() {{
     var data = large{{}}
@@ -282,7 +282,7 @@ func main() {{
         print(f"arena large offset {offset}: ok", flush=True)
 
     for offset in (2147483647, 2147483648, 2147483656):
-        source = COMMON + f"""type large {{ padding[{offset}] i8, value i32, next i32, equal bool, values[3] i32 }}
+        source = COMMON + f"""type large {{ padding i8[{offset}], value i32, next i32, equal bool, values i32[3] }}
 func noinline update(value i32) {{ value = value + 1 }}
 func noinline probe(data large) {{
     data.value = 7
@@ -373,8 +373,8 @@ func main() {
         print(f"arena large frame capacity {vars_size}: ok", flush=True)
 
     for declaration in (
-        "type huge { values[2305843009213693952] i64 }",
-        "type huge { values[9223372036854775807] i8, extra i8 }",
+        "type huge { values i64[2305843009213693952] }",
+        "type huge { values i8[9223372036854775807], extra i8 }",
         "var huge = i64[2305843009213693952]{}",
         "dat huge = i64[2305843009213693952]{}",
         "dat huge = i64[1152921504606846976]{}",

@@ -2,17 +2,17 @@
 
 func assert(expr bool) { if not expr exit(1) }
 
-type string { len i8, data[127] i8 }
+type string { len i8, data i8[127] }
 
 type room { name string, description string, note string }
 
-type world { rooms[128] room }
+type world { rooms room[128] }
 
 func bar(i i8) {
     i = 1
 }
 
-func foozi(str[] i8) {
+func foozi(str i8[]) {
     bar(str[5])
 }
 

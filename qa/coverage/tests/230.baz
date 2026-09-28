@@ -1,7 +1,7 @@
 # nested user-type array fields must match
 
-type p { data[2] i8 }
-type q { data[2] i16 }
+type p { data i8[2] }
+type q { data i16[2] }
 func main() {
     var q1 = q{}
     var p1 = p{q1.data}

@@ -289,11 +289,11 @@ func low_byte(v i32) res i8 {
 }
 # types follow the argument and result names
 
-func first(arr[] i32) res i32 {
+func first(arr i32[]) res i32 {
     res = arr[0]
 }
-# an array argument is declared with '[]' and optional type, its size comes
-# from the caller
+# an array argument has '[]' after the type, 'i[]' with the default type, its
+# size comes from the caller
 
 func functions() {
     var x = 3
@@ -324,7 +324,7 @@ type point {x, y}
 type pixel {
     pos point,
     color i32,
-    tags[2] i8, # trailing comma allowed
+    tags i8[2], # trailing comma allowed
 }
 # fields have optional types and can be arrays or other user types
 

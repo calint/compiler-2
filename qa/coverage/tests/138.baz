@@ -4,7 +4,7 @@ func faz(x i32, y i32) res i32 {
     res = x / y 
 }
 
-func fez(val[] i32) res i32 {
+func fez(val i32[]) res i32 {
     res = val[2] / val[1] 
 }
 

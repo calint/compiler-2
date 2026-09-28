@@ -13,19 +13,19 @@ type vertex {
 }
 
 type mesh {
-    vertices[16] vertex,
-    indices[24] i32,
+    vertices vertex[16],
+    indices i32[24],
     id i32
 }
 
 type scene {
-    meshes[4] mesh,
+    meshes mesh[4],
     active i32
 }
 
 type world {
-    scenes[3] scene,
-    metadata[32] i8
+    scenes scene[3],
+    metadata i8[32]
 }
 
 func init_vertex(v vertex, idx i32) {

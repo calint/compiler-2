@@ -1,6 +1,6 @@
 # computed inner index in a nested array
 
-type group { values[2] i8 }
+type group { values i8[2] }
 
 func main() {
     var groups = group[2]{}

@@ -4,7 +4,7 @@ type point { x, y }
 
 type line { from point, to point }
 
-type message { len i8, subject[128] i8 }
+type message { len i8, subject i8[128] }
 
 func main() {
     var x = -1

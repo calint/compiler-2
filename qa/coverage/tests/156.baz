@@ -2,13 +2,13 @@
 
 func assert(expr bool) { if not expr exit(1) }
 
-type string { len i8, data[127] i8 }
+type string { len i8, data i8[127] }
 
 type link { name_id i16, to i16, pad i16 }
 
-type room { name string, description string, note string, links[6] link }
+type room { name string, description string, note string, links link[6] }
 
-type world { rooms[128] room }
+type world { rooms room[128] }
 
 func f3(to i16) {
     to = 2

@@ -2,9 +2,9 @@ func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }
 
-type msgpoint {  msg[128] i8, pt point }
+type msgpoint {  msg i8[128], pt point }
 
-type message { subject[64] i8, is_read bool, checks[4] bool }
+type message { subject i8[64], is_read bool, checks bool[4] }
 
 func main() {
     var x = -1

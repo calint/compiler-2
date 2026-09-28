@@ -96,8 +96,8 @@ auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
 }
 
 // declared in 'decouple.hpp'
-// e.g. 'i8' in 'i8[]{1, 2}' or the default type in 'i[]{1, 2}'
-auto array_literal_type(const toc& tc, const token& tk) -> const type& {
+// e.g. 'i8' in 'i8[]{1, 2}' or 'arr i8[]', the default type in 'i[]{1, 2}'
+auto named_type(const toc& tc, const token& tk) -> const type& {
     return stmt_builtin_convert::conversion_type(tc, tk);
 }
 

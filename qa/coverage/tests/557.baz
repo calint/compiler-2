@@ -5,7 +5,7 @@ func assert(err, ok bool) { if not ok exit(err) }
 
 type padded {
     tag i8,
-    text[7] i8
+    text i8[7]
 }
 
 dat expected_high = "\xff\x80\x7f\x01"

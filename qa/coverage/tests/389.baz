@@ -1,7 +1,7 @@
 # aggregate assignment with an array field
 
 type point { x, y }
-type tagged_points { tag, points[2] point }
+type tagged_points { tag, points point[2] }
 
 func assert(x bool) { if not x exit(1) }
 

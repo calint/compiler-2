@@ -5,19 +5,19 @@ func assert(expr bool) {
 }
 
 type link {
-    name[64] i8,
+    name i8[64],
     name_len i8,
     loc i32
 }
 
 type location {
-    name[64] i8,
-    links[8] link
+    name i8[64],
+    links link[8]
 }
 
 type world {
     time,
-    locations[7] location
+    locations location[7]
 }
 
 func foozi(lnk link){
@@ -26,12 +26,12 @@ func foozi(lnk link){
     lnk.name[0] = 0x61 # 'a'
 }
 
-func bar(locs[] location) {
+func bar(locs location[]) {
     foozi(locs[2].links[1])
     foozi(locs[3].links[5])
 }
 
-func baz(wld[] world) {
+func baz(wld world[]) {
     bar(wld[1].locations)
 }
 

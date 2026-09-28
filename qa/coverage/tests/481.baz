@@ -1,5 +1,5 @@
 # a constant index sets only its element
-type pair {cells[2]}
+type pair {cells i[2]}
 func make_pair() res pair {
     res.cells[0] = 5
 }

@@ -5,7 +5,7 @@ func assert(err, ok bool) { if not ok exit(err) }
 
 type list {
     count,
-    items[4]
+    items i[4]
 }
 
 type point {
@@ -16,7 +16,7 @@ type point {
 type holder {
     tag i8,
     lst list,
-    lists[2] list
+    lists list[2]
 }
 
 func list.clear() {

@@ -1,2 +1,2 @@
 
-458.baz:2:23: expected ',' or ')' after parameter 'values'
+458.baz:2:19: expected type before '[', e.g. 'values i8[]' or 'values i[]'

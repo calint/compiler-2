@@ -1,7 +1,7 @@
 # local array initializes an array of types with array fields
 
 type point { x, y }
-type holder { points[2] point }
+type holder { points point[2] }
 
 func assert(x bool) { if not x exit(1) }
 

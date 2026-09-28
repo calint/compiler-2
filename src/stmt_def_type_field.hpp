@@ -27,29 +27,37 @@ class stmt_def_type_field final : public statement {
             throw compiler_exception{tk, "expected field name"};
         }
 
-        open_bracket_tk_ = tz.is_next_char_token('[');
-        if (not open_bracket_tk_.is_empty()) {
-            is_array_ = true;
+        assert_type_before_brackets(tz, tk.text(), "4");
 
-            array_count_const_ = {tc, tz, 0};
-
-            if (not array_count_const_.has_value() or
-                array_count_const_.value() < 1) {
-
-                throw compiler_exception{
-                    array_count_const_.tok(),
-                    "expected a constant array size greater than 0"};
-            }
-
-            array_count_ = static_cast<size_t>(array_count_const_.value());
-
-            close_bracket_tk_ = tz.is_next_char_token(']');
-            if (close_bracket_tk_.is_empty()) {
-                throw compiler_exception{array_count_const_.tok(),
-                                         "expected ']' after array size"};
-            }
-        }
         type_tk_ = tz.next_token();
+        if (type_tk_.is_empty()) {
+            return;
+        }
+
+        open_bracket_tk_ = tz.is_next_char_token('[');
+        if (open_bracket_tk_.is_empty()) {
+            return;
+        }
+
+        is_array_ = true;
+
+        array_count_const_ = {tc, tz, 0};
+
+        if (not array_count_const_.has_value() or
+            array_count_const_.value() < 1) {
+
+            throw compiler_exception{
+                array_count_const_.tok(),
+                "expected a constant array size greater than 0"};
+        }
+
+        array_count_ = static_cast<size_t>(array_count_const_.value());
+
+        close_bracket_tk_ = tz.is_next_char_token(']');
+        if (close_bracket_tk_.is_empty()) {
+            throw compiler_exception{array_count_const_.tok(),
+                                     "expected ']' after array size"};
+        }
     }
 
     stmt_def_type_field() = default;
@@ -60,13 +68,13 @@ class stmt_def_type_field final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
+        if (not type_tk_.is_empty()) {
+            type_tk_.source_to(os);
+        }
         if (is_array_) {
             open_bracket_tk_.source_to(os);
             array_count_const_.source_to(os);
             close_bracket_tk_.source_to(os);
-        }
-        if (not type_tk_.is_empty()) {
-            type_tk_.source_to(os);
         }
     }
 

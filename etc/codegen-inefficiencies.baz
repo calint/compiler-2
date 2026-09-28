@@ -23,7 +23,7 @@ type point {x, y}
 
 type object {pos point, color i32}
 
-type world { locations[8] }
+type world { locations i[8] }
 
 func assert(ok bool) { if not ok exit(1) }
 

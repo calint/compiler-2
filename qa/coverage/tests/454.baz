@@ -1,11 +1,11 @@
 # arrays follow names, with optional element types
-type point { coordinates[2] i32, tags[2] }
+type point { coordinates i32[2], tags i[2] }
 dat colon = ": "
 dat numbers = i[2]{ 3, 4 }
 func assert(ok bool) { if not ok exit(1) }
-func sum(values[] i32) result i32 { result = values[0] + values[1] }
-func default_sum(values[]) result { result = values[0] + values[1] }
-func update(points[] point) { points[0].coordinates[1] = 9 }
+func sum(values i32[]) result i32 { result = values[0] + values[1] }
+func default_sum(values i[]) result { result = values[0] + values[1] }
+func update(points point[]) { points[0].coordinates[1] = 9 }
 func main() {
     var values = i32[]{ 5, 6 }
     assert(sum(values) == 11)

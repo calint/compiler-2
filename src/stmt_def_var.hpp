@@ -225,7 +225,7 @@ class stmt_def_var final : public statement {
         const token tk{tz.next_token()};
         tz.put_back_token(tk);
 
-        return array_literal_type(tc, tk);
+        return named_type(tc, tk);
     }
 
     // e.g. 'i8[3]{1, 2}', 'i[]{1, 2}' or 'point[]{{1, 2}}'

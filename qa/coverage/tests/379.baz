@@ -1,8 +1,8 @@
 # foo over a points array in an indexed holder
 
 type point { x, y }
-type item { points[2] point }
-type holder { cols[4] item }
+type item { points point[2] }
+type holder { cols item[4] }
 
 dat h1 =
     holder[3]{

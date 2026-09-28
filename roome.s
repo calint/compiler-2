@@ -55,7 +55,7 @@ main:
 ;   [86:14] free named register rdi
 ;   [86:14] free named register rax
 ;   [87:5] print(hello)
-;   [80:6] print(s[] i8)
+;   [80:6] print(s i8[])
     func.print.87.5:
 ;       [87:5] alias s -> hello
 ;       [81:5] write(1, s)
@@ -108,7 +108,7 @@ main:
         lea rbx, [rbp + 264]
         call func.print_num
 ;       [91:9] print(colon)
-;       [80:6] print(s[] i8)
+;       [80:6] print(s i8[])
         func.print.91.9:
 ;           [91:9] alias s -> colon
 ;           [81:5] write(1, s)
@@ -128,7 +128,7 @@ main:
 ;           [81:5] free named register rdi
         func.print.91.9.end:
 ;       [92:9] print(prompt1)
-;       [80:6] print(s[] i8)
+;       [80:6] print(s i8[])
         func.print.92.9:
 ;           [92:9] alias s -> prompt1
 ;           [81:5] write(1, s)
@@ -353,7 +353,7 @@ main:
         jg if.94.9.else
         if.94.12.code:
 ;           [95:13] print(prompt2)
-;           [80:6] print(s[] i8)
+;           [80:6] print(s i8[])
             func.print.95.13:
 ;               [95:13] alias s -> prompt2
 ;               [81:5] write(1, s)
@@ -376,7 +376,7 @@ main:
             jmp loop.88.5
         if.94.9.else:
 ;           [98:13] print(prompt3)
-;           [80:6] print(s[] i8)
+;           [80:6] print(s i8[])
             func.print.98.13:
 ;               [98:13] alias s -> prompt3
 ;               [81:5] write(1, s)
@@ -424,7 +424,7 @@ main:
 ;               [16:5] free named register rdi
             func.str.out.99.16.end:
 ;           [100:13] print(dot)
-;           [80:6] print(s[] i8)
+;           [80:6] print(s i8[])
             func.print.100.13:
 ;               [100:13] alias s -> dot
 ;               [81:5] write(1, s)
@@ -444,7 +444,7 @@ main:
 ;               [81:5] free named register rdi
             func.print.100.13.end:
 ;           [101:13] print(nl)
-;           [80:6] print(s[] i8)
+;           [80:6] print(s i8[])
             func.print.101.13:
 ;               [101:13] alias s -> nl
 ;               [81:5] write(1, s)

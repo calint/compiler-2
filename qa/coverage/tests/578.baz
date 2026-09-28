@@ -1,7 +1,7 @@
 # a record array field copied from an array of another size
 
 type point { x i32, y i32 }
-type line { pts[2] point }
+type line { pts point[2] }
 func main() {
     var ps = point[3]{}
     var l = line{ ps }

@@ -1,7 +1,7 @@
 # foo over a holder with an array of user types
 
 type point { x, y }
-type holder { points[2] point }
+type holder { points point[2] }
 
 dat holders = 
     holder[2]{ 

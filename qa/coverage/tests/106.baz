@@ -8,19 +8,19 @@ type point {x, y}
 
 type link {
     pos point,
-    name[64] i8,
+    name i8[64],
     name_len i8,
     loc i32
 }
 
 type location {
-    name[64] i8,
-    links[8] link
+    name i8[64],
+    links link[8]
 }
 
 type world {
     time,
-    locations[7] location
+    locations location[7]
 }
 
 func fuz(wld1 world, wld2 world) {

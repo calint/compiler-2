@@ -6,7 +6,7 @@ dat str="hello world"
 type vector{x,y}
 type object{pos vector,vel vector,color}
 
-func f(str[] i8,fld){
+func f(str i8[],fld){
     var obj = object{{1,0},{0,0},0}
     if not obj.pos.x==1 exit(1)
     obj.pos.x=1

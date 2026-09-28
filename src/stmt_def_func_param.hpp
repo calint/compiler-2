@@ -23,14 +23,7 @@ class stmt_def_func_param final : public statement {
 
         toc::assert_name_not_reserved(tok());
 
-        open_bracket_tk_ = tz.is_next_char_token('[');
-        if (not open_bracket_tk_.is_empty()) {
-            close_bracket_tk_ = tz.is_next_char_token(']');
-            if (close_bracket_tk_.is_empty()) {
-                throw compiler_exception{tz, "expected ']'"};
-            }
-            is_array_ = true;
-        }
+        assert_type_before_brackets(tz, tok().text(), "");
 
         token delimiter_tk{tz.is_next_char_token(',')};
         if (delimiter_tk.is_empty()) {
@@ -47,9 +40,20 @@ class stmt_def_func_param final : public statement {
 
         type_tk_ = tz.next_token();
 
-        set_type(type_tk_.is_empty()
-                     ? tc.get_type_default()
-                     : tc.get_type_or_throw(type_tk_, type_tk_.text()));
+        set_type(type_tk_.is_empty() ? tc.get_type_default()
+                                     : named_type(tc, type_tk_));
+
+        open_bracket_tk_ = tz.is_next_char_token('[');
+        if (open_bracket_tk_.is_empty()) {
+            return;
+        }
+
+        close_bracket_tk_ = tz.is_next_char_token(']');
+        if (close_bracket_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected ']'"};
+        }
+
+        is_array_ = true;
     }
 
     stmt_def_func_param(const token tk, const type& tp)
@@ -70,12 +74,12 @@ class stmt_def_func_param final : public statement {
         }
 
         statement::source_to(os);
+        if (not type_tk_.is_empty()) {
+            type_tk_.source_to(os);
+        }
         if (is_array_) {
             open_bracket_tk_.source_to(os);
             close_bracket_tk_.source_to(os);
-        }
-        if (not type_tk_.is_empty()) {
-            type_tk_.source_to(os);
         }
     }
 

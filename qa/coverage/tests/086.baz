@@ -2,16 +2,16 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(str[] i8, len) {
+func print(str i8[], len) {
     write(1, str, len)
 }
 
-func input(str[] i8, len) nbytes {
+func input(str i8[], len) nbytes {
     nbytes = read(0, str, len)
 }
 
 type location {
-    name[64] i8,
+    name i8[64],
     name_len
 }
 

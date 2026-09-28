@@ -57,10 +57,9 @@ class stmt_def_type final : public statement {
             toc::assert_name_not_reserved(fld.tok());
 
             // get the type of field. no type name means default
-            const type& tp{
-                fld.type_str().empty()
-                    ? tc.get_type_default()
-                    : tc.get_type_or_throw(fld.type_token(), fld.type_str())};
+            const type& tp{fld.type_str().empty()
+                               ? tc.get_type_default()
+                               : named_type(tc, fld.type_token())};
 
             type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
                             fld.array_count());

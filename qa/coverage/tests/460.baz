@@ -1,9 +1,9 @@
 # structured address scales include non-powers of two and values above 255
-type triple { bytes[3] i8 }
-type wide { bytes[300] i8 }
-type page { bytes[256] i8 }
+type triple { bytes i8[3] }
+type wide { bytes i8[300] }
+type page { bytes i8[256] }
 func assert(ok bool) { if not ok exit(1) }
-func update(values[] wide, index) { values[index].bytes[299] = 42 }
+func update(values wide[], index) { values[index].bytes[299] = 42 }
 func noinline read_wide(value wide) result i8 { result = value.bytes[299] }
 func main() {
     var triples = triple[3]{}

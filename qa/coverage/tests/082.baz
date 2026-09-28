@@ -9,11 +9,11 @@ type vec3 {x, y, z}
 type point {x, y}
 type color_rgba {r i8, g i8, b i8, a i8}
 type object {pos point, color i32, id}
-type cluster {objs[10] object, flags i8}
+type cluster {objs object[10], flags i8}
 type particle {vel vec3, pos vec3, mass i32, active bool}
-type physics_grid {particles[5] particle, timestamp}
-type scene_layer {clusters[3] cluster, grid physics_grid, name}
-type mega_structure {layers[4] scene_layer, colors[8] color_rgba, metadata[16]}
+type physics_grid {particles particle[5], timestamp}
+type scene_layer {clusters cluster[3], grid physics_grid, name}
+type mega_structure {layers scene_layer[4], colors color_rgba[8], metadata i[16]}
 
 func main() {
     # Test 1: Basic nested array access

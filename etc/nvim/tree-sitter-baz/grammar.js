@@ -8,8 +8,6 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
-    [$.sized_array_type],
-    [$.unsized_array_type],
     [$._access_chain],
   ],
 
@@ -125,7 +123,6 @@ module.exports = grammar({
     _definition_type: $ => choice(
       $._base_type,
       $.sized_array_type,
-      $.unsized_array_type,
     ),
 
     // Types that can be passed as a parameter (allows unsized arrays)
@@ -140,16 +137,16 @@ module.exports = grammar({
     ),
 
     sized_array_type: $ => seq(
+      field('type', $._base_type),
       '[',
       field('size', choice($.number_literal, $.character_literal)),
       ']',
-      optional(field('type', $._base_type)),
     ),
 
     unsized_array_type: $ => seq(
+      field('type', $._base_type),
       '[',
       ']',
-      optional(field('type', $._base_type)),
     ),
 
     // -------------------------------------------------------------------------

@@ -1,11 +1,11 @@
 dat hello="hello\n"
 dat world="world\n"
 
-func print(str[] i8, len) {
+func print(str i8[], len) {
     write(1, str, len)
 }
 
-func bar(a,b,hello[] i8){
+func bar(a,b,hello i8[]){
     loop{
         if b==0 return
         print(hello,array_length(hello))
@@ -13,7 +13,7 @@ func bar(a,b,hello[] i8){
     }
 }
 
-func foozi(world[] i8){
+func foozi(world i8[]){
     print(world,array_length(world))
 }
 

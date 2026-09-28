@@ -1,5 +1,5 @@
 type person {
-    name[-1] i8
+    name i8[-1]
 }
 
 func main() {}

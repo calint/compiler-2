@@ -1,7 +1,7 @@
 # a record array field copied from a single record
 
 type point { x i32, y i32 }
-type line { pts[2] point }
+type line { pts point[2] }
 func main() {
     var p = point{}
     var l = line{ p }

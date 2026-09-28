@@ -1,7 +1,7 @@
 # increment indexes an array member of its user-type argument
 
 type point { x, y }
-type item { data[2] point }
+type item { data point[2] }
 
 dat values =
     item[3]{

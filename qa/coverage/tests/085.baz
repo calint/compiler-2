@@ -6,7 +6,7 @@ func assert(expr bool) {
 
 type point {x, y}
 
-type object {color i32, pos[2] point} 
+type object {color i32, pos point[2]} 
 
 func main() {
     var x = 1

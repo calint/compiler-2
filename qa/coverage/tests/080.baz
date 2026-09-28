@@ -6,7 +6,7 @@ func assert(expr bool) {
 
 type point {x, y}
 type object {pos point, color i32}
-type cluster {objs[10] object, flags i8}
+type cluster {objs object[10], flags i8}
 
 func main() {
     var cr = cluster[7]{}

@@ -1,2 +1,2 @@
 
-457.baz:2:24: expected ',' followed by another field in type 'point'
+457.baz:2:20: expected type before '[', e.g. 'values i8[4]' or 'values i[4]'

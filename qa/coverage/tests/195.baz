@@ -1,4 +1,4 @@
 # strings require i8 arrays
 
-type p { s[2] i16 }
+type p { s i16[2] }
 func main() { dat x = p{"x"} }

@@ -2,27 +2,27 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(str[] i8, len) {
+func print(str i8[], len) {
     write(1, str, len)
 }
 
-func input(str[] i8, len) nbytes {
+func input(str i8[], len) nbytes {
     nbytes = read(0, str, len)
 }
 
 type str_s {
     size i8,
-    data[31] i8
+    data i8[31]
 }
 
 type str_m {
     size i8,
-    data[63] i8
+    data i8[63]
 }
 
 type str_l {
     size i8,
-    data[127] i8
+    data i8[127]
 }
 
 type link {
@@ -32,7 +32,7 @@ type link {
 
 type location {
     name str_s,
-    links[8] link
+    links link[8]
 }
 
 func main() {

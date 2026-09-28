@@ -1,7 +1,7 @@
 # foo over an array field of an indexed holder array argument
 
 type point { x, y }
-type holder { points[2] point }
+type holder { points point[2] }
 
 dat holders =
     holder[2]{
@@ -11,7 +11,7 @@ dat holders =
 
 func assert(x bool) { if not x exit(1) }
 
-func update(h[] holder) {
+func update(h holder[]) {
     foo h[1].points  {
         e.y = e.y + 10
     }

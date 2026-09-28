@@ -9,7 +9,7 @@ dat   colon = ": "
 
 type str {
     len i8,
-    data[127] i8
+    data i8[127]
 }
 
 func str.out() {
@@ -77,7 +77,7 @@ func noinline print_num(num) {
     write(1, buf, write_pos)
 }
 
-func print(s[] i8) {
+func print(s i8[]) {
     write(1, s)
 }
 

@@ -1,6 +1,6 @@
 # non-inline print_num: repeated calls, local arrays and inline syscall helpers
 
-func print(str[] i8, len) {
+func print(str i8[], len) {
     write(1, str, len)
 }
 

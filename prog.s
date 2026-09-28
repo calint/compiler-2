@@ -610,7 +610,7 @@ main:
 ;       [207:5] free scratch register r15
     func.assert.207.5.end:
 ;   [209:5] faz(arr)
-;   [72:6] faz(arg[] i32)
+;   [72:6] faz(arg i32[])
     func.faz.209.5:
 ;       [209:5] alias arg -> arr
 ;       [73:5] arg[1] = 0xfe
@@ -1937,7 +1937,7 @@ main:
 ;   [318:14] free named register rdi
 ;   [318:14] free named register rax
 ;   [319:5] print(hello)
-;   [35:6] print(str[] i8)
+;   [35:6] print(str i8[])
     func.print.319.5:
 ;       [319:5] alias str -> hello
 ;       [36:5] write(1, str)
@@ -1990,7 +1990,7 @@ main:
         lea rbx, [rbp + 1192]
         call func.print_num
 ;       [323:9] print(colon)
-;       [35:6] print(str[] i8)
+;       [35:6] print(str i8[])
         func.print.323.9:
 ;           [323:9] alias str -> colon
 ;           [36:5] write(1, str)
@@ -2010,7 +2010,7 @@ main:
 ;           [36:5] free named register rdi
         func.print.323.9.end:
 ;       [324:9] print(prompt1)
-;       [35:6] print(str[] i8)
+;       [35:6] print(str i8[])
         func.print.324.9:
 ;           [324:9] alias str -> prompt1
 ;           [36:5] write(1, str)
@@ -2084,7 +2084,7 @@ main:
         jg if.327.9.else
         if.329.19.code:
 ;           [330:13] print(prompt2)
-;           [35:6] print(str[] i8)
+;           [35:6] print(str i8[])
             func.print.330.13:
 ;               [330:13] alias str -> prompt2
 ;               [36:5] write(1, str)
@@ -2107,7 +2107,7 @@ main:
             jmp loop.320.5
         if.327.9.else:
 ;           [333:13] print(prompt3)
-;           [35:6] print(str[] i8)
+;           [35:6] print(str i8[])
             func.print.333.13:
 ;               [333:13] alias str -> prompt3
 ;               [36:5] write(1, str)
@@ -2155,7 +2155,7 @@ main:
 ;               [84:5] free named register rdi
             func.str.print.334.16.end:
 ;           [335:13] print(dot)
-;           [35:6] print(str[] i8)
+;           [35:6] print(str i8[])
             func.print.335.13:
 ;               [335:13] alias str -> dot
 ;               [36:5] write(1, str)
@@ -2175,7 +2175,7 @@ main:
 ;               [36:5] free named register rdi
             func.print.335.13.end:
 ;           [336:13] print(nl)
-;           [35:6] print(str[] i8)
+;           [35:6] print(str i8[])
             func.print.336.13:
 ;               [336:13] alias str -> nl
 ;               [36:5] write(1, str)
