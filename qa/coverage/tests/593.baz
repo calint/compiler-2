@@ -131,6 +131,22 @@ func main() {
     }
     assert(28, 2 * 3 == b + one)
 
+    # a constant left side becomes the immediate of the mirrored comparison
+    if 3 + 3 <= b { # folds
+        exit(50)
+    }
+    if c >= b {
+        exit(51)
+    }
+    if 2 + 3 != b { # folds
+        exit(52)
+    }
+    assert(53, 1 + 4 == b)
+    assert(54, 10 > b and -1 < b)
+    if 25 * 2 > h { # folds
+        exit(55)
+    }
+
     # comparisons of constant lists evaluate at compile
     if b < 2 + 2 { # folds
         exit(31)

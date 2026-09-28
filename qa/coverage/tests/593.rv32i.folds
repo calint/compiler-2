@@ -229,16 +229,28 @@
     call .Lbaz_divide
     sb a0, 28(s0)
 === 129:     if 1 + 1 > b { # folds
-        li t0, 2
-    lw t1, 4(s0)
-    bge t1, t0, if.129.5.end
-=== 135:     if b < 2 + 2 { # folds
+    lw t0, 4(s0)
+    li t1, 2
+    bge t0, t1, if.129.5.end
+=== 135:     if 3 + 3 <= b { # folds
+    lw t0, 4(s0)
+    li t1, 6
+    blt t0, t1, if.135.5.end
+=== 141:     if 2 + 3 != b { # folds
+    lw t0, 4(s0)
+    li t1, 5
+    beq t0, t1, if.141.5.end
+=== 146:     if 25 * 2 > h { # folds
+    lb t0, 12(s0)
+    li t1, 50
+    bge t0, t1, if.146.5.end
+=== 151:     if b < 2 + 2 { # folds
     lw t0, 4(s0)
     li t1, 4
-    bge t0, t1, if.135.5.end
-=== 138:     if h < 50 + 50 { # folds
+    bge t0, t1, if.151.5.end
+=== 154:     if h < 50 + 50 { # folds
     lb t0, 12(s0)
     li t1, 100
-    bge t0, t1, if.138.5.end
-=== 141:     if 1 + 1 != 2 { # folds
-=== 144:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds
+    bge t0, t1, if.154.5.end
+=== 157:     if 1 + 1 != 2 { # folds
+=== 160:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds

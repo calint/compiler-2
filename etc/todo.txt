@@ -3,18 +3,22 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[ ] constant known at compile: a comparison with a constant left side and a
-    run-time right side mirrors the operation ('1 + 1 > b' -> 'b < 2') so
-    the constant becomes an immediate instead of a scratch register copy
-    => x86 one instruction less, rv32i same count ('li' either way)
-    => 'expr_bool_op::resolve_cmp', reuse 'mirrored_operation'; the
-       "wider, swap" check then applies to the swapped sides
+[ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
+    compares, then the remaining dword, word and byte compares
+[ ] rv32i: a constant above 16 bytes stored at an address inside a word
+    ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
+    offset) loops bytes: the constant is word aligned and the destination is
+    not, so no head reaches a common boundary
+    => the constant could be laid out starting at the destination's position
+       within a word; needs the frontend 'add_constant' callback to pad it
 [ ] constant known at compile: other users of constants use
     'statement::folded_constant'
     => 'expr_any::constant_element_value' (needs a width parameter):
        constant indexes, '{...}' packing, 'array_copy' count, inline argument
        aliasing ('stmt_identifier', 'stmt_call', 'stmt_builtin_array_copy')
 [ ] review opus generated code regarding constant folding in expr_arith
+[ ] review machine_rv32i code copy/zero/compare and the design that merges their
+    functionality
 
 --------------------------------------------------------------------------------
 easy
@@ -35,14 +39,6 @@ medium
 --------------------------------------------------------------------------------
 generated assembly, easiest first
 --------------------------------------------------------------------------------
-[ ] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
-    compares, then the remaining dword, word and byte compares
-[ ] rv32i: a constant above 16 bytes stored at an address inside a word
-    ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
-    offset) loops bytes: the constant is word aligned and the destination is
-    not, so no head reaches a common boundary
-    => the constant could be laid out starting at the destination's position
-       within a word; needs the frontend 'add_constant' callback to pad it
 [ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
     field instead of computing the address once
     (etc/codegen-inefficiencies.baz)
@@ -342,6 +338,15 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] constant known at compile: a comparison with a constant left side and a
+    run-time right side mirrors the operation ('1 + 1 > b' -> 'b < 2') so
+    the constant becomes an immediate instead of a scratch register copy
+    => 'expr_bool_op::compile_element' swaps the sides and uses
+       'mirrored_operation'; x86 one instruction less, rv32i same count
+    => the width check applies to the swapped sides: a constant that does
+       not fit the run-time side is a compile error (test 597), a run-time
+       side wider than the constant's type is accepted
+    => test 593 '# folds' covers '>', '<=', '>=', '!=', '==' and '<'
 [x] constant known at compile: an identifier without an index register can
     compute its offset at compile time ('stmt_identifier::init_reg_offset')
     => 'stmt_identifier::compile_lea' adds a constant index to the
@@ -377,8 +382,8 @@ resolved
        by 'constant_value' and 'resolve_expr'
     => a constant right side is an immediate, "src: folded constant '...'";
        'a < 1 + 1' is accepted (was "wider, swap") when the value fits 'a'
-    => a constant left side is still a scratch register copy, see the open
-       item on mirroring the operation
+    => a constant left side mirrors the operation, see the resolved item
+       above
 [x] constant folding in lists mixing '*' with '/' or '%' ('expr_arith')
     => the constants of a run of '*' merge at its end past run-time factors
        ('2 * b * 3 / c' -> 'b * 6 / c')

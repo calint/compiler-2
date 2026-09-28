@@ -1,0 +1,2 @@
+
+597.baz:4:8: constant '257' does not fit 'n' of type 'i8'

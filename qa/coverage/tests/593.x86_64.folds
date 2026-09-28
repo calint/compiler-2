@@ -216,14 +216,22 @@
     idiv r15
     mov byte [rbp + 40], al
 === 129:     if 1 + 1 > b { # folds
-        mov r15, 2
-    cmp r15, qword [rbp + 8]
-    jle if.129.5.end
-=== 135:     if b < 2 + 2 { # folds
+    cmp qword [rbp + 8], 2
+    jge if.129.5.end
+=== 135:     if 3 + 3 <= b { # folds
+    cmp qword [rbp + 8], 6
+    jl if.135.5.end
+=== 141:     if 2 + 3 != b { # folds
+    cmp qword [rbp + 8], 5
+    je if.141.5.end
+=== 146:     if 25 * 2 > h { # folds
+    cmp byte [rbp + 24], 50
+    jge if.146.5.end
+=== 151:     if b < 2 + 2 { # folds
     cmp qword [rbp + 8], 4
-    jge if.135.5.end
-=== 138:     if h < 50 + 50 { # folds
+    jge if.151.5.end
+=== 154:     if h < 50 + 50 { # folds
     cmp byte [rbp + 24], 100
-    jge if.138.5.end
-=== 141:     if 1 + 1 != 2 { # folds
-=== 144:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds
+    jge if.154.5.end
+=== 157:     if 1 + 1 != 2 { # folds
+=== 160:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds

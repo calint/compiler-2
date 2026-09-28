@@ -195,9 +195,16 @@ class expr_bool_op final : public statement {
             return compile_constant(tc, indent, *constant != inverted, action);
         }
 
-        // note: a constant 'lhs' is compiled to a scratch register, however,
-        //       the if statement evaluates constant expressions at compile
-        //       time before reaching this
+        // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
+        // register copy, the width check then applies to the swapped sides
+        if (not is_shorthand_ and side_constant(tc, lhs_)) {
+            machine::comparison_action mirrored_action{action};
+            mirrored_action.operation = mirrored_operation(op_);
+
+            resolve_cmp(tc, indent, rhs_, lhs_, mirrored_action);
+
+            return std::nullopt;
+        }
 
         if (not is_shorthand_) {
             resolve_cmp(tc, indent, lhs_, rhs_, action);
@@ -324,7 +331,7 @@ class expr_bool_op final : public statement {
         const operand src{
             resolve_expr(tc, indent, rhs, false, allocated_registers)};
 
-        assert_rhs_fits_lhs(tc, lhs, rhs, op_, dst, src);
+        assert_rhs_fits_lhs(tc, lhs, rhs, action.operation, dst, src);
 
         machine& x{tc.machine()};
 
