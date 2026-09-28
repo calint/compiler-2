@@ -2126,9 +2126,9 @@ main:
 ;               [36:5] free named register rsi
 ;               [36:5] free named register rdi
             func.print.333.13.end:
-;           [334:16] nm.output()
-;           [83:6] str.output()
-            func.str.output.334.16:
+;           [334:16] nm.print()
+;           [83:6] str.print()
+            func.str.print.334.16:
 ;               [334:16] alias self -> nm
 ;               [84:5] write(1, self.data, self.len)
 ;               [84:5] allocate named register rdi
@@ -2153,7 +2153,7 @@ main:
 ;               [84:5] free named register rdx
 ;               [84:5] free named register rsi
 ;               [84:5] free named register rdi
-            func.str.output.334.16.end:
+            func.str.print.334.16.end:
 ;           [335:13] print(dot)
 ;           [35:6] print(str[] i8)
             func.print.335.13:

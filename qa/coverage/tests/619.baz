@@ -1,0 +1,12 @@
+# calling a method that does not exist reports the method, not a missing field
+
+type point {x, y}
+
+func point.move(dx) {
+    self.x = self.x + dx
+}
+
+func main() {
+    var p = point{}
+    p.jump(1)
+}

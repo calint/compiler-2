@@ -80,7 +80,7 @@ func str.input() {
     self.len = i8(nbytes - 1)
 } 
 
-func str.output() {
+func str.print() {
     write(1, self.data, self.len)
 } 
 
@@ -331,7 +331,7 @@ func main() {
             continue
         } else {
             print(prompt3)
-            nm.output()
+            nm.print()
             print(dot)
             print(nl)
         }

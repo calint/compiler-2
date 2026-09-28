@@ -85,6 +85,7 @@ class stmt_identifier : public statement {
                 const token next_tk{tz.next_token()};
                 if (not is_method_name(tc, tz, tk, next_tk)) {
                     assert_element_selected(tc, tk);
+                    assert_not_method_call(tc, tz, tk, next_tk);
                     elem_delims_tk_.emplace_back(t);
                     tk_prv = tk;
                     tk = next_tk;
@@ -460,6 +461,27 @@ class stmt_identifier : public statement {
 
         throw compiler_exception{
             tk, std::format("array '{}' must be indexed", path_as_string_)};
+    }
+
+    // without a method 'T.m' a following '(' would otherwise be reported as a
+    // missing field
+    auto assert_not_method_call(const toc& tc, tokenizer& tz,
+                                const token& path_tk,
+                                const token& name_tk) const -> void {
+
+        if (tc.is_func(path_as_string_)) {
+            return;
+        }
+
+        if (tz.peek_char_after_whitespace() != '(') {
+            return;
+        }
+
+        const ident_info info{tc.make_ident_info(path_tk, path_as_string_)};
+
+        throw compiler_exception{
+            name_tk, std::format("method '{}' not found in type '{}'",
+                                 name_tk.text(), info.type_ref().name())};
     }
 
     // 'name_tk' after the path so far names a method of the path's type

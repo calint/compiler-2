@@ -34,7 +34,7 @@ compiler writes the binary image itself.
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
   `continue`, `break`, `return`, `self`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
-  `write`, `exit`, `i8`, `i16`, `i32`, `i64`
+  `write`, `exit`, `i`, `i8`, `i16`, `i32`, `i64`
 
 ## Howto
 

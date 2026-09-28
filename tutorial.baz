@@ -1,0 +1,487 @@
+# a tour of baz from the easiest to the most difficult concepts
+# each concept is introduced in code followed by a comment explaining it
+
+# comments start with '#' and last until the end of the line
+
+func assert(ok bool) { if not ok exit(1) }
+# a helper used throughout the tutorial, functions and booleans are explained
+# further down
+# 'exit' is a built-in function that ends the program with an exit code
+
+#
+# constants and variables
+#
+
+func constants_and_variables() {
+    const answer = 42
+    # a constant is known at compile time and takes no storage
+
+    var count = 1
+    # a variable always has an initial value and gets its type from it
+    # here the default type: 'i64' on x86_64 and 'i32' on rv32i
+
+    count = count + answer
+    assert(count == 43)
+    # '=' assigns and '==' compares, statements need no semicolons
+}
+
+#
+# literals
+#
+
+func literals() {
+    var dec = 255
+    var hex = 0xff
+    var bin = 0b11111111
+    assert(dec == hex and hex == bin)
+    # hex values start with '0x' and binary values with '0b'
+
+    var letter = 'a'
+    assert(letter == 97)
+    # a character literal is the byte value of the character, escapes such as
+    # '\n' and '\x41' are supported
+
+    var neg = -dec
+    var inv = ~dec
+    assert(neg == -255)
+    assert(inv == -256)
+    # unary '-' negates and '~' inverts the bits
+}
+
+#
+# arithmetic
+#
+
+func arithmetic() {
+    var a = 7
+    var b = 2
+    assert(a + b == 9)
+    assert(a - b == 5)
+    assert(a * b == 14)
+    assert(a / b == 3)
+    assert(a % b == 1)
+    assert(-a / b == -3)
+    assert(-a % b == -1)
+    # division truncates toward zero, the remainder has the sign of the
+    # dividend
+
+    assert(a & 3 == 3)
+    assert(a | 8 == 15)
+    assert(a ^ 1 == 6)
+    assert(a << 2 == 28)
+    assert(-a >> 1 == -4)
+    # bitwise and, or, xor and shifts, '>>' keeps the sign
+
+    var one = 1
+    assert(one + 2 * 3 == 7)
+    assert(one + one << 3 == 9)
+    assert(b * one | 2 == 6)
+    assert(6 & 3 ^ one == 2)
+    # precedence from lowest to highest: '+ -', '* / %', '|', '&', '^',
+    # '<< >>'
+    # unlike c, bitwise operations and shifts bind tighter than arithmetic
+    # and '^' binds tighter than '&'
+
+    assert((one + one) << 3 == 16)
+    # parentheses group as usual
+}
+
+#
+# sized types and conversions
+#
+
+func sized_types() {
+    var small = i8(100)
+    # built-in integer types are 'i64', 'i32', 'i16' and 'i8', a conversion
+    # such as 'i8(100)' gives the variable that type
+    # 'i64' is not available on rv32i
+
+    small = small + small
+    assert(small == -56)
+    # arithmetic wraps at the width of the destination
+
+    var wide = i(small)
+    assert(wide == -56)
+    # 'i(x)' converts to the default type
+
+#   small = wide
+#   compile error because the value might not fit, narrowing must be
+#   acknowledged with a conversion
+
+    small = i8(wide + 1)
+    assert(small == -55)
+}
+
+#
+# booleans
+#
+
+func booleans() {
+    var yes = true
+    var no = false
+    # the built-in type 'bool' has the values 'true' and 'false'
+
+    var x = 1
+    var less = x < 2
+    assert(less)
+    # comparisons '==', '!=', '<', '<=', '>' and '>=' give a 'bool'
+
+    assert(yes and not no)
+    assert(no or yes)
+    assert(not (no or x > 2))
+    # 'and', 'or' and 'not' combine booleans, evaluation stops as soon as the
+    # result is known
+}
+
+#
+# control flow
+#
+
+func control_flow() {
+    var n = 3
+    var kind = 0
+    if n < 0 {
+        kind = -1
+    } else if n == 0 {
+        kind = 0
+    } else {
+        kind = 1
+    }
+    assert(kind == 1)
+    # conditions need no parentheses
+
+    if n == 3 kind = 2
+    assert(kind == 2)
+    # a single statement needs no braces
+
+    var sum = 0
+    var i = 0
+    loop {
+        i = i + 1
+        if i == 3 continue
+        if i > 5 break
+        sum = sum + i
+    }
+    assert(sum == 1 + 2 + 4 + 5)
+    # 'loop' repeats until 'break', 'continue' starts the next iteration
+    # there is no 'while' or 'for'
+}
+
+#
+# scopes
+#
+
+func scopes() {
+    const level = 1
+    var x = 1
+    {
+        const level = 2
+        var x = 2
+        assert(level == 2 and x == 2)
+    }
+    assert(level == 1 and x == 1)
+    # a block opens a new scope, its constants and variables shadow outer ones
+    # and end with the block
+}
+
+#
+# arrays
+#
+
+func arrays() {
+    var zeros = i32[4]{}
+    assert(zeros[3] == 0)
+    # an array literal names the element type and size, missing elements are
+    # zeroed
+
+    var primes = i[]{2, 3, 5, 7}
+    assert(array_length(primes) == 4)
+    # '[]' takes the size from the elements, 'i' is the default type and
+    # 'array_length' is a built-in function
+
+    var ix = 2
+    primes[ix] = primes[ix + 1] * 2
+    assert(primes[2] == 14)
+    # indexes start at 0 and can be expressions
+
+    var sum = 0
+    foo primes {
+        sum = sum + e
+    }
+    assert(sum == 2 + 3 + 14 + 7)
+    # 'foo' iterates over an array injecting:
+    #   'e': the current element
+    #   'i': the index starting at 0
+    #   'n': the constant size of the array
+
+    foo primes {
+        e = i + n
+    }
+    assert(primes[0] == 4 and primes[3] == 7)
+    # 'e' refers to the element, assigning it changes the array
+
+    var copy = primes
+    copy[0] = 0
+    assert(primes[0] == 4)
+    # initializing from an array copies it
+
+    array_copy(primes[1], copy, 3)
+    assert(copy[0] == 5 and copy[2] == 7 and copy[3] == 7)
+    # built-in 'array_copy' copies from, to and number of elements, an
+    # indexed array starts at that element
+
+    assert(arrays_equal(primes[1], copy, 3))
+    assert(not equal(primes, copy))
+    # built-in 'arrays_equal' compares a number of elements and 'equal'
+    # compares arrays of the same size
+}
+
+#
+# strings and data
+#
+
+dat greeting[] i8 = "hello from the tutorial\n"
+# 'dat' is data stored in the program image and initialized before variables
+# a string is an 'i8' array, '[]' takes the size from the string
+
+func strings() {
+    write(1, greeting)
+    # 'write' is a built-in function writing an array to a file descriptor,
+    # here 1 is standard output
+    # it has 2 more optional arguments: count and start index
+
+    var word = "baz\n"
+    assert(array_length(word) == 4 and word[0] == 'b')
+    # a string initializes an 'i8' array of its size
+
+    write(1, word, 2, 1)
+    write(1, word, 1, 3)
+    # writes 2 elements from index 1, then the newline at index 3
+}
+
+#
+# functions
+#
+
+func twice(v) res {
+    res = v * 2
+}
+# the result 'res' is named and assigned like a variable
+# argument and result types are the default type when omitted
+
+func increment(v) {
+    v = v + 1
+}
+# arguments are references, assigning 'v' changes the variable of the caller
+
+func sign(v) res {
+    res = 0
+    if v == 0 return
+    res = 1
+    if v < 0 res = -1
+}
+# 'return' leaves early, the result must be assigned on every path or it is a
+# compile error
+
+func low_byte(v i32) res i8 {
+    res = i8(v & 0xff)
+}
+# types follow the argument and result names
+
+func first(arr[] i32) res i32 {
+    res = arr[0]
+}
+# an array argument is declared with '[]' and optional type, its size comes
+# from the caller
+
+func functions() {
+    var x = 3
+    assert(twice(x) == 6)
+    assert(twice(x + 1) == 8)
+
+    increment(x)
+    assert(x == 4)
+
+    assert(sign(-x) == -1)
+    assert(sign(0) == 0)
+
+    var w = i32(0x1234)
+    assert(low_byte(w) == 0x34)
+
+    var arr = i32[]{9, 8}
+    assert(first(arr) == 9)
+    # functions are inlined at every call by default
+}
+
+#
+# user types
+#
+
+type point {x, y}
+# a user type with 2 fields of the default type
+
+type pixel {
+    pos point,
+    color i32,
+    tags[2] i8, # trailing comma allowed
+}
+# fields have optional types and can be arrays or other user types
+
+func user_types() {
+    var p = point{1, 2}
+    assert(p.x == 1 and p.y == 2)
+    # a record literal names the type and lists the fields in order
+
+    var origin = point{}
+    assert(origin.x == 0 and origin.y == 0)
+    # missing fields are zeroed
+
+    var px = pixel{{3, 4}, 0xff0000}
+    px.pos.x = 5
+    px.tags[1] = 'z'
+    assert(px.pos.x == 5 and px.color == 0xff0000 and px.tags[1] == 'z')
+    # nested literals need no type name, fields are accessed with '.'
+
+    var q = px.pos
+    q.y = 4
+    assert(equal(q, px.pos))
+    # copying a record copies all fields, built-in 'equal' compares records
+
+    var points = point[3]{{1, 2}, {3, 4}}
+    points[2] = points[0]
+    assert(points[2].y == 2)
+    # arrays of records work like other arrays
+}
+
+#
+# methods
+#
+
+func point.move(dx, dy) {
+    self.x = self.x + dx
+    self.y = self.y + dy
+}
+# a method on a user type is called as 'p.move(1, 2)', 'self' refers to 'p'
+
+func point.sum() res {
+    res = self.x + self.y
+}
+
+func point.x(x) {
+    self.x = x
+}
+# a method can have the name of a field, 'p.x(1)' calls the method and 'p.x'
+# is the field
+
+func methods() {
+    var p = point{1, 2}
+    p.move(10, 20)
+    assert(p.x == 11 and p.y == 22)
+    assert(p.sum() == 33)
+
+    p.x(0)
+    assert(p.x == 0)
+}
+
+#
+# constructors
+#
+
+func point.at(x, y) self {
+    self.x = x
+    self.y = y
+}
+# a constructor has the result 'self' and must assign every field
+# it is called on the type: 'point.at(1, 2)'
+
+func constructors() {
+    var p = point.at(-1, -2)
+    assert(p.x == -1 and p.y == -2)
+    # the variable gets the type of the constructor
+
+    var pts = point[2]{}
+    pts[1] = point.at(3, 4)
+    assert(pts[1].y == 4)
+    # the constructor builds its result in the destination
+}
+
+#
+# non-inlined functions
+#
+
+func noinline factorial(n) res {
+    res = 1
+    if n <= 1 return
+
+    var m = n - 1
+    var partial = factorial(m)
+    res = n * partial
+}
+# 'noinline' emits the function once and calls it, which allows recursion
+# arguments must be variables of the same type as the parameters, arrays are
+# not supported as arguments
+
+func non_inlined() {
+    var n = 5
+    var f = factorial(n)
+    assert(f == 120)
+    # '--checks=frame' checks at run time that the frames of non-inlined calls
+    # fit in the variable storage
+}
+
+#
+# undefined behavior and checks
+#
+
+func add_to_zero(v) res {
+    res = 0
+    res = res + v
+}
+
+func checks() {
+    var arr = i[4]{}
+    var ix = 3
+    arr[ix] = 1
+    assert(arr[3] == 1)
+    # run-time indexes are not checked by default, '--checks=upper,lower' adds
+    # bounds checks that exit with code 255
+    # '--checks=upper,lower,line' also reports the source line of the failure
+    # a constant index out of bounds is always a compile error
+
+    var x = 5
+    var y = add_to_zero(x)
+    assert(y == 5)
+
+#   x = add_to_zero(x)
+#   gives 0 because the result 'res' and the argument 'v' refer to the same
+#   variable 'x', so 'res = 0' also clears 'v'
+#   '--checks=alias' rejects calls where a result and an argument may share
+#   storage
+
+    var p = point{1, 2}
+    p = point{2, 1}
+    assert(p.x == 2 and p.y == 1)
+
+#   p = point{p.y, p.x}
+#   compile error because 'p.x' is read after the first field overwrote it
+}
+# '--checks=noub' enables all checks against undefined behavior
+
+func main() {
+    constants_and_variables()
+    literals()
+    arithmetic()
+    sized_types()
+    booleans()
+    control_flow()
+    scopes()
+    arrays()
+    strings()
+    functions()
+    user_types()
+    methods()
+    constructors()
+    non_inlined()
+    checks()
+}
+# execution starts at 'main' and ends with exit code 0 at the end of it

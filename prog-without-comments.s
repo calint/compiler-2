@@ -953,7 +953,7 @@ main:
                 mov rax, 1
                 syscall
             func.print.333.13.end:
-            func.str.output.334.16:
+            func.str.print.334.16:
                 mov rdi, 1
                 movsx rdx, byte [rbp + 1064]
                 test rdx, rdx
@@ -963,7 +963,7 @@ main:
                 lea rsi, [rbp + 1065]
                 mov rax, 1
                 syscall
-            func.str.output.334.16.end:
+            func.str.print.334.16.end:
             func.print.335.13:
                 mov rdi, 1
                 mov rdx, 1
