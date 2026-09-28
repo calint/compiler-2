@@ -1,0 +1,5 @@
+# an array literal must name the element type of the destination
+
+func main() {
+    var a[2] i8 = i16[]{1, 2}
+}

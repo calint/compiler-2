@@ -118,6 +118,15 @@ class expr_bool_op final : public statement {
     // class methods
     //
 
+    // e.g. 'a + 1', null when negated or compared
+    [[nodiscard]] auto arithmetic() const -> const expr_arith* {
+        if (not is_shorthand_ or not nots_.empty()) {
+            return nullptr;
+        }
+
+        return &lhs_;
+    }
+
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
                                    const std::string_view jmp_to_if_false,
                                    const bool inverted, const operand& dst,
@@ -744,6 +753,17 @@ class expr_bool final : public statement {
     //
     // class methods
     //
+
+    // e.g. 'a + 1' or '(a + 1)', null when the list negates, compares, or
+    // combines with 'and' or 'or'
+    [[nodiscard]] auto arithmetic() const -> const expr_arith* {
+        if (bools_.size() != 1 or not_tk_.is_text("not")) {
+            return nullptr;
+        }
+
+        return bools_.front().visit(
+            [](const auto& e) -> const expr_arith* { return e.arithmetic(); });
+    }
 
     // decided at compile time only by constants before any run-time element,
     // a later short-circuit still needs the earlier elements evaluated

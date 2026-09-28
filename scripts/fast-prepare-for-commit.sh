@@ -18,7 +18,11 @@ qa/coverage/test-coverage.sh --target=x86 run
 qa/coverage/test-coverage.sh --target=rv32i run
 qa/coverage/test-coverage.sh --target=rv32i-qemu run
 qa/coverage/test-coverage.sh --target=rv32i-fpga run
-echo run program to generate source
-./run.sh prog.baz --vars=131072 --checks=upper,lower,line
+echo make
+./make.sh build
+echo compile prog
+./run.sh --checks=noub
+echo compile roome
+./run.sh --checks=noub roome.baz
 echo make readme
 etc/readme/make.sh

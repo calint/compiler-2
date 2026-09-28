@@ -15,6 +15,10 @@ clang-format -i --style=file src/*
 echo coverage all
 qa/coverage/test-all.sh
 echo make
-./make.sh
+./make.sh build
+echo compile prog
+./run.sh --checks=noub
+echo compile roome
+./run.sh --checks=noub roome.baz
 echo make readme
 etc/readme/make.sh

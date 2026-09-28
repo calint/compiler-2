@@ -1,0 +1,5 @@
+# an array literal with a size holds at most that many elements
+
+func main() {
+    var a = i8[2]{1, 2, 3}
+}

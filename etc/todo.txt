@@ -3,6 +3,30 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
+[ ] non-inline calls take expression arguments, e.g. roome.baz
+    'print_num(i64(counter))' fails with "expression arguments are
+    unsupported" because every argument is passed by address (424.baz)
+    => plan: the caller evaluates the argument into a temporary in its own
+       storage and passes the temporary's address
+       - 'stmt_call::assert_noninline_argument': accept an expression,
+         constant, conversion or record literal when its type fits the
+         parameter like an assignment ('assert_not_narrowed' against the
+         parameter type); a plain variable keeps the exact-type check
+       - 'stmt_call::compile_noninline': 'tc.enter_block()' around the call;
+         per such argument 'tc.add_var' a hidden local of the parameter type
+         (e.g. 'arg.L.C.N') so 'next_frame_address' starts after it and the
+         peak frame size counts it, compile the argument into it with
+         'expr_any::compile', pass its address in 'frame_slot_addresses',
+         'tc.exit_block()' after 'call_function' frees it
+       - writes to such a parameter change only the temporary, like inline
+         expression aliases
+       - arguments are evaluated left to right before any slot address is
+         taken so their scratch registers are free again
+       - tests: 424.baz becomes a run test (constant, arithmetic, conversion,
+         record literal arguments, nested non-inline calls, '--checks=frame'
+         on both targets), new COMPERR for a narrowing argument
+    => roome.baz: 'i64(counter)' does not compile on rv32i (no 'i64');
+       'i(counter)' converts to the default type on both targets
 [ ] local code generation found in the survey of all coverage tests on both
     targets (2026-09-28), illustrated in etc/codegen-inefficiencies.baz;
     site counts are occurrences in the tests

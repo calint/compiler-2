@@ -57,8 +57,9 @@ func main() {
   var i5 = -1
   var i6 = 2147483647  
   var i7 = -2147483648
-  var i2_wide = i2
-  var i3_wide = i3
+  # 'i(...)' widens to the default type of 'print_num'
+  var i2_wide = i(i2)
+  var i3_wide = i(i3)
 
   print_num(i1)
   print(nl, 1)

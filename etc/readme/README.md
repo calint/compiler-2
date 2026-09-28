@@ -110,10 +110,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5447           2051          17362
+C/C++ Header                    55           5551           2114          17653
 C++                              1             66             19            329
 -------------------------------------------------------------------------------
-SUM:                            55           5513           2070          17691
+SUM:                            56           5617           2133          17982
 -------------------------------------------------------------------------------
 ```
 
@@ -1586,7 +1586,7 @@ dat.end:
 section .bss.vars nobits alloc write
 align 16
 vars:
-resb 65536
+resb 131072
 vars.end:
 ```
 
@@ -4101,7 +4101,7 @@ dat.end:
 section .bss.vars nobits alloc write
 align 16
 vars:
-resb 65536
+resb 131072
 vars.end:
 ; free named register rbp
 

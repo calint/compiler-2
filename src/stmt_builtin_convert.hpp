@@ -16,7 +16,7 @@
 #include "unary_ops.hpp"
 
 // e.g. 'i8(x)' converts 'x' to the type, a narrowing store truncates on
-// purpose
+// purpose; 'i(x)' converts to the default type of the target
 class stmt_builtin_convert final : public expression {
     token open_paren_tk_;
     expr_arith arg_;
@@ -28,7 +28,7 @@ class stmt_builtin_convert final : public expression {
         : expression{tk, std::move(uops)},
           open_paren_tk_{tz.is_next_char_token('(')} {
 
-        set_type(tc.get_type_or_throw(tk, tk.text()));
+        set_type(conversion_type(tc, tk));
 
         arg_ = {tc, tz, true};
 
@@ -152,7 +152,8 @@ class stmt_builtin_convert final : public expression {
     [[nodiscard]] static auto is_builtin_name(const std::string_view name)
         -> bool {
 
-        return name == "i8" or name == "i16" or name == "i32" or name == "i64";
+        return name == "i" or name == "i8" or name == "i16" or name == "i32" or
+               name == "i64";
     }
 
   private:
@@ -215,5 +216,21 @@ class stmt_builtin_convert final : public expression {
         default:
             return result;
         }
+    }
+
+    //
+    // statics
+    //
+
+    // the default type has no name of its own, e.g. 'i64' on x86_64 and 'i32'
+    // on rv32i
+    [[nodiscard]] static auto conversion_type(const toc& tc, const token& tk)
+        -> const type& {
+
+        if (tk.is_text("i")) {
+            return tc.get_type_default();
+        }
+
+        return tc.get_type_or_throw(tk, tk.text());
     }
 };

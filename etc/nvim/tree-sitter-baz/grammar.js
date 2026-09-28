@@ -272,6 +272,8 @@ module.exports = grammar({
       $.function_call,
       $.parenthesized_expression,
       $.initializer_block,
+      $.typed_initializer,
+      $.typed_array_initializer,
       $._access_chain,
       $._literal,
     ),
@@ -382,6 +384,29 @@ module.exports = grammar({
     // Structure or Array positional initialization block
     initializer_block: $ => seq(
       '{',
+      optional($.initializer_list),
+      '}',
+    ),
+
+    // e.g. 'point{1, 2}', the '{' follows the type name immediately so that
+    // 'if a == b {' stays a condition and a block
+    typed_initializer: $ => seq(
+      field('type', $.identifier),
+      token.immediate('{'),
+      optional($.initializer_list),
+      '}',
+    ),
+
+    // e.g. 'i8[]{1, 2}' or 'point[3]{{1, 2}}', the elements take the type; an
+    // identifier since a builtin type keyword would break 'i8(x)' in
+    // expressions, and the '{' right after ']' keeps 'if a[i] {' an index and
+    // a block
+    typed_array_initializer: $ => seq(
+      field('type', $.identifier),
+      '[',
+      optional(field('size', $._expression)),
+      ']',
+      token.immediate('{'),
       optional($.initializer_list),
       '}',
     ),

@@ -1,9 +1,10 @@
-# recursive initialization is rejected
+# recursive initialization is rejected, the type is explicit because an untyped
+# variable is not declared in its initializer
 
 func foozi(i) {
 
 }
 
 func main() {
-    var x = foozi(x)
+    var x i32 = foozi(x)
 }

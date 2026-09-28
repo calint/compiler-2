@@ -16,6 +16,7 @@
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "expr_type.hpp"
+#include "stmt_const.hpp"
 
 class expr_any final : public statement {
     using expr_variant = std::variant<expr_arith, expr_bool, expr_type>;
@@ -27,6 +28,11 @@ class expr_any final : public statement {
 
     std::vector<expr_variant> vars_;
     std::vector<token> var_delims_tk_;
+    // e.g. 'i8[3]' in 'i8[3]{1, 2}'
+    token element_type_tk_;
+    token open_bracket_tk_;
+    stmt_const literal_count_const_;
+    token close_bracket_tk_;
     token open_brace_tk_;
     token close_brace_tk_;
     token string_tk_;
@@ -64,7 +70,14 @@ class expr_any final : public statement {
 
         // check if it is '{ ... }' or identifier e.g. 'str.data'
 
+        parse_element_type(tc, tz, tp);
+
         open_brace_tk_ = tz.is_next_char_token('{');
+        if (open_brace_tk_.is_empty() and not element_type_tk_.is_empty()) {
+            throw compiler_exception{
+                tz, std::format("expected '{{' after '{}[]'", tp.name())};
+        }
+
         if (open_brace_tk_.is_empty()) {
             // 'expr_type' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
@@ -122,6 +135,12 @@ class expr_any final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         string_tk_.source_to(os);
+        if (not element_type_tk_.is_empty()) {
+            element_type_tk_.source_to(os);
+            open_bracket_tk_.source_to(os);
+            literal_count_const_.source_to(os);
+            close_bracket_tk_.source_to(os);
+        }
         open_brace_tk_.source_to(os);
         if (not vars_.empty()) {
             vars_.front().visit([&os](const auto& expression) -> void {
@@ -486,6 +505,53 @@ class expr_any final : public statement {
         }
 
         return array_count_;
+    }
+
+    // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
+    // from the destination, and the size unless it is 'i8[]'
+    auto parse_element_type(toc& tc, tokenizer& tz, const type& tp) -> void {
+        const token tk{tz.next_token()};
+        if (not is_array_literal(tc, tk, tz)) {
+            tz.put_back_token(tk);
+            return;
+        }
+
+        if (not tk.is_text(tp.name())) {
+            throw compiler_exception{tk,
+                                     std::format("expected type '{}', got '{}'",
+                                                 tp.name(), tk.text())};
+        }
+
+        element_type_tk_ = tk;
+        open_bracket_tk_ = tz.is_next_char_token('[');
+        literal_count_const_ = {tc, tz, 0};
+
+        close_bracket_tk_ = tz.is_next_char_token(']');
+        if (close_bracket_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected ']' after array size"};
+        }
+
+        if (not literal_count_const_.has_value()) {
+            return;
+        }
+
+        if (literal_count_const_.value() <= 0) {
+            throw compiler_exception{
+                literal_count_const_.tok(),
+                "expected a constant array size greater than 0"};
+        }
+
+        const size_t count{static_cast<size_t>(literal_count_const_.value())};
+
+        // e.g. 'var a[2] = i8[3]{1, 2}'
+        if (array_count_ != 0 and array_count_ != count) {
+            throw compiler_exception{
+                literal_count_const_.tok(),
+                std::format("array size {} does not match destination size {}",
+                            count, array_count_)};
+        }
+
+        array_count_ = count;
     }
 
     //

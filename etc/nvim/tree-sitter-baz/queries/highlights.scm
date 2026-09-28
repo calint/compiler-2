@@ -44,6 +44,8 @@
 
 (function_definition name: (identifier) @function)
 (function_definition receiver_type: (identifier) @type)
+(typed_initializer type: (identifier) @type)
+(typed_array_initializer type: (identifier) @type)
 (type_definition name: (identifier) @type.definition)
 (member_field name: (identifier) @variable.member)
 (member_field type: (_) @type)

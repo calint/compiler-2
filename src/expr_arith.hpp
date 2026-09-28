@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cassert>
 #include <cstdint>
 #include <format>
 #include <functional>
@@ -11,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -437,6 +439,29 @@ class expr_arith final : public expression {
         for (const std::unique_ptr<statement>& e : exprs_) {
             e->visit_reads(var, reader);
         }
+    }
+
+    //
+    // class methods
+    //
+
+    // e.g. 'flag', 'p', 'f(x)' or '-i32(x)', a parenthesized list is
+    // arithmetic of its own
+    [[nodiscard]] auto is_single_operand() const -> bool {
+        if (exprs_.size() != 1) {
+            return false;
+        }
+
+        const statement& e{*exprs_.front()};
+
+        return typeid(e) != typeid(expr_arith);
+    }
+
+    // the list type of a folded 'i8(-3)' is the default type of a constant
+    [[nodiscard]] auto single_operand_type() const -> const type& {
+        assert(is_single_operand());
+
+        return exprs_.front()->get_type();
     }
 
     //

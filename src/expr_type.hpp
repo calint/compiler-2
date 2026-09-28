@@ -109,12 +109,6 @@ class expr_type final : public statement {
         assert_items_not_reading(dst, 0);
     }
 
-    [[nodiscard]] auto is_make_copy() const -> bool {
-        return not tok().text().empty();
-        // note: if token is empty then it is an expression of a type '{ ... }'
-        //       otherwise e.g. 'p = pt'
-    }
-
     //
     // statics
     //

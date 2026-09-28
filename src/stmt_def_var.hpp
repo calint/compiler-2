@@ -10,6 +10,8 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "expr_arith.hpp"
+#include "expr_bool.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_const.hpp"
 #include "stmt_identifier.hpp"
@@ -47,6 +49,11 @@ class stmt_def_var final : public statement {
         // expect initialization
         equals_tk_ = tz.is_next_char_token('=');
         const bool init_required{not equals_tk_.is_empty()};
+
+        // e.g. 'var a = i8[]{1, 2}' is an array by its initializer
+        if (init_required and type_tk_.is_empty() and not is_array_) {
+            is_array_ = starts_array_literal(tc, tz);
+        }
 
         set_type(declared_type(tc, tz));
 
@@ -139,27 +146,29 @@ class stmt_def_var final : public statement {
     }
 
   private:
-    // e.g. 'var p = point.at(1, 2)' has the type of the constructor
-    [[nodiscard]] auto declared_type(const toc& tc, tokenizer& tz) const
+    // e.g. 'var b = x < 3' is a 'bool' and 'var p = point.at(1, 2)' a 'point'
+    [[nodiscard]] auto declared_type(toc& tc, tokenizer& tz) const
         -> const type& {
 
         if (not type_tk_.is_empty()) {
             return tc.get_type_or_throw(type_tk_, type_tk_.text());
         }
 
-        if (equals_tk_.is_empty() or is_array_) {
+        if (equals_tk_.is_empty()) {
             return tc.get_type_default();
         }
 
-        const token init_tk{tz.next_token()};
-        const bool is_constructor{is_constructor_call(tc, init_tk, tz)};
-        tz.put_back_token(init_tk);
-
-        if (not is_constructor) {
-            return tc.get_type_default();
+        if (is_array_) {
+            return array_element_type(tc, tz);
         }
 
-        return tc.get_type_or_throw(init_tk, init_tk.text());
+        // the parser of the initializer depends on its type so it is parsed
+        // again once the type is known
+        const token start_tk{tz.cur_position_token()};
+        const type& tp{initializer_type(tc, tz)};
+        tz.rewind_to_position(start_tk);
+
+        return tp;
     }
 
     [[nodiscard]] auto make_var_info() const -> var_info {
@@ -194,5 +203,70 @@ class stmt_def_var final : public statement {
         if (close_bracket_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ']' after array size"};
         }
+    }
+
+    //
+    // statics
+    //
+
+    // e.g. 'i8' in 'i8[]{1, 2}', '{1, 2}' alone has the default type
+    [[nodiscard]] static auto array_element_type(const toc& tc, tokenizer& tz)
+        -> const type& {
+
+        if (not starts_array_literal(tc, tz)) {
+            return tc.get_type_default();
+        }
+
+        const token tk{tz.next_token()};
+        tz.put_back_token(tk);
+
+        return tc.get_type_or_throw(tk, tk.text());
+    }
+
+    // e.g. 'point{1, 2}', 'x < 3', 'flag', 'p', 'f(x)', 'i32(x)' or 'a + 1'
+    [[nodiscard]] static auto initializer_type(toc& tc, tokenizer& tz)
+        -> const type& {
+
+        // 'expr_arith' cannot parse the '{' of a record literal
+        const token tk{tz.next_token()};
+        if (is_record_literal(tc, tk, tz)) {
+            return tc.get_type_or_throw(tk, tk.text());
+        }
+
+        tz.put_back_token(tk);
+
+        // 'expr_bool' parses any arithmetic too, as a comparison shorthand
+        const expr_bool bol{tc, tz.next_whitespace_token(), tz};
+
+        // a comparison, 'not', 'and' or 'or'
+        const expr_arith* const arith{bol.arithmetic()};
+        if (arith == nullptr) {
+            return tc.get_type_bool();
+        }
+
+        // several operands have the default type like the constants
+        if (not arith->is_single_operand()) {
+            return tc.get_type_default();
+        }
+
+        // 'true' and 'false' are integer constants in arithmetic
+        if (arith->is_identifier() and
+            (arith->identifier() == "true" or arith->identifier() == "false")) {
+
+            return tc.get_type_bool();
+        }
+
+        return arith->single_operand_type();
+    }
+
+    // e.g. 'i8[3]{1, 2}' or 'point[]{{1, 2}}'
+    [[nodiscard]] static auto starts_array_literal(const toc& tc, tokenizer& tz)
+        -> bool {
+
+        const token tk{tz.next_token()};
+        const bool is_literal{is_array_literal(tc, tk, tz)};
+        tz.put_back_token(tk);
+
+        return is_literal;
     }
 };

@@ -1,2 +1,2 @@
 
-121.baz:8:19: use of uninitialized variable 'x'
+121.baz:9:23: use of uninitialized variable 'x'

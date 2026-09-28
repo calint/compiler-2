@@ -1,0 +1,132 @@
+# an untyped variable has the type of its initializer: a comparison or a 'bool'
+# operand is a 'bool', a single operand has its own type, several operands have
+# the default type like constants
+#
+# test-deduced-types.sh checks the type on lines marked '# is TYPE', 'default'
+# is the default type of the target
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type point {
+    x,
+    y
+}
+
+type object {
+    pos point,
+    color
+}
+
+func point.at(x, y) self {
+    self.x = x
+    self.y = y
+}
+
+func is_origin(p point) res bool {
+    res = p.x == 0 and p.y == 0
+}
+
+func twice(v) res {
+    res = v * 2
+}
+
+func main() {
+    var small = i8(-3) # is i8
+    var wide = i16(1000) # is i16
+
+    # comparisons, 'not', 'and' and 'or' are 'bool'
+    var less = small < 0 # is bool
+    var both = small < 0 and wide > 0 # is bool
+    var neither = not (small < 0 or wide > 0) # is bool
+    assert(1, less and both and not neither)
+
+    # 'bool' operands
+    var yes = true # is bool
+    var no = false # is bool
+    var same = less # is bool
+    var zero = point{0, 0} # is point
+    var one = point{0, 1} # is point
+    var origin = is_origin(zero) # is bool
+    var elsewhere = is_origin(one) # is bool
+    assert(2, yes and not no and same and origin and not elsewhere)
+
+    # a single integer operand keeps its type, the products wrap at its width
+    var s = small # is i8
+    s = s * 100
+    assert(3, s == -44)
+
+    var w = wide # is i16
+    w = w * 100
+    assert(4, w == -31072)
+
+    var bytes = i8[]{1, 2, 100} # is i8
+    var e = bytes[2] # is i8
+    e = e * 2
+    assert(5, e == -56)
+
+    var paren = (small) # is i8
+    paren = paren * 100
+    assert(6, paren == -44)
+
+    var negated = -small # is i8
+    negated = negated * 100
+    assert(18, negated == 44)
+
+    # a conversion names the type
+    var n = i32(small) # is i32
+    n = n * 100
+    assert(7, n == -300)
+
+    var d = i(small) # is default
+    d = d * 100
+    assert(22, d == -300)
+
+    # several operands, a parenthesized list, constants and calls of the
+    # default type
+    var sum = small + 0 # is default
+    sum = sum * 100
+    assert(8, sum == -300)
+
+    var list = -(small) # is default
+    list = list * 100
+    assert(9, list == 300)
+
+    var k = 3 # is default
+    k = k * 1000
+    assert(10, k == 3000)
+
+    var t = twice(small + 0) # is default
+    assert(11, t == -6)
+
+    # records from literals, copies, fields and constructors
+    var p = point{1, 2} # is point
+    assert(12, p.x == 1 and p.y == 2)
+
+    var q = p # is point
+    assert(13, q.x == 1 and q.y == 2)
+
+    var o = object{point{3, 4}, 5} # is object
+    assert(14, o.pos.x == 3 and o.pos.y == 4 and o.color == 5)
+
+    var pos = o.pos # is point
+    assert(15, pos.x == 3 and pos.y == 4)
+
+    var at = point.at(6, 7) # is point
+    assert(16, at.x == 6 and at.y == 7)
+
+    # an array literal names its element type and size, '[]' counts the
+    # elements
+    var points = point[3]{{1, 2}, point{3, 4}} # is point
+    assert(19, points[0].x == 1 and points[1].y == 4 and points[2].x == 0)
+
+    var sized = i16[]{300, -300} # is i16
+    assert(20, array_length(sized) == 2 and sized[1] == -300)
+
+    var declared[2] = i8[2]{5, 6} # is i8
+    assert(21, declared[0] == 5 and declared[1] == 6)
+
+    # a typed literal is also a value in assignments and fields
+    p = point{8, 9}
+    o.pos = point{10, 11}
+    assert(17, p.x == 8 and p.y == 9 and o.pos.x == 10 and o.pos.y == 11)
+}

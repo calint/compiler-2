@@ -1,0 +1,6 @@
+# an untyped variable cannot take its type from '{...}', e.g. 'point{1, 2}'
+# names it
+
+func main() {
+    var p = {1, 2}
+}

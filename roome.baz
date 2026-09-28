@@ -83,7 +83,7 @@ func print(s[] i8) {
 
 func main() {
     var counter
-    var nm str
+    var nm = str{}
     print(hello)
     loop {
         counter = counter + 1

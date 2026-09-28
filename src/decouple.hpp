@@ -479,5 +479,11 @@ struct ident_info {
                                            stmt_identifier receiver)
     -> std::unique_ptr<statement>;
 
+[[nodiscard]] auto is_array_literal(const toc& tc, const token& tk,
+                                    tokenizer& tz) -> bool;
+
 [[nodiscard]] auto is_constructor_call(const toc& tc, const token& tk,
                                        tokenizer& tz) -> bool;
+
+[[nodiscard]] auto is_record_literal(const toc& tc, const token& tk,
+                                     tokenizer& tz) -> bool;

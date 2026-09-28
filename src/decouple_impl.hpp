@@ -25,11 +25,11 @@
 #include "expr_type.hpp"
 #include "stmt_builtin_array_length.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
+#include "stmt_builtin_convert.hpp"
 #include "stmt_builtin_equal.hpp"
 #include "stmt_builtin_exit.hpp"
 #include "stmt_builtin_foo.hpp"
 #include "stmt_builtin_io.hpp"
-#include "stmt_builtin_narrow.hpp"
 #include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
@@ -96,12 +96,34 @@ auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
 }
 
 // declared in 'decouple.hpp'
+// e.g. 'i8[]{1, 2}' or 'point[]{{1, 2}}', a type name followed by '[' has no
+// other meaning
+auto is_array_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
+    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
+           tz.peek_char_after_whitespace() == '[';
+}
+
+// declared in 'decouple.hpp'
 // e.g. 'point.at(1, 2)', a type name followed by '.' has no other meaning
 auto is_constructor_call(const toc& tc, const token& tk, tokenizer& tz)
     -> bool {
 
     return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
            tz.peek_char_after_whitespace() == '.';
+}
+
+// declared in 'decouple.hpp'
+// e.g. 'point{1, 2}', a record type name followed by '{' has no other meaning
+auto is_record_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
+    if (not tc.has_type(tk.text()) or tc.is_var_or_alias(tk.text())) {
+        return false;
+    }
+
+    if (tc.get_type_or_throw(tk, tk.text()).is_builtin()) {
+        return false;
+    }
+
+    return tz.peek_char_after_whitespace() == '{';
 }
 
 // declared in 'decouple.hpp'
@@ -137,11 +159,11 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         return std::make_unique<stmt_builtin_equal>(tc, std::move(uops), tk,
                                                     tz);
     }
-    if (stmt_builtin_narrow::is_builtin_name(tk.text()) and
+    if (stmt_builtin_convert::is_builtin_name(tk.text()) and
         tz.peek_char_after_whitespace() == '(') {
 
-        return std::make_unique<stmt_builtin_narrow>(tc, std::move(uops), tk,
-                                                     tz);
+        return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
+                                                      tz);
     }
 
     if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
@@ -177,8 +199,17 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     set_type(tp);
 
-    // note: token name would be empty at the '{x, y}' type of statement
-    if (is_make_copy()) {
+    // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
+    // destination
+    const bool is_typed_literal{is_record_literal(tc, tok(), tz)};
+    if (is_typed_literal and not tok().is_text(tp.name())) {
+        throw compiler_exception{tok(),
+                                 std::format("expected type '{}', got '{}'",
+                                             tp.name(), tok().text())};
+    }
+
+    // e.g. 'p = pt', the token is empty at '{x, y}'
+    if (not tok().text().empty() and not is_typed_literal) {
         parse_copy_source(tc, tz, tp);
         return;
     }
@@ -297,7 +328,7 @@ auto expr_type::source_to(std::ostream& os) const -> void {
     }
 
     // identifier case: base statement already emitted token text
-    if (is_make_copy()) {
+    if (stmt_ident_) {
         stmt_ident_->source_to(os);
         return;
     }
@@ -658,6 +689,11 @@ auto expr_type::compile_lea(toc& tc, const size_t indent,
 auto expr_type::identifier() const -> std::string_view {
     if (stmt_ident_) {
         return stmt_ident_->identifier();
+    }
+
+    // e.g. 'point' in 'point{1, 2}' is a type, not a value
+    if (not open_brace_tk_.is_empty()) {
+        return {};
     }
 
     return statement::identifier();

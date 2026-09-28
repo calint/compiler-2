@@ -1,0 +1,15 @@
+# a typed record literal must name the type of the destination
+
+type point {
+    x,
+    y
+}
+
+type size {
+    w,
+    h
+}
+
+func main() {
+    var p point = size{1, 2}
+}
