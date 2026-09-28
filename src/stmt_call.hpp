@@ -410,7 +410,7 @@ class stmt_call : public expression {
 
         x.free_scratch_registers(tok(), indent, address_registers);
 
-        x.call_function(indent, func.body_label(), frame_address);
+        x.call_function(tok(), indent, func.body_label(), frame_address);
     }
 
     //

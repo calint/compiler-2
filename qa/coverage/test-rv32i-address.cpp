@@ -488,8 +488,7 @@ auto main(const int argc, const char* argv[]) -> int {
         // equal sizes keep the version without scratch in direct and buffered
         // output
         for (const assembler::jump_mode jumps :
-             {assembler::jump_mode::as_emitted,
-              assembler::jump_mode::resolved,
+             {assembler::jump_mode::as_emitted, assembler::jump_mode::resolved,
               assembler::jump_mode::optimized}) {
             std::ostringstream output;
             machine_rv32i backend{output, {}, jumps};
@@ -647,8 +646,7 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     if (argc > 1 and std::string_view{argv[1]} == "noninline") {
         // hand-written lines are interleaved with the backend's output
-        machine_rv32i backend{
-            std::cout, {}, assembler::jump_mode::as_emitted};
+        machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -663,7 +661,7 @@ auto main(const int argc, const char* argv[]) -> int {
                 std::println("    li x{}, {}", index, 100 + index);
             }
         }
-        backend.call_function(1, "outer",
+        backend.call_function(token{}, 1, "outer",
                               operand::mem("s0", {}, 1, 4096, integer));
         for (size_t index{1}; index < 32; ++index) {
             if (index != 2) {
@@ -695,7 +693,7 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.reserve_frame_base();
         std::println("    la t0, dat\n    li t1, 4096\n    add t0, t0, t1\n"
                      "    beq s1, t0, 1f\n    j call_failure\n1:");
-        backend.call_function(1, "inner",
+        backend.call_function(token{}, 1, "inner",
                               operand::mem("s1", {}, 1, 8192, integer));
         // the frame base is live here, so the call restores it
         std::println("    la t0, dat\n    li t1, 4096\n    add t0, t0, t1\n"
@@ -721,8 +719,7 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     if (argc > 1 and std::string_view{argv[1]} == "frame-checks") {
         // hand-written lines are interleaved with the backend's output
-        machine_rv32i backend{
-            std::cout, {}, assembler::jump_mode::as_emitted};
+        machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -779,8 +776,7 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     if (argc > 1 and std::string_view{argv[1]} == "long-loop") {
         // hand-written lines are interleaved with the backend's output
-        machine_rv32i backend{
-            std::cout, {}, assembler::jump_mode::as_emitted};
+        machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
         backend.set_builtin_types(integer64, integer, half, byte, boolean,
                                   empty);
         backend.start();
@@ -981,9 +977,9 @@ func main() {
               "t3: elements to bytes (4 bytes/element)",
               "t0: left value/result, t4: right value",
               "t5: words, t3: tail bytes", "stop at first mismatch",
-              "compare 4-byte words",
-              "compare optional 2-byte tail", "compare optional final byte",
-              "all matched or empty: true", "mismatch: false"}) {
+              "compare 4-byte words", "compare optional 2-byte tail",
+              "compare optional final byte", "all matched or empty: true",
+              "mismatch: false"}) {
             assert(output.str().contains(std::format("# {}\n", text)));
         }
     }

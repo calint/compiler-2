@@ -135,7 +135,7 @@ class machine {
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
 
-    virtual auto call_function(const size_t indent,
+    virtual auto call_function(const token& src_loc_tk, const size_t indent,
                                const std::string_view label,
                                const operand& frame_address) -> void = 0;
 

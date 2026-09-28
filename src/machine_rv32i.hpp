@@ -1289,7 +1289,8 @@ class machine_rv32i : public machine {
         emit_jump(indent, op::j, {}, {}, target);
     }
 
-    auto call_function(const size_t indent, const std::string_view label,
+    auto call_function(const token& src_loc_tk, const size_t indent,
+                       const std::string_view label,
                        const operand& frame_address) -> void override {
 
         assert(frame_address.is_memory());
@@ -1315,7 +1316,8 @@ class machine_rv32i : public machine {
             saved.size() * word_size_bytes_, stack_alignment)};
 
         if (stack_bytes != 0) {
-            assembler_.comment(indent, "before call: save allocated registers");
+            comment(src_loc_tk, indent,
+                    "before call: save allocated registers");
             assembler_.addi(indent, "sp", "sp",
                             -static_cast<int64_t>(stack_bytes));
         }
@@ -1325,13 +1327,14 @@ class machine_rv32i : public machine {
                           static_cast<size_t>(index) * word_size_bytes_, "sp");
         }
 
-        address_of(token{}, indent,
+        comment(src_loc_tk, indent, "set function frame base");
+        address_of(src_loc_tk, indent,
                    make_register_operand(frame_base_register(), default_type()),
                    frame_address);
 
         assembler_.call(indent, label);
         if (stack_bytes != 0) {
-            assembler_.comment(indent, "after call: restore saved registers");
+            comment(src_loc_tk, indent, "after call: restore saved registers");
         }
 
         restore_saved_registers(indent, saved, stack_bytes);

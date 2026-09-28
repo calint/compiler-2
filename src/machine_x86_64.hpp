@@ -359,7 +359,8 @@ class machine_x86_64 final : public machine {
         assembler_.jmp(indent, target);
     }
 
-    auto call_function(const size_t indent, const std::string_view label,
+    auto call_function(const token& src_loc_tk, const size_t indent,
+                       const std::string_view label,
                        const operand& frame_address) -> void override {
 
         assert(frame_address.is_memory());
@@ -378,20 +379,22 @@ class machine_x86_64 final : public machine {
         }
 
         if (not saved.empty()) {
-            assembler_.comment(indent, "before call: save allocated registers");
+            comment(src_loc_tk, indent,
+                    "before call: save allocated registers");
         }
 
         for (const operand& reg : saved) {
             push(indent, reg);
         }
 
+        comment(src_loc_tk, indent, "set function frame base");
         lea(indent,
             make_register_operand(frame_base_register(), *default_type_),
             frame_address, true);
 
         assembler_.call(indent, label);
         if (not saved.empty()) {
-            assembler_.comment(indent, "after call: restore saved registers");
+            comment(src_loc_tk, indent, "after call: restore saved registers");
         }
 
         for (const operand& reg : saved | std::views::reverse) {

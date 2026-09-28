@@ -2018,6 +2018,7 @@ main:
         lea r15, [rbp + 1056]
         mov qword [rbp + 1192], r15
 ;       [304:9] free scratch register r15
+;       [304:9] set function frame base
         lea rbx, [rbp + 1192]
         call func.print_num
 ;       [305:9] print(colon)
