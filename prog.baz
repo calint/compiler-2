@@ -24,8 +24,8 @@ dat prompt3[] i8 = "hello "
 dat     dot[] i8 = "."
 dat      nl[] i8 = "\n"
 dat   colon[] i8 = ": "
-dat     nums[4] = { 1 } # remaining elements are zeroed
-dat    str1 str = { 3 } # remaining fields are zeroed
+dat      nums[4] = { 1 } # remaining elements are zeroed
+dat     str1 str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
 

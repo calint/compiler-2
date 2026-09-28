@@ -146,8 +146,8 @@ dat prompt3[] i8 = "hello "
 dat     dot[] i8 = "."
 dat      nl[] i8 = "\n"
 dat   colon[] i8 = ": "
-dat     nums[4] = { 1 } # remaining elements are zeroed
-dat    str1 str = { 3 } # remaining fields are zeroed
+dat      nums[4] = { 1 } # remaining elements are zeroed
+dat     str1 str = { 3 } # remaining fields are zeroed
 
 # default is to inline functions
 
@@ -1642,9 +1642,9 @@ lea rbp, [dat]
 ;[26:1] dat colon[] i8 = ": "
 ;[26:7] colon: i8[2] (2 B @ [rbp + 61])
 ;[27:1] dat nums[4] = { 1 }
-;[27:9] nums: i64[4] (32 B @ [rbp + 64])
+;[27:10] nums: i64[4] (32 B @ [rbp + 64])
 ;[28:1] dat str1 str = { 3 }
-;[28:8] str1: str (128 B @ [rbp + 96])
+;[28:9] str1: str (128 B @ [rbp + 96])
 ;[106:7] const yes = 1
 ;[107:7] const no = 0
 ;[108:7] const maybe = -1
@@ -4084,17 +4084,17 @@ db `\n`
 db `: `
 ; padding 1 B
 times 1 db 0
-;[27:9] nums
+;[27:10] nums
 ; i64[4]
-;[27:21] [0]
-;[27:21] i64
+;[27:22] [0]
+;[27:22] i64
 dq 1
 ; pad 3 'i64' of size 8
 times 24 db 0
-;[28:8] str1
-;[28:21] i8
+;[28:9] str1
+;[28:22] i8
 db 3
-;[28:19] zero remaining fields: 127 B
+;[28:20] zero remaining fields: 127 B
 times 127 db 0
 dat.end:
 
