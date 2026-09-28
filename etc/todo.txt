@@ -3,10 +3,10 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[ ] local code generation found in the survey of all coverage tests on both
+[o] local code generation found in the survey of all coverage tests on both
     targets (2026-09-28), illustrated in etc/codegen-inefficiencies.baz;
     site counts are occurrences in the tests
-    [ ] x86: an 8-byte element with a constant that fits a sign-extended
+    [x] x86: an 8-byte element with a constant that fits a sign-extended
         32-bit immediate is stored as two 4-byte halves:
         'mov dword [rbp + 24], 3; mov dword [rbp + 28], 0' instead of
         'mov qword [rbp + 24], 3' ('var arr3[] = { 3, 5 }', 40 sites)

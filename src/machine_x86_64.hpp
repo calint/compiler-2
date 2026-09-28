@@ -590,8 +590,8 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rax");
     }
 
-    // a dword immediate store is one instruction without a register while a
-    // copy needs a load and a store for each qword
+    // an immediate store is one instruction without a register while a copy
+    // needs a load and a store for each qword
     auto copy_bytes(const token& src_loc_tk, const size_t indent,
                     const std::string_view bytes, const operand& dst,
                     [[maybe_unused]] const size_t alignment,
@@ -617,12 +617,25 @@ class machine_x86_64 final : public machine {
                 threshold_for_rep_movs_size_bytes);
 
         for_each_part(
-            bytes.size(), size_dword,
+            bytes.size(), size_qword,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
-                mov(src_loc_tk, indent,
-                    memory_part(dst, part_size_bytes, offset),
-                    immediate(little_endian_value(
-                        bytes.substr(offset, part_size_bytes))));
+                const int64_t value{
+                    little_endian_value(bytes.substr(offset, part_size_bytes))};
+
+                // a qword store takes only a sign-extended 32-bit immediate
+                if (part_size_bytes == size_qword and
+                    not std::in_range<int32_t>(value)) {
+
+                    store_immediate_part(src_loc_tk, indent, bytes, dst,
+                                         size_dword, offset);
+                    store_immediate_part(src_loc_tk, indent, bytes, dst,
+                                         size_dword, offset + size_dword);
+
+                    return;
+                }
+
+                store_immediate_part(src_loc_tk, indent, bytes, dst,
+                                     part_size_bytes, offset);
             });
     }
 
@@ -2105,6 +2118,16 @@ class machine_x86_64 final : public machine {
             return;
         }
         setcc(indent, cc, sized_memory(dst, size_byte));
+    }
+
+    auto store_immediate_part(const token& src_loc_tk, const size_t indent,
+                              const std::string_view bytes, const operand& dst,
+                              const size_t part_size_bytes, const size_t offset)
+        -> void {
+
+        mov(src_loc_tk, indent, memory_part(dst, part_size_bytes, offset),
+            immediate(
+                little_endian_value(bytes.substr(offset, part_size_bytes))));
     }
 
     auto syscall(const size_t indent) -> void {

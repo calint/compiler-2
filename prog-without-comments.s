@@ -275,10 +275,8 @@ main:
             syscall
         if.32.24.210.5.end:
     func.assert.210.5.end:
-    mov dword [rbp + 296], 3
-    mov dword [rbp + 300], 0
-    mov dword [rbp + 304], 5
-    mov dword [rbp + 308], 0
+    mov qword [rbp + 296], 3
+    mov qword [rbp + 304], 5
     lea r15, [rbp + 296]
     mov qword [rbp + 320], 0
     foo.213.5:
@@ -823,10 +821,8 @@ main:
             syscall
         if.32.24.307.5.end:
     func.assert.307.5.end:
-    mov dword [rbp + 1040], -1
-    mov dword [rbp + 1044], -1
-    mov dword [rbp + 1048], 2
-    mov dword [rbp + 1052], 0
+    mov qword [rbp + 1040], -1
+    mov qword [rbp + 1048], 2
     cmp.313.12:
         mov r14, 2
     cmp r14, 2

@@ -649,10 +649,8 @@ main:
 ;   [212:9] arr3: i64[2] (16 B @ [rbp + 296])
 ;   [212:9] arr3 = i[]{ 3, 5 }
 ;   [212:19] size <= 16 B, use immediates
-    mov dword [rbp + 296], 3
-    mov dword [rbp + 300], 0
-    mov dword [rbp + 304], 5
-    mov dword [rbp + 308], 0
+    mov qword [rbp + 296], 3
+    mov qword [rbp + 304], 5
 ;   [213:5] foo arr3
 ;   [213:9] allocate scratch register -> r15
 ;   [213:9] e: i64 (r15)
@@ -1823,10 +1821,8 @@ main:
 ;   [312:9] arr2: i64[2] (16 B @ [rbp + 1040])
 ;   [312:9] arr2 = i[]{ -1, 2 }
 ;   [312:19] size <= 16 B, use immediates
-    mov dword [rbp + 1040], -1
-    mov dword [rbp + 1044], -1
-    mov dword [rbp + 1048], 2
-    mov dword [rbp + 1052], 0
+    mov qword [rbp + 1040], -1
+    mov qword [rbp + 1048], 2
 ;   [313:5] assert(array_length(arr2) == 2)
 ;   [313:12] allocate scratch register -> r15
 ;   [313:12] ? array_length(arr2) == 2

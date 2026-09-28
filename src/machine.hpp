@@ -481,18 +481,23 @@ class machine {
         return bits;
     }
 
-    // a word is sign extended so its bits fit a signed 32-bit immediate
+    // a word or double word is sign extended so a value that fits a signed
+    // 32-bit immediate is recognized
     [[nodiscard]] static auto little_endian_value(const std::string_view bytes)
         -> int64_t {
 
         constexpr size_t byte_bits{8};
 
-        uint32_t bits{};
+        uint64_t bits{};
         for (size_t i{}; i < bytes.size(); ++i) {
-            bits |= uint32_t{static_cast<unsigned char>(bytes[i])}
+            bits |= uint64_t{static_cast<unsigned char>(bytes[i])}
                     << (byte_bits * i);
         }
 
-        return std::bit_cast<int32_t>(bits);
+        if (bytes.size() == sizeof(int32_t)) {
+            return std::bit_cast<int32_t>(static_cast<uint32_t>(bits));
+        }
+
+        return std::bit_cast<int64_t>(bits);
     }
 };
