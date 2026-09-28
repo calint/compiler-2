@@ -3,8 +3,6 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[ ] self referential types
-[ ] a ways to split code in multiple files while keeping the unity build
 [ ] local code generation found in the survey of all coverage tests on both
     targets (2026-09-28), illustrated in etc/codegen-inefficiencies.baz;
     site counts are occurrences in the tests
@@ -119,6 +117,8 @@ queued, easiest first
     source: src/machine_x86_64.hpp:789
 [ ] review machine_rv32i code copy/zero/compare and the design that merges their
     functionality; still a bit messy
+[ ] self referential types
+[ ] a ways to split code in multiple files while keeping the unity build
 
 --------------------------------------------------------------------------------
 easy

@@ -48,7 +48,7 @@ lea rbp, [dat]
 ;[27:1] dat nums[4] = { 1 }
 ;[27:8] nums: i64[4] (32 B @ [rbp + 64])
 ;[28:1] dat str1 str = { 3 }
-;[28:8] str1: str (128 B @ [rbp + 96])
+;[28:7] str1: str (128 B @ [rbp + 96])
 ;[106:7] const yes = 1
 ;[107:7] const no = 0
 ;[108:7] const maybe = -1
@@ -2495,17 +2495,17 @@ times 1 db 0
 dq 1
 ; pad 3 'i64' of size 8
 times 24 db 0
-;[28:8] str1
-;[28:21] i8
+;[28:7] str1
+;[28:20] i8
 db 3
-;[28:19] zero remaining fields: 127 B
+;[28:18] zero remaining fields: 127 B
 times 127 db 0
 dat.end:
 
 section .bss.vars nobits alloc write
 align 16
 vars:
-resb 131072
+resb 65536
 vars.end:
 ; free named register rbp
 
