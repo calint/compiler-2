@@ -12,6 +12,7 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "statement.hpp"
+#include "stmt_builtin_convert.hpp"
 #include "stmt_const.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -38,15 +39,17 @@ class stmt_def_dat final : public statement {
     };
 
     token name_tk_;
+    token equals_tk_;
     token type_tk_;
     token open_bracket_tk_;
     stmt_const array_count_const_;
     token close_bracket_tk_;
-    token equals_tk_;
+    token open_paren_tk_;
+    token close_paren_tk_;
     elem elroot_;
-    bool has_init_{};
 
   public:
+    // e.g. 'dat x = i32(0)', the initializer gives the type
     stmt_def_dat(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()} {
 
@@ -56,32 +59,18 @@ class stmt_def_dat final : public statement {
 
         toc::assert_name_not_reserved(name_tk_);
 
-        open_bracket_tk_ = tz.is_next_char_token('[');
-        const bool is_array{not open_bracket_tk_.is_empty()};
-        const size_t array_count{is_array ? parse_array_size(tc, tz) : 0};
-
-        type_tk_ = tz.next_token();
-        if (not tc.has_type(type_tk_.text())) {
-            tz.put_back_token(type_tk_);
-            type_tk_ = {};
+        equals_tk_ = tz.is_next_char_token('=');
+        if (equals_tk_.is_empty()) {
+            throw compiler_exception{
+                tz, "expected '=' followed by an initializer, e.g. "
+                    "'dat x = i32(0)'"};
         }
 
-        // get type reference from the token
-        const type& tp{type_tk_.text().empty()
-                           ? tc.get_type_default()
-                           : tc.get_type_or_throw(type_tk_, type_tk_.text())};
+        elroot_ = parse_initializer(tc, tz);
 
-        set_type(tp);
-
-        // expect initialization
-        equals_tk_ = tz.is_next_char_token('=');
-        has_init_ = not equals_tk_.is_empty();
-
-        // register the variable without emitting output so it is available
+        // register the data without emitting output so it is available
         // during subsequent parsing
-        tc.add_var(name_tk_, 0, make_var_info(is_array, array_count), true);
-
-        elroot_ = parse_root(tc, tz, tp, is_array, array_count);
+        tc.add_var(name_tk_, 0, make_var_info(), true);
 
         tc.add_dat(this);
     }
@@ -95,23 +84,16 @@ class stmt_def_dat final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
-        if (elroot_.is_array) {
+        equals_tk_.source_to(os);
+        type_tk_.source_to(os);
+        if (not open_bracket_tk_.is_empty()) {
             open_bracket_tk_.source_to(os);
             array_count_const_.source_to(os);
             close_bracket_tk_.source_to(os);
         }
-        if (not type_tk_.is_empty()) {
-            type_tk_.source_to(os);
-        }
-
-        if (not has_init_) {
-            return;
-        }
-
-        equals_tk_.source_to(os);
-
-        const type& tp{get_type()};
-        print_source_elem(os, tp, elroot_);
+        open_paren_tk_.source_to(os);
+        print_source_elem(os, get_type(), elroot_);
+        close_paren_tk_.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent,
@@ -122,9 +104,7 @@ class stmt_def_dat final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        // an unsized array has its size from the initializer by now
-        tc.add_var(name_tk_, indent,
-                   make_var_info(elroot_.is_array, elroot_.array_count), true);
+        tc.add_var(name_tk_, indent, make_var_info(), true);
     }
 
     auto compile_data(toc& tc) const -> void override {
@@ -141,19 +121,30 @@ class stmt_def_dat final : public statement {
     }
 
   private:
-    [[nodiscard]] auto make_var_info(const bool is_array,
-                                     const size_t array_count) const
-        -> var_info {
-
+    [[nodiscard]] auto make_var_info() const -> var_info {
         return {
             .name{name_tk_.text()},
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
-            .is_array{is_array},
-            .array_len{array_count},
+            .is_array{elroot_.is_array},
+            .array_len{elroot_.array_count},
             .reg{},
             .base_register{},
         };
+    }
+
+    // e.g. 'i8[4]{1, 2}', 'i[]{1, 2}' or 'point[2]{{1, 2}}'
+    [[nodiscard]] auto parse_array_literal(toc& tc, tokenizer& tz) -> elem {
+        open_bracket_tk_ = tz.is_next_char_token('[');
+        const size_t array_count{parse_array_size(tc, tz)};
+
+        elem el{parse_array(tc, tz, type_tk_, get_type(), array_count)};
+        if (el.array_count == 0) {
+            throw compiler_exception{name_tk_,
+                                     "empty arrays require a specified size"};
+        }
+
+        return el;
     }
 
     // e.g. '[4]', or '[]' when the initializer gives the size, which is 0
@@ -177,29 +168,68 @@ class stmt_def_dat final : public statement {
         return static_cast<size_t>(array_count_const_.value());
     }
 
-    // without an initializer only the shape is known and the data is zero
-    [[nodiscard]] auto parse_root(toc& tc, tokenizer& tz, const type& tp,
-                                  const bool is_array,
-                                  const size_t array_count) const -> elem {
+    // e.g. 'i8(3)' or 'i(3)'
+    [[nodiscard]] auto parse_conversion(const toc& tc, tokenizer& tz) -> elem {
+        open_paren_tk_ = tz.is_next_char_token('(');
 
-        if (not has_init_) {
+        elem el{parse_builtin(tc, tz, get_type())};
+
+        close_paren_tk_ = tz.is_next_char_token(')');
+        if (close_paren_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected ')' after the argument"};
+        }
+
+        return el;
+    }
+
+    // e.g. 'dat s = "hi"' is an 'i8' array of 2, 'dat a = i8[4]{1, 2}' an 'i8'
+    // array of 4, 'dat p = point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8',
+    // 'dat b = true' a 'bool' and 'dat n = 3' has the default type
+    [[nodiscard]] auto parse_initializer(toc& tc, tokenizer& tz) -> elem {
+        if (tz.peek_char_after_whitespace() == '"') {
+            const token string_tk{tz.next_token()};
+            set_type(tc.get_type_or_throw(string_tk, "i8"));
+
             elem el{};
-            el.is_array = is_array;
-            el.array_count = array_count;
+            el.is_array = true;
+            el.tk = string_tk;
+            el.array_count = string_array_count(string_tk, get_type(), 0);
 
             return el;
         }
 
-        elem el{parse_elem(tc, tz, type_tk_, tp, is_array, array_count)};
+        const token tk{tz.next_token()};
 
-        if (el.is_array and el.array_count == 0 and not el.tk.is_string() and
-            el.elems.empty()) {
+        if (is_array_literal(tc, tk, tz)) {
+            type_tk_ = tk;
+            set_type(array_literal_type(tc, tk));
 
-            throw compiler_exception{name_tk_,
-                                     "empty arrays require a specified size"};
+            return parse_array_literal(tc, tz);
         }
 
-        return el;
+        if (is_record_literal(tc, tk, tz)) {
+            type_tk_ = tk;
+            set_type(tc.get_type_or_throw(tk, tk.text()));
+
+            return parse_type(tc, tz, get_type());
+        }
+
+        if (stmt_builtin_convert::is_builtin_name(tk.text()) and
+            tz.peek_char_after_whitespace() == '(') {
+
+            type_tk_ = tk;
+            set_type(stmt_builtin_convert::conversion_type(tc, tk));
+
+            return parse_conversion(tc, tz);
+        }
+
+        const bool is_bool{tk.is_text("true") or tk.is_text("false")};
+        set_type(is_bool ? tc.get_type_bool() : tc.get_type_default());
+
+        // the constant may start with unary operations, e.g. '-1'
+        tz.put_back_token(tk);
+
+        return parse_builtin(tc, tz, get_type());
     }
 
     //
@@ -213,11 +243,6 @@ class stmt_def_dat final : public statement {
 
         if (not elroot.is_array) {
             x.comment(elroot.tk, 0, "{}", tp.name());
-            if (elroot.tk.text().empty()) {
-                x.emit_data(tp.size_bytes(), {});
-                return;
-            }
-
             x.emit_data(tp.size_bytes(), {
                                              .value{elroot.value},
                                              .uops{elroot.uops.to_string()},
@@ -360,7 +385,7 @@ class stmt_def_dat final : public statement {
             multiply_storage_size(tp.size_bytes(), remaining_count));
     }
 
-    // '{' elements '}', only an array of built-ins may be empty
+    // '{' elements '}', empty zeroes a sized array
     [[nodiscard]] static auto parse_array(const toc& tc, tokenizer& tz,
                                           const token src_loc_tk,
                                           const type& tp,
@@ -382,10 +407,7 @@ class stmt_def_dat final : public statement {
                             tp.name())};
         }
 
-        if (tp.is_builtin()) {
-            el.close_brace_tk_ = tz.is_next_char_token('}');
-        }
-
+        el.close_brace_tk_ = tz.is_next_char_token('}');
         if (el.close_brace_tk_.is_empty()) {
             parse_array_elements(tc, tz, tp, el);
             el.close_brace_tk_ = tz.is_next_char_token('}');

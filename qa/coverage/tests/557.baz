@@ -8,7 +8,7 @@ type padded {
     text[7] i8
 }
 
-dat expected_high[] i8 = "\xff\x80\x7f\x01"
+dat expected_high = "\xff\x80\x7f\x01"
 
 func main() {
     # zero bytes are stored without a value

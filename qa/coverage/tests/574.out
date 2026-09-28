@@ -1,2 +1,2 @@
 
-574.baz:8:30: constant '~32768' does not fit 'i16'
+574.baz:8:29: constant '~32768' does not fit 'i16'

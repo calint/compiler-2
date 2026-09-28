@@ -1,2 +1,2 @@
 
-195.baz:3:25: only arrays of type 'i8' can be initialized with strings
+195.baz:4:25: only arrays of type 'i8' can be initialized with strings

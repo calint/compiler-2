@@ -10,7 +10,7 @@ func input(str[] i8, len) nbytes {
     nbytes = read(0, str, len)
 }
 
-dat ok[] i8 = "ok\n"
+dat ok = "ok\n"
 
 func main() {
     var word1 = i8[64]{}

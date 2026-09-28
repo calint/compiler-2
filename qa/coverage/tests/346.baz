@@ -1,6 +1,6 @@
 # empty string fills a sized dat array with zeros
 
-dat value[8] i8 = ""
+dat value = i8[8]{}
 
 func assert(x bool) { if not x exit(1) }
 

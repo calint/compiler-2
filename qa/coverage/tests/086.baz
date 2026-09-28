@@ -15,7 +15,7 @@ type location {
     name_len
 }
 
-dat nl_str[] i8 = "\n"
+dat nl_str = "\n"
 
 func nl() {
     print(nl_str, array_length(nl_str))

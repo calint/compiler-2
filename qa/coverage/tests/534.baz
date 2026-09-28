@@ -5,7 +5,7 @@ type point {
     y  # vertical
 }
 
-dat primes[] = {
+dat primes = i[]{
     2, # first
     3,
     5  # last

@@ -4,8 +4,8 @@ type point { x, y }
 type item { points[2] point }
 type holder { cols[4] item }
 
-dat h1[3] holder =
-    {
+dat h1 =
+    holder[3]{
         {
             {
                 {

@@ -4,8 +4,8 @@ type point { x, y }
 type data_holder { data[3] point }
 type item { something[2] data_holder }
 
-dat values[2] item =
-    {
+dat values =
+    item[2]{
         {
             {
                 { { {1, 2}, {3, 4}, {5, 6} } },

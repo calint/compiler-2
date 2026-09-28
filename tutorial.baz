@@ -240,9 +240,10 @@ func arrays() {
 # strings and data
 #
 
-dat greeting[] i8 = "hello from the tutorial\n"
+dat greeting = "hello from the tutorial\n"
 # 'dat' is data stored in the program image and initialized before variables
-# a string is an 'i8' array, '[]' takes the size from the string
+# like 'var' the initializer gives the type, a string is an 'i8' array of its
+# size
 
 func strings() {
     write(1, greeting)

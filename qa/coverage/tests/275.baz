@@ -2,7 +2,7 @@
 
 const n = 3
 
-dat values[n] i8 = {1,2,3}
+dat values = i8[n]{1,2,3}
 
 func assert(x bool) { if not x exit(1) }
 func main() {

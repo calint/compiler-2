@@ -14,8 +14,8 @@ type team {
     motto[24] i8
 }
 
-dat expected_motto[] i8 = "strings longer than 16!\n"
-dat cleared[3] i8 = ""
+dat expected_motto = "strings longer than 16!\n"
+dat cleared = i8[3]{}
 
 # an unsized parameter takes the size of the argument
 func greet(dst[] i8) {

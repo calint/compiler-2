@@ -1,2 +1,2 @@
 
-348.baz:3:18: an empty string is not valid for an array with unspecified size
+348.baz:3:13: an empty string is not valid for an array with unspecified size

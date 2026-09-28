@@ -1,8 +1,8 @@
 # colonless declarations retain default types, arrays and adjacent statements
 
 type point { x, y i32, values[2] }
-dat text[] i8 = ": stays in strings"
-dat data[2] = { 3, 4 }
+dat text = ": stays in strings"
+dat data = i[2]{ 3, 4 }
 func assert(ok bool) { if not ok exit(1) }
 func noinline twice(value i32) result i32 { result = value * 2 }
 func sum(values[]) result { result = values[0] + values[1] }

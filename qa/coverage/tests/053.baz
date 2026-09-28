@@ -1,7 +1,7 @@
 # nested struct fields
 
 dat fld=42
-dat str[] i8="hello world"
+dat str="hello world"
 
 type vector{x,y}
 type object{pos vector,vel vector,color}

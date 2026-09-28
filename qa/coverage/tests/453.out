@@ -1,2 +1,2 @@
 
-453.baz:2:11: unexpected character
+453.baz:2:11: expected '=' followed by an initializer, e.g. 'dat x = i32(0)'

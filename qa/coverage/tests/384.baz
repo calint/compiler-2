@@ -3,8 +3,8 @@
 type point { x, y }
 type item { data point }
 
-dat values[3] item =
-    {
+dat values =
+    item[3]{
         { {1, 2} },
         { {3, 4} },
         { {5, 6} }

@@ -890,7 +890,7 @@ auto main(const int argc, const char* argv[]) -> int {
         return 0;
     }
     if (mode == "far-foo" or mode == "far-foo-optimized") {
-        std::string source{"dat values[] = {1, 2, 3, 4, 5}\nfunc main() {\n"
+        std::string source{"dat values = i[]{1, 2, 3, 4, 5}\nfunc main() {\n"
                            "    var pad = 0\n    var visits = 0\n"
                            "    var sum = 0\n"};
 
@@ -1083,7 +1083,7 @@ func main() {
     }
     if (argc > 1 and std::string_view{argv[1]} == "strings-syscall") {
         const std::string_view source{R"baz(
-dat text[] i8 = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
+dat text = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
 func main() {
     var count = write(1, text, array_length(text))
     if count != 20 exit(1)

@@ -8,7 +8,7 @@ func print(str[] i8, len) {
     write(1, str, len)
 }
 
-dat hello[] i8 = "hello \"world\" \n from 'baz'\n  "
+dat hello = "hello \"world\" \n from 'baz'\n  "
 
 func main() {
     print(hello, array_length(hello))

@@ -1,0 +1,6 @@
+# an array size after the data name is rejected, an array literal gives the
+# element type and size, e.g. 'dat a = i8[4]{}'
+
+dat a[4] i8
+
+func main() {}

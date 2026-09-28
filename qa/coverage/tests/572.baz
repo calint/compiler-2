@@ -7,9 +7,9 @@ type limits {
     high i16
 }
 
-dat bytes[] i8 = {-128, 127, ~127, '\x7f'}
-dat words limits = {-32768, ~-32768}
-dat dwords[2] i32 = {-2147483648, 2147483647}
+dat bytes = i8[]{-128, 127, ~127, '\x7f'}
+dat words = limits{-32768, ~-32768}
+dat dwords = i32[2]{-2147483648, 2147483647}
 
 func main() {
     assert(1, bytes[0] == -128)

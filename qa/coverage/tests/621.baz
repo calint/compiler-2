@@ -1,0 +1,6 @@
+# a type after the data name is rejected, the initializer gives the type,
+# e.g. 'dat x = i32(0)'
+
+dat x i32 = 1
+
+func main() {}

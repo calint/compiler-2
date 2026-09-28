@@ -10,9 +10,9 @@ type glyph {
     code i32
 }
 
-dat letters[] i8 = {'b', 'a', 'z'}
-dat quoted glyph = {'\'', '"'}
-dat delimiters[] i8 = {' ', '#', '.', '(', ']', ',', '=', '+'}
+dat letters = i8[]{'b', 'a', 'z'}
+dat quoted = glyph{'\'', '"'}
+dat delimiters = i8[]{' ', '#', '.', '(', ']', ',', '=', '+'}
 
 func is_digit(ch i8) res bool {
     res = ch >= '0' and ch <= '9'

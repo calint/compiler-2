@@ -1,11 +1,11 @@
-dat   hello[] i8 = "welcome to adventure #6\n    type 'help'\n\nu r in roome\nu c me\nexits: none\ntodo: find an exit\n"
-dat prompt1[] i8 = "> "
-dat prompt2[] i8 = "unknown command\n"
-dat prompt3[] i8 = "hello "
-dat     dot[] i8 = "."
-dat      nl[] i8 = "\n"
-dat   erase[] i8 = "\b \b"
-dat   colon[] i8 = ": "
+dat   hello = "welcome to adventure #6\n    type 'help'\n\nu r in roome\nu c me\nexits: none\ntodo: find an exit\n"
+dat prompt1 = "> "
+dat prompt2 = "unknown command\n"
+dat prompt3 = "hello "
+dat     dot = "."
+dat      nl = "\n"
+dat   erase = "\b \b"
+dat   colon = ": "
 
 type str {
     len i8,

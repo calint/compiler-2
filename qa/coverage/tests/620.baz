@@ -1,0 +1,41 @@
+# data declarations take the type and size from the initializer like 'var'
+
+type point {x, y}
+
+type str {
+    len i8,
+    data[127] i8,
+}
+
+dat hello = "hello\n"            # i8 array of 6
+dat  nums = i[4]{ 1 }            # default type, remaining elements are zeroed
+dat  name = str{ 3, "abc" }      # remaining bytes of the field are zeroed
+dat small = i8(-3)
+dat  flag = true
+dat count = 7                    # default type
+dat zeros = point[3]{}           # zeroed records
+dat  pts = point[]{{1, 2}, {3}}  # size from the initializer
+dat bools = bool[2]{true}
+dat halfs = i16[]{ -1, 2 }
+
+func assert(ok bool) { if not ok exit(1) }
+
+func main() {
+    assert(array_length(hello) == 6)
+    assert(nums[0] == 1)
+    assert(nums[3] == 0)
+    assert(name.len == 3)
+    assert(name.data[2] == 'c')
+    assert(name.data[3] == 0)
+    assert(small == -3)
+    assert(flag)
+    assert(count == 7)
+    assert(zeros[2].y == 0)
+    assert(array_length(pts) == 2)
+    assert(pts[1].x == 3)
+    assert(pts[1].y == 0)
+    assert(bools[0])
+    assert(not bools[1])
+    assert(halfs[0] == -1)
+    assert(halfs[1] == 2)
+}

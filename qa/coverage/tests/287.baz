@@ -1,5 +1,5 @@
 # negative type-level array size is rejected
 
-dat values[-1] i8
+dat values = i8[-1]{}
 
 func main() {}

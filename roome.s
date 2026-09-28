@@ -12,21 +12,21 @@ _start:
 ; allocate named register rbp
 lea rbp, [dat]
 
-;[1:1] dat hello[] i8 = "welcome to adventure #6\n    type 'help'\n\nu r in roome\nu c me\nexits: none\ntodo: find an exit\n"
+;[1:1] dat hello = "welcome to adventure #6\n    type 'help'\n\nu r in roome\nu c me\nexits: none\ntodo: find an exit\n"
 ;[1:7] hello: i8[92] (92 B @ [rbp])
-;[2:1] dat prompt1[] i8 = "> "
+;[2:1] dat prompt1 = "> "
 ;[2:5] prompt1: i8[2] (2 B @ [rbp + 92])
-;[3:1] dat prompt2[] i8 = "unknown command\n"
+;[3:1] dat prompt2 = "unknown command\n"
 ;[3:5] prompt2: i8[16] (16 B @ [rbp + 94])
-;[4:1] dat prompt3[] i8 = "hello "
+;[4:1] dat prompt3 = "hello "
 ;[4:5] prompt3: i8[6] (6 B @ [rbp + 110])
-;[5:1] dat dot[] i8 = "."
+;[5:1] dat dot = "."
 ;[5:9] dot: i8[1] (1 B @ [rbp + 116])
-;[6:1] dat nl[] i8 = "\n"
+;[6:1] dat nl = "\n"
 ;[6:10] nl: i8[1] (1 B @ [rbp + 117])
-;[7:1] dat erase[] i8 = "\b \b"
+;[7:1] dat erase = "\b \b"
 ;[7:7] erase: i8[3] (3 B @ [rbp + 118])
-;[8:1] dat colon[] i8 = ": "
+;[8:1] dat colon = ": "
 ;[8:7] colon: i8[2] (2 B @ [rbp + 121])
 ;[10:1] str : 128 B    fields:
 ;[10:1]       name :  offset :    size :  array? : array size
@@ -737,28 +737,28 @@ section .data
 align 16
 dat:
 ;[1:7] hello
-;[1:20] i8[92]
+;[1:15] i8[92]
 db `welcome to adventure #6\n    type 'help'\n\nu r in roome\nu c me\nexits: none\ntodo: find an exit\n`
 ;[2:5] prompt1
-;[2:20] i8[2]
+;[2:15] i8[2]
 db `> `
 ;[3:5] prompt2
-;[3:20] i8[16]
+;[3:15] i8[16]
 db `unknown command\n`
 ;[4:5] prompt3
-;[4:20] i8[6]
+;[4:15] i8[6]
 db `hello `
 ;[5:9] dot
-;[5:20] i8[1]
+;[5:15] i8[1]
 db `.`
 ;[6:10] nl
-;[6:20] i8[1]
+;[6:15] i8[1]
 db `\n`
 ;[7:7] erase
-;[7:20] i8[3]
+;[7:15] i8[3]
 db `\b \b`
 ;[8:7] colon
-;[8:20] i8[2]
+;[8:15] i8[2]
 db `: `
 dat.end:
 

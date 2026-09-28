@@ -31,24 +31,24 @@ lea rbp, [dat]
 ;[13:1]        len :       0 :       1 :      no :           
 ;[13:1]       data :       1 :     127 :     yes :        127
 ;
-;[20:1] dat hello[] i8 = "hello world from baz\n"
+;[20:1] dat hello = "hello world from baz\n"
 ;[20:7] hello: i8[21] (21 B @ [rbp])
-;[21:1] dat prompt1[] i8 = "enter name:\n"
+;[21:1] dat prompt1 = "enter name:\n"
 ;[21:5] prompt1: i8[12] (12 B @ [rbp + 21])
-;[22:1] dat prompt2[] i8 = "that is not a name.\n"
+;[22:1] dat prompt2 = "that is not a name.\n"
 ;[22:5] prompt2: i8[20] (20 B @ [rbp + 33])
-;[23:1] dat prompt3[] i8 = "hello "
+;[23:1] dat prompt3 = "hello "
 ;[23:5] prompt3: i8[6] (6 B @ [rbp + 53])
-;[24:1] dat dot[] i8 = "."
+;[24:1] dat dot = "."
 ;[24:9] dot: i8[1] (1 B @ [rbp + 59])
-;[25:1] dat nl[] i8 = "\n"
+;[25:1] dat nl = "\n"
 ;[25:10] nl: i8[1] (1 B @ [rbp + 60])
-;[26:1] dat colon[] i8 = ": "
+;[26:1] dat colon = ": "
 ;[26:7] colon: i8[2] (2 B @ [rbp + 61])
-;[27:1] dat nums[4] = { 1 }
-;[27:10] nums: i64[4] (32 B @ [rbp + 64])
-;[28:1] dat str1 str = { 3 }
-;[28:9] str1: str (128 B @ [rbp + 96])
+;[27:1] dat nums = i[4]{ 1 }
+;[27:8] nums: i64[4] (32 B @ [rbp + 64])
+;[28:1] dat str1 = str{ 3 }
+;[28:8] str1: str (128 B @ [rbp + 96])
 ;[106:7] const yes = 1
 ;[107:7] const no = 0
 ;[108:7] const maybe = -1
@@ -1154,16 +1154,16 @@ main:
 ;   [260:9] pt: point (16 B @ [rbp + 384])
 ;   [260:9] pt = point.at(-1, -2)
 ;   [260:14] point.at(-1, -2)
-;   [90:6] point.at(x, y) self
+;   [87:6] point.at(x, y) self
     func.point.at.260.14:
 ;       [260:14] alias self -> pt
 ;       [260:14] alias x -> -1
 ;       [260:14] alias y -> -2
-;       [91:5] self.x = x
-;       [91:14] x
+;       [88:5] self.x = x
+;       [88:14] x
         mov qword [rbp + 384], -1
-;       [92:5] self.y = y
-;       [92:14] y
+;       [89:5] self.y = y
+;       [89:14] y
         mov qword [rbp + 392], -2
     func.point.at.260.14.end:
 ;   [264:5] assert(pt.x == -1)
@@ -1223,12 +1223,12 @@ main:
 ;       [265:5] free scratch register r15
     func.assert.265.5.end:
 ;   [267:8] pt.x(2)
-;   [97:6] point.x(x)
+;   [95:6] point.x(x)
     func.point.x.267.8:
 ;       [267:8] alias self -> pt
 ;       [267:8] alias x -> 2
-;       [98:5] self.x = x
-;       [98:14] x
+;       [96:5] self.x = x
+;       [96:14] x
         mov qword [rbp + 384], 2
     func.point.x.267.8.end:
 ;   [268:5] assert(pt.x == 2)
@@ -1610,16 +1610,16 @@ main:
 ;       [292:13] alias color -> 16777215
 ;       [102:5] self.pos = point.at(x, y)
 ;       [102:16] point.at(x, y)
-;       [90:6] point.at(x, y) self
+;       [87:6] point.at(x, y) self
         func.point.at.102.16.292.13:
 ;           [102:16] alias self -> self.pos (lea: rbp + 504)
 ;           [102:16] alias x -> 2
 ;           [102:16] alias y -> 74
-;           [91:5] self.x = x
-;           [91:14] x
+;           [88:5] self.x = x
+;           [88:14] x
             mov qword [rbp + 504], 2
-;           [92:5] self.y = y
-;           [92:14] y
+;           [89:5] self.y = y
+;           [89:14] y
             mov qword [rbp + 512], 74
         func.point.at.102.16.292.13.end:
 ;       [103:5] self.color = color
@@ -2472,39 +2472,39 @@ section .data
 align 16
 dat:
 ;[20:7] hello
-;[20:20] i8[21]
+;[20:15] i8[21]
 db `hello world from baz\n`
 ;[21:5] prompt1
-;[21:20] i8[12]
+;[21:15] i8[12]
 db `enter name:\n`
 ;[22:5] prompt2
-;[22:20] i8[20]
+;[22:15] i8[20]
 db `that is not a name.\n`
 ;[23:5] prompt3
-;[23:20] i8[6]
+;[23:15] i8[6]
 db `hello `
 ;[24:9] dot
-;[24:20] i8[1]
+;[24:15] i8[1]
 db `.`
 ;[25:10] nl
-;[25:20] i8[1]
+;[25:15] i8[1]
 db `\n`
 ;[26:7] colon
-;[26:20] i8[2]
+;[26:15] i8[2]
 db `: `
 ; padding 1 B
 times 1 db 0
-;[27:10] nums
-; i64[4]
-;[27:22] [0]
-;[27:22] i64
+;[27:8] nums
+;[27:15] i64[4]
+;[27:21] [0]
+;[27:21] i64
 dq 1
-; pad 3 'i64' of size 8
+;[27:15] pad 3 'i64' of size 8
 times 24 db 0
-;[28:9] str1
-;[28:22] i8
+;[28:8] str1
+;[28:20] i8
 db 3
-;[28:20] zero remaining fields: 127 B
+;[28:18] zero remaining fields: 127 B
 times 127 db 0
 dat.end:
 

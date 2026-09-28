@@ -1,2 +1,2 @@
 
-243.baz:4:29: expected '{' to open type initializer for 'p'
+243.baz:4:28: expected '{' to open type initializer for 'p'

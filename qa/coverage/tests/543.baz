@@ -28,11 +28,11 @@ type holder {
     n i32
 }
 
-dat greeting[] i8 = "hi!"
-dat numbers[] i32 = {10, 20, 30}
-dat letter i8 = 7
-dat halves[] i16 = {-1, 2}
-dat constant_mixed mixed = {1, 2, 3, 4}
+dat greeting = "hi!"
+dat numbers = i32[]{10, 20, 30}
+dat letter = i8(7)
+dat halves = i16[]{-1, 2}
+dat constant_mixed = mixed{1, 2, 3, 4}
 
 # the i32 locals after the byte would be written at an unaligned offset
 func noinline print_sign(num) res {

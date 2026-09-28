@@ -8,7 +8,7 @@ const maybe = -1
 
 type point { x, y }
 
-dat p1 point = { true, maybe }
+dat p1 = point{ true, maybe }
 
 func main() {
     assert (p1.x == yes)

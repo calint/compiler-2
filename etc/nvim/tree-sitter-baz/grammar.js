@@ -8,7 +8,6 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
-    [$.data_declaration],
     [$.sized_array_type],
     [$.unsized_array_type],
     [$._access_chain],
@@ -165,15 +164,12 @@ module.exports = grammar({
       field('initializer', $._expression)
     ),
 
-    // dat identifier type = expression
+    // dat identifier = expression, the initializer gives the type
     data_declaration: $ => seq(
       $.dat_keyword,
       field('destination', $.identifier),
-      optional(field('type', $._definition_type)),
-      optional(seq(
-        '=',
-        field('initializer', $._expression)
-      ))
+      '=',
+      field('initializer', $._expression)
     ),
 
     // var identifier = expression, the initializer gives the type

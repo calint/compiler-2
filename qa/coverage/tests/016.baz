@@ -1,5 +1,5 @@
-dat hello[] i8="hello\n"
-dat world[] i8="world\n"
+dat hello="hello\n"
+dat world="world\n"
 
 func print(str[] i8, len) {
     write(1, str, len)

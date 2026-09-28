@@ -1,3 +1,4 @@
-# string data cannot exceed its array size
+# a string cannot exceed the size of its data field
 
-func main() { dat x[2] i8 = "abc" }
+type p { s[2] i8 }
+func main() { dat x = p{"abc"} }

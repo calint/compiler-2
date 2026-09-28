@@ -115,13 +115,13 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     layouts = {
         "no-data": ("", "", 0, {}),
         "odd-data": (
-            "dat first i8 = 7\ndat second i32 = 123456\ndat third[2] i8 = {11, 22}\n",
+            "dat first = i8(7)\ndat second = i32(123456)\ndat third = i8[2]{11, 22}\n",
             """    assert(12, first == 7)
     assert(13, second == 123456)
     assert(14, third[1] == 22)
 """, 10, {"first": 0, "second": 4, "third": 8}),
         "aligned-data": (
-            "dat first[2] i64 = {7, 9}\n",
+            "dat first = i64[2]{7, 9}\n",
             """    assert(10, first[0] == 7)
     assert(11, first[1] == 9)
 """, 16, {"first": 0}),
@@ -141,12 +141,12 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         ("no-data", ""),
         ("odd-data", layouts["odd-data"][0]),
         ("aligned-data", layouts["aligned-data"][0]),
-        ("one-byte", "dat data[1] i8\n"),
-        ("before-alignment", "dat data[15] i8\n"),
-        ("after-alignment", "dat data[17] i8\n"),
-        ("before-second-alignment", "dat data[31] i8\n"),
-        ("second-alignment", "dat data[32] i8\n"),
-        ("inferred-data", "dat data[] i8 = {" + ", ".join(["1"] * 17) + "}\n"),
+        ("one-byte", "dat data = i8[1]{}\n"),
+        ("before-alignment", "dat data = i8[15]{}\n"),
+        ("after-alignment", "dat data = i8[17]{}\n"),
+        ("before-second-alignment", "dat data = i8[31]{}\n"),
+        ("second-alignment", "dat data = i8[32]{}\n"),
+        ("inferred-data", "dat data = i8[]{" + ", ".join(["1"] * 17) + "}\n"),
     ]
     # Each case is (name, declarations before main, main body, expected peak bytes).
     # These are simultaneous storage requirements, not sums of all declarations.
@@ -376,8 +376,8 @@ func main() {
         "type huge { values[2305843009213693952] i64 }",
         "type huge { values[9223372036854775807] i8, extra i8 }",
         "var huge = i64[2305843009213693952]{}",
-        "dat huge[2305843009213693952] i64",
-        "dat huge[1152921504606846976] i64",
+        "dat huge = i64[2305843009213693952]{}",
+        "dat huge = i64[1152921504606846976]{}",
     ):
         result = compile_source(directory, declaration + "\nfunc main() {}\n", 4096, [])
         assert result.returncode == 1, result.stderr

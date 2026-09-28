@@ -1,0 +1,2 @@
+
+621.baz:4:7: expected '=' followed by an initializer, e.g. 'dat x = i32(0)'

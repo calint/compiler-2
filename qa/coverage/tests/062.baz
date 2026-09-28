@@ -7,13 +7,13 @@ func input(str[] i8, len) nbytes {
     nbytes = read(0, str, len)
 }
 
-dat   hello[] i8 = "hello world from baz\n"
-dat   input[] i8 = "............................................................"
-dat prompt1[] i8 = "enter name:\n"
-dat prompt2[] i8 = "that is not a name.\n"
-dat prompt3[] i8 = "hello "
-dat     dot[] i8 = "."
-dat      nl[] i8 = "\n"
+dat   hello = "hello world from baz\n"
+dat   input = "............................................................"
+dat prompt1 = "enter name:\n"
+dat prompt2 = "that is not a name.\n"
+dat prompt3 = "hello "
+dat     dot = "."
+dat      nl = "\n"
 
 func main(){
 

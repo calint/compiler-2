@@ -1,6 +1,6 @@
 # a scalar data value outside the signed range of its type is rejected
 
-dat count i32 = 2147483648
+dat count = i32(2147483648)
 
 func main() {
     exit(count)

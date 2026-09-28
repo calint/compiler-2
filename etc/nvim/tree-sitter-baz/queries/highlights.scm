@@ -64,7 +64,7 @@
 
 (data_declaration
   destination: (identifier) @variable
-  type: (identifier)? @type)
+  initializer: (_)? @variable)
 
 (sized_array_type type: (identifier) @type)
 

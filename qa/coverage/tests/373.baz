@@ -2,7 +2,7 @@
 
 type point { x, y }
 
-dat points[3] point = { {1, 2}, {3, 4}, {5, 6} }
+dat points = point[3]{ {1, 2}, {3, 4}, {5, 6} }
 
 func assert(x bool) { if not x exit(1) }
 

@@ -4,7 +4,7 @@ func print(str[] i8, len) {
     write(1, str, len)
 }
 
-dat letter[] i8 = "\x41"
+dat letter = "\x41"
 
 func main() {
     print(letter, array_length(letter))

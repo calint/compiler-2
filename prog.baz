@@ -17,15 +17,15 @@ type str {
 
 # initial data is initialized before variables
 
-dat   hello[] i8 = "hello world from baz\n"
-dat prompt1[] i8 = "enter name:\n"
-dat prompt2[] i8 = "that is not a name.\n"
-dat prompt3[] i8 = "hello "
-dat     dot[] i8 = "."
-dat      nl[] i8 = "\n"
-dat   colon[] i8 = ": "
-dat      nums[4] = { 1 } # remaining elements are zeroed
-dat     str1 str = { 3 } # remaining fields are zeroed
+dat   hello = "hello world from baz\n"
+dat prompt1 = "enter name:\n"
+dat prompt2 = "that is not a name.\n"
+dat prompt3 = "hello "
+dat     dot = "."
+dat      nl = "\n"
+dat   colon = ": "
+dat    nums = i[4]{ 1 } # remaining elements are zeroed
+dat    str1 = str{ 3 } # remaining fields are zeroed
 
 # default is to inline functions
 
@@ -84,19 +84,19 @@ func str.print() {
     write(1, self.data, self.len)
 } 
 
-# a constructor builds its result `self` and must assign every field:
-# `func point.at(x, y) self` is called as `point.at(x, y)`
-
 func point.at(x, y) self {
     self.x = x
     self.y = y
 }
 
-# types can have methods with same name as fields
+# a constructor builds its result `self` and must assign every field:
+# `func point.at(x, y) self` is called as `point.at(x, y)`
 
 func point.x(x) {
     self.x = x
 }
+
+# types can have methods with same name as fields
 
 func object.at(x, y, color i32) self {
     self.pos = point.at(x, y)
