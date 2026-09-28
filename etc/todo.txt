@@ -3,6 +3,13 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
+[o] review opus generated code regarding constant folding in expr_arith
+    => steered towards cognitively easier algorithm done in passes with simple
+       and well defined purpose skipping the more complicated state machine
+       approach; a bug in the initial algorithm was found and fixed in the
+       process
+[ ] review machine_rv32i code copy/zero/compare and the design that merges their
+    functionality; still a bit messy
 [ ] rv32i: a constant above 16 bytes stored at an address inside a word
     ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
     offset) loops bytes: the constant is word aligned and the destination is
@@ -14,9 +21,6 @@ queued, easiest first
     => 'expr_any::constant_element_value' (needs a width parameter):
        constant indexes, '{...}' packing, 'array_copy' count, inline argument
        aliasing ('stmt_identifier', 'stmt_call', 'stmt_builtin_array_copy')
-[ ] review opus generated code regarding constant folding in expr_arith
-[ ] review machine_rv32i code copy/zero/compare and the design that merges their
-    functionality
 
 --------------------------------------------------------------------------------
 easy

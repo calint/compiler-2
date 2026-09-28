@@ -588,162 +588,279 @@ class expr_arith final : public expression {
         uops_.compile(tc, indent, dst_info.operand);
     }
 
+    // an operation of the list being folded: an element, or merged constants
+    // when 'element' is null
+    struct step {
+        char op{};
+        const statement* element{};
+        std::optional<int64_t> value; // set when the step is a constant
+        std::string folded_source;    // e.g. '* 3 * 2' for the comment
+    };
+
+    // a nested list is folded when it is compiled as an element:
+    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
     auto compile_elements(toc& tc, const size_t indent,
                           const ident_info& dst_info) const -> void {
 
-        const std::optional<merged_constants> merged{
-            merge_constants(tc, dst_info.type_ref())};
+        const type& width_type{dst_info.type_ref()};
 
-        if (merged) {
-            compile_merged(tc, indent, dst_info, *merged);
-            return;
-        }
+        std::vector<step> steps{make_steps(tc, width_type)};
+        steps = merge_commutative_constants(steps, width_type);
+        steps = merge_divisors(steps, width_type);
+        lead_with_constant(tc, steps);
 
-        const std::optional<std::vector<multiplicative_step>> steps{
-            merge_multiplicative_runs(tc, dst_info.type_ref())};
+        compile_first_step(tc, indent, dst_info, steps.front());
 
-        if (steps) {
-            compile_multiplicative_steps(tc, indent, dst_info, *steps);
-            return;
-        }
-
-        compile_first_element(tc, indent, dst_info, *exprs_[0]);
-
-        // remaining elements are +,-,*,/,%,|,&,^,<<,>>
-        for (const auto [o, e] :
-             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
-
-            const statement& s{*e};
-            asm_op(tc, indent, o, dst_info, s);
+        for (const step& s : std::span{steps}.subspan(1)) {
+            compile_step(tc, indent, dst_info, s);
         }
     }
 
-    // an element computed at run time and the operation that applies it
-    struct runtime_element {
-        char op{};
-        const statement* element{};
-    };
+    [[nodiscard]] static auto is_commutative(const char op) -> bool {
+        return op == '+' or op == '-' or op == '*' or op == '&' or op == '|' or
+               op == '^';
+    }
 
-    // the constant elements combined into one value applied with 'op'
-    struct merged_constants {
-        char op{};
-        int64_t value{};
-        std::vector<runtime_element> runtime_elements;
-        std::string folded_source; // e.g. '- 3 + c * 2' for the comment
-    };
-
-    // empty when the order of the operations matters or there is no constant
-    // to merge
-    [[nodiscard]] auto merge_constants(const toc& tc,
-                                       const type& width_type) const
-        -> std::optional<merged_constants> {
-
-        if (not is_mergeable()) {
-            return std::nullopt;
+    // the first element is added in an additive list and a factor in a list
+    // led by '*' or a bitwise operation, otherwise it is the dividend or the
+    // shifted value
+    [[nodiscard]] auto first_op() const -> char {
+        if (ops_.empty()) {
+            return '=';
         }
 
-        // the first element is added in an additive list
-        const char list_op{ops_.front() == '-' ? '+' : ops_.front()};
+        const char first{ops_.front()};
+        if (first == '-') {
+            return '+';
+        }
 
-        merged_constants merged{
-            .op{list_op},
-            .value{identity_of(list_op)},
-            .runtime_elements{},
+        return is_commutative(first) ? first : '=';
+    }
+
+    // pass 0: one step per element with the constant value of the element
+    //   'a * 3 * 2 / 3 / 2 * 4'  =>  '* a' '* 3' '* 2' '/ 3' '/ 2' '* 4'
+    [[nodiscard]] auto make_steps(const toc& tc, const type& width_type) const
+        -> std::vector<step> {
+
+        std::vector<step> steps;
+
+        for (size_t i{}; i < exprs_.size(); ++i) {
+            const char op{i == 0 ? first_op() : ops_[i - 1]};
+            const statement& e{*exprs_[i]};
+
+            steps.push_back({
+                .op{op},
+                .element{&e},
+                .value{element_constant(tc, e, width_type)},
+                .folded_source{
+                    std::format("{} {}", op, statement::trimmed_source(e))},
+            });
+        }
+
+        return steps;
+    }
+
+    // pass 1: the constants of a run of '+' and '-', of '*' or of one bitwise
+    // operation merge into one constant at the end of the run, '/' and '%'
+    // end a run since moving a constant across them changes the result, a
+    // lower precedence operation continues the list left to right and starts
+    // a new run
+    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 3 * 2 / 3 / 2 * 4 + 8'
+    //   'a * 3 * 2 / 3 / 2 * 4'          =>  'a * 6 / 3 / 2 * 4'
+    //   '2 * b * 3 / c'                  =>  'b * 6 / c'
+    //   'b & 7 & 13'                     =>  'b & 5'
+    //   'b & 1 | 2 | 4'                  =>  'b & 1 | 6'
+    //   'b * 2 - 3 + c + 4'              =>  'b * 2 + c + 1'
+    [[nodiscard]] static auto
+    merge_commutative_constants(const std::span<const step> steps,
+                                const type& width_type) -> std::vector<step> {
+
+        // a dividend or a divisor is a run of its own
+        const auto same_run{[](const step& a, const step& b) -> bool {
+            return is_commutative(a.op) and is_commutative(b.op) and
+                   precedence_for_op(a.op) == precedence_for_op(b.op);
+        }};
+
+        std::vector<step> merged;
+
+        for (const std::span<const step> run :
+             steps | std::views::chunk_by(same_run)) {
+
+            merge_run(merged, run, width_type);
+        }
+
+        return merged;
+    }
+
+    static auto merge_run(std::vector<step>& merged,
+                          const std::span<const step> run,
+                          const type& width_type) -> void {
+
+        // subtracted constants are subtracted from an added constant
+        const char op{run.front().op == '-' ? '+' : run.front().op};
+
+        if (not is_commutative(op)) {
+            merged.append_range(run);
+            return;
+        }
+
+        step constant{
+            .op{op},
+            .element{},
+            .value{identity_of(op)},
             .folded_source{},
         };
 
         bool has_constant{};
 
-        for (size_t i{}; i < exprs_.size(); ++i) {
-            const char op{i == 0 ? list_op : ops_[i - 1]};
-            const statement& e{*exprs_[i]};
-
-            const std::optional<int64_t> value{
-                element_constant(tc, e, width_type)};
-
-            if (not value) {
-                merged.runtime_elements.push_back({.op{op}, .element{&e}});
+        for (const step& s : run) {
+            if (not s.value) {
+                merged.push_back(s);
                 continue;
             }
 
-            merged.value = combine(merged.value, op, *value, width_type);
-            has_constant = true;
+            constant.value =
+                combine(*constant.value, s.op, *s.value, width_type);
 
-            if (not merged.folded_source.empty()) {
-                merged.folded_source += ' ';
+            append_source(constant, s);
+            has_constant = true;
+        }
+
+        if (has_constant) {
+            merged.push_back(std::move(constant));
+        }
+    }
+
+    // pass 2: consecutive constant divisors merge into their product
+    //   'a * 6 / 3 / 2 * 4'  =>  'a * 6 / 6 * 4'
+    //   'b / 2 / c / 3'      =>  'b / 2 / c / 3'
+    [[nodiscard]] static auto merge_divisors(const std::span<const step> steps,
+                                             const type& width_type)
+        -> std::vector<step> {
+
+        std::vector<step> merged;
+
+        for (const step& s : steps) {
+            const std::optional<int64_t> product{
+                merged.empty() ? std::nullopt
+                               : merged_divisor(merged.back(), s, width_type)};
+
+            if (not product) {
+                merged.push_back(s);
+                continue;
             }
 
-            merged.folded_source +=
-                std::format("{} {}", op, statement::trimmed_source(e));
+            step& divisor{merged.back()};
+            divisor.element = nullptr;
+            divisor.value = product;
+            append_source(divisor, s);
         }
-
-        if (not has_constant) {
-            return std::nullopt;
-        }
-
-        // 'compile' folds a list of only constants into one immediate
-        assert(not merged.runtime_elements.empty());
 
         return merged;
     }
 
-    // a subtracted element cannot lead without a negation so the constant
-    // leads instead: '1 - b + 2' is '3 - b', a negated element is then
-    // subtracted: '-b + 23' is '23 - b'
-    [[nodiscard]] static auto
-    leads_with_constant(const toc& tc, const merged_constants& merged) -> bool {
+    // a divisor of 0 or -1 is left to run time where it traps or wraps
+    [[nodiscard]] static auto mergeable_divisor(const step& s)
+        -> std::optional<int64_t> {
 
-        const runtime_element& first{merged.runtime_elements.front()};
-
-        // a zero constant adds nothing so negating in place is shorter
-        if (merged.value == 0) {
-            return false;
+        if (s.op != '/' or not s.value or *s.value == 0 or *s.value == -1) {
+            return std::nullopt;
         }
 
-        if (first.op == '-') {
-            return true;
-        }
-
-        if (first.op != '+') {
-            return false;
-        }
-
-        return is_negated_operand(tc, *first.element);
+        return s.value;
     }
 
-    auto compile_merged(toc& tc, const size_t indent,
-                        const ident_info& dst_info,
-                        const merged_constants& merged) const -> void {
+    // '(b / m) / n' is 'b / (m * n)' while the product fits the width
+    [[nodiscard]] static auto merged_divisor(const step& divisor,
+                                             const step& next,
+                                             const type& width_type)
+        -> std::optional<int64_t> {
 
-        const std::span<const runtime_element> elements{
-            merged.runtime_elements};
+        const std::optional<int64_t> m{mergeable_divisor(divisor)};
+        const std::optional<int64_t> n{mergeable_divisor(next)};
 
-        if (leads_with_constant(tc, merged)) {
-            compile_constant(tc, indent, dst_info, merged.value,
-                             merged.folded_source);
+        if (not m or not n) {
+            return std::nullopt;
+        }
 
-            for (const runtime_element& e : elements) {
-                asm_op(tc, indent, e.op, dst_info, *e.element);
-            }
+        const int64_t product{combine(*m, '*', *n, width_type)};
+
+        // a wrapped product divided back differs from the divisor
+        if (product / *n != *m) {
+            return std::nullopt;
+        }
+
+        return product;
+    }
+
+    static auto append_source(step& merged, const step& s) -> void {
+        if (not merged.folded_source.empty()) {
+            merged.folded_source += ' ';
+        }
+
+        merged.folded_source += s.folded_source;
+    }
+
+    // pass 3: a subtracted or negated first element needs a negation so the
+    // merged constant of an additive list leads instead, a zero constant adds
+    // nothing so negating in place is shorter
+    //   '- b + 3'  =>  '3 - b'   from '1 - b + 2'
+    //   '-b + 23'  =>  '23 - b'
+    //   '- b + 0'  =>  '- b + 0' from '2 - b - 2'
+    static auto lead_with_constant(const toc& tc, std::vector<step>& steps)
+        -> void {
+
+        const step& first{steps.front()};
+        const step& last{steps.back()};
+
+        // only a merged constant has no element
+        if (last.element != nullptr or last.op != '+' or last.value == 0) {
+            return;
+        }
+
+        const bool is_negated{first.op == '+' and first.element != nullptr and
+                              is_negated_operand(tc, *first.element)};
+
+        if (first.op != '-' and not is_negated) {
+            return;
+        }
+
+        std::ranges::rotate(steps, steps.end() - 1);
+    }
+
+    auto compile_first_step(toc& tc, const size_t indent,
+                            const ident_info& dst_info, const step& first) const
+        -> void {
+
+        // e.g. '2 * 3 / b' or '3 - b'
+        if (first.element == nullptr and first.value) {
+            compile_constant(tc, indent, dst_info, *first.value,
+                             first.folded_source);
 
             return;
         }
 
-        compile_first_element(tc, indent, dst_info, *elements.front().element);
-
-        machine& x{tc.machine()};
+        compile_first_element(tc, indent, dst_info, *first.element);
 
         // only a zero constant leaves a subtracted element first: '2 - b - 2'
-        if (elements.front().op == '-') {
+        if (first.op == '-') {
+            machine& x{tc.machine()};
+
             x.unary(indent, '-', dst_info.operand);
         }
+    }
 
-        for (const runtime_element& e : elements.subspan(1)) {
-            asm_op(tc, indent, e.op, dst_info, *e.element);
+    auto compile_step(toc& tc, const size_t indent, const ident_info& dst_info,
+                      const step& s) const -> void {
+
+        if (s.element == nullptr and s.value) {
+            apply_merged_constant(tc, indent, s.op, dst_info, *s.value,
+                                  s.folded_source);
+
+            return;
         }
 
-        apply_merged_constant(tc, indent, merged.op, dst_info, merged.value,
-                              merged.folded_source);
+        asm_op(tc, indent, s.op, dst_info, *s.element);
     }
 
     // e.g. 'b + 1 - 1' or 'b / 1 / 1' apply nothing
@@ -763,214 +880,6 @@ class expr_arith final : public expression {
         }
 
         asm_op_constant(tc, indent, op, dst_info, value, folded_source);
-    }
-
-    // an element of a list mixing '*' with '/' or '%', or the merged
-    // constants of one run when 'element' is null
-    struct multiplicative_step {
-        char op{};
-        const statement* element{};
-        int64_t value{};
-        std::string folded_source;
-    };
-
-    // the constants of a run of '*' or of consecutive '/' until the run ends
-    struct constant_run {
-        char op{};
-        int64_t value{};
-        const statement* first{}; // emitted as is when the run holds only it
-        size_t count{};
-        std::string folded_source;
-    };
-
-    // the constants of a run of '*' merge at its end past run-time factors:
-    // '2 * b * 3 / c' is 'b * 6 / c', consecutive constant divisors merge:
-    // 'b / 2 / 3' is 'b / 6'; empty when nothing merges
-    [[nodiscard]] auto merge_multiplicative_runs(const toc& tc,
-                                                 const type& width_type) const
-        -> std::optional<std::vector<multiplicative_step>> {
-
-        // same-precedence operations share a list, a list of only '*' is
-        // already merged by 'merge_constants'
-        if (ops_.empty() or
-            precedence_for_op(ops_.front()) != precedence_multiplicative) {
-            return std::nullopt;
-        }
-
-        std::vector<multiplicative_step> steps;
-        constant_run run{};
-        bool has_merged{};
-
-        for (size_t i{}; i < exprs_.size(); ++i) {
-            const char op{multiplicative_op(i)};
-            const statement& e{*exprs_[i]};
-
-            const std::optional<int64_t> value{
-                element_constant(tc, e, width_type)};
-
-            if (value and joins_run(run, op, *value, width_type)) {
-                add_to_run(run, op, *value, e, width_type);
-                has_merged = true;
-                continue;
-            }
-
-            // run-time factors stay within a run of '*' while anything else
-            // ends the run
-            if (run.op == '/' or op != '*') {
-                end_run(steps, run);
-            }
-
-            if (value and starts_run(op, *value)) {
-                add_to_run(run, op, *value, e, width_type);
-                continue;
-            }
-
-            steps.push_back({
-                .op{op},
-                .element{&e},
-                .value{},
-                .folded_source{},
-            });
-        }
-
-        end_run(steps, run);
-
-        if (not has_merged) {
-            return std::nullopt;
-        }
-
-        return steps;
-    }
-
-    // the first element is a factor of a leading run of '*' or the dividend
-    [[nodiscard]] auto multiplicative_op(const size_t i) const -> char {
-        if (i != 0) {
-            return ops_[i - 1];
-        }
-
-        return ops_.front() == '*' ? '*' : '=';
-    }
-
-    // a divisor of 0 or -1 is left to run time where it traps or wraps
-    [[nodiscard]] static auto starts_run(const char op, const int64_t value)
-        -> bool {
-
-        if (op == '*') {
-            return true;
-        }
-
-        return op == '/' and value != 0 and value != -1;
-    }
-
-    // '(b / m) / n' is 'b / (m * n)' while the product fits the width
-    [[nodiscard]] static auto joins_run(const constant_run& run, const char op,
-                                        const int64_t value,
-                                        const type& width_type) -> bool {
-
-        if (run.count == 0 or run.op != op or not starts_run(op, value)) {
-            return false;
-        }
-
-        if (op == '*') {
-            return true;
-        }
-
-        // a wrapped product divided back differs from the divisor
-        return combine(run.value, '*', value, width_type) / value == run.value;
-    }
-
-    static auto add_to_run(constant_run& run, const char op,
-                           const int64_t value, const statement& e,
-                           const type& width_type) -> void {
-
-        if (not run.folded_source.empty()) {
-            run.folded_source += ' ';
-        }
-
-        run.folded_source +=
-            std::format("{} {}", op, statement::trimmed_source(e));
-
-        ++run.count;
-
-        if (run.count == 1) {
-            run.op = op;
-            run.value = value;
-            run.first = &e;
-            return;
-        }
-
-        // divisors join only while their product fits so both kinds multiply
-        run.value = combine(run.value, '*', value, width_type);
-    }
-
-    static auto end_run(std::vector<multiplicative_step>& steps,
-                        constant_run& run) -> void {
-
-        if (run.count == 0) {
-            return;
-        }
-
-        // the next constant starts a new run
-        constant_run ended{std::exchange(run, {})};
-
-        // one constant keeps its element and comments
-        if (ended.count == 1) {
-            steps.push_back({
-                .op{ended.op},
-                .element{ended.first},
-                .value{},
-                .folded_source{},
-            });
-
-            return;
-        }
-
-        steps.push_back({
-            .op{ended.op},
-            .element{},
-            .value{ended.value},
-            .folded_source{std::move(ended.folded_source)},
-        });
-    }
-
-    auto compile_multiplicative_steps(
-        toc& tc, const size_t indent, const ident_info& dst_info,
-        const std::span<const multiplicative_step> steps) const -> void {
-
-        compile_first_step(tc, indent, dst_info, steps.front());
-
-        for (const multiplicative_step& s : steps.subspan(1)) {
-            compile_step(tc, indent, dst_info, s);
-        }
-    }
-
-    // a leading run of '*' starts with its first run-time factor or its
-    // merged constants
-    auto compile_first_step(toc& tc, const size_t indent,
-                            const ident_info& dst_info,
-                            const multiplicative_step& step) const -> void {
-
-        // e.g. '2 * 3 / b'
-        if (step.element == nullptr) {
-            compile_constant(tc, indent, dst_info, step.value,
-                             step.folded_source);
-
-            return;
-        }
-
-        compile_first_element(tc, indent, dst_info, *step.element);
-    }
-
-    auto compile_step(toc& tc, const size_t indent, const ident_info& dst_info,
-                      const multiplicative_step& step) const -> void {
-
-        if (step.element != nullptr) {
-            asm_op(tc, indent, step.op, dst_info, *step.element);
-            return;
-        }
-
-        apply_merged_constant(tc, indent, step.op, dst_info, step.value,
-                              step.folded_source);
     }
 
     auto compile_constant(toc& tc, const size_t indent,
@@ -1036,23 +945,6 @@ class expr_arith final : public expression {
                                                const int64_t value) -> operand {
 
         return operand::imm(std::format("{}", value), tc.get_type_default());
-    }
-
-    // constants can move to one end when the order of the operations does not
-    // matter: '+' and '-', only '*' or one bitwise operation
-    [[nodiscard]] auto is_mergeable() const -> bool {
-        if (ops_.empty()) {
-            return false;
-        }
-
-        const char first{ops_.front()};
-        if (first == '*') {
-            return std::ranges::all_of(
-                ops_, [](const char o) -> bool { return o == '*'; });
-        }
-
-        return first == '+' or first == '-' or first == '&' or first == '|' or
-               first == '^';
     }
 
     // the constant that leaves a value unchanged

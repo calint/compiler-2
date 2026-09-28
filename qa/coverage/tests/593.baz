@@ -54,6 +54,14 @@ func main() {
     d = b * 4 / 2 # folds
     assert(12, d == 10)
 
+    # a lower precedence operation continues the list and starts a new run
+    d = b & 1 | 2 | 4 # folds
+    assert(56, d == 7)
+    d = b ^ 2 + 1 # folds
+    assert(57, d == 8)
+    d = b * 2 - 3 + one + 4 # folds
+    assert(58, d == 12)
+
     # constants merge within a run of '*' and over consecutive divisors
     d = 2 * b * 3 / one # folds
     assert(39, d == 30)
