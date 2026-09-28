@@ -1,2 +1,2 @@
 
-585.baz:9:19: array 'arr' must be indexed
+585.baz:9:15: array 'arr' must be indexed

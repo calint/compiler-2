@@ -18,7 +18,7 @@ func str.out() {
 
 func str.in() {
     # the uart does not echo, so each byte is written back as it is read
-    var nbytes
+    var nbytes = 0
     loop {
         if nbytes == array_length(self.data) break
         if read(0, self.data, 1, nbytes) == 0 break
@@ -40,9 +40,9 @@ func noinline print_num(num) {
     # 19 digits of an i64 plus the sign
     const buf_count = 20
 
-    var buf[buf_count] i8
+    var buf = i8[buf_count]{}
     var n = num
-    var is_negative bool
+    var is_negative = false
 
     # digits are taken from the negative value because the most negative i64
     # has no positive counterpart
@@ -66,7 +66,7 @@ func noinline print_num(num) {
         buf[i] = '-'
     }
  
-    var write_pos
+    var write_pos = 0
     loop {
         buf[write_pos] = buf[i]
         write_pos = write_pos + 1
@@ -82,7 +82,7 @@ func print(s[] i8) {
 }
 
 func main() {
-    var counter
+    var counter = 0
     var nm = str{}
     print(hello)
     loop {

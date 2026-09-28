@@ -103,30 +103,40 @@ func main() {
     assert(29, d == -4)
 
     # narrow destinations wrap after each operation
-    var h i8 = 100
-    var e i8 = (100 + 100) / 2 # folds
-    var e_run i8 = (h + 100) / 2
+    var h = i8(100)
+    var e = i8(0)
+    e = (100 + 100) / 2 # folds
+    var e_run = i8(0)
+    e_run = (h + 100) / 2
     assert(20, e == e_run)
     assert(21, e == -28)
-    var w i8 = 100 + 100 # folds
+    var w = i8(0)
+    w = 100 + 100 # folds
     assert(22, w == -56)
-    var m i16 = 300 * 300 # folds
-    var m_factor i16 = 300
-    var m_run i16 = m_factor * 300
+    var m = i16(0)
+    m = 300 * 300 # folds
+    var m_factor = i16(300)
+    var m_run = i16(0)
+    m_run = m_factor * 300
     assert(23, m == m_run)
-    var s8 i8 = 1 << 7 # folds
+    var s8 = i8(0)
+    s8 = 1 << 7 # folds
     assert(24, s8 == -128)
-    var r8 i8 = (1 << 7) >> 7 # folds
+    var r8 = i8(0)
+    r8 = (1 << 7) >> 7 # folds
     assert(30, r8 == -1)
 
     # divisors merge only while their product fits the width
-    var q8 i8 = 100
-    var q8_apart i8 = q8 / 16 / 16 # folds
+    var q8 = i8(100)
+    var q8_apart = i8(0)
+    q8_apart = q8 / 16 / 16 # folds
     assert(47, q8_apart == 0)
-    var q8_merged i8 = q8 / 4 / 8 # folds
+    var q8_merged = i8(0)
+    q8_merged = q8 / 4 / 8 # folds
     assert(48, q8_merged == 3)
-    var q8_min i8 = 1 << 7
-    var q8_min_merged i8 = q8_min / -2 / 64 # folds
+    var q8_min = i8(1 << 7)
+    var q8_min_merged = i8(0)
+    q8_min_merged = q8_min / -2 / 64 # folds
     assert(49, q8_min_merged == 1)
 
     # inline arguments that are constants fold in the body
@@ -168,7 +178,7 @@ func main() {
     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds
         exit(34)
     }
-    var f bool = 1 + 2 == 3
+    var f = 1 + 2 == 3
     assert(35, f)
 
     exit(0)

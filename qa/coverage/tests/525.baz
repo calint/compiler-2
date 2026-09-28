@@ -2,28 +2,28 @@
 # runtime multiply for many constants, operands and widths
 
 func main() {
-    var xi32[8] i32 = {0, 1, -1, 13, -13, 12345, 2147483647, -2147483648}
-    var xi16[8] i16 = {0, 1, -1, 13, -13, 1234, 32767, -32768}
-    var xi8[8] i8 = {0, 1, -1, 13, -13, 100, 127, -128}
+    var xi32 = i32[8]{0, 1, -1, 13, -13, 12345, 2147483647, -2147483648}
+    var xi16 = i16[8]{0, 1, -1, 13, -13, 1234, 32767, -32768}
+    var xi8 = i8[8]{0, 1, -1, 13, -13, 100, 127, -128}
     var i = 0
-    var mi32 i32 = 0
-    var vi32 i32 = 0
-    var pi32 i32 = 0
-    var qi32 i32 = 0
-    var ri32 i32 = 0
-    var si32 i32 = 0
-    var mi16 i16 = 0
-    var vi16 i16 = 0
-    var pi16 i16 = 0
-    var qi16 i16 = 0
-    var ri16 i16 = 0
-    var si16 i16 = 0
-    var mi8 i8 = 0
-    var vi8 i8 = 0
-    var pi8 i8 = 0
-    var qi8 i8 = 0
-    var ri8 i8 = 0
-    var si8 i8 = 0
+    var mi32 = i32(0)
+    var vi32 = i32(0)
+    var pi32 = i32(0)
+    var qi32 = i32(0)
+    var ri32 = i32(0)
+    var si32 = i32(0)
+    var mi16 = i16(0)
+    var vi16 = i16(0)
+    var pi16 = i16(0)
+    var qi16 = i16(0)
+    var ri16 = i16(0)
+    var si16 = i16(0)
+    var mi8 = i8(0)
+    var vi8 = i8(0)
+    var pi8 = i8(0)
+    var qi8 = i8(0)
+    var ri8 = i8(0)
+    var si8 = i8(0)
 
     # i32 * 0
     mi32 = 0
@@ -1916,17 +1916,17 @@ func main() {
     }
 
     # known products guard against both paths agreeing on a wrong value
-    var t i32 = 13
+    var t = i32(13)
     t = t * 7
     if t != 91 exit(106)
     t = t * -7
     if t != -637 exit(107)
     t = t * 1000000
     if t != -637000000 exit(108)
-    var u i16 = 13
+    var u = i16(13)
     u = u * -9
     if u != -117 exit(109)
-    var w i8 = 13
+    var w = i8(13)
     w = w * 23
     if w != 43 exit(110)
     w = w * -3

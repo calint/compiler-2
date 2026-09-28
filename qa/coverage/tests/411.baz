@@ -20,7 +20,7 @@ func bump(a node) {
 }
 
 func main() {
-    var worlds[2] world
+    var worlds = world[2]{}
 
     worlds[1].nodes[2].p.y = 7
 

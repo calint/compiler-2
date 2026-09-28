@@ -9,10 +9,10 @@ dat record holder = { 7, { 10, 20 }, 9 }
 func assert(ok bool) { if not ok exit(1) }
 
 func main() {
-    var array[128] = { 1, 2 }
-    var inferred[] = { -3, 4, 5 }
-    var cleared[3]
-    var scalar
+    var array = i[128]{ 1, 2 }
+    var inferred = i[]{ -3, 4, 5 }
+    var cleared = i[3]{}
+    var scalar = 0
     assert(array_length(array) == 128)
     assert(array[0] == 1)
     assert(array[1] == 2)
@@ -44,7 +44,7 @@ func main() {
     assert(cleared_data[2] == 0)
     assert(array_length(record.values) == 3)
     assert(record.values[2] == 0)
-    var local holder = record
+    var local = record
     foo local.values {
         e = e + i
     }

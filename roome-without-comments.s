@@ -19,6 +19,17 @@ main:
     func.print.87.5.end:
     loop.88.5:
         add qword [rbp + 128], 1
+        lea r15, [rbp + 264]
+        lea r14, [vars]
+        cmp r15, r14
+        jb baz_frame_overflow
+        mov r14, strict qword vars.end
+        cmp r15, r14
+        ja baz_frame_overflow
+        sub r14, r15
+        mov r15, size.func.print_num
+        cmp r15, r14
+        ja baz_frame_overflow
         lea r15, [rbp + 128]
         mov qword [rbp + 264], r15
         lea rbx, [rbp + 264]
@@ -52,6 +63,14 @@ main:
                     mov rdi, 0
                     mov rdx, 1
                     mov r14, qword [rbp + 264]
+                    test r14, r14
+                    js baz_bounds_panic
+                    test rdx, rdx
+                    js baz_bounds_panic
+                    mov r13, rdx
+                    add r13, r14
+                    cmp r13, 127
+                    jg baz_bounds_panic
                     lea rsi, [rbp + 137]
                     add rsi, r14
                     mov rax, 0
@@ -64,6 +83,10 @@ main:
                 if.25.12.93.12:
                 cmp.25.12.93.12:
                 mov r15, qword [rbp + 264]
+                test r15, r15
+                js baz_bounds_panic
+                cmp r15, 127
+                jge baz_bounds_panic
                 cmp byte [rbp + r15 + 137], 127
                 jne if.25.9.93.12.end
                 if.25.12.93.12.code:
@@ -84,6 +107,14 @@ main:
                 mov rdi, 1
                 mov rdx, 1
                 mov r15, qword [rbp + 264]
+                test r15, r15
+                js baz_bounds_panic
+                test rdx, rdx
+                js baz_bounds_panic
+                mov r14, rdx
+                add r14, r15
+                cmp r14, 127
+                jg baz_bounds_panic
                 lea rsi, [rbp + 137]
                 add rsi, r15
                 mov rax, 1
@@ -91,6 +122,10 @@ main:
                 if.33.12.93.12:
                 cmp.33.12.93.12:
                 mov r15, qword [rbp + 264]
+                test r15, r15
+                js baz_bounds_panic
+                cmp r15, 127
+                jge baz_bounds_panic
                 cmp byte [rbp + r15 + 137], 10
                 je loop.22.5.93.12.end
                 if.33.12.93.12.code:
@@ -125,6 +160,10 @@ main:
             func.str.out.99.16:
                 mov rdi, 1
                 movsx rdx, byte [rbp + 136]
+                test rdx, rdx
+                js baz_bounds_panic
+                cmp rdx, 127
+                jg baz_bounds_panic
                 lea rsi, [rbp + 137]
                 mov rax, 1
                 syscall
@@ -172,6 +211,10 @@ func.print_num:
     loop.57.5:
         sub qword [rbx + 48], 1
         mov r15, qword [rbx + 48]
+        test r15, r15
+        js baz_bounds_panic
+        cmp r15, 20
+        jge baz_bounds_panic
             mov r14, 48
             mov r13, qword [rbx + 32]
             mov rax, r13
@@ -200,12 +243,24 @@ func.print_num:
     if.64.8.code:
         sub qword [rbx + 48], 1
         mov r15, qword [rbx + 48]
+        test r15, r15
+        js baz_bounds_panic
+        cmp r15, 20
+        jge baz_bounds_panic
         mov byte [rbx + r15 + 8], 45
     if.64.5.end:
     mov qword [rbx + 56], 0
     loop.70.5:
         mov r15, qword [rbx + 56]
+        test r15, r15
+        js baz_bounds_panic
+        cmp r15, 20
+        jge baz_bounds_panic
         mov r14, qword [rbx + 48]
+        test r14, r14
+        js baz_bounds_panic
+        cmp r14, 20
+        jge baz_bounds_panic
         mov r13b, byte [rbx + r14 + 8]
         mov byte [rbx + r15 + 8], r13b
         add qword [rbx + 56], 1
@@ -219,11 +274,33 @@ func.print_num:
     loop.70.5.end:
     mov rdi, 1
     mov rdx, qword [rbx + 56]
+    test rdx, rdx
+    js baz_bounds_panic
+    cmp rdx, 20
+    jg baz_bounds_panic
     lea rsi, [rbx + 8]
     mov rax, 1
     syscall
     ret
 size.func.print_num equ 64
+baz_frame_overflow:
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_frame_overflow]
+    mov rdx, msg_frame_overflow_len
+    syscall
+    mov rax, 60
+    mov rdi, 255
+    syscall
+section .rodata
+msg_frame_overflow:
+db `panic: frame overflow\n`
+msg_frame_overflow_len equ $ - msg_frame_overflow
+section .text
+baz_bounds_panic:
+    mov rax, 60
+    mov rdi, 255
+    syscall
 section .data
 align 16
 dat:

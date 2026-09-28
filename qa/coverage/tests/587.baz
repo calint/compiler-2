@@ -16,7 +16,7 @@ func sum(p point) res i32 {
 }
 
 func main() {
-    var arr[3] i32 = {1, 2, 3}
+    var arr = i32[3]{1, 2, 3}
     var ix = 2
 
     arr[0] = twice(arr[ix])
@@ -25,7 +25,7 @@ func main() {
     arr[ix] = twice(arr[1])
     assert(arr[2] == 4)
 
-    var ps[2] point = {{1, 2}, {3, 4}}
+    var ps = point[2]{{1, 2}, {3, 4}}
     assert(sum(ps[1]) == 7)
     assert(equal(ps[0], ps[0]))
     assert(not equal(arr[0], arr[1]))

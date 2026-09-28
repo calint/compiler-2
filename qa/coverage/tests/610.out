@@ -1,2 +1,2 @@
 
-610.baz:14:19: expected type 'point', got 'size'
+610.baz:15:9: expected type 'point', got 'size'

@@ -28,18 +28,18 @@ func main(){
     var q=f1(1)
     if not q==-1 exit(1)
     
-    var bt i8=1
-    var wd i16=2
-    var dd i32=3
+    var bt = i8(1)
+    var wd = i16(2)
+    var dd = i32(3)
     var qd=4
     
-    var b i8=f5(bt)
+    var b = f5(bt)
     if not b==-4 exit(2)
 
-    var w i16=f4(wd)
+    var w = f4(wd)
     if not w==-8 exit(3)
 
-    var d i32=f3(dd)
+    var d = f3(dd)
     if not d==-9 exit(4)
 
     q=f2(qd)

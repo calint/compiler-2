@@ -1,5 +1,5 @@
 # a constant left side of a comparison may not truncate either
 func main() {
-    var n i8 = 1
+    var n = i8(1)
     if 200 + 57 > n { exit(1) }
 }

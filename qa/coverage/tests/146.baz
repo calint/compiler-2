@@ -6,7 +6,7 @@ func main() {
     var x = 1
     var y = 2
 
-    var b bool
+    var b = false
 
     b = x == 1
     assert(b)

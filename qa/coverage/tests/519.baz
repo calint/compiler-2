@@ -3,13 +3,13 @@
 func assert(err, expr bool) { if not expr exit(err) }
 
 func main() {
-    var buf[4] i8
+    var buf = i8[4]{}
     var n = read(0, buf, 2, 2)
     assert(1, n == 0)
     n = read(0, buf, 0, 4)
     assert(2, n == 0)
-    var a[4] i8 = {1, 2, 3, 4}
-    var b[4] i8
+    var a = i8[4]{1, 2, 3, 4}
+    var b = i8[4]{}
     var k = 2
     array_copy(a[k], b[k], 2)
     assert(3, b[3] == 4)

@@ -6,6 +6,6 @@ func fill(dst[] i32) {
 }
 
 func main() {
-    var values[2] i32 = {4, 5}
+    var values = i32[2]{4, 5}
     fill(values)
 }

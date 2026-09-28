@@ -1,4 +1,4 @@
 func main() {
-    var x
-    var x
+    var x = 0
+    var x = 0
 }

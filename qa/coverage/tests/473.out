@@ -1,2 +1,2 @@
 
-473.baz:8:25: use of uninitialized variable 'p'
+473.baz:8:29: use of uninitialized variable 'ps'

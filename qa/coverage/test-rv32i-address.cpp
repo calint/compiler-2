@@ -933,8 +933,8 @@ auto main(const int argc, const char* argv[]) -> int {
     {
         const std::string_view source{R"baz(
 func main() {
-    var source[4] i32
-    var destination[4] i32
+    var source = i32[4]{}
+    var destination = i32[4]{}
     var count = 2
     array_copy(source[2], destination[1], count)
 }
@@ -955,8 +955,8 @@ func main() {
         const std::string_view source{R"baz(
 func assert(ok bool) { if not ok exit(1) }
 func main() {
-    var source[4] i32
-    var destination[4] i32
+    var source = i32[4]{}
+    var destination = i32[4]{}
     assert(arrays_equal(source[2], destination[1], 2))
 }
 )baz"};
@@ -987,8 +987,8 @@ func main() {
         const std::string_view source{R"baz(
 func assert(ok bool) { if not ok exit(1) }
 func main() {
-    var left[2] i8 = {1, 2}
-    var right[2] i8 = {1, 2}
+    var left = i8[2]{1, 2}
+    var right = i8[2]{1, 2}
     assert(arrays_equal(left, right, 2))
     right[1] = 3
     assert(not arrays_equal(left, right, 2))
@@ -1007,9 +1007,9 @@ func main() {
     {
         const std::string_view source{R"baz(
 func main() {
-    var left[2] i8 = {1, 2}
-    var right[2] i8 = {1, 2}
-    var same bool = arrays_equal(left, right, 2)
+    var left = i8[2]{1, 2}
+    var right = i8[2]{1, 2}
+    var same = arrays_equal(left, right, 2)
     same = not arrays_equal(left, right, 2)
     same = equal(left, right)
     same = not equal(left, right)
@@ -1045,16 +1045,16 @@ func nested(source[] packed, destination[] packed) count i32 {
     count = 2
 }
 func main() {
-    var source[3] packed = {{1, 300}, {2, -400}, {3, 500}}
-    var destination[3] packed
-    var single packed = source[1]
+    var source = packed[3]{{1, 300}, {2, -400}, {3, 500}}
+    var destination = packed[3]{}
+    var single = source[1]
     assert(equal(single, source[1]))
     single.second = 12
     assert(not equal(single, source[1]))
     array_copy(source, destination, nested(source, destination))
     assert(arrays_equal(source, destination, 2))
     assert(not arrays_equal(source, destination, 3))
-    var index i32 = 2
+    var index = i32(2)
     array_copy(source[index], destination[index], 1)
     assert(arrays_equal(source[index], destination[index], 1))
     destination[index].second = 501
@@ -1294,7 +1294,7 @@ func main() {
     }
     {
         const std::string_view source{
-            "func main() { var b[1] i8 var value = write(1, b, 0) "
+            "func main() { var b = i8[1]{} var value = write(1, b, 0) "
             "exit(value) }"};
 
         std::ostringstream output;
@@ -1311,8 +1311,8 @@ func main() {
         assert(not main_body.contains("allocate scratch register"));
     }
     for (const std::string_view source :
-         {"func main() { var b[1] i8 write(1, b, write(1, b, 0)) }",
-          "func main() { var b[1] i8 exit(write(1, b, 0)) }"}) {
+         {"func main() { var b = i8[1]{} write(1, b, write(1, b, 0)) }",
+          "func main() { var b = i8[1]{} exit(write(1, b, 0)) }"}) {
         std::ostringstream output;
         machine_x86_64 compiler{output, source};
         program prg{compiler, source, 4096, false, false, false};

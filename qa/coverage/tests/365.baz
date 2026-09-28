@@ -15,18 +15,18 @@ func take_dword(value i32) result i32 {
 }
 
 func main() {
-    var qword i64 = 0x12345678
+    var qword = i64(0x12345678)
     qword = qword << 32
-    var lower i64 = 0x9abc
+    var lower = i64(0x9abc)
     lower = lower << 16
     lower = lower | 0xdef0
     qword = qword | lower
-    var qword_byte i8 = i8(qword)
-    var qword_word i16 = i16(qword)
-    var qword_dword i32 = i32(qword)
-    var byte i8 = take_byte(qword_byte)
-    var word i16 = take_word(qword_word)
-    var dword i32 = take_dword(qword_dword)
+    var qword_byte = i8(qword)
+    var qword_word = i16(qword)
+    var qword_dword = i32(qword)
+    var byte = take_byte(qword_byte)
+    var word = take_word(qword_word)
+    var dword = take_dword(qword_dword)
 
     assert(byte == -16)          # 0xf0
     assert(word == -8464)        # 0xdef0

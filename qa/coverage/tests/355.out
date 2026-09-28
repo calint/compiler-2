@@ -1,2 +1,2 @@
 
-355.baz:6:23: expected type 'i16', got 'i8'
+355.baz:6:22: expected type 'i16', got 'i8'

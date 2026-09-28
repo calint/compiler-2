@@ -1,4 +1,4 @@
-# scalar values cannot initialize user types
+# scalar values cannot be assigned to user types
 
 type p { x }
-func main() { var p1 p = 1 }
+func main() { var p1 = p{} p1 = 1 }

@@ -11,7 +11,7 @@ type polygon {nindices, indices[8] i8}
 type object {pos point, pgons[8] polygon, color i32}
 
 func main() {
-    var o[1] object
+    var o = object[1]{}
     o[0].pgons[3].nindices = 4
     o[0].pgons[3].indices[3] = 7
 

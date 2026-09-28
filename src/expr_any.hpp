@@ -516,7 +516,7 @@ class expr_any final : public statement {
             return;
         }
 
-        if (not tk.is_text(tp.name())) {
+        if (array_literal_type(tc, tk).name() != tp.name()) {
             throw compiler_exception{tk,
                                      std::format("expected type '{}', got '{}'",
                                                  tp.name(), tk.text())};
@@ -543,7 +543,7 @@ class expr_any final : public statement {
 
         const size_t count{static_cast<size_t>(literal_count_const_.value())};
 
-        // e.g. 'var a[2] = i8[3]{1, 2}'
+        // e.g. 'a = i8[3]{1, 2}' for 'var a = i8[2]{}'
         if (array_count_ != 0 and array_count_ != count) {
             throw compiler_exception{
                 literal_count_const_.tok(),

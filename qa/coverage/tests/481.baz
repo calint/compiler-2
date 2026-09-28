@@ -4,5 +4,5 @@ func make_pair() res pair {
     res.cells[0] = 5
 }
 func main() {
-    var p pair = make_pair()
+    var p = make_pair()
 }

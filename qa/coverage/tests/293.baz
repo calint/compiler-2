@@ -10,8 +10,8 @@ func shift_point(source point) result point {
 }
 
 func main() {
-    var source point = { 10, 20 }
-    var shifted point = shift_point(source)
+    var source = point{ 10, 20 }
+    var shifted = shift_point(source)
     assert(shifted.x == 15)
     assert(shifted.y == 17)
 }

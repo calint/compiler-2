@@ -11,7 +11,7 @@ func list.append(other list) {
 }
 
 func main() {
-    var lst list
+    var lst = list{}
     lst.count = 0
     lst.append(lst)
 }

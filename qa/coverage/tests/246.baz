@@ -4,6 +4,6 @@ type p { x }
 type q { x }
 func f(x p) {}
 func main() {
-    var y q
+    var y = q{}
     f(y)
 }

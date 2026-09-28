@@ -17,10 +17,10 @@ func main() {
     assert(data[2] == 3)
     assert(data[3] == 12)
 
-    var inner_seen
+    var inner_seen = 0
 
     foo inner_data {
-        var j
+        var j = 0
         const n2 = n
         loop {
             j = j + 1
@@ -36,7 +36,7 @@ func main() {
     assert(inner_data[1] == 5)
     assert(inner_data[2] == 6)
 
-    var outer_count
+    var outer_count = 0
 
     loop {
         outer_count = outer_count + 1

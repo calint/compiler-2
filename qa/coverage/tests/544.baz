@@ -46,17 +46,17 @@ func main() {
     assert(19, quoted.ch == 39 and quoted.code == 34)
 
     # arithmetic, narrowing and array sizes
-    var c i8 = 'x'
+    var c = i8('x')
     c = c - 'a' + 'A'
     assert(20, c == 'X')
-    var n i8 = i8('\xff')
+    var n = i8('\xff')
     assert(21, n == -1)
-    var buf[' '] i8
+    var buf = i8[' ']{}
     assert(22, array_length(buf) == 32)
     assert(23, is_digit('7') and not is_digit('a'))
 
     var digit = '7' - '0'
     assert(24, digit == 7)
-    var line[] i8 = {'o', 'k', '\n'}
+    var line = i8[]{'o', 'k', '\n'}
     write(1, line, array_length(line))
 }

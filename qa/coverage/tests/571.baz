@@ -7,7 +7,7 @@ type pixel {
 }
 
 func main() {
-    var x i32 = 1
-    var p pixel = {x, 2}
+    var x = i32(1)
+    var p = pixel{x, 2}
     exit(p.shade)
 }

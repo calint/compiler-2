@@ -11,8 +11,8 @@ func fooz(v) res {
 func main() {
     var x = 10
     var y = 4
-    var numbers[3] = { x, 20, 30 }
-    var points[2] point = { {1, 2}, {3, fooz(y) + 1} }
+    var numbers = i[3]{ x, 20, 30 }
+    var points = point[2]{ {1, 2}, {3, fooz(y) + 1} }
 
     assert(1, numbers[0] == 10)
     assert(2, numbers[1] == 20)

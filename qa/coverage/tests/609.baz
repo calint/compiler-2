@@ -122,8 +122,23 @@ func main() {
     var sized = i16[]{300, -300} # is i16
     assert(20, array_length(sized) == 2 and sized[1] == -300)
 
-    var declared[2] = i8[2]{5, 6} # is i8
+    var declared = i8[2]{5, 6} # is i8
     assert(21, declared[0] == 5 and declared[1] == 6)
+
+    # 'i' names the default type in an array literal
+    var defaults = i[]{1, -1} # is default
+    assert(23, array_length(defaults) == 2 and defaults[1] == -1)
+
+    var zeros = i8[4]{} # is i8
+    assert(24, zeros[0] == 0 and zeros[3] == 0)
+
+    # a string is an 'i8' array of its size, an array copies the whole array
+    var text = "hi" # is i8
+    assert(25, array_length(text) == 2 and text[1] == 'i')
+
+    var copy = sized # is i16
+    copy[0] = 1
+    assert(26, array_length(copy) == 2 and copy[1] == -300 and sized[0] == 300)
 
     # a typed literal is also a value in assignments and fields
     p = point{8, 9}

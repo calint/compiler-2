@@ -5,6 +5,6 @@ func fill(dst[] i8) {
 }
 
 func main() {
-    var small[2] i8 = {}
+    var small = i8[2]{}
     fill(small)
 }

@@ -9,7 +9,7 @@ func make_point() res point {
 }
 
 func main() {
-    var point_value point = make_point()
+    var point_value = make_point()
     assert(point_value.x == 12)
     assert(point_value.y == -7)
 }

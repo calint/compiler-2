@@ -23,7 +23,7 @@ func f1(room room) {
 }
 
 func main() {
-    var wld world
+    var wld = world{}
     f1(wld.rooms[1])
 
     assert(wld.rooms[1].links[2].to == 2)

@@ -53,13 +53,13 @@ func main() {
     var p = point.at(1, 2)
     assert(1, p.x == 1 and p.y == 2)
 
-    var q point = point.origin()
+    var q = point.origin()
     assert(2, q.x == 0 and q.y == 0)
 
     p = point.at(3, 4)
     assert(3, p.x == 3 and p.y == 4)
 
-    var ps[2] point
+    var ps = point[2]{}
     var i = 1
     ps[i] = point.at(5, 6)
     assert(4, ps[1].x == 5 and ps[1].y == 6)
@@ -67,12 +67,12 @@ func main() {
     var o = object.at(7, 8, 0)
     assert(5, o.pos.x == 7 and o.pos.y == 8 and o.color == 0xffffff)
 
-    var o3[2] object
+    var o3 = object[2]{}
     o3[1] = object.at(9, 10, 0xff)
     assert(6, o3[1].pos.y == 10 and o3[1].color == 0xff)
 
     # in a record literal
-    var o2 object = {point.at(11, 12), 13}
+    var o2 = object{point.at(11, 12), 13}
     assert(7, o2.pos.x == 11 and o2.color == 13)
     var p2 = point.at(11, 12)
     assert(8, equal(o2.pos, p2))

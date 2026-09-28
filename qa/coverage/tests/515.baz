@@ -1,7 +1,7 @@
 # the start element plus the count must stay within the array
 
 func main() {
-    var buf[4] i8
+    var buf = i8[4]{}
     var s = 3
     var r = read(0, buf, 2, s)
 }

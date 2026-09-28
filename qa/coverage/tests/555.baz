@@ -12,16 +12,16 @@ func clear(dst[] i16) {
 }
 
 func main() {
-    var values[4] i32 = {1, 2, 3, 4}
+    var values = i32[4]{1, 2, 3, 4}
     fill(values)
     assert(1, values[0] == 7 and values[1] == 8)
     assert(2, values[2] == 0 and values[3] == 0)
 
-    var exact[2] i32 = {1, 2}
+    var exact = i32[2]{1, 2}
     fill(exact)
     assert(3, exact[0] == 7 and exact[1] == 8)
 
-    var shorts[3] i16 = {1, 2, 3}
+    var shorts = i16[3]{1, 2, 3}
     clear(shorts)
     assert(4, shorts[0] == 0 and shorts[1] == 0 and shorts[2] == 0)
 }

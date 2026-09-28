@@ -1,10 +1,9 @@
-# function argument cannot read its own uninitialized caller variable, the type
-# is explicit because an untyped variable is not declared in its initializer
+# function argument cannot read its own uninitialized caller variable
 
 func foozi(i) res {
     res = 1
 }
 
 func main() {
-    var x i32 = foozi(x)
+    var x = foozi(x)
 }

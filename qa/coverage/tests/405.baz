@@ -20,7 +20,7 @@ func set_fields(dst box, v, i) {
 }
 
 func main() {
-    var boxes[2] box
+    var boxes = box[2]{}
 
     var ix = 0
     set_fields(boxes[ix], 40, ix)

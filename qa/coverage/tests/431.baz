@@ -5,7 +5,7 @@ dat initial i32 = 42
 dat padding[5] i8
 
 func main() {
-    var source i32 = initial
-    var destination i32 = source
+    var source = initial
+    var destination = source
     exit(destination)
 }

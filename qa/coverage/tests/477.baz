@@ -11,7 +11,7 @@ func make_rectangle() res rectangle {
     res.bottom_right.y = res.top_left.y * 3
 }
 func main() {
-    var r rectangle = make_rectangle()
+    var r = make_rectangle()
     assert(r.top_left.x == 3)
     assert(r.top_left.y == 4)
     assert(r.bottom_right.x == 6)

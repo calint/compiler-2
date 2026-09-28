@@ -17,7 +17,7 @@ func sum(p point, # the point
 }
 
 func main() {
-    var ps[2] point = {
+    var ps = point[2]{
         {1, 2}, # first point
         {3, 4}  # second point
     }

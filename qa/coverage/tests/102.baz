@@ -9,7 +9,7 @@ func arrarg(arg[]) {
 }
 
 func main() {
-    var arr[7]
+    var arr = i[7]{}
     arrarg(arr)
     assert(arr[1] == 0xfe)
 }

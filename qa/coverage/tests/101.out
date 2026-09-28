@@ -1,2 +1,2 @@
 
-101.baz:5:13: cannot resolve identifier 'x'
+101.baz:4:13: use of uninitialized variable 'x'

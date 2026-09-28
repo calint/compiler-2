@@ -2,8 +2,8 @@
 
 func assert(x bool) { if not x exit(1) }
 func main() {
-    var a[2] i8
-    var b[2] i8
+    var a = i8[2]{}
+    var b = i8[2]{}
     a[0] = 1
     b[0] = 1
     var z = equal(a[0],b[0])

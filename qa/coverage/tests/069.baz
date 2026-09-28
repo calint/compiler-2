@@ -11,7 +11,7 @@ func baz(arg) res {
 }
 
 func main() {
-    var p point = {0, 0}
+    var p = point{0, 0}
     p = {baz(2), baz(3)}
     assert(p.x==4 and p.y==6)
 }

@@ -3,12 +3,12 @@ func assert(expr bool) {
 }
 
 func main() {
-  var b i8 = 1
-  var b2 i8 = 11
-  var w i16 = 2
-  var w2 i16 = 22
-  var dw i32 = 3
-  var dw2 i32 = 33
+  var b = i8(1)
+  var b2 = i8(11)
+  var w = i16(2)
+  var w2 = i16(22)
+  var dw = i32(3)
+  var dw2 = i32(33)
   var q = 4
   var q2 = 44
 

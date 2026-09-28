@@ -3,6 +3,6 @@
 type point { x i32, y i32 }
 type line { pts[2] point }
 func main() {
-    var p point
-    var l line = { p }
+    var p = point{}
+    var l = line{ p }
 }

@@ -192,17 +192,17 @@
     mov qword [rbp + 16], 8
 === 102:     d = -16 >> 2 # folds
     mov qword [rbp + 16], -4
-=== 107:     var e i8 = (100 + 100) / 2 # folds
+=== 108:     e = (100 + 100) / 2 # folds
     mov byte [rbp + 25], -28
-=== 111:     var w i8 = 100 + 100 # folds
+=== 114:     w = 100 + 100 # folds
     mov byte [rbp + 27], -56
-=== 113:     var m i16 = 300 * 300 # folds
+=== 117:     m = 300 * 300 # folds
     mov word [rbp + 28], 24464
-=== 117:     var s8 i8 = 1 << 7 # folds
+=== 123:     s8 = 1 << 7 # folds
     mov byte [rbp + 34], -128
-=== 119:     var r8 i8 = (1 << 7) >> 7 # folds
+=== 126:     r8 = (1 << 7) >> 7 # folds
     mov byte [rbp + 35], -1
-=== 124:     var q8_apart i8 = q8 / 16 / 16 # folds
+=== 132:     q8_apart = q8 / 16 / 16 # folds
     mov r15b, byte [rbp + 36]
     mov byte [rbp + 37], r15b
     movsx rax, byte [rbp + 37]
@@ -215,7 +215,7 @@
     mov r15, 16
     idiv r15
     mov byte [rbp + 37], al
-=== 126:     var q8_merged i8 = q8 / 4 / 8 # folds
+=== 135:     q8_merged = q8 / 4 / 8 # folds
     mov r15b, byte [rbp + 36]
     mov byte [rbp + 38], r15b
     movsx rax, byte [rbp + 38]
@@ -223,7 +223,7 @@
     mov r15, 32
     idiv r15
     mov byte [rbp + 38], al
-=== 129:     var q8_min_merged i8 = q8_min / -2 / 64 # folds
+=== 139:     q8_min_merged = q8_min / -2 / 64 # folds
     mov r15b, byte [rbp + 39]
     mov byte [rbp + 40], r15b
     movsx rax, byte [rbp + 40]
@@ -231,23 +231,23 @@
     mov r15, -128
     idiv r15
     mov byte [rbp + 40], al
-=== 137:     if 1 + 1 > b { # folds
+=== 147:     if 1 + 1 > b { # folds
     cmp qword [rbp + 8], 2
-    jge if.137.5.end
-=== 143:     if 3 + 3 <= b { # folds
+    jge if.147.5.end
+=== 153:     if 3 + 3 <= b { # folds
     cmp qword [rbp + 8], 6
-    jl if.143.5.end
-=== 149:     if 2 + 3 != b { # folds
+    jl if.153.5.end
+=== 159:     if 2 + 3 != b { # folds
     cmp qword [rbp + 8], 5
-    je if.149.5.end
-=== 154:     if 25 * 2 > h { # folds
+    je if.159.5.end
+=== 164:     if 25 * 2 > h { # folds
     cmp byte [rbp + 24], 50
-    jge if.154.5.end
-=== 159:     if b < 2 + 2 { # folds
+    jge if.164.5.end
+=== 169:     if b < 2 + 2 { # folds
     cmp qword [rbp + 8], 4
-    jge if.159.5.end
-=== 162:     if h < 50 + 50 { # folds
+    jge if.169.5.end
+=== 172:     if h < 50 + 50 { # folds
     cmp byte [rbp + 24], 100
-    jge if.162.5.end
-=== 165:     if 1 + 1 != 2 { # folds
-=== 168:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds
+    jge if.172.5.end
+=== 175:     if 1 + 1 != 2 { # folds
+=== 178:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds

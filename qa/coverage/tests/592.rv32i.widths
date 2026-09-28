@@ -1,6 +1,6 @@
-101: var z1[80] i8: 4-byte accesses after a 3 B head
-103: var z2[80] i8: 4-byte accesses after a 1 B head
-105: var z3[80] i8: 4-byte accesses after a 2 B head
+101: var z1 = i8[80]{}: 4-byte accesses after a 3 B head
+103: var z2 = i8[80]{}: 4-byte accesses after a 1 B head
+105: var z3 = i8[80]{}: 4-byte accesses after a 2 B head
 118: array_copy(a1, b1, 40): 4-byte accesses after a 3 B head
 127: assert(7, equal(p, q)): 4-byte accesses after a 3 B head
 129: assert(8, not equal(p, q)): 4-byte accesses after a 3 B head

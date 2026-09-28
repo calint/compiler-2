@@ -3,7 +3,7 @@
 func assert(x bool) { if not x exit(1) }
 
 func main() {
-    var a[2] i8
+    var a = i8[2]{}
     var n = -array_length(a)
     assert(n == -2)
 }

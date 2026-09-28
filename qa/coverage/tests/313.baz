@@ -1,7 +1,7 @@
 # upper-bound check without lower check
 
 func main() {
-    var arr[8] i8
+    var arr = i8[8]{}
     var index = 8
     arr[index] = 1
 }

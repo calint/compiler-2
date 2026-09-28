@@ -9,17 +9,17 @@ func bump(value i16) {
 }
 
 func noinline update(value i16, other i16) {
-    var local i16 = value
+    var local = value
     bump(value)
     other = other + local
     calls = calls + 1
 }
 
 func main() {
-    var before i16 = 1234
-    var value i16 = -7
-    var after i16 = 2345
-    var other i16 = 20
+    var before = i16(1234)
+    var value = i16(-7)
+    var after = i16(2345)
+    var other = i16(20)
 
     update(value, other)
     assert(1, value == -6)

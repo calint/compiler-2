@@ -20,7 +20,7 @@ type location {
 }
 
 func main() {
-    var locations[4] location
+    var locations = location[4]{}
 
     var i = 0
     loop {

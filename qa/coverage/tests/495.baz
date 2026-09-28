@@ -1,5 +1,6 @@
 # narrowing a variable must be stated with the builtin
 func main() {
-    var wide i32 = 300
-    var small i8 = wide
+    var wide = i32(300)
+    var small = i8(0)
+    small = wide
 }

@@ -11,5 +11,6 @@ type size {
 }
 
 func main() {
-    var p point = size{1, 2}
+    var p = point{0, 0}
+    p = size{1, 2}
 }

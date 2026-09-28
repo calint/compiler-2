@@ -12,7 +12,7 @@ type object {
 }
 
 func main() {
-    var o object = {{1, 2}, 3}
+    var o = object{{1, 2}, 3}
     assert(o.pos.x == 1)
     assert(o.pos.y == 2)
     assert(o.color == 3)

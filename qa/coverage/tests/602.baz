@@ -9,6 +9,6 @@ func point.at(x, y) self {
 }
 
 func main() {
-    var p point
-    var q point = p.at(1, 2)
+    var p = point{}
+    var q = p.at(1, 2)
 }

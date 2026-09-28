@@ -1,2 +1,2 @@
 
-228.baz:4:28: too many fields specified for type 'p'
+228.baz:4:27: too many fields specified for type 'p'

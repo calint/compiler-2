@@ -41,8 +41,8 @@ func main() {
     var z = add_two(y)
     assert(5, z == 8)
 
-    var p point = {1, 2}
-    var q point = swap(p)
+    var p = point{1, 2}
+    var q = swap(p)
     assert(6, q.x == 2)
     assert(7, q.y == 1)
 

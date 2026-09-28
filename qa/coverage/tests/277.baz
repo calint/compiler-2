@@ -3,7 +3,7 @@
 const n = -1
 func assert(x bool) { if not x exit(1) }
 func main() {
-    var values[-n] i8
+    var values = i8[-n]{}
     values[0] = 7
     assert(values[0] == 7)
 }

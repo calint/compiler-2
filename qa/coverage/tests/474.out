@@ -1,2 +1,2 @@
 
-474.baz:4:24: use of uninitialized variable 'i'
+474.baz:4:20: use of uninitialized variable 'i'

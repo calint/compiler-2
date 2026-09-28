@@ -1,6 +1,6 @@
 # array_length requires an opening parenthesis
 
 func main() {
-    var x[2] i8
+    var x = i8[2]{}
     var n = array_length x
 }

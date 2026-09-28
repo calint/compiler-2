@@ -10,7 +10,7 @@ func set_x(p point) {
 }
 
 func main() {
-    var h holder
+    var h = holder{}
     set_x(h.points[1])
     assert(h.points[1].x == 9)
 }

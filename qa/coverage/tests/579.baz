@@ -2,7 +2,7 @@
 
 type point { x i32, y i32 }
 func main() {
-    var ps[3] point
-    var qs[2] point
+    var ps = point[3]{}
+    var qs = point[2]{}
     qs[0] = ps
 }

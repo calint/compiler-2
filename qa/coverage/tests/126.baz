@@ -62,9 +62,9 @@ func foozi(src location, dst location) {
 }
 
 func main() {
-    var locations[128] location
-    var entities[128] entity
-    var exits[1024] exit
+    var locations = location[128]{}
+    var entities = entity[128]{}
+    var exits = exit[1024]{}
 
     locations[0].name.data[1] = 0x61
 

@@ -147,7 +147,7 @@ main:
     mov qword [rbp + 256], rax
     mov rax, qword [rbp + 240]
     mov qword [rbp + 264], rax
-    cmp.191.19:
+    cmp.191.14:
         mov rcx, 3
         mov r15, 1
         test r15, r15
@@ -173,7 +173,7 @@ main:
         test rcx, rcx
         repe cmpsb
         sete byte [rbp + 288]
-    bool.191.19.end:
+    bool.191.14.end:
     cmp.194.12:
     mov r15b, byte [rbp + 288]
     bool.194.12.end:
@@ -224,11 +224,11 @@ main:
     js baz_bounds_panic
     cmp r15, 4
     jge baz_bounds_panic
-    func.inv.205.20:
+    func.inv.205.16:
         mov r14d, dword [rbp + r15 * 4 + 232]
         mov dword [rbp + 292], r14d
         not dword [rbp + 292]
-    func.inv.205.20.end:
+    func.inv.205.16.end:
     not dword [rbp + 292]
     mov r15, qword [rbp + 248]
     test r15, r15
@@ -491,9 +491,9 @@ main:
             syscall
         if.32.24.255.5.end:
     func.assert.255.5.end:
-    func.baz.257.21:
+    func.baz.257.20:
         mov qword [rbp + 368], 6
-    func.baz.257.21.end:
+    func.baz.257.20.end:
     mov qword [rbp + 376], 0
     cmp.258.12:
     cmp qword [rbp + 368], 6
@@ -1119,5 +1119,5 @@ dat.end:
 section .bss.vars nobits alloc write
 align 16
 vars:
-resb 131072
+resb 65536
 vars.end:

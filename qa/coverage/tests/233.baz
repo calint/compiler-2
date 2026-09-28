@@ -2,6 +2,6 @@
 
 func f(x i8) {}
 func main() {
-    var a[2] i8
+    var a = i8[2]{}
     f(-a[0])
 }

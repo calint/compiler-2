@@ -62,10 +62,6 @@
   destination: (identifier) @variable
   initializer: (_)? @variable)
 
-((variable_declaration
-  type: (identifier) @type)
-  (#set! priority 110))
-
 (data_declaration
   destination: (identifier) @variable
   type: (identifier)? @type)

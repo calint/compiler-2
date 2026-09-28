@@ -8,12 +8,12 @@ type point { x i32, y i32 }
 type line { pts[2] point }
 
 func main() {
-    var ps[3] point = { { 1, 2 }, { 3, 4 }, { 5, 6 } }
-    var q point = ps[1]
-    var guard1 i32 = 77
-    var l line = { { ps[2], ps[0] } }
-    var r point = l.pts[1]
-    var guard2 i32 = 88
+    var ps = point[3]{ { 1, 2 }, { 3, 4 }, { 5, 6 } }
+    var q = ps[1]
+    var guard1 = i32(77)
+    var l = line{ { ps[2], ps[0] } }
+    var r = l.pts[1]
+    var guard2 = i32(88)
     q = ps[2]
     r = l.pts[0]
     assert(1, q.x == 5)

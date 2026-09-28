@@ -22,7 +22,7 @@ func bar(flg flags) {
 }
 
 func main() {
-    var worlds[2] world
+    var worlds = world[2]{}
     foozi(worlds[1].flgs[2].data)
     bar(worlds[1].flgs[1])
 }

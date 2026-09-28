@@ -9,7 +9,7 @@ type object {pos point, color i32}
 type cluster {objs[10] object, flags i8}
 
 func main() {
-    var cr[7] cluster
+    var cr = cluster[7]{}
     cr[1].objs[2].pos.y = 8
     assert(cr[1].objs[2].pos.y == 8)
 

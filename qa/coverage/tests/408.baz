@@ -15,7 +15,7 @@ type outer {
 }
 
 func main() {
-    var data[2] outer
+    var data = outer[2]{}
     var ix = 1
 
     data[ix] = {{10, 20}, 7}

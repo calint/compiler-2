@@ -6,8 +6,8 @@ type tagged_points { tag, points[2] point }
 func assert(x bool) { if not x exit(1) }
 
 func main() {
-    var arr[2] point = { {1, 2}, {3, 4} }
-    var type_inst tagged_points
+    var arr = point[2]{ {1, 2}, {3, 4} }
+    var type_inst = tagged_points{}
     type_inst = { 7, arr }
 
     assert(type_inst.tag == 7)

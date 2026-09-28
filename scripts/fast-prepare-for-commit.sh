@@ -18,8 +18,6 @@ qa/coverage/test-coverage.sh --target=x86 run
 qa/coverage/test-coverage.sh --target=rv32i run
 qa/coverage/test-coverage.sh --target=rv32i-qemu run
 qa/coverage/test-coverage.sh --target=rv32i-fpga run
-echo make
-./make.sh build
 echo compile prog
 ./run.sh --checks=noub
 echo compile roome

@@ -3,8 +3,8 @@
 func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var source[3] i8 = { 11, 22, 33 }
-    var destination[3] i8
+    var source = i8[3]{ 11, 22, 33 }
+    var destination = i8[3]{}
     array_copy(source, destination, 3)
     assert(destination[0] == 11)
     assert(destination[1] == 22)

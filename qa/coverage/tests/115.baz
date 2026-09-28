@@ -17,7 +17,7 @@ func main() {
     assert(a == 10)  # Verify reference semantics
     assert(r == 11)
     
-    var b i32 = 100
+    var b = i32(100)
     mutate_only(b)
     assert(b == 0xff)
     

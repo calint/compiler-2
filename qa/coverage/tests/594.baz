@@ -1,5 +1,5 @@
 # a comparison may not truncate a folded constant
 func main() {
-    var n i8 = 1
+    var n = i8(1)
     if n == 200 + 57 { exit(1) }
 }

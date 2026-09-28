@@ -1,10 +1,9 @@
-# recursive initialization is rejected, the type is explicit because an untyped
-# variable is not declared in its initializer
+# recursive initialization is rejected, also inside a conversion
 
-func foozi(i) {
-
+func foozi(i) res {
+    res = 1
 }
 
 func main() {
-    var x i32 = foozi(x)
+    var x = i32(foozi(x))
 }

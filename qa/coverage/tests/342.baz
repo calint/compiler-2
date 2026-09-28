@@ -5,6 +5,6 @@ func legacy_write(values[] i8, index) {
 }
 
 func main() {
-    var values[8] i8
+    var values = i8[8]{}
     legacy_write(values, 7)
 }

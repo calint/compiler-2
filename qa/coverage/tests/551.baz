@@ -5,5 +5,5 @@ type wide {
 }
 
 func main() {
-    var w wide = {"ab"}
+    var w = wide{"ab"}
 }

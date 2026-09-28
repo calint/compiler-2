@@ -1,25 +1,25 @@
 # omitting identical memory copies preserves subsequent operations
 func assert(ok bool) { if not ok exit(1) }
 func main() {
-    var number i32 = 123
+    var number = i32(123)
     number = number
     assert(number == 123)
     number = -number
     assert(number == -123)
     number = number / 10
     assert(number == -12)
-    var small i8 = 120
+    var small = i8(120)
     small = small
     small = -small
     assert(small == -120)
-    var half i16 = -300
+    var half = i16(-300)
     half = half
     half = ~half
     assert(half == 299)
-    var flag bool = true
+    var flag = true
     flag = flag
     assert(flag)
-    var values[2] i32 = { 11, 22 }
+    var values = i32[2]{ 11, 22 }
     var index = 1
     values[index] = values[index]
     assert(values[1] == 22)

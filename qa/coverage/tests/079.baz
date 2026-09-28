@@ -26,7 +26,7 @@ func baz(arg) res {
 }
 
 func main() {
-    var objs[23] object
+    var objs = object[23]{}
     objs[3].color = ~2
     assert(objs[3].color == ~2)
 

@@ -1,2 +1,2 @@
 
-276.baz:5:16: expected a constant array size greater than 0
+276.baz:5:21: expected a constant array size greater than 0

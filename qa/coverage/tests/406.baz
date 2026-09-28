@@ -17,8 +17,8 @@ func put(dst pair, src pair, j) {
 }
 
 func main() {
-    var srcs[3] pair
-    var dsts[3] pair
+    var srcs = pair[3]{}
+    var dsts = pair[3]{}
 
     srcs[0] = {1, 2}
     srcs[1] = {30, 40}

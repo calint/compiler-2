@@ -1,2 +1,2 @@
 
-099.baz:9:23: use of uninitialized variable 'x'
+099.baz:8:19: use of uninitialized variable 'x'

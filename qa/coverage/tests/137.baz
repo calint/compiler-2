@@ -17,7 +17,7 @@ func fuz(x, y) res {
 }
 
 func main() {
-    var values[4]
+    var values = i[4]{}
     values[1] = 4
     values[2] = 8
 

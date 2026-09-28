@@ -1,7 +1,7 @@
 # element access checks a computed index
 
 func main() {
-    var values[8] i8
+    var values = i8[8]{}
     var index = 8
     var value = values[index]
 }

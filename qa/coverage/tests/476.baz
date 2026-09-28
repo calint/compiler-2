@@ -4,5 +4,5 @@ func half() res point {
     res.x = 1
 }
 func main() {
-    var p point = half()
+    var p = half()
 }

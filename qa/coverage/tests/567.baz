@@ -10,6 +10,6 @@ func point.shifted(dx, dy) res point {
 }
 
 func main() {
-    var p point = {1, 2}
-    var q point = p.shifted(1)
+    var p = point{1, 2}
+    var q = p.shifted(1)
 }

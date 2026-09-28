@@ -3,7 +3,7 @@
 func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var values[8] i8
+    var values = i8[8]{}
     var index = 7
     values[index] = 5
     assert(values[7] == 5)

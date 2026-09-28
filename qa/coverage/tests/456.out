@@ -1,2 +1,2 @@
 
-456.baz:2:29: expected '}' to close block
+456.baz:2:26: expected '=' followed by an initializer, e.g. 'var x = i32(0)'

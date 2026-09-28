@@ -14,7 +14,7 @@ func pick(c) res point {
     }
 }
 func main() {
-    var p point = pick(1)
+    var p = pick(1)
     assert(p.x == 1 and p.y == 10)
     p = pick(2)
     assert(p.x == 20 and p.y == 21)

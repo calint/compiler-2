@@ -12,23 +12,23 @@ type five {a i32, b i32, c i32, d i32, e i32}
 func main() {
     # a negative power of two into memory is only a shift and a negation,
     # 'other' leaves another value in the scratch register
-    var a i32 = 3
-    var other i32 = 7
+    var a = i32(3)
+    var other = i32(7)
     a = a * -4
     assert(1, a == -12)
     assert(2, other == 7)
 
-    var h i16 = 5
+    var h = i16(5)
     h = h * -2
     assert(3, h == -10)
 
-    var b i8 = 3
+    var b = i8(3)
     b = b * -8
     assert(4, b == -24)
 
     # several digits: 45 is 101101b, 7 is 8 - 1, 85 is 1010101b
-    var x i32 = 11
-    var y i32 = x * 45
+    var x = i32(11)
+    var y = i32(x * 45)
     assert(5, y == 495)
     y = x * -7
     assert(6, y == -77)
@@ -38,20 +38,20 @@ func main() {
     assert(8, x == 110)
 
     # element sizes 12, 3 and 20 scale the index
-    var ix i32 = 2
-    var ts[4] triple
+    var ix = i32(2)
+    var ts = triple[4]{}
     ts[ix].b = 5
     ts[ix + 1].c = 6
     assert(9, ts[2].b == 5)
     assert(10, ts[3].c == 6)
     assert(11, ts[1].b == 0)
 
-    var bs[4] bytes3
+    var bs = bytes3[4]{}
     bs[ix].c = 9
     assert(12, bs[2].c == 9)
     assert(13, bs[3].a == 0)
 
-    var fs[3] five
+    var fs = five[3]{}
     fs[ix].d = 4
     assert(14, fs[2].d == 4)
     assert(15, fs[1].d == 0)

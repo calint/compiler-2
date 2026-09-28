@@ -5,7 +5,7 @@ type world { locations[2] }
 func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var worlds[2] world
+    var worlds = world[2]{}
     worlds[1].locations[1] = 0xffee
     assert(worlds[1].locations[1] == 0xffee)
 }

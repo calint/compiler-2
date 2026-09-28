@@ -16,13 +16,13 @@ func third(arr[] i32) res {
 }
 
 func main() {
-    var arr[4] i32
+    var arr = i32[4]{}
     arr[2] = 5 # folds
     arr[3] = arr[2] + 1 # folds
     assert(1, arr[3] == 6)
     assert(2, third(arr) == 5)
 
-    var shapes[2] shape
+    var shapes = shape[2]{}
     shapes[1].pts[two].y = 7 # folds
     shapes[1].id = 3 # folds
     assert(3, shapes[1].pts[2].y == 7)
@@ -37,7 +37,7 @@ func main() {
 
     # a constant range start with a run-time count keeps the bounds check
     var n = 2
-    var dst[2] i32
+    var dst = i32[2]{}
     array_copy(arr[2], dst, n)
     assert(7, dst[0] == 5 and dst[1] == 6)
 

@@ -5,5 +5,5 @@ func grow() res point {
     res.y = res.y + res.x
 }
 func main() {
-    var p point = grow()
+    var p = grow()
 }

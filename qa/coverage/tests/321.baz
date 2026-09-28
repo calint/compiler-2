@@ -1,7 +1,7 @@
 # one-element lower failure without line output
 
 func main() {
-    var arr[1] i8
+    var arr = i8[1]{}
     var index = -1
     arr[index] = 1
 }

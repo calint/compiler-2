@@ -6,9 +6,9 @@ func assert(ok bool) { if not ok exit(1) }
 func update(values[] wide, index) { values[index].bytes[299] = 42 }
 func noinline read_wide(value wide) result i8 { result = value.bytes[299] }
 func main() {
-    var triples[3] triple
-    var pages[3] page
-    var values[10] wide
+    var triples = triple[3]{}
+    var pages = page[3]{}
+    var values = wide[10]{}
     var index = 1
     triples[index].bytes[2] = 7
     triples[2] = triples[index]
@@ -17,7 +17,7 @@ func main() {
     pages[2] = pages[index]
     assert(pages[2].bytes[255] == 9)
     update(values, index)
-    var result i8 = read_wide(values[index])
+    var result = read_wide(values[index])
     assert(result == 42)
     values[2] = values[index]
     assert(values[2].bytes[299] == 42)

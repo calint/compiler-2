@@ -36,7 +36,7 @@ func baz(wld[] world) {
 }
 
 func main() {
-    var worlds[2] world
+    var worlds = world[2]{}
     baz(worlds)
     assert(worlds[1].locations[2].links[1].loc == 2)
     assert(worlds[1].locations[2].links[1].name_len == 1)

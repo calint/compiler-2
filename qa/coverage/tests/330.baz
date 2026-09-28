@@ -7,7 +7,7 @@ func legacy_write(values[] i8) {
 }
 
 func main() {
-    var values[8] i8
+    var values = i8[8]{}
     legacy_write(values)
     assert(values[7] == 1)
 }

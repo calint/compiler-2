@@ -7,8 +7,8 @@ func noinline factorial(value i32) result i32 {
     result = 1
     if value <= 1 return
     var saved = value
-    var next i32 = value - 1
-    var partial i32 = 0
+    var next = i32(value - 1)
+    var partial = i32(0)
     partial = factorial(next)
     assert(saved == value)
     assert(next == value - 1)
@@ -16,7 +16,7 @@ func noinline factorial(value i32) result i32 {
 }
 
 func noinline shift(value point) result point {
-    var buffer[4096] i8
+    var buffer = i8[4096]{}
     buffer[4095] = 17
     result = value
     value.x = value.x + 2
@@ -30,16 +30,16 @@ func noinline forward(value point) result point {
 }
 
 func main() {
-    var value i32 = 5
-    var result i32 = 0
+    var value = i32(5)
+    var result = i32(0)
     result = factorial(value)
     assert(result == 120)
     assert(value == 5)
     value = 1
     result = factorial(value)
     assert(result == 1)
-    var source point = {3, 20}
-    var destination point
+    var source = point{3, 20}
+    var destination = point{}
     destination = forward(source)
     assert(source.x == 5)
     assert(source.y == 20)

@@ -2,9 +2,9 @@
 <         j loop.10.5.end
 <     j loop.10.5
 81d78
-<     beq t0, zero, bool.15.19.end
+<     beq t0, zero, bool.15.14.end
 83d79
-<     j bool.15.19.end
+<     j bool.15.14.end
 93d88
 <     j if.16.8.code
 122c117

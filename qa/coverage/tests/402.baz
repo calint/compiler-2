@@ -25,9 +25,9 @@ func copy_pair(src pair, dst pair) {
 }
 
 func main() {
-    var srcs[3] pair
-    var dsts[3] pair
-    var boxes[2] container
+    var srcs = pair[3]{}
+    var dsts = pair[3]{}
+    var boxes = container[2]{}
 
     srcs[0] = {10, 20}
     srcs[1] = {30, 40}

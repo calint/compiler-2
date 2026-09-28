@@ -9,5 +9,5 @@ func pick(c) res point {
     }
 }
 func main() {
-    var p point = pick(1)
+    var p = pick(1)
 }

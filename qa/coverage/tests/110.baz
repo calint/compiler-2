@@ -55,7 +55,7 @@ func verify_vertex(v vertex, idx i32) {
 func init_mesh(m mesh, id_val i32) {
     m.id = id_val
     
-    var i i32 = 0
+    var i = i32(0)
     loop {
         init_vertex(m.vertices[i], i)
         i = i + 1
@@ -73,7 +73,7 @@ func init_mesh(m mesh, id_val i32) {
 func verify_mesh(m mesh, id_val i32) {
     assert(m.id == id_val)
     
-    var i i32 = 0
+    var i = i32(0)
     loop {
         verify_vertex(m.vertices[i], i)
         i = i + 1
@@ -121,7 +121,7 @@ func shift_colors(s scene, shift_val i32) {
 }
 
 func main() {
-    var w[2] world
+    var w = world[2]{}
     
     # TEST 1: Deep nested struct array initialization and verification
     var i = 0
@@ -170,7 +170,7 @@ func main() {
     verify_mesh(w[1].scenes[2].meshes[3], 3)
     
     # TEST 4: arrays_equal on complex nested vertex arrays
-    var eq1 bool = arrays_equal(
+    var eq1 = arrays_equal(
         w[0].scenes[0].meshes[2].vertices,
         w[1].scenes[2].meshes[2].vertices,
         array_length(w[0].scenes[0].meshes[2].vertices)
@@ -201,7 +201,7 @@ func main() {
     
     array_copy(w[0], w[1], 1)
 
-    var scale i32 = 2
+    var scale = i32(2)
     scale_vertices(w[1].scenes[0], scale)
     
     # After scaling by 2:
@@ -228,7 +228,7 @@ func main() {
     assert(w[0].scenes[2].meshes[1].vertices[8].col.g == 34)  # 8*3+10=34
 
     # TEST 9: Initialize standalone mesh array and copy to nested
-    var standalone_meshes[4] mesh
+    var standalone_meshes = mesh[4]{}
     var m = 0
     loop {
         init_mesh(standalone_meshes[m], i32(1000 + m))
@@ -246,7 +246,7 @@ func main() {
     verify_mesh(w[1].scenes[2].meshes[3], 1003)
     
     # TEST 10: Cross-scene mesh swapping via temporary
-    var temp_mesh_indices[24] i32
+    var temp_mesh_indices = i32[24]{}
     array_copy(
         w[0].scenes[0].meshes[1].indices,
         temp_mesh_indices,

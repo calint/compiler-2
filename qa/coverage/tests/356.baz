@@ -2,6 +2,6 @@
 
 type small { data[2] i8 }
 func main() {
-    var value i8
-    var dst small = { value }
+    var value = i8(0)
+    var dst = small{ value }
 }

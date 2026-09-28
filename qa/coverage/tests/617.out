@@ -1,0 +1,2 @@
+
+617.baz:5:10: expected '=' followed by an initializer, e.g. 'var x = i32(0)'

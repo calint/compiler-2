@@ -1,7 +1,7 @@
 # combined bounds checks without line output
 
 func main() {
-    var values[8] i8
+    var values = i8[8]{}
     var index = 8
     values[index] = 1
 }

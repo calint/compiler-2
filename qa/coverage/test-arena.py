@@ -20,18 +20,18 @@ func bump(value item) { value.values[2] = value.values[2] + 1 }
 # Runtime checks: the first local is zeroed; sibling blocks re-zero storage;
 # nested indexing and mutation through a function argument work without
 # corrupting neighbors. Placement is checked from the compiler's comments.
-BODY = """    var first_local[3] i8
+BODY = """    var first_local = i8[3]{}
     assert(2, first_local[0] == 0)
     first_local[2] = 23
     {
-        var temporary[5] i8
+        var temporary = i8[5]{}
         temporary[0] = 99
     }
     {
-        var temporary[5] i8
+        var temporary = i8[5]{}
         assert(4, temporary[0] == 0)
     }
-    var items[2] item
+    var items = item[2]{}
     var index = 1
     items[index].tag = 9
     items[index].values[2] = 41
@@ -152,33 +152,33 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     # These are simultaneous storage requirements, not sums of all declarations.
     statistics_cases = [
         ("no-vars", "", "", 0),
-        ("local", "", "var local[3] i8", 3),
+        ("local", "", "var local = i8[3]{}", 3),
         # Sibling blocks do not coexist: 3 + max(5, 2) = 8.
         ("sibling-scopes", "",
-         "var local[3] i8\n{ var temporary[5] i8 }\n"
-         "{ var temporary[2] i8 }", 8),
+         "var local = i8[3]{}\n{ var temporary = i8[5]{} }\n"
+         "{ var temporary = i8[2]{} }", 8),
         # Nested blocks coexist: 3 + 5 + 7 = 15; the later 4-byte block reuses space.
         ("nested-scopes", "",
-         "var local[3] i8\n{ var outer[5] i8\n"
-         "{ var inner[7] i8 } }\n{ var reused[4] i8 }", 15),
+         "var local = i8[3]{}\n{ var outer = i8[5]{}\n"
+         "{ var inner = i8[7]{} } }\n{ var reused = i8[4]{} }", 15),
         # Global vars remain live while main runs: 11 + 3 + 5 = 19.
-        ("global-and-local", "var global[11] i8\n",
-         "var local[3] i8\n{ var temporary[5] i8 }", 19),
+        ("global-and-local", "var global = i8[11]{}\n",
+         "var local = i8[3]{}\n{ var temporary = i8[5]{} }", 19),
         # main, middle, and leaf need 3 + 5 + 7 = 15 together.
         # Calling middle again must reuse its storage, not accumulate another 12.
         ("nested-calls",
-         "func leaf() { var leaf_local[7] i8 }\n"
-         "func middle() { var middle_local[5] i8 leaf() }\n",
-         "var local[3] i8\nmiddle()\nmiddle()", 15),
+         "func leaf() { var leaf_local = i8[7]{} }\n"
+         "func middle() { var middle_local = i8[5]{} leaf() }\n",
+         "var local = i8[3]{}\nmiddle()\nmiddle()", 15),
         # Two aligned records: 2 * (1 + 3 padding + 3 * 4) = 32.
         ("structured-array", "type record { tag i8, values[3] i32 }\n",
-         "var records[2] record", 32),
+         "var records = record[2]{}", 32),
     ]
     for name, data_source in statistics_layouts:
         for case, declarations, body, expected_size in statistics_cases:
             # Parsing an unused function must not inflate generated-program usage.
             source = (data_source + declarations
-                      + "func unused() { var unused_local[1024] i8 }\n"
+                      + "func unused() { var unused_local = i8[1024]{} }\n"
                       + "func main() {\n" + body + "\n}\n")
             for mode, options in modes.items():
                 result = compile_source(directory, source, 4096, options)
@@ -195,7 +195,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
             print(f"arena {name} max vars size: ok", flush=True)
 
     for count in (16, 17):
-        source = f"func main() {{ var buffer[{count}] i8 }}\n"
+        source = f"func main() {{ var buffer = i8[{count}]{{}} }}\n"
         result = compile_source(directory, source, 16, [])
         assert result.returncode == (0 if count == 16 else 1), result.stderr
         if count == 17:
@@ -264,10 +264,10 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         source = f"""type large {{ padding[{offset}] i8, value i8, next i8 }}
 func noinline update(value i8) {{ value = value + 1 }}
 func main() {{
-    var data large
+    var data = large{{}}
     data.value = 7
     data.next = data.value
-    var equal bool = data.value == data.next
+    var equal = data.value == data.next
     data.value = -data.value
     update(data.next)
 }}
@@ -352,7 +352,7 @@ panic_entry:
 
     source = COMMON + """func noinline update(value i32) { value = value + 1 }
 func main() {
-    var value i32 = 41
+    var value = i32(41)
     update(value)
     assert(1, value == 42)
 }
@@ -375,7 +375,7 @@ func main() {
     for declaration in (
         "type huge { values[2305843009213693952] i64 }",
         "type huge { values[9223372036854775807] i8, extra i8 }",
-        "var huge[2305843009213693952] i64",
+        "var huge = i64[2305843009213693952]{}",
         "dat huge[2305843009213693952] i64",
         "dat huge[1152921504606846976] i64",
     ):

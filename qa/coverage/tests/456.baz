@@ -1,2 +1,2 @@
-# array brackets must precede the variable element type
+# a type after the variable name is rejected, the initializer gives the type
 func main() { var values i32[2] }

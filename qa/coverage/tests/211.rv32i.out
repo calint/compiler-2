@@ -1,2 +1,2 @@
 
-211.baz:5:16: destination must be an 'i32'
+211.baz:6:9: destination must be an 'i32'

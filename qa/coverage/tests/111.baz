@@ -9,9 +9,9 @@ func input(str[] i8, len) nbytes {
 }
 
 func pn(num) {
-    var buf[20] i8
+    var buf = i8[20]{}
     var n = num
-    var is_negative bool = false
+    var is_negative = false
 
     if n < 0 {
         is_negative = true
@@ -49,7 +49,7 @@ func foozi(w1 world, w2 world){
 }
 
 func main() {
-    var wlds[2] world
+    var wlds = world[2]{}
     wlds[0].note.size = 1
     wlds[1].note.size = 2
  

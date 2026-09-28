@@ -30,7 +30,7 @@ func fuz(lnks[] link) {
 }
 
 func main() {
-    var worlds[2] world
+    var worlds = world[2]{}
     fuz(worlds[1].locations[2].links)
     assert(worlds[1].locations[2].links[4].loc == 0xba)
     assert(worlds[1].locations[2].links[4].pos.y == 0xab)

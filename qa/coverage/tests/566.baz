@@ -10,6 +10,6 @@ func list.clear() {
 }
 
 func main() {
-    var lst list
+    var lst = list{}
     lst.clear = 1
 }

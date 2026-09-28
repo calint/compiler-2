@@ -1,6 +1,6 @@
 # an empty array cannot be declared, so its element cannot be accessed
 
 func main() {
-    var values[] i8 = {}
+    var values = i8[]{}
     var value = values[0]
 }

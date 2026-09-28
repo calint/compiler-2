@@ -2,7 +2,7 @@
 
 func put(s[] i8, n) res { res = write(1, s, n) }
 func main() {
-    var buf[6] i8
+    var buf = i8[6]{}
     var i = 2
     var r = put(buf[i], 5)
 }

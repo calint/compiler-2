@@ -29,7 +29,7 @@ func baz(arg) res {
 }
 
 func main() {
-    var p point = {0, 0}
+    var p = point{0, 0}
     foozi(p)
     assert(p.x == 2)
     assert(p.y == 0xb)
@@ -49,23 +49,23 @@ func main() {
     k = baz(1)
     assert(k == 2)
 
-    var p0 point = {baz(2), 0}
+    var p0 = point{baz(2), 0}
     assert(p0.x == 4)
 
     var x = 1
     var y = 2
 
-    var o1 object = {{x * 10, y}, 0xff0000}
+    var o1 = object{{x * 10, y}, 0xff0000}
     assert(o1.pos.x == 10)
     assert(o1.pos.y == 2)
     assert(o1.color == 0xff0000)
 
-    var p1 point = {-x, -y}
+    var p1 = point{-x, -y}
     o1.pos = p1
     assert(o1.pos.x == -1)
     assert(o1.pos.y == -2)
 
-    var o2 object = o1
+    var o2 = o1
     assert(o2.pos.x == -1)
     assert(o2.pos.y == -2)
     assert(o2.color == 0xff0000)

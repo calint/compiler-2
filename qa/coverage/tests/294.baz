@@ -20,7 +20,7 @@ func make_rectangle() result rectangle {
 }
 
 func main() {
-    var rectangle_value rectangle = make_rectangle()
+    var rectangle_value = make_rectangle()
     assert(rectangle_value.top_left.x == 3)
     assert(rectangle_value.top_left.y == 4)
     assert(rectangle_value.bottom_right.x == 6)

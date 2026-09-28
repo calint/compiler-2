@@ -5,5 +5,5 @@ func twice(pt point) res point {
     res.y = pt.y * 2
 }
 func main() {
-    var p point = twice(p)
+    var ps = point[1]{twice(ps[0])}
 }

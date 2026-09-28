@@ -205,22 +205,22 @@
 === 102:     d = -16 >> 2 # folds
     li t0, -4
     sw t0, 8(s0)
-=== 107:     var e i8 = (100 + 100) / 2 # folds
+=== 108:     e = (100 + 100) / 2 # folds
     li t0, -28
     sb t0, 13(s0)
-=== 111:     var w i8 = 100 + 100 # folds
+=== 114:     w = 100 + 100 # folds
     li t0, -56
     sb t0, 15(s0)
-=== 113:     var m i16 = 300 * 300 # folds
+=== 117:     m = 300 * 300 # folds
     li t0, 24464
     sh t0, 16(s0)
-=== 117:     var s8 i8 = 1 << 7 # folds
+=== 123:     s8 = 1 << 7 # folds
     li t0, -128
     sb t0, 22(s0)
-=== 119:     var r8 i8 = (1 << 7) >> 7 # folds
+=== 126:     r8 = (1 << 7) >> 7 # folds
     li t0, -1
     sb t0, 23(s0)
-=== 124:     var q8_apart i8 = q8 / 16 / 16 # folds
+=== 132:     q8_apart = q8 / 16 / 16 # folds
     lb t0, 24(s0)
     sb t0, 25(s0)
     lb a0, 25(s0)
@@ -231,43 +231,43 @@
     li a1, 16
     call .Lbaz_divide
     sb a0, 25(s0)
-=== 126:     var q8_merged i8 = q8 / 4 / 8 # folds
+=== 135:     q8_merged = q8 / 4 / 8 # folds
     lb t0, 24(s0)
     sb t0, 26(s0)
     lb a0, 26(s0)
     li a1, 32
     call .Lbaz_divide
     sb a0, 26(s0)
-=== 129:     var q8_min_merged i8 = q8_min / -2 / 64 # folds
+=== 139:     q8_min_merged = q8_min / -2 / 64 # folds
     lb t0, 27(s0)
     sb t0, 28(s0)
     lb a0, 28(s0)
     li a1, -128
     call .Lbaz_divide
     sb a0, 28(s0)
-=== 137:     if 1 + 1 > b { # folds
+=== 147:     if 1 + 1 > b { # folds
     lw t0, 4(s0)
     li t1, 2
-    bge t0, t1, if.137.5.end
-=== 143:     if 3 + 3 <= b { # folds
+    bge t0, t1, if.147.5.end
+=== 153:     if 3 + 3 <= b { # folds
     lw t0, 4(s0)
     li t1, 6
-    blt t0, t1, if.143.5.end
-=== 149:     if 2 + 3 != b { # folds
+    blt t0, t1, if.153.5.end
+=== 159:     if 2 + 3 != b { # folds
     lw t0, 4(s0)
     li t1, 5
-    beq t0, t1, if.149.5.end
-=== 154:     if 25 * 2 > h { # folds
+    beq t0, t1, if.159.5.end
+=== 164:     if 25 * 2 > h { # folds
     lb t0, 12(s0)
     li t1, 50
-    bge t0, t1, if.154.5.end
-=== 159:     if b < 2 + 2 { # folds
+    bge t0, t1, if.164.5.end
+=== 169:     if b < 2 + 2 { # folds
     lw t0, 4(s0)
     li t1, 4
-    bge t0, t1, if.159.5.end
-=== 162:     if h < 50 + 50 { # folds
+    bge t0, t1, if.169.5.end
+=== 172:     if h < 50 + 50 { # folds
     lb t0, 12(s0)
     li t1, 100
-    bge t0, t1, if.162.5.end
-=== 165:     if 1 + 1 != 2 { # folds
-=== 168:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds
+    bge t0, t1, if.172.5.end
+=== 175:     if 1 + 1 != 2 { # folds
+=== 178:     if not (2 * 3 == 6 and 1 << 2 == 4) { # folds

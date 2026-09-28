@@ -17,7 +17,7 @@ func point.y() res {
 }
 
 func main() {
-    var p point
+    var p = point{}
     p.x(3)
     assert(1, p.x == 3)
     p.y = 4
@@ -25,7 +25,7 @@ func main() {
     p.x (5)
     assert(3, p.x == 5)
 
-    var point point
+    var point = p
     point.x(6)
     assert(4, point.x == 6)
     point.y = 7

@@ -34,10 +34,10 @@ func fuz(wld1 world, wld2 world) {
 }
 
 func main() {
-    var worlds[2] world
+    var worlds = world[2]{}
     fuz(worlds[0], worlds[1])
 
-    var ok bool = arrays_equal(
+    var ok = arrays_equal(
       worlds[0].locations[2].links,
       worlds[1].locations[0].links,
       array_length(worlds[0].locations[2].links)

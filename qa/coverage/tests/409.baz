@@ -11,8 +11,8 @@ type holder {
 }
 
 func main() {
-    var src_values[2] = {31, 32}
-    var holders[2] holder
+    var src_values = i[2]{31, 32}
+    var holders = holder[2]{}
 
     var ix = 1
     holders[ix] = {src_values, 9}

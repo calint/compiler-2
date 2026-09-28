@@ -2,16 +2,16 @@
 === 16:     zeros = "\0\0"
     sh zero, 16(s0)
     sh zero, 18(s0)
-=== 20:     var high[4] i8 = "\xff\x80\x7f\x01"
+=== 20:     var high = "\xff\x80\x7f\x01"
     li t0, 25133311
     sw t0, 20(s0)
-=== 24:     var same[] i8 = "aaaaaaaa\n"
+=== 24:     var same = "aaaaaaaa\n"
     li t0, 1633771873
     sw t0, 24(s0)
     sw t0, 28(s0)
     li t0, 10
     sb t0, 32(s0)
-=== 28:     var p padded = {1, "abcdef\n"}
+=== 28:     var p = padded{1, "abcdef\n"}
     li t0, 1
     sb t0, 33(s0)
     li t0, 25185
@@ -43,8 +43,8 @@
     sb zero, 46(t1)
     sb zero, 47(t1)
     sb zero, 48(t1)
-=== 42:     var line[] i8 = "0123456789abcd\n"
-    la t0, str.42.21
+=== 42:     var line = "0123456789abcd\n"
+    la t0, str.42.16
     lw t1, 0(t0)
     sw t1, 64(s0)
     lw t1, 4(t0)
@@ -57,5 +57,5 @@
     sb t1, 78(s0)
 === read-only constants
 .balign 4
-str.42.21:
+str.42.16:
 .ascii "0123456789abcd\n"

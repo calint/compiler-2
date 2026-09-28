@@ -67,12 +67,12 @@ func noinline point.length_sq() res {
 # 'self' is a pointer in a non-inline method and forwarded to both kinds
 func noinline point.move_twice(dx) {
     self.move(dx)
-    var q point = self.shifted(dx, 0)
+    var q = self.shifted(dx, 0)
     self.x = q.x
 }
 
 func main() {
-    var lst list
+    var lst = list{}
     lst.clear()
     assert(1, lst.is_empty())
     lst.add(3)
@@ -89,7 +89,7 @@ func main() {
     assert(6, lst.size() == 4 and lst.sum() == 17)
 
     # nested field and array element receivers
-    var h holder
+    var h = holder{}
     h.lst.clear()
     h.lst.add(10)
     var i = 1
@@ -101,8 +101,8 @@ func main() {
     assert(8, h.lists[1].sum() == 30)
 
     # record result
-    var p point = {1, 2}
-    var q point = p.shifted(3, 4)
+    var p = point{1, 2}
+    var q = p.shifted(3, 4)
     assert(9, q.x == 4 and q.y == 6)
 
     # non-inline methods

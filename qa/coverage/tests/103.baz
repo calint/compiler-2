@@ -31,7 +31,7 @@ func fooz(lnk link) {
 }
 
 func main() {
-    var wld[1] world
+    var wld = world[1]{}
     fooz(wld[0].loc.links[0])
     assert(wld[0].loc.links[0].name_len == 1)
     assert(wld[0].loc.links[0].name[0] == 0x61 )

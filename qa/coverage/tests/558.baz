@@ -1,5 +1,5 @@
 # string with an unsupported escape
 
 func main() {
-    var s[] i8 = "a\qb"
+    var s = "a\qb"
 }

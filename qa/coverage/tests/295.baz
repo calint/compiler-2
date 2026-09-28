@@ -10,7 +10,7 @@ func make_point() result point {
 }
 
 func main() {
-    var container box
+    var container = box{}
     container.point_value = make_point()
     assert(container.point_value.x == 8)
     assert(container.point_value.y == -3)

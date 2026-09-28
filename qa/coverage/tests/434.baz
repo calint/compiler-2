@@ -1,7 +1,7 @@
 # portable read/write with byte counts, errors, and discarded results
 
 func main() {
-    var buffer[16] i8
+    var buffer = i8[16]{}
     var count = read(0, buffer, 16)
     if count != 6 exit(1)
     var written = write(1, buffer, count)

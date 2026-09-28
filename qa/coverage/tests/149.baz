@@ -20,7 +20,7 @@ func main() {
     answer = yes
     assert(answer == 1)
 
-    var p2 point = { no, yes }
+    var p2 = point{ no, yes }
     assert (p2.x == no)
     assert (p2.y == yes)
 }

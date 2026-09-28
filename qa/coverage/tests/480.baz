@@ -6,7 +6,7 @@ func make_pair() res pair {
     res.cells[1] = res.cells[0] + 1
 }
 func main() {
-    var p pair = make_pair()
+    var p = make_pair()
     assert(p.cells[0] == 5)
     assert(p.cells[1] == 6)
 }

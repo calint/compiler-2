@@ -1,0 +1,6 @@
+# an array size after the variable name is rejected, an array literal gives the
+# element type and size, e.g. 'var a = i8[4]{}'
+
+func main() {
+    var a[4] i8
+}

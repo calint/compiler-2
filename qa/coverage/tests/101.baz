@@ -1,5 +1,4 @@
-# variable cannot initialize itself, the type of an untyped variable comes from
-# its initializer so the variable is not declared there yet
+# variable cannot initialize itself
 
 func main() {
     var x = x + 1

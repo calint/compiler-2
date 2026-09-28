@@ -1,6 +1,7 @@
 # array_length result requires a wide destination
 
 func main() {
-    var a[2] i8
-    var n i8 = array_length(a)
+    var a = i8[2]{}
+    var n = i8(0)
+    n = array_length(a)
 }

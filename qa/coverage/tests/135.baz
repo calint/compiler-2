@@ -9,14 +9,14 @@ func fuz(x i32, y i32) res i32 {
 }
 
 func main() {
-    var arr[4] i32
-    var ix i32 = 1
+    var arr = i32[4]{}
+    var ix = i32(1)
     arr[ix] = 2
     arr[3] = fiz(arr[ix], ix)
     assert(arr[3] == 6)
-    var c i32 = fuz(arr[ix], ix)
+    var c = fuz(arr[ix], ix)
     assert(c == -4)
-    var d i32 = fiz(arr[ix], ix)
+    var d = fiz(arr[ix], ix)
     assert(d == 6)
     arr[3] = fuz(arr[ix], ix)
     assert(arr[3] == -4)

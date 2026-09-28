@@ -12,7 +12,7 @@ func foozi(kv pair) {
 }
 
 func main() {
-    var lut[2] pair
+    var lut = pair[2]{}
     lut[0] = {1, 0x20}
     lut[1] = {2, 0x40}
 

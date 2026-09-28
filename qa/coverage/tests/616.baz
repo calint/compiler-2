@@ -1,0 +1,6 @@
+# a type after the variable name is rejected, the initializer gives the type,
+# e.g. 'var x = i32(0)'
+
+func main() {
+    var x i32
+}

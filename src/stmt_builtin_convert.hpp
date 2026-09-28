@@ -149,6 +149,18 @@ class stmt_builtin_convert final : public expression {
     // statics
     //
 
+    // the default type has no name of its own, e.g. 'i64' on x86_64 and 'i32'
+    // on rv32i
+    [[nodiscard]] static auto conversion_type(const toc& tc, const token& tk)
+        -> const type& {
+
+        if (tk.is_text("i")) {
+            return tc.get_type_default();
+        }
+
+        return tc.get_type_or_throw(tk, tk.text());
+    }
+
     [[nodiscard]] static auto is_builtin_name(const std::string_view name)
         -> bool {
 
@@ -216,21 +228,5 @@ class stmt_builtin_convert final : public expression {
         default:
             return result;
         }
-    }
-
-    //
-    // statics
-    //
-
-    // the default type has no name of its own, e.g. 'i64' on x86_64 and 'i32'
-    // on rv32i
-    [[nodiscard]] static auto conversion_type(const toc& tc, const token& tk)
-        -> const type& {
-
-        if (tk.is_text("i")) {
-            return tc.get_type_default();
-        }
-
-        return tc.get_type_or_throw(tk, tk.text());
     }
 };

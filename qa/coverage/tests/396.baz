@@ -12,7 +12,7 @@ func bazi() res point {
 }
 
 func main() {
-    var p point = baz(2)
+    var p = baz(2)
     assert(1, p.x == 6)
     assert(2, p.y == 8)
 

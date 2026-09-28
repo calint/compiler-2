@@ -12,7 +12,7 @@ func main(){
         break
     }
     # both outcomes of the last comparison continue at the end of the list
-    var ok bool = a==1 and b==2
+    var ok = a==1 and b==2
     if not ok
         exit(2)
     # jumps to the next code and a branch over a jump

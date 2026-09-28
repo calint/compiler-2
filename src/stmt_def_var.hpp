@@ -3,7 +3,7 @@
 //           2026-09-09
 
 #include <format>
-#include <memory>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -13,20 +13,16 @@
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "stmt_assign_var.hpp"
-#include "stmt_const.hpp"
 #include "stmt_identifier.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
+// e.g. 'var x = i32(0)', the initializer gives the type
 class stmt_def_var final : public statement {
     token name_tk_;
-    token type_tk_;
-    token open_bracket_tk_;
-    stmt_const array_count_const_;
     size_t array_count_{};
-    token close_bracket_tk_;
     token equals_tk_;
-    std::unique_ptr<stmt_assign_var> assign_var_;
+    stmt_assign_var assign_var_;
     bool is_array_{};
 
   public:
@@ -35,45 +31,23 @@ class stmt_def_var final : public statement {
 
         toc::assert_name_not_reserved(name_tk_);
 
-        open_bracket_tk_ = tz.is_next_char_token('[');
-        if (not open_bracket_tk_.is_empty()) {
-            parse_array_size(tc, tz);
-        }
-
-        type_tk_ = tz.next_token();
-        if (not tc.has_type(type_tk_.text())) {
-            tz.put_back_token(type_tk_);
-            type_tk_ = {};
-        }
-
-        // expect initialization
         equals_tk_ = tz.is_next_char_token('=');
-        const bool init_required{not equals_tk_.is_empty()};
-
-        // e.g. 'var a = i8[]{1, 2}' is an array by its initializer
-        if (init_required and type_tk_.is_empty() and not is_array_) {
-            is_array_ = starts_array_literal(tc, tz);
+        if (equals_tk_.is_empty()) {
+            throw compiler_exception{
+                tz, "expected '=' followed by an initializer, e.g. "
+                    "'var x = i32(0)'"};
         }
 
-        set_type(declared_type(tc, tz));
+        deduce_declaration(tc, tz);
 
         // add var to toc without emitting output so the further parsing has the
         // variable declared
         tc.add_var(name_tk_, 0, make_var_info(), false);
 
-        if (init_required) {
-            stmt_identifier si{tc, {}, name_tk_, tz};
-            assign_var_ = std::make_unique<stmt_assign_var>(
-                tc, tz, std::move(si), equals_tk_, is_array_, array_count_);
+        stmt_identifier si{tc, {}, name_tk_, tz};
 
-            if (is_array_ and array_count_ == 0) {
-                array_count_ = assign_var_->array_count();
-                if (array_count_ == 0) {
-                    throw compiler_exception{
-                        name_tk_, "expected array size greater than 0"};
-                }
-            }
-        }
+        assign_var_ = {tc,         tz,        std::move(si),
+                       equals_tk_, is_array_, array_count_};
 
         // the newly defined variable is not yet assigned in its initialization
         assert_var_not_used(
@@ -91,18 +65,8 @@ class stmt_def_var final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
-        if (is_array_) {
-            open_bracket_tk_.source_to(os);
-            array_count_const_.source_to(os);
-            close_bracket_tk_.source_to(os);
-        }
-        if (not type_tk_.is_empty()) {
-            type_tk_.source_to(os);
-        }
-        if (assign_var_) {
-            equals_tk_.source_to(os);
-            assign_var_->expression().source_to(os);
-        }
+        equals_tk_.source_to(os);
+        assign_var_.expression().source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent,
@@ -119,56 +83,105 @@ class stmt_def_var final : public statement {
         const ident_info& var_dst_info{
             tc.make_ident_info(name_tk_, name_tk_.text())};
 
-        if (assign_var_) {
-            assign_var_->compile(tc, indent, var_dst_info);
-            return;
-        }
-
-        // zero the variable data
-
-        const size_t instance_count{array_count_ ? array_count_ : 1};
-        const size_t size_bytes{multiply_storage_size(
-            var_dst_info.type_ref().size_bytes(), instance_count)};
-
-        x.comment(name_tk_, indent, "zero {} * {} B = {} B", instance_count,
-                  var_dst_info.type_ref().size_bytes(), size_bytes);
-
-        x.zero(tok(), indent, var_dst_info.operand, size_bytes,
-               var_dst_info.type_ref().alignment());
+        assign_var_.compile(tc, indent, var_dst_info);
     }
 
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override {
 
-        if (assign_var_) {
-            assign_var_->visit_reads(var, reader);
-        }
+        assign_var_.visit_reads(var, reader);
     }
 
   private:
-    // e.g. 'var b = x < 3' is a 'bool' and 'var p = point.at(1, 2)' a 'point'
-    [[nodiscard]] auto declared_type(toc& tc, tokenizer& tz) const
-        -> const type& {
+    // e.g. 'var b = x < 3' is a 'bool', 'var a = i8[]{1, 2}' an 'i8' array and
+    // 'var s = "hi"' an 'i8' array of 2
+    auto deduce_declaration(toc& tc, tokenizer& tz) -> void {
+        const bool is_string{tz.peek_char_after_whitespace() == '"'};
+        if (not is_string and not starts_array_literal(tc, tz)) {
+            set_type(tc.get_type_default());
 
-        if (not type_tk_.is_empty()) {
-            return tc.get_type_or_throw(type_tk_, type_tk_.text());
+            trial_parse(tc, tz, [this, &tc, &tz] -> void {
+                deduce_from_initializer(tc, tz);
+            });
+
+            return;
         }
 
-        if (equals_tk_.is_empty()) {
-            return tc.get_type_default();
+        is_array_ = true;
+        set_type(is_string ? tc.get_type_or_throw(name_tk_, "i8")
+                           : array_element_type(tc, tz));
+
+        // later statements read the size while parsing, e.g. 'var b = a'
+        trial_parse(tc, tz, [this, &tc, &tz] -> void {
+            array_count_ =
+                expr_any{tc, tz, get_type(), false, true, 0}.array_count();
+        });
+
+        if (array_count_ == 0) {
+            throw compiler_exception{name_tk_,
+                                     "expected array size greater than 0"};
+        }
+    }
+
+    // e.g. 'point{1, 2}', 'x < 3', 'flag', 'p', 'f(x)', 'i32(x)', 'a + 1' or
+    // the array 'a'
+    auto deduce_from_initializer(toc& tc, tokenizer& tz) -> void {
+        // 'expr_arith' cannot parse the '{' of a record literal
+        const token tk{tz.next_token()};
+        if (is_record_literal(tc, tk, tz)) {
+            set_type(tc.get_type_or_throw(tk, tk.text()));
+            return;
         }
 
-        if (is_array_) {
-            return array_element_type(tc, tz);
+        tz.put_back_token(tk);
+
+        // 'expr_bool' parses any arithmetic too, as a comparison shorthand
+        const expr_bool bol{tc, tz.next_whitespace_token(), tz};
+
+        // a comparison, 'not', 'and' or 'or'
+        const expr_arith* const arith{bol.arithmetic()};
+        if (arith == nullptr) {
+            set_type(tc.get_type_bool());
+            return;
         }
 
-        // the parser of the initializer depends on its type so it is parsed
-        // again once the type is known
-        const token start_tk{tz.cur_position_token()};
-        const type& tp{initializer_type(tc, tz)};
-        tz.rewind_to_position(start_tk);
+        // several operands have the default type like the constants
+        if (not arith->is_single_operand()) {
+            set_type(tc.get_type_default());
+            return;
+        }
 
-        return tp;
+        // 'true' and 'false' are integer constants in arithmetic
+        if (arith->is_identifier() and
+            (arith->identifier() == "true" or arith->identifier() == "false")) {
+
+            set_type(tc.get_type_bool());
+            return;
+        }
+
+        set_type(arith->single_operand_type());
+
+        if (not arith->is_identifier() or
+            not arith->get_unary_ops().is_empty()) {
+
+            return;
+        }
+
+        // e.g. 'var c = a' copies the whole array 'a'
+        const ident_info info{tc.make_ident_info(*arith)};
+        if (not info.is_array) {
+            return;
+        }
+
+        // e.g. an unsized array parameter
+        if (info.array_len == 0) {
+            throw compiler_exception{
+                tk, std::format("size of array '{}' is not known",
+                                arith->identifier())};
+        }
+
+        is_array_ = true;
+        array_count_ = info.array_len;
     }
 
     [[nodiscard]] auto make_var_info() const -> var_info {
@@ -183,83 +196,39 @@ class stmt_def_var final : public statement {
         };
     }
 
-    // e.g. '[4]', or '[]' when the initializer gives the size
-    auto parse_array_size(toc& tc, tokenizer& tz) -> void {
-        is_array_ = true;
+    // the initializer is parsed to learn the type or size and parsed again
+    // once they are known; a placeholder variable resolves a read in its own
+    // initializer, e.g. 'var x = x + 1', which is rejected later as
+    // uninitialized
+    auto trial_parse(toc& tc, tokenizer& tz,
+                     const std::function_ref<void()> parse) const -> void {
 
-        array_count_const_ = {tc, tz, 0};
+        const token start_tk{tz.cur_position_token()};
 
-        if (array_count_const_.has_value()) {
-            if (array_count_const_.value() <= 0) {
-                throw compiler_exception{
-                    array_count_const_.tok(),
-                    "expected a constant array size greater than 0"};
-            }
+        tc.enter_block();
+        tc.add_var(name_tk_, 0, make_var_info(), false);
 
-            array_count_ = static_cast<size_t>(array_count_const_.value());
-        }
+        parse();
 
-        close_bracket_tk_ = tz.is_next_char_token(']');
-        if (close_bracket_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ']' after array size"};
-        }
+        tc.exit_block();
+        tz.rewind_to_position(start_tk);
     }
 
     //
     // statics
     //
 
-    // e.g. 'i8' in 'i8[]{1, 2}', '{1, 2}' alone has the default type
+    // e.g. 'i8' in 'i8[]{1, 2}' or the default type in 'i[]{1, 2}'
     [[nodiscard]] static auto array_element_type(const toc& tc, tokenizer& tz)
         -> const type& {
 
-        if (not starts_array_literal(tc, tz)) {
-            return tc.get_type_default();
-        }
-
         const token tk{tz.next_token()};
         tz.put_back_token(tk);
 
-        return tc.get_type_or_throw(tk, tk.text());
+        return array_literal_type(tc, tk);
     }
 
-    // e.g. 'point{1, 2}', 'x < 3', 'flag', 'p', 'f(x)', 'i32(x)' or 'a + 1'
-    [[nodiscard]] static auto initializer_type(toc& tc, tokenizer& tz)
-        -> const type& {
-
-        // 'expr_arith' cannot parse the '{' of a record literal
-        const token tk{tz.next_token()};
-        if (is_record_literal(tc, tk, tz)) {
-            return tc.get_type_or_throw(tk, tk.text());
-        }
-
-        tz.put_back_token(tk);
-
-        // 'expr_bool' parses any arithmetic too, as a comparison shorthand
-        const expr_bool bol{tc, tz.next_whitespace_token(), tz};
-
-        // a comparison, 'not', 'and' or 'or'
-        const expr_arith* const arith{bol.arithmetic()};
-        if (arith == nullptr) {
-            return tc.get_type_bool();
-        }
-
-        // several operands have the default type like the constants
-        if (not arith->is_single_operand()) {
-            return tc.get_type_default();
-        }
-
-        // 'true' and 'false' are integer constants in arithmetic
-        if (arith->is_identifier() and
-            (arith->identifier() == "true" or arith->identifier() == "false")) {
-
-            return tc.get_type_bool();
-        }
-
-        return arith->single_operand_type();
-    }
-
-    // e.g. 'i8[3]{1, 2}' or 'point[]{{1, 2}}'
+    // e.g. 'i8[3]{1, 2}', 'i[]{1, 2}' or 'point[]{{1, 2}}'
     [[nodiscard]] static auto starts_array_literal(const toc& tc, tokenizer& tz)
         -> bool {
 

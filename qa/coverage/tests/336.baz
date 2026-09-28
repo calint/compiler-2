@@ -7,7 +7,7 @@ func get_index() result {
 }
 
 func main() {
-    var values[8] i8
+    var values = i8[8]{}
     values[get_index()] = 1
     assert(values[7] == 1)
 }

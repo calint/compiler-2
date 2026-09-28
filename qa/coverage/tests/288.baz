@@ -10,6 +10,6 @@ func inspect(points[] point) {
 }
 
 func main() {
-    var points[2] point
+    var points = point[2]{}
     inspect(points)
 }

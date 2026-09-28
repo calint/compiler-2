@@ -22,7 +22,7 @@ func fuz(rm room) {
 }
 
 func main() {
-    var wld world
+    var wld = world{}
     fuz(wld.rooms[2])
 
     assert(wld.rooms[2].name.len == 2)

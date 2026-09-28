@@ -1,2 +1,2 @@
 
-493.baz:5:25: parameter 'value': required 'i8', got 'i32'
+493.baz:5:22: parameter 'value': required 'i8', got 'i32'

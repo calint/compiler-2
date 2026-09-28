@@ -13,8 +13,8 @@ func input(str[] i8, len) nbytes {
 dat ok[] i8 = "ok\n"
 
 func main() {
-    var word1[64] i8
-    var word2[64] i8
+    var word1 = i8[64]{}
+    var word2 = i8[64]{}
 
     print(ok, array_length(ok))
 

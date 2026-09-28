@@ -1,6 +1,6 @@
 # unary negative constant index is rejected at compile
 
 func main() {
-    var values[8] i8
+    var values = i8[8]{}
     values[~0] = 1
 }

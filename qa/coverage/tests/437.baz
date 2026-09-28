@@ -5,7 +5,7 @@ type large_item { first i32, padding[8188] i8, last i32 }
 func assert(ok bool) { if not ok exit(1) }
 
 func main() {
-    var values[3] large_item
+    var values = large_item[3]{}
     values[0].first = 10
     values[0].last = 20
     values[1].first = 11

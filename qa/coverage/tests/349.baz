@@ -1,7 +1,8 @@
-# boolean result cannot initialize an integer variable
+# boolean result cannot be assigned to an integer variable
 
 func main() {
-    var a[2] i8
-    var b[2] i8
-    var result i16 = arrays_equal(a, b, 1)
+    var a = i8[2]{}
+    var b = i8[2]{}
+    var result = i16(0)
+    result = arrays_equal(a, b, 1)
 }

@@ -1,2 +1,2 @@
 
-187.baz:1:21: cannot resolve identifier 'nope'
+187.baz:1:21: expected '=' followed by an initializer, e.g. 'var x = i32(0)'

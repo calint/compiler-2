@@ -5,6 +5,6 @@ func get_index() result {
 }
 
 func main() {
-    var arr[8] i8
+    var arr = i8[8]{}
     arr[get_index()] = 1
 }
