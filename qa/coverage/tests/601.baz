@@ -1,0 +1,14 @@
+type point {
+    x,
+    y
+}
+
+# a constructor must not read 'self' before it is assigned
+func point.at(x) self {
+    self.x = x
+    self.y = self.y + x
+}
+
+func main() {
+    var p = point.at(1)
+}

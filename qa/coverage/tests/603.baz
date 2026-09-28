@@ -1,0 +1,13 @@
+type point {
+    x,
+    y
+}
+
+# a method needs a receiver
+func point.sum() res {
+    res = self.x + self.y
+}
+
+func main() {
+    var s = point.sum()
+}

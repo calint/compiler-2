@@ -822,6 +822,23 @@ class toc final {
         return current_func_frame().is_inlined_func();
     }
 
+    // same scoping as 'make_ident_info', e.g. a variable 'limits' hides the
+    // type 'limits'
+    [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
+        -> bool {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.has_var(name)) {
+                return true;
+            }
+            if (frm.is_func()) {
+                return frm.has_alias(name) or frames_.front().has_var(name);
+            }
+        }
+
+        return false;
+    }
+
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
     [[nodiscard]] auto machine() const -> const ::machine& {
@@ -926,6 +943,16 @@ class toc final {
     //
     // statics
     //
+
+    // 'self' is declared only by the compiler: the receiver of a method and the
+    // value built by a constructor
+    static auto assert_name_not_reserved(const token& name_tk) -> void {
+        if (not name_tk.is_text("self")) {
+            return;
+        }
+
+        throw compiler_exception{name_tk, "'self' is reserved"};
+    }
 
     static auto assert_not_whole_array(const statement& st,
                                        const ident_info& info) -> void {

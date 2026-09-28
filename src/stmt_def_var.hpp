@@ -31,6 +31,8 @@ class stmt_def_var final : public statement {
     stmt_def_var(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()} {
 
+        toc::assert_name_not_reserved(name_tk_);
+
         open_bracket_tk_ = tz.is_next_char_token('[');
         if (not open_bracket_tk_.is_empty()) {
             parse_array_size(tc, tz);
@@ -42,16 +44,11 @@ class stmt_def_var final : public statement {
             type_tk_ = {};
         }
 
-        // get type reference from the token
-        const type& tp{type_tk_.text().empty()
-                           ? tc.get_type_default()
-                           : tc.get_type_or_throw(type_tk_, type_tk_.text())};
-
-        set_type(tp);
-
         // expect initialization
         equals_tk_ = tz.is_next_char_token('=');
         const bool init_required{not equals_tk_.is_empty()};
+
+        set_type(declared_type(tc, tz));
 
         // add var to toc without emitting output so the further parsing has the
         // variable declared
@@ -75,7 +72,7 @@ class stmt_def_var final : public statement {
         assert_var_not_used(
             name_tk_.text(),
             field_coverage{multiply_storage_size(
-                tp.size_bytes(), is_array_ ? array_count_ : 1)});
+                get_type().size_bytes(), is_array_ ? array_count_ : 1)});
     }
 
     stmt_def_var() = default;
@@ -142,6 +139,29 @@ class stmt_def_var final : public statement {
     }
 
   private:
+    // e.g. 'var p = point.at(1, 2)' has the type of the constructor
+    [[nodiscard]] auto declared_type(const toc& tc, tokenizer& tz) const
+        -> const type& {
+
+        if (not type_tk_.is_empty()) {
+            return tc.get_type_or_throw(type_tk_, type_tk_.text());
+        }
+
+        if (equals_tk_.is_empty() or is_array_) {
+            return tc.get_type_default();
+        }
+
+        const token init_tk{tz.next_token()};
+        const bool is_constructor{is_constructor_call(tc, init_tk, tz)};
+        tz.put_back_token(init_tk);
+
+        if (not is_constructor) {
+            return tc.get_type_default();
+        }
+
+        return tc.get_type_or_throw(init_tk, init_tk.text());
+    }
+
     [[nodiscard]] auto make_var_info() const -> var_info {
         return {
             .name{name_tk_.text()},

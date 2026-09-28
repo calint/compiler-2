@@ -471,6 +471,13 @@ struct ident_info {
                                     const token open_paren_tk)
     -> std::unique_ptr<statement>;
 
+[[nodiscard]] auto create_stmt_constructor_call(toc& tc, tokenizer& tz,
+                                                const token type_tk)
+    -> std::unique_ptr<statement>;
+
 [[nodiscard]] auto create_stmt_method_call(toc& tc, tokenizer& tz,
                                            stmt_identifier receiver)
     -> std::unique_ptr<statement>;
+
+[[nodiscard]] auto is_constructor_call(const toc& tc, const token& tk,
+                                       tokenizer& tz) -> bool;

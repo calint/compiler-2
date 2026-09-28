@@ -80,11 +80,28 @@ auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si,
 
 // declared in 'decouple.hpp'
 // called from 'stmt_block'
+auto create_stmt_constructor_call(toc& tc, tokenizer& tz, const token type_tk)
+    -> std::unique_ptr<statement> {
+
+    return std::make_unique<stmt_call>(tc, unary_ops{}, type_tk, tz);
+}
+
+// declared in 'decouple.hpp'
+// called from 'stmt_block'
 auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
     -> std::unique_ptr<statement> {
 
     return std::make_unique<stmt_call>(tc, unary_ops{}, std::move(receiver),
                                        tz);
+}
+
+// declared in 'decouple.hpp'
+// e.g. 'point.at(1, 2)', a type name followed by '.' has no other meaning
+auto is_constructor_call(const toc& tc, const token& tk, tokenizer& tz)
+    -> bool {
+
+    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
+           tz.peek_char_after_whitespace() == '.';
 }
 
 // declared in 'decouple.hpp'
@@ -130,6 +147,10 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
         // e.g.  foo(...)
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, t, tz);
+    }
+
+    if (is_constructor_call(tc, tk, tz)) {
+        return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz);
     }
 
     // e.g. 0x80, rax, identifiers, constants
@@ -212,12 +233,21 @@ expr_type::expr_type(std::shared_ptr<stmt_identifier> receiver)
 }
 
 // declared in 'expr_type.hpp'
-// e.g. 'obj.pos = p', 'obj.pos = f()' or 'o.pos = lst.first()'
+// e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or
+// 'o.pos = point.at(1, 2)'
 auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
     if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
         stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
+
+        assert_call_type(tp);
+
+        return;
+    }
+
+    if (is_constructor_call(tc, tok(), tz)) {
+        stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, tok(), tz);
 
         assert_call_type(tp);
 
@@ -364,7 +394,20 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
                                const type& dst_type, const ident_info& dst_info,
                                operand& dst_op) const -> void {
 
-    // is it e.g. pt1 = pt2, or pt1 = f()?
+    // e.g. 'f()' in '{f(), 3}' writes the field in place
+    if (stmt_call_) {
+        ident_info call_dst_info{dst_info};
+        call_dst_info.operand = operand::mem(dst_op, dst_type);
+        call_dst_info.use_operand = true;
+
+        stmt_call_->compile(tc, indent, call_dst_info);
+
+        dst_op.increment_offset(address_offset(dst_type.size_bytes()));
+
+        return;
+    }
+
+    // e.g. 'pt1 = pt2'
     if (is_identifier()) {
         const ident_info src_info{tc.make_ident_info(*this)};
 

@@ -1,0 +1,13 @@
+type point {
+    x,
+    y
+}
+
+# a constructor must assign every field of 'self'
+func point.at(x) self {
+    self.x = x
+}
+
+func main() {
+    var p = point.at(1)
+}

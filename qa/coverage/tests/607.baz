@@ -1,0 +1,9 @@
+type point {
+    x,
+    y
+}
+
+# the type has no such constructor
+func main() {
+    var p = point.at(1, 2)
+}

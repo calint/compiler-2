@@ -20,6 +20,8 @@ class stmt_def_type final : public statement {
         : statement{tk}, name_tk_{tz.next_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
+        toc::assert_name_not_reserved(name_tk_);
+
         if (open_brace_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '{' to begin declaration of type"};
@@ -52,6 +54,8 @@ class stmt_def_type final : public statement {
 
         // add the fields
         for (const stmt_def_type_field& fld : fields_) {
+            toc::assert_name_not_reserved(fld.tok());
+
             // get the type of field. no type name means default
             const type& tp{
                 fld.type_str().empty()

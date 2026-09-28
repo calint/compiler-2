@@ -1,0 +1,2 @@
+
+602.baz:13:21: 'point.at' is a constructor, call it as 'point.at(...)'

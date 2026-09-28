@@ -40,6 +40,8 @@ class stmt_def_func final : public statement {
 
         name_ = name_tk_.text();
 
+        toc::assert_name_not_reserved(name_tk_);
+
         // e.g. 'func list.add(x)'
         if (open_paren_tk_.is_empty()) {
             method_dot_tk_ = tz.is_next_char_token('.');
@@ -77,6 +79,11 @@ class stmt_def_func final : public statement {
         }
 
         parse_returns(tc, tz);
+
+        // known only after the result: a constructor builds 'self' instead
+        if (is_method()) {
+            add_self_param(tc);
+        }
 
         tc.add_func(name_tk_, name_, statement::get_type(), this);
 
@@ -157,12 +164,18 @@ class stmt_def_func final : public statement {
         return std::format("size.{}", body_label());
     }
 
+    // e.g. 'func point.at(x, y) self'
+    [[nodiscard]] auto is_constructor() const -> bool {
+        return returns_.has_value() and returns_->ident_tk.is_text("self");
+    }
+
     [[nodiscard]] auto is_inlined() const -> bool {
         return noinline_tk_.is_empty();
     }
 
+    // has the implicit first parameter 'self'
     [[nodiscard]] auto is_method() const -> bool {
-        return not method_dot_tk_.is_empty();
+        return not method_dot_tk_.is_empty() and not is_constructor();
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
@@ -195,7 +208,7 @@ class stmt_def_func final : public statement {
         }
         noinline_tk_.source_to(os);
         name_tk_.source_to(os);
-        if (is_method()) {
+        if (not method_dot_tk_.is_empty()) {
             method_dot_tk_.source_to(os);
             method_name_tk_.source_to(os);
         }
@@ -224,6 +237,21 @@ class stmt_def_func final : public statement {
     }
 
   private:
+    // located at the method name for diagnostics
+    auto add_self_param(const toc& tc) -> void {
+        const token self_tk{
+            "",     method_name_tk_.start_index(),
+            "self", method_name_tk_.start_index(),
+            "",     method_name_tk_.at_line(),
+            false,
+        };
+
+        params_.insert(
+            params_.begin(),
+            stmt_def_func_param{
+                self_tk, tc.get_type_or_throw(name_tk_, name_tk_.text())});
+    }
+
     // a non-inline body reaches the result and the arguments through pointer
     // slots in its frame
     auto add_signature_vars(toc& tc, const size_t indent,
@@ -257,8 +285,8 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // 'name_tk_' is the receiver type, the method gets an implicit first
-    // parameter 'self' of that type
+    // 'name_tk_' is the receiver type, a method gets an implicit first
+    // parameter 'self' of that type and a constructor builds a 'self' of it
     auto parse_method_name(const toc& tc, tokenizer& tz) -> void {
         const type& receiver_type{
             tc.get_type_or_throw(name_tk_, name_tk_.text())};
@@ -275,6 +303,8 @@ class stmt_def_func final : public statement {
             throw compiler_exception{tz, "expected method name after '.'"};
         }
 
+        toc::assert_name_not_reserved(method_name_tk_);
+
         // 'lst.add' would be ambiguous
         for (const type_field& f : receiver_type.fields()) {
             if (f.name == method_name_tk_.text()) {
@@ -288,16 +318,6 @@ class stmt_def_func final : public statement {
 
         name_ =
             std::format("{}.{}", receiver_type.name(), method_name_tk_.text());
-
-        // located at the method name for diagnostics
-        const token self_tk{
-            "",     method_name_tk_.start_index(),
-            "self", method_name_tk_.start_index(),
-            "",     method_name_tk_.at_line(),
-            false,
-        };
-
-        params_.emplace_back(self_tk, receiver_type);
     }
 
     // 'name [type]' of the returned value, without a name the type is void
@@ -316,11 +336,37 @@ class stmt_def_func final : public statement {
             type_tk = {};
         }
 
+        if (ident_tk.is_text("self")) {
+            set_constructor_result(tc, ident_tk, type_tk);
+            return;
+        }
+
         const type& tp{type_tk.is_empty()
                            ? tc.get_type_default()
                            : tc.get_type_or_throw(type_tk, type_tk.text())};
 
         returns_.emplace(type_tk, ident_tk, &tp);
+        set_type(tp);
+    }
+
+    // e.g. 'func point.at(x, y) self' builds a 'point'
+    auto set_constructor_result(const toc& tc, const token& self_tk,
+                                const token& type_tk) -> void {
+
+        if (method_dot_tk_.is_empty()) {
+            throw compiler_exception{
+                self_tk, "result 'self' requires a constructor 'type.name'"};
+        }
+
+        // one spelling, the type is already named before the '.'
+        if (not type_tk.is_empty()) {
+            throw compiler_exception{
+                type_tk, "result 'self' has the type of the constructor"};
+        }
+
+        const type& tp{tc.get_type_or_throw(name_tk_, name_tk_.text())};
+
+        returns_.emplace(type_tk, self_tk, &tp);
         set_type(tp);
     }
 };

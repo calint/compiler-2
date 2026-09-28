@@ -161,6 +161,11 @@ class stmt_block final : public statement {
                                                          const token tk)
         -> std::unique_ptr<statement> {
 
+        // the discarded result is rejected at compile like any other call
+        if (is_constructor_call(tc, tk, tz)) {
+            return create_stmt_constructor_call(tc, tz, tk);
+        }
+
         stmt_identifier si{tc, {}, tk, tz};
 
         if (si.is_method_receiver()) {

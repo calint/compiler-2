@@ -1,0 +1,14 @@
+type point {
+    x,
+    y
+}
+
+# a constructor is called on the type, not on a value
+func point.at(x, y) self {
+    self = {x, y}
+}
+
+func main() {
+    var p point
+    var q point = p.at(1, 2)
+}

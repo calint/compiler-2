@@ -32,7 +32,7 @@ compiler writes the binary image itself.
 * methods on user defined types
 * partial ub-free support
 * keywords: `func`, `type`, `dat`, `var`, `const`, `foo`, `loop`, `if`, `else`,
-  `continue`, `break`, `return`
+  `continue`, `break`, `return`, `self`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
   `write`, `exit`, `i8`, `i16`, `i32`, `i64`
 

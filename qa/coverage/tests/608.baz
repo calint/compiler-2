@@ -1,0 +1,13 @@
+type point {
+    x,
+    y
+}
+
+# the value built by a constructor must be stored
+func point.at(x, y) self {
+    self = {x, y}
+}
+
+func main() {
+    point.at(1, 2)
+}

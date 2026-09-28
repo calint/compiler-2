@@ -1,0 +1,9 @@
+type point {
+    x,
+    y
+}
+
+# 'self' is reserved
+func main() {
+    var self = 1
+}

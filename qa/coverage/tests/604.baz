@@ -1,0 +1,11 @@
+type point {
+    x,
+    y
+}
+
+# a result named 'self' requires a constructor
+func make() self {
+}
+
+func main() {
+}

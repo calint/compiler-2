@@ -1,0 +1,12 @@
+type point {
+    x,
+    y
+}
+
+# the type of a constructor result is not written
+func point.at(x, y) self point {
+    self = {x, y}
+}
+
+func main() {
+}

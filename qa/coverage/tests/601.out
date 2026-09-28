@@ -1,0 +1,2 @@
+
+601.baz:9:14: use of uninitialized variable 'self'

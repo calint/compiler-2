@@ -1,0 +1,2 @@
+
+603.baz:12:19: 'point.sum' is a method, call it on a value of type 'point'

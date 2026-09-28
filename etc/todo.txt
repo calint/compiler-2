@@ -3,6 +3,41 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
+[ ] local code generation found in the survey of all coverage tests on both
+    targets (2026-09-28), illustrated in etc/codegen-inefficiencies.baz;
+    site counts are occurrences in the tests
+    [ ] x86: an 8-byte element with a constant that fits a sign-extended
+        32-bit immediate is stored as two 4-byte halves:
+        'mov dword [rbp + 24], 3; mov dword [rbp + 28], 0' instead of
+        'mov qword [rbp + 24], 3' ('var arr3[] = { 3, 5 }', 40 sites)
+    [ ] the constant part of a run-time index is added before addressing
+        instead of going into the displacement: 'arr[ix + 1]' is
+        'addi t0, t0, 1' before 'sw t2, 4(t3)' instead of 'sw t2, 8(t3)',
+        x86 'add r15, 1' before '[rbp + r15 * 4 + 8]' instead of '+ 12'
+        (26 rv32i, 27 x86 sites)
+    [ ] rv32i: 'equal' with a known small size loops through address
+        registers ('li t3, 2', 't1'/'t2') instead of unrolled 'lw; lw; bne'
+        pairs from 's0'; x86 already unrolls 'cmpsq' (89 sites)
+    [ ] an 'array_length(...)' count is known but 'array_copy' takes the
+        run-time count path: 'li t2, 8; slli t2, t2, 2', chunk split and
+        tail tests instead of the known-size copy, x86 'mov rcx, 8' then
+        'shl rcx, 3' (41 rv32i sites)
+        => part of 'constant known at compile: other users' below
+    [ ] a constant compared with a constant is evaluated at run time:
+        'array_length(arr3) == 2' is 'li t1, 2; xori t0, t1, 2; sltiu', x86
+        'mov r14, 2; cmp r14, 2; sete' (13 sites)
+        => part of 'constant known at compile: other users' below
+    [ ] a helper, 'idiv' or syscall result is copied out of its fixed
+        register before the next operation: 'addi t2, a1, 0;
+        sub t1, t1, t2' instead of 'sub t1, t1, a1' (257 rv32i sites), x86
+        'mov r13, rdx' after 'idiv' (113 sites)
+        => the operand side is 'register allocation: an operand is loaded
+           into a scratch register then copied' below (107 rv32i sites,
+           x86 'mov rax, r13' before 'cqo' 113 sites)
+    => also illustrated there and tracked below: runtime bool argument
+       materialized (97 rv32i sites), value reloaded right after it was
+       stored (574 rv32i sites), scaled index in a new register,
+       self-cancelling unary ops
 [ ] reorder locals by alignment, largest first, to reduce padding
 [ ] rv32i: a constant above 16 bytes stored at an address inside a word
     ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd

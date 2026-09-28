@@ -21,6 +21,9 @@
 class stmt_call : public expression {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument
     token method_dot_tk_;
+    // e.g. the '.' and 'at' in 'point.at(1, 2)', 'tok()' is the type
+    token constructor_dot_tk_;
+    token constructor_name_tk_;
     std::string func_name_;
     token open_paren_tk_;
     std::vector<expr_any> args_;
@@ -61,6 +64,16 @@ class stmt_call : public expression {
             throw compiler_exception{tok(), "expected '(' after method name"};
         }
 
+        const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
+
+        // a constructor has no receiver, it builds its value
+        if (func.is_constructor()) {
+            throw compiler_exception{
+                tok(), std::format("'{}' is a constructor, call it as "
+                                   "'{}(...)'",
+                                   func_name_, func_name_)};
+        }
+
         // an element of an array can be the receiver
         if (receiver.is_array()) {
             throw compiler_exception{
@@ -80,7 +93,49 @@ class stmt_call : public expression {
             receiver_pos_tk,
             expr_type{std::make_shared<stmt_identifier>(std::move(receiver))});
 
-        parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_));
+        parse_arguments(tc, tz, func);
+    }
+
+    // e.g. 'point.at(1, 2)' calls the constructor 'point.at'
+    stmt_call(toc& tc, unary_ops uops, const token type_tk, tokenizer& tz)
+        : expression{type_tk, std::move(uops)},
+          constructor_dot_tk_{tz.is_next_char_token('.')},
+          constructor_name_tk_{tz.next_token()},
+          func_name_{std::format("{}.{}", type_tk.text(),
+                                 constructor_name_tk_.text())} {
+
+        assert(not constructor_dot_tk_.is_empty());
+
+        if (constructor_name_tk_.text().empty()) {
+            throw compiler_exception{tz, "expected constructor name after '.'"};
+        }
+
+        if (not tc.is_func(func_name_)) {
+            throw compiler_exception{
+                constructor_name_tk_,
+                std::format("type '{}' has no constructor '{}'", type_tk.text(),
+                            constructor_name_tk_.text())};
+        }
+
+        const stmt_def_func& func{
+            tc.get_func_or_throw(constructor_name_tk_, func_name_)};
+
+        if (not func.is_constructor()) {
+            throw compiler_exception{
+                constructor_name_tk_,
+                std::format("'{}' is a method, call it on a value of type '{}'",
+                            func_name_, type_tk.text())};
+        }
+
+        set_type(func.get_type());
+
+        open_paren_tk_ = tz.is_next_char_token('(');
+        if (open_paren_tk_.is_empty()) {
+            throw compiler_exception{constructor_name_tk_,
+                                     "expected '(' after constructor name"};
+        }
+
+        parse_arguments(tc, tz, func);
     }
 
     stmt_call() = default;
@@ -738,6 +793,10 @@ class stmt_call : public expression {
         return addresses;
     }
 
+    [[nodiscard]] auto is_constructor() const -> bool {
+        return not constructor_dot_tk_.is_empty();
+    }
+
     [[nodiscard]] auto is_method() const -> bool {
         return not method_dot_tk_.is_empty();
     }
@@ -876,8 +935,15 @@ class stmt_call : public expression {
                             dst_info.type_ref());
     }
 
-    // e.g. 'foo' or 'lst.add'
+    // e.g. 'foo', 'lst.add' or 'point.at'
     auto source_callee_to(std::ostream& os) const -> void {
+        if (is_constructor()) {
+            expression::source_to(os);
+            constructor_dot_tk_.source_to(os);
+            constructor_name_tk_.source_to(os);
+            return;
+        }
+
         if (not is_method()) {
             expression::source_to(os);
             return;

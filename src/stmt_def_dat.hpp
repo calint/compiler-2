@@ -54,6 +54,8 @@ class stmt_def_dat final : public statement {
             throw compiler_exception{name_tk_, "expected name of data"};
         }
 
+        toc::assert_name_not_reserved(name_tk_);
+
         open_bracket_tk_ = tz.is_next_char_token('[');
         const bool is_array{not open_bracket_tk_.is_empty()};
         const size_t array_count{is_array ? parse_array_size(tc, tz) : 0};

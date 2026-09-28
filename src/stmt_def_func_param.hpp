@@ -21,6 +21,8 @@ class stmt_def_func_param final : public statement {
 
         assert(not tok().text().empty());
 
+        toc::assert_name_not_reserved(tok());
+
         open_bracket_tk_ = tz.is_next_char_token('[');
         if (not open_bracket_tk_.is_empty()) {
             close_bracket_tk_ = tz.is_next_char_token(']');

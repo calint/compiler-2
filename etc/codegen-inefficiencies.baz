@@ -1,7 +1,23 @@
 # local code generation inefficiencies found in the rv32i assessment
-# (2026-09-26), see etc/todo.txt
+# (2026-09-26) and in a survey of all coverage tests on both targets
+# (2026-09-28), see etc/todo.txt
+#
+# comments show rv32i code unless marked 'x86:'; 'fixed:' examples stay as a
+# reference; 'sites' counts the occurrences in the coverage tests
+#
+# within one machine operation:
+#   x86 constant stores in 4-byte halves, constant part of a run-time index,
+#   rv32i known-size 'equal' loop, constant 'array_copy' count, constant
+#   compared with constant
+# between machine operations of one statement:
+#   helper/'idiv'/syscall operands and results copied through a scratch
+#   register, runtime bool argument materialized
+# across statements (register allocation, out of scope for now):
+#   value reloaded right after it was stored
 #
 # review with: ./baz --target=rv32i etc/codegen-inefficiencies.baz
+#         and: ./baz etc/codegen-inefficiencies.baz
+# etc/codegen-inefficiencies.s: ./baz --target=rv32i-fpga
 
 type point {x, y}
 
@@ -15,10 +31,14 @@ func inv(i i32) res i32 {
     res = ~i
 }
 
-func object_init() res object {
-    res.pos.x = 2
-    res.pos.y = 74
-    res.color = 0xffffff
+func point.at(x, y) self {
+    self.x = x
+    self.y = y
+}
+
+func object.at(x, y, color i32) self {
+    self.pos = point.at(x, y)
+    self.color = color
 }
 
 func noinline print_num(num) {
@@ -27,7 +47,13 @@ func noinline print_num(num) {
     var i = 20
     loop {
         i = i - 1
-        # divide call: 'lw t2' then 'addi a0, t2, 0' instead of 'lw a0'
+        # across statements: 'sw t0, 28(s1)' above then 'lw t0, 28(s1)' here
+        # (574 sites)
+        #
+        # divide call: 'lw t2; addi a0, t2, 0' instead of 'lw a0' (107 sites)
+        # and 'addi t2, a1, 0; sub t1, t1, t2' instead of 'sub t1, t1, a1'
+        # (257 sites); x86: 'mov rax, r13' before 'cqo' and 'mov r13, rdx'
+        # after 'idiv' (113 sites each)
         buf[i] = i8('0' - n % 10)
         n = n / 10
         if n == 0 break
@@ -38,77 +64,100 @@ func noinline print_num(num) {
 func main() {
     var x = 1
     var arr[4] i32
+    # x86: each 8-byte element is two 4-byte stores 'mov dword [rbp + 24], 3;
+    # mov dword [rbp + 28], 0' instead of 'mov qword [rbp + 24], 3' although
+    # the value fits a sign-extended 32-bit immediate (40 sites)
     var arr3[] = { 3, 5 }
     var o3[2] object
     var worlds[8] world
 
-    # constant folding: 'li t2, 3; addi t2, t2, 2; xor' instead of 'xori 5'
+    # fixed: constant folding, 'xori t0, t1, 5' (was 'li t2, 3; addi t2, t2,
+    # 2; xor')
     assert(arr3[0] + 2 == 3 + 0 + 2)
 
-    # constant folding: 'li t1, 2; xori t0, t1, 2; sltiu' for a known result
+    # constant compared with constant: 'li t1, 2; xori t0, t1, 2; sltiu' for
+    # a known result, x86: 'mov r14, 2; cmp r14, 2; sete' (13 sites)
     assert(array_length(arr3) == 2)
 
-    # constant index: 'li; slli; add; lw 212(t0)' instead of 'lw 216(s0)'
+    # fixed: constant index, 'sw t0, 8(s0)' (was 'li; slli; add; sw')
     arr[1] = 2
     assert(arr[1] == 2)
 
-    # constant index with element size 12: 7 instructions instead of 1
+    # fixed: constant index with element size 12, 'sw t0, 44(s0)' (was 7
+    # instructions)
     o3[1].pos.y = 74
     assert(o3[1].pos.y == 74)
 
-    # constant indexes and field offset: 9 instructions instead of 2
+    # fixed: constant indexes and field offset, 'sw t0, 88(s0)' (was 9
+    # instructions)
     worlds[1].locations[1] = 0xffee
 
-    # constant part of a runtime index and the base offset are not folded
-    # into the displacement: 'addi t0, t0, 1' and 'addi t0, t0, 384'
+    # constant part of a run-time index is not folded into the displacement:
+    # 'addi t0, t0, 1' before 'sw t2, 4(t3)' instead of 'sw t2, 8(t3)', x86:
+    # 'add r15, 1' before '[rbp + r15 * 4 + 8]' instead of '+ 12' (26 rv32i,
+    # 27 x86 sites); fixed: the base offset is folded, 'sw t2, 56(t1)'
     var ix = 1
     arr[ix + 1] = arr[ix]
     worlds[ix].locations[1] = 0xffee
 
-    # unary on a memory destination: 'lw; sw; lw; sub; sw'
+    # fixed: unary on a memory destination, 'lw; sub; sw' (was 'lw; sw; lw;
+    # sub; sw')
     var a = -x
     a = ~x
 
-    # narrowing on a memory destination: 'lw; sb; lb; addi; sb'
+    # fixed: narrowing on a memory destination, 'lw; addi; sb' (was 'lw; sb;
+    # lb; addi; sb')
     var b i8
     b = i8(x - 1)
 
-    # unary in a record literal field: copy then negate in memory
+    # fixed: unary in a record literal field, 'lw; sub; sw' (was copy then
+    # negate in memory)
     var p1 point = {-x, -a}
 
-    # inline result with unary: the destination address is computed 3 times
+    # constant part of the index: 'addi t2, t2, -1' instead of 'lw t1, 0(t1)';
+    # low priority: '~' in 'inv' and on the result give two 'xori t1, t1, -1'
+    # (x86: two 'not dword'); fixed: the destination address is computed once
     arr[ix] = ~inv(arr[ix - 1])
 
-    # runtime bool argument: 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
+    # runtime bool argument: 'lw; xori; sltiu; bne' instead of 'lw; li; bne',
+    # x86: 'sete r15b; cmp r15b, 0; jne' (97 rv32i sites)
     assert(x == 1)
 
-    # bool shorthand argument: copied with 'lbu', no 'sltu t0, zero, t0'
+    # fixed: bool shorthand argument copied with 'lbu', no 'sltu t0, zero, t0'
     var eq bool = x == 1
     assert(eq)
 
-    # redundant copy: 'addi t1, t0, 0' before the shift and add sequence
+    # fixed: 'slli t1, t0, 2; add t0, t1, t0; slli t0, t0, 1' (was a copy
+    # 'addi t1, t0, 0' before the shift and add sequence)
     a = x * 10
 
-    # address in a new register instead of reusing the index register
+    # low priority: the address goes into a new register 'slli t1, t0, 2'
+    # instead of reusing the index register
     a = arr[ix]
 
-    # 'add t1, s0, t0' is repeated for each field of the result
-    o3[ix] = object_init()
+    # fixed: 'add t1, s0, t0' once for all fields of the result (was repeated
+    # for each field)
+    o3[ix] = object.at(2, 74, 0xffffff)
 
     # fixed: zeroing 20 bytes at the odd offset 's0 + 329' peels to the word
     # boundary: 'sb', 'sh', 4 'sw' and 'sb'; above 16 stores the loop still
     # uses the start's width
     var buf[20] i8
 
-    # 'equal' with a known 8 byte size uses the generic loop and tail code
+    # 'equal' with a known 8 byte size loops 'li t3, 2' through the address
+    # registers 't1'/'t2' instead of two unrolled 'lw; lw; bne' from 's0'
+    # (89 sites); fixed on x86: 'cmpsq; jne; cmpsq'
     var q point = p1
     assert(equal(p1, q))
 
-    # 'array_length' count is not a constant so the copy loops
+    # the 'array_length' count is known but takes the run-time count path:
+    # 'li t2, 8; slli t2, t2, 2', chunk split and tail tests instead of the
+    # known-size copy, x86: 'mov rcx, 8' then 'shl rcx, 3' (41 rv32i sites)
     array_copy(worlds[1].locations, worlds[0].locations,
                array_length(worlds[0].locations))
 
-    # call saves and restores all 30 registers although only s0 is live
+    # fixed: the call saves nothing, only 's0' is live and the callee does not
+    # write it (was all 30 registers)
     print_num(a)
 
     assert(buf[0] == 0)

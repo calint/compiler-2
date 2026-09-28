@@ -84,15 +84,17 @@ func str.output() {
     write(1, self.data, self.len)
 } 
 
-func point_init() res point {
-    res.x = -1
-    res.y = -2
+# a constructor builds its result `self` and must assign every field:
+# `func point.at(x, y) self` is called as `point.at(x, y)`
+
+func point.at(x, y) self {
+    self.x = x
+    self.y = y
 }
 
-func object_init() res object {
-    res.pos.x = 2
-    res.pos.y = 74
-    res.color = 0xffffff
+func object.at(x, y, color i32) self {
+    self.pos = point.at(x, y)
+    self.color = color
 }
 
 const yes = 1
@@ -243,8 +245,9 @@ func main() {
     var p0 point = {baz(3), 0}
     assert(p0.x == 6)
 
-    var pt point = point_init()
-    # "return" from functions are writing to the destination through a reference
+    var pt = point.at(-1, -2)
+    # a constructor builds its result `self` in the destination
+    # `pt` has the type of the constructor
  
     assert(pt.x == -1)
     assert(pt.y == -2)
@@ -271,7 +274,7 @@ func main() {
     o3[0].pos.y = 73
 
     assert(o3[0].pos.y == 73)
-    o3[1] = object_init()
+    o3[1] = object.at(2, 74, 0xffffff)
     assert(o3[1].pos.y == 74)
 
     var worlds[8] world

@@ -24,6 +24,8 @@ class stmt_def_const final : public statement {
             throw compiler_exception{name_tk_, "expected name of constant"};
         }
 
+        toc::assert_name_not_reserved(name_tk_);
+
         equals_tk_ = tz.is_next_char_token('=');
         if (equals_tk_.is_empty()) {
             throw compiler_exception{name_tk_,
