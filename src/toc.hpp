@@ -1162,13 +1162,11 @@ class toc final {
 
         // is it a boolean constant?
         if (id.base() == "true") {
-            return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          1);
+            return ident_info::make_const(ident, id.str(), get_type_bool(), 1);
         }
 
         if (id.base() == "false") {
-            return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          0);
+            return ident_info::make_const(ident, id.str(), get_type_bool(), 0);
         }
 
         // is 'id' a constant?

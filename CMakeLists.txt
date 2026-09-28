@@ -4,6 +4,7 @@ set(CMAKE_CXX_COMPILER "clang++")
 set(CMAKE_CXX_STANDARD 26)
 add_compile_options(
     -O3
+    -fno-rtti
     -Werror
     -Wfatal-errors
     -Weverything

@@ -385,6 +385,8 @@ class expr_arith final : public expression {
         return exprs_.size() == 1 and exprs_.front()->is_array_element();
     }
 
+    [[nodiscard]] auto is_expr_arith() const -> bool override { return true; }
+
     [[nodiscard]] auto is_expression() const -> bool override {
         // if unary operators on the list then it will need to compile the
         // expression
@@ -452,9 +454,7 @@ class expr_arith final : public expression {
             return false;
         }
 
-        const statement& e{*exprs_.front()};
-
-        return typeid(e) != typeid(expr_arith);
+        return not exprs_.front()->is_expr_arith();
     }
 
     // the list type of a folded 'i8(-3)' is the default type of a constant

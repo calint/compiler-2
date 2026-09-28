@@ -52,11 +52,14 @@ MSAN=
 TSAN=
 PROF=
 BUILD_ONLY=0
+# asan keeps rtti because its vptr check needs it
+RTTI=-fno-rtti
 
 for arg in "$@"; do
     case "$arg" in
     asan)
         ASAN="$ASAN_FLAGS"
+        RTTI=
         ;;
     msan)
         MSAN="$MSAN_FLAGS"
@@ -105,7 +108,7 @@ fi
 
 SANITIZERS="$ASAN$MSAN$TSAN"
 
-CMD="$CC src/main.cpp -o baz $DBG $OPT $CF $CW $SANITIZERS $PROF"
+CMD="$CC src/main.cpp -o baz $DBG $OPT $RTTI $CF $CW $SANITIZERS $PROF"
 echo "$CMD"
 $CMD
 

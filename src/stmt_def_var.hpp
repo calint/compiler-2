@@ -151,14 +151,6 @@ class stmt_def_var final : public statement {
             return;
         }
 
-        // 'true' and 'false' are integer constants in arithmetic
-        if (arith->is_identifier() and
-            (arith->identifier() == "true" or arith->identifier() == "false")) {
-
-            set_type(tc.get_type_bool());
-            return;
-        }
-
         set_type(arith->single_operand_type());
 
         if (not arith->is_identifier() or

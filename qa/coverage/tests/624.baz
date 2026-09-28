@@ -1,0 +1,6 @@
+# 'true' and 'false' are of type 'bool' and cannot be arithmetic operands
+
+func main() {
+    var n = i32(1)
+    n = n + true
+}

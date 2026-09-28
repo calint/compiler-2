@@ -103,6 +103,9 @@ class statement {
         return false;
     }
 
+    // lets callers identify 'expr_arith' without rtti
+    [[nodiscard]] virtual auto is_expr_arith() const -> bool { return false; }
+
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
     [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }
