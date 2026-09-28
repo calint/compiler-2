@@ -3,25 +3,15 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[x] a way to optimize the push/pop around noinline functions.
-    toc.capture_register_allocations
-    compile the body
-    toc.end_capture_register_allocations
-    toc.captured_registers
-    add to func_def and only push and pop those
-    => opus suggestion: the caller saves only the registers allocated at the
-       call site (live values), except the variables base which the callee
-       never writes; unallocated registers hold nothing the caller needs, so
-       the callee's use of them, including hidden clobbers (syscall, helper
-       routines), does not matter and no capture or deferral is needed
-[x] generate a script to organize c++ source
-[x] review opus generated code regarding constant folding in expr_arith
-    => steered towards cognitively easier algorithm done in passes with simple
-       and well defined purpose skipping the more complicated state machine
-       approach; a bug in the initial algorithm was found and fixed in the
-       process
-[ ] review machine_rv32i code copy/zero/compare and the design that merges their
-    functionality; still a bit messy
+[ ] rv32i: an indexed reference argument such as 'set(o3[ix])' repeats
+    'add t1, s0, t0' per access in the inlined body, like the result did
+    => fold the lea in 'make_reference_alias' into one register when it is
+       shorter; the arguments are built in a loop, so 'emit_most_efficient'
+       around the whole body does not fit directly
+[ ] rv32i: the folded result address includes the displacement
+    ('add t1, s0, t0; addi t1, t1, 28'); keeping it in the operand
+    ('sw t2, 28(t1)') saves the 'addi'
+[ ] reorder locals by alignment, largest first, to reduce padding
 [ ] rv32i: a constant above 16 bytes stored at an address inside a word
     ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
     offset) loops bytes: the constant is word aligned and the destination is
@@ -33,36 +23,46 @@ queued, easiest first
     => 'expr_any::constant_element_value' (needs a width parameter):
        constant indexes, '{...}' packing, 'array_copy' count, inline argument
        aliasing ('stmt_identifier', 'stmt_call', 'stmt_builtin_array_copy')
-
---------------------------------------------------------------------------------
-easy
---------------------------------------------------------------------------------
-[ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
-    the emulator with the dividend in a0 as exit code
-[ ] variable argument count in read/write might be confusing. consider requiring
-    all arguments
-[ ] rename compiler_exception
-[ ] remove panic_exception
-[o] examine NOLINTNEXTLINE annotations and try to fix
-    => 'main' and 'unary_ops' suppressions removed; left: the
-       'misc-definitions-in-headers' block in 'decouple_impl.hpp', either
-       'inline' on its 22 definitions or keep the block
-
---------------------------------------------------------------------------------
-medium
---------------------------------------------------------------------------------
-generated assembly, easiest first
---------------------------------------------------------------------------------
-[ ] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
-    field instead of computing the address once
+[ ] register allocation: a value is loaded again right after it was stored:
+    'i = i - 1' ends with 'sw t0, 28(s1)' and 'buf[i]' starts with
+    'lw t0, 28(s1)' (etc/codegen-inefficiencies.baz)
+    => needs to know which register still holds a variable between
+       statements
+[ ] register allocation: an operand is loaded into a scratch register then
+    copied to where the next operation needs it: 'lw t2; addi a0, t2, 0'
+    before the divide call instead of 'lw a0', the syscall count
+    'addi a2, t0, 0' (etc/codegen-inefficiencies.baz)
+[ ] register allocation: multiply/divide helper chains ('r = a * b * c * d')
+    pass the value through memory ('sw a0, r; lw a0, r') or a scratch register
+    ('addi a0, t0, 0' and back) between the calls
     (etc/codegen-inefficiencies.baz)
-[ ] reorder locals by alignment, largest first, to reduce padding
-[x] register allocation: a non-inline call saves and restores all 30 registers
-    with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
-    'print_num(a)' (etc/codegen-inefficiencies.baz)
-    => the registers a non-inline function can use could be listed so the
-       call saves only those
-    => done with the push/pop item above
+    => needs register targeting for helper operands
+[ ] x86 register utilization: 109.baz, 082.baz, 104.baz
+[ ] a runtime bool argument to an inline function is materialized:
+    'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
+    (or 'bnez' against 0) (etc/codegen-inefficiencies.baz)
+    => plan (big: several files and interfaces, awaiting go-ahead)
+       => the argument cannot be compiled at the 'if' in the body: names
+          resolve in the callee's scope and an argument is a value taken
+          at the call before the body runs
+       [ ] a 'bool' parameter given a single comparison 'a op b' (no
+           'and'/'or', not a shorthand) evaluates 'a' and a non-constant
+           'b' into scratch registers at the call and binds the parameter
+           to { lhs register, op, rhs operand } instead of 0/1; the
+           registers stay allocated until the body ends
+       [ ] 'alias_info' and 'ident_info' carry the optional comparison,
+           'toc' name resolution returns it
+       [ ] a shorthand on the parameter ('if ok', 'if not ok',
+           'ok and ...') calls 'compare_and_branch' with the bound
+           operands, inversion combined as today
+       [ ] only when every read in the body is such a whole condition and
+           the parameter is never assigned, otherwise materialized as
+           today; needs a visitor that tells condition reads from value
+           reads
+       [ ] expected: rv32i 'lw; li; bne', 'x == 0' as 'lw; bnez'
+       [ ] tests on both targets: condition-only use, value use and
+           assignment fall back, a callee name shadowing a caller name,
+           an operand changed in the body before the 'if'
 [ ] low priority: code after an unconditional 'exit' elsewhere than the end of
     'main' is generated, e.g. after a constant false 'assert'
 [ ] low priority: register allocation: the scaled index goes into a new
@@ -88,6 +88,34 @@ generated assembly, easiest first
     class: machine_x86_64
     method: shift
     source: src/machine_x86_64.hpp:789
+[ ] review machine_rv32i code copy/zero/compare and the design that merges their
+    functionality; still a bit messy
+
+--------------------------------------------------------------------------------
+easy
+--------------------------------------------------------------------------------
+[ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
+    the emulator with the dividend in a0 as exit code
+[ ] variable argument count in read/write might be confusing. consider requiring
+    all arguments
+[ ] rename compiler_exception
+[ ] remove panic_exception
+[o] examine NOLINTNEXTLINE annotations and try to fix
+    => 'main' and 'unary_ops' suppressions removed; left: the
+       'misc-definitions-in-headers' block in 'decouple_impl.hpp', either
+       'inline' on its 22 definitions or keep the block
+
+--------------------------------------------------------------------------------
+medium
+--------------------------------------------------------------------------------
+generated assembly, easiest first
+--------------------------------------------------------------------------------
+[x] register allocation: a non-inline call saves and restores all 30 registers
+    with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
+    'print_num(a)' (etc/codegen-inefficiencies.baz)
+    => the registers a non-inline function can use could be listed so the
+       call saves only those
+    => done with the push/pop item above
 --------------------------------------------------------------------------------
 other, easiest first
 --------------------------------------------------------------------------------
@@ -176,46 +204,6 @@ other, easiest first
 --------------------------------------------------------------------------------
 hard
 --------------------------------------------------------------------------------
-[ ] register allocation: a value is loaded again right after it was stored:
-    'i = i - 1' ends with 'sw t0, 28(s1)' and 'buf[i]' starts with
-    'lw t0, 28(s1)' (etc/codegen-inefficiencies.baz)
-    => needs to know which register still holds a variable between
-       statements
-[ ] register allocation: an operand is loaded into a scratch register then
-    copied to where the next operation needs it: 'lw t2; addi a0, t2, 0'
-    before the divide call instead of 'lw a0', the syscall count
-    'addi a2, t0, 0' (etc/codegen-inefficiencies.baz)
-[ ] register allocation: multiply/divide helper chains ('r = a * b * c * d')
-    pass the value through memory ('sw a0, r; lw a0, r') or a scratch register
-    ('addi a0, t0, 0' and back) between the calls
-    (etc/codegen-inefficiencies.baz)
-    => needs register targeting for helper operands
-[ ] x86 register utilization: 109.baz, 082.baz, 104.baz
-[ ] a runtime bool argument to an inline function is materialized:
-    'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
-    (or 'bnez' against 0) (etc/codegen-inefficiencies.baz)
-    => plan (big: several files and interfaces, awaiting go-ahead)
-       => the argument cannot be compiled at the 'if' in the body: names
-          resolve in the callee's scope and an argument is a value taken
-          at the call before the body runs
-       [ ] a 'bool' parameter given a single comparison 'a op b' (no
-           'and'/'or', not a shorthand) evaluates 'a' and a non-constant
-           'b' into scratch registers at the call and binds the parameter
-           to { lhs register, op, rhs operand } instead of 0/1; the
-           registers stay allocated until the body ends
-       [ ] 'alias_info' and 'ident_info' carry the optional comparison,
-           'toc' name resolution returns it
-       [ ] a shorthand on the parameter ('if ok', 'if not ok',
-           'ok and ...') calls 'compare_and_branch' with the bound
-           operands, inversion combined as today
-       [ ] only when every read in the body is such a whole condition and
-           the parameter is never assigned, otherwise materialized as
-           today; needs a visitor that tells condition reads from value
-           reads
-       [ ] expected: rv32i 'lw; li; bne', 'x == 0' as 'lw; bnez'
-       [ ] tests on both targets: condition-only use, value use and
-           assignment fall back, a callee name shadowing a caller name,
-           an operand changed in the body before the 'if'
 [ ] strings as sources of 'arrays_equal' and 'array_copy'
     => plan (big: new machine interface method, several files)
        [ ] parse a string token or an identifier for the 'array_copy' source
@@ -353,6 +341,34 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] a way to optimize the push/pop around noinline functions.
+    toc.capture_register_allocations
+    compile the body
+    toc.end_capture_register_allocations
+    toc.captured_registers
+    add to func_def and only push and pop those
+    => opus suggestion: the caller saves only the registers allocated at the
+       call site (live values), except the variables base which the callee
+       never writes; unallocated registers hold nothing the caller needs, so
+       the callee's use of them, including hidden clobbers (syscall, helper
+       routines), does not matter and no capture or deferral is needed
+[x] generate a script to organize c++ source
+[x] review opus generated code regarding constant folding in expr_arith
+    => steered towards cognitively easier algorithm done in passes with simple
+       and well defined purpose skipping the more complicated state machine
+       approach; a bug in the initial algorithm was found and fixed in the
+       process
+[x] register allocation: 'o3[ix] = object_init()' repeats 'add t1, s0, t0' per
+    field instead of computing the address once
+    (etc/codegen-inefficiencies.baz)
+    => the result alias and reference arguments do carry the lea
+       '[s0 + t0]' (x86 uses '[rbp + r15]' directly); rv32i has no
+       base + index addressing so every use lowers it with 'add'
+    => fixed by opus: 'stmt_call::compile' emits the inlined body both ways
+       with 'emit_most_efficient', as is and with the result address folded
+       once into a new register ('compile_inline_with_address_register'),
+       and keeps the shorter; rv32i one 'add' instead of one per access, x86
+       unchanged
 [x] x86 'equal' with a known size: 'rep cmpsq' when more than 2 qword
     compares, then the remaining dword, word and byte compares
     => up to 2 qwords use single 'cmpsq' without loading 'rcx'; each part

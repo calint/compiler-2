@@ -123,7 +123,28 @@ class stmt_call : public expression {
             return;
         }
 
-        if (get_unary_ops().is_empty() or not dst_info.operand.is_memory()) {
+        if (not dst_info.operand.is_memory()) {
+            compile_inline(tc, indent, dst_info, func);
+            return;
+        }
+
+        // without base + index addressing each result access adds base and
+        // index again, computing the address once can be shorter
+        if (get_unary_ops().is_empty() and
+            not dst_info.operand.index_register().empty()) {
+
+            x.emit_most_efficient(
+                tok(), indent,
+                [&] -> void { compile_inline(tc, indent, dst_info, func); },
+                [&] -> void {
+                    compile_inline_with_address_register(tc, indent, dst_info,
+                                                         func);
+                });
+
+            return;
+        }
+
+        if (get_unary_ops().is_empty()) {
             compile_inline(tc, indent, dst_info, func);
             return;
         }
@@ -527,6 +548,48 @@ class stmt_call : public expression {
         x.comment(tok(), indent, "address of argument '{}' to parameter '{}'",
                   statement::trimmed_source(args_[arg_idx]),
                   func.params()[arg_idx].name());
+    }
+
+    // the id has no indexes, so an id naming an array means the result is
+    // one of its elements
+    auto comment_result_address(toc& tc, const size_t indent,
+                                const ident_info& dst_info) const -> void {
+
+        machine& x{tc.machine()};
+
+        if (tc.make_ident_info(tok(), dst_info.id).is_array) {
+            x.comment(tok(), indent, "address of result element in array '{}'",
+                      dst_info.id);
+
+            return;
+        }
+
+        x.comment(tok(), indent, "address of indexed result '{}'", dst_info.id);
+    }
+
+    // a new register because the index register may belong to an enclosing
+    // alias that is used after the call
+    auto compile_inline_with_address_register(toc& tc, const size_t indent,
+                                              const ident_info& dst_info,
+                                              const stmt_def_func& func) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        const operand address{
+            x.alloc_scratch_register(tok(), indent, tc.get_type_address())};
+
+        comment_result_address(tc, indent, dst_info);
+
+        x.address_of(tok(), indent, address, dst_info.operand);
+
+        ident_info address_info{dst_info};
+        address_info.operand =
+            operand::mem(address, dst_info.operand.type_ref());
+
+        compile_inline(tc, indent, address_info, func);
+
+        x.free_scratch_register(tok(), indent, address);
     }
 
     [[nodiscard]] auto describe_argument(const size_t index) const
