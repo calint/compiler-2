@@ -344,9 +344,26 @@ class stmt_call : public expression {
             return;
         }
 
-        // without base + index addressing each access to an indexed argument
-        // adds base and index again, computing the address once can be
-        // shorter
+        // note: the body is compiled in three versions and the one with the
+        //       least code is kept
+        //
+        //       1. aliases use the indexed addresses as they are, e.g.
+        //          '[s0 + t0 * 4 + 28]'
+        //       2. each indexed address goes once into a new register, the
+        //          displacement included, e.g. '[t1]'
+        //       3. as 2 but the displacement stays in each access, e.g.
+        //          '[t1 + 28]'
+        //
+        //       rv32i has no base + index addressing, so in version 1 every
+        //       access adds base and index again; a register pays off only
+        //       when the body accesses the argument more than once, and a
+        //       kept displacement saves an 'addi' unless the field offsets
+        //       then exceed the 12-bit immediate range; which is shorter is
+        //       only known after compiling the body
+        //
+        //       the argument registers are shared by all versions, so they
+        //       are freed after the choice instead of inside the body
+
         x.emit_most_efficient(
             tok(), indent,
             [&] -> void {
