@@ -190,8 +190,13 @@ func main() {
     arr1[2] = -1
     assert(not arrays_equal(arr, arr1, 4))
 
+#   arr[ix] = ~inv(arr[ix - 1])
+#   compile time error because it could ub since the "return" of the function
+#   and argument refers to same memory range (arr)
+
     ix = 3
-    arr[ix] = ~inv(arr[ix - 1])
+    var tmp i32 = ~inv(arr[ix - 1])
+    arr[ix] = tmp
     assert(arr[ix] == 2)
 
     faz(arr)
