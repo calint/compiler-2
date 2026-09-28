@@ -305,17 +305,6 @@ class stmt_def_func final : public statement {
 
         toc::assert_name_not_reserved(method_name_tk_);
 
-        // 'lst.add' would be ambiguous
-        for (const type_field& f : receiver_type.fields()) {
-            if (f.name == method_name_tk_.text()) {
-                throw compiler_exception{
-                    method_name_tk_,
-                    std::format("method '{}' has the same name as a field in "
-                                "type '{}'",
-                                f.name, receiver_type.name())};
-            }
-        }
-
         name_ =
             std::format("{}.{}", receiver_type.name(), method_name_tk_.text());
     }

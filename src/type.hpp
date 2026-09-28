@@ -166,6 +166,10 @@ class type final {
         return fields_;
     }
 
+    [[nodiscard]] auto has_field(const std::string_view name) const -> bool {
+        return std::ranges::contains(fields_, name, &type_field::name);
+    }
+
     [[nodiscard]] auto is_builtin() const -> bool { return is_builtin_; }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }

@@ -83,7 +83,7 @@ class stmt_identifier : public statement {
 
             if (const token t{tz.is_next_char_token('.')}; not t.is_empty()) {
                 const token next_tk{tz.next_token()};
-                if (not is_method_name(tc, tk, next_tk)) {
+                if (not is_method_name(tc, tz, tk, next_tk)) {
                     assert_element_selected(tc, tk);
                     elem_delims_tk_.emplace_back(t);
                     tk_prv = tk;
@@ -463,7 +463,8 @@ class stmt_identifier : public statement {
     }
 
     // 'name_tk' after the path so far names a method of the path's type
-    [[nodiscard]] auto is_method_name(const toc& tc, const token& path_tk,
+    [[nodiscard]] auto is_method_name(const toc& tc, tokenizer& tz,
+                                      const token& path_tk,
                                       const token& name_tk) const -> bool {
 
         if (tc.is_func(path_as_string_)) {
@@ -472,8 +473,21 @@ class stmt_identifier : public statement {
 
         const ident_info info{tc.make_ident_info(path_tk, path_as_string_)};
 
-        return tc.is_func(
-            std::format("{}.{}", info.type_ref().name(), name_tk.text()));
+        const type& path_type{info.type_ref()};
+
+        if (not tc.is_func(
+                std::format("{}.{}", path_type.name(), name_tk.text()))) {
+
+            return false;
+        }
+
+        // a method and a field may share a name, only the call has '('
+        if (tz.peek_char_after_whitespace() == '(') {
+            return true;
+        }
+
+        // without a field 'lst.clear = 1' reports the missing arguments
+        return not path_type.has_field(name_tk.text());
     }
 
     // an unknown element leaves the whole array as the accessed range

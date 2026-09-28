@@ -1,13 +1,33 @@
-# a method named like a field would make 'lst.count' ambiguous
+# a method may share its name with a field: 'p.x(3)' calls the method and
+# 'p.x' is the field, also when a variable is named like its type
 
-type list {
-    count,
-    items[4]
+func assert(err, ok bool) { if not ok exit(err) }
+
+type point {
+    x,
+    y
 }
 
-func list.count() res {
-    res = self.count
+func point.x(v) {
+    self.x = v
+}
+
+func point.y() res {
+    res = self.y
 }
 
 func main() {
+    var p point
+    p.x(3)
+    assert(1, p.x == 3)
+    p.y = 4
+    assert(2, p.y() == 4)
+    p.x (5)
+    assert(3, p.x == 5)
+
+    var point point
+    point.x(6)
+    assert(4, point.x == 6)
+    point.y = 7
+    assert(5, point.y() == 7)
 }

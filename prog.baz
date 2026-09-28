@@ -92,6 +92,12 @@ func point.at(x, y) self {
     self.y = y
 }
 
+# types can have methods with same name as fields
+
+func point.x(x) {
+    self.x = x
+}
+
 func object.at(x, y, color i32) self {
     self.pos = point.at(x, y)
     self.color = color
@@ -192,7 +198,8 @@ func main() {
 
 #   arr[ix] = ~inv(arr[ix - 1])
 #   compile time error because it could ub since the "return" of the function
-#   and argument refers to same memory range (arr)
+#   and argument refer to same memory range (`arr`)
+#   same possible ub if anyt function arguments share the same memory region
 
     ix = 3
     var tmp i32 = ~inv(arr[ix - 1])
@@ -256,6 +263,9 @@ func main() {
  
     assert(pt.x == -1)
     assert(pt.y == -2)
+
+    pt.x(2)
+    assert(pt.x == 2)
 
     var x = 1
     var y = 2
