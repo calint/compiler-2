@@ -366,13 +366,37 @@ class machine_x86_64 final : public machine {
         assert(frame_address.index_register().empty());
         assert(frame_address.base_register() != "rsp");
 
-        assembler_.use_macro(indent, "PUSH_REGS");
+        // the callee may use every register but the variables base, so only
+        // values live at the call need saving
+        std::vector<operand> saved;
+        for (const allocation& allocated : allocations_) {
+            if (allocated.name == variables_base_register_) {
+                continue;
+            }
+
+            saved.push_back(qword_register(allocated.name));
+        }
+
+        if (not saved.empty()) {
+            assembler_.comment(indent, "before call: save allocated registers");
+        }
+
+        for (const operand& reg : saved) {
+            push(indent, reg);
+        }
+
         lea(indent,
             make_register_operand(frame_base_register(), *default_type_),
             frame_address, true);
 
         assembler_.call(indent, label);
-        assembler_.use_macro(indent, "POP_REGS");
+        if (not saved.empty()) {
+            assembler_.comment(indent, "after call: restore saved registers");
+        }
+
+        for (const operand& reg : saved | std::views::reverse) {
+            pop(indent, reg);
+        }
     }
 
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
@@ -1196,25 +1220,6 @@ class machine_x86_64 final : public machine {
         assembler_.comment(0, "");
         assembler_.add_separator_newline();
         assembler_.default_rel();
-        assembler_.add_separator_newline();
-
-        const std::array<std::string_view, 15> saved_registers{
-            "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "r8",
-            "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
-
-        assembler_.define_macro("PUSH_REGS", [&] -> void {
-            for (const std::string_view name : saved_registers) {
-                push(1, make_register_operand(name, *default_type_));
-            }
-        });
-        assembler_.add_separator_newline();
-
-        assembler_.define_macro("POP_REGS", [&] -> void {
-            for (const std::string_view name :
-                 saved_registers | std::views::reverse) {
-                pop(1, make_register_operand(name, *default_type_));
-            }
-        });
         assembler_.add_separator_newline();
 
         assembler_.switch_section(section::text);

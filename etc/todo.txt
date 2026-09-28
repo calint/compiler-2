@@ -3,12 +3,17 @@
 --------------------------------------------------------------------------------
 queued, easiest first
 --------------------------------------------------------------------------------
-[ ] a way to optimize the push/pop around noinline functions.
+[x] a way to optimize the push/pop around noinline functions.
     toc.capture_register_allocations
     compile the body
     toc.end_capture_register_allocations
     toc.captured_registers
     add to func_def and only push and pop those
+    => opus suggestion: the caller saves only the registers allocated at the
+       call site (live values), except the variables base which the callee
+       never writes; unallocated registers hold nothing the caller needs, so
+       the callee's use of them, including hidden clobbers (syscall, helper
+       routines), does not matter and no capture or deferral is needed
 [x] generate a script to organize c++ source
 [x] review opus generated code regarding constant folding in expr_arith
     => steered towards cognitively easier algorithm done in passes with simple
@@ -52,11 +57,12 @@ generated assembly, easiest first
     field instead of computing the address once
     (etc/codegen-inefficiencies.baz)
 [ ] reorder locals by alignment, largest first, to reduce padding
-[ ] register allocation: a non-inline call saves and restores all 30 registers
+[x] register allocation: a non-inline call saves and restores all 30 registers
     with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
     'print_num(a)' (etc/codegen-inefficiencies.baz)
     => the registers a non-inline function can use could be listed so the
        call saves only those
+    => done with the push/pop item above
 [ ] low priority: code after an unconditional 'exit' elsewhere than the end of
     'main' is generated, e.g. after a constant false 'assert'
 [ ] low priority: register allocation: the scaled index goes into a new

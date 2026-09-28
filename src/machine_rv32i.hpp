@@ -41,8 +41,6 @@ class machine_rv32i : public machine {
     static constexpr int sign_shift_{31};
     // the return address slot keeps sp 16-byte aligned
     static constexpr int64_t frame_save_bytes_{16};
-    // a word for each of x1 to x31, rounded up to keep sp 16-byte aligned
-    static constexpr int64_t register_save_bytes_{128};
     static constexpr size_t word_size_bytes_{4};
     // the i/o call save area keeps sp 16-byte aligned
     static constexpr int io_save_size_bytes_{16};
@@ -1299,14 +1297,44 @@ class machine_rv32i : public machine {
         assert(register_index(frame_address.base_register()) !=
                register_index("sp"));
 
-        assembler_.use_macro(indent, "PUSH_REGS");
+        // the callee may use every register but the variables base, so only
+        // values live at the call need saving
+        std::vector<std::string_view> saved;
+        for (const allocation& allocated : allocations_) {
+            if (allocated.register_index ==
+                register_index(variables_base_register_)) {
+
+                continue;
+            }
+
+            saved.push_back(register_names_.at(allocated.register_index));
+        }
+
+        constexpr size_t stack_alignment{16};
+        const size_t stack_bytes{align_storage_size(
+            saved.size() * word_size_bytes_, stack_alignment)};
+
+        if (stack_bytes != 0) {
+            assembler_.comment(indent, "before call: save allocated registers");
+            assembler_.addi(indent, "sp", "sp",
+                            -static_cast<int64_t>(stack_bytes));
+        }
+
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.sw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
 
         address_of(token{}, indent,
                    make_register_operand(frame_base_register(), default_type()),
                    frame_address);
 
         assembler_.call(indent, label);
-        assembler_.use_macro(indent, "POP_REGS");
+        if (stack_bytes != 0) {
+            assembler_.comment(indent, "after call: restore saved registers");
+        }
+
+        restore_saved_registers(indent, saved, stack_bytes);
     }
 
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
@@ -2386,8 +2414,6 @@ class machine_rv32i : public machine {
         assembler_.option_norvc();
         assembler_.option_norelax();
         assembler_.add_separator_newline();
-        define_register_macros();
-        assembler_.add_separator_newline();
         assembler_.switch_section(section::text);
         assembler_.globl("_start");
         label(0, "_start");
@@ -2874,28 +2900,6 @@ class machine_rv32i : public machine {
 
         // both operands are live inputs or zero
         return alloc_scratch_register(src_loc_tk, indent, default_type());
-    }
-
-    // one definition keeps each non-inline call's register saving to a line
-    auto define_register_macros() -> void {
-        assembler_.define_macro("PUSH_REGS", [this] -> void {
-            assembler_.addi(1, "sp", "sp", -register_save_bytes_);
-            for (const size_t index : scratch_registers_) {
-                assembler_.sw(1, register_names_.at(index), (index - 1) * 4,
-                              "sp");
-            }
-        });
-
-        assembler_.add_separator_newline();
-
-        assembler_.define_macro("POP_REGS", [this] -> void {
-            for (const size_t index : scratch_registers_) {
-                assembler_.lw(1, register_names_.at(index), (index - 1) * 4,
-                              "sp");
-            }
-
-            assembler_.addi(1, "sp", "sp", register_save_bytes_);
-        });
     }
 
     auto emit_arithmetic_helpers() const -> void {

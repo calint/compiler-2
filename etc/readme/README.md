@@ -110,10 +110,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5341           1993          17070
+C/C++ Header                    54           5345           1995          17073
 C++                              1             66             19            329
 -------------------------------------------------------------------------------
-SUM:                            55           5407           2012          17399
+SUM:                            55           5411           2014          17402
 -------------------------------------------------------------------------------
 ```
 
@@ -448,40 +448,6 @@ func main() {
 
 ```nasm
 default rel
-%macro PUSH_REGS 0
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    push rsi
-    push rdi
-    push rbp
-    push r8
-    push r9
-    push r10
-    push r11
-    push r12
-    push r13
-    push r14
-    push r15
-%endmacro
-%macro POP_REGS 0
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-    pop rbp
-    pop rdi
-    pop rsi
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rax
-%endmacro
 section .text
 bits 64
 global _start
@@ -1407,10 +1373,8 @@ main:
         add qword [rbp + 1056], 1
         lea r15, [rbp + 1056]
         mov qword [rbp + 1192], r15
-        PUSH_REGS
         lea rbx, [rbp + 1192]
         call func.print_num
-        POP_REGS
         func.print.305.9:
             mov rdi, 1
             mov rdx, 2
@@ -1677,42 +1641,6 @@ vars.end:
 ;
 
 default rel
-
-%macro PUSH_REGS 0
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    push rsi
-    push rdi
-    push rbp
-    push r8
-    push r9
-    push r10
-    push r11
-    push r12
-    push r13
-    push r14
-    push r15
-%endmacro
-
-%macro POP_REGS 0
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-    pop rbp
-    pop rdi
-    pop rsi
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rax
-%endmacro
 
 section .text
 bits 64
@@ -3728,10 +3656,8 @@ main:
         lea r15, [rbp + 1056]
         mov qword [rbp + 1192], r15
 ;       [304:9] free scratch register r15
-        PUSH_REGS
         lea rbx, [rbp + 1192]
         call func.print_num
-        POP_REGS
 ;       [305:9] print(colon)
 ;       [35:6] print(str[] i8)
         func.print.305.9:

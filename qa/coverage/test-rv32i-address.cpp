@@ -653,8 +653,13 @@ auto main(const int argc, const char* argv[]) -> int {
                                   empty);
         backend.start();
         std::println("    addi sp, sp, -128\n    sw sp, 124(sp)");
+        // a call keeps only allocated registers, the variables base s0 is
+        // already allocated
+        std::vector<operand> live;
         for (size_t index{1}; index < 32; ++index) {
             if (index != 2 and index != 8) {
+                live.push_back(backend.alloc_named_register(
+                    token{}, 0, std::format("x{}", index), integer));
                 std::println("    li x{}, {}", index, 100 + index);
             }
         }
@@ -680,6 +685,9 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("    beq t0, t1, 1f\n    j call_failure\n1:");
         }
         std::println("    addi sp, sp, 128");
+        for (const operand& reg : live | std::views::reverse) {
+            backend.free_named_register(token{}, 0, reg);
+        }
         backend.end_main();
         backend.label(0, "call_failure");
         backend.exit(token{}, 1, operand::imm("1", integer));
@@ -689,14 +697,18 @@ auto main(const int argc, const char* argv[]) -> int {
                      "    beq s1, t0, 1f\n    j call_failure\n1:");
         backend.call_function(1, "inner",
                               operand::mem("s1", {}, 1, 8192, integer));
+        // the frame base is live here, so the call restores it
+        std::println("    la t0, dat\n    li t1, 4096\n    add t0, t0, t1\n"
+                     "    beq s1, t0, 1f\n    j call_failure\n1:");
         backend.return_function(1);
         backend.release_frame_base();
         backend.label(0, "inner");
         backend.reserve_frame_base();
         std::println("    la t0, dat\n    li t1, 12288\n    add t0, t0, t1\n"
                      "    beq s1, t0, 1f\n    j call_failure\n1:");
+        // callees never write the variables base s0
         for (size_t index{1}; index < 32; ++index) {
-            if (index != 2) {
+            if (index != 2 and index != 8) {
                 std::println("    li x{}, -1", index);
             }
         }
