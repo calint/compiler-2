@@ -31,6 +31,8 @@ class stmt_def_var final : public statement {
 
         toc::assert_name_not_reserved(name_tk_);
 
+        const token after_name_tk{tz.cur_position_token()};
+
         equals_tk_ = parse_initializer_equals(tz, "var");
 
         deduce_declaration(tc, tz);
@@ -39,7 +41,11 @@ class stmt_def_var final : public statement {
         // variable declared
         tc.add_var(name_tk_, 0, make_var_info(), false);
 
+        // the identifier is parsed where it ends at '=', past it the '[2]' in
+        // 'var a = [2]{}' would read as an index
+        tz.rewind_to_position(after_name_tk);
         stmt_identifier si{tc, {}, name_tk_, tz};
+        equals_tk_ = parse_initializer_equals(tz, "var");
 
         assign_var_ = {tc,         tz,        std::move(si),
                        equals_tk_, is_array_, array_count_};
@@ -205,19 +211,27 @@ class stmt_def_var final : public statement {
     // statics
     //
 
-    // e.g. 'i8' in 'i8[]{1, 2}' or the default type in 'i[]{1, 2}'
+    // e.g. 'i8' in 'i8[]{1, 2}' or the default type in '[]{1, 2}'
     [[nodiscard]] static auto array_element_type(const toc& tc, tokenizer& tz)
         -> const type& {
+
+        if (is_default_array_literal(tz)) {
+            return tc.get_type_default();
+        }
 
         const token tk{tz.next_token()};
         tz.put_back_token(tk);
 
-        return named_type(tc, tk);
+        return tc.get_type_or_throw(tk, tk.text());
     }
 
-    // e.g. 'i8[3]{1, 2}', 'i[]{1, 2}' or 'point[]{{1, 2}}'
+    // e.g. 'i8[3]{1, 2}', '[]{1, 2}' or 'point[]{{1, 2}}'
     [[nodiscard]] static auto starts_array_literal(const toc& tc, tokenizer& tz)
         -> bool {
+
+        if (is_default_array_literal(tz)) {
+            return true;
+        }
 
         const token tk{tz.next_token()};
         const bool is_literal{is_array_literal(tc, tk, tz)};

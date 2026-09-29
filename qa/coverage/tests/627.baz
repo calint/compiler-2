@@ -1,0 +1,7 @@
+# an array literal without a type name has the default type which must match
+# the destination
+
+func main() {
+    var a = i8[2]{}
+    a = [2]{1, 2}
+}

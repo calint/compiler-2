@@ -1,3 +1,3 @@
 # array literal size requires a closing bracket
 
-func main() { var x = i[2 = {1,2} }
+func main() { var x = [2 = {1,2} }

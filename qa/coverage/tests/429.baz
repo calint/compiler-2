@@ -1,4 +1,4 @@
 # an element cannot be passed to a non-inline array parameter
 
-func noinline target(parameter i[]) {}
-func main() { var items = i[2]{} target(items[0]) }
+func noinline target(parameter[]) {}
+func main() { var items = [2]{} target(items[0]) }

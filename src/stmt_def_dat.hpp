@@ -128,12 +128,16 @@ class stmt_def_dat final : public statement {
         };
     }
 
-    // e.g. 'i8[4]{1, 2}', 'i[]{1, 2}' or 'point[2]{{1, 2}}'
+    // e.g. 'i8[4]{1, 2}', '[]{1, 2}' or 'point[2]{{1, 2}}'
     [[nodiscard]] auto parse_array_literal(toc& tc, tokenizer& tz) -> elem {
         open_bracket_tk_ = tz.is_next_char_token('[');
         const size_t array_count{parse_array_size(tc, tz)};
 
-        elem el{parse_array(tc, tz, type_tk_, get_type(), array_count)};
+        // the default type has no type token to locate the data comments
+        const token src_loc_tk{type_tk_.is_empty() ? open_bracket_tk_
+                                                   : type_tk_};
+
+        elem el{parse_array(tc, tz, src_loc_tk, get_type(), array_count)};
         if (el.array_count == 0) {
             throw compiler_exception{name_tk_,
                                      "empty arrays require a specified size"};
@@ -178,8 +182,9 @@ class stmt_def_dat final : public statement {
     }
 
     // e.g. 'dat s = "hi"' is an 'i8' array of 2, 'dat a = i8[4]{1, 2}' an 'i8'
-    // array of 4, 'dat p = point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8',
-    // 'dat b = true' a 'bool' and 'dat n = 3' has the default type
+    // array of 4, 'dat a = [4]{1, 2}' a default type array of 4, 'dat p =
+    // point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8', 'dat b = true' a 'bool'
+    // and 'dat n = 3' has the default type
     [[nodiscard]] auto parse_initializer(toc& tc, tokenizer& tz) -> elem {
         if (tz.peek_char_after_whitespace() == '"') {
             const token string_tk{tz.next_token()};
@@ -193,11 +198,16 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
+        if (is_default_array_literal(tz)) {
+            set_type(tc.get_type_default());
+            return parse_array_literal(tc, tz);
+        }
+
         const token tk{tz.next_token()};
 
         if (is_array_literal(tc, tk, tz)) {
             type_tk_ = tk;
-            set_type(named_type(tc, tk));
+            set_type(tc.get_type_or_throw(tk, tk.text()));
 
             return parse_array_literal(tc, tz);
         }

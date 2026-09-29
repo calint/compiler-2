@@ -125,8 +125,8 @@ func main() {
     var declared = i8[2]{5, 6} # is i8
     assert(21, declared[0] == 5 and declared[1] == 6)
 
-    # 'i' names the default type in an array literal
-    var defaults = i[]{1, -1} # is default
+    # an array literal without a type name has the default type
+    var defaults = []{1, -1} # is default
     assert(23, array_length(defaults) == 2 and defaults[1] == -1)
 
     var zeros = i8[4]{} # is i8

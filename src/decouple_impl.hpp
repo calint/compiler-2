@@ -96,26 +96,17 @@ auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
 }
 
 // declared in 'decouple.hpp'
-// e.g. 'i8' in 'i8[]{1, 2}' or 'arr i8[]', the default type in 'i[]{1, 2}'
-auto named_type(const toc& tc, const token& tk) -> const type& {
-    return stmt_builtin_convert::conversion_type(tc, tk);
+// e.g. 'i8[]{1, 2}' or 'point[]{{1, 2}}', a type name followed by '[' has no
+// other meaning
+auto is_array_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
+    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
+           tz.peek_char_after_whitespace() == '[';
 }
 
 // declared in 'decouple.hpp'
-// e.g. 'i8[]{1, 2}', 'i[]{1, 2}' or 'point[]{{1, 2}}', a type name followed by
-// '[' has no other meaning
-auto is_array_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
-    if (tz.peek_char_after_whitespace() != '[') {
-        return false;
-    }
-
-    // a variable named 'i' is common and only an array one can be indexed
-    if (tk.is_text("i")) {
-        return not tc.is_var_or_alias(tk.text()) or
-               not tc.make_ident_info(tk, tk.text()).is_array;
-    }
-
-    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text());
+// e.g. '[]{1, 2}' has the default type, no expression starts with '['
+auto is_default_array_literal(tokenizer& tz) -> bool {
+    return tz.peek_char_after_whitespace() == '[';
 }
 
 // declared in 'decouple.hpp'

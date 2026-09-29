@@ -890,7 +890,7 @@ auto main(const int argc, const char* argv[]) -> int {
         return 0;
     }
     if (mode == "far-foo" or mode == "far-foo-optimized") {
-        std::string source{"dat values = i[]{1, 2, 3, 4, 5}\nfunc main() {\n"
+        std::string source{"dat values = []{1, 2, 3, 4, 5}\nfunc main() {\n"
                            "    var pad = 0\n    var visits = 0\n"
                            "    var sum = 0\n"};
 

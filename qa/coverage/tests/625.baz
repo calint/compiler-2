@@ -1,0 +1,5 @@
+# 'i' is not a type name, an array literal of the default type omits it
+
+func main() {
+    var a = i[2]{1, 2}
+}

@@ -73,9 +73,10 @@ class expr_any final : public statement {
         parse_element_type(tc, tz, tp);
 
         open_brace_tk_ = tz.is_next_char_token('{');
-        if (open_brace_tk_.is_empty() and not element_type_tk_.is_empty()) {
-            throw compiler_exception{
-                tz, std::format("expected '{{' after '{}[]'", tp.name())};
+        if (open_brace_tk_.is_empty() and not open_bracket_tk_.is_empty()) {
+            throw compiler_exception{tz,
+                                     std::format("expected '{{' after '{}[]'",
+                                                 element_type_tk_.text())};
         }
 
         if (open_brace_tk_.is_empty()) {
@@ -135,7 +136,7 @@ class expr_any final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         string_tk_.source_to(os);
-        if (not element_type_tk_.is_empty()) {
+        if (not open_bracket_tk_.is_empty()) {
             element_type_tk_.source_to(os);
             open_bracket_tk_.source_to(os);
             literal_count_const_.source_to(os);
@@ -508,22 +509,35 @@ class expr_any final : public statement {
     }
 
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
-    // from the destination, and the size unless it is 'i8[]'
+    // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
+    // the default type
     auto parse_element_type(toc& tc, tokenizer& tz, const type& tp) -> void {
         const token tk{tz.next_token()};
-        if (not is_array_literal(tc, tk, tz)) {
+        const bool is_typed{is_array_literal(tc, tk, tz)};
+        if (not is_typed) {
             tz.put_back_token(tk);
+        }
+
+        if (not is_typed and not is_default_array_literal(tz)) {
             return;
         }
 
-        if (named_type(tc, tk).name() != tp.name()) {
-            throw compiler_exception{tk,
+        open_bracket_tk_ = tz.is_next_char_token('[');
+
+        const type& literal_type{is_typed ? tc.get_type_or_throw(tk, tk.text())
+                                          : tc.get_type_default()};
+
+        if (literal_type.name() != tp.name()) {
+            throw compiler_exception{is_typed ? tk : open_bracket_tk_,
                                      std::format("expected type '{}', got '{}'",
-                                                 tp.name(), tk.text())};
+                                                 tp.name(),
+                                                 literal_type.name())};
         }
 
-        element_type_tk_ = tk;
-        open_bracket_tk_ = tz.is_next_char_token('[');
+        if (is_typed) {
+            element_type_tk_ = tk;
+        }
+
         literal_count_const_ = {tc, tz, 0};
 
         close_bracket_tk_ = tz.is_next_char_token(']');

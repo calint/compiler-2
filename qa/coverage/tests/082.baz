@@ -13,7 +13,7 @@ type cluster {objs object[10], flags i8}
 type particle {vel vec3, pos vec3, mass i32, active bool}
 type physics_grid {particles particle[5], timestamp}
 type scene_layer {clusters cluster[3], grid physics_grid, name}
-type mega_structure {layers scene_layer[4], colors color_rgba[8], metadata i[16]}
+type mega_structure {layers scene_layer[4], colors color_rgba[8], metadata[16]}
 
 func main() {
     # Test 1: Basic nested array access

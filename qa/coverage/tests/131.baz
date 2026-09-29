@@ -7,7 +7,7 @@ func fiz(x, y) res {
 }
 
 func main() {
-    var arr = i[4]{}
+    var arr = [4]{}
     var ix = 1
     arr[ix] = 2
     arr[3] = 3

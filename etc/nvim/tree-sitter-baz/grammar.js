@@ -136,15 +136,17 @@ module.exports = grammar({
       $.identifier
     ),
 
+    // e.g. 'i8[4]', or '[4]' with the default type
     sized_array_type: $ => seq(
-      field('type', $._base_type),
+      optional(field('type', $._base_type)),
       '[',
       field('size', choice($.number_literal, $.character_literal)),
       ']',
     ),
 
+    // e.g. 'i8[]', or '[]' with the default type
     unsized_array_type: $ => seq(
-      field('type', $._base_type),
+      optional(field('type', $._base_type)),
       '[',
       ']',
     ),
@@ -386,12 +388,12 @@ module.exports = grammar({
       '}',
     ),
 
-    // e.g. 'i8[]{1, 2}' or 'point[3]{{1, 2}}', the elements take the type; an
-    // identifier since a builtin type keyword would break 'i8(x)' in
-    // expressions, and the '{' right after ']' keeps 'if a[i] {' an index and
-    // a block
+    // e.g. 'i8[]{1, 2}', 'point[3]{{1, 2}}' or '[]{1, 2}' with the default
+    // type, the elements take the type; an identifier since a builtin type
+    // keyword would break 'i8(x)' in expressions, and the '{' right after ']'
+    // keeps 'if a[i] {' an index and a block
     typed_array_initializer: $ => seq(
-      field('type', $.identifier),
+      optional(field('type', $.identifier)),
       '[',
       optional(field('size', $._expression)),
       ']',

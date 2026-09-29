@@ -8,7 +8,7 @@ type str {
 }
 
 dat hello = "hello\n"            # i8 array of 6
-dat  nums = i[4]{ 1 }            # default type, remaining elements are zeroed
+dat  nums = [4]{ 1 }            # default type, remaining elements are zeroed
 dat  name = str{ 3, "abc" }      # remaining bytes of the field are zeroed
 dat small = i8(-3)
 dat  flag = true

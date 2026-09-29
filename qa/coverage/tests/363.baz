@@ -8,7 +8,7 @@ func main(){
     var b32 = i32(-13)
     var b64 = -17
 
-    var arr = i[8]{}
+    var arr = [8]{}
     arr[0] = b8
     arr[1] = b16
     arr[2] = b32
@@ -19,7 +19,7 @@ func main(){
     assert(arr[2] == -13)
     assert(arr[3] == -17)
 
-    var ptr = i[4]{}
+    var ptr = [4]{}
     ptr[0] = -1
     ptr[1] = -2
     ptr[2] = -3

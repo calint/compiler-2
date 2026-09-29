@@ -23,8 +23,6 @@ class stmt_def_func_param final : public statement {
 
         toc::assert_name_not_reserved(tok());
 
-        assert_type_before_brackets(tz, tok().text(), "");
-
         token delimiter_tk{tz.is_next_char_token(',')};
         if (delimiter_tk.is_empty()) {
             delimiter_tk = tz.is_next_char_token(')');
@@ -38,10 +36,14 @@ class stmt_def_func_param final : public statement {
             return;
         }
 
-        type_tk_ = tz.next_token();
+        // e.g. 'arr[]' has the default type
+        if (tz.peek_char_after_whitespace() != '[') {
+            type_tk_ = tz.next_token();
+        }
 
-        set_type(type_tk_.is_empty() ? tc.get_type_default()
-                                     : named_type(tc, type_tk_));
+        set_type(type_tk_.is_empty()
+                     ? tc.get_type_default()
+                     : tc.get_type_or_throw(type_tk_, type_tk_.text()));
 
         open_bracket_tk_ = tz.is_next_char_token('[');
         if (open_bracket_tk_.is_empty()) {

@@ -194,10 +194,10 @@ func arrays() {
     # an array literal names the element type and size, missing elements are
     # zeroed
 
-    var primes = i[]{2, 3, 5, 7}
+    var primes = []{2, 3, 5, 7}
     assert(array_length(primes) == 4)
-    # '[]' takes the size from the elements, 'i' is the default type and
-    # 'array_length' is a built-in function
+    # '[]' takes the size from the elements, no type name means the default
+    # type and 'array_length' is a built-in function
 
     var ix = 2
     primes[ix] = primes[ix + 1] * 2
@@ -292,8 +292,8 @@ func low_byte(v i32) res i8 {
 func first(arr i32[]) res i32 {
     res = arr[0]
 }
-# an array argument has '[]' after the type, 'i[]' with the default type, its
-# size comes from the caller
+# an array argument has '[]' after the type, only '[]' for the default type,
+# its size comes from the caller
 
 func functions() {
     var x = 3
@@ -411,7 +411,7 @@ func constructors() {
 #
 
 type stack {
-    items i[4],
+    items[4],
     count,
 }
 # a field can be an array, its size is part of the type
@@ -426,7 +426,7 @@ func stack.pop() res {
     res = self.items[self.count]
 }
 
-func sum_all(arr i[]) res {
+func sum_all(arr[]) res {
     res = 0
     foo arr {
         res = res + e
@@ -460,7 +460,7 @@ func arrays_in_types() {
 # data
 #
 
-dat powers = i[]{1, 2, 4, 8}
+dat powers = []{1, 2, 4, 8}
 dat calls = 0
 dat home = point{10, 20}
 dat history = stack{{1, 2}, 2}
@@ -532,7 +532,7 @@ func add_to_zero(v) res {
 }
 
 func checks() {
-    var arr = i[4]{}
+    var arr = [4]{}
     var ix = 3
     arr[ix] = 1
     assert(arr[3] == 1)

@@ -1,6 +1,6 @@
 # constant indexes set every element of an array field
 func assert(ok bool) { if not ok exit(1) }
-type pair {cells i[2]}
+type pair {cells[2]}
 func make_pair() res pair {
     res.cells[0] = 5
     res.cells[1] = res.cells[0] + 1

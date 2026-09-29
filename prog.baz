@@ -6,10 +6,10 @@
 
 type point { x, y }
 
-type object { pos point, color i32, }
+type object { pos point, color i32 }
 
-type world { locations i[8] }
-# `i` is the default integer type of the target platform
+type world { locations[8] }
+# array of default integer type of target platform
 
 type str {
     len i8,
@@ -27,7 +27,7 @@ dat     dot = "."
 dat      nl = "\n"
 dat   colon = ": "
 dat    nums = [4]{ 1 } # remaining elements are zeroed
-dat    str1 = str{ 3 }  # remaining fields are zeroed
+dat    str1 = str{ 3 } # remaining fields are zeroed
 dat    str2 = str{ 3, "baz" } # a string initializes an `i8` array
 
 dat greeted = "names greeted: "
@@ -271,7 +271,7 @@ func main() {
     faz(arr)
     assert(arr[1] == 0xfe)
 
-    var arr3 = i[]{ 3, 5 }
+    var arr3 = []{ 3, 5 }
     foo arr3 {
         e = e + i + n
     }
@@ -390,7 +390,7 @@ func main() {
              array_length(worlds[0].locations)
           ))
 
-    var arr2 = i[]{ -1, 2 }
+    var arr2 = []{ -1, 2 }
     assert(array_length(arr2) == 2)
     assert(arr2[0] == -1)
     assert(arr2[1] == 2)

@@ -4,7 +4,7 @@ func faz(x, y) res {
     res = x / y 
 }
 
-func fez(val i[]) res {
+func fez(val[]) res {
     res = val[2] / val[1] 
 }
 
@@ -17,7 +17,7 @@ func fuz(x, y) res {
 }
 
 func main() {
-    var values = i[4]{}
+    var values = [4]{}
     values[1] = 4
     values[2] = 8
 

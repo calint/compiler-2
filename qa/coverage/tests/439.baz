@@ -1,17 +1,17 @@
 # arrays with omitted element type use the target's default integer type
 
-type holder { first, values i[3], last }
-dat data = i[128]{ 1, 2 }
-dat inferred_data = i[]{ -3, 4, 5 }
-dat cleared_data = i[3]{}
+type holder { first, values[3], last }
+dat data = [128]{ 1, 2 }
+dat inferred_data = []{ -3, 4, 5 }
+dat cleared_data = [3]{}
 dat record = holder{ 7, { 10, 20 }, 9 }
 
 func assert(ok bool) { if not ok exit(1) }
 
 func main() {
-    var array = i[128]{ 1, 2 }
-    var inferred = i[]{ -3, 4, 5 }
-    var cleared = i[3]{}
+    var array = [128]{ 1, 2 }
+    var inferred = []{ -3, 4, 5 }
+    var cleared = [3]{}
     var scalar = 0
     assert(array_length(array) == 128)
     assert(array[0] == 1)

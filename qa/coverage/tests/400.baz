@@ -13,7 +13,7 @@ func store_after_inc(v, slot, i) {
 }
 
 func main() {
-    var arr = i[3]{10, 20, 30}
+    var arr = [3]{10, 20, 30}
 
     var ix = 0
     arr[ix] = ret_after_inc(ix)

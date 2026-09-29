@@ -257,25 +257,6 @@ class statement {
     // statics
     //
 
-    // parameters and fields put the brackets after the type like array
-    // literals 'i8[]{1, 2}' do, 'size' is the example size
-    static auto assert_type_before_brackets(tokenizer& tz,
-                                            const std::string_view name,
-                                            const std::string_view size)
-        -> void {
-
-        const token open_bracket_tk{tz.is_next_char_token('[')};
-        if (open_bracket_tk.is_empty()) {
-            return;
-        }
-
-        throw compiler_exception{
-            open_bracket_tk,
-            std::format("expected type before '[', e.g. '{0} i8[{1}]' or "
-                        "'{0} i[{1}]'",
-                        name, size)};
-    }
-
     [[nodiscard]] static auto fits_size_bytes(const int64_t value,
                                               const size_t size_bytes) -> bool {
 

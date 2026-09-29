@@ -27,11 +27,9 @@ class stmt_def_type_field final : public statement {
             throw compiler_exception{tk, "expected field name"};
         }
 
-        assert_type_before_brackets(tz, tk.text(), "4");
-
-        type_tk_ = tz.next_token();
-        if (type_tk_.is_empty()) {
-            return;
+        // e.g. 'tags[4]' has the default type
+        if (tz.peek_char_after_whitespace() != '[') {
+            type_tk_ = tz.next_token();
         }
 
         open_bracket_tk_ = tz.is_next_char_token('[');

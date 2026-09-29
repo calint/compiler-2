@@ -23,7 +23,7 @@ type point {x, y}
 
 type object {pos point, color i32}
 
-type world { locations i[8] }
+type world { locations[8] }
 
 func assert(ok bool) { if not ok exit(1) }
 
@@ -67,7 +67,7 @@ func main() {
     # x86: each 8-byte element is two 4-byte stores 'mov dword [rbp + 24], 3;
     # mov dword [rbp + 28], 0' instead of 'mov qword [rbp + 24], 3' although
     # the value fits a sign-extended 32-bit immediate (40 sites)
-    var arr3 = i[]{ 3, 5 }
+    var arr3 = []{ 3, 5 }
     var o3 = object[2]{}
     var worlds = world[8]{}
 

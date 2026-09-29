@@ -5,7 +5,7 @@ func assert(err, ok bool) { if not ok exit(err) }
 
 type list {
     count,
-    items i[4]
+    items[4]
 }
 
 type point {
