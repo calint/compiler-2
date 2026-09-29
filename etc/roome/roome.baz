@@ -145,7 +145,7 @@ func parse_input(cur_entity, inp str) {
 
 func main() {
     print(str_hello)
-    var counter = 0
+    
     var inp = str{}
     var cur_entity = 0
     loop {

@@ -103,24 +103,15 @@ main:
         # [11:5] free named register a1
         # [11:5] free named register a0
     func.print.147.5.end:
-    # [148:5] var counter = 0
-    # [148:9] counter: i32 (4 B @ [s0 + 149968])
-    # [148:9] counter = 0
-    # [148:19] 0
-    # [148:19] allocate scratch register -> t0
-    lui t0, 37
-    add t0, t0, s0
-    sw zero, -1584(t0)
-    # [148:19] free scratch register t0
     # [149:5] var inp = str{}
-    # [149:9] inp: str (128 B @ [s0 + 149972])
+    # [149:9] inp: str (128 B @ [s0 + 149968])
     # [149:9] inp = str{}
     # [149:15] zero remaining fields: 128 B
     # [149:15] zero loop of 4-byte accesses: start word aligned
     # [149:15] allocate scratch register -> t0
     lui t0, 37
     add t0, t0, s0
-    addi t0, t0, -1580
+    addi t0, t0, -1584
     # [149:15] allocate scratch register -> t1
     # [149:15] zero 4-byte words
     li t1, 32
@@ -132,13 +123,13 @@ main:
     # [149:15] free scratch register t1
     # [149:15] free scratch register t0
     # [150:5] var cur_entity = 0
-    # [150:9] cur_entity: i32 (4 B @ [s0 + 150100])
+    # [150:9] cur_entity: i32 (4 B @ [s0 + 150096])
     # [150:9] cur_entity = 0
     # [150:22] 0
     # [150:22] allocate scratch register -> t0
     lui t0, 37
     add t0, t0, s0
-    sw zero, -1452(t0)
+    sw zero, -1456(t0)
     # [150:22] free scratch register t0
     # [151:5] label
     loop.151.5:
@@ -149,7 +140,7 @@ main:
         # [152:12] allocate scratch register -> t0
         lui t0, 37
         add t0, t0, s0
-        lw t0, -1452(t0)
+        lw t0, -1456(t0)
         # [152:12] allocate scratch register -> t1
         lui t1, 37
         add t1, t1, s0
@@ -163,7 +154,7 @@ main:
             # [153:26] allocate scratch register -> t0
             lui t0, 37
             add t0, t0, s0
-            sw zero, -1452(t0)
+            sw zero, -1456(t0)
             # [153:26] free scratch register t0
         if.152.9.end:
         # [155:9] print(str_nl)
@@ -194,7 +185,7 @@ main:
         # [156:24] cur_entity
         lui t1, 37
         add t1, t1, s0
-        lw t1, -1452(t1)
+        lw t1, -1456(t1)
         # [156:24] bounds check
         # [156:24] lower bound (--checks=lower)
         bltz t1, 1f
@@ -330,12 +321,12 @@ main:
                     # [11:5] free named register a0
                 func.print.116.9.156.45.end:
                 # [117:9] var i = i16(0)
-                # [117:13] i: i16 (2 B @ [s0 + 150104])
+                # [117:13] i: i16 (2 B @ [s0 + 150100])
                 # [117:13] i = i16(0)
                 # [117:17] allocate scratch register -> t2
                 lui t2, 37
                 add t2, t2, s0
-                sh zero, -1448(t2)
+                sh zero, -1452(t2)
                 # [117:17] free scratch register t2
                 # [118:9] label
                 loop.118.9.156.45:
@@ -348,7 +339,7 @@ main:
                     # [119:16] allocate scratch register -> t3
                     lui t3, 37
                     add t3, t3, s0
-                    lh t3, -1448(t3)
+                    lh t3, -1452(t3)
                     beq t2, t3, loop.118.9.156.45.end
                     # [119:16] free scratch register t3
                     # [119:16] free scratch register t2
@@ -364,7 +355,7 @@ main:
                     # [120:40] i
                     lui t3, 37
                     add t3, t3, s0
-                    lh t3, -1448(t3)
+                    lh t3, -1452(t3)
                     # [120:40] bounds check
                     # [120:40] lower bound (--checks=lower)
                     bltz t3, 1f
@@ -465,9 +456,9 @@ main:
                     lui t2, 37
                     add t2, t2, s0
                     # [122:17] allocate scratch register -> t3
-                    lh t3, -1448(t2)
+                    lh t3, -1452(t2)
                     addi t3, t3, 1
-                    sh t3, -1448(t2)
+                    sh t3, -1452(t2)
                     # [122:17] free scratch register t3
                     # [122:17] free scratch register t2
                 j loop.118.9.156.45
@@ -504,12 +495,12 @@ main:
                     # [11:5] free named register a0
                 func.print.126.9.156.45.end:
                 # [127:9] var i = i8(0)
-                # [127:13] i: i8 (1 B @ [s0 + 150104])
+                # [127:13] i: i8 (1 B @ [s0 + 150100])
                 # [127:13] i = i8(0)
                 # [127:17] allocate scratch register -> t2
                 lui t2, 37
                 add t2, t2, s0
-                sb zero, -1448(t2)
+                sb zero, -1452(t2)
                 # [127:17] free scratch register t2
                 # [128:9] label
                 loop.128.9.156.45:
@@ -522,7 +513,7 @@ main:
                     # [129:16] allocate scratch register -> t3
                     lui t3, 37
                     add t3, t3, s0
-                    lb t3, -1448(t3)
+                    lb t3, -1452(t3)
                     beq t2, t3, loop.128.9.156.45.end
                     # [129:16] free scratch register t3
                     # [129:16] free scratch register t2
@@ -538,7 +529,7 @@ main:
                     # [130:35] i
                     lui t3, 37
                     add t3, t3, s0
-                    lb t3, -1448(t3)
+                    lb t3, -1452(t3)
                     # [130:35] bounds check
                     # [130:35] lower bound (--checks=lower)
                     bltz t3, 1f
@@ -635,9 +626,9 @@ main:
                     lui t2, 37
                     add t2, t2, s0
                     # [132:17] allocate scratch register -> t3
-                    lb t3, -1448(t2)
+                    lb t3, -1452(t2)
                     addi t3, t3, 1
-                    sb t3, -1448(t2)
+                    sb t3, -1452(t2)
                     # [132:17] free scratch register t3
                     # [132:17] free scratch register t2
                 j loop.128.9.156.45
@@ -712,7 +703,7 @@ main:
         # [157:18] cur_entity
         lui t0, 37
         add t0, t0, s0
-        lw t0, -1452(t0)
+        lw t0, -1456(t0)
         # [157:18] bounds check
         # [157:18] lower bound (--checks=lower)
         bltz t0, 1f
@@ -795,13 +786,13 @@ main:
         func.str.input.159.13:
             # [159:13] alias self -> inp
             # [25:5] var nbytes = 0
-            # [25:9] nbytes: i32 (4 B @ [s0 + 150104])
+            # [25:9] nbytes: i32 (4 B @ [s0 + 150100])
             # [25:9] nbytes = 0
             # [25:18] 0
             # [25:18] allocate scratch register -> t0
             lui t0, 37
             add t0, t0, s0
-            sw zero, -1448(t0)
+            sw zero, -1452(t0)
             # [25:18] free scratch register t0
             # [26:5] label
             loop.26.5.159.13:
@@ -817,7 +808,7 @@ main:
                 # [27:12] allocate scratch register -> t1
                 lui t1, 37
                 add t1, t1, s0
-                lw t1, -1448(t1)
+                lw t1, -1452(t1)
                 beq t1, t0, loop.26.5.159.13.end
                 # [27:12] free scratch register t1
                 # [27:12] free scratch register t0
@@ -843,7 +834,7 @@ main:
                     # [28:34] nbytes
                     lui t1, 37
                     add t1, t1, s0
-                    lw t1, -1448(t1)
+                    lw t1, -1452(t1)
                     # [28:34] bounds check
                     # [28:34] lower bound (--checks=lower)
                     bltz t1, 1f
@@ -861,7 +852,7 @@ main:
                     # [28:34] free scratch register t2
                     lui a1, 37
                     add a1, a1, s0
-                    addi a1, a1, -1580
+                    addi a1, a1, -1584
                     add a1, a1, t1
                     # [28:12] free scratch register t1
                     # [28:12] allocate named register a7
@@ -885,7 +876,7 @@ main:
                 # [29:22] nbytes
                 lui t0, 37
                 add t0, t0, s0
-                lw t0, -1448(t0)
+                lw t0, -1452(t0)
                 # [29:22] bounds check
                 # [29:22] lower bound (--checks=lower)
                 bltz t0, 1f
@@ -903,7 +894,7 @@ main:
                 lui t2, 37
                 add t1, t1, t2
                 # [29:12] free scratch register t2
-                lb t1, -1580(t1)
+                lb t1, -1584(t1)
                 # [29:12] allocate scratch register -> t2
                 li t2, 127
                 bne t1, t2, if.29.9.159.13.end
@@ -918,7 +909,7 @@ main:
                     # [30:16] allocate scratch register -> t0
                     lui t0, 37
                     add t0, t0, s0
-                    lw t0, -1448(t0)
+                    lw t0, -1452(t0)
                     bge zero, t0, if.30.13.159.13.end
                     # [30:16] free scratch register t0
                     if.30.16.159.13.code:
@@ -930,9 +921,9 @@ main:
                         lui t0, 37
                         add t0, t0, s0
                         # [31:26] allocate scratch register -> t1
-                        lw t1, -1448(t0)
+                        lw t1, -1452(t0)
                         addi t1, t1, -1
-                        sw t1, -1448(t0)
+                        sw t1, -1452(t0)
                         # [31:26] free scratch register t1
                         # [31:26] free scratch register t0
                         # [32:17] write(1, str_erase)
@@ -965,7 +956,7 @@ main:
                 # [36:32] nbytes
                 lui t0, 37
                 add t0, t0, s0
-                lw t0, -1448(t0)
+                lw t0, -1452(t0)
                 # [36:32] bounds check
                 # [36:32] lower bound (--checks=lower)
                 bltz t0, 1f
@@ -983,7 +974,7 @@ main:
                 # [36:32] free scratch register t1
                 lui a1, 37
                 add a1, a1, s0
-                addi a1, a1, -1580
+                addi a1, a1, -1584
                 add a1, a1, t0
                 # [36:9] free scratch register t0
                 # [36:9] allocate named register a7
@@ -1001,7 +992,7 @@ main:
                 # [37:22] nbytes
                 lui t0, 37
                 add t0, t0, s0
-                lw t0, -1448(t0)
+                lw t0, -1452(t0)
                 # [37:22] bounds check
                 # [37:22] lower bound (--checks=lower)
                 bltz t0, 1f
@@ -1019,7 +1010,7 @@ main:
                 lui t2, 37
                 add t1, t1, t2
                 # [37:12] free scratch register t2
-                lb t1, -1580(t1)
+                lb t1, -1584(t1)
                 # [37:12] allocate scratch register -> t2
                 li t2, 10
                 beq t1, t2, loop.26.5.159.13.end
@@ -1037,9 +1028,9 @@ main:
                 lui t0, 37
                 add t0, t0, s0
                 # [38:18] allocate scratch register -> t1
-                lw t1, -1448(t0)
+                lw t1, -1452(t0)
                 addi t1, t1, 1
-                sw t1, -1448(t0)
+                sw t1, -1452(t0)
                 # [38:18] free scratch register t1
                 # [38:18] free scratch register t0
             j loop.26.5.159.13
@@ -1051,11 +1042,11 @@ main:
             # [40:19] allocate scratch register -> t0
             lui t0, 37
             add t0, t0, s0
-            lw t0, -1448(t0)
+            lw t0, -1452(t0)
             # [40:19] allocate scratch register -> t1
             lui t1, 37
             add t1, t1, s0
-            sb t0, -1453(t1)
+            sb t0, -1457(t1)
             # [40:19] free scratch register t1
             # [40:19] free scratch register t0
         func.str.input.159.13.end:
@@ -1318,4 +1309,4 @@ vars.end:
 # inverted branches over jumps: 5
 #            max frames in use: 12
 #              dat var padding: 0 B
-#                max vars size: 140 B
+#                max vars size: 136 B
