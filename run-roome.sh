@@ -14,8 +14,8 @@ fi
 # the emulator requires an sd card image which the program does not use
 SDCARD="$(mktemp)"
 
-./baz --target=rv32i-fpga --vars=131072 --checks=noub \
-    etc/roome/roome.baz >etc/roome/roome.s
+./baz --target=rv32i-fpga --checks=noub,line etc/roome/roome.baz
+>etc/roome/roome.s
 
 IMAGE=etc/roome/roome-rv32i-fpga.bin
 

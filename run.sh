@@ -40,7 +40,7 @@ echo $SEP
 printf './baz'
 printf ' %q' "$@"
 printf '\n'
-./baz "$@" >"$ASM"
+./baz --checks=noub,line "$@" >"$ASM"
 echo $SEP
 COMMENT=';'
 if [[ -n "$RV32I" ]]; then
