@@ -1,22 +1,24 @@
-dat   hello = "welcome to adventure #6\n    type 'help'\n\nu r in roome\nu c me\nexits: none\ntodo: find an exit\n"
-dat prompt1 = "> "
-dat prompt2 = "unknown command\n"
-dat prompt3 = "hello "
-dat     dot = "."
-dat      nl = "\n"
-dat   erase = "\b \b"
-dat   colon = ": "
+dat  str_hello = "\nwelcome to adventure #6\n    type 'help'\n\n"
+dat     str_uc = "u c "
+dat  str_exits = "exits: "
+dat str_prompt = " > "
+dat     str_nl = "\n"
+dat  str_erase = "\b \b"
 
-type str {
-    len i8,
-    data i8[127]
+func print(s i8[]) {
+    write(1, s)
 }
 
-func str.out() {
+type str {
+    data i8[127],
+    len i8,
+}
+
+func str.print() {
     write(1, self.data, self.len)
 }
 
-func str.in() {
+func str.input() {
     # the uart does not echo, so each byte is written back as it is read
     var nbytes = 0
     loop {
@@ -25,7 +27,7 @@ func str.in() {
         if self.data[nbytes] == '\x7f' {
             if nbytes > 0 {
                 nbytes = nbytes - 1
-                write(1, erase)
+                write(1, str_erase)
             }
             continue
         }
@@ -36,70 +38,115 @@ func str.in() {
     self.len = i8(nbytes)
 }
 
-func noinline print_num(num) {
-    # 19 digits of an i64 plus the sign
-    const buf_count = 20
+const name_len = 16
+const id_list_len = 32
+const room_objects_len = 64
+const room_entities_len = 32
+const room_links_len = 8
+const names_len = 1024
+const rooms_len = 128
+const entities_len = 32
 
-    var buf = i8[buf_count]{}
-    var n = num
-    var is_negative = false
-
-    # digits are taken from the negative value because the most negative i64
-    # has no positive counterpart
-    if n < 0 {
-        is_negative = true
-    }
-    if n > 0 {
-        n = -n
-    }
- 
-    var i = buf_count
-    loop {
-        i = i - 1
-        buf[i] = i8('0' - n % 10)
-        n = n / 10
-        if n == 0 break
-    }
- 
-    if is_negative {
-        i = i - 1
-        buf[i] = '-'
-    }
- 
-    var write_pos = 0
-    loop {
-        buf[write_pos] = buf[i]
-        write_pos = write_pos + 1
-        i = i + 1
-        if i == buf_count break
-    }
- 
-    write(1, buf, write_pos)
+type id_list {
+    ids i16[id_list_len],
+    len i16
 }
 
-func print(s i8[]) {
-    write(1, s)
+type name {
+    text i8[name_len],
+    len i8,
+}
+
+func name.print() {
+    write(1, self.text, self.len)
+}
+
+dat names = name[names_len]{
+    { "none", 4 } 
+}
+
+type link {
+    name i16,
+    from i16,
+    to i16,
+}
+
+type room {
+    name name,
+    description str,
+    note str,
+    entities id_list,
+    links link[room_links_len],
+    links_len i8,
+    objects i16[room_objects_len],
+}
+
+type entity {
+    name name,
+    room i16,
+    messages str[16],
+}
+
+func entity.print() {
+    write(1, self.name.text, self.name.len)
+}
+
+dat rooms = room[rooms_len]{
+    { 
+        { "roome", 5 },
+        { "u r in roome", 12 },
+        { "todo: find an exit", 18 },
+        { { 0 }, 1 },
+        { {0, 0, 0} }, 1
+    } 
+}
+
+dat entities = entity[entities_len]{
+    { { "me", 2 }, 0 }
+}
+
+dat entities_len = 1
+
+func room.print() {
+    self.description.print()
+    print(str_nl)
+    if(self.entities.len > 0) {
+        print(str_uc)
+        var i = i16(0)
+        loop {
+            if self.entities.len == i break
+            entities[self.entities.ids[i]].print()
+            print(str_nl)
+            i = i + 1
+        }
+    }
+    if(self.links_len > 0) {
+        print(str_exits)
+        var i = i8(0)
+        loop {
+            if self.links_len == i break
+            names[self.links[i].name].print()
+            print(str_nl)
+            i = i + 1
+        }
+    }
+    self.note.print()
+    print(str_nl)
 }
 
 func main() {
+    print(str_hello)
     var counter = 0
-    var nm = str{}
-    print(hello)
+    var inp = str{}
+    var cur_entity = 0
     loop {
-        counter = counter + 1
-        print_num(counter)
-        print(colon)
-        print(prompt1)
-        nm.in()
-        if nm.len <= 4 {
-            print(prompt2)
-            continue
-        } else {
-            print(prompt3)
-            nm.out()
-            print(dot)
-            print(nl)
+        if cur_entity == entities_len {
+            cur_entity = 0
         }
+        rooms[entities[cur_entity].room].print()
+        entities[cur_entity].name.print()
+        print(str_prompt)
+        inp.input()
     }
 }
 

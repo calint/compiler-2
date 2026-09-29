@@ -6,9 +6,6 @@
 set -eu
 cd "$(dirname "$0")"
 
-# a given image is relative to the caller's directory
-IMAGE="$(realpath "${1:-$(dirname "$0")/roome-rv32i-fpga.bin}")"
-
 EMULATOR=fpga-emulator/osqa
 if [[ ! -x $EMULATOR ]]; then
     fpga-emulator/make.sh
@@ -20,6 +17,9 @@ SDCARD="$(mktemp)"
 ./baz --target=rv32i-fpga --vars=131072 --checks=noub \
     etc/roome/roome.baz >etc/roome/roome.s
 
+IMAGE=etc/roome/roome-rv32i-fpga.bin
+
 # ctrl-c skips the emulator's terminal restore
 trap 'rm -f "$SDCARD"; stty sane 2>/dev/null || true' EXIT
+echo "$EMULATOR" "$IMAGE" "$SDCARD"
 "$EMULATOR" "$IMAGE" "$SDCARD"
