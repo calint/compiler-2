@@ -27,8 +27,9 @@ dat     dot = "."
 dat      nl = "\n"
 dat   colon = ": "
 dat    nums = i[4]{ 1 } # remaining elements are zeroed
-dat    str1 = str{ 3, "baz" } # a string initializes an `i8` array
-                             # remaining fields are zeroed
+dat    str1 = str{ 3 }  # remaining fields are zeroed
+dat    str2 = str{ 3, "baz" } # a string initializes an `i8` array
+
 dat greeted = "names greeted: "
 dat   names = 0
 
@@ -194,7 +195,7 @@ func main() {
     assert(maybe == -1)
 
     assert(nums[0] == 1 and nums[3] == 0)
-    assert(str1.len == 3 and str1.data[2] == 'z')
+    assert(str2.len == 3 and str2.data[2] == 'z')
 
     var a = 7
     assert(a & 3 == 3)

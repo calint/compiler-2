@@ -154,8 +154,9 @@ dat     dot = "."
 dat      nl = "\n"
 dat   colon = ": "
 dat    nums = i[4]{ 1 } # remaining elements are zeroed
-dat    str1 = str{ 3, "baz" } # a string initializes an `i8` array
-                             # remaining fields are zeroed
+dat    str1 = str{ 3 }  # remaining fields are zeroed
+dat    str2 = str{ 3, "baz" } # a string initializes an `i8` array
+
 dat greeted = "names greeted: "
 dat   names = 0
 
@@ -321,7 +322,7 @@ func main() {
     assert(maybe == -1)
 
     assert(nums[0] == 1 and nums[3] == 0)
-    assert(str1.len == 3 and str1.data[2] == 'z')
+    assert(str2.len == 3 and str2.data[2] == 'z')
 
     var a = 7
     assert(a & 3 == 3)
@@ -560,338 +561,338 @@ global _start
 _start:
 lea rbp, [dat]
 main:
-    mov qword [rbp + 256], 0
-    cmp.182.12:
-    cmp qword [rbp + 256], 0
+    mov qword [rbp + 384], 0
+    cmp.183.12:
+    cmp qword [rbp + 384], 0
     sete r15b
-    bool.182.12.end:
-    func.assert.182.5:
-        if.37.27.182.5:
-        cmp.37.27.182.5:
+    bool.183.12.end:
+    func.assert.183.5:
+        if.38.27.183.5:
+        cmp.38.27.183.5:
         cmp r15b, 0
-        jne if.37.24.182.5.end
-        if.37.27.182.5.code:
+        jne if.38.24.183.5.end
+        if.38.27.183.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.182.5.end:
-    func.assert.182.5.end:
-    mov qword [rbp + 256], -1
-    cmp.185.12:
-    cmp qword [rbp + 256], -1
+        if.38.24.183.5.end:
+    func.assert.183.5.end:
+    mov qword [rbp + 384], -1
+    cmp.186.12:
+    cmp qword [rbp + 384], -1
     sete r15b
-    bool.185.12.end:
-    func.assert.185.5:
-        if.37.27.185.5:
-        cmp.37.27.185.5:
+    bool.186.12.end:
+    func.assert.186.5:
+        if.38.27.186.5:
+        cmp.38.27.186.5:
         cmp r15b, 0
-        jne if.37.24.185.5.end
-        if.37.27.185.5.code:
+        jne if.38.24.186.5.end
+        if.38.27.186.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.185.5.end:
-    func.assert.185.5.end:
-        func.assert.191.9:
-            if.37.27.191.9:
-            cmp.37.27.191.9:
-            if.37.24.191.9.end:
-        func.assert.191.9.end:
-    func.assert.194.5:
-        if.37.27.194.5:
-        cmp.37.27.194.5:
-        if.37.24.194.5.end:
-    func.assert.194.5.end:
-    cmp.196.12:
+        if.38.24.186.5.end:
+    func.assert.186.5.end:
+        func.assert.192.9:
+            if.38.27.192.9:
+            cmp.38.27.192.9:
+            if.38.24.192.9.end:
+        func.assert.192.9.end:
+    func.assert.195.5:
+        if.38.27.195.5:
+        cmp.38.27.195.5:
+        if.38.24.195.5.end:
+    func.assert.195.5.end:
+    cmp.197.12:
     cmp qword [rbp + 64], 1
     sete r15b
-    jne bool.196.12.end
-    cmp.196.29:
-    cmp qword [rbp + 88], 0
-    sete r15b
-    bool.196.12.end:
-    func.assert.196.5:
-        if.37.27.196.5:
-        cmp.37.27.196.5:
-        cmp r15b, 0
-        jne if.37.24.196.5.end
-        if.37.27.196.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if.37.24.196.5.end:
-    func.assert.196.5.end:
-    cmp.197.12:
-    cmp byte [rbp + 96], 3
-    sete r15b
     jne bool.197.12.end
-    cmp.197.30:
-    cmp byte [rbp + 99], 122
+    cmp.197.29:
+    cmp qword [rbp + 88], 0
     sete r15b
     bool.197.12.end:
     func.assert.197.5:
-        if.37.27.197.5:
-        cmp.37.27.197.5:
+        if.38.27.197.5:
+        cmp.38.27.197.5:
         cmp r15b, 0
-        jne if.37.24.197.5.end
-        if.37.27.197.5.code:
+        jne if.38.24.197.5.end
+        if.38.27.197.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.197.5.end:
+        if.38.24.197.5.end:
     func.assert.197.5.end:
-    mov qword [rbp + 264], 7
-    cmp.200.12:
-        mov r14, qword [rbp + 264]
+    cmp.198.12:
+    cmp byte [rbp + 224], 3
+    sete r15b
+    jne bool.198.12.end
+    cmp.198.30:
+    cmp byte [rbp + 227], 122
+    sete r15b
+    bool.198.12.end:
+    func.assert.198.5:
+        if.38.27.198.5:
+        cmp.38.27.198.5:
+        cmp r15b, 0
+        jne if.38.24.198.5.end
+        if.38.27.198.5.code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if.38.24.198.5.end:
+    func.assert.198.5.end:
+    mov qword [rbp + 392], 7
+    cmp.201.12:
+        mov r14, qword [rbp + 392]
         and r14, 3
     cmp r14, 3
     sete r15b
-    bool.200.12.end:
-    func.assert.200.5:
-        if.37.27.200.5:
-        cmp.37.27.200.5:
+    bool.201.12.end:
+    func.assert.201.5:
+        if.38.27.201.5:
+        cmp.38.27.201.5:
         cmp r15b, 0
-        jne if.37.24.200.5.end
-        if.37.27.200.5.code:
+        jne if.38.24.201.5.end
+        if.38.27.201.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.200.5.end:
-    func.assert.200.5.end:
-    cmp.201.12:
-        mov r14, qword [rbp + 264]
+        if.38.24.201.5.end:
+    func.assert.201.5.end:
+    cmp.202.12:
+        mov r14, qword [rbp + 392]
         or r14, 8
     cmp r14, 15
     sete r15b
-    bool.201.12.end:
-    func.assert.201.5:
-        if.37.27.201.5:
-        cmp.37.27.201.5:
+    bool.202.12.end:
+    func.assert.202.5:
+        if.38.27.202.5:
+        cmp.38.27.202.5:
         cmp r15b, 0
-        jne if.37.24.201.5.end
-        if.37.27.201.5.code:
+        jne if.38.24.202.5.end
+        if.38.27.202.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.201.5.end:
-    func.assert.201.5.end:
-    cmp.202.12:
-        mov r14, qword [rbp + 264]
+        if.38.24.202.5.end:
+    func.assert.202.5.end:
+    cmp.203.12:
+        mov r14, qword [rbp + 392]
         xor r14, 1
     cmp r14, 6
     sete r15b
-    bool.202.12.end:
-    func.assert.202.5:
-        if.37.27.202.5:
-        cmp.37.27.202.5:
+    bool.203.12.end:
+    func.assert.203.5:
+        if.38.27.203.5:
+        cmp.38.27.203.5:
         cmp r15b, 0
-        jne if.37.24.202.5.end
-        if.37.27.202.5.code:
+        jne if.38.24.203.5.end
+        if.38.27.203.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.202.5.end:
-    func.assert.202.5.end:
-    cmp.203.12:
-        mov r14, qword [rbp + 264]
+        if.38.24.203.5.end:
+    func.assert.203.5.end:
+    cmp.204.12:
+        mov r14, qword [rbp + 392]
         sal r14, 2
     cmp r14, 28
     sete r15b
-    bool.203.12.end:
-    func.assert.203.5:
-        if.37.27.203.5:
-        cmp.37.27.203.5:
+    bool.204.12.end:
+    func.assert.204.5:
+        if.38.27.204.5:
+        cmp.38.27.204.5:
         cmp r15b, 0
-        jne if.37.24.203.5.end
-        if.37.27.203.5.code:
+        jne if.38.24.204.5.end
+        if.38.27.204.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.203.5.end:
-    func.assert.203.5.end:
-    cmp.204.12:
-        mov r14, qword [rbp + 264]
+        if.38.24.204.5.end:
+    func.assert.204.5.end:
+    cmp.205.12:
+        mov r14, qword [rbp + 392]
         neg r14
         sar r14, 1
     cmp r14, -4
     sete r15b
-    bool.204.12.end:
-    func.assert.204.5:
-        if.37.27.204.5:
-        cmp.37.27.204.5:
+    bool.205.12.end:
+    func.assert.205.5:
+        if.38.27.205.5:
+        cmp.38.27.205.5:
         cmp r15b, 0
-        jne if.37.24.204.5.end
-        if.37.27.204.5.code:
+        jne if.38.24.205.5.end
+        if.38.27.205.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.204.5.end:
-    func.assert.204.5.end:
-    cmp.207.12:
-        mov r14, qword [rbp + 264]
-        mov r13, qword [rbp + 264]
+        if.38.24.205.5.end:
+    func.assert.205.5.end:
+    cmp.208.12:
+        mov r14, qword [rbp + 392]
+        mov r13, qword [rbp + 392]
         sal r13, 1
         add r14, r13
     cmp r14, 21
     sete r15b
-    bool.207.12.end:
-    func.assert.207.5:
-        if.37.27.207.5:
-        cmp.37.27.207.5:
+    bool.208.12.end:
+    func.assert.208.5:
+        if.38.27.208.5:
+        cmp.38.27.208.5:
         cmp r15b, 0
-        jne if.37.24.207.5.end
-        if.37.27.207.5.code:
+        jne if.38.24.208.5.end
+        if.38.27.208.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.207.5.end:
-    func.assert.207.5.end:
-    cmp.208.12:
-        mov r14, qword [rbp + 264]
-        add r14, qword [rbp + 264]
+        if.38.24.208.5.end:
+    func.assert.208.5.end:
+    cmp.209.12:
+        mov r14, qword [rbp + 392]
+        add r14, qword [rbp + 392]
         sal r14, 1
     cmp r14, 28
     sete r15b
-    bool.208.12.end:
-    func.assert.208.5:
-        if.37.27.208.5:
-        cmp.37.27.208.5:
+    bool.209.12.end:
+    func.assert.209.5:
+        if.38.27.209.5:
+        cmp.38.27.209.5:
         cmp r15b, 0
-        jne if.37.24.208.5.end
-        if.37.27.208.5.code:
+        jne if.38.24.209.5.end
+        if.38.27.209.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.208.5.end:
-    func.assert.208.5.end:
-    cmp.211.12:
-    cmp qword [rbp + 264], 0
+        if.38.24.209.5.end:
+    func.assert.209.5.end:
+    cmp.212.12:
+    cmp qword [rbp + 392], 0
     setne r15b
-    je bool.211.12.end
-    cmp.211.23:
-    cmp.211.24:
-    cmp qword [rbp + 264], 7
+    je bool.212.12.end
+    cmp.212.23:
+    cmp.212.24:
+    cmp qword [rbp + 392], 7
     setge r15b
-    jge bool.211.12.end
-    cmp.211.34:
-    cmp qword [rbp + 264], 0
+    jge bool.212.12.end
+    cmp.212.34:
+    cmp qword [rbp + 392], 0
     setl r15b
-    bool.211.12.end:
-    func.assert.211.5:
-        if.37.27.211.5:
-        cmp.37.27.211.5:
+    bool.212.12.end:
+    func.assert.212.5:
+        if.38.27.212.5:
+        cmp.38.27.212.5:
         cmp r15b, 0
-        jne if.37.24.211.5.end
-        if.37.27.211.5.code:
+        jne if.38.24.212.5.end
+        if.38.27.212.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.211.5.end:
-    func.assert.211.5.end:
-    mov byte [rbp + 272], 100
-    mov r15b, byte [rbp + 272]
-    add r15b, byte [rbp + 272]
-    mov byte [rbp + 272], r15b
-    cmp.216.12:
-    cmp byte [rbp + 272], -56
+        if.38.24.212.5.end:
+    func.assert.212.5.end:
+    mov byte [rbp + 400], 100
+    mov r15b, byte [rbp + 400]
+    add r15b, byte [rbp + 400]
+    mov byte [rbp + 400], r15b
+    cmp.217.12:
+    cmp byte [rbp + 400], -56
     sete r15b
-    bool.216.12.end:
-    func.assert.216.5:
-        if.37.27.216.5:
-        cmp.37.27.216.5:
+    bool.217.12.end:
+    func.assert.217.5:
+        if.38.27.217.5:
+        cmp.38.27.217.5:
         cmp r15b, 0
-        jne if.37.24.216.5.end
-        if.37.27.216.5.code:
+        jne if.38.24.217.5.end
+        if.38.27.217.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.216.5.end:
-    func.assert.216.5.end:
-    movsx r15, byte [rbp + 272]
-    mov qword [rbp + 280], r15
-    cmp.220.12:
-    cmp qword [rbp + 280], -56
+        if.38.24.217.5.end:
+    func.assert.217.5.end:
+    movsx r15, byte [rbp + 400]
+    mov qword [rbp + 408], r15
+    cmp.221.12:
+    cmp qword [rbp + 408], -56
     sete r15b
-    bool.220.12.end:
-    func.assert.220.5:
-        if.37.27.220.5:
-        cmp.37.27.220.5:
+    bool.221.12.end:
+    func.assert.221.5:
+        if.38.27.221.5:
+        cmp.38.27.221.5:
         cmp r15b, 0
-        jne if.37.24.220.5.end
-        if.37.27.220.5.code:
+        jne if.38.24.221.5.end
+        if.38.27.221.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.220.5.end:
-    func.assert.220.5.end:
-    mov qword [rbp + 288], 65
-    cmp.228.12:
-    cmp qword [rbp + 288], 65
+        if.38.24.221.5.end:
+    func.assert.221.5.end:
+    mov qword [rbp + 416], 65
+    cmp.229.12:
+    cmp qword [rbp + 416], 65
     sete r15b
-    bool.228.12.end:
-    func.assert.228.5:
-        if.37.27.228.5:
-        cmp.37.27.228.5:
+    bool.229.12.end:
+    func.assert.229.5:
+        if.38.27.229.5:
+        cmp.38.27.229.5:
         cmp r15b, 0
-        jne if.37.24.228.5.end
-        if.37.27.228.5.code:
+        jne if.38.24.229.5.end
+        if.38.27.229.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.228.5.end:
-    func.assert.228.5.end:
-    mov qword [rbp + 296], 0
-    mov qword [rbp + 304], 0
-    mov qword [rbp + 312], 1
-    mov r15, qword [rbp + 312]
+        if.38.24.229.5.end:
+    func.assert.229.5.end:
+    mov qword [rbp + 424], 0
+    mov qword [rbp + 432], 0
+    mov qword [rbp + 440], 1
+    mov r15, qword [rbp + 440]
     test r15, r15
     js baz_bounds_panic
     cmp r15, 4
     jge baz_bounds_panic
-    mov dword [rbp + r15 * 4 + 296], 2
-    mov r15, qword [rbp + 312]
+    mov dword [rbp + r15 * 4 + 424], 2
+    mov r15, qword [rbp + 440]
     add r15, 1
     test r15, r15
     js baz_bounds_panic
     cmp r15, 4
     jge baz_bounds_panic
-    mov r14, qword [rbp + 312]
+    mov r14, qword [rbp + 440]
     test r14, r14
     js baz_bounds_panic
     cmp r14, 4
     jge baz_bounds_panic
-    mov r13d, dword [rbp + r14 * 4 + 296]
-    mov dword [rbp + r15 * 4 + 296], r13d
-    cmp.236.12:
-    cmp dword [rbp + 300], 2
-    sete r15b
-    bool.236.12.end:
-    func.assert.236.5:
-        if.37.27.236.5:
-        cmp.37.27.236.5:
-        cmp r15b, 0
-        jne if.37.24.236.5.end
-        if.37.27.236.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if.37.24.236.5.end:
-    func.assert.236.5.end:
+    mov r13d, dword [rbp + r14 * 4 + 424]
+    mov dword [rbp + r15 * 4 + 424], r13d
     cmp.237.12:
-    cmp dword [rbp + 304], 2
+    cmp dword [rbp + 428], 2
     sete r15b
     bool.237.12.end:
     func.assert.237.5:
-        if.37.27.237.5:
-        cmp.37.27.237.5:
+        if.38.27.237.5:
+        cmp.38.27.237.5:
         cmp r15b, 0
-        jne if.37.24.237.5.end
-        if.37.27.237.5.code:
+        jne if.38.24.237.5.end
+        if.38.27.237.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.237.5.end:
+        if.38.24.237.5.end:
     func.assert.237.5.end:
+    cmp.238.12:
+    cmp dword [rbp + 432], 2
+    sete r15b
+    bool.238.12.end:
+    func.assert.238.5:
+        if.38.27.238.5:
+        cmp.38.27.238.5:
+        cmp r15b, 0
+        jne if.38.24.238.5.end
+        if.38.27.238.5.code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if.38.24.238.5.end:
+    func.assert.238.5.end:
     mov r15, 2
     mov r14, 2
     test r14, r14
@@ -906,27 +907,27 @@ main:
     js baz_bounds_panic
     cmp r15, 4
     jg baz_bounds_panic
-    mov rax, qword [rbp + r14 * 4 + 296]
-    mov qword [rbp + 296], rax
-    cmp.240.12:
-    cmp dword [rbp + 296], 2
+    mov rax, qword [rbp + r14 * 4 + 424]
+    mov qword [rbp + 424], rax
+    cmp.241.12:
+    cmp dword [rbp + 424], 2
     sete r15b
-    bool.240.12.end:
-    func.assert.240.5:
-        if.37.27.240.5:
-        cmp.37.27.240.5:
+    bool.241.12.end:
+    func.assert.241.5:
+        if.38.27.241.5:
+        cmp.38.27.241.5:
         cmp r15b, 0
-        jne if.37.24.240.5.end
-        if.37.27.240.5.code:
+        jne if.38.24.241.5.end
+        if.38.27.241.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.240.5.end:
-    func.assert.240.5.end:
-    mov qword [rbp + 320], 0
-    mov qword [rbp + 328], 0
-    mov qword [rbp + 336], 0
-    mov qword [rbp + 344], 0
+        if.38.24.241.5.end:
+    func.assert.241.5.end:
+    mov qword [rbp + 448], 0
+    mov qword [rbp + 456], 0
+    mov qword [rbp + 464], 0
+    mov qword [rbp + 472], 0
     mov r15, 4
     test r15, r15
     js baz_bounds_panic
@@ -936,11 +937,11 @@ main:
     js baz_bounds_panic
     cmp r15, 8
     jg baz_bounds_panic
-    mov rax, qword [rbp + 296]
-    mov qword [rbp + 320], rax
-    mov rax, qword [rbp + 304]
-    mov qword [rbp + 328], rax
-    cmp.245.14:
+    mov rax, qword [rbp + 424]
+    mov qword [rbp + 448], rax
+    mov rax, qword [rbp + 432]
+    mov qword [rbp + 456], rax
+    cmp.246.14:
         mov rcx, 3
         mov r15, 1
         test r15, r15
@@ -951,7 +952,7 @@ main:
         add r14, r15
         cmp r14, 4
         jg baz_bounds_panic
-        lea rsi, [rbp + r15 * 4 + 296]
+        lea rsi, [rbp + r15 * 4 + 424]
         mov r15, 1
         test r15, r15
         js baz_bounds_panic
@@ -961,353 +962,353 @@ main:
         add r14, r15
         cmp r14, 8
         jg baz_bounds_panic
-        lea rdi, [rbp + r15 * 4 + 320]
+        lea rdi, [rbp + r15 * 4 + 448]
         shl rcx, 2
         test rcx, rcx
         repe cmpsb
-        sete byte [rbp + 352]
-    bool.245.14.end:
-    cmp.248.12:
-    mov r15b, byte [rbp + 352]
-    bool.248.12.end:
-    func.assert.248.5:
-        if.37.27.248.5:
-        cmp.37.27.248.5:
+        sete byte [rbp + 480]
+    bool.246.14.end:
+    cmp.249.12:
+    mov r15b, byte [rbp + 480]
+    bool.249.12.end:
+    func.assert.249.5:
+        if.38.27.249.5:
+        cmp.38.27.249.5:
         cmp r15b, 0
-        jne if.37.24.248.5.end
-        if.37.27.248.5.code:
+        jne if.38.24.249.5.end
+        if.38.27.249.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.248.5.end:
-    func.assert.248.5.end:
-    mov dword [rbp + 328], -1
-    cmp.251.12:
+        if.38.24.249.5.end:
+    func.assert.249.5.end:
+    mov dword [rbp + 456], -1
+    cmp.252.12:
         mov rcx, 4
         test rcx, rcx
         js baz_bounds_panic
         cmp rcx, 4
         jg baz_bounds_panic
-        lea rsi, [rbp + 296]
+        lea rsi, [rbp + 424]
         test rcx, rcx
         js baz_bounds_panic
         cmp rcx, 8
         jg baz_bounds_panic
-        lea rdi, [rbp + 320]
+        lea rdi, [rbp + 448]
         shl rcx, 2
         test rcx, rcx
         repe cmpsb
         setne r15b
-    bool.251.12.end:
-    func.assert.251.5:
-        if.37.27.251.5:
-        cmp.37.27.251.5:
+    bool.252.12.end:
+    func.assert.252.5:
+        if.38.27.252.5:
+        cmp.38.27.252.5:
         cmp r15b, 0
-        jne if.37.24.251.5.end
-        if.37.27.251.5.code:
+        jne if.38.24.252.5.end
+        if.38.27.252.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.251.5.end:
-    func.assert.251.5.end:
-    mov rax, qword [rbp + 296]
-    mov qword [rbp + 356], rax
-    mov rax, qword [rbp + 304]
-    mov qword [rbp + 364], rax
-    cmp.254.12:
-        lea rsi, [rbp + 296]
-        lea rdi, [rbp + 356]
+        if.38.24.252.5.end:
+    func.assert.252.5.end:
+    mov rax, qword [rbp + 424]
+    mov qword [rbp + 484], rax
+    mov rax, qword [rbp + 432]
+    mov qword [rbp + 492], rax
+    cmp.255.12:
+        lea rsi, [rbp + 424]
+        lea rdi, [rbp + 484]
         cmpsq
         jne .Lbaz_equal.0
         cmpsq
         .Lbaz_equal.0:
         sete r15b
-    bool.254.12.end:
-    func.assert.254.5:
-        if.37.27.254.5:
-        cmp.37.27.254.5:
+    bool.255.12.end:
+    func.assert.255.5:
+        if.38.27.255.5:
+        cmp.38.27.255.5:
         cmp r15b, 0
-        jne if.37.24.254.5.end
-        if.37.27.254.5.code:
+        jne if.38.24.255.5.end
+        if.38.27.255.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.254.5.end:
-    func.assert.254.5.end:
-    mov qword [rbp + 312], 3
-    mov r15, qword [rbp + 312]
+        if.38.24.255.5.end:
+    func.assert.255.5.end:
+    mov qword [rbp + 440], 3
+    mov r15, qword [rbp + 440]
     sub r15, 1
     test r15, r15
     js baz_bounds_panic
     cmp r15, 4
     jge baz_bounds_panic
-    func.inv.262.16:
-        mov r14d, dword [rbp + r15 * 4 + 296]
-        mov dword [rbp + 372], r14d
-        not dword [rbp + 372]
-    func.inv.262.16.end:
-    not dword [rbp + 372]
-    mov r15, qword [rbp + 312]
+    func.inv.263.16:
+        mov r14d, dword [rbp + r15 * 4 + 424]
+        mov dword [rbp + 500], r14d
+        not dword [rbp + 500]
+    func.inv.263.16.end:
+    not dword [rbp + 500]
+    mov r15, qword [rbp + 440]
     test r15, r15
     js baz_bounds_panic
     cmp r15, 4
     jge baz_bounds_panic
-    mov r14d, dword [rbp + 372]
-    mov dword [rbp + r15 * 4 + 296], r14d
-    cmp.264.12:
-    mov r14, qword [rbp + 312]
+    mov r14d, dword [rbp + 500]
+    mov dword [rbp + r15 * 4 + 424], r14d
+    cmp.265.12:
+    mov r14, qword [rbp + 440]
     test r14, r14
     js baz_bounds_panic
     cmp r14, 4
     jge baz_bounds_panic
-    cmp dword [rbp + r14 * 4 + 296], 2
+    cmp dword [rbp + r14 * 4 + 424], 2
     sete r15b
-    bool.264.12.end:
-    func.assert.264.5:
-        if.37.27.264.5:
-        cmp.37.27.264.5:
+    bool.265.12.end:
+    func.assert.265.5:
+        if.38.27.265.5:
+        cmp.38.27.265.5:
         cmp r15b, 0
-        jne if.37.24.264.5.end
-        if.37.27.264.5.code:
+        jne if.38.24.265.5.end
+        if.38.27.265.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.264.5.end:
-    func.assert.264.5.end:
-    func.faz.266.5:
-        mov dword [rbp + 300], 254
-    func.faz.266.5.end:
-    cmp.267.12:
-    cmp dword [rbp + 300], 254
+        if.38.24.265.5.end:
+    func.assert.265.5.end:
+    func.faz.267.5:
+        mov dword [rbp + 428], 254
+    func.faz.267.5.end:
+    cmp.268.12:
+    cmp dword [rbp + 428], 254
     sete r15b
-    bool.267.12.end:
-    func.assert.267.5:
-        if.37.27.267.5:
-        cmp.37.27.267.5:
+    bool.268.12.end:
+    func.assert.268.5:
+        if.38.27.268.5:
+        cmp.38.27.268.5:
         cmp r15b, 0
-        jne if.37.24.267.5.end
-        if.37.27.267.5.code:
+        jne if.38.24.268.5.end
+        if.38.27.268.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.267.5.end:
-    func.assert.267.5.end:
-    mov qword [rbp + 376], 3
-    mov qword [rbp + 384], 5
-    lea r15, [rbp + 376]
-    mov qword [rbp + 400], 0
-    foo.270.5:
-        mov r14, qword [rbp + 400]
+        if.38.24.268.5.end:
+    func.assert.268.5.end:
+    mov qword [rbp + 504], 3
+    mov qword [rbp + 512], 5
+    lea r15, [rbp + 504]
+    mov qword [rbp + 528], 0
+    foo.271.5:
+        mov r14, qword [rbp + 528]
         add qword [r15], r14
         add qword [r15], 2
-        foo.270.5.continue:
+        foo.271.5.continue:
             add r15, 8
-            inc qword [rbp + 400]
-            cmp qword [rbp + 400], 2
-            jne foo.270.5
-    foo.270.5.end:
-    cmp.273.12:
-    cmp qword [rbp + 376], 5
-    sete r15b
-    bool.273.12.end:
-    func.assert.273.5:
-        if.37.27.273.5:
-        cmp.37.27.273.5:
-        cmp r15b, 0
-        jne if.37.24.273.5.end
-        if.37.27.273.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if.37.24.273.5.end:
-    func.assert.273.5.end:
+            inc qword [rbp + 528]
+            cmp qword [rbp + 528], 2
+            jne foo.271.5
+    foo.271.5.end:
     cmp.274.12:
-    cmp qword [rbp + 384], 8
+    cmp qword [rbp + 504], 5
     sete r15b
     bool.274.12.end:
     func.assert.274.5:
-        if.37.27.274.5:
-        cmp.37.27.274.5:
+        if.38.27.274.5:
+        cmp.38.27.274.5:
         cmp r15b, 0
-        jne if.37.24.274.5.end
-        if.37.27.274.5.code:
+        jne if.38.24.274.5.end
+        if.38.27.274.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.274.5.end:
+        if.38.24.274.5.end:
     func.assert.274.5.end:
-    mov qword [rbp + 392], 0
-    mov qword [rbp + 400], 0
-    func.point.fooz.282.7:
-        mov qword [rbp + 392], 2
-        mov qword [rbp + 400], 11
-    func.point.fooz.282.7.end:
-    cmp.285.12:
-    cmp qword [rbp + 392], 2
+    cmp.275.12:
+    cmp qword [rbp + 512], 8
     sete r15b
-    bool.285.12.end:
-    func.assert.285.5:
-        if.37.27.285.5:
-        cmp.37.27.285.5:
+    bool.275.12.end:
+    func.assert.275.5:
+        if.38.27.275.5:
+        cmp.38.27.275.5:
         cmp r15b, 0
-        jne if.37.24.285.5.end
-        if.37.27.285.5.code:
+        jne if.38.24.275.5.end
+        if.38.27.275.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.285.5.end:
-    func.assert.285.5.end:
+        if.38.24.275.5.end:
+    func.assert.275.5.end:
+    mov qword [rbp + 520], 0
+    mov qword [rbp + 528], 0
+    func.point.fooz.283.7:
+        mov qword [rbp + 520], 2
+        mov qword [rbp + 528], 11
+    func.point.fooz.283.7.end:
     cmp.286.12:
-    cmp qword [rbp + 400], 11
+    cmp qword [rbp + 520], 2
     sete r15b
     bool.286.12.end:
     func.assert.286.5:
-        if.37.27.286.5:
-        cmp.37.27.286.5:
+        if.38.27.286.5:
+        cmp.38.27.286.5:
         cmp r15b, 0
-        jne if.37.24.286.5.end
-        if.37.27.286.5.code:
+        jne if.38.24.286.5.end
+        if.38.27.286.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.286.5.end:
+        if.38.24.286.5.end:
     func.assert.286.5.end:
-    mov rax, qword [rbp + 392]
-    mov qword [rbp + 408], rax
-    mov rax, qword [rbp + 400]
-    mov qword [rbp + 416], rax
-    cmp.291.12:
-        lea rsi, [rbp + 392]
-        lea rdi, [rbp + 408]
+    cmp.287.12:
+    cmp qword [rbp + 528], 11
+    sete r15b
+    bool.287.12.end:
+    func.assert.287.5:
+        if.38.27.287.5:
+        cmp.38.27.287.5:
+        cmp r15b, 0
+        jne if.38.24.287.5.end
+        if.38.27.287.5.code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if.38.24.287.5.end:
+    func.assert.287.5.end:
+    mov rax, qword [rbp + 520]
+    mov qword [rbp + 536], rax
+    mov rax, qword [rbp + 528]
+    mov qword [rbp + 544], rax
+    cmp.292.12:
+        lea rsi, [rbp + 520]
+        lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.1
         cmpsq
         .Lbaz_equal.1:
         sete r15b
-    bool.291.12.end:
-    func.assert.291.5:
-        if.37.27.291.5:
-        cmp.37.27.291.5:
+    bool.292.12.end:
+    func.assert.292.5:
+        if.38.27.292.5:
+        cmp.38.27.292.5:
         cmp r15b, 0
-        jne if.37.24.291.5.end
-        if.37.27.291.5.code:
+        jne if.38.24.292.5.end
+        if.38.27.292.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.291.5.end:
-    func.assert.291.5.end:
-    mov qword [rbp + 408], 3
-    cmp.296.12:
-        lea rsi, [rbp + 392]
-        lea rdi, [rbp + 408]
+        if.38.24.292.5.end:
+    func.assert.292.5.end:
+    mov qword [rbp + 536], 3
+    cmp.297.12:
+        lea rsi, [rbp + 520]
+        lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.2
         cmpsq
         .Lbaz_equal.2:
         setne r15b
-    bool.296.12.end:
-    func.assert.296.5:
-        if.37.27.296.5:
-        cmp.37.27.296.5:
+    bool.297.12.end:
+    func.assert.297.5:
+        if.38.27.297.5:
+        cmp.38.27.297.5:
         cmp r15b, 0
-        jne if.37.24.296.5.end
-        if.37.27.296.5.code:
+        jne if.38.24.297.5.end
+        if.38.27.297.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.296.5.end:
-    func.assert.296.5.end:
-    mov qword [rbp + 424], 0
-    func.bar.299.5:
-        if.58.8.299.5:
-        cmp.58.8.299.5:
-        cmp qword [rbp + 424], 0
-        je func.bar.299.5.end
-        if.58.8.299.5.code:
-        if.58.5.299.5.end:
-        mov qword [rbp + 424], 255
-    func.bar.299.5.end:
-    cmp.300.12:
-    cmp qword [rbp + 424], 0
+        if.38.24.297.5.end:
+    func.assert.297.5.end:
+    mov qword [rbp + 552], 0
+    func.bar.300.5:
+        if.59.8.300.5:
+        cmp.59.8.300.5:
+        cmp qword [rbp + 552], 0
+        je func.bar.300.5.end
+        if.59.8.300.5.code:
+        if.59.5.300.5.end:
+        mov qword [rbp + 552], 255
+    func.bar.300.5.end:
+    cmp.301.12:
+    cmp qword [rbp + 552], 0
     sete r15b
-    bool.300.12.end:
-    func.assert.300.5:
-        if.37.27.300.5:
-        cmp.37.27.300.5:
+    bool.301.12.end:
+    func.assert.301.5:
+        if.38.27.301.5:
+        cmp.38.27.301.5:
         cmp r15b, 0
-        jne if.37.24.300.5.end
-        if.37.27.300.5.code:
+        jne if.38.24.301.5.end
+        if.38.27.301.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.300.5.end:
-    func.assert.300.5.end:
-    mov qword [rbp + 424], 1
-    func.bar.303.5:
-        if.58.8.303.5:
-        cmp.58.8.303.5:
-        cmp qword [rbp + 424], 0
-        je func.bar.303.5.end
-        if.58.8.303.5.code:
-        if.58.5.303.5.end:
-        mov qword [rbp + 424], 255
-    func.bar.303.5.end:
-    cmp.304.12:
-    cmp qword [rbp + 424], 255
+        if.38.24.301.5.end:
+    func.assert.301.5.end:
+    mov qword [rbp + 552], 1
+    func.bar.304.5:
+        if.59.8.304.5:
+        cmp.59.8.304.5:
+        cmp qword [rbp + 552], 0
+        je func.bar.304.5.end
+        if.59.8.304.5.code:
+        if.59.5.304.5.end:
+        mov qword [rbp + 552], 255
+    func.bar.304.5.end:
+    cmp.305.12:
+    cmp qword [rbp + 552], 255
     sete r15b
-    bool.304.12.end:
-    func.assert.304.5:
-        if.37.27.304.5:
-        cmp.37.27.304.5:
+    bool.305.12.end:
+    func.assert.305.5:
+        if.38.27.305.5:
+        cmp.38.27.305.5:
         cmp r15b, 0
-        jne if.37.24.304.5.end
-        if.37.27.304.5.code:
+        jne if.38.24.305.5.end
+        if.38.27.305.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.304.5.end:
-    func.assert.304.5.end:
-    mov qword [rbp + 432], 1
-    func.baz.307.13:
-        mov r15, qword [rbp + 432]
-        mov qword [rbp + 440], r15
-        sal qword [rbp + 440], 1
-    func.baz.307.13.end:
-    cmp.308.12:
-    cmp qword [rbp + 440], 2
+        if.38.24.305.5.end:
+    func.assert.305.5.end:
+    mov qword [rbp + 560], 1
+    func.baz.308.13:
+        mov r15, qword [rbp + 560]
+        mov qword [rbp + 568], r15
+        sal qword [rbp + 568], 1
+    func.baz.308.13.end:
+    cmp.309.12:
+    cmp qword [rbp + 568], 2
     sete r15b
-    bool.308.12.end:
-    func.assert.308.5:
-        if.37.27.308.5:
-        cmp.37.27.308.5:
+    bool.309.12.end:
+    func.assert.309.5:
+        if.38.27.309.5:
+        cmp.38.27.309.5:
         cmp r15b, 0
-        jne if.37.24.308.5.end
-        if.37.27.308.5.code:
+        jne if.38.24.309.5.end
+        if.38.27.309.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.308.5.end:
-    func.assert.308.5.end:
-    func.baz.310.9:
-        mov qword [rbp + 440], 2
-    func.baz.310.9.end:
-    cmp.311.12:
-    cmp qword [rbp + 440], 2
+        if.38.24.309.5.end:
+    func.assert.309.5.end:
+    func.baz.311.9:
+        mov qword [rbp + 568], 2
+    func.baz.311.9.end:
+    cmp.312.12:
+    cmp qword [rbp + 568], 2
     sete r15b
-    bool.311.12.end:
-    func.assert.311.5:
-        if.37.27.311.5:
-        cmp.37.27.311.5:
+    bool.312.12.end:
+    func.assert.312.5:
+        if.38.27.312.5:
+        cmp.38.27.312.5:
         cmp r15b, 0
-        jne if.37.24.311.5.end
-        if.37.27.311.5.code:
+        jne if.38.24.312.5.end
+        if.38.27.312.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.311.5.end:
-    func.assert.311.5.end:
-    mov qword [rbp + 448], 5
-    lea r15, [rbp + 464]
+        if.38.24.312.5.end:
+    func.assert.312.5.end:
+    mov qword [rbp + 576], 5
+    lea r15, [rbp + 592]
     lea r14, [vars]
     cmp r15, r14
     jb baz_frame_overflow
@@ -1318,502 +1319,502 @@ main:
     mov r15, size.func.factorial
     cmp r15, r14
     ja baz_frame_overflow
-    lea r15, [rbp + 456]
-    mov qword [rbp + 464], r15
-    lea r15, [rbp + 448]
-    mov qword [rbp + 472], r15
-    lea rbx, [rbp + 464]
+    lea r15, [rbp + 584]
+    mov qword [rbp + 592], r15
+    lea r15, [rbp + 576]
+    mov qword [rbp + 600], r15
+    lea rbx, [rbp + 592]
     call func.factorial
-    cmp.315.12:
-    cmp qword [rbp + 456], 120
+    cmp.316.12:
+    cmp qword [rbp + 584], 120
     sete r15b
-    bool.315.12.end:
-    func.assert.315.5:
-        if.37.27.315.5:
-        cmp.37.27.315.5:
+    bool.316.12.end:
+    func.assert.316.5:
+        if.38.27.316.5:
+        cmp.38.27.316.5:
         cmp r15b, 0
-        jne if.37.24.315.5.end
-        if.37.27.315.5.code:
+        jne if.38.24.316.5.end
+        if.38.27.316.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.315.5.end:
-    func.assert.315.5.end:
-    func.baz.317.20:
-        mov qword [rbp + 464], 6
-    func.baz.317.20.end:
-    mov qword [rbp + 472], 0
-    cmp.318.12:
-    cmp qword [rbp + 464], 6
+        if.38.24.316.5.end:
+    func.assert.316.5.end:
+    func.baz.318.20:
+        mov qword [rbp + 592], 6
+    func.baz.318.20.end:
+    mov qword [rbp + 600], 0
+    cmp.319.12:
+    cmp qword [rbp + 592], 6
     sete r15b
-    bool.318.12.end:
-    func.assert.318.5:
-        if.37.27.318.5:
-        cmp.37.27.318.5:
+    bool.319.12.end:
+    func.assert.319.5:
+        if.38.27.319.5:
+        cmp.38.27.319.5:
         cmp r15b, 0
-        jne if.37.24.318.5.end
-        if.37.27.318.5.code:
+        jne if.38.24.319.5.end
+        if.38.27.319.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.318.5.end:
-    func.assert.318.5.end:
-    func.point.at.320.14:
-        mov qword [rbp + 480], -1
-        mov qword [rbp + 488], -2
-    func.point.at.320.14.end:
-    cmp.324.12:
-    cmp qword [rbp + 480], -1
-    sete r15b
-    bool.324.12.end:
-    func.assert.324.5:
-        if.37.27.324.5:
-        cmp.37.27.324.5:
-        cmp r15b, 0
-        jne if.37.24.324.5.end
-        if.37.27.324.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if.37.24.324.5.end:
-    func.assert.324.5.end:
+        if.38.24.319.5.end:
+    func.assert.319.5.end:
+    func.point.at.321.14:
+        mov qword [rbp + 608], -1
+        mov qword [rbp + 616], -2
+    func.point.at.321.14.end:
     cmp.325.12:
-    cmp qword [rbp + 488], -2
+    cmp qword [rbp + 608], -1
     sete r15b
     bool.325.12.end:
     func.assert.325.5:
-        if.37.27.325.5:
-        cmp.37.27.325.5:
+        if.38.27.325.5:
+        cmp.38.27.325.5:
         cmp r15b, 0
-        jne if.37.24.325.5.end
-        if.37.27.325.5.code:
+        jne if.38.24.325.5.end
+        if.38.27.325.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.325.5.end:
+        if.38.24.325.5.end:
     func.assert.325.5.end:
-    func.point.x.327.8:
-        mov qword [rbp + 480], 2
-    func.point.x.327.8.end:
-    cmp.328.12:
-    cmp qword [rbp + 480], 2
+    cmp.326.12:
+    cmp qword [rbp + 616], -2
     sete r15b
-    bool.328.12.end:
-    func.assert.328.5:
-        if.37.27.328.5:
-        cmp.37.27.328.5:
+    bool.326.12.end:
+    func.assert.326.5:
+        if.38.27.326.5:
+        cmp.38.27.326.5:
         cmp r15b, 0
-        jne if.37.24.328.5.end
-        if.37.27.328.5.code:
+        jne if.38.24.326.5.end
+        if.38.27.326.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.328.5.end:
-    func.assert.328.5.end:
+        if.38.24.326.5.end:
+    func.assert.326.5.end:
+    func.point.x.328.8:
+        mov qword [rbp + 608], 2
+    func.point.x.328.8.end:
     cmp.329.12:
-        func.point.sum.329.15:
-            mov r14, qword [rbp + 480]
-            add r14, qword [rbp + 488]
-        func.point.sum.329.15.end:
-    cmp r14, 0
+    cmp qword [rbp + 608], 2
     sete r15b
     bool.329.12.end:
     func.assert.329.5:
-        if.37.27.329.5:
-        cmp.37.27.329.5:
+        if.38.27.329.5:
+        cmp.38.27.329.5:
         cmp r15b, 0
-        jne if.37.24.329.5.end
-        if.37.27.329.5.code:
+        jne if.38.24.329.5.end
+        if.38.27.329.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.329.5.end:
+        if.38.24.329.5.end:
     func.assert.329.5.end:
-    mov qword [rbp + 496], 1
-    mov qword [rbp + 504], 2
-    mov r15, qword [rbp + 496]
-    imul r15, 10
-    mov qword [rbp + 512], r15
-    mov r15, qword [rbp + 504]
-    mov qword [rbp + 520], r15
-    mov dword [rbp + 528], 16711680
-    mov dword [rbp + 532], 0
-    cmp.335.12:
-    cmp qword [rbp + 512], 10
+    cmp.330.12:
+        func.point.sum.330.15:
+            mov r14, qword [rbp + 608]
+            add r14, qword [rbp + 616]
+        func.point.sum.330.15.end:
+    cmp r14, 0
     sete r15b
-    bool.335.12.end:
-    func.assert.335.5:
-        if.37.27.335.5:
-        cmp.37.27.335.5:
+    bool.330.12.end:
+    func.assert.330.5:
+        if.38.27.330.5:
+        cmp.38.27.330.5:
         cmp r15b, 0
-        jne if.37.24.335.5.end
-        if.37.27.335.5.code:
+        jne if.38.24.330.5.end
+        if.38.27.330.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.335.5.end:
-    func.assert.335.5.end:
+        if.38.24.330.5.end:
+    func.assert.330.5.end:
+    mov qword [rbp + 624], 1
+    mov qword [rbp + 632], 2
+    mov r15, qword [rbp + 624]
+    imul r15, 10
+    mov qword [rbp + 640], r15
+    mov r15, qword [rbp + 632]
+    mov qword [rbp + 648], r15
+    mov dword [rbp + 656], 16711680
+    mov dword [rbp + 660], 0
     cmp.336.12:
-    cmp qword [rbp + 520], 2
+    cmp qword [rbp + 640], 10
     sete r15b
     bool.336.12.end:
     func.assert.336.5:
-        if.37.27.336.5:
-        cmp.37.27.336.5:
+        if.38.27.336.5:
+        cmp.38.27.336.5:
         cmp r15b, 0
-        jne if.37.24.336.5.end
-        if.37.27.336.5.code:
+        jne if.38.24.336.5.end
+        if.38.27.336.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.336.5.end:
+        if.38.24.336.5.end:
     func.assert.336.5.end:
     cmp.337.12:
-    cmp dword [rbp + 528], 16711680
+    cmp qword [rbp + 648], 2
     sete r15b
     bool.337.12.end:
     func.assert.337.5:
-        if.37.27.337.5:
-        cmp.37.27.337.5:
+        if.38.27.337.5:
+        cmp.38.27.337.5:
         cmp r15b, 0
-        jne if.37.24.337.5.end
-        if.37.27.337.5.code:
+        jne if.38.24.337.5.end
+        if.38.27.337.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.337.5.end:
+        if.38.24.337.5.end:
     func.assert.337.5.end:
-    mov r15, qword [rbp + 496]
-    mov qword [rbp + 536], r15
-    neg qword [rbp + 536]
-    mov r15, qword [rbp + 504]
-    mov qword [rbp + 544], r15
-    neg qword [rbp + 544]
-    mov rax, qword [rbp + 536]
-    mov qword [rbp + 512], rax
-    mov rax, qword [rbp + 544]
-    mov qword [rbp + 520], rax
-    cmp.341.12:
-    cmp qword [rbp + 512], -1
+    cmp.338.12:
+    cmp dword [rbp + 656], 16711680
     sete r15b
-    bool.341.12.end:
-    func.assert.341.5:
-        if.37.27.341.5:
-        cmp.37.27.341.5:
+    bool.338.12.end:
+    func.assert.338.5:
+        if.38.27.338.5:
+        cmp.38.27.338.5:
         cmp r15b, 0
-        jne if.37.24.341.5.end
-        if.37.27.341.5.code:
+        jne if.38.24.338.5.end
+        if.38.27.338.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.341.5.end:
-    func.assert.341.5.end:
+        if.38.24.338.5.end:
+    func.assert.338.5.end:
+    mov r15, qword [rbp + 624]
+    mov qword [rbp + 664], r15
+    neg qword [rbp + 664]
+    mov r15, qword [rbp + 632]
+    mov qword [rbp + 672], r15
+    neg qword [rbp + 672]
+    mov rax, qword [rbp + 664]
+    mov qword [rbp + 640], rax
+    mov rax, qword [rbp + 672]
+    mov qword [rbp + 648], rax
     cmp.342.12:
-    cmp qword [rbp + 520], -2
+    cmp qword [rbp + 640], -1
     sete r15b
     bool.342.12.end:
     func.assert.342.5:
-        if.37.27.342.5:
-        cmp.37.27.342.5:
+        if.38.27.342.5:
+        cmp.38.27.342.5:
         cmp r15b, 0
-        jne if.37.24.342.5.end
-        if.37.27.342.5.code:
+        jne if.38.24.342.5.end
+        if.38.27.342.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.342.5.end:
+        if.38.24.342.5.end:
     func.assert.342.5.end:
-    lea rsi, [rbp + 512]
-    lea rdi, [rbp + 552]
+    cmp.343.12:
+    cmp qword [rbp + 648], -2
+    sete r15b
+    bool.343.12.end:
+    func.assert.343.5:
+        if.38.27.343.5:
+        cmp.38.27.343.5:
+        cmp r15b, 0
+        jne if.38.24.343.5.end
+        if.38.27.343.5.code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if.38.24.343.5.end:
+    func.assert.343.5.end:
+    lea rsi, [rbp + 640]
+    lea rdi, [rbp + 680]
     mov rcx, 24
     rep movsb
-    cmp.345.12:
-    cmp qword [rbp + 552], -1
-    sete r15b
-    bool.345.12.end:
-    func.assert.345.5:
-        if.37.27.345.5:
-        cmp.37.27.345.5:
-        cmp r15b, 0
-        jne if.37.24.345.5.end
-        if.37.27.345.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if.37.24.345.5.end:
-    func.assert.345.5.end:
     cmp.346.12:
-    cmp qword [rbp + 560], -2
+    cmp qword [rbp + 680], -1
     sete r15b
     bool.346.12.end:
     func.assert.346.5:
-        if.37.27.346.5:
-        cmp.37.27.346.5:
+        if.38.27.346.5:
+        cmp.38.27.346.5:
         cmp r15b, 0
-        jne if.37.24.346.5.end
-        if.37.27.346.5.code:
+        jne if.38.24.346.5.end
+        if.38.27.346.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.346.5.end:
+        if.38.24.346.5.end:
     func.assert.346.5.end:
     cmp.347.12:
-    cmp dword [rbp + 568], 16711680
+    cmp qword [rbp + 688], -2
     sete r15b
     bool.347.12.end:
     func.assert.347.5:
-        if.37.27.347.5:
-        cmp.37.27.347.5:
+        if.38.27.347.5:
+        cmp.38.27.347.5:
         cmp r15b, 0
-        jne if.37.24.347.5.end
-        if.37.27.347.5.code:
+        jne if.38.24.347.5.end
+        if.38.27.347.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.347.5.end:
+        if.38.24.347.5.end:
     func.assert.347.5.end:
-    mov r15, qword [rbp + 496]
-    mov qword [rbp + 552], r15
-    mov r15, qword [rbp + 504]
-    mov qword [rbp + 560], r15
-    cmp.350.12:
-    cmp qword [rbp + 552], 1
+    cmp.348.12:
+    cmp dword [rbp + 696], 16711680
     sete r15b
-    bool.350.12.end:
-    func.assert.350.5:
-        if.37.27.350.5:
-        cmp.37.27.350.5:
+    bool.348.12.end:
+    func.assert.348.5:
+        if.38.27.348.5:
+        cmp.38.27.348.5:
         cmp r15b, 0
-        jne if.37.24.350.5.end
-        if.37.27.350.5.code:
+        jne if.38.24.348.5.end
+        if.38.27.348.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.350.5.end:
-    func.assert.350.5.end:
-    mov r15, qword [rbp + 504]
-    mov qword [rbp + 552], r15
-    mov r15, qword [rbp + 496]
-    mov qword [rbp + 560], r15
-    cmp.352.12:
-    cmp qword [rbp + 552], 2
+        if.38.24.348.5.end:
+    func.assert.348.5.end:
+    mov r15, qword [rbp + 624]
+    mov qword [rbp + 680], r15
+    mov r15, qword [rbp + 632]
+    mov qword [rbp + 688], r15
+    cmp.351.12:
+    cmp qword [rbp + 680], 1
     sete r15b
-    bool.352.12.end:
-    func.assert.352.5:
-        if.37.27.352.5:
-        cmp.37.27.352.5:
+    bool.351.12.end:
+    func.assert.351.5:
+        if.38.27.351.5:
+        cmp.38.27.351.5:
         cmp r15b, 0
-        jne if.37.24.352.5.end
-        if.37.27.352.5.code:
+        jne if.38.24.351.5.end
+        if.38.27.351.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.352.5.end:
-    func.assert.352.5.end:
+        if.38.24.351.5.end:
+    func.assert.351.5.end:
+    mov r15, qword [rbp + 632]
+    mov qword [rbp + 680], r15
+    mov r15, qword [rbp + 624]
+    mov qword [rbp + 688], r15
+    cmp.353.12:
+    cmp qword [rbp + 680], 2
+    sete r15b
+    bool.353.12.end:
+    func.assert.353.5:
+        if.38.27.353.5:
+        cmp.38.27.353.5:
+        cmp r15b, 0
+        jne if.38.24.353.5.end
+        if.38.27.353.5.code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if.38.24.353.5.end:
+    func.assert.353.5.end:
     xor al, al
-    lea rdi, [rbp + 576]
+    lea rdi, [rbp + 704]
     mov rcx, 48
     rep stosb
-    mov qword [rbp + 584], 73
-    cmp.362.12:
-    cmp qword [rbp + 584], 73
+    mov qword [rbp + 712], 73
+    cmp.363.12:
+    cmp qword [rbp + 712], 73
     sete r15b
-    bool.362.12.end:
-    func.assert.362.5:
-        if.37.27.362.5:
-        cmp.37.27.362.5:
+    bool.363.12.end:
+    func.assert.363.5:
+        if.38.27.363.5:
+        cmp.38.27.363.5:
         cmp r15b, 0
-        jne if.37.24.362.5.end
-        if.37.27.362.5.code:
+        jne if.38.24.363.5.end
+        if.38.27.363.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.362.5.end:
-    func.assert.362.5.end:
-    func.object.at.363.13:
-        func.point.at.114.16.363.13:
-            mov qword [rbp + 600], 2
-            mov qword [rbp + 608], 74
-        func.point.at.114.16.363.13.end:
-        mov dword [rbp + 616], 16777215
-    func.object.at.363.13.end:
-    cmp.364.12:
-    cmp qword [rbp + 608], 74
+        if.38.24.363.5.end:
+    func.assert.363.5.end:
+    func.object.at.364.13:
+        func.point.at.115.16.364.13:
+            mov qword [rbp + 728], 2
+            mov qword [rbp + 736], 74
+        func.point.at.115.16.364.13.end:
+        mov dword [rbp + 744], 16777215
+    func.object.at.364.13.end:
+    cmp.365.12:
+    cmp qword [rbp + 736], 74
     sete r15b
-    bool.364.12.end:
-    func.assert.364.5:
-        if.37.27.364.5:
-        cmp.37.27.364.5:
+    bool.365.12.end:
+    func.assert.365.5:
+        if.38.27.365.5:
+        cmp.38.27.365.5:
         cmp r15b, 0
-        jne if.37.24.364.5.end
-        if.37.27.364.5.code:
+        jne if.38.24.365.5.end
+        if.38.27.365.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.364.5.end:
-    func.assert.364.5.end:
-    func.point.fooz.366.15:
-        mov qword [rbp + 600], 2
-        mov qword [rbp + 608], 11
-    func.point.fooz.366.15.end:
-    cmp.367.12:
-        func.point.sum.367.22:
-            mov r14, qword [rbp + 600]
-            add r14, qword [rbp + 608]
-        func.point.sum.367.22.end:
+        if.38.24.365.5.end:
+    func.assert.365.5.end:
+    func.point.fooz.367.15:
+        mov qword [rbp + 728], 2
+        mov qword [rbp + 736], 11
+    func.point.fooz.367.15.end:
+    cmp.368.12:
+        func.point.sum.368.22:
+            mov r14, qword [rbp + 728]
+            add r14, qword [rbp + 736]
+        func.point.sum.368.22.end:
     cmp r14, 13
     sete r15b
-    bool.367.12.end:
-    func.assert.367.5:
-        if.37.27.367.5:
-        cmp.37.27.367.5:
+    bool.368.12.end:
+    func.assert.368.5:
+        if.38.27.368.5:
+        cmp.38.27.368.5:
         cmp r15b, 0
-        jne if.37.24.367.5.end
-        if.37.27.367.5.code:
+        jne if.38.24.368.5.end
+        if.38.27.368.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.367.5.end:
-    func.assert.367.5.end:
+        if.38.24.368.5.end:
+    func.assert.368.5.end:
     xor al, al
-    lea rdi, [rbp + 624]
+    lea rdi, [rbp + 752]
     mov rcx, 512
     rep stosb
-    mov qword [rbp + 696], 65518
-    cmp.372.12:
-    cmp qword [rbp + 696], 65518
+    mov qword [rbp + 824], 65518
+    cmp.373.12:
+    cmp qword [rbp + 824], 65518
     sete r15b
-    bool.372.12.end:
-    func.assert.372.5:
-        if.37.27.372.5:
-        cmp.37.27.372.5:
+    bool.373.12.end:
+    func.assert.373.5:
+        if.38.27.373.5:
+        cmp.38.27.373.5:
         cmp r15b, 0
-        jne if.37.24.372.5.end
-        if.37.27.372.5.code:
+        jne if.38.24.373.5.end
+        if.38.27.373.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.372.5.end:
-    func.assert.372.5.end:
+        if.38.24.373.5.end:
+    func.assert.373.5.end:
     mov rcx, 8
     test rcx, rcx
     js baz_bounds_panic
     cmp rcx, 8
     jg baz_bounds_panic
-    lea rsi, [rbp + 688]
+    lea rsi, [rbp + 816]
     test rcx, rcx
     js baz_bounds_panic
     cmp rcx, 8
     jg baz_bounds_panic
-    lea rdi, [rbp + 624]
+    lea rdi, [rbp + 752]
     shl rcx, 3
     rep movsb
-    cmp.381.12:
-    cmp qword [rbp + 632], 65518
+    cmp.382.12:
+    cmp qword [rbp + 760], 65518
     sete r15b
-    bool.381.12.end:
-    func.assert.381.5:
-        if.37.27.381.5:
-        cmp.37.27.381.5:
+    bool.382.12.end:
+    func.assert.382.5:
+        if.38.27.382.5:
+        cmp.38.27.382.5:
         cmp r15b, 0
-        jne if.37.24.381.5.end
-        if.37.27.381.5.code:
+        jne if.38.24.382.5.end
+        if.38.27.382.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.381.5.end:
-    func.assert.381.5.end:
-    cmp.382.12:
+        if.38.24.382.5.end:
+    func.assert.382.5.end:
+    cmp.383.12:
         mov rcx, 8
         test rcx, rcx
         js baz_bounds_panic
         cmp rcx, 8
         jg baz_bounds_panic
-        lea rsi, [rbp + 624]
+        lea rsi, [rbp + 752]
         test rcx, rcx
         js baz_bounds_panic
         cmp rcx, 8
         jg baz_bounds_panic
-        lea rdi, [rbp + 688]
+        lea rdi, [rbp + 816]
         shl rcx, 3
         test rcx, rcx
         repe cmpsb
         sete r15b
-    bool.382.12.end:
-    func.assert.382.5:
-        if.37.27.382.5:
-        cmp.37.27.382.5:
+    bool.383.12.end:
+    func.assert.383.5:
+        if.38.27.383.5:
+        cmp.38.27.383.5:
         cmp r15b, 0
-        jne if.37.24.382.5.end
-        if.37.27.382.5.code:
+        jne if.38.24.383.5.end
+        if.38.27.383.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.382.5.end:
-    func.assert.382.5.end:
-    mov qword [rbp + 1136], -1
-    mov qword [rbp + 1144], 2
-    cmp.389.12:
+        if.38.24.383.5.end:
+    func.assert.383.5.end:
+    mov qword [rbp + 1264], -1
+    mov qword [rbp + 1272], 2
+    cmp.390.12:
         mov r14, 2
     cmp r14, 2
     sete r15b
-    bool.389.12.end:
-    func.assert.389.5:
-        if.37.27.389.5:
-        cmp.37.27.389.5:
-        cmp r15b, 0
-        jne if.37.24.389.5.end
-        if.37.27.389.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
-        if.37.24.389.5.end:
-    func.assert.389.5.end:
-    cmp.390.12:
-    cmp qword [rbp + 1136], -1
-    sete r15b
     bool.390.12.end:
     func.assert.390.5:
-        if.37.27.390.5:
-        cmp.37.27.390.5:
+        if.38.27.390.5:
+        cmp.38.27.390.5:
         cmp r15b, 0
-        jne if.37.24.390.5.end
-        if.37.27.390.5.code:
+        jne if.38.24.390.5.end
+        if.38.27.390.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.390.5.end:
+        if.38.24.390.5.end:
     func.assert.390.5.end:
     cmp.391.12:
-    cmp qword [rbp + 1144], 2
+    cmp qword [rbp + 1264], -1
     sete r15b
     bool.391.12.end:
     func.assert.391.5:
-        if.37.27.391.5:
-        cmp.37.27.391.5:
+        if.38.27.391.5:
+        cmp.38.27.391.5:
         cmp r15b, 0
-        jne if.37.24.391.5.end
-        if.37.27.391.5.code:
+        jne if.38.24.391.5.end
+        if.38.27.391.5.code:
             mov rdi, 1
             mov rax, 60
             syscall
-        if.37.24.391.5.end:
+        if.38.24.391.5.end:
     func.assert.391.5.end:
-    mov qword [rbp + 1152], 0
+    cmp.392.12:
+    cmp qword [rbp + 1272], 2
+    sete r15b
+    bool.392.12.end:
+    func.assert.392.5:
+        if.38.27.392.5:
+        cmp.38.27.392.5:
+        cmp r15b, 0
+        jne if.38.24.392.5.end
+        if.38.27.392.5.code:
+            mov rdi, 1
+            mov rax, 60
+            syscall
+        if.38.24.392.5.end:
+    func.assert.392.5.end:
+    mov qword [rbp + 1280], 0
     xor al, al
-    lea rdi, [rbp + 1160]
+    lea rdi, [rbp + 1288]
     mov rcx, 128
     rep stosb
-    func.print.395.5:
+    func.print.396.5:
         mov rdi, 1
         mov rdx, 21
         lea rsi, [rbp]
         mov rax, 1
         syscall
-    func.print.395.5.end:
-    loop.396.5:
-        add qword [rbp + 1152], 1
-        lea r15, [rbp + 1288]
+    func.print.396.5.end:
+    loop.397.5:
+        add qword [rbp + 1280], 1
+        lea r15, [rbp + 1416]
         lea r14, [vars]
         cmp r15, r14
         jb baz_frame_overflow
@@ -1824,100 +1825,100 @@ main:
         mov r15, size.func.print_num
         cmp r15, r14
         ja baz_frame_overflow
-        lea r15, [rbp + 1152]
-        mov qword [rbp + 1288], r15
-        lea rbx, [rbp + 1288]
+        lea r15, [rbp + 1280]
+        mov qword [rbp + 1416], r15
+        lea rbx, [rbp + 1416]
         call func.print_num
-        func.print.399.9:
+        func.print.400.9:
             mov rdi, 1
             mov rdx, 2
             lea rsi, [rbp + 61]
             mov rax, 1
             syscall
-        func.print.399.9.end:
-        func.print.400.9:
+        func.print.400.9.end:
+        func.print.401.9:
             mov rdi, 1
             mov rdx, 12
             lea rsi, [rbp + 21]
             mov rax, 1
             syscall
-        func.print.400.9.end:
-        func.str.input.401.12:
+        func.print.401.9.end:
+        func.str.input.402.12:
             mov rdi, 0
             mov rdx, 127
-            lea rsi, [rbp + 1161]
+            lea rsi, [rbp + 1289]
             mov rax, 0
             syscall
-            mov qword [rbp + 1288], rax
-            mov r15b, byte [rbp + 1288]
-            mov byte [rbp + 1160], r15b
-            sub byte [rbp + 1160], 1
-        func.str.input.401.12.end:
-        if.403.12:
-        cmp.403.12:
-        cmp byte [rbp + 1160], 0
-        jle loop.396.5.end
-        if.403.12.code:
-        if.405.19:
-        cmp.405.19:
-        cmp byte [rbp + 1160], 4
-        jg if.403.9.else
-        if.405.19.code:
-            func.print.406.13:
+            mov qword [rbp + 1416], rax
+            mov r15b, byte [rbp + 1416]
+            mov byte [rbp + 1288], r15b
+            sub byte [rbp + 1288], 1
+        func.str.input.402.12.end:
+        if.404.12:
+        cmp.404.12:
+        cmp byte [rbp + 1288], 0
+        jle loop.397.5.end
+        if.404.12.code:
+        if.406.19:
+        cmp.406.19:
+        cmp byte [rbp + 1288], 4
+        jg if.404.9.else
+        if.406.19.code:
+            func.print.407.13:
                 mov rdi, 1
                 mov rdx, 20
                 lea rsi, [rbp + 33]
                 mov rax, 1
                 syscall
-            func.print.406.13.end:
-            jmp loop.396.5
-        if.403.9.else:
-            func.greet.409.13:
-                func.print.94.5.409.13:
+            func.print.407.13.end:
+            jmp loop.397.5
+        if.404.9.else:
+            func.greet.410.13:
+                func.print.95.5.410.13:
                     mov rdi, 1
                     mov rdx, 6
                     lea rsi, [rbp + 53]
                     mov rax, 1
                     syscall
-                func.print.94.5.409.13.end:
-                func.str.print.95.10.409.13:
+                func.print.95.5.410.13.end:
+                func.str.print.96.10.410.13:
                     mov rdi, 1
-                    movsx rdx, byte [rbp + 1160]
+                    movsx rdx, byte [rbp + 1288]
                     test rdx, rdx
                     js baz_bounds_panic
                     cmp rdx, 127
                     jg baz_bounds_panic
-                    lea rsi, [rbp + 1161]
+                    lea rsi, [rbp + 1289]
                     mov rax, 1
                     syscall
-                func.str.print.95.10.409.13.end:
-                func.print.96.5.409.13:
+                func.str.print.96.10.410.13.end:
+                func.print.97.5.410.13:
                     mov rdi, 1
                     mov rdx, 1
                     lea rsi, [rbp + 59]
                     mov rax, 1
                     syscall
-                func.print.96.5.409.13.end:
-                func.print.97.5.409.13:
+                func.print.97.5.410.13.end:
+                func.print.98.5.410.13:
                     mov rdi, 1
                     mov rdx, 1
                     lea rsi, [rbp + 60]
                     mov rax, 1
                     syscall
-                func.print.97.5.409.13.end:
-                add qword [rbp + 240], 1
-            func.greet.409.13.end:
-        if.403.9.end:
-    jmp loop.396.5
-    loop.396.5.end:
-    func.print.413.5:
+                func.print.98.5.410.13.end:
+                add qword [rbp + 368], 1
+            func.greet.410.13.end:
+        if.404.9.end:
+    jmp loop.397.5
+    loop.397.5.end:
+    func.print.414.5:
         mov rdi, 1
         mov rdx, 15
-        lea rsi, [rbp + 224]
+        lea rsi, [rbp + 352]
         mov rax, 1
         syscall
-    func.print.413.5.end:
-    lea r15, [rbp + 1288]
+    func.print.414.5.end:
+    lea r15, [rbp + 1416]
     lea r14, [vars]
     cmp r15, r14
     jb baz_frame_overflow
@@ -1928,28 +1929,28 @@ main:
     mov r15, size.func.print_num
     cmp r15, r14
     ja baz_frame_overflow
-    lea r15, [rbp + 240]
-    mov qword [rbp + 1288], r15
-    lea rbx, [rbp + 1288]
+    lea r15, [rbp + 368]
+    mov qword [rbp + 1416], r15
+    lea rbx, [rbp + 1416]
     call func.print_num
-    func.print.415.5:
+    func.print.416.5:
         mov rdi, 1
         mov rdx, 1
         lea rsi, [rbp + 60]
         mov rax, 1
         syscall
-    func.print.415.5.end:
-    mov dword [rbp + 1288], 543521122
-    mov dword [rbp + 1292], 1836020326
-    mov dword [rbp + 1296], 2053202464
-    mov byte [rbp + 1300], 10
+    func.print.416.5.end:
+    mov dword [rbp + 1416], 543521122
+    mov dword [rbp + 1420], 1836020326
+    mov dword [rbp + 1424], 2053202464
+    mov byte [rbp + 1428], 10
     mov rdi, 1
     mov rdx, 3
     test rdx, rdx
     js baz_bounds_panic
     cmp rdx, 13
     jg baz_bounds_panic
-    lea rsi, [rbp + 1288]
+    lea rsi, [rbp + 1416]
     mov rax, 1
     syscall
     mov rdi, 1
@@ -1964,7 +1965,7 @@ main:
     add r14, r15
     cmp r14, 13
     jg baz_bounds_panic
-    lea rsi, [rbp + 1288]
+    lea rsi, [rbp + 1416]
     add rsi, r15
     mov rax, 1
     syscall
@@ -1979,22 +1980,22 @@ func.print_num:
     mov r14, qword [r15]
     mov qword [rbx + 32], r14
     mov byte [rbx + 40], 0
-    if.137.8:
-    cmp.137.8:
+    if.138.8:
+    cmp.138.8:
     cmp qword [rbx + 32], 0
-    jge if.137.5.end
-    if.137.8.code:
+    jge if.138.5.end
+    if.138.8.code:
         mov byte [rbx + 40], 1
-    if.137.5.end:
-    if.140.8:
-    cmp.140.8:
+    if.138.5.end:
+    if.141.8:
+    cmp.141.8:
     cmp qword [rbx + 32], 0
-    jle if.140.5.end
-    if.140.8.code:
+    jle if.141.5.end
+    if.141.8.code:
         neg qword [rbx + 32]
-    if.140.5.end:
+    if.141.5.end:
     mov qword [rbx + 48], 20
-    loop.145.5:
+    loop.146.5:
         sub qword [rbx + 48], 1
         mov r15, qword [rbx + 48]
         test r15, r15
@@ -2015,18 +2016,18 @@ func.print_num:
         mov r15, 10
         idiv r15
         mov qword [rbx + 32], rax
-        if.149.12:
-        cmp.149.12:
+        if.150.12:
+        cmp.150.12:
         cmp qword [rbx + 32], 0
-        jne loop.145.5
-        if.149.12.code:
-        if.149.9.end:
-    loop.145.5.end:
-    if.152.8:
-    cmp.152.8:
+        jne loop.146.5
+        if.150.12.code:
+        if.150.9.end:
+    loop.146.5.end:
+    if.153.8:
+    cmp.153.8:
     cmp byte [rbx + 40], 0
-    je if.152.5.end
-    if.152.8.code:
+    je if.153.5.end
+    if.153.8.code:
         sub qword [rbx + 48], 1
         mov r15, qword [rbx + 48]
         test r15, r15
@@ -2034,9 +2035,9 @@ func.print_num:
         cmp r15, 20
         jge baz_bounds_panic
         mov byte [rbx + r15 + 8], 45
-    if.152.5.end:
+    if.153.5.end:
     mov qword [rbx + 56], 0
-    loop.158.5:
+    loop.159.5:
         mov r15, qword [rbx + 56]
         test r15, r15
         js baz_bounds_panic
@@ -2051,13 +2052,13 @@ func.print_num:
         mov byte [rbx + r15 + 8], r13b
         add qword [rbx + 56], 1
         add qword [rbx + 48], 1
-        if.162.12:
-        cmp.162.12:
+        if.163.12:
+        cmp.163.12:
         cmp qword [rbx + 48], 20
-        jne loop.158.5
-        if.162.12.code:
-        if.162.9.end:
-    loop.158.5.end:
+        jne loop.159.5
+        if.163.12.code:
+        if.163.9.end:
+    loop.159.5.end:
     mov rdi, 1
     mov rdx, qword [rbx + 56]
     test rdx, rdx
@@ -2072,14 +2073,14 @@ size.func.print_num equ 64
 func.factorial:
     mov r15, qword [rbx]
     mov qword [r15], 1
-    if.170.8:
-    cmp.170.8:
+    if.171.8:
+    cmp.171.8:
     mov r15, qword [rbx + 8]
     cmp qword [r15], 1
-    jg if.170.5.end
-    if.170.8.code:
+    jg if.171.5.end
+    if.171.8.code:
         ret
-    if.170.5.end:
+    if.171.5.end:
     mov r15, qword [rbx + 8]
     mov r14, qword [r15]
     mov qword [rbx + 16], r14
@@ -2141,6 +2142,8 @@ db `: `
 times 1 db 0
 dq 1
 times 24 db 0
+db 3
+times 127 db 0
 db 3
 db `baz`
 times 124 db 0
@@ -2208,625 +2211,609 @@ lea rbp, [dat]
 ;[28:7] colon: i8[2] (2 B @ [rbp + 61])
 ;[29:1] dat nums = i[4]{ 1 }
 ;[29:8] nums: i64[4] (32 B @ [rbp + 64])
-;[30:1] dat str1 = str{ 3, "baz" }
+;[30:1] dat str1 = str{ 3 }
 ;[30:8] str1: str (128 B @ [rbp + 96])
-;[32:1] dat greeted = "names greeted: "
-;[32:5] greeted: i8[15] (15 B @ [rbp + 224])
-;[33:1] dat names = 0
-;[33:7] names: i64 (8 B @ [rbp + 240])
-;[118:7] const yes = 1
-;[119:7] const no = 0
-;[120:7] const maybe = -1
+;[31:1] dat str2 = str{ 3, "baz" }
+;[31:8] str2: str (128 B @ [rbp + 224])
+;[33:1] dat greeted = "names greeted: "
+;[33:5] greeted: i8[15] (15 B @ [rbp + 352])
+;[34:1] dat names = 0
+;[34:7] names: i64 (8 B @ [rbp + 368])
+;[119:7] const yes = 1
+;[120:7] const no = 0
+;[121:7] const maybe = -1
 ;
 main:
-;   [180:5] var answer = 0
-;   [180:9] answer: i64 (8 B @ [rbp + 256])
-;   [180:9] answer = 0
-;   [180:18] 0
-    mov qword [rbp + 256], 0
-;   [182:5] assert(answer == 0)
-;   [182:12] allocate scratch register -> r15
-;   [182:12] ? answer == 0
-;   [182:12] ? answer == 0
-    cmp.182.12:
-    cmp qword [rbp + 256], 0
+;   [181:5] var answer = 0
+;   [181:9] answer: i64 (8 B @ [rbp + 384])
+;   [181:9] answer = 0
+;   [181:18] 0
+    mov qword [rbp + 384], 0
+;   [183:5] assert(answer == 0)
+;   [183:12] allocate scratch register -> r15
+;   [183:12] ? answer == 0
+;   [183:12] ? answer == 0
+    cmp.183.12:
+    cmp qword [rbp + 384], 0
     sete r15b
-    bool.182.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.182.5:
-;       [182:5] alias ok -> r15b
-        if.37.27.182.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.182.5:
+    bool.183.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.183.5:
+;       [183:5] alias ok -> r15b
+        if.38.27.183.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.183.5:
         cmp r15b, 0
-        jne if.37.24.182.5.end
-        if.37.27.182.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.183.5.end
+        if.38.27.183.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.182.5.end:
-;       [182:5] free scratch register r15
-    func.assert.182.5.end:
-;   [184:5] answer = maybe
-;   [184:14] maybe
-    mov qword [rbp + 256], -1
-;   [185:5] assert(answer == -1)
-;   [185:12] allocate scratch register -> r15
-;   [185:12] ? answer == -1
-;   [185:12] ? answer == -1
-    cmp.185.12:
-    cmp qword [rbp + 256], -1
+;           [38:34] free named register rdi
+        if.38.24.183.5.end:
+;       [183:5] free scratch register r15
+    func.assert.183.5.end:
+;   [185:5] answer = maybe
+;   [185:14] maybe
+    mov qword [rbp + 384], -1
+;   [186:5] assert(answer == -1)
+;   [186:12] allocate scratch register -> r15
+;   [186:12] ? answer == -1
+;   [186:12] ? answer == -1
+    cmp.186.12:
+    cmp qword [rbp + 384], -1
     sete r15b
-    bool.185.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.185.5:
-;       [185:5] alias ok -> r15b
-        if.37.27.185.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.185.5:
+    bool.186.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.186.5:
+;       [186:5] alias ok -> r15b
+        if.38.27.186.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.186.5:
         cmp r15b, 0
-        jne if.37.24.185.5.end
-        if.37.27.185.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.186.5.end
+        if.38.27.186.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.185.5.end:
-;       [185:5] free scratch register r15
-    func.assert.185.5.end:
-;       [190:15] const maybe = 33
-;       [191:9] assert(maybe == 33)
-;       [37:6] assert(ok bool)
-        func.assert.191.9:
-;           [191:9] alias ok -> 1
-            if.37.27.191.9:
-;           [37:27] ? not ok
-;           [37:27] ? shorthand: not ok
-            cmp.37.27.191.9:
-;           [37:31] const eval to false
-            if.37.24.191.9.end:
-        func.assert.191.9.end:
-;   [194:5] assert(maybe == -1)
-;   [37:6] assert(ok bool)
-    func.assert.194.5:
-;       [194:5] alias ok -> 1
-        if.37.27.194.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.194.5:
-;       [37:31] const eval to false
-        if.37.24.194.5.end:
-    func.assert.194.5.end:
-;   [196:5] assert(nums[0] == 1 and nums[3] == 0)
-;   [196:12] allocate scratch register -> r15
-;   [196:12] ? nums[0] == 1 and nums[3] == 0
-;   [196:12] ? nums[0] == 1
-    cmp.196.12:
+;           [38:34] free named register rdi
+        if.38.24.186.5.end:
+;       [186:5] free scratch register r15
+    func.assert.186.5.end:
+;       [191:15] const maybe = 33
+;       [192:9] assert(maybe == 33)
+;       [38:6] assert(ok bool)
+        func.assert.192.9:
+;           [192:9] alias ok -> 1
+            if.38.27.192.9:
+;           [38:27] ? not ok
+;           [38:27] ? shorthand: not ok
+            cmp.38.27.192.9:
+;           [38:31] const eval to false
+            if.38.24.192.9.end:
+        func.assert.192.9.end:
+;   [195:5] assert(maybe == -1)
+;   [38:6] assert(ok bool)
+    func.assert.195.5:
+;       [195:5] alias ok -> 1
+        if.38.27.195.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.195.5:
+;       [38:31] const eval to false
+        if.38.24.195.5.end:
+    func.assert.195.5.end:
+;   [197:5] assert(nums[0] == 1 and nums[3] == 0)
+;   [197:12] allocate scratch register -> r15
+;   [197:12] ? nums[0] == 1 and nums[3] == 0
+;   [197:12] ? nums[0] == 1
+    cmp.197.12:
     cmp qword [rbp + 64], 1
     sete r15b
-    jne bool.196.12.end
-;   [196:29] ? nums[3] == 0
-    cmp.196.29:
+    jne bool.197.12.end
+;   [197:29] ? nums[3] == 0
+    cmp.197.29:
     cmp qword [rbp + 88], 0
     sete r15b
-    bool.196.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.196.5:
-;       [196:5] alias ok -> r15b
-        if.37.27.196.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.196.5:
-        cmp r15b, 0
-        jne if.37.24.196.5.end
-        if.37.27.196.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
-            mov rdi, 1
-            mov rax, 60
-            syscall
-;           [37:34] free named register rdi
-        if.37.24.196.5.end:
-;       [196:5] free scratch register r15
-    func.assert.196.5.end:
-;   [197:5] assert(str1.len == 3 and str1.data[2] == 'z')
-;   [197:12] allocate scratch register -> r15
-;   [197:12] ? str1.len == 3 and str1.data[2] == 'z'
-;   [197:12] ? str1.len == 3
-    cmp.197.12:
-    cmp byte [rbp + 96], 3
-    sete r15b
-    jne bool.197.12.end
-;   [197:30] ? str1.data[2] == 'z'
-    cmp.197.30:
-    cmp byte [rbp + 99], 122
-    sete r15b
     bool.197.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.197.5:
 ;       [197:5] alias ok -> r15b
-        if.37.27.197.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.197.5:
+        if.38.27.197.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.197.5:
         cmp r15b, 0
-        jne if.37.24.197.5.end
-        if.37.27.197.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.197.5.end
+        if.38.27.197.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.197.5.end:
+;           [38:34] free named register rdi
+        if.38.24.197.5.end:
 ;       [197:5] free scratch register r15
     func.assert.197.5.end:
-;   [199:5] var a = 7
-;   [199:9] a: i64 (8 B @ [rbp + 264])
-;   [199:9] a = 7
-;   [199:13] 7
-    mov qword [rbp + 264], 7
-;   [200:5] assert(a & 3 == 3)
-;   [200:12] allocate scratch register -> r15
-;   [200:12] ? a & 3 == 3
-;   [200:12] ? a & 3 == 3
-    cmp.200.12:
-;   [200:12] allocate scratch register -> r14
-;       [200:12] a
-        mov r14, qword [rbp + 264]
-;       [200:12] r14 & 3
-;       [200:12] src: folded constant '& 3'
-        and r14, 3
-    cmp r14, 3
-;   [200:12] free scratch register r14
+;   [198:5] assert(str2.len == 3 and str2.data[2] == 'z')
+;   [198:12] allocate scratch register -> r15
+;   [198:12] ? str2.len == 3 and str2.data[2] == 'z'
+;   [198:12] ? str2.len == 3
+    cmp.198.12:
+    cmp byte [rbp + 224], 3
     sete r15b
-    bool.200.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.200.5:
-;       [200:5] alias ok -> r15b
-        if.37.27.200.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.200.5:
+    jne bool.198.12.end
+;   [198:30] ? str2.data[2] == 'z'
+    cmp.198.30:
+    cmp byte [rbp + 227], 122
+    sete r15b
+    bool.198.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.198.5:
+;       [198:5] alias ok -> r15b
+        if.38.27.198.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.198.5:
         cmp r15b, 0
-        jne if.37.24.200.5.end
-        if.37.27.200.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.198.5.end
+        if.38.27.198.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.200.5.end:
-;       [200:5] free scratch register r15
-    func.assert.200.5.end:
-;   [201:5] assert(a | 8 == 15)
+;           [38:34] free named register rdi
+        if.38.24.198.5.end:
+;       [198:5] free scratch register r15
+    func.assert.198.5.end:
+;   [200:5] var a = 7
+;   [200:9] a: i64 (8 B @ [rbp + 392])
+;   [200:9] a = 7
+;   [200:13] 7
+    mov qword [rbp + 392], 7
+;   [201:5] assert(a & 3 == 3)
 ;   [201:12] allocate scratch register -> r15
-;   [201:12] ? a | 8 == 15
-;   [201:12] ? a | 8 == 15
+;   [201:12] ? a & 3 == 3
+;   [201:12] ? a & 3 == 3
     cmp.201.12:
 ;   [201:12] allocate scratch register -> r14
 ;       [201:12] a
-        mov r14, qword [rbp + 264]
-;       [201:12] r14 | 8
-;       [201:12] src: folded constant '| 8'
-        or r14, 8
-    cmp r14, 15
+        mov r14, qword [rbp + 392]
+;       [201:12] r14 & 3
+;       [201:12] src: folded constant '& 3'
+        and r14, 3
+    cmp r14, 3
 ;   [201:12] free scratch register r14
     sete r15b
     bool.201.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.201.5:
 ;       [201:5] alias ok -> r15b
-        if.37.27.201.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.201.5:
+        if.38.27.201.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.201.5:
         cmp r15b, 0
-        jne if.37.24.201.5.end
-        if.37.27.201.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.201.5.end
+        if.38.27.201.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.201.5.end:
+;           [38:34] free named register rdi
+        if.38.24.201.5.end:
 ;       [201:5] free scratch register r15
     func.assert.201.5.end:
-;   [202:5] assert(a ^ 1 == 6)
+;   [202:5] assert(a | 8 == 15)
 ;   [202:12] allocate scratch register -> r15
-;   [202:12] ? a ^ 1 == 6
-;   [202:12] ? a ^ 1 == 6
+;   [202:12] ? a | 8 == 15
+;   [202:12] ? a | 8 == 15
     cmp.202.12:
 ;   [202:12] allocate scratch register -> r14
 ;       [202:12] a
-        mov r14, qword [rbp + 264]
-;       [202:12] r14 ^ 1
-;       [202:12] src: folded constant '^ 1'
-        xor r14, 1
-    cmp r14, 6
+        mov r14, qword [rbp + 392]
+;       [202:12] r14 | 8
+;       [202:12] src: folded constant '| 8'
+        or r14, 8
+    cmp r14, 15
 ;   [202:12] free scratch register r14
     sete r15b
     bool.202.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.202.5:
 ;       [202:5] alias ok -> r15b
-        if.37.27.202.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.202.5:
+        if.38.27.202.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.202.5:
         cmp r15b, 0
-        jne if.37.24.202.5.end
-        if.37.27.202.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.202.5.end
+        if.38.27.202.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.202.5.end:
+;           [38:34] free named register rdi
+        if.38.24.202.5.end:
 ;       [202:5] free scratch register r15
     func.assert.202.5.end:
-;   [203:5] assert(a << 2 == 28)
+;   [203:5] assert(a ^ 1 == 6)
 ;   [203:12] allocate scratch register -> r15
-;   [203:12] ? a << 2 == 28
-;   [203:12] ? a << 2 == 28
+;   [203:12] ? a ^ 1 == 6
+;   [203:12] ? a ^ 1 == 6
     cmp.203.12:
 ;   [203:12] allocate scratch register -> r14
 ;       [203:12] a
-        mov r14, qword [rbp + 264]
-;       [203:17] r14 << 2
-;       [203:17] src: constant
-        sal r14, 2
-    cmp r14, 28
+        mov r14, qword [rbp + 392]
+;       [203:12] r14 ^ 1
+;       [203:12] src: folded constant '^ 1'
+        xor r14, 1
+    cmp r14, 6
 ;   [203:12] free scratch register r14
     sete r15b
     bool.203.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.203.5:
 ;       [203:5] alias ok -> r15b
-        if.37.27.203.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.203.5:
+        if.38.27.203.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.203.5:
         cmp r15b, 0
-        jne if.37.24.203.5.end
-        if.37.27.203.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.203.5.end
+        if.38.27.203.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.203.5.end:
+;           [38:34] free named register rdi
+        if.38.24.203.5.end:
 ;       [203:5] free scratch register r15
     func.assert.203.5.end:
-;   [204:5] assert(-a >> 1 == -4)
+;   [204:5] assert(a << 2 == 28)
 ;   [204:12] allocate scratch register -> r15
-;   [204:12] ? -a >> 1 == -4
-;   [204:12] ? -a >> 1 == -4
+;   [204:12] ? a << 2 == 28
+;   [204:12] ? a << 2 == 28
     cmp.204.12:
 ;   [204:12] allocate scratch register -> r14
-;       [204:13] -a
-        mov r14, qword [rbp + 264]
-        neg r14
-;       [204:18] r14 >> 1
-;       [204:18] src: constant
-        sar r14, 1
-    cmp r14, -4
+;       [204:12] a
+        mov r14, qword [rbp + 392]
+;       [204:17] r14 << 2
+;       [204:17] src: constant
+        sal r14, 2
+    cmp r14, 28
 ;   [204:12] free scratch register r14
     sete r15b
     bool.204.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.204.5:
 ;       [204:5] alias ok -> r15b
-        if.37.27.204.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.204.5:
+        if.38.27.204.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.204.5:
         cmp r15b, 0
-        jne if.37.24.204.5.end
-        if.37.27.204.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.204.5.end
+        if.38.27.204.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.204.5.end:
+;           [38:34] free named register rdi
+        if.38.24.204.5.end:
 ;       [204:5] free scratch register r15
     func.assert.204.5.end:
-;   [207:5] assert(a + a << 1 == 21)
-;   [207:12] allocate scratch register -> r15
-;   [207:12] ? a + a << 1 == 21
-;   [207:12] ? a + a << 1 == 21
-    cmp.207.12:
-;   [207:12] allocate scratch register -> r14
-;       [207:12] a
-        mov r14, qword [rbp + 264]
-;       [207:18] r14 + a << 1
-;       [207:18] src: expression
-;       [207:18] allocate scratch register -> r13
-;       [207:16] a
-        mov r13, qword [rbp + 264]
-;       [207:21] r13 << 1
-;       [207:21] src: constant
-        sal r13, 1
-        add r14, r13
-;       [207:18] free scratch register r13
-    cmp r14, 21
-;   [207:12] free scratch register r14
+;   [205:5] assert(-a >> 1 == -4)
+;   [205:12] allocate scratch register -> r15
+;   [205:12] ? -a >> 1 == -4
+;   [205:12] ? -a >> 1 == -4
+    cmp.205.12:
+;   [205:12] allocate scratch register -> r14
+;       [205:13] -a
+        mov r14, qword [rbp + 392]
+        neg r14
+;       [205:18] r14 >> 1
+;       [205:18] src: constant
+        sar r14, 1
+    cmp r14, -4
+;   [205:12] free scratch register r14
     sete r15b
-    bool.207.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.207.5:
-;       [207:5] alias ok -> r15b
-        if.37.27.207.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.207.5:
+    bool.205.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.205.5:
+;       [205:5] alias ok -> r15b
+        if.38.27.205.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.205.5:
         cmp r15b, 0
-        jne if.37.24.207.5.end
-        if.37.27.207.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.205.5.end
+        if.38.27.205.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.207.5.end:
-;       [207:5] free scratch register r15
-    func.assert.207.5.end:
-;   [208:5] assert((a + a) << 1 == 28)
+;           [38:34] free named register rdi
+        if.38.24.205.5.end:
+;       [205:5] free scratch register r15
+    func.assert.205.5.end:
+;   [208:5] assert(a + a << 1 == 21)
 ;   [208:12] allocate scratch register -> r15
-;   [208:12] ? (a + a) << 1 == 28
-;   [208:12] ? (a + a) << 1 == 28
+;   [208:12] ? a + a << 1 == 21
+;   [208:12] ? a + a << 1 == 21
     cmp.208.12:
 ;   [208:12] allocate scratch register -> r14
-;       [208:13] r14 = (a + a)
-;       [208:13] = expression
-;       [208:13] a
-        mov r14, qword [rbp + 264]
-;       [208:17] r14 + a
-;       [208:17] src: operand
-        add r14, qword [rbp + 264]
-;       [208:23] r14 << 1
-;       [208:23] src: constant
-        sal r14, 1
-    cmp r14, 28
+;       [208:12] a
+        mov r14, qword [rbp + 392]
+;       [208:18] r14 + a << 1
+;       [208:18] src: expression
+;       [208:18] allocate scratch register -> r13
+;       [208:16] a
+        mov r13, qword [rbp + 392]
+;       [208:21] r13 << 1
+;       [208:21] src: constant
+        sal r13, 1
+        add r14, r13
+;       [208:18] free scratch register r13
+    cmp r14, 21
 ;   [208:12] free scratch register r14
     sete r15b
     bool.208.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.208.5:
 ;       [208:5] alias ok -> r15b
-        if.37.27.208.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.208.5:
+        if.38.27.208.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.208.5:
         cmp r15b, 0
-        jne if.37.24.208.5.end
-        if.37.27.208.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.208.5.end
+        if.38.27.208.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.208.5.end:
+;           [38:34] free named register rdi
+        if.38.24.208.5.end:
 ;       [208:5] free scratch register r15
     func.assert.208.5.end:
-;   [211:5] assert(a != 0 and (a >= 7 or a < 0))
-;   [211:12] allocate scratch register -> r15
-;   [211:12] ? a != 0 and (a >= 7 or a < 0)
-;   [211:12] ? a != 0
-    cmp.211.12:
-    cmp qword [rbp + 264], 0
+;   [209:5] assert((a + a) << 1 == 28)
+;   [209:12] allocate scratch register -> r15
+;   [209:12] ? (a + a) << 1 == 28
+;   [209:12] ? (a + a) << 1 == 28
+    cmp.209.12:
+;   [209:12] allocate scratch register -> r14
+;       [209:13] r14 = (a + a)
+;       [209:13] = expression
+;       [209:13] a
+        mov r14, qword [rbp + 392]
+;       [209:17] r14 + a
+;       [209:17] src: operand
+        add r14, qword [rbp + 392]
+;       [209:23] r14 << 1
+;       [209:23] src: constant
+        sal r14, 1
+    cmp r14, 28
+;   [209:12] free scratch register r14
+    sete r15b
+    bool.209.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.209.5:
+;       [209:5] alias ok -> r15b
+        if.38.27.209.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.209.5:
+        cmp r15b, 0
+        jne if.38.24.209.5.end
+        if.38.27.209.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
+            mov rdi, 1
+            mov rax, 60
+            syscall
+;           [38:34] free named register rdi
+        if.38.24.209.5.end:
+;       [209:5] free scratch register r15
+    func.assert.209.5.end:
+;   [212:5] assert(a != 0 and (a >= 7 or a < 0))
+;   [212:12] allocate scratch register -> r15
+;   [212:12] ? a != 0 and (a >= 7 or a < 0)
+;   [212:12] ? a != 0
+    cmp.212.12:
+    cmp qword [rbp + 392], 0
     setne r15b
-    je bool.211.12.end
-    cmp.211.23:
-;   [211:23] ? (a >= 7 or a < 0)
-;   [211:24] ? a >= 7
-    cmp.211.24:
-    cmp qword [rbp + 264], 7
+    je bool.212.12.end
+    cmp.212.23:
+;   [212:23] ? (a >= 7 or a < 0)
+;   [212:24] ? a >= 7
+    cmp.212.24:
+    cmp qword [rbp + 392], 7
     setge r15b
-    jge bool.211.12.end
-;   [211:34] ? a < 0
-    cmp.211.34:
-    cmp qword [rbp + 264], 0
+    jge bool.212.12.end
+;   [212:34] ? a < 0
+    cmp.212.34:
+    cmp qword [rbp + 392], 0
     setl r15b
-    bool.211.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.211.5:
-;       [211:5] alias ok -> r15b
-        if.37.27.211.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.211.5:
+    bool.212.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.212.5:
+;       [212:5] alias ok -> r15b
+        if.38.27.212.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.212.5:
         cmp r15b, 0
-        jne if.37.24.211.5.end
-        if.37.27.211.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.212.5.end
+        if.38.27.212.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.211.5.end:
-;       [211:5] free scratch register r15
-    func.assert.211.5.end:
-;   [214:5] var small = i8(100)
-;   [214:9] small: i8 (1 B @ [rbp + 272])
-;   [214:9] small = i8(100)
-    mov byte [rbp + 272], 100
-;   [215:5] small = small + small
-;   [215:13] instructions without scratch register 3, with 4
-;   [215:13] allocate scratch register -> r15
-;   [215:13] small
-    mov r15b, byte [rbp + 272]
-;   [215:21] r15b + small
-;   [215:21] src: operand
-    add r15b, byte [rbp + 272]
-    mov byte [rbp + 272], r15b
-;   [215:13] free scratch register r15
-;   [216:5] assert(small == -56)
-;   [216:12] allocate scratch register -> r15
-;   [216:12] ? small == -56
-;   [216:12] ? small == -56
-    cmp.216.12:
-    cmp byte [rbp + 272], -56
+;           [38:34] free named register rdi
+        if.38.24.212.5.end:
+;       [212:5] free scratch register r15
+    func.assert.212.5.end:
+;   [215:5] var small = i8(100)
+;   [215:9] small: i8 (1 B @ [rbp + 400])
+;   [215:9] small = i8(100)
+    mov byte [rbp + 400], 100
+;   [216:5] small = small + small
+;   [216:13] instructions without scratch register 3, with 4
+;   [216:13] allocate scratch register -> r15
+;   [216:13] small
+    mov r15b, byte [rbp + 400]
+;   [216:21] r15b + small
+;   [216:21] src: operand
+    add r15b, byte [rbp + 400]
+    mov byte [rbp + 400], r15b
+;   [216:13] free scratch register r15
+;   [217:5] assert(small == -56)
+;   [217:12] allocate scratch register -> r15
+;   [217:12] ? small == -56
+;   [217:12] ? small == -56
+    cmp.217.12:
+    cmp byte [rbp + 400], -56
     sete r15b
-    bool.216.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.216.5:
-;       [216:5] alias ok -> r15b
-        if.37.27.216.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.216.5:
+    bool.217.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.217.5:
+;       [217:5] alias ok -> r15b
+        if.38.27.217.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.217.5:
         cmp r15b, 0
-        jne if.37.24.216.5.end
-        if.37.27.216.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.217.5.end
+        if.38.27.217.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.216.5.end:
-;       [216:5] free scratch register r15
-    func.assert.216.5.end:
-;   [219:5] var wide = i(i16(small))
-;   [219:9] wide: i64 (8 B @ [rbp + 280])
-;   [219:9] wide = i(i16(small))
-;   [219:16] wide = i(i16(small))
-;   [219:16] = expression
-;   [219:16] instructions without scratch register 2, with 3
-;   [219:18] wide = i16(small)
-;   [219:18] = expression
-;   [219:18] instructions without scratch register 2, with 3
-;   [219:22] small
-;   [219:22] allocate scratch register -> r15
-    movsx r15, byte [rbp + 272]
-    mov qword [rbp + 280], r15
-;   [219:22] free scratch register r15
-;   [220:5] assert(wide == -56)
-;   [220:12] allocate scratch register -> r15
-;   [220:12] ? wide == -56
-;   [220:12] ? wide == -56
-    cmp.220.12:
-    cmp qword [rbp + 280], -56
+;           [38:34] free named register rdi
+        if.38.24.217.5.end:
+;       [217:5] free scratch register r15
+    func.assert.217.5.end:
+;   [220:5] var wide = i(i16(small))
+;   [220:9] wide: i64 (8 B @ [rbp + 408])
+;   [220:9] wide = i(i16(small))
+;   [220:16] wide = i(i16(small))
+;   [220:16] = expression
+;   [220:16] instructions without scratch register 2, with 3
+;   [220:18] wide = i16(small)
+;   [220:18] = expression
+;   [220:18] instructions without scratch register 2, with 3
+;   [220:22] small
+;   [220:22] allocate scratch register -> r15
+    movsx r15, byte [rbp + 400]
+    mov qword [rbp + 408], r15
+;   [220:22] free scratch register r15
+;   [221:5] assert(wide == -56)
+;   [221:12] allocate scratch register -> r15
+;   [221:12] ? wide == -56
+;   [221:12] ? wide == -56
+    cmp.221.12:
+    cmp qword [rbp + 408], -56
     sete r15b
-    bool.220.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.220.5:
-;       [220:5] alias ok -> r15b
-        if.37.27.220.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.220.5:
+    bool.221.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.221.5:
+;       [221:5] alias ok -> r15b
+        if.38.27.221.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.221.5:
         cmp r15b, 0
-        jne if.37.24.220.5.end
-        if.37.27.220.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.221.5.end
+        if.38.27.221.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.220.5.end:
-;       [220:5] free scratch register r15
-    func.assert.220.5.end:
-;   [227:5] var letter = '\x41'
-;   [227:9] letter: i64 (8 B @ [rbp + 288])
-;   [227:9] letter = '\x41'
-;   [227:18] '\x41'
-    mov qword [rbp + 288], 65
-;   [228:5] assert(letter == 'A')
-;   [228:12] allocate scratch register -> r15
-;   [228:12] ? letter == 'A'
-;   [228:12] ? letter == 'A'
-    cmp.228.12:
-    cmp qword [rbp + 288], 65
+;           [38:34] free named register rdi
+        if.38.24.221.5.end:
+;       [221:5] free scratch register r15
+    func.assert.221.5.end:
+;   [228:5] var letter = '\x41'
+;   [228:9] letter: i64 (8 B @ [rbp + 416])
+;   [228:9] letter = '\x41'
+;   [228:18] '\x41'
+    mov qword [rbp + 416], 65
+;   [229:5] assert(letter == 'A')
+;   [229:12] allocate scratch register -> r15
+;   [229:12] ? letter == 'A'
+;   [229:12] ? letter == 'A'
+    cmp.229.12:
+    cmp qword [rbp + 416], 65
     sete r15b
-    bool.228.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.228.5:
-;       [228:5] alias ok -> r15b
-        if.37.27.228.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.228.5:
+    bool.229.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.229.5:
+;       [229:5] alias ok -> r15b
+        if.38.27.229.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.229.5:
         cmp r15b, 0
-        jne if.37.24.228.5.end
-        if.37.27.228.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.229.5.end
+        if.38.27.229.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.228.5.end:
-;       [228:5] free scratch register r15
-    func.assert.228.5.end:
-;   [231:5] var arr = i32[4]{}
-;   [231:9] arr: i32[4] (16 B @ [rbp + 296])
-;   [231:9] arr = i32[4]{}
-;   [231:15] zero remaining elements: 4 * 4 B = 16 B
-;   [231:15] size <= 32 B, use mov
-    mov qword [rbp + 296], 0
-    mov qword [rbp + 304], 0
-;   [233:5] var ix = 1
-;   [233:9] ix: i64 (8 B @ [rbp + 312])
-;   [233:9] ix = 1
-;   [233:14] 1
-    mov qword [rbp + 312], 1
-;   [234:5] arr[ix] = 2
-;   [234:9] allocate scratch register -> r15
-;   [234:9] set array index
-;   [234:9] ix
-    mov r15, qword [rbp + 312]
-;   [234:9] bounds check
-;   [234:9] lower bound (--checks=lower)
-    test r15, r15
-    js baz_bounds_panic
-;   [234:9] upper bound (--checks=upper)
-    cmp r15, 4
-    jge baz_bounds_panic
-;   [234:15] 2
-    mov dword [rbp + r15 * 4 + 296], 2
-;   [234:5] free scratch register r15
-;   [235:5] arr[ix + 1] = arr[ix]
+;           [38:34] free named register rdi
+        if.38.24.229.5.end:
+;       [229:5] free scratch register r15
+    func.assert.229.5.end:
+;   [232:5] var arr = i32[4]{}
+;   [232:9] arr: i32[4] (16 B @ [rbp + 424])
+;   [232:9] arr = i32[4]{}
+;   [232:15] zero remaining elements: 4 * 4 B = 16 B
+;   [232:15] size <= 32 B, use mov
+    mov qword [rbp + 424], 0
+    mov qword [rbp + 432], 0
+;   [234:5] var ix = 1
+;   [234:9] ix: i64 (8 B @ [rbp + 440])
+;   [234:9] ix = 1
+;   [234:14] 1
+    mov qword [rbp + 440], 1
+;   [235:5] arr[ix] = 2
 ;   [235:9] allocate scratch register -> r15
 ;   [235:9] set array index
 ;   [235:9] ix
-    mov r15, qword [rbp + 312]
-;   [235:9] r15 + 1
-;   [235:9] src: folded constant '+ 1'
-    add r15, 1
+    mov r15, qword [rbp + 440]
 ;   [235:9] bounds check
 ;   [235:9] lower bound (--checks=lower)
     test r15, r15
@@ -2834,992 +2821,1010 @@ main:
 ;   [235:9] upper bound (--checks=upper)
     cmp r15, 4
     jge baz_bounds_panic
-;   [235:19] arr[ix]
-;   [235:23] allocate scratch register -> r14
-;   [235:23] set array index
-;   [235:23] ix
-    mov r14, qword [rbp + 312]
-;   [235:23] bounds check
-;   [235:23] lower bound (--checks=lower)
+;   [235:15] 2
+    mov dword [rbp + r15 * 4 + 424], 2
+;   [235:5] free scratch register r15
+;   [236:5] arr[ix + 1] = arr[ix]
+;   [236:9] allocate scratch register -> r15
+;   [236:9] set array index
+;   [236:9] ix
+    mov r15, qword [rbp + 440]
+;   [236:9] r15 + 1
+;   [236:9] src: folded constant '+ 1'
+    add r15, 1
+;   [236:9] bounds check
+;   [236:9] lower bound (--checks=lower)
+    test r15, r15
+    js baz_bounds_panic
+;   [236:9] upper bound (--checks=upper)
+    cmp r15, 4
+    jge baz_bounds_panic
+;   [236:19] arr[ix]
+;   [236:23] allocate scratch register -> r14
+;   [236:23] set array index
+;   [236:23] ix
+    mov r14, qword [rbp + 440]
+;   [236:23] bounds check
+;   [236:23] lower bound (--checks=lower)
     test r14, r14
     js baz_bounds_panic
-;   [235:23] upper bound (--checks=upper)
+;   [236:23] upper bound (--checks=upper)
     cmp r14, 4
     jge baz_bounds_panic
-;   [235:19] allocate scratch register -> r13
-    mov r13d, dword [rbp + r14 * 4 + 296]
-    mov dword [rbp + r15 * 4 + 296], r13d
-;   [235:19] free scratch register r13
-;   [235:19] free scratch register r14
-;   [235:5] free scratch register r15
-;   [236:5] assert(arr[1] == 2)
-;   [236:12] allocate scratch register -> r15
-;   [236:12] ? arr[1] == 2
-;   [236:12] ? arr[1] == 2
-    cmp.236.12:
-    cmp dword [rbp + 300], 2
-    sete r15b
-    bool.236.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.236.5:
-;       [236:5] alias ok -> r15b
-        if.37.27.236.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.236.5:
-        cmp r15b, 0
-        jne if.37.24.236.5.end
-        if.37.27.236.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
-            mov rdi, 1
-            mov rax, 60
-            syscall
-;           [37:34] free named register rdi
-        if.37.24.236.5.end:
-;       [236:5] free scratch register r15
-    func.assert.236.5.end:
-;   [237:5] assert(arr[2] == 2)
+;   [236:19] allocate scratch register -> r13
+    mov r13d, dword [rbp + r14 * 4 + 424]
+    mov dword [rbp + r15 * 4 + 424], r13d
+;   [236:19] free scratch register r13
+;   [236:19] free scratch register r14
+;   [236:5] free scratch register r15
+;   [237:5] assert(arr[1] == 2)
 ;   [237:12] allocate scratch register -> r15
-;   [237:12] ? arr[2] == 2
-;   [237:12] ? arr[2] == 2
+;   [237:12] ? arr[1] == 2
+;   [237:12] ? arr[1] == 2
     cmp.237.12:
-    cmp dword [rbp + 304], 2
+    cmp dword [rbp + 428], 2
     sete r15b
     bool.237.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.237.5:
 ;       [237:5] alias ok -> r15b
-        if.37.27.237.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.237.5:
+        if.38.27.237.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.237.5:
         cmp r15b, 0
-        jne if.37.24.237.5.end
-        if.37.27.237.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.237.5.end
+        if.38.27.237.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.237.5.end:
+;           [38:34] free named register rdi
+        if.38.24.237.5.end:
 ;       [237:5] free scratch register r15
     func.assert.237.5.end:
-;   [239:5] array_copy(arr[2], arr, 2)
-;   [239:5] allocate scratch register -> r15
-;   [239:29] 2
-;   [239:29] 2
+;   [238:5] assert(arr[2] == 2)
+;   [238:12] allocate scratch register -> r15
+;   [238:12] ? arr[2] == 2
+;   [238:12] ? arr[2] == 2
+    cmp.238.12:
+    cmp dword [rbp + 432], 2
+    sete r15b
+    bool.238.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.238.5:
+;       [238:5] alias ok -> r15b
+        if.38.27.238.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.238.5:
+        cmp r15b, 0
+        jne if.38.24.238.5.end
+        if.38.27.238.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
+            mov rdi, 1
+            mov rax, 60
+            syscall
+;           [38:34] free named register rdi
+        if.38.24.238.5.end:
+;       [238:5] free scratch register r15
+    func.assert.238.5.end:
+;   [240:5] array_copy(arr[2], arr, 2)
+;   [240:5] allocate scratch register -> r15
+;   [240:29] 2
+;   [240:29] 2
     mov r15, 2
-;   [239:16] arr[2]
-;   [239:20] allocate scratch register -> r14
-;   [239:20] set array index
-;   [239:20] 2
+;   [240:16] arr[2]
+;   [240:20] allocate scratch register -> r14
+;   [240:20] set array index
+;   [240:20] 2
     mov r14, 2
-;   [239:20] bounds check
-;   [239:20] lower bound (--checks=lower)
+;   [240:20] bounds check
+;   [240:20] lower bound (--checks=lower)
     test r14, r14
     js baz_bounds_panic
     test r15, r15
     js baz_bounds_panic
-;   [239:20] upper bound (--checks=upper)
-;   [239:20] allocate scratch register -> r13
+;   [240:20] upper bound (--checks=upper)
+;   [240:20] allocate scratch register -> r13
     mov r13, r15
     add r13, r14
     cmp r13, 4
-;   [239:20] free scratch register r13
+;   [240:20] free scratch register r13
     jg baz_bounds_panic
-;   [239:24] arr
-;   [239:24] bounds check
-;   [239:24] lower bound (--checks=lower)
+;   [240:24] arr
+;   [240:24] bounds check
+;   [240:24] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
-;   [239:24] upper bound (--checks=upper)
+;   [240:24] upper bound (--checks=upper)
     cmp r15, 4
     jg baz_bounds_panic
-;   [239:5] size <= 16 B, use mov
-;   [239:5] allocate named register rax
-    mov rax, qword [rbp + r14 * 4 + 296]
-    mov qword [rbp + 296], rax
-;   [239:5] free named register rax
-;   [239:5] free scratch register r14
-;   [239:5] free scratch register r15
-;   [240:5] assert(arr[0] == 2)
-;   [240:12] allocate scratch register -> r15
-;   [240:12] ? arr[0] == 2
-;   [240:12] ? arr[0] == 2
-    cmp.240.12:
-    cmp dword [rbp + 296], 2
+;   [240:5] size <= 16 B, use mov
+;   [240:5] allocate named register rax
+    mov rax, qword [rbp + r14 * 4 + 424]
+    mov qword [rbp + 424], rax
+;   [240:5] free named register rax
+;   [240:5] free scratch register r14
+;   [240:5] free scratch register r15
+;   [241:5] assert(arr[0] == 2)
+;   [241:12] allocate scratch register -> r15
+;   [241:12] ? arr[0] == 2
+;   [241:12] ? arr[0] == 2
+    cmp.241.12:
+    cmp dword [rbp + 424], 2
     sete r15b
-    bool.240.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.240.5:
-;       [240:5] alias ok -> r15b
-        if.37.27.240.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.240.5:
+    bool.241.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.241.5:
+;       [241:5] alias ok -> r15b
+        if.38.27.241.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.241.5:
         cmp r15b, 0
-        jne if.37.24.240.5.end
-        if.37.27.240.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.241.5.end
+        if.38.27.241.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.240.5.end:
-;       [240:5] free scratch register r15
-    func.assert.240.5.end:
-;   [243:5] var arr1 = i32[8]{}
-;   [243:9] arr1: i32[8] (32 B @ [rbp + 320])
-;   [243:9] arr1 = i32[8]{}
-;   [243:16] zero remaining elements: 8 * 4 B = 32 B
-;   [243:16] size <= 32 B, use mov
-    mov qword [rbp + 320], 0
-    mov qword [rbp + 328], 0
-    mov qword [rbp + 336], 0
-    mov qword [rbp + 344], 0
-;   [244:5] array_copy(arr, arr1, 4)
-;   [244:5] allocate scratch register -> r15
-;   [244:27] 4
-;   [244:27] 4
+;           [38:34] free named register rdi
+        if.38.24.241.5.end:
+;       [241:5] free scratch register r15
+    func.assert.241.5.end:
+;   [244:5] var arr1 = i32[8]{}
+;   [244:9] arr1: i32[8] (32 B @ [rbp + 448])
+;   [244:9] arr1 = i32[8]{}
+;   [244:16] zero remaining elements: 8 * 4 B = 32 B
+;   [244:16] size <= 32 B, use mov
+    mov qword [rbp + 448], 0
+    mov qword [rbp + 456], 0
+    mov qword [rbp + 464], 0
+    mov qword [rbp + 472], 0
+;   [245:5] array_copy(arr, arr1, 4)
+;   [245:5] allocate scratch register -> r15
+;   [245:27] 4
+;   [245:27] 4
     mov r15, 4
-;   [244:16] arr
-;   [244:16] bounds check
-;   [244:16] lower bound (--checks=lower)
+;   [245:16] arr
+;   [245:16] bounds check
+;   [245:16] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
-;   [244:16] upper bound (--checks=upper)
+;   [245:16] upper bound (--checks=upper)
     cmp r15, 4
     jg baz_bounds_panic
-;   [244:21] arr1
-;   [244:21] bounds check
-;   [244:21] lower bound (--checks=lower)
+;   [245:21] arr1
+;   [245:21] bounds check
+;   [245:21] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
-;   [244:21] upper bound (--checks=upper)
+;   [245:21] upper bound (--checks=upper)
     cmp r15, 8
     jg baz_bounds_panic
-;   [244:5] size <= 16 B, use mov
-;   [244:5] allocate named register rax
-    mov rax, qword [rbp + 296]
-    mov qword [rbp + 320], rax
-    mov rax, qword [rbp + 304]
-    mov qword [rbp + 328], rax
-;   [244:5] free named register rax
-;   [244:5] free scratch register r15
-;   [245:5] var eq = arrays_equal(arr[1], arr1[1], 3)
-;   [245:9] eq: bool (1 B @ [rbp + 352])
-;   [245:9] eq = arrays_equal(arr[1], arr1[1], 3)
-;   [245:14] ? arrays_equal(arr[1], arr1[1], 3)
-;   [245:14] ? shorthand: arrays_equal(arr[1], arr1[1], 3)
-    cmp.245.14:
-;       [245:14] arrays_equal(arr[1], arr1[1], 3)
-;       [245:14] allocate named register rsi
-;       [245:14] allocate named register rdi
-;       [245:14] allocate named register rcx
-;       [245:44] 3
-;       [245:44] 3
+;   [245:5] size <= 16 B, use mov
+;   [245:5] allocate named register rax
+    mov rax, qword [rbp + 424]
+    mov qword [rbp + 448], rax
+    mov rax, qword [rbp + 432]
+    mov qword [rbp + 456], rax
+;   [245:5] free named register rax
+;   [245:5] free scratch register r15
+;   [246:5] var eq = arrays_equal(arr[1], arr1[1], 3)
+;   [246:9] eq: bool (1 B @ [rbp + 480])
+;   [246:9] eq = arrays_equal(arr[1], arr1[1], 3)
+;   [246:14] ? arrays_equal(arr[1], arr1[1], 3)
+;   [246:14] ? shorthand: arrays_equal(arr[1], arr1[1], 3)
+    cmp.246.14:
+;       [246:14] arrays_equal(arr[1], arr1[1], 3)
+;       [246:14] allocate named register rsi
+;       [246:14] allocate named register rdi
+;       [246:14] allocate named register rcx
+;       [246:44] 3
+;       [246:44] 3
         mov rcx, 3
-;       [245:27] arr[1]
-;       [245:31] allocate scratch register -> r15
-;       [245:31] set array index
-;       [245:31] 1
+;       [246:27] arr[1]
+;       [246:31] allocate scratch register -> r15
+;       [246:31] set array index
+;       [246:31] 1
         mov r15, 1
-;       [245:31] bounds check
-;       [245:31] lower bound (--checks=lower)
+;       [246:31] bounds check
+;       [246:31] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
         test rcx, rcx
         js baz_bounds_panic
-;       [245:31] upper bound (--checks=upper)
-;       [245:31] allocate scratch register -> r14
+;       [246:31] upper bound (--checks=upper)
+;       [246:31] allocate scratch register -> r14
         mov r14, rcx
         add r14, r15
         cmp r14, 4
-;       [245:31] free scratch register r14
+;       [246:31] free scratch register r14
         jg baz_bounds_panic
-        lea rsi, [rbp + r15 * 4 + 296]
-;       [245:14] free scratch register r15
-;       [245:35] arr1[1]
-;       [245:40] allocate scratch register -> r15
-;       [245:40] set array index
-;       [245:40] 1
+        lea rsi, [rbp + r15 * 4 + 424]
+;       [246:14] free scratch register r15
+;       [246:35] arr1[1]
+;       [246:40] allocate scratch register -> r15
+;       [246:40] set array index
+;       [246:40] 1
         mov r15, 1
-;       [245:40] bounds check
-;       [245:40] lower bound (--checks=lower)
+;       [246:40] bounds check
+;       [246:40] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
         test rcx, rcx
         js baz_bounds_panic
-;       [245:40] upper bound (--checks=upper)
-;       [245:40] allocate scratch register -> r14
+;       [246:40] upper bound (--checks=upper)
+;       [246:40] allocate scratch register -> r14
         mov r14, rcx
         add r14, r15
         cmp r14, 8
-;       [245:40] free scratch register r14
+;       [246:40] free scratch register r14
         jg baz_bounds_panic
-        lea rdi, [rbp + r15 * 4 + 320]
-;       [245:14] free scratch register r15
+        lea rdi, [rbp + r15 * 4 + 448]
+;       [246:14] free scratch register r15
         shl rcx, 2
         test rcx, rcx
         repe cmpsb
-;       [245:14] free named register rcx
-;       [245:14] free named register rdi
-;       [245:14] free named register rsi
-        sete byte [rbp + 352]
-    bool.245.14.end:
-;   [248:5] assert(eq)
-;   [248:12] allocate scratch register -> r15
-;   [248:12] ? eq
-;   [248:12] ? shorthand: eq
-    cmp.248.12:
-    mov r15b, byte [rbp + 352]
-    bool.248.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.248.5:
-;       [248:5] alias ok -> r15b
-        if.37.27.248.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.248.5:
+;       [246:14] free named register rcx
+;       [246:14] free named register rdi
+;       [246:14] free named register rsi
+        sete byte [rbp + 480]
+    bool.246.14.end:
+;   [249:5] assert(eq)
+;   [249:12] allocate scratch register -> r15
+;   [249:12] ? eq
+;   [249:12] ? shorthand: eq
+    cmp.249.12:
+    mov r15b, byte [rbp + 480]
+    bool.249.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.249.5:
+;       [249:5] alias ok -> r15b
+        if.38.27.249.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.249.5:
         cmp r15b, 0
-        jne if.37.24.248.5.end
-        if.37.27.248.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.249.5.end
+        if.38.27.249.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.248.5.end:
-;       [248:5] free scratch register r15
-    func.assert.248.5.end:
-;   [250:5] arr1[2] = -1
-;   [250:15] instructions without scratch register 1, with 2
-;   [250:16] -1
-    mov dword [rbp + 328], -1
-;   [251:5] assert(not arrays_equal(arr, arr1, 4))
-;   [251:12] allocate scratch register -> r15
-;   [251:12] ? not arrays_equal(arr, arr1, 4)
-;   [251:12] ? shorthand: not arrays_equal(arr, arr1, 4)
-    cmp.251.12:
-;       [251:16] arrays_equal(arr, arr1, 4)
-;       [251:16] allocate named register rsi
-;       [251:16] allocate named register rdi
-;       [251:16] allocate named register rcx
-;       [251:40] 4
-;       [251:40] 4
+;           [38:34] free named register rdi
+        if.38.24.249.5.end:
+;       [249:5] free scratch register r15
+    func.assert.249.5.end:
+;   [251:5] arr1[2] = -1
+;   [251:15] instructions without scratch register 1, with 2
+;   [251:16] -1
+    mov dword [rbp + 456], -1
+;   [252:5] assert(not arrays_equal(arr, arr1, 4))
+;   [252:12] allocate scratch register -> r15
+;   [252:12] ? not arrays_equal(arr, arr1, 4)
+;   [252:12] ? shorthand: not arrays_equal(arr, arr1, 4)
+    cmp.252.12:
+;       [252:16] arrays_equal(arr, arr1, 4)
+;       [252:16] allocate named register rsi
+;       [252:16] allocate named register rdi
+;       [252:16] allocate named register rcx
+;       [252:40] 4
+;       [252:40] 4
         mov rcx, 4
-;       [251:29] arr
-;       [251:29] bounds check
-;       [251:29] lower bound (--checks=lower)
+;       [252:29] arr
+;       [252:29] bounds check
+;       [252:29] lower bound (--checks=lower)
         test rcx, rcx
         js baz_bounds_panic
-;       [251:29] upper bound (--checks=upper)
+;       [252:29] upper bound (--checks=upper)
         cmp rcx, 4
         jg baz_bounds_panic
-        lea rsi, [rbp + 296]
-;       [251:34] arr1
-;       [251:34] bounds check
-;       [251:34] lower bound (--checks=lower)
+        lea rsi, [rbp + 424]
+;       [252:34] arr1
+;       [252:34] bounds check
+;       [252:34] lower bound (--checks=lower)
         test rcx, rcx
         js baz_bounds_panic
-;       [251:34] upper bound (--checks=upper)
+;       [252:34] upper bound (--checks=upper)
         cmp rcx, 8
         jg baz_bounds_panic
-        lea rdi, [rbp + 320]
+        lea rdi, [rbp + 448]
         shl rcx, 2
         test rcx, rcx
         repe cmpsb
-;       [251:16] free named register rcx
-;       [251:16] free named register rdi
-;       [251:16] free named register rsi
+;       [252:16] free named register rcx
+;       [252:16] free named register rdi
+;       [252:16] free named register rsi
         setne r15b
-    bool.251.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.251.5:
-;       [251:5] alias ok -> r15b
-        if.37.27.251.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.251.5:
+    bool.252.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.252.5:
+;       [252:5] alias ok -> r15b
+        if.38.27.252.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.252.5:
         cmp r15b, 0
-        jne if.37.24.251.5.end
-        if.37.27.251.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.252.5.end
+        if.38.27.252.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.251.5.end:
-;       [251:5] free scratch register r15
-    func.assert.251.5.end:
-;   [253:5] var arr4 = arr
-;   [253:9] arr4: i32[4] (16 B @ [rbp + 356])
-;   [253:9] arr4 = arr
-;   [253:16] size <= 16 B, use mov
-;   [253:16] allocate named register rax
-    mov rax, qword [rbp + 296]
-    mov qword [rbp + 356], rax
-    mov rax, qword [rbp + 304]
-    mov qword [rbp + 364], rax
-;   [253:16] free named register rax
-;   [254:5] assert(equal(arr, arr4))
-;   [254:12] allocate scratch register -> r15
-;   [254:12] ? equal(arr, arr4)
-;   [254:12] ? shorthand: equal(arr, arr4)
-    cmp.254.12:
-;       [254:12] equal(arr, arr4)
-;       [254:12] allocate named register rsi
-;       [254:12] allocate named register rdi
-;       [254:12] allocate named register rcx
-;       [254:18] arr
-        lea rsi, [rbp + 296]
-;       [254:23] arr4
-        lea rdi, [rbp + 356]
+;           [38:34] free named register rdi
+        if.38.24.252.5.end:
+;       [252:5] free scratch register r15
+    func.assert.252.5.end:
+;   [254:5] var arr4 = arr
+;   [254:9] arr4: i32[4] (16 B @ [rbp + 484])
+;   [254:9] arr4 = arr
+;   [254:16] size <= 16 B, use mov
+;   [254:16] allocate named register rax
+    mov rax, qword [rbp + 424]
+    mov qword [rbp + 484], rax
+    mov rax, qword [rbp + 432]
+    mov qword [rbp + 492], rax
+;   [254:16] free named register rax
+;   [255:5] assert(equal(arr, arr4))
+;   [255:12] allocate scratch register -> r15
+;   [255:12] ? equal(arr, arr4)
+;   [255:12] ? shorthand: equal(arr, arr4)
+    cmp.255.12:
+;       [255:12] equal(arr, arr4)
+;       [255:12] allocate named register rsi
+;       [255:12] allocate named register rdi
+;       [255:12] allocate named register rcx
+;       [255:18] arr
+        lea rsi, [rbp + 424]
+;       [255:23] arr4
+        lea rdi, [rbp + 484]
         cmpsq
         jne .Lbaz_equal.0
         cmpsq
         .Lbaz_equal.0:
-;       [254:12] free named register rcx
-;       [254:12] free named register rdi
-;       [254:12] free named register rsi
+;       [255:12] free named register rcx
+;       [255:12] free named register rdi
+;       [255:12] free named register rsi
         sete r15b
-    bool.254.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.254.5:
-;       [254:5] alias ok -> r15b
-        if.37.27.254.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.254.5:
+    bool.255.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.255.5:
+;       [255:5] alias ok -> r15b
+        if.38.27.255.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.255.5:
         cmp r15b, 0
-        jne if.37.24.254.5.end
-        if.37.27.254.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.255.5.end
+        if.38.27.255.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.254.5.end:
-;       [254:5] free scratch register r15
-    func.assert.254.5.end:
-;   [261:5] ix = 3
-;   [261:10] 3
-    mov qword [rbp + 312], 3
-;   [262:5] var tmp = ~inv(arr[ix - 1])
-;   [262:9] tmp: i32 (4 B @ [rbp + 372])
-;   [262:9] tmp = ~inv(arr[ix - 1])
-;   [262:16] tmp = ~inv(arr[ix - 1])
-;   [262:16] = expression
-;   [262:16] ~inv(arr[ix - 1])
-;   [262:16] instructions without scratch register 12, with 12
-;   [262:24] allocate scratch register -> r15
-;   [262:24] set array index
-;   [262:24] ix
-    mov r15, qword [rbp + 312]
-;   [262:24] r15 - 1
-;   [262:24] src: folded constant '- 1'
+;           [38:34] free named register rdi
+        if.38.24.255.5.end:
+;       [255:5] free scratch register r15
+    func.assert.255.5.end:
+;   [262:5] ix = 3
+;   [262:10] 3
+    mov qword [rbp + 440], 3
+;   [263:5] var tmp = ~inv(arr[ix - 1])
+;   [263:9] tmp: i32 (4 B @ [rbp + 500])
+;   [263:9] tmp = ~inv(arr[ix - 1])
+;   [263:16] tmp = ~inv(arr[ix - 1])
+;   [263:16] = expression
+;   [263:16] ~inv(arr[ix - 1])
+;   [263:16] instructions without scratch register 12, with 12
+;   [263:24] allocate scratch register -> r15
+;   [263:24] set array index
+;   [263:24] ix
+    mov r15, qword [rbp + 440]
+;   [263:24] r15 - 1
+;   [263:24] src: folded constant '- 1'
     sub r15, 1
-;   [262:24] bounds check
-;   [262:24] lower bound (--checks=lower)
+;   [263:24] bounds check
+;   [263:24] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
-;   [262:24] upper bound (--checks=upper)
+;   [263:24] upper bound (--checks=upper)
     cmp r15, 4
     jge baz_bounds_panic
-;   [262:16] instructions without scratch register 6, with 7
-;   [70:6] inv(i i32) res i32
-    func.inv.262.16:
-;       [262:16] alias res -> tmp
-;       [262:16] alias i -> arr (lea: rbp + r15 * 4 + 296)
-;       [71:5] res = ~i
-;       [71:11] instructions without scratch register 3, with 3
-;       [71:12] ~i
-;       [71:12] allocate scratch register -> r14
-        mov r14d, dword [rbp + r15 * 4 + 296]
-        mov dword [rbp + 372], r14d
-;       [71:12] free scratch register r14
-        not dword [rbp + 372]
-    func.inv.262.16.end:
-    not dword [rbp + 372]
-;       [262:16] free scratch register r15
-;   [263:5] arr[ix] = tmp
-;   [263:9] allocate scratch register -> r15
-;   [263:9] set array index
-;   [263:9] ix
-    mov r15, qword [rbp + 312]
-;   [263:9] bounds check
-;   [263:9] lower bound (--checks=lower)
+;   [263:16] instructions without scratch register 6, with 7
+;   [71:6] inv(i i32) res i32
+    func.inv.263.16:
+;       [263:16] alias res -> tmp
+;       [263:16] alias i -> arr (lea: rbp + r15 * 4 + 424)
+;       [72:5] res = ~i
+;       [72:11] instructions without scratch register 3, with 3
+;       [72:12] ~i
+;       [72:12] allocate scratch register -> r14
+        mov r14d, dword [rbp + r15 * 4 + 424]
+        mov dword [rbp + 500], r14d
+;       [72:12] free scratch register r14
+        not dword [rbp + 500]
+    func.inv.263.16.end:
+    not dword [rbp + 500]
+;       [263:16] free scratch register r15
+;   [264:5] arr[ix] = tmp
+;   [264:9] allocate scratch register -> r15
+;   [264:9] set array index
+;   [264:9] ix
+    mov r15, qword [rbp + 440]
+;   [264:9] bounds check
+;   [264:9] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
-;   [263:9] upper bound (--checks=upper)
+;   [264:9] upper bound (--checks=upper)
     cmp r15, 4
     jge baz_bounds_panic
-;   [263:15] tmp
-;   [263:15] allocate scratch register -> r14
-    mov r14d, dword [rbp + 372]
-    mov dword [rbp + r15 * 4 + 296], r14d
-;   [263:15] free scratch register r14
-;   [263:5] free scratch register r15
-;   [264:5] assert(arr[ix] == 2)
-;   [264:12] allocate scratch register -> r15
-;   [264:12] ? arr[ix] == 2
-;   [264:12] ? arr[ix] == 2
-    cmp.264.12:
-;   [264:16] allocate scratch register -> r14
-;   [264:16] set array index
-;   [264:16] ix
-    mov r14, qword [rbp + 312]
-;   [264:16] bounds check
-;   [264:16] lower bound (--checks=lower)
+;   [264:15] tmp
+;   [264:15] allocate scratch register -> r14
+    mov r14d, dword [rbp + 500]
+    mov dword [rbp + r15 * 4 + 424], r14d
+;   [264:15] free scratch register r14
+;   [264:5] free scratch register r15
+;   [265:5] assert(arr[ix] == 2)
+;   [265:12] allocate scratch register -> r15
+;   [265:12] ? arr[ix] == 2
+;   [265:12] ? arr[ix] == 2
+    cmp.265.12:
+;   [265:16] allocate scratch register -> r14
+;   [265:16] set array index
+;   [265:16] ix
+    mov r14, qword [rbp + 440]
+;   [265:16] bounds check
+;   [265:16] lower bound (--checks=lower)
     test r14, r14
     js baz_bounds_panic
-;   [264:16] upper bound (--checks=upper)
+;   [265:16] upper bound (--checks=upper)
     cmp r14, 4
     jge baz_bounds_panic
-    cmp dword [rbp + r14 * 4 + 296], 2
-;   [264:12] free scratch register r14
+    cmp dword [rbp + r14 * 4 + 424], 2
+;   [265:12] free scratch register r14
     sete r15b
-    bool.264.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.264.5:
-;       [264:5] alias ok -> r15b
-        if.37.27.264.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.264.5:
+    bool.265.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.265.5:
+;       [265:5] alias ok -> r15b
+        if.38.27.265.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.265.5:
         cmp r15b, 0
-        jne if.37.24.264.5.end
-        if.37.27.264.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.265.5.end
+        if.38.27.265.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.264.5.end:
-;       [264:5] free scratch register r15
-    func.assert.264.5.end:
-;   [266:5] faz(arr)
-;   [76:6] faz(arg i32[])
-    func.faz.266.5:
-;       [266:5] alias arg -> arr
-;       [77:5] arg[1] = 0xfe
-;       [77:14] 0xfe
-        mov dword [rbp + 300], 254
-    func.faz.266.5.end:
-;   [267:5] assert(arr[1] == 0xfe)
-;   [267:12] allocate scratch register -> r15
-;   [267:12] ? arr[1] == 0xfe
-;   [267:12] ? arr[1] == 0xfe
-    cmp.267.12:
-    cmp dword [rbp + 300], 254
+;           [38:34] free named register rdi
+        if.38.24.265.5.end:
+;       [265:5] free scratch register r15
+    func.assert.265.5.end:
+;   [267:5] faz(arr)
+;   [77:6] faz(arg i32[])
+    func.faz.267.5:
+;       [267:5] alias arg -> arr
+;       [78:5] arg[1] = 0xfe
+;       [78:14] 0xfe
+        mov dword [rbp + 428], 254
+    func.faz.267.5.end:
+;   [268:5] assert(arr[1] == 0xfe)
+;   [268:12] allocate scratch register -> r15
+;   [268:12] ? arr[1] == 0xfe
+;   [268:12] ? arr[1] == 0xfe
+    cmp.268.12:
+    cmp dword [rbp + 428], 254
     sete r15b
-    bool.267.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.267.5:
-;       [267:5] alias ok -> r15b
-        if.37.27.267.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.267.5:
+    bool.268.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.268.5:
+;       [268:5] alias ok -> r15b
+        if.38.27.268.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.268.5:
         cmp r15b, 0
-        jne if.37.24.267.5.end
-        if.37.27.267.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.268.5.end
+        if.38.27.268.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.267.5.end:
-;       [267:5] free scratch register r15
-    func.assert.267.5.end:
-;   [269:5] var arr3 = i[]{ 3, 5 }
-;   [269:9] arr3: i64[2] (16 B @ [rbp + 376])
-;   [269:9] arr3 = i[]{ 3, 5 }
-;   [269:19] size <= 16 B, use immediates
-    mov qword [rbp + 376], 3
-    mov qword [rbp + 384], 5
-;   [270:5] foo arr3
-;   [270:9] allocate scratch register -> r15
-;   [270:9] e: i64 (r15)
-;   [270:9] i: i64 (8 B @ [rbp + 400])
-;   [270:9] const n = 2
-;   [270:9] initiate iterator e
-    lea r15, [rbp + 376]
-;   [270:9] initiate counter i
-    mov qword [rbp + 400], 0
-    foo.270.5:
-;       [271:9] e = e + i + n
-;       [271:13] instructions without scratch register 3, with 4
-;       [271:13] e
-;       [271:17] e + i
-;       [271:17] src: operand
-;       [271:17] allocate scratch register -> r14
-        mov r14, qword [rbp + 400]
+;           [38:34] free named register rdi
+        if.38.24.268.5.end:
+;       [268:5] free scratch register r15
+    func.assert.268.5.end:
+;   [270:5] var arr3 = i[]{ 3, 5 }
+;   [270:9] arr3: i64[2] (16 B @ [rbp + 504])
+;   [270:9] arr3 = i[]{ 3, 5 }
+;   [270:19] size <= 16 B, use immediates
+    mov qword [rbp + 504], 3
+    mov qword [rbp + 512], 5
+;   [271:5] foo arr3
+;   [271:9] allocate scratch register -> r15
+;   [271:9] e: i64 (r15)
+;   [271:9] i: i64 (8 B @ [rbp + 528])
+;   [271:9] const n = 2
+;   [271:9] initiate iterator e
+    lea r15, [rbp + 504]
+;   [271:9] initiate counter i
+    mov qword [rbp + 528], 0
+    foo.271.5:
+;       [272:9] e = e + i + n
+;       [272:13] instructions without scratch register 3, with 4
+;       [272:13] e
+;       [272:17] e + i
+;       [272:17] src: operand
+;       [272:17] allocate scratch register -> r14
+        mov r14, qword [rbp + 528]
         add qword [r15], r14
-;       [271:17] free scratch register r14
-;       [271:13] e + 2
-;       [271:13] src: folded constant '+ n'
+;       [272:17] free scratch register r14
+;       [272:13] e + 2
+;       [272:13] src: folded constant '+ n'
         add qword [r15], 2
-        foo.270.5.continue:
+        foo.271.5.continue:
             add r15, 8
-            inc qword [rbp + 400]
-            cmp qword [rbp + 400], 2
-            jne foo.270.5
-    foo.270.5.end:
-;   [270:5] free scratch register r15
-;   [273:5] assert(arr3[0] == 3 + 0 + 2)
-;   [273:12] allocate scratch register -> r15
-;   [273:12] ? arr3[0] == 3 + 0 + 2
-;   [273:12] ? arr3[0] == 3 + 0 + 2
-    cmp.273.12:
-;   [273:23] src: folded constant '3 + 0 + 2'
-    cmp qword [rbp + 376], 5
-    sete r15b
-    bool.273.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.273.5:
-;       [273:5] alias ok -> r15b
-        if.37.27.273.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.273.5:
-        cmp r15b, 0
-        jne if.37.24.273.5.end
-        if.37.27.273.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
-            mov rdi, 1
-            mov rax, 60
-            syscall
-;           [37:34] free named register rdi
-        if.37.24.273.5.end:
-;       [273:5] free scratch register r15
-    func.assert.273.5.end:
-;   [274:5] assert(arr3[1] == 5 + 1 + 2)
+            inc qword [rbp + 528]
+            cmp qword [rbp + 528], 2
+            jne foo.271.5
+    foo.271.5.end:
+;   [271:5] free scratch register r15
+;   [274:5] assert(arr3[0] == 3 + 0 + 2)
 ;   [274:12] allocate scratch register -> r15
-;   [274:12] ? arr3[1] == 5 + 1 + 2
-;   [274:12] ? arr3[1] == 5 + 1 + 2
+;   [274:12] ? arr3[0] == 3 + 0 + 2
+;   [274:12] ? arr3[0] == 3 + 0 + 2
     cmp.274.12:
-;   [274:23] src: folded constant '5 + 1 + 2'
-    cmp qword [rbp + 384], 8
+;   [274:23] src: folded constant '3 + 0 + 2'
+    cmp qword [rbp + 504], 5
     sete r15b
     bool.274.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.274.5:
 ;       [274:5] alias ok -> r15b
-        if.37.27.274.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.274.5:
+        if.38.27.274.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.274.5:
         cmp r15b, 0
-        jne if.37.24.274.5.end
-        if.37.27.274.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.274.5.end
+        if.38.27.274.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.274.5.end:
+;           [38:34] free named register rdi
+        if.38.24.274.5.end:
 ;       [274:5] free scratch register r15
     func.assert.274.5.end:
-;   [280:5] var p = point{}
-;   [280:9] p: point (16 B @ [rbp + 392])
-;   [280:9] p = point{}
-;   [280:13] zero remaining fields: 16 B
-;   [280:13] size <= 32 B, use mov
-    mov qword [rbp + 392], 0
-    mov qword [rbp + 400], 0
-;   [282:7] p.fooz()
-;   [46:6] point.fooz()
-    func.point.fooz.282.7:
-;       [282:7] alias self -> p
-;       [47:5] self.x = 0b10
-;       [47:14] 0b10
-        mov qword [rbp + 392], 2
-;       [48:5] self.y = 0xb
-;       [48:14] 0xb
-        mov qword [rbp + 400], 11
-    func.point.fooz.282.7.end:
-;   [285:5] assert(p.x == 2)
-;   [285:12] allocate scratch register -> r15
-;   [285:12] ? p.x == 2
-;   [285:12] ? p.x == 2
-    cmp.285.12:
-    cmp qword [rbp + 392], 2
+;   [275:5] assert(arr3[1] == 5 + 1 + 2)
+;   [275:12] allocate scratch register -> r15
+;   [275:12] ? arr3[1] == 5 + 1 + 2
+;   [275:12] ? arr3[1] == 5 + 1 + 2
+    cmp.275.12:
+;   [275:23] src: folded constant '5 + 1 + 2'
+    cmp qword [rbp + 512], 8
     sete r15b
-    bool.285.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.285.5:
-;       [285:5] alias ok -> r15b
-        if.37.27.285.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.285.5:
+    bool.275.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.275.5:
+;       [275:5] alias ok -> r15b
+        if.38.27.275.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.275.5:
         cmp r15b, 0
-        jne if.37.24.285.5.end
-        if.37.27.285.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.275.5.end
+        if.38.27.275.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.285.5.end:
-;       [285:5] free scratch register r15
-    func.assert.285.5.end:
-;   [286:5] assert(p.y == 0xb)
+;           [38:34] free named register rdi
+        if.38.24.275.5.end:
+;       [275:5] free scratch register r15
+    func.assert.275.5.end:
+;   [281:5] var p = point{}
+;   [281:9] p: point (16 B @ [rbp + 520])
+;   [281:9] p = point{}
+;   [281:13] zero remaining fields: 16 B
+;   [281:13] size <= 32 B, use mov
+    mov qword [rbp + 520], 0
+    mov qword [rbp + 528], 0
+;   [283:7] p.fooz()
+;   [47:6] point.fooz()
+    func.point.fooz.283.7:
+;       [283:7] alias self -> p
+;       [48:5] self.x = 0b10
+;       [48:14] 0b10
+        mov qword [rbp + 520], 2
+;       [49:5] self.y = 0xb
+;       [49:14] 0xb
+        mov qword [rbp + 528], 11
+    func.point.fooz.283.7.end:
+;   [286:5] assert(p.x == 2)
 ;   [286:12] allocate scratch register -> r15
-;   [286:12] ? p.y == 0xb
-;   [286:12] ? p.y == 0xb
+;   [286:12] ? p.x == 2
+;   [286:12] ? p.x == 2
     cmp.286.12:
-    cmp qword [rbp + 400], 11
+    cmp qword [rbp + 520], 2
     sete r15b
     bool.286.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.286.5:
 ;       [286:5] alias ok -> r15b
-        if.37.27.286.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.286.5:
+        if.38.27.286.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.286.5:
         cmp r15b, 0
-        jne if.37.24.286.5.end
-        if.37.27.286.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.286.5.end
+        if.38.27.286.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.286.5.end:
+;           [38:34] free named register rdi
+        if.38.24.286.5.end:
 ;       [286:5] free scratch register r15
     func.assert.286.5.end:
-;   [288:5] var q = p
-;   [288:9] q: point (16 B @ [rbp + 408])
-;   [288:9] q = p
-;   [288:13] size <= 16 B, use mov
-;   [288:13] allocate named register rax
-    mov rax, qword [rbp + 392]
-    mov qword [rbp + 408], rax
-    mov rax, qword [rbp + 400]
-    mov qword [rbp + 416], rax
-;   [288:13] free named register rax
-;   [291:5] assert(equal(p, q))
-;   [291:12] allocate scratch register -> r15
-;   [291:12] ? equal(p, q)
-;   [291:12] ? shorthand: equal(p, q)
-    cmp.291.12:
-;       [291:12] equal(p, q)
-;       [291:12] allocate named register rsi
-;       [291:12] allocate named register rdi
-;       [291:12] allocate named register rcx
-;       [291:18] p
-        lea rsi, [rbp + 392]
-;       [291:21] q
-        lea rdi, [rbp + 408]
+;   [287:5] assert(p.y == 0xb)
+;   [287:12] allocate scratch register -> r15
+;   [287:12] ? p.y == 0xb
+;   [287:12] ? p.y == 0xb
+    cmp.287.12:
+    cmp qword [rbp + 528], 11
+    sete r15b
+    bool.287.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.287.5:
+;       [287:5] alias ok -> r15b
+        if.38.27.287.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.287.5:
+        cmp r15b, 0
+        jne if.38.24.287.5.end
+        if.38.27.287.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
+            mov rdi, 1
+            mov rax, 60
+            syscall
+;           [38:34] free named register rdi
+        if.38.24.287.5.end:
+;       [287:5] free scratch register r15
+    func.assert.287.5.end:
+;   [289:5] var q = p
+;   [289:9] q: point (16 B @ [rbp + 536])
+;   [289:9] q = p
+;   [289:13] size <= 16 B, use mov
+;   [289:13] allocate named register rax
+    mov rax, qword [rbp + 520]
+    mov qword [rbp + 536], rax
+    mov rax, qword [rbp + 528]
+    mov qword [rbp + 544], rax
+;   [289:13] free named register rax
+;   [292:5] assert(equal(p, q))
+;   [292:12] allocate scratch register -> r15
+;   [292:12] ? equal(p, q)
+;   [292:12] ? shorthand: equal(p, q)
+    cmp.292.12:
+;       [292:12] equal(p, q)
+;       [292:12] allocate named register rsi
+;       [292:12] allocate named register rdi
+;       [292:12] allocate named register rcx
+;       [292:18] p
+        lea rsi, [rbp + 520]
+;       [292:21] q
+        lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.1
         cmpsq
         .Lbaz_equal.1:
-;       [291:12] free named register rcx
-;       [291:12] free named register rdi
-;       [291:12] free named register rsi
+;       [292:12] free named register rcx
+;       [292:12] free named register rdi
+;       [292:12] free named register rsi
         sete r15b
-    bool.291.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.291.5:
-;       [291:5] alias ok -> r15b
-        if.37.27.291.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.291.5:
+    bool.292.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.292.5:
+;       [292:5] alias ok -> r15b
+        if.38.27.292.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.292.5:
         cmp r15b, 0
-        jne if.37.24.291.5.end
-        if.37.27.291.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.292.5.end
+        if.38.27.292.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.291.5.end:
-;       [291:5] free scratch register r15
-    func.assert.291.5.end:
-;   [295:5] q.x = 3
-;   [295:11] 3
-    mov qword [rbp + 408], 3
-;   [296:5] assert(not equal(p, q))
-;   [296:12] allocate scratch register -> r15
-;   [296:12] ? not equal(p, q)
-;   [296:12] ? shorthand: not equal(p, q)
-    cmp.296.12:
-;       [296:16] equal(p, q)
-;       [296:16] allocate named register rsi
-;       [296:16] allocate named register rdi
-;       [296:16] allocate named register rcx
-;       [296:22] p
-        lea rsi, [rbp + 392]
-;       [296:25] q
-        lea rdi, [rbp + 408]
+;           [38:34] free named register rdi
+        if.38.24.292.5.end:
+;       [292:5] free scratch register r15
+    func.assert.292.5.end:
+;   [296:5] q.x = 3
+;   [296:11] 3
+    mov qword [rbp + 536], 3
+;   [297:5] assert(not equal(p, q))
+;   [297:12] allocate scratch register -> r15
+;   [297:12] ? not equal(p, q)
+;   [297:12] ? shorthand: not equal(p, q)
+    cmp.297.12:
+;       [297:16] equal(p, q)
+;       [297:16] allocate named register rsi
+;       [297:16] allocate named register rdi
+;       [297:16] allocate named register rcx
+;       [297:22] p
+        lea rsi, [rbp + 520]
+;       [297:25] q
+        lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.2
         cmpsq
         .Lbaz_equal.2:
-;       [296:16] free named register rcx
-;       [296:16] free named register rdi
-;       [296:16] free named register rsi
+;       [297:16] free named register rcx
+;       [297:16] free named register rdi
+;       [297:16] free named register rsi
         setne r15b
-    bool.296.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.296.5:
-;       [296:5] alias ok -> r15b
-        if.37.27.296.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.296.5:
+    bool.297.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.297.5:
+;       [297:5] alias ok -> r15b
+        if.38.27.297.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.297.5:
         cmp r15b, 0
-        jne if.37.24.296.5.end
-        if.37.27.296.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.297.5.end
+        if.38.27.297.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.296.5.end:
-;       [296:5] free scratch register r15
-    func.assert.296.5.end:
-;   [298:5] var i = 0
-;   [298:9] i: i64 (8 B @ [rbp + 424])
-;   [298:9] i = 0
-;   [298:13] 0
-    mov qword [rbp + 424], 0
-;   [299:5] bar(i)
-;   [57:6] bar(arg)
-    func.bar.299.5:
-;       [299:5] alias arg -> i
-        if.58.8.299.5:
-;       [58:8] ? arg == 0
-;       [58:8] ? arg == 0
-        cmp.58.8.299.5:
-        cmp qword [rbp + 424], 0
-        je func.bar.299.5.end
-        if.58.8.299.5.code:
-;           [58:17] return
-        if.58.5.299.5.end:
-;       [59:5] arg = 0xff
-;       [59:11] 0xff
-        mov qword [rbp + 424], 255
-    func.bar.299.5.end:
-;   [300:5] assert(i == 0)
-;   [300:12] allocate scratch register -> r15
-;   [300:12] ? i == 0
-;   [300:12] ? i == 0
-    cmp.300.12:
-    cmp qword [rbp + 424], 0
+;           [38:34] free named register rdi
+        if.38.24.297.5.end:
+;       [297:5] free scratch register r15
+    func.assert.297.5.end:
+;   [299:5] var i = 0
+;   [299:9] i: i64 (8 B @ [rbp + 552])
+;   [299:9] i = 0
+;   [299:13] 0
+    mov qword [rbp + 552], 0
+;   [300:5] bar(i)
+;   [58:6] bar(arg)
+    func.bar.300.5:
+;       [300:5] alias arg -> i
+        if.59.8.300.5:
+;       [59:8] ? arg == 0
+;       [59:8] ? arg == 0
+        cmp.59.8.300.5:
+        cmp qword [rbp + 552], 0
+        je func.bar.300.5.end
+        if.59.8.300.5.code:
+;           [59:17] return
+        if.59.5.300.5.end:
+;       [60:5] arg = 0xff
+;       [60:11] 0xff
+        mov qword [rbp + 552], 255
+    func.bar.300.5.end:
+;   [301:5] assert(i == 0)
+;   [301:12] allocate scratch register -> r15
+;   [301:12] ? i == 0
+;   [301:12] ? i == 0
+    cmp.301.12:
+    cmp qword [rbp + 552], 0
     sete r15b
-    bool.300.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.300.5:
-;       [300:5] alias ok -> r15b
-        if.37.27.300.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.300.5:
+    bool.301.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.301.5:
+;       [301:5] alias ok -> r15b
+        if.38.27.301.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.301.5:
         cmp r15b, 0
-        jne if.37.24.300.5.end
-        if.37.27.300.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.301.5.end
+        if.38.27.301.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.300.5.end:
-;       [300:5] free scratch register r15
-    func.assert.300.5.end:
-;   [302:5] i = 1
-;   [302:9] 1
-    mov qword [rbp + 424], 1
-;   [303:5] bar(i)
-;   [57:6] bar(arg)
-    func.bar.303.5:
-;       [303:5] alias arg -> i
-        if.58.8.303.5:
-;       [58:8] ? arg == 0
-;       [58:8] ? arg == 0
-        cmp.58.8.303.5:
-        cmp qword [rbp + 424], 0
-        je func.bar.303.5.end
-        if.58.8.303.5.code:
-;           [58:17] return
-        if.58.5.303.5.end:
-;       [59:5] arg = 0xff
-;       [59:11] 0xff
-        mov qword [rbp + 424], 255
-    func.bar.303.5.end:
-;   [304:5] assert(i == 0xff)
-;   [304:12] allocate scratch register -> r15
-;   [304:12] ? i == 0xff
-;   [304:12] ? i == 0xff
-    cmp.304.12:
-    cmp qword [rbp + 424], 255
+;           [38:34] free named register rdi
+        if.38.24.301.5.end:
+;       [301:5] free scratch register r15
+    func.assert.301.5.end:
+;   [303:5] i = 1
+;   [303:9] 1
+    mov qword [rbp + 552], 1
+;   [304:5] bar(i)
+;   [58:6] bar(arg)
+    func.bar.304.5:
+;       [304:5] alias arg -> i
+        if.59.8.304.5:
+;       [59:8] ? arg == 0
+;       [59:8] ? arg == 0
+        cmp.59.8.304.5:
+        cmp qword [rbp + 552], 0
+        je func.bar.304.5.end
+        if.59.8.304.5.code:
+;           [59:17] return
+        if.59.5.304.5.end:
+;       [60:5] arg = 0xff
+;       [60:11] 0xff
+        mov qword [rbp + 552], 255
+    func.bar.304.5.end:
+;   [305:5] assert(i == 0xff)
+;   [305:12] allocate scratch register -> r15
+;   [305:12] ? i == 0xff
+;   [305:12] ? i == 0xff
+    cmp.305.12:
+    cmp qword [rbp + 552], 255
     sete r15b
-    bool.304.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.304.5:
-;       [304:5] alias ok -> r15b
-        if.37.27.304.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.304.5:
+    bool.305.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.305.5:
+;       [305:5] alias ok -> r15b
+        if.38.27.305.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.305.5:
         cmp r15b, 0
-        jne if.37.24.304.5.end
-        if.37.27.304.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.305.5.end
+        if.38.27.305.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.304.5.end:
-;       [304:5] free scratch register r15
-    func.assert.304.5.end:
-;   [306:5] var j = 1
-;   [306:9] j: i64 (8 B @ [rbp + 432])
-;   [306:9] j = 1
-;   [306:13] 1
-    mov qword [rbp + 432], 1
-;   [307:5] var k = baz(j)
-;   [307:9] k: i64 (8 B @ [rbp + 440])
-;   [307:9] k = baz(j)
-;   [307:13] k = baz(j)
-;   [307:13] = expression
-;   [307:13] baz(j)
-;   [64:6] baz(arg) res
-    func.baz.307.13:
-;       [307:13] alias res -> k
-;       [307:13] alias arg -> j
-;       [65:5] res = arg * 2
-;       [65:11] instructions without scratch register 3, with 3
-;       [65:11] arg
-;       [65:11] allocate scratch register -> r15
-        mov r15, qword [rbp + 432]
-        mov qword [rbp + 440], r15
-;       [65:11] free scratch register r15
-;       [65:11] res * 2
-;       [65:11] src: folded constant '* 2'
-        sal qword [rbp + 440], 1
-    func.baz.307.13.end:
-;   [308:5] assert(k == 2)
-;   [308:12] allocate scratch register -> r15
-;   [308:12] ? k == 2
-;   [308:12] ? k == 2
-    cmp.308.12:
-    cmp qword [rbp + 440], 2
+;           [38:34] free named register rdi
+        if.38.24.305.5.end:
+;       [305:5] free scratch register r15
+    func.assert.305.5.end:
+;   [307:5] var j = 1
+;   [307:9] j: i64 (8 B @ [rbp + 560])
+;   [307:9] j = 1
+;   [307:13] 1
+    mov qword [rbp + 560], 1
+;   [308:5] var k = baz(j)
+;   [308:9] k: i64 (8 B @ [rbp + 568])
+;   [308:9] k = baz(j)
+;   [308:13] k = baz(j)
+;   [308:13] = expression
+;   [308:13] baz(j)
+;   [65:6] baz(arg) res
+    func.baz.308.13:
+;       [308:13] alias res -> k
+;       [308:13] alias arg -> j
+;       [66:5] res = arg * 2
+;       [66:11] instructions without scratch register 3, with 3
+;       [66:11] arg
+;       [66:11] allocate scratch register -> r15
+        mov r15, qword [rbp + 560]
+        mov qword [rbp + 568], r15
+;       [66:11] free scratch register r15
+;       [66:11] res * 2
+;       [66:11] src: folded constant '* 2'
+        sal qword [rbp + 568], 1
+    func.baz.308.13.end:
+;   [309:5] assert(k == 2)
+;   [309:12] allocate scratch register -> r15
+;   [309:12] ? k == 2
+;   [309:12] ? k == 2
+    cmp.309.12:
+    cmp qword [rbp + 568], 2
     sete r15b
-    bool.308.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.308.5:
-;       [308:5] alias ok -> r15b
-        if.37.27.308.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.308.5:
+    bool.309.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.309.5:
+;       [309:5] alias ok -> r15b
+        if.38.27.309.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.309.5:
         cmp r15b, 0
-        jne if.37.24.308.5.end
-        if.37.27.308.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.309.5.end
+        if.38.27.309.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.308.5.end:
-;       [308:5] free scratch register r15
-    func.assert.308.5.end:
-;   [310:5] k = baz(1)
-;   [310:9] k = baz(1)
-;   [310:9] = expression
-;   [310:9] baz(1)
-;   [64:6] baz(arg) res
-    func.baz.310.9:
-;       [310:9] alias res -> k
-;       [310:9] alias arg -> 1
-;       [65:5] res = arg * 2
-;       [65:11] res = 2
-;       [65:11] src: folded constant 'arg * 2'
-        mov qword [rbp + 440], 2
-    func.baz.310.9.end:
-;   [311:5] assert(k == 2)
-;   [311:12] allocate scratch register -> r15
-;   [311:12] ? k == 2
-;   [311:12] ? k == 2
-    cmp.311.12:
-    cmp qword [rbp + 440], 2
+;           [38:34] free named register rdi
+        if.38.24.309.5.end:
+;       [309:5] free scratch register r15
+    func.assert.309.5.end:
+;   [311:5] k = baz(1)
+;   [311:9] k = baz(1)
+;   [311:9] = expression
+;   [311:9] baz(1)
+;   [65:6] baz(arg) res
+    func.baz.311.9:
+;       [311:9] alias res -> k
+;       [311:9] alias arg -> 1
+;       [66:5] res = arg * 2
+;       [66:11] res = 2
+;       [66:11] src: folded constant 'arg * 2'
+        mov qword [rbp + 568], 2
+    func.baz.311.9.end:
+;   [312:5] assert(k == 2)
+;   [312:12] allocate scratch register -> r15
+;   [312:12] ? k == 2
+;   [312:12] ? k == 2
+    cmp.312.12:
+    cmp qword [rbp + 568], 2
     sete r15b
-    bool.311.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.311.5:
-;       [311:5] alias ok -> r15b
-        if.37.27.311.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.311.5:
+    bool.312.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.312.5:
+;       [312:5] alias ok -> r15b
+        if.38.27.312.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.312.5:
         cmp r15b, 0
-        jne if.37.24.311.5.end
-        if.37.27.311.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.312.5.end
+        if.38.27.312.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.311.5.end:
-;       [311:5] free scratch register r15
-    func.assert.311.5.end:
-;   [313:5] var five = 5
-;   [313:9] five: i64 (8 B @ [rbp + 448])
-;   [313:9] five = 5
-;   [313:16] 5
-    mov qword [rbp + 448], 5
-;   [314:5] var f = factorial(five)
-;   [314:9] f: i64 (8 B @ [rbp + 456])
-;   [314:9] f = factorial(five)
-;   [314:13] f = factorial(five)
-;   [314:13] = expression
-;   [314:13] factorial(five)
-;   [314:13] frame capacity check (--checks=frame)
-;   [314:13] allocate scratch register -> r15
-;   [314:13] allocate scratch register -> r14
-    lea r15, [rbp + 464]
+;           [38:34] free named register rdi
+        if.38.24.312.5.end:
+;       [312:5] free scratch register r15
+    func.assert.312.5.end:
+;   [314:5] var five = 5
+;   [314:9] five: i64 (8 B @ [rbp + 576])
+;   [314:9] five = 5
+;   [314:16] 5
+    mov qword [rbp + 576], 5
+;   [315:5] var f = factorial(five)
+;   [315:9] f: i64 (8 B @ [rbp + 584])
+;   [315:9] f = factorial(five)
+;   [315:13] f = factorial(five)
+;   [315:13] = expression
+;   [315:13] factorial(five)
+;   [315:13] frame capacity check (--checks=frame)
+;   [315:13] allocate scratch register -> r15
+;   [315:13] allocate scratch register -> r14
+    lea r15, [rbp + 592]
     lea r14, [vars]
     cmp r15, r14
     jb baz_frame_overflow
@@ -3830,840 +3835,831 @@ main:
     mov r15, size.func.factorial
     cmp r15, r14
     ja baz_frame_overflow
-;   [314:13] free scratch register r14
-;   [314:13] free scratch register r15
-;   [314:13] result address in callee frame
-;   [314:13] allocate scratch register -> r15
-    lea r15, [rbp + 456]
-    mov qword [rbp + 464], r15
-;   [314:13] free scratch register r15
-;   [314:13] address of argument 'five' to parameter 'n'
-;   [314:13] allocate scratch register -> r15
-    lea r15, [rbp + 448]
-    mov qword [rbp + 472], r15
-;   [314:13] free scratch register r15
-;   [314:13] set function frame base
-    lea rbx, [rbp + 464]
+;   [315:13] free scratch register r14
+;   [315:13] free scratch register r15
+;   [315:13] result address in callee frame
+;   [315:13] allocate scratch register -> r15
+    lea r15, [rbp + 584]
+    mov qword [rbp + 592], r15
+;   [315:13] free scratch register r15
+;   [315:13] address of argument 'five' to parameter 'n'
+;   [315:13] allocate scratch register -> r15
+    lea r15, [rbp + 576]
+    mov qword [rbp + 600], r15
+;   [315:13] free scratch register r15
+;   [315:13] set function frame base
+    lea rbx, [rbp + 592]
     call func.factorial
-;   [315:5] assert(f == 120)
-;   [315:12] allocate scratch register -> r15
-;   [315:12] ? f == 120
-;   [315:12] ? f == 120
-    cmp.315.12:
-    cmp qword [rbp + 456], 120
+;   [316:5] assert(f == 120)
+;   [316:12] allocate scratch register -> r15
+;   [316:12] ? f == 120
+;   [316:12] ? f == 120
+    cmp.316.12:
+    cmp qword [rbp + 584], 120
     sete r15b
-    bool.315.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.315.5:
-;       [315:5] alias ok -> r15b
-        if.37.27.315.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.315.5:
+    bool.316.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.316.5:
+;       [316:5] alias ok -> r15b
+        if.38.27.316.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.316.5:
         cmp r15b, 0
-        jne if.37.24.315.5.end
-        if.37.27.315.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.316.5.end
+        if.38.27.316.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.315.5.end:
-;       [315:5] free scratch register r15
-    func.assert.315.5.end:
-;   [317:5] var p0 = point{baz(3), 0}
-;   [317:9] p0: point (16 B @ [rbp + 464])
-;   [317:9] p0 = point{baz(3), 0}
-;   [317:20] copy field 'x'
-;   [317:20] p0.x = baz(3)
-;   [317:20] = expression
-;   [317:20] baz(3)
-;   [64:6] baz(arg) res
-    func.baz.317.20:
-;       [317:20] alias res -> p0.x (lea: rbp + 464)
-;       [317:20] alias arg -> 3
-;       [65:5] res = arg * 2
-;       [65:11] res = 6
-;       [65:11] src: folded constant 'arg * 2'
-        mov qword [rbp + 464], 6
-    func.baz.317.20.end:
-;   [317:28] copy field 'y'
-    mov qword [rbp + 472], 0
-;   [318:5] assert(p0.x == 6)
-;   [318:12] allocate scratch register -> r15
-;   [318:12] ? p0.x == 6
-;   [318:12] ? p0.x == 6
-    cmp.318.12:
-    cmp qword [rbp + 464], 6
+;           [38:34] free named register rdi
+        if.38.24.316.5.end:
+;       [316:5] free scratch register r15
+    func.assert.316.5.end:
+;   [318:5] var p0 = point{baz(3), 0}
+;   [318:9] p0: point (16 B @ [rbp + 592])
+;   [318:9] p0 = point{baz(3), 0}
+;   [318:20] copy field 'x'
+;   [318:20] p0.x = baz(3)
+;   [318:20] = expression
+;   [318:20] baz(3)
+;   [65:6] baz(arg) res
+    func.baz.318.20:
+;       [318:20] alias res -> p0.x (lea: rbp + 592)
+;       [318:20] alias arg -> 3
+;       [66:5] res = arg * 2
+;       [66:11] res = 6
+;       [66:11] src: folded constant 'arg * 2'
+        mov qword [rbp + 592], 6
+    func.baz.318.20.end:
+;   [318:28] copy field 'y'
+    mov qword [rbp + 600], 0
+;   [319:5] assert(p0.x == 6)
+;   [319:12] allocate scratch register -> r15
+;   [319:12] ? p0.x == 6
+;   [319:12] ? p0.x == 6
+    cmp.319.12:
+    cmp qword [rbp + 592], 6
     sete r15b
-    bool.318.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.318.5:
-;       [318:5] alias ok -> r15b
-        if.37.27.318.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.318.5:
+    bool.319.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.319.5:
+;       [319:5] alias ok -> r15b
+        if.38.27.319.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.319.5:
         cmp r15b, 0
-        jne if.37.24.318.5.end
-        if.37.27.318.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.319.5.end
+        if.38.27.319.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.318.5.end:
-;       [318:5] free scratch register r15
-    func.assert.318.5.end:
-;   [320:5] var pt = point.at(-1, -2)
-;   [320:9] pt: point (16 B @ [rbp + 480])
-;   [320:9] pt = point.at(-1, -2)
-;   [320:14] point.at(-1, -2)
-;   [102:6] point.at(x, y) self
-    func.point.at.320.14:
-;       [320:14] alias self -> pt
-;       [320:14] alias x -> -1
-;       [320:14] alias y -> -2
-;       [103:5] self.x = x
-;       [103:14] x
-        mov qword [rbp + 480], -1
-;       [104:5] self.y = y
-;       [104:14] y
-        mov qword [rbp + 488], -2
-    func.point.at.320.14.end:
-;   [324:5] assert(pt.x == -1)
-;   [324:12] allocate scratch register -> r15
-;   [324:12] ? pt.x == -1
-;   [324:12] ? pt.x == -1
-    cmp.324.12:
-    cmp qword [rbp + 480], -1
-    sete r15b
-    bool.324.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.324.5:
-;       [324:5] alias ok -> r15b
-        if.37.27.324.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.324.5:
-        cmp r15b, 0
-        jne if.37.24.324.5.end
-        if.37.27.324.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
-            mov rdi, 1
-            mov rax, 60
-            syscall
-;           [37:34] free named register rdi
-        if.37.24.324.5.end:
-;       [324:5] free scratch register r15
-    func.assert.324.5.end:
-;   [325:5] assert(pt.y == -2)
+;           [38:34] free named register rdi
+        if.38.24.319.5.end:
+;       [319:5] free scratch register r15
+    func.assert.319.5.end:
+;   [321:5] var pt = point.at(-1, -2)
+;   [321:9] pt: point (16 B @ [rbp + 608])
+;   [321:9] pt = point.at(-1, -2)
+;   [321:14] point.at(-1, -2)
+;   [103:6] point.at(x, y) self
+    func.point.at.321.14:
+;       [321:14] alias self -> pt
+;       [321:14] alias x -> -1
+;       [321:14] alias y -> -2
+;       [104:5] self.x = x
+;       [104:14] x
+        mov qword [rbp + 608], -1
+;       [105:5] self.y = y
+;       [105:14] y
+        mov qword [rbp + 616], -2
+    func.point.at.321.14.end:
+;   [325:5] assert(pt.x == -1)
 ;   [325:12] allocate scratch register -> r15
-;   [325:12] ? pt.y == -2
-;   [325:12] ? pt.y == -2
+;   [325:12] ? pt.x == -1
+;   [325:12] ? pt.x == -1
     cmp.325.12:
-    cmp qword [rbp + 488], -2
+    cmp qword [rbp + 608], -1
     sete r15b
     bool.325.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.325.5:
 ;       [325:5] alias ok -> r15b
-        if.37.27.325.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.325.5:
+        if.38.27.325.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.325.5:
         cmp r15b, 0
-        jne if.37.24.325.5.end
-        if.37.27.325.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.325.5.end
+        if.38.27.325.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.325.5.end:
+;           [38:34] free named register rdi
+        if.38.24.325.5.end:
 ;       [325:5] free scratch register r15
     func.assert.325.5.end:
-;   [327:8] pt.x(2)
-;   [108:6] point.x(x)
-    func.point.x.327.8:
-;       [327:8] alias self -> pt
-;       [327:8] alias x -> 2
-;       [109:5] self.x = x
-;       [109:14] x
-        mov qword [rbp + 480], 2
-    func.point.x.327.8.end:
-;   [328:5] assert(pt.x == 2)
-;   [328:12] allocate scratch register -> r15
-;   [328:12] ? pt.x == 2
-;   [328:12] ? pt.x == 2
-    cmp.328.12:
-    cmp qword [rbp + 480], 2
+;   [326:5] assert(pt.y == -2)
+;   [326:12] allocate scratch register -> r15
+;   [326:12] ? pt.y == -2
+;   [326:12] ? pt.y == -2
+    cmp.326.12:
+    cmp qword [rbp + 616], -2
     sete r15b
-    bool.328.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.328.5:
-;       [328:5] alias ok -> r15b
-        if.37.27.328.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.328.5:
+    bool.326.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.326.5:
+;       [326:5] alias ok -> r15b
+        if.38.27.326.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.326.5:
         cmp r15b, 0
-        jne if.37.24.328.5.end
-        if.37.27.328.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.326.5.end
+        if.38.27.326.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.328.5.end:
-;       [328:5] free scratch register r15
-    func.assert.328.5.end:
-;   [329:5] assert(pt.sum() == 0)
+;           [38:34] free named register rdi
+        if.38.24.326.5.end:
+;       [326:5] free scratch register r15
+    func.assert.326.5.end:
+;   [328:8] pt.x(2)
+;   [109:6] point.x(x)
+    func.point.x.328.8:
+;       [328:8] alias self -> pt
+;       [328:8] alias x -> 2
+;       [110:5] self.x = x
+;       [110:14] x
+        mov qword [rbp + 608], 2
+    func.point.x.328.8.end:
+;   [329:5] assert(pt.x == 2)
 ;   [329:12] allocate scratch register -> r15
-;   [329:12] ? pt.sum() == 0
-;   [329:12] ? pt.sum() == 0
+;   [329:12] ? pt.x == 2
+;   [329:12] ? pt.x == 2
     cmp.329.12:
-;   [329:12] allocate scratch register -> r14
-;       [329:15] r14 = pt.sum()
-;       [329:15] = expression
-;       [329:15] pt.sum()
-;       [52:6] point.sum() res
-        func.point.sum.329.15:
-;           [329:15] alias res -> r14
-;           [329:15] alias self -> pt
-;           [53:5] res = self.x + self.y
-;           [53:11] self.x
-            mov r14, qword [rbp + 480]
-;           [53:20] res + self.y
-;           [53:20] src: operand
-            add r14, qword [rbp + 488]
-        func.point.sum.329.15.end:
-    cmp r14, 0
-;   [329:12] free scratch register r14
+    cmp qword [rbp + 608], 2
     sete r15b
     bool.329.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.329.5:
 ;       [329:5] alias ok -> r15b
-        if.37.27.329.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.329.5:
+        if.38.27.329.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.329.5:
         cmp r15b, 0
-        jne if.37.24.329.5.end
-        if.37.27.329.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.329.5.end
+        if.38.27.329.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.329.5.end:
+;           [38:34] free named register rdi
+        if.38.24.329.5.end:
 ;       [329:5] free scratch register r15
     func.assert.329.5.end:
-;   [331:5] var x = 1
-;   [331:9] x: i64 (8 B @ [rbp + 496])
-;   [331:9] x = 1
-;   [331:13] 1
-    mov qword [rbp + 496], 1
-;   [332:5] var y = 2
-;   [332:9] y: i64 (8 B @ [rbp + 504])
-;   [332:9] y = 2
-;   [332:13] 2
-    mov qword [rbp + 504], 2
-;   [334:5] var o1 = object{{x * 10, y}, 0xff0000}
-;   [334:9] o1: object (24 B @ [rbp + 512])
-;   [334:9] o1 = object{{x * 10, y}, 0xff0000}
-;   [334:21] copy field 'pos'
-;   [334:22] copy field 'x'
-;   [334:22] instructions without scratch register 5, with 3
-;   [334:22] allocate scratch register -> r15
-;   [334:22] x
-    mov r15, qword [rbp + 496]
-;   [334:22] r15 * 10
-;   [334:22] src: folded constant '* 10'
-    imul r15, 10
-    mov qword [rbp + 512], r15
-;   [334:22] free scratch register r15
-;   [334:30] copy field 'y'
-;   [334:30] allocate scratch register -> r15
-    mov r15, qword [rbp + 504]
-    mov qword [rbp + 520], r15
-;   [334:30] free scratch register r15
-;   [334:34] copy field 'color'
-    mov dword [rbp + 528], 16711680
-;   [334:14] zero padding: 4 B
-;   [334:14] size <= 32 B, use mov
-    mov dword [rbp + 532], 0
-;   [335:5] assert(o1.pos.x == 10)
-;   [335:12] allocate scratch register -> r15
-;   [335:12] ? o1.pos.x == 10
-;   [335:12] ? o1.pos.x == 10
-    cmp.335.12:
-    cmp qword [rbp + 512], 10
+;   [330:5] assert(pt.sum() == 0)
+;   [330:12] allocate scratch register -> r15
+;   [330:12] ? pt.sum() == 0
+;   [330:12] ? pt.sum() == 0
+    cmp.330.12:
+;   [330:12] allocate scratch register -> r14
+;       [330:15] r14 = pt.sum()
+;       [330:15] = expression
+;       [330:15] pt.sum()
+;       [53:6] point.sum() res
+        func.point.sum.330.15:
+;           [330:15] alias res -> r14
+;           [330:15] alias self -> pt
+;           [54:5] res = self.x + self.y
+;           [54:11] self.x
+            mov r14, qword [rbp + 608]
+;           [54:20] res + self.y
+;           [54:20] src: operand
+            add r14, qword [rbp + 616]
+        func.point.sum.330.15.end:
+    cmp r14, 0
+;   [330:12] free scratch register r14
     sete r15b
-    bool.335.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.335.5:
-;       [335:5] alias ok -> r15b
-        if.37.27.335.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.335.5:
+    bool.330.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.330.5:
+;       [330:5] alias ok -> r15b
+        if.38.27.330.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.330.5:
         cmp r15b, 0
-        jne if.37.24.335.5.end
-        if.37.27.335.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.330.5.end
+        if.38.27.330.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.335.5.end:
-;       [335:5] free scratch register r15
-    func.assert.335.5.end:
-;   [336:5] assert(o1.pos.y == 2)
+;           [38:34] free named register rdi
+        if.38.24.330.5.end:
+;       [330:5] free scratch register r15
+    func.assert.330.5.end:
+;   [332:5] var x = 1
+;   [332:9] x: i64 (8 B @ [rbp + 624])
+;   [332:9] x = 1
+;   [332:13] 1
+    mov qword [rbp + 624], 1
+;   [333:5] var y = 2
+;   [333:9] y: i64 (8 B @ [rbp + 632])
+;   [333:9] y = 2
+;   [333:13] 2
+    mov qword [rbp + 632], 2
+;   [335:5] var o1 = object{{x * 10, y}, 0xff0000}
+;   [335:9] o1: object (24 B @ [rbp + 640])
+;   [335:9] o1 = object{{x * 10, y}, 0xff0000}
+;   [335:21] copy field 'pos'
+;   [335:22] copy field 'x'
+;   [335:22] instructions without scratch register 5, with 3
+;   [335:22] allocate scratch register -> r15
+;   [335:22] x
+    mov r15, qword [rbp + 624]
+;   [335:22] r15 * 10
+;   [335:22] src: folded constant '* 10'
+    imul r15, 10
+    mov qword [rbp + 640], r15
+;   [335:22] free scratch register r15
+;   [335:30] copy field 'y'
+;   [335:30] allocate scratch register -> r15
+    mov r15, qword [rbp + 632]
+    mov qword [rbp + 648], r15
+;   [335:30] free scratch register r15
+;   [335:34] copy field 'color'
+    mov dword [rbp + 656], 16711680
+;   [335:14] zero padding: 4 B
+;   [335:14] size <= 32 B, use mov
+    mov dword [rbp + 660], 0
+;   [336:5] assert(o1.pos.x == 10)
 ;   [336:12] allocate scratch register -> r15
-;   [336:12] ? o1.pos.y == 2
-;   [336:12] ? o1.pos.y == 2
+;   [336:12] ? o1.pos.x == 10
+;   [336:12] ? o1.pos.x == 10
     cmp.336.12:
-    cmp qword [rbp + 520], 2
+    cmp qword [rbp + 640], 10
     sete r15b
     bool.336.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.336.5:
 ;       [336:5] alias ok -> r15b
-        if.37.27.336.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.336.5:
+        if.38.27.336.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.336.5:
         cmp r15b, 0
-        jne if.37.24.336.5.end
-        if.37.27.336.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.336.5.end
+        if.38.27.336.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.336.5.end:
+;           [38:34] free named register rdi
+        if.38.24.336.5.end:
 ;       [336:5] free scratch register r15
     func.assert.336.5.end:
-;   [337:5] assert(o1.color == 0xff0000)
+;   [337:5] assert(o1.pos.y == 2)
 ;   [337:12] allocate scratch register -> r15
-;   [337:12] ? o1.color == 0xff0000
-;   [337:12] ? o1.color == 0xff0000
+;   [337:12] ? o1.pos.y == 2
+;   [337:12] ? o1.pos.y == 2
     cmp.337.12:
-    cmp dword [rbp + 528], 16711680
+    cmp qword [rbp + 648], 2
     sete r15b
     bool.337.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.337.5:
 ;       [337:5] alias ok -> r15b
-        if.37.27.337.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.337.5:
+        if.38.27.337.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.337.5:
         cmp r15b, 0
-        jne if.37.24.337.5.end
-        if.37.27.337.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.337.5.end
+        if.38.27.337.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.337.5.end:
+;           [38:34] free named register rdi
+        if.38.24.337.5.end:
 ;       [337:5] free scratch register r15
     func.assert.337.5.end:
-;   [339:5] var p1 = point{-x, -y}
-;   [339:9] p1: point (16 B @ [rbp + 536])
-;   [339:9] p1 = point{-x, -y}
-;   [339:20] copy field 'x'
-;   [339:20] instructions without scratch register 3, with 3
-;   [339:20] allocate scratch register -> r15
-    mov r15, qword [rbp + 496]
-    mov qword [rbp + 536], r15
-;   [339:20] free scratch register r15
-    neg qword [rbp + 536]
-;   [339:24] copy field 'y'
-;   [339:24] instructions without scratch register 3, with 3
-;   [339:24] allocate scratch register -> r15
-    mov r15, qword [rbp + 504]
-    mov qword [rbp + 544], r15
-;   [339:24] free scratch register r15
-    neg qword [rbp + 544]
-;   [340:5] o1.pos = p1
-;   [340:14] size <= 16 B, use mov
-;   [340:14] allocate named register rax
-    mov rax, qword [rbp + 536]
-    mov qword [rbp + 512], rax
-    mov rax, qword [rbp + 544]
-    mov qword [rbp + 520], rax
-;   [340:14] free named register rax
-;   [341:5] assert(o1.pos.x == -1)
-;   [341:12] allocate scratch register -> r15
-;   [341:12] ? o1.pos.x == -1
-;   [341:12] ? o1.pos.x == -1
-    cmp.341.12:
-    cmp qword [rbp + 512], -1
+;   [338:5] assert(o1.color == 0xff0000)
+;   [338:12] allocate scratch register -> r15
+;   [338:12] ? o1.color == 0xff0000
+;   [338:12] ? o1.color == 0xff0000
+    cmp.338.12:
+    cmp dword [rbp + 656], 16711680
     sete r15b
-    bool.341.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.341.5:
-;       [341:5] alias ok -> r15b
-        if.37.27.341.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.341.5:
+    bool.338.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.338.5:
+;       [338:5] alias ok -> r15b
+        if.38.27.338.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.338.5:
         cmp r15b, 0
-        jne if.37.24.341.5.end
-        if.37.27.341.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.338.5.end
+        if.38.27.338.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.341.5.end:
-;       [341:5] free scratch register r15
-    func.assert.341.5.end:
-;   [342:5] assert(o1.pos.y == -2)
+;           [38:34] free named register rdi
+        if.38.24.338.5.end:
+;       [338:5] free scratch register r15
+    func.assert.338.5.end:
+;   [340:5] var p1 = point{-x, -y}
+;   [340:9] p1: point (16 B @ [rbp + 664])
+;   [340:9] p1 = point{-x, -y}
+;   [340:20] copy field 'x'
+;   [340:20] instructions without scratch register 3, with 3
+;   [340:20] allocate scratch register -> r15
+    mov r15, qword [rbp + 624]
+    mov qword [rbp + 664], r15
+;   [340:20] free scratch register r15
+    neg qword [rbp + 664]
+;   [340:24] copy field 'y'
+;   [340:24] instructions without scratch register 3, with 3
+;   [340:24] allocate scratch register -> r15
+    mov r15, qword [rbp + 632]
+    mov qword [rbp + 672], r15
+;   [340:24] free scratch register r15
+    neg qword [rbp + 672]
+;   [341:5] o1.pos = p1
+;   [341:14] size <= 16 B, use mov
+;   [341:14] allocate named register rax
+    mov rax, qword [rbp + 664]
+    mov qword [rbp + 640], rax
+    mov rax, qword [rbp + 672]
+    mov qword [rbp + 648], rax
+;   [341:14] free named register rax
+;   [342:5] assert(o1.pos.x == -1)
 ;   [342:12] allocate scratch register -> r15
-;   [342:12] ? o1.pos.y == -2
-;   [342:12] ? o1.pos.y == -2
+;   [342:12] ? o1.pos.x == -1
+;   [342:12] ? o1.pos.x == -1
     cmp.342.12:
-    cmp qword [rbp + 520], -2
+    cmp qword [rbp + 640], -1
     sete r15b
     bool.342.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.342.5:
 ;       [342:5] alias ok -> r15b
-        if.37.27.342.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.342.5:
+        if.38.27.342.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.342.5:
         cmp r15b, 0
-        jne if.37.24.342.5.end
-        if.37.27.342.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.342.5.end
+        if.38.27.342.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.342.5.end:
+;           [38:34] free named register rdi
+        if.38.24.342.5.end:
 ;       [342:5] free scratch register r15
     func.assert.342.5.end:
-;   [344:5] var o2 = o1
-;   [344:9] o2: object (24 B @ [rbp + 552])
-;   [344:9] o2 = o1
-;   [344:14] allocate named register rsi
-;   [344:14] allocate named register rdi
-;   [344:14] allocate named register rcx
-    lea rsi, [rbp + 512]
-    lea rdi, [rbp + 552]
+;   [343:5] assert(o1.pos.y == -2)
+;   [343:12] allocate scratch register -> r15
+;   [343:12] ? o1.pos.y == -2
+;   [343:12] ? o1.pos.y == -2
+    cmp.343.12:
+    cmp qword [rbp + 648], -2
+    sete r15b
+    bool.343.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.343.5:
+;       [343:5] alias ok -> r15b
+        if.38.27.343.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.343.5:
+        cmp r15b, 0
+        jne if.38.24.343.5.end
+        if.38.27.343.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
+            mov rdi, 1
+            mov rax, 60
+            syscall
+;           [38:34] free named register rdi
+        if.38.24.343.5.end:
+;       [343:5] free scratch register r15
+    func.assert.343.5.end:
+;   [345:5] var o2 = o1
+;   [345:9] o2: object (24 B @ [rbp + 680])
+;   [345:9] o2 = o1
+;   [345:14] allocate named register rsi
+;   [345:14] allocate named register rdi
+;   [345:14] allocate named register rcx
+    lea rsi, [rbp + 640]
+    lea rdi, [rbp + 680]
     mov rcx, 24
     rep movsb
-;   [344:14] free named register rcx
-;   [344:14] free named register rdi
-;   [344:14] free named register rsi
-;   [345:5] assert(o2.pos.x == -1)
-;   [345:12] allocate scratch register -> r15
-;   [345:12] ? o2.pos.x == -1
-;   [345:12] ? o2.pos.x == -1
-    cmp.345.12:
-    cmp qword [rbp + 552], -1
-    sete r15b
-    bool.345.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.345.5:
-;       [345:5] alias ok -> r15b
-        if.37.27.345.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.345.5:
-        cmp r15b, 0
-        jne if.37.24.345.5.end
-        if.37.27.345.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
-            mov rdi, 1
-            mov rax, 60
-            syscall
-;           [37:34] free named register rdi
-        if.37.24.345.5.end:
-;       [345:5] free scratch register r15
-    func.assert.345.5.end:
-;   [346:5] assert(o2.pos.y == -2)
+;   [345:14] free named register rcx
+;   [345:14] free named register rdi
+;   [345:14] free named register rsi
+;   [346:5] assert(o2.pos.x == -1)
 ;   [346:12] allocate scratch register -> r15
-;   [346:12] ? o2.pos.y == -2
-;   [346:12] ? o2.pos.y == -2
+;   [346:12] ? o2.pos.x == -1
+;   [346:12] ? o2.pos.x == -1
     cmp.346.12:
-    cmp qword [rbp + 560], -2
+    cmp qword [rbp + 680], -1
     sete r15b
     bool.346.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.346.5:
 ;       [346:5] alias ok -> r15b
-        if.37.27.346.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.346.5:
+        if.38.27.346.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.346.5:
         cmp r15b, 0
-        jne if.37.24.346.5.end
-        if.37.27.346.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.346.5.end
+        if.38.27.346.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.346.5.end:
+;           [38:34] free named register rdi
+        if.38.24.346.5.end:
 ;       [346:5] free scratch register r15
     func.assert.346.5.end:
-;   [347:5] assert(o2.color == 0xff0000)
+;   [347:5] assert(o2.pos.y == -2)
 ;   [347:12] allocate scratch register -> r15
-;   [347:12] ? o2.color == 0xff0000
-;   [347:12] ? o2.color == 0xff0000
+;   [347:12] ? o2.pos.y == -2
+;   [347:12] ? o2.pos.y == -2
     cmp.347.12:
-    cmp dword [rbp + 568], 16711680
+    cmp qword [rbp + 688], -2
     sete r15b
     bool.347.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.347.5:
 ;       [347:5] alias ok -> r15b
-        if.37.27.347.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.347.5:
+        if.38.27.347.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.347.5:
         cmp r15b, 0
-        jne if.37.24.347.5.end
-        if.37.27.347.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.347.5.end
+        if.38.27.347.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.347.5.end:
+;           [38:34] free named register rdi
+        if.38.24.347.5.end:
 ;       [347:5] free scratch register r15
     func.assert.347.5.end:
-;   [349:5] o2.pos = {x, y}
-;   [349:15] copy field 'x'
-;   [349:15] allocate scratch register -> r15
-    mov r15, qword [rbp + 496]
-    mov qword [rbp + 552], r15
-;   [349:15] free scratch register r15
-;   [349:18] copy field 'y'
-;   [349:18] allocate scratch register -> r15
-    mov r15, qword [rbp + 504]
-    mov qword [rbp + 560], r15
-;   [349:18] free scratch register r15
-;   [350:5] assert(o2.pos.x == 1)
-;   [350:12] allocate scratch register -> r15
-;   [350:12] ? o2.pos.x == 1
-;   [350:12] ? o2.pos.x == 1
-    cmp.350.12:
-    cmp qword [rbp + 552], 1
+;   [348:5] assert(o2.color == 0xff0000)
+;   [348:12] allocate scratch register -> r15
+;   [348:12] ? o2.color == 0xff0000
+;   [348:12] ? o2.color == 0xff0000
+    cmp.348.12:
+    cmp dword [rbp + 696], 16711680
     sete r15b
-    bool.350.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.350.5:
-;       [350:5] alias ok -> r15b
-        if.37.27.350.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.350.5:
+    bool.348.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.348.5:
+;       [348:5] alias ok -> r15b
+        if.38.27.348.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.348.5:
         cmp r15b, 0
-        jne if.37.24.350.5.end
-        if.37.27.350.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.348.5.end
+        if.38.27.348.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.350.5.end:
-;       [350:5] free scratch register r15
-    func.assert.350.5.end:
-;   [351:5] o2.pos = point{y, x}
-;   [351:20] copy field 'x'
-;   [351:20] allocate scratch register -> r15
-    mov r15, qword [rbp + 504]
-    mov qword [rbp + 552], r15
-;   [351:20] free scratch register r15
-;   [351:23] copy field 'y'
-;   [351:23] allocate scratch register -> r15
-    mov r15, qword [rbp + 496]
-    mov qword [rbp + 560], r15
-;   [351:23] free scratch register r15
-;   [352:5] assert(o2.pos.x == 2)
-;   [352:12] allocate scratch register -> r15
-;   [352:12] ? o2.pos.x == 2
-;   [352:12] ? o2.pos.x == 2
-    cmp.352.12:
-    cmp qword [rbp + 552], 2
+;           [38:34] free named register rdi
+        if.38.24.348.5.end:
+;       [348:5] free scratch register r15
+    func.assert.348.5.end:
+;   [350:5] o2.pos = {x, y}
+;   [350:15] copy field 'x'
+;   [350:15] allocate scratch register -> r15
+    mov r15, qword [rbp + 624]
+    mov qword [rbp + 680], r15
+;   [350:15] free scratch register r15
+;   [350:18] copy field 'y'
+;   [350:18] allocate scratch register -> r15
+    mov r15, qword [rbp + 632]
+    mov qword [rbp + 688], r15
+;   [350:18] free scratch register r15
+;   [351:5] assert(o2.pos.x == 1)
+;   [351:12] allocate scratch register -> r15
+;   [351:12] ? o2.pos.x == 1
+;   [351:12] ? o2.pos.x == 1
+    cmp.351.12:
+    cmp qword [rbp + 680], 1
     sete r15b
-    bool.352.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.352.5:
-;       [352:5] alias ok -> r15b
-        if.37.27.352.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.352.5:
+    bool.351.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.351.5:
+;       [351:5] alias ok -> r15b
+        if.38.27.351.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.351.5:
         cmp r15b, 0
-        jne if.37.24.352.5.end
-        if.37.27.352.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.351.5.end
+        if.38.27.351.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.352.5.end:
-;       [352:5] free scratch register r15
-    func.assert.352.5.end:
-;   [359:5] var o3 = object[2]{}
-;   [359:9] o3: object[2] (48 B @ [rbp + 576])
-;   [359:9] o3 = object[2]{}
-;   [359:14] zero remaining elements: 2 * 24 B = 48 B
-;   [359:14] allocate named register rax
-;   [359:14] allocate named register rdi
-;   [359:14] allocate named register rcx
+;           [38:34] free named register rdi
+        if.38.24.351.5.end:
+;       [351:5] free scratch register r15
+    func.assert.351.5.end:
+;   [352:5] o2.pos = point{y, x}
+;   [352:20] copy field 'x'
+;   [352:20] allocate scratch register -> r15
+    mov r15, qword [rbp + 632]
+    mov qword [rbp + 680], r15
+;   [352:20] free scratch register r15
+;   [352:23] copy field 'y'
+;   [352:23] allocate scratch register -> r15
+    mov r15, qword [rbp + 624]
+    mov qword [rbp + 688], r15
+;   [352:23] free scratch register r15
+;   [353:5] assert(o2.pos.x == 2)
+;   [353:12] allocate scratch register -> r15
+;   [353:12] ? o2.pos.x == 2
+;   [353:12] ? o2.pos.x == 2
+    cmp.353.12:
+    cmp qword [rbp + 680], 2
+    sete r15b
+    bool.353.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.353.5:
+;       [353:5] alias ok -> r15b
+        if.38.27.353.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.353.5:
+        cmp r15b, 0
+        jne if.38.24.353.5.end
+        if.38.27.353.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
+            mov rdi, 1
+            mov rax, 60
+            syscall
+;           [38:34] free named register rdi
+        if.38.24.353.5.end:
+;       [353:5] free scratch register r15
+    func.assert.353.5.end:
+;   [360:5] var o3 = object[2]{}
+;   [360:9] o3: object[2] (48 B @ [rbp + 704])
+;   [360:9] o3 = object[2]{}
+;   [360:14] zero remaining elements: 2 * 24 B = 48 B
+;   [360:14] allocate named register rax
+;   [360:14] allocate named register rdi
+;   [360:14] allocate named register rcx
     xor al, al
-    lea rdi, [rbp + 576]
+    lea rdi, [rbp + 704]
     mov rcx, 48
     rep stosb
-;   [359:14] free named register rcx
-;   [359:14] free named register rdi
-;   [359:14] free named register rax
-;   [360:5] o3[0].pos.y = 73
-;   [360:19] 73
-    mov qword [rbp + 584], 73
-;   [362:5] assert(o3[0].pos.y == 73)
-;   [362:12] allocate scratch register -> r15
-;   [362:12] ? o3[0].pos.y == 73
-;   [362:12] ? o3[0].pos.y == 73
-    cmp.362.12:
-    cmp qword [rbp + 584], 73
+;   [360:14] free named register rcx
+;   [360:14] free named register rdi
+;   [360:14] free named register rax
+;   [361:5] o3[0].pos.y = 73
+;   [361:19] 73
+    mov qword [rbp + 712], 73
+;   [363:5] assert(o3[0].pos.y == 73)
+;   [363:12] allocate scratch register -> r15
+;   [363:12] ? o3[0].pos.y == 73
+;   [363:12] ? o3[0].pos.y == 73
+    cmp.363.12:
+    cmp qword [rbp + 712], 73
     sete r15b
-    bool.362.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.362.5:
-;       [362:5] alias ok -> r15b
-        if.37.27.362.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.362.5:
+    bool.363.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.363.5:
+;       [363:5] alias ok -> r15b
+        if.38.27.363.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.363.5:
         cmp r15b, 0
-        jne if.37.24.362.5.end
-        if.37.27.362.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.363.5.end
+        if.38.27.363.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.362.5.end:
-;       [362:5] free scratch register r15
-    func.assert.362.5.end:
-;   [363:5] o3[1] = object.at(2, 74, 0xffffff)
-;   [363:13] object.at(2, 74, 0xffffff)
-;   [113:6] object.at(x, y, color i32) self
-    func.object.at.363.13:
-;       [363:13] alias self -> o3 (lea: rbp + 600)
-;       [363:13] alias x -> 2
-;       [363:13] alias y -> 74
-;       [363:13] alias color -> 16777215
-;       [114:5] self.pos = point.at(x, y)
-;       [114:16] point.at(x, y)
-;       [102:6] point.at(x, y) self
-        func.point.at.114.16.363.13:
-;           [114:16] alias self -> self.pos (lea: rbp + 600)
-;           [114:16] alias x -> 2
-;           [114:16] alias y -> 74
-;           [103:5] self.x = x
-;           [103:14] x
-            mov qword [rbp + 600], 2
-;           [104:5] self.y = y
-;           [104:14] y
-            mov qword [rbp + 608], 74
-        func.point.at.114.16.363.13.end:
-;       [115:5] self.color = color
-;       [115:18] color
-        mov dword [rbp + 616], 16777215
-    func.object.at.363.13.end:
-;   [364:5] assert(o3[1].pos.y == 74)
-;   [364:12] allocate scratch register -> r15
-;   [364:12] ? o3[1].pos.y == 74
-;   [364:12] ? o3[1].pos.y == 74
-    cmp.364.12:
-    cmp qword [rbp + 608], 74
+;           [38:34] free named register rdi
+        if.38.24.363.5.end:
+;       [363:5] free scratch register r15
+    func.assert.363.5.end:
+;   [364:5] o3[1] = object.at(2, 74, 0xffffff)
+;   [364:13] object.at(2, 74, 0xffffff)
+;   [114:6] object.at(x, y, color i32) self
+    func.object.at.364.13:
+;       [364:13] alias self -> o3 (lea: rbp + 728)
+;       [364:13] alias x -> 2
+;       [364:13] alias y -> 74
+;       [364:13] alias color -> 16777215
+;       [115:5] self.pos = point.at(x, y)
+;       [115:16] point.at(x, y)
+;       [103:6] point.at(x, y) self
+        func.point.at.115.16.364.13:
+;           [115:16] alias self -> self.pos (lea: rbp + 728)
+;           [115:16] alias x -> 2
+;           [115:16] alias y -> 74
+;           [104:5] self.x = x
+;           [104:14] x
+            mov qword [rbp + 728], 2
+;           [105:5] self.y = y
+;           [105:14] y
+            mov qword [rbp + 736], 74
+        func.point.at.115.16.364.13.end:
+;       [116:5] self.color = color
+;       [116:18] color
+        mov dword [rbp + 744], 16777215
+    func.object.at.364.13.end:
+;   [365:5] assert(o3[1].pos.y == 74)
+;   [365:12] allocate scratch register -> r15
+;   [365:12] ? o3[1].pos.y == 74
+;   [365:12] ? o3[1].pos.y == 74
+    cmp.365.12:
+    cmp qword [rbp + 736], 74
     sete r15b
-    bool.364.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.364.5:
-;       [364:5] alias ok -> r15b
-        if.37.27.364.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.364.5:
+    bool.365.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.365.5:
+;       [365:5] alias ok -> r15b
+        if.38.27.365.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.365.5:
         cmp r15b, 0
-        jne if.37.24.364.5.end
-        if.37.27.364.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.365.5.end
+        if.38.27.365.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.364.5.end:
-;       [364:5] free scratch register r15
-    func.assert.364.5.end:
-;   [366:15] o3[1].pos.fooz()
-;   [46:6] point.fooz()
-    func.point.fooz.366.15:
-;       [366:15] alias self -> o3.pos (lea: rbp + 600)
-;       [47:5] self.x = 0b10
-;       [47:14] 0b10
-        mov qword [rbp + 600], 2
-;       [48:5] self.y = 0xb
-;       [48:14] 0xb
-        mov qword [rbp + 608], 11
-    func.point.fooz.366.15.end:
-;   [367:5] assert(o3[1].pos.sum() == 13)
-;   [367:12] allocate scratch register -> r15
-;   [367:12] ? o3[1].pos.sum() == 13
-;   [367:12] ? o3[1].pos.sum() == 13
-    cmp.367.12:
-;   [367:12] allocate scratch register -> r14
-;       [367:22] r14 = o3[1].pos.sum()
-;       [367:22] = expression
-;       [367:22] o3[1].pos.sum()
-;       [52:6] point.sum() res
-        func.point.sum.367.22:
-;           [367:22] alias res -> r14
-;           [367:22] alias self -> o3.pos (lea: rbp + 600)
-;           [53:5] res = self.x + self.y
-;           [53:11] self.x
-            mov r14, qword [rbp + 600]
-;           [53:20] res + self.y
-;           [53:20] src: operand
-            add r14, qword [rbp + 608]
-        func.point.sum.367.22.end:
+;           [38:34] free named register rdi
+        if.38.24.365.5.end:
+;       [365:5] free scratch register r15
+    func.assert.365.5.end:
+;   [367:15] o3[1].pos.fooz()
+;   [47:6] point.fooz()
+    func.point.fooz.367.15:
+;       [367:15] alias self -> o3.pos (lea: rbp + 728)
+;       [48:5] self.x = 0b10
+;       [48:14] 0b10
+        mov qword [rbp + 728], 2
+;       [49:5] self.y = 0xb
+;       [49:14] 0xb
+        mov qword [rbp + 736], 11
+    func.point.fooz.367.15.end:
+;   [368:5] assert(o3[1].pos.sum() == 13)
+;   [368:12] allocate scratch register -> r15
+;   [368:12] ? o3[1].pos.sum() == 13
+;   [368:12] ? o3[1].pos.sum() == 13
+    cmp.368.12:
+;   [368:12] allocate scratch register -> r14
+;       [368:22] r14 = o3[1].pos.sum()
+;       [368:22] = expression
+;       [368:22] o3[1].pos.sum()
+;       [53:6] point.sum() res
+        func.point.sum.368.22:
+;           [368:22] alias res -> r14
+;           [368:22] alias self -> o3.pos (lea: rbp + 728)
+;           [54:5] res = self.x + self.y
+;           [54:11] self.x
+            mov r14, qword [rbp + 728]
+;           [54:20] res + self.y
+;           [54:20] src: operand
+            add r14, qword [rbp + 736]
+        func.point.sum.368.22.end:
     cmp r14, 13
-;   [367:12] free scratch register r14
+;   [368:12] free scratch register r14
     sete r15b
-    bool.367.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.367.5:
-;       [367:5] alias ok -> r15b
-        if.37.27.367.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.367.5:
+    bool.368.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.368.5:
+;       [368:5] alias ok -> r15b
+        if.38.27.368.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.368.5:
         cmp r15b, 0
-        jne if.37.24.367.5.end
-        if.37.27.367.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.368.5.end
+        if.38.27.368.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.367.5.end:
-;       [367:5] free scratch register r15
-    func.assert.367.5.end:
-;   [370:5] var worlds = world[8]{}
-;   [370:9] worlds: world[8] (512 B @ [rbp + 624])
-;   [370:9] worlds = world[8]{}
-;   [370:18] zero remaining elements: 8 * 64 B = 512 B
-;   [370:18] allocate named register rax
-;   [370:18] allocate named register rdi
-;   [370:18] allocate named register rcx
+;           [38:34] free named register rdi
+        if.38.24.368.5.end:
+;       [368:5] free scratch register r15
+    func.assert.368.5.end:
+;   [371:5] var worlds = world[8]{}
+;   [371:9] worlds: world[8] (512 B @ [rbp + 752])
+;   [371:9] worlds = world[8]{}
+;   [371:18] zero remaining elements: 8 * 64 B = 512 B
+;   [371:18] allocate named register rax
+;   [371:18] allocate named register rdi
+;   [371:18] allocate named register rcx
     xor al, al
-    lea rdi, [rbp + 624]
+    lea rdi, [rbp + 752]
     mov rcx, 512
     rep stosb
-;   [370:18] free named register rcx
-;   [370:18] free named register rdi
-;   [370:18] free named register rax
-;   [371:5] worlds[1].locations[1] = 0xffee
-;   [371:30] 0xffee
-    mov qword [rbp + 696], 65518
-;   [372:5] assert(worlds[1].locations[1] == 0xffee)
-;   [372:12] allocate scratch register -> r15
-;   [372:12] ? worlds[1].locations[1] == 0xffee
-;   [372:12] ? worlds[1].locations[1] == 0xffee
-    cmp.372.12:
-    cmp qword [rbp + 696], 65518
+;   [371:18] free named register rcx
+;   [371:18] free named register rdi
+;   [371:18] free named register rax
+;   [372:5] worlds[1].locations[1] = 0xffee
+;   [372:30] 0xffee
+    mov qword [rbp + 824], 65518
+;   [373:5] assert(worlds[1].locations[1] == 0xffee)
+;   [373:12] allocate scratch register -> r15
+;   [373:12] ? worlds[1].locations[1] == 0xffee
+;   [373:12] ? worlds[1].locations[1] == 0xffee
+    cmp.373.12:
+    cmp qword [rbp + 824], 65518
     sete r15b
-    bool.372.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.372.5:
-;       [372:5] alias ok -> r15b
-        if.37.27.372.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.372.5:
+    bool.373.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.373.5:
+;       [373:5] alias ok -> r15b
+        if.38.27.373.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.373.5:
         cmp r15b, 0
-        jne if.37.24.372.5.end
-        if.37.27.372.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.373.5.end
+        if.38.27.373.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.372.5.end:
-;       [372:5] free scratch register r15
-    func.assert.372.5.end:
-;   [374:5] array_copy( worlds[1].locations, worlds[0].locations, array_length(worlds[0].locations) )
-;   [374:5] allocate named register rsi
-;   [374:5] allocate named register rdi
-;   [374:5] allocate named register rcx
-;   [377:9] array_length(worlds[0].locations)
-;   [377:9] rcx = array_length(worlds[0].locations)
-;   [377:9] = expression
-;   [377:9] array_length(worlds[0].locations)
+;           [38:34] free named register rdi
+        if.38.24.373.5.end:
+;       [373:5] free scratch register r15
+    func.assert.373.5.end:
+;   [375:5] array_copy( worlds[1].locations, worlds[0].locations, array_length(worlds[0].locations) )
+;   [375:5] allocate named register rsi
+;   [375:5] allocate named register rdi
+;   [375:5] allocate named register rcx
+;   [378:9] array_length(worlds[0].locations)
+;   [378:9] rcx = array_length(worlds[0].locations)
+;   [378:9] = expression
+;   [378:9] array_length(worlds[0].locations)
     mov rcx, 8
-;   [375:9] worlds[1].locations
-;   [375:9] bounds check
-;   [375:9] lower bound (--checks=lower)
-    test rcx, rcx
-    js baz_bounds_panic
-;   [375:9] upper bound (--checks=upper)
-    cmp rcx, 8
-    jg baz_bounds_panic
-    lea rsi, [rbp + 688]
-;   [376:9] worlds[0].locations
+;   [376:9] worlds[1].locations
 ;   [376:9] bounds check
 ;   [376:9] lower bound (--checks=lower)
     test rcx, rcx
@@ -4671,64 +4667,64 @@ main:
 ;   [376:9] upper bound (--checks=upper)
     cmp rcx, 8
     jg baz_bounds_panic
-    lea rdi, [rbp + 624]
+    lea rsi, [rbp + 816]
+;   [377:9] worlds[0].locations
+;   [377:9] bounds check
+;   [377:9] lower bound (--checks=lower)
+    test rcx, rcx
+    js baz_bounds_panic
+;   [377:9] upper bound (--checks=upper)
+    cmp rcx, 8
+    jg baz_bounds_panic
+    lea rdi, [rbp + 752]
     shl rcx, 3
     rep movsb
-;   [374:5] free named register rcx
-;   [374:5] free named register rdi
-;   [374:5] free named register rsi
-;   [381:5] assert(worlds[0].locations[1] == 0xffee)
-;   [381:12] allocate scratch register -> r15
-;   [381:12] ? worlds[0].locations[1] == 0xffee
-;   [381:12] ? worlds[0].locations[1] == 0xffee
-    cmp.381.12:
-    cmp qword [rbp + 632], 65518
+;   [375:5] free named register rcx
+;   [375:5] free named register rdi
+;   [375:5] free named register rsi
+;   [382:5] assert(worlds[0].locations[1] == 0xffee)
+;   [382:12] allocate scratch register -> r15
+;   [382:12] ? worlds[0].locations[1] == 0xffee
+;   [382:12] ? worlds[0].locations[1] == 0xffee
+    cmp.382.12:
+    cmp qword [rbp + 760], 65518
     sete r15b
-    bool.381.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.381.5:
-;       [381:5] alias ok -> r15b
-        if.37.27.381.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.381.5:
+    bool.382.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.382.5:
+;       [382:5] alias ok -> r15b
+        if.38.27.382.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.382.5:
         cmp r15b, 0
-        jne if.37.24.381.5.end
-        if.37.27.381.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.382.5.end
+        if.38.27.382.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.381.5.end:
-;       [381:5] free scratch register r15
-    func.assert.381.5.end:
-;   [382:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) ))
-;   [382:12] allocate scratch register -> r15
-;   [382:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
-;   [382:12] ? shorthand: arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
-    cmp.382.12:
-;       [382:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
-;       [382:12] allocate named register rsi
-;       [382:12] allocate named register rdi
-;       [382:12] allocate named register rcx
-;       [385:14] array_length(worlds[0].locations)
-;       [385:14] rcx = array_length(worlds[0].locations)
-;       [385:14] = expression
-;       [385:14] array_length(worlds[0].locations)
+;           [38:34] free named register rdi
+        if.38.24.382.5.end:
+;       [382:5] free scratch register r15
+    func.assert.382.5.end:
+;   [383:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) ))
+;   [383:12] allocate scratch register -> r15
+;   [383:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
+;   [383:12] ? shorthand: arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
+    cmp.383.12:
+;       [383:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
+;       [383:12] allocate named register rsi
+;       [383:12] allocate named register rdi
+;       [383:12] allocate named register rcx
+;       [386:14] array_length(worlds[0].locations)
+;       [386:14] rcx = array_length(worlds[0].locations)
+;       [386:14] = expression
+;       [386:14] array_length(worlds[0].locations)
         mov rcx, 8
-;       [383:14] worlds[0].locations
-;       [383:14] bounds check
-;       [383:14] lower bound (--checks=lower)
-        test rcx, rcx
-        js baz_bounds_panic
-;       [383:14] upper bound (--checks=upper)
-        cmp rcx, 8
-        jg baz_bounds_panic
-        lea rsi, [rbp + 624]
-;       [384:14] worlds[1].locations
+;       [384:14] worlds[0].locations
 ;       [384:14] bounds check
 ;       [384:14] lower bound (--checks=lower)
         test rcx, rcx
@@ -4736,183 +4732,192 @@ main:
 ;       [384:14] upper bound (--checks=upper)
         cmp rcx, 8
         jg baz_bounds_panic
-        lea rdi, [rbp + 688]
+        lea rsi, [rbp + 752]
+;       [385:14] worlds[1].locations
+;       [385:14] bounds check
+;       [385:14] lower bound (--checks=lower)
+        test rcx, rcx
+        js baz_bounds_panic
+;       [385:14] upper bound (--checks=upper)
+        cmp rcx, 8
+        jg baz_bounds_panic
+        lea rdi, [rbp + 816]
         shl rcx, 3
         test rcx, rcx
         repe cmpsb
-;       [382:12] free named register rcx
-;       [382:12] free named register rdi
-;       [382:12] free named register rsi
+;       [383:12] free named register rcx
+;       [383:12] free named register rdi
+;       [383:12] free named register rsi
         sete r15b
-    bool.382.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.382.5:
-;       [382:5] alias ok -> r15b
-        if.37.27.382.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.382.5:
+    bool.383.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.383.5:
+;       [383:5] alias ok -> r15b
+        if.38.27.383.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.383.5:
         cmp r15b, 0
-        jne if.37.24.382.5.end
-        if.37.27.382.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.383.5.end
+        if.38.27.383.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.382.5.end:
-;       [382:5] free scratch register r15
-    func.assert.382.5.end:
-;   [388:5] var arr2 = i[]{ -1, 2 }
-;   [388:9] arr2: i64[2] (16 B @ [rbp + 1136])
-;   [388:9] arr2 = i[]{ -1, 2 }
-;   [388:19] size <= 16 B, use immediates
-    mov qword [rbp + 1136], -1
-    mov qword [rbp + 1144], 2
-;   [389:5] assert(array_length(arr2) == 2)
-;   [389:12] allocate scratch register -> r15
-;   [389:12] ? array_length(arr2) == 2
-;   [389:12] ? array_length(arr2) == 2
-    cmp.389.12:
-;   [389:12] allocate scratch register -> r14
-;       [389:12] r14 = array_length(arr2)
-;       [389:12] = expression
-;       [389:12] array_length(arr2)
+;           [38:34] free named register rdi
+        if.38.24.383.5.end:
+;       [383:5] free scratch register r15
+    func.assert.383.5.end:
+;   [389:5] var arr2 = i[]{ -1, 2 }
+;   [389:9] arr2: i64[2] (16 B @ [rbp + 1264])
+;   [389:9] arr2 = i[]{ -1, 2 }
+;   [389:19] size <= 16 B, use immediates
+    mov qword [rbp + 1264], -1
+    mov qword [rbp + 1272], 2
+;   [390:5] assert(array_length(arr2) == 2)
+;   [390:12] allocate scratch register -> r15
+;   [390:12] ? array_length(arr2) == 2
+;   [390:12] ? array_length(arr2) == 2
+    cmp.390.12:
+;   [390:12] allocate scratch register -> r14
+;       [390:12] r14 = array_length(arr2)
+;       [390:12] = expression
+;       [390:12] array_length(arr2)
         mov r14, 2
     cmp r14, 2
-;   [389:12] free scratch register r14
-    sete r15b
-    bool.389.12.end:
-;   [37:6] assert(ok bool)
-    func.assert.389.5:
-;       [389:5] alias ok -> r15b
-        if.37.27.389.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.389.5:
-        cmp r15b, 0
-        jne if.37.24.389.5.end
-        if.37.27.389.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
-            mov rdi, 1
-            mov rax, 60
-            syscall
-;           [37:34] free named register rdi
-        if.37.24.389.5.end:
-;       [389:5] free scratch register r15
-    func.assert.389.5.end:
-;   [390:5] assert(arr2[0] == -1)
-;   [390:12] allocate scratch register -> r15
-;   [390:12] ? arr2[0] == -1
-;   [390:12] ? arr2[0] == -1
-    cmp.390.12:
-    cmp qword [rbp + 1136], -1
+;   [390:12] free scratch register r14
     sete r15b
     bool.390.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.390.5:
 ;       [390:5] alias ok -> r15b
-        if.37.27.390.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.390.5:
+        if.38.27.390.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.390.5:
         cmp r15b, 0
-        jne if.37.24.390.5.end
-        if.37.27.390.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.390.5.end
+        if.38.27.390.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.390.5.end:
+;           [38:34] free named register rdi
+        if.38.24.390.5.end:
 ;       [390:5] free scratch register r15
     func.assert.390.5.end:
-;   [391:5] assert(arr2[1] == 2)
+;   [391:5] assert(arr2[0] == -1)
 ;   [391:12] allocate scratch register -> r15
-;   [391:12] ? arr2[1] == 2
-;   [391:12] ? arr2[1] == 2
+;   [391:12] ? arr2[0] == -1
+;   [391:12] ? arr2[0] == -1
     cmp.391.12:
-    cmp qword [rbp + 1144], 2
+    cmp qword [rbp + 1264], -1
     sete r15b
     bool.391.12.end:
-;   [37:6] assert(ok bool)
+;   [38:6] assert(ok bool)
     func.assert.391.5:
 ;       [391:5] alias ok -> r15b
-        if.37.27.391.5:
-;       [37:27] ? not ok
-;       [37:27] ? shorthand: not ok
-        cmp.37.27.391.5:
+        if.38.27.391.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.391.5:
         cmp r15b, 0
-        jne if.37.24.391.5.end
-        if.37.27.391.5.code:
-;           [37:34] exit(1)
-;           [37:34] allocate named register rdi
-;           [37:39] 1
+        jne if.38.24.391.5.end
+        if.38.27.391.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
             mov rdi, 1
             mov rax, 60
             syscall
-;           [37:34] free named register rdi
-        if.37.24.391.5.end:
+;           [38:34] free named register rdi
+        if.38.24.391.5.end:
 ;       [391:5] free scratch register r15
     func.assert.391.5.end:
-;   [393:5] var counter = 0
-;   [393:9] counter: i64 (8 B @ [rbp + 1152])
-;   [393:9] counter = 0
-;   [393:19] 0
-    mov qword [rbp + 1152], 0
-;   [394:5] var nm = str{}
-;   [394:9] nm: str (128 B @ [rbp + 1160])
-;   [394:9] nm = str{}
-;   [394:14] zero remaining fields: 128 B
-;   [394:14] allocate named register rax
-;   [394:14] allocate named register rdi
-;   [394:14] allocate named register rcx
+;   [392:5] assert(arr2[1] == 2)
+;   [392:12] allocate scratch register -> r15
+;   [392:12] ? arr2[1] == 2
+;   [392:12] ? arr2[1] == 2
+    cmp.392.12:
+    cmp qword [rbp + 1272], 2
+    sete r15b
+    bool.392.12.end:
+;   [38:6] assert(ok bool)
+    func.assert.392.5:
+;       [392:5] alias ok -> r15b
+        if.38.27.392.5:
+;       [38:27] ? not ok
+;       [38:27] ? shorthand: not ok
+        cmp.38.27.392.5:
+        cmp r15b, 0
+        jne if.38.24.392.5.end
+        if.38.27.392.5.code:
+;           [38:34] exit(1)
+;           [38:34] allocate named register rdi
+;           [38:39] 1
+            mov rdi, 1
+            mov rax, 60
+            syscall
+;           [38:34] free named register rdi
+        if.38.24.392.5.end:
+;       [392:5] free scratch register r15
+    func.assert.392.5.end:
+;   [394:5] var counter = 0
+;   [394:9] counter: i64 (8 B @ [rbp + 1280])
+;   [394:9] counter = 0
+;   [394:19] 0
+    mov qword [rbp + 1280], 0
+;   [395:5] var nm = str{}
+;   [395:9] nm: str (128 B @ [rbp + 1288])
+;   [395:9] nm = str{}
+;   [395:14] zero remaining fields: 128 B
+;   [395:14] allocate named register rax
+;   [395:14] allocate named register rdi
+;   [395:14] allocate named register rcx
     xor al, al
-    lea rdi, [rbp + 1160]
+    lea rdi, [rbp + 1288]
     mov rcx, 128
     rep stosb
-;   [394:14] free named register rcx
-;   [394:14] free named register rdi
-;   [394:14] free named register rax
-;   [395:5] print(hello)
-;   [40:6] print(str i8[])
-    func.print.395.5:
-;       [395:5] alias str -> hello
-;       [41:5] write(1, str)
-;       [41:5] allocate named register rdi
-;       [41:5] allocate named register rsi
-;       [41:5] allocate named register rdx
-;       [41:11] 1
+;   [395:14] free named register rcx
+;   [395:14] free named register rdi
+;   [395:14] free named register rax
+;   [396:5] print(hello)
+;   [41:6] print(str i8[])
+    func.print.396.5:
+;       [396:5] alias str -> hello
+;       [42:5] write(1, str)
+;       [42:5] allocate named register rdi
+;       [42:5] allocate named register rsi
+;       [42:5] allocate named register rdx
+;       [42:11] 1
         mov rdi, 1
         mov rdx, 21
         lea rsi, [rbp]
-;       [41:5] allocate named register rax
+;       [42:5] allocate named register rax
         mov rax, 1
         syscall
-;       [41:5] free named register rax
-;       [41:5] free named register rdx
-;       [41:5] free named register rsi
-;       [41:5] free named register rdi
-    func.print.395.5.end:
-;   [396:5] label
-    loop.396.5:
-;       [397:9] counter = counter + 1
-;       [397:19] instructions without scratch register 1, with 3
-;       [397:19] counter
-;       [397:19] counter + 1
-;       [397:19] src: folded constant '+ 1'
-        add qword [rbp + 1152], 1
-;       [398:9] print_num(counter)
-;       [398:9] frame capacity check (--checks=frame)
-;       [398:9] allocate scratch register -> r15
-;       [398:9] allocate scratch register -> r14
-        lea r15, [rbp + 1288]
+;       [42:5] free named register rax
+;       [42:5] free named register rdx
+;       [42:5] free named register rsi
+;       [42:5] free named register rdi
+    func.print.396.5.end:
+;   [397:5] label
+    loop.397.5:
+;       [398:9] counter = counter + 1
+;       [398:19] instructions without scratch register 1, with 3
+;       [398:19] counter
+;       [398:19] counter + 1
+;       [398:19] src: folded constant '+ 1'
+        add qword [rbp + 1280], 1
+;       [399:9] print_num(counter)
+;       [399:9] frame capacity check (--checks=frame)
+;       [399:9] allocate scratch register -> r15
+;       [399:9] allocate scratch register -> r14
+        lea r15, [rbp + 1416]
         lea r14, [vars]
         cmp r15, r14
         jb baz_frame_overflow
@@ -4923,260 +4928,260 @@ main:
         mov r15, size.func.print_num
         cmp r15, r14
         ja baz_frame_overflow
-;       [398:9] free scratch register r14
-;       [398:9] free scratch register r15
-;       [398:9] address of argument 'counter' to parameter 'num'
-;       [398:9] allocate scratch register -> r15
-        lea r15, [rbp + 1152]
-        mov qword [rbp + 1288], r15
-;       [398:9] free scratch register r15
-;       [398:9] set function frame base
-        lea rbx, [rbp + 1288]
+;       [399:9] free scratch register r14
+;       [399:9] free scratch register r15
+;       [399:9] address of argument 'counter' to parameter 'num'
+;       [399:9] allocate scratch register -> r15
+        lea r15, [rbp + 1280]
+        mov qword [rbp + 1416], r15
+;       [399:9] free scratch register r15
+;       [399:9] set function frame base
+        lea rbx, [rbp + 1416]
         call func.print_num
-;       [399:9] print(colon)
-;       [40:6] print(str i8[])
-        func.print.399.9:
-;           [399:9] alias str -> colon
-;           [41:5] write(1, str)
-;           [41:5] allocate named register rdi
-;           [41:5] allocate named register rsi
-;           [41:5] allocate named register rdx
-;           [41:11] 1
+;       [400:9] print(colon)
+;       [41:6] print(str i8[])
+        func.print.400.9:
+;           [400:9] alias str -> colon
+;           [42:5] write(1, str)
+;           [42:5] allocate named register rdi
+;           [42:5] allocate named register rsi
+;           [42:5] allocate named register rdx
+;           [42:11] 1
             mov rdi, 1
             mov rdx, 2
             lea rsi, [rbp + 61]
-;           [41:5] allocate named register rax
+;           [42:5] allocate named register rax
             mov rax, 1
             syscall
-;           [41:5] free named register rax
-;           [41:5] free named register rdx
-;           [41:5] free named register rsi
-;           [41:5] free named register rdi
-        func.print.399.9.end:
-;       [400:9] print(prompt1)
-;       [40:6] print(str i8[])
-        func.print.400.9:
-;           [400:9] alias str -> prompt1
-;           [41:5] write(1, str)
-;           [41:5] allocate named register rdi
-;           [41:5] allocate named register rsi
-;           [41:5] allocate named register rdx
-;           [41:11] 1
+;           [42:5] free named register rax
+;           [42:5] free named register rdx
+;           [42:5] free named register rsi
+;           [42:5] free named register rdi
+        func.print.400.9.end:
+;       [401:9] print(prompt1)
+;       [41:6] print(str i8[])
+        func.print.401.9:
+;           [401:9] alias str -> prompt1
+;           [42:5] write(1, str)
+;           [42:5] allocate named register rdi
+;           [42:5] allocate named register rsi
+;           [42:5] allocate named register rdx
+;           [42:11] 1
             mov rdi, 1
             mov rdx, 12
             lea rsi, [rbp + 21]
-;           [41:5] allocate named register rax
+;           [42:5] allocate named register rax
             mov rax, 1
             syscall
-;           [41:5] free named register rax
-;           [41:5] free named register rdx
-;           [41:5] free named register rsi
-;           [41:5] free named register rdi
-        func.print.400.9.end:
-;       [401:12] nm.input()
-;       [82:6] str.input()
-        func.str.input.401.12:
-;           [401:12] alias self -> nm
-;           [83:5] var nbytes = read(0, self.data)
-;           [83:9] nbytes: i64 (8 B @ [rbp + 1288])
-;           [83:9] nbytes = read(0, self.data)
-;           [83:18] nbytes = read(0, self.data)
-;           [83:18] = expression
-;           [83:18] read(0, self.data)
-;           [83:18] allocate named register rdi
-;           [83:18] allocate named register rsi
-;           [83:18] allocate named register rdx
-;           [83:23] 0
+;           [42:5] free named register rax
+;           [42:5] free named register rdx
+;           [42:5] free named register rsi
+;           [42:5] free named register rdi
+        func.print.401.9.end:
+;       [402:12] nm.input()
+;       [83:6] str.input()
+        func.str.input.402.12:
+;           [402:12] alias self -> nm
+;           [84:5] var nbytes = read(0, self.data)
+;           [84:9] nbytes: i64 (8 B @ [rbp + 1416])
+;           [84:9] nbytes = read(0, self.data)
+;           [84:18] nbytes = read(0, self.data)
+;           [84:18] = expression
+;           [84:18] read(0, self.data)
+;           [84:18] allocate named register rdi
+;           [84:18] allocate named register rsi
+;           [84:18] allocate named register rdx
+;           [84:23] 0
             mov rdi, 0
             mov rdx, 127
-            lea rsi, [rbp + 1161]
-;           [83:18] allocate named register rax
+            lea rsi, [rbp + 1289]
+;           [84:18] allocate named register rax
             mov rax, 0
             syscall
-            mov qword [rbp + 1288], rax
-;           [83:18] free named register rax
-;           [83:18] free named register rdx
-;           [83:18] free named register rsi
-;           [83:18] free named register rdi
-;           [86:5] self.len = i8(nbytes - 1)
-;           [86:16] self.len = i8(nbytes - 1)
-;           [86:16] = expression
-;           [86:16] instructions without scratch register 3, with 3
-;           [86:19] instructions without scratch register 3, with 3
-;           [86:19] nbytes
-;           [86:19] allocate scratch register -> r15
-            mov r15b, byte [rbp + 1288]
-            mov byte [rbp + 1160], r15b
-;           [86:19] free scratch register r15
-;           [86:19] self.len - 1
-;           [86:19] src: folded constant '- 1'
-            sub byte [rbp + 1160], 1
-        func.str.input.401.12.end:
-        if.403.12:
-;       [403:12] ? nm.len <= 0
-;       [403:12] ? nm.len <= 0
-        cmp.403.12:
-        cmp byte [rbp + 1160], 0
-        jle loop.396.5.end
-        if.403.12.code:
-;           [404:13] break
-        if.405.19:
-;       [405:19] ? nm.len <= 4
-;       [405:19] ? nm.len <= 4
-        cmp.405.19:
-        cmp byte [rbp + 1160], 4
-        jg if.403.9.else
-        if.405.19.code:
-;           [406:13] print(prompt2)
-;           [40:6] print(str i8[])
-            func.print.406.13:
-;               [406:13] alias str -> prompt2
-;               [41:5] write(1, str)
-;               [41:5] allocate named register rdi
-;               [41:5] allocate named register rsi
-;               [41:5] allocate named register rdx
-;               [41:11] 1
+            mov qword [rbp + 1416], rax
+;           [84:18] free named register rax
+;           [84:18] free named register rdx
+;           [84:18] free named register rsi
+;           [84:18] free named register rdi
+;           [87:5] self.len = i8(nbytes - 1)
+;           [87:16] self.len = i8(nbytes - 1)
+;           [87:16] = expression
+;           [87:16] instructions without scratch register 3, with 3
+;           [87:19] instructions without scratch register 3, with 3
+;           [87:19] nbytes
+;           [87:19] allocate scratch register -> r15
+            mov r15b, byte [rbp + 1416]
+            mov byte [rbp + 1288], r15b
+;           [87:19] free scratch register r15
+;           [87:19] self.len - 1
+;           [87:19] src: folded constant '- 1'
+            sub byte [rbp + 1288], 1
+        func.str.input.402.12.end:
+        if.404.12:
+;       [404:12] ? nm.len <= 0
+;       [404:12] ? nm.len <= 0
+        cmp.404.12:
+        cmp byte [rbp + 1288], 0
+        jle loop.397.5.end
+        if.404.12.code:
+;           [405:13] break
+        if.406.19:
+;       [406:19] ? nm.len <= 4
+;       [406:19] ? nm.len <= 4
+        cmp.406.19:
+        cmp byte [rbp + 1288], 4
+        jg if.404.9.else
+        if.406.19.code:
+;           [407:13] print(prompt2)
+;           [41:6] print(str i8[])
+            func.print.407.13:
+;               [407:13] alias str -> prompt2
+;               [42:5] write(1, str)
+;               [42:5] allocate named register rdi
+;               [42:5] allocate named register rsi
+;               [42:5] allocate named register rdx
+;               [42:11] 1
                 mov rdi, 1
                 mov rdx, 20
                 lea rsi, [rbp + 33]
-;               [41:5] allocate named register rax
+;               [42:5] allocate named register rax
                 mov rax, 1
                 syscall
-;               [41:5] free named register rax
-;               [41:5] free named register rdx
-;               [41:5] free named register rsi
-;               [41:5] free named register rdi
-            func.print.406.13.end:
-;           [407:13] continue
-            jmp loop.396.5
-        if.403.9.else:
-;           [409:13] greet(nm)
-;           [93:6] greet(name str)
-            func.greet.409.13:
-;               [409:13] alias name -> nm
-;               [94:5] print(prompt3)
-;               [40:6] print(str i8[])
-                func.print.94.5.409.13:
-;                   [94:5] alias str -> prompt3
-;                   [41:5] write(1, str)
-;                   [41:5] allocate named register rdi
-;                   [41:5] allocate named register rsi
-;                   [41:5] allocate named register rdx
-;                   [41:11] 1
+;               [42:5] free named register rax
+;               [42:5] free named register rdx
+;               [42:5] free named register rsi
+;               [42:5] free named register rdi
+            func.print.407.13.end:
+;           [408:13] continue
+            jmp loop.397.5
+        if.404.9.else:
+;           [410:13] greet(nm)
+;           [94:6] greet(name str)
+            func.greet.410.13:
+;               [410:13] alias name -> nm
+;               [95:5] print(prompt3)
+;               [41:6] print(str i8[])
+                func.print.95.5.410.13:
+;                   [95:5] alias str -> prompt3
+;                   [42:5] write(1, str)
+;                   [42:5] allocate named register rdi
+;                   [42:5] allocate named register rsi
+;                   [42:5] allocate named register rdx
+;                   [42:11] 1
                     mov rdi, 1
                     mov rdx, 6
                     lea rsi, [rbp + 53]
-;                   [41:5] allocate named register rax
+;                   [42:5] allocate named register rax
                     mov rax, 1
                     syscall
-;                   [41:5] free named register rax
-;                   [41:5] free named register rdx
-;                   [41:5] free named register rsi
-;                   [41:5] free named register rdi
-                func.print.94.5.409.13.end:
-;               [95:10] name.print()
-;               [89:6] str.print()
-                func.str.print.95.10.409.13:
-;                   [95:10] alias self -> name
-;                   [90:5] write(1, self.data, self.len)
-;                   [90:5] allocate named register rdi
-;                   [90:5] allocate named register rsi
-;                   [90:5] allocate named register rdx
-;                   [90:11] 1
+;                   [42:5] free named register rax
+;                   [42:5] free named register rdx
+;                   [42:5] free named register rsi
+;                   [42:5] free named register rdi
+                func.print.95.5.410.13.end:
+;               [96:10] name.print()
+;               [90:6] str.print()
+                func.str.print.96.10.410.13:
+;                   [96:10] alias self -> name
+;                   [91:5] write(1, self.data, self.len)
+;                   [91:5] allocate named register rdi
+;                   [91:5] allocate named register rsi
+;                   [91:5] allocate named register rdx
+;                   [91:11] 1
                     mov rdi, 1
-;                   [90:25] self.len
-                    movsx rdx, byte [rbp + 1160]
-;                   [90:14] bounds check
-;                   [90:14] lower bound (--checks=lower)
+;                   [91:25] self.len
+                    movsx rdx, byte [rbp + 1288]
+;                   [91:14] bounds check
+;                   [91:14] lower bound (--checks=lower)
                     test rdx, rdx
                     js baz_bounds_panic
-;                   [90:14] upper bound (--checks=upper)
+;                   [91:14] upper bound (--checks=upper)
                     cmp rdx, 127
                     jg baz_bounds_panic
-                    lea rsi, [rbp + 1161]
-;                   [90:5] allocate named register rax
+                    lea rsi, [rbp + 1289]
+;                   [91:5] allocate named register rax
                     mov rax, 1
                     syscall
-;                   [90:5] free named register rax
-;                   [90:5] free named register rdx
-;                   [90:5] free named register rsi
-;                   [90:5] free named register rdi
-                func.str.print.95.10.409.13.end:
-;               [96:5] print(dot)
-;               [40:6] print(str i8[])
-                func.print.96.5.409.13:
-;                   [96:5] alias str -> dot
-;                   [41:5] write(1, str)
-;                   [41:5] allocate named register rdi
-;                   [41:5] allocate named register rsi
-;                   [41:5] allocate named register rdx
-;                   [41:11] 1
+;                   [91:5] free named register rax
+;                   [91:5] free named register rdx
+;                   [91:5] free named register rsi
+;                   [91:5] free named register rdi
+                func.str.print.96.10.410.13.end:
+;               [97:5] print(dot)
+;               [41:6] print(str i8[])
+                func.print.97.5.410.13:
+;                   [97:5] alias str -> dot
+;                   [42:5] write(1, str)
+;                   [42:5] allocate named register rdi
+;                   [42:5] allocate named register rsi
+;                   [42:5] allocate named register rdx
+;                   [42:11] 1
                     mov rdi, 1
                     mov rdx, 1
                     lea rsi, [rbp + 59]
-;                   [41:5] allocate named register rax
+;                   [42:5] allocate named register rax
                     mov rax, 1
                     syscall
-;                   [41:5] free named register rax
-;                   [41:5] free named register rdx
-;                   [41:5] free named register rsi
-;                   [41:5] free named register rdi
-                func.print.96.5.409.13.end:
-;               [97:5] print(nl)
-;               [40:6] print(str i8[])
-                func.print.97.5.409.13:
-;                   [97:5] alias str -> nl
-;                   [41:5] write(1, str)
-;                   [41:5] allocate named register rdi
-;                   [41:5] allocate named register rsi
-;                   [41:5] allocate named register rdx
-;                   [41:11] 1
+;                   [42:5] free named register rax
+;                   [42:5] free named register rdx
+;                   [42:5] free named register rsi
+;                   [42:5] free named register rdi
+                func.print.97.5.410.13.end:
+;               [98:5] print(nl)
+;               [41:6] print(str i8[])
+                func.print.98.5.410.13:
+;                   [98:5] alias str -> nl
+;                   [42:5] write(1, str)
+;                   [42:5] allocate named register rdi
+;                   [42:5] allocate named register rsi
+;                   [42:5] allocate named register rdx
+;                   [42:11] 1
                     mov rdi, 1
                     mov rdx, 1
                     lea rsi, [rbp + 60]
-;                   [41:5] allocate named register rax
+;                   [42:5] allocate named register rax
                     mov rax, 1
                     syscall
-;                   [41:5] free named register rax
-;                   [41:5] free named register rdx
-;                   [41:5] free named register rsi
-;                   [41:5] free named register rdi
-                func.print.97.5.409.13.end:
-;               [98:5] names = names + 1
-;               [98:13] instructions without scratch register 1, with 3
-;               [98:13] names
-;               [98:13] names + 1
-;               [98:13] src: folded constant '+ 1'
-                add qword [rbp + 240], 1
-            func.greet.409.13.end:
-        if.403.9.end:
-    jmp loop.396.5
-    loop.396.5.end:
-;   [413:5] print(greeted)
-;   [40:6] print(str i8[])
-    func.print.413.5:
-;       [413:5] alias str -> greeted
-;       [41:5] write(1, str)
-;       [41:5] allocate named register rdi
-;       [41:5] allocate named register rsi
-;       [41:5] allocate named register rdx
-;       [41:11] 1
+;                   [42:5] free named register rax
+;                   [42:5] free named register rdx
+;                   [42:5] free named register rsi
+;                   [42:5] free named register rdi
+                func.print.98.5.410.13.end:
+;               [99:5] names = names + 1
+;               [99:13] instructions without scratch register 1, with 3
+;               [99:13] names
+;               [99:13] names + 1
+;               [99:13] src: folded constant '+ 1'
+                add qword [rbp + 368], 1
+            func.greet.410.13.end:
+        if.404.9.end:
+    jmp loop.397.5
+    loop.397.5.end:
+;   [414:5] print(greeted)
+;   [41:6] print(str i8[])
+    func.print.414.5:
+;       [414:5] alias str -> greeted
+;       [42:5] write(1, str)
+;       [42:5] allocate named register rdi
+;       [42:5] allocate named register rsi
+;       [42:5] allocate named register rdx
+;       [42:11] 1
         mov rdi, 1
         mov rdx, 15
-        lea rsi, [rbp + 224]
-;       [41:5] allocate named register rax
+        lea rsi, [rbp + 352]
+;       [42:5] allocate named register rax
         mov rax, 1
         syscall
-;       [41:5] free named register rax
-;       [41:5] free named register rdx
-;       [41:5] free named register rsi
-;       [41:5] free named register rdi
-    func.print.413.5.end:
-;   [414:5] print_num(names)
-;   [414:5] frame capacity check (--checks=frame)
-;   [414:5] allocate scratch register -> r15
-;   [414:5] allocate scratch register -> r14
-    lea r15, [rbp + 1288]
+;       [42:5] free named register rax
+;       [42:5] free named register rdx
+;       [42:5] free named register rsi
+;       [42:5] free named register rdi
+    func.print.414.5.end:
+;   [415:5] print_num(names)
+;   [415:5] frame capacity check (--checks=frame)
+;   [415:5] allocate scratch register -> r15
+;   [415:5] allocate scratch register -> r14
+    lea r15, [rbp + 1416]
     lea r14, [vars]
     cmp r15, r14
     jb baz_frame_overflow
@@ -5187,99 +5192,60 @@ main:
     mov r15, size.func.print_num
     cmp r15, r14
     ja baz_frame_overflow
-;   [414:5] free scratch register r14
-;   [414:5] free scratch register r15
-;   [414:5] address of argument 'names' to parameter 'num'
-;   [414:5] allocate scratch register -> r15
-    lea r15, [rbp + 240]
-    mov qword [rbp + 1288], r15
-;   [414:5] free scratch register r15
-;   [414:5] set function frame base
-    lea rbx, [rbp + 1288]
+;   [415:5] free scratch register r14
+;   [415:5] free scratch register r15
+;   [415:5] address of argument 'names' to parameter 'num'
+;   [415:5] allocate scratch register -> r15
+    lea r15, [rbp + 368]
+    mov qword [rbp + 1416], r15
+;   [415:5] free scratch register r15
+;   [415:5] set function frame base
+    lea rbx, [rbp + 1416]
     call func.print_num
-;   [415:5] print(nl)
-;   [40:6] print(str i8[])
-    func.print.415.5:
-;       [415:5] alias str -> nl
-;       [41:5] write(1, str)
-;       [41:5] allocate named register rdi
-;       [41:5] allocate named register rsi
-;       [41:5] allocate named register rdx
-;       [41:11] 1
+;   [416:5] print(nl)
+;   [41:6] print(str i8[])
+    func.print.416.5:
+;       [416:5] alias str -> nl
+;       [42:5] write(1, str)
+;       [42:5] allocate named register rdi
+;       [42:5] allocate named register rsi
+;       [42:5] allocate named register rdx
+;       [42:11] 1
         mov rdi, 1
         mov rdx, 1
         lea rsi, [rbp + 60]
-;       [41:5] allocate named register rax
+;       [42:5] allocate named register rax
         mov rax, 1
         syscall
-;       [41:5] free named register rax
-;       [41:5] free named register rdx
-;       [41:5] free named register rsi
-;       [41:5] free named register rdi
-    func.print.415.5.end:
-;   [417:5] var bye = "bye from baz\n"
-;   [417:9] bye: i8[13] (13 B @ [rbp + 1288])
-;   [417:9] bye = "bye from baz\n"
-;   [417:15] size <= 16 B, use immediates
-    mov dword [rbp + 1288], 543521122
-    mov dword [rbp + 1292], 1836020326
-    mov dword [rbp + 1296], 2053202464
-    mov byte [rbp + 1300], 10
-;   [418:5] write(1, bye, 3)
-;   [418:5] allocate named register rdi
-;   [418:5] allocate named register rsi
-;   [418:5] allocate named register rdx
-;   [418:11] 1
-    mov rdi, 1
-;   [418:19] 3
-    mov rdx, 3
-;   [418:14] bounds check
-;   [418:14] lower bound (--checks=lower)
-    test rdx, rdx
-    js baz_bounds_panic
-;   [418:14] upper bound (--checks=upper)
-    cmp rdx, 13
-    jg baz_bounds_panic
-    lea rsi, [rbp + 1288]
-;   [418:5] allocate named register rax
-    mov rax, 1
-    syscall
-;   [418:5] free named register rax
-;   [418:5] free named register rdx
-;   [418:5] free named register rsi
-;   [418:5] free named register rdi
-;   [419:5] write(1, bye, 1, array_length(bye) - 1)
+;       [42:5] free named register rax
+;       [42:5] free named register rdx
+;       [42:5] free named register rsi
+;       [42:5] free named register rdi
+    func.print.416.5.end:
+;   [418:5] var bye = "bye from baz\n"
+;   [418:9] bye: i8[13] (13 B @ [rbp + 1416])
+;   [418:9] bye = "bye from baz\n"
+;   [418:15] size <= 16 B, use immediates
+    mov dword [rbp + 1416], 543521122
+    mov dword [rbp + 1420], 1836020326
+    mov dword [rbp + 1424], 2053202464
+    mov byte [rbp + 1428], 10
+;   [419:5] write(1, bye, 3)
 ;   [419:5] allocate named register rdi
 ;   [419:5] allocate named register rsi
 ;   [419:5] allocate named register rdx
 ;   [419:11] 1
     mov rdi, 1
-;   [419:19] 1
-    mov rdx, 1
-;   [419:22] allocate scratch register -> r15
-;   [419:22] r15 = array_length(bye)
-;   [419:22] = expression
-;   [419:22] array_length(bye)
-    mov r15, 13
-;   [419:22] r15 - 1
-;   [419:22] src: folded constant '- 1'
-    sub r15, 1
-;   [419:22] bounds check
-;   [419:22] lower bound (--checks=lower)
-    test r15, r15
-    js baz_bounds_panic
+;   [419:19] 3
+    mov rdx, 3
+;   [419:14] bounds check
+;   [419:14] lower bound (--checks=lower)
     test rdx, rdx
     js baz_bounds_panic
-;   [419:22] upper bound (--checks=upper)
-;   [419:22] allocate scratch register -> r14
-    mov r14, rdx
-    add r14, r15
-    cmp r14, 13
-;   [419:22] free scratch register r14
+;   [419:14] upper bound (--checks=upper)
+    cmp rdx, 13
     jg baz_bounds_panic
-    lea rsi, [rbp + 1288]
-    add rsi, r15
-;   [419:5] free scratch register r15
+    lea rsi, [rbp + 1416]
 ;   [419:5] allocate named register rax
     mov rax, 1
     syscall
@@ -5287,301 +5253,340 @@ main:
 ;   [419:5] free named register rdx
 ;   [419:5] free named register rsi
 ;   [419:5] free named register rdi
+;   [420:5] write(1, bye, 1, array_length(bye) - 1)
+;   [420:5] allocate named register rdi
+;   [420:5] allocate named register rsi
+;   [420:5] allocate named register rdx
+;   [420:11] 1
+    mov rdi, 1
+;   [420:19] 1
+    mov rdx, 1
+;   [420:22] allocate scratch register -> r15
+;   [420:22] r15 = array_length(bye)
+;   [420:22] = expression
+;   [420:22] array_length(bye)
+    mov r15, 13
+;   [420:22] r15 - 1
+;   [420:22] src: folded constant '- 1'
+    sub r15, 1
+;   [420:22] bounds check
+;   [420:22] lower bound (--checks=lower)
+    test r15, r15
+    js baz_bounds_panic
+    test rdx, rdx
+    js baz_bounds_panic
+;   [420:22] upper bound (--checks=upper)
+;   [420:22] allocate scratch register -> r14
+    mov r14, rdx
+    add r14, r15
+    cmp r14, 13
+;   [420:22] free scratch register r14
+    jg baz_bounds_panic
+    lea rsi, [rbp + 1416]
+    add rsi, r15
+;   [420:5] free scratch register r15
+;   [420:5] allocate named register rax
+    mov rax, 1
+    syscall
+;   [420:5] free named register rax
+;   [420:5] free named register rdx
+;   [420:5] free named register rsi
+;   [420:5] free named register rdi
     mov rdi, 0
     mov rax, 60
     syscall
 
 ;
-;[127:15] noinline print_num(num)
+;[128:15] noinline print_num(num)
 func.print_num:
-;   [127:25] num: i64 (8 B @ [rbx])
-;   [129:11] const buf_count = 20
-;   [131:5] var buf = i8[buf_count]{}
-;   [131:9] buf: i8[20] (20 B @ [rbx + 8])
-;   [131:9] buf = i8[buf_count]{}
-;   [131:15] zero remaining elements: 20 * 1 B = 20 B
-;   [131:15] size <= 32 B, use mov
+;   [128:25] num: i64 (8 B @ [rbx])
+;   [130:11] const buf_count = 20
+;   [132:5] var buf = i8[buf_count]{}
+;   [132:9] buf: i8[20] (20 B @ [rbx + 8])
+;   [132:9] buf = i8[buf_count]{}
+;   [132:15] zero remaining elements: 20 * 1 B = 20 B
+;   [132:15] size <= 32 B, use mov
     mov qword [rbx + 8], 0
     mov qword [rbx + 16], 0
     mov dword [rbx + 24], 0
-;   [132:5] var n = num
-;   [132:9] n: i64 (8 B @ [rbx + 32])
-;   [132:9] n = num
-;   [132:13] num
-;   [132:13] allocate scratch register -> r15
+;   [133:5] var n = num
+;   [133:9] n: i64 (8 B @ [rbx + 32])
+;   [133:9] n = num
+;   [133:13] num
+;   [133:13] allocate scratch register -> r15
     mov r15, qword [rbx]
-;   [132:13] allocate scratch register -> r14
+;   [133:13] allocate scratch register -> r14
     mov r14, qword [r15]
     mov qword [rbx + 32], r14
-;   [132:13] free scratch register r14
-;   [132:13] free scratch register r15
-;   [133:5] var is_negative = false
-;   [133:9] is_negative: bool (1 B @ [rbx + 40])
-;   [133:9] is_negative = false
+;   [133:13] free scratch register r14
+;   [133:13] free scratch register r15
+;   [134:5] var is_negative = false
+;   [134:9] is_negative: bool (1 B @ [rbx + 40])
+;   [134:9] is_negative = false
     mov byte [rbx + 40], 0
-    if.137.8:
-;   [137:8] ? n < 0
-;   [137:8] ? n < 0
-    cmp.137.8:
+    if.138.8:
+;   [138:8] ? n < 0
+;   [138:8] ? n < 0
+    cmp.138.8:
     cmp qword [rbx + 32], 0
-    jge if.137.5.end
-    if.137.8.code:
-;       [138:9] is_negative = true
+    jge if.138.5.end
+    if.138.8.code:
+;       [139:9] is_negative = true
         mov byte [rbx + 40], 1
-    if.137.5.end:
-    if.140.8:
-;   [140:8] ? n > 0
-;   [140:8] ? n > 0
-    cmp.140.8:
+    if.138.5.end:
+    if.141.8:
+;   [141:8] ? n > 0
+;   [141:8] ? n > 0
+    cmp.141.8:
     cmp qword [rbx + 32], 0
-    jle if.140.5.end
-    if.140.8.code:
-;       [141:9] n = -n
-;       [141:13] instructions without scratch register 1, with 3
-;       [141:14] -n
+    jle if.141.5.end
+    if.141.8.code:
+;       [142:9] n = -n
+;       [142:13] instructions without scratch register 1, with 3
+;       [142:14] -n
         neg qword [rbx + 32]
-    if.140.5.end:
-;   [144:5] var i = buf_count
-;   [144:9] i: i64 (8 B @ [rbx + 48])
-;   [144:9] i = buf_count
-;   [144:13] buf_count
+    if.141.5.end:
+;   [145:5] var i = buf_count
+;   [145:9] i: i64 (8 B @ [rbx + 48])
+;   [145:9] i = buf_count
+;   [145:13] buf_count
     mov qword [rbx + 48], 20
-;   [145:5] label
-    loop.145.5:
-;       [146:9] i = i - 1
-;       [146:13] instructions without scratch register 1, with 3
-;       [146:13] i
-;       [146:13] i - 1
-;       [146:13] src: folded constant '- 1'
-        sub qword [rbx + 48], 1
-;       [147:9] buf[i] = i8('0' - n % 10)
-;       [147:13] allocate scratch register -> r15
-;       [147:13] set array index
+;   [146:5] label
+    loop.146.5:
+;       [147:9] i = i - 1
+;       [147:13] instructions without scratch register 1, with 3
 ;       [147:13] i
+;       [147:13] i - 1
+;       [147:13] src: folded constant '- 1'
+        sub qword [rbx + 48], 1
+;       [148:9] buf[i] = i8('0' - n % 10)
+;       [148:13] allocate scratch register -> r15
+;       [148:13] set array index
+;       [148:13] i
         mov r15, qword [rbx + 48]
-;       [147:13] bounds check
-;       [147:13] lower bound (--checks=lower)
+;       [148:13] bounds check
+;       [148:13] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
-;       [147:13] upper bound (--checks=upper)
+;       [148:13] upper bound (--checks=upper)
         cmp r15, 20
         jge baz_bounds_panic
-;       [147:18] buf = i8('0' - n % 10)
-;       [147:18] = expression
-;       [147:18] allocate scratch register -> r14
-;           [147:21] r14 = 48
-;           [147:21] src: folded constant '+ '0''
+;       [148:18] buf = i8('0' - n % 10)
+;       [148:18] = expression
+;       [148:18] allocate scratch register -> r14
+;           [148:21] r14 = 48
+;           [148:21] src: folded constant '+ '0''
             mov r14, 48
-;           [147:29] r14 - n % 10
-;           [147:29] src: expression
-;           [147:29] allocate scratch register -> r13
-;           [147:27] n
+;           [148:29] r14 - n % 10
+;           [148:29] src: expression
+;           [148:29] allocate scratch register -> r13
+;           [148:27] n
             mov r13, qword [rbx + 32]
-;           [147:31] r13 % 10
-;           [147:31] src: constant
-;           [147:31] allocate named register rax
+;           [148:31] r13 % 10
+;           [148:31] src: constant
+;           [148:31] allocate named register rax
             mov rax, r13
-;           [147:31] allocate named register rdx
+;           [148:31] allocate named register rdx
             cqo
-;           [147:31] allocate scratch register -> r12
+;           [148:31] allocate scratch register -> r12
             mov r12, 10
             idiv r12
-;           [147:31] free scratch register r12
+;           [148:31] free scratch register r12
             mov r13, rdx
-;           [147:31] free named register rdx
-;           [147:31] free named register rax
+;           [148:31] free named register rdx
+;           [148:31] free named register rax
             sub r14, r13
-;           [147:29] free scratch register r13
+;           [148:29] free scratch register r13
         mov byte [rbx + r15 + 8], r14b
-;       [147:18] free scratch register r14
-;       [147:9] free scratch register r15
-;       [148:9] n = n / 10
-;       [148:13] instructions without scratch register 5, with 7
-;       [148:13] n
-;       [148:17] n / 10
-;       [148:17] src: constant
-;       [148:17] allocate named register rax
+;       [148:18] free scratch register r14
+;       [148:9] free scratch register r15
+;       [149:9] n = n / 10
+;       [149:13] instructions without scratch register 5, with 7
+;       [149:13] n
+;       [149:17] n / 10
+;       [149:17] src: constant
+;       [149:17] allocate named register rax
         mov rax, qword [rbx + 32]
-;       [148:17] allocate named register rdx
+;       [149:17] allocate named register rdx
         cqo
-;       [148:17] allocate scratch register -> r15
+;       [149:17] allocate scratch register -> r15
         mov r15, 10
         idiv r15
-;       [148:17] free scratch register r15
+;       [149:17] free scratch register r15
         mov qword [rbx + 32], rax
-;       [148:17] free named register rdx
-;       [148:17] free named register rax
-        if.149.12:
-;       [149:12] ? n == 0
-;       [149:12] ? n == 0
-        cmp.149.12:
+;       [149:17] free named register rdx
+;       [149:17] free named register rax
+        if.150.12:
+;       [150:12] ? n == 0
+;       [150:12] ? n == 0
+        cmp.150.12:
         cmp qword [rbx + 32], 0
-        jne loop.145.5
-        if.149.12.code:
-;           [149:19] break
-        if.149.9.end:
-    loop.145.5.end:
-    if.152.8:
-;   [152:8] ? is_negative
-;   [152:8] ? shorthand: is_negative
-    cmp.152.8:
+        jne loop.146.5
+        if.150.12.code:
+;           [150:19] break
+        if.150.9.end:
+    loop.146.5.end:
+    if.153.8:
+;   [153:8] ? is_negative
+;   [153:8] ? shorthand: is_negative
+    cmp.153.8:
     cmp byte [rbx + 40], 0
-    je if.152.5.end
-    if.152.8.code:
-;       [153:9] i = i - 1
-;       [153:13] instructions without scratch register 1, with 3
-;       [153:13] i
-;       [153:13] i - 1
-;       [153:13] src: folded constant '- 1'
-        sub qword [rbx + 48], 1
-;       [154:9] buf[i] = '-'
-;       [154:13] allocate scratch register -> r15
-;       [154:13] set array index
+    je if.153.5.end
+    if.153.8.code:
+;       [154:9] i = i - 1
+;       [154:13] instructions without scratch register 1, with 3
 ;       [154:13] i
+;       [154:13] i - 1
+;       [154:13] src: folded constant '- 1'
+        sub qword [rbx + 48], 1
+;       [155:9] buf[i] = '-'
+;       [155:13] allocate scratch register -> r15
+;       [155:13] set array index
+;       [155:13] i
         mov r15, qword [rbx + 48]
-;       [154:13] bounds check
-;       [154:13] lower bound (--checks=lower)
+;       [155:13] bounds check
+;       [155:13] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
-;       [154:13] upper bound (--checks=upper)
+;       [155:13] upper bound (--checks=upper)
         cmp r15, 20
         jge baz_bounds_panic
-;       [154:18] '-'
+;       [155:18] '-'
         mov byte [rbx + r15 + 8], 45
-;       [154:9] free scratch register r15
-    if.152.5.end:
-;   [157:5] var write_pos = 0
-;   [157:9] write_pos: i64 (8 B @ [rbx + 56])
-;   [157:9] write_pos = 0
-;   [157:21] 0
+;       [155:9] free scratch register r15
+    if.153.5.end:
+;   [158:5] var write_pos = 0
+;   [158:9] write_pos: i64 (8 B @ [rbx + 56])
+;   [158:9] write_pos = 0
+;   [158:21] 0
     mov qword [rbx + 56], 0
-;   [158:5] label
-    loop.158.5:
-;       [159:9] buf[write_pos] = buf[i]
-;       [159:13] allocate scratch register -> r15
-;       [159:13] set array index
-;       [159:13] write_pos
+;   [159:5] label
+    loop.159.5:
+;       [160:9] buf[write_pos] = buf[i]
+;       [160:13] allocate scratch register -> r15
+;       [160:13] set array index
+;       [160:13] write_pos
         mov r15, qword [rbx + 56]
-;       [159:13] bounds check
-;       [159:13] lower bound (--checks=lower)
+;       [160:13] bounds check
+;       [160:13] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
-;       [159:13] upper bound (--checks=upper)
+;       [160:13] upper bound (--checks=upper)
         cmp r15, 20
         jge baz_bounds_panic
-;       [159:26] buf[i]
-;       [159:30] allocate scratch register -> r14
-;       [159:30] set array index
-;       [159:30] i
+;       [160:26] buf[i]
+;       [160:30] allocate scratch register -> r14
+;       [160:30] set array index
+;       [160:30] i
         mov r14, qword [rbx + 48]
-;       [159:30] bounds check
-;       [159:30] lower bound (--checks=lower)
+;       [160:30] bounds check
+;       [160:30] lower bound (--checks=lower)
         test r14, r14
         js baz_bounds_panic
-;       [159:30] upper bound (--checks=upper)
+;       [160:30] upper bound (--checks=upper)
         cmp r14, 20
         jge baz_bounds_panic
-;       [159:26] allocate scratch register -> r13
+;       [160:26] allocate scratch register -> r13
         mov r13b, byte [rbx + r14 + 8]
         mov byte [rbx + r15 + 8], r13b
-;       [159:26] free scratch register r13
-;       [159:26] free scratch register r14
-;       [159:9] free scratch register r15
-;       [160:9] write_pos = write_pos + 1
-;       [160:21] instructions without scratch register 1, with 3
-;       [160:21] write_pos
-;       [160:21] write_pos + 1
-;       [160:21] src: folded constant '+ 1'
+;       [160:26] free scratch register r13
+;       [160:26] free scratch register r14
+;       [160:9] free scratch register r15
+;       [161:9] write_pos = write_pos + 1
+;       [161:21] instructions without scratch register 1, with 3
+;       [161:21] write_pos
+;       [161:21] write_pos + 1
+;       [161:21] src: folded constant '+ 1'
         add qword [rbx + 56], 1
-;       [161:9] i = i + 1
-;       [161:13] instructions without scratch register 1, with 3
-;       [161:13] i
-;       [161:13] i + 1
-;       [161:13] src: folded constant '+ 1'
+;       [162:9] i = i + 1
+;       [162:13] instructions without scratch register 1, with 3
+;       [162:13] i
+;       [162:13] i + 1
+;       [162:13] src: folded constant '+ 1'
         add qword [rbx + 48], 1
-        if.162.12:
-;       [162:12] ? i == buf_count
-;       [162:12] ? i == buf_count
-        cmp.162.12:
+        if.163.12:
+;       [163:12] ? i == buf_count
+;       [163:12] ? i == buf_count
+        cmp.163.12:
         cmp qword [rbx + 48], 20
-        jne loop.158.5
-        if.162.12.code:
-;           [162:27] break
-        if.162.9.end:
-    loop.158.5.end:
-;   [165:5] write(1, buf, write_pos)
-;   [165:5] allocate named register rdi
-;   [165:5] allocate named register rsi
-;   [165:5] allocate named register rdx
-;   [165:11] 1
+        jne loop.159.5
+        if.163.12.code:
+;           [163:27] break
+        if.163.9.end:
+    loop.159.5.end:
+;   [166:5] write(1, buf, write_pos)
+;   [166:5] allocate named register rdi
+;   [166:5] allocate named register rsi
+;   [166:5] allocate named register rdx
+;   [166:11] 1
     mov rdi, 1
-;   [165:19] write_pos
+;   [166:19] write_pos
     mov rdx, qword [rbx + 56]
-;   [165:14] bounds check
-;   [165:14] lower bound (--checks=lower)
+;   [166:14] bounds check
+;   [166:14] lower bound (--checks=lower)
     test rdx, rdx
     js baz_bounds_panic
-;   [165:14] upper bound (--checks=upper)
+;   [166:14] upper bound (--checks=upper)
     cmp rdx, 20
     jg baz_bounds_panic
     lea rsi, [rbx + 8]
-;   [165:5] allocate named register rax
+;   [166:5] allocate named register rax
     mov rax, 1
     syscall
-;   [165:5] free named register rax
-;   [165:5] free named register rdx
-;   [165:5] free named register rsi
-;   [165:5] free named register rdi
+;   [166:5] free named register rax
+;   [166:5] free named register rdx
+;   [166:5] free named register rsi
+;   [166:5] free named register rdi
     ret
 size.func.print_num equ 64
 ;
-;[168:15] noinline factorial(n) res
+;[169:15] noinline factorial(n) res
 func.factorial:
-;   [168:28] res: i64 (8 B @ [rbx])
-;   [168:25] n: i64 (8 B @ [rbx + 8])
-;   [169:5] res = 1
-;   [169:5] allocate scratch register -> r15
+;   [169:28] res: i64 (8 B @ [rbx])
+;   [169:25] n: i64 (8 B @ [rbx + 8])
+;   [170:5] res = 1
+;   [170:5] allocate scratch register -> r15
     mov r15, qword [rbx]
-;   [169:11] 1
+;   [170:11] 1
     mov qword [r15], 1
-;   [169:5] free scratch register r15
-    if.170.8:
-;   [170:8] ? n <= 1
-;   [170:8] ? n <= 1
-    cmp.170.8:
-;   [170:8] allocate scratch register -> r15
+;   [170:5] free scratch register r15
+    if.171.8:
+;   [171:8] ? n <= 1
+;   [171:8] ? n <= 1
+    cmp.171.8:
+;   [171:8] allocate scratch register -> r15
     mov r15, qword [rbx + 8]
     cmp qword [r15], 1
-;   [170:8] free scratch register r15
-    jg if.170.5.end
-    if.170.8.code:
-;       [170:15] return
+;   [171:8] free scratch register r15
+    jg if.171.5.end
+    if.171.8.code:
+;       [171:15] return
         ret
-    if.170.5.end:
-;   [172:5] var m = n - 1
-;   [172:9] m: i64 (8 B @ [rbx + 16])
-;   [172:9] m = n - 1
-;   [172:13] instructions without scratch register 4, with 4
-;   [172:13] n
-;   [172:13] allocate scratch register -> r15
+    if.171.5.end:
+;   [173:5] var m = n - 1
+;   [173:9] m: i64 (8 B @ [rbx + 16])
+;   [173:9] m = n - 1
+;   [173:13] instructions without scratch register 4, with 4
+;   [173:13] n
+;   [173:13] allocate scratch register -> r15
     mov r15, qword [rbx + 8]
-;   [172:13] allocate scratch register -> r14
+;   [173:13] allocate scratch register -> r14
     mov r14, qword [r15]
     mov qword [rbx + 16], r14
-;   [172:13] free scratch register r14
-;   [172:13] free scratch register r15
-;   [172:13] m - 1
-;   [172:13] src: folded constant '- 1'
+;   [173:13] free scratch register r14
+;   [173:13] free scratch register r15
+;   [173:13] m - 1
+;   [173:13] src: folded constant '- 1'
     sub qword [rbx + 16], 1
-;   [173:5] var partial = factorial(m)
-;   [173:9] partial: i64 (8 B @ [rbx + 24])
-;   [173:9] partial = factorial(m)
-;   [173:19] partial = factorial(m)
-;   [173:19] = expression
-;   [173:19] factorial(m)
-;   [173:19] frame capacity check (--checks=frame)
-;   [173:19] allocate scratch register -> r15
-;   [173:19] allocate scratch register -> r14
+;   [174:5] var partial = factorial(m)
+;   [174:9] partial: i64 (8 B @ [rbx + 24])
+;   [174:9] partial = factorial(m)
+;   [174:19] partial = factorial(m)
+;   [174:19] = expression
+;   [174:19] factorial(m)
+;   [174:19] frame capacity check (--checks=frame)
+;   [174:19] allocate scratch register -> r15
+;   [174:19] allocate scratch register -> r14
     lea r15, [rbx + 32]
     lea r14, [vars]
     cmp r15, r14
@@ -5593,41 +5598,41 @@ func.factorial:
     mov r15, size.func.factorial
     cmp r15, r14
     ja baz_frame_overflow
-;   [173:19] free scratch register r14
-;   [173:19] free scratch register r15
-;   [173:19] result address in callee frame
-;   [173:19] allocate scratch register -> r15
+;   [174:19] free scratch register r14
+;   [174:19] free scratch register r15
+;   [174:19] result address in callee frame
+;   [174:19] allocate scratch register -> r15
     lea r15, [rbx + 24]
     mov qword [rbx + 32], r15
-;   [173:19] free scratch register r15
-;   [173:19] address of argument 'm' to parameter 'n'
-;   [173:19] allocate scratch register -> r15
+;   [174:19] free scratch register r15
+;   [174:19] address of argument 'm' to parameter 'n'
+;   [174:19] allocate scratch register -> r15
     lea r15, [rbx + 16]
     mov qword [rbx + 40], r15
-;   [173:19] free scratch register r15
-;   [173:19] before call: save allocated registers
+;   [174:19] free scratch register r15
+;   [174:19] before call: save allocated registers
     push rbx
-;   [173:19] set function frame base
+;   [174:19] set function frame base
     lea rbx, [rbx + 32]
     call func.factorial
-;   [173:19] after call: restore saved registers
+;   [174:19] after call: restore saved registers
     pop rbx
-;   [174:5] res = n * partial
-;   [174:5] allocate scratch register -> r15
+;   [175:5] res = n * partial
+;   [175:5] allocate scratch register -> r15
     mov r15, qword [rbx]
-;   [174:11] instructions without scratch register 6, with 4
-;   [174:11] allocate scratch register -> r14
-;   [174:11] n
-;   [174:11] allocate scratch register -> r13
+;   [175:11] instructions without scratch register 6, with 4
+;   [175:11] allocate scratch register -> r14
+;   [175:11] n
+;   [175:11] allocate scratch register -> r13
     mov r13, qword [rbx + 8]
     mov r14, qword [r13]
-;   [174:11] free scratch register r13
-;   [174:15] r14 * partial
-;   [174:15] src: operand
+;   [175:11] free scratch register r13
+;   [175:15] r14 * partial
+;   [175:15] src: operand
     imul r14, qword [rbx + 24]
     mov qword [r15], r14
-;   [174:11] free scratch register r14
-;   [174:5] free scratch register r15
+;   [175:11] free scratch register r14
+;   [175:5] free scratch register r15
     ret
 size.func.factorial equ 32
 ; frame overflow handler (--checks=frame)
@@ -5690,17 +5695,22 @@ times 24 db 0
 ;[30:8] str1
 ;[30:20] i8
 db 3
-;[30:23] i8[127]
+;[30:18] zero remaining fields: 127 B
+times 127 db 0
+;[31:8] str2
+;[31:20] i8
+db 3
+;[31:23] i8[127]
 db `baz`
-;[30:23] zero remaining array
+;[31:23] zero remaining array
 times 124 db 0
-;[32:5] greeted
-;[32:15] i8[15]
+;[33:5] greeted
+;[33:15] i8[15]
 db `names greeted: `
 ; padding 1 B
 times 1 db 0
-;[33:7] names
-;[33:15] i64
+;[34:7] names
+;[34:15] i64
 dq 0
 dat.end:
 
