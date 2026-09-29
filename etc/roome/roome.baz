@@ -82,8 +82,9 @@ type room {
     note str,
     entities id_list,
     links link[room_links_len],
-    links_len i8,
+    links_len i16,
     objects i16[room_objects_len],
+    objects_len i16,
 }
 dat rooms = room[rooms_len]{
     { 
