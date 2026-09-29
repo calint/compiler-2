@@ -89,7 +89,7 @@ type room {
 dat rooms = room[rooms_len]{
     { 
         { "roome", 5 },
-        { "u r in roome", 12 },
+        { },
         { "todo: find an exit", 18 },
         { { 0 }, 1 },
         { {0, 1} }, 1
@@ -111,7 +111,13 @@ func entity.print() {
     write(1, self.name.data, self.name.len)
 }
 
+dat str_u_r_in = "u r in "
 func room.print() {
+    if self.name.len != 0 {
+        print(str_u_r_in)
+        self.name.print()
+        print(str_nl)
+    }
     if self.description.len != 0 {
         self.description.print()
         print(str_nl)
@@ -144,29 +150,46 @@ func room.print() {
 }
 
 type tokenizer {
+    str str,
     start i16,
     end i16,
 }
 
-func tokenizer.skip_whitespace(inp str) {
+func tokenizer.input() {
+    self.start = 0
+    self.end = 0
+    self.str.input()
+}
+
+func tokenizer.skip_whitespace() {
     self.start = self.end
     loop {
-        if self.start >= inp.len {
+        if self.start >= self.str.len {
             self.end = self.start
             return
         }
-        if inp.data[self.start] != ' ' break
+        if self.str.data[self.start] != ' ' break
         self.start = self.start + 1
     }
     self.end = self.start
 }
 
-func tokenizer.next(inp str) {
-    self.skip_whitespace(inp)
+func tokenizer.first() {
+    self.skip_whitespace()
     self.end = self.start
     loop {
-        if self.end >= inp.len break
-        if inp.data[self.end] == ' ' break
+        if self.end >= self.str.len break
+        if self.str.data[self.end] == ' ' break
+        self.end = self.end + 1
+    }
+}
+
+func tokenizer.next() {
+    self.skip_whitespace()
+    self.end = self.start
+    loop {
+        if self.end >= self.str.len break
+        if self.str.data[self.end] == ' ' break
         self.end = self.end + 1
     }
 }
@@ -175,37 +198,37 @@ func tokenizer.len() res {
     res = self.end - self.start
 }
 
-func tokenizer.print(inp str) {
-    write(1, inp.data, self.len(), self.start)
+func tokenizer.print() {
+    write(1, self.str.data, self.len(), self.start)
 }
 
-func tokenizer.is_str(inp str, str i8[]) res bool {
+func tokenizer.is_str(str i8[]) res bool {
     res = self.len() == array_length(str) and
-          arrays_equal(str, inp.data[self.start], array_length(str))
+          arrays_equal(str, self.str.data[self.start], array_length(str))
 }
 
-func tokenizer.is_name(inp str, nm name) res bool {
+func tokenizer.is_name(nm name) res bool {
     res = self.len() == nm.len and
-          arrays_equal(nm.data, inp.data[self.start], nm.len)
+          arrays_equal(nm.data, self.str.data[self.start], nm.len)
 }
 
 func tokenizer.is_empty() res bool {
     res = self.start == self.end
 }
 
-func tokenizer.copy_to_name(inp str, dst name) {
+func tokenizer.copy_to_name(dst name) {
     dst.len = i8(self.len())
-    array_copy(inp.data[self.start], dst.data, dst.len)
+    array_copy(self.str.data[self.start], dst.data, dst.len)
 }
 
-func tokenizer.copy_to_str(inp str, dst str) {
+func tokenizer.copy_to_str(dst str) {
     dst.len = i8(self.len())
-    array_copy(inp.data[self.start], dst.data, dst.len)
+    array_copy(self.str.data[self.start], dst.data, dst.len)
 }
 
-func tokenizer.to_end(inp str) {
+func tokenizer.to_end() {
     self.start = self.end
-    self.end = inp.len
+    self.end = self.str.len
 }
 
 dat str_went_to = "went to "
@@ -213,14 +236,14 @@ dat str_go_where = "go where\n"
 dat str_no_such_exit = "cannot go there\n"
 dat str_home = "home"
 
-func action_go(cur_entity, inp str, tz tokenizer) {
-    tz.next(inp)
+func action_go(cur_entity, tz tokenizer) {
+    tz.next()
     if tz.is_empty() {
         print(str_go_where)
         return
     }
 
-    if tz.is_str(inp, str_home) {
+    if tz.is_str(str_home) {
         exit(0)
     }
 
@@ -231,7 +254,7 @@ func action_go(cur_entity, inp str, tz tokenizer) {
     loop {
         if i == links_len break
         var link_name_id = rooms[room_id].links[i].link_name_id
-        if tz.is_name(inp, link_names[link_name_id]) break
+        if tz.is_name(link_names[link_name_id]) break
         i = i + 1
     }
 
@@ -244,15 +267,15 @@ func action_go(cur_entity, inp str, tz tokenizer) {
     entities[cur_entity].room_id = rooms[room_id].links[i].to
 
     print(str_went_to)
-    tz.print(inp)
+    tz.print()
     print(str_nl)
 }
 
-func find_link_name_or_make(inp str, tz tokenizer) res i16 {
+func find_link_name_or_make(tz tokenizer) res i16 {
     var i = i16(0)
     loop {
         if i == link_names_len break
-        if tz.is_name(inp, link_names[i]) break
+        if tz.is_name(link_names[i]) break
         i = i + 1
     }
 
@@ -261,7 +284,7 @@ func find_link_name_or_make(inp str, tz tokenizer) res i16 {
         return
     }
 
-    tz.copy_to_name(inp, link_names[link_names_len])
+    tz.copy_to_name(link_names[link_names_len])
 
     res = link_names_len
 
@@ -271,8 +294,8 @@ func find_link_name_or_make(inp str, tz tokenizer) res i16 {
 dat str_what_exit_name_to = "what is exit name to new room\n"
 dat str_what_exit_name_back = "what is exit name back to this room\n"
 
-func action_new_room(cur_entity, inp str, tz tokenizer) {
-    tz.next(inp)
+func action_new_room(cur_entity, tz tokenizer) {
+    tz.next()
 
     if tz.is_empty() {
         print(str_what_exit_name_to)
@@ -283,16 +306,16 @@ func action_new_room(cur_entity, inp str, tz tokenizer) {
 
     var cur_room_next_link_id = rooms[cur_room_id].links_len
 
-    var link_name_id = find_link_name_or_make(inp, tz)
+    var link_name_id = find_link_name_or_make(tz)
 
-    tz.next(inp)
+    tz.next()
 
     if tz.is_empty() {
         print(str_what_exit_name_back)
         return
     }
 
-    var link_name_back_id = find_link_name_or_make(inp, tz)
+    var link_name_back_id = find_link_name_or_make(tz)
 
     # link to next room
     rooms[cur_room_id].links[cur_room_next_link_id] = { 
@@ -312,27 +335,27 @@ func action_new_room(cur_entity, inp str, tz tokenizer) {
     rooms_len = rooms_len + 1
 }
 
-func str_action_set_room_description(cur_entity, inp str, tz tokenizer) {
-    tz.skip_whitespace(inp)
-    tz.to_end(inp)
-    tz.copy_to_str(inp, rooms[entities[cur_entity].room_id].description)
+func str_action_set_room_description(cur_entity, tz tokenizer) {
+    tz.skip_whitespace()
+    tz.to_end()
+    tz.copy_to_str(rooms[entities[cur_entity].room_id].description)
 }
 
 dat str_action_go = "go"
 dat str_action_new_room = "rn"
 dat str_action_set_room_description = "rd"
 
-func parse_input(cur_entity, inp str) {
-    var tz = tokenizer{}
-    tz.next(inp)
-    if tz.is_str(inp, str_action_go) {
-        action_go(cur_entity, inp, tz)
+func parse_input(cur_entity, tz tokenizer) {
+    tz.first()
 
-    } else if tz.is_str(inp, str_action_new_room) {
-        action_new_room(cur_entity, inp, tz)
+    if tz.is_str(str_action_go) {
+        action_go(cur_entity, tz)
 
-    } else if tz.is_str(inp, str_action_set_room_description) {
-        str_action_set_room_description(cur_entity, inp, tz)
+    } else if tz.is_str(str_action_new_room) {
+        action_new_room(cur_entity, tz)
+
+    } else if tz.is_str(str_action_set_room_description) {
+        str_action_set_room_description(cur_entity, tz)
 
     } else {
         print(str_not_understood)
@@ -343,7 +366,7 @@ func parse_input(cur_entity, inp str) {
 func main() {
     print(str_hello)
 
-    var inp = str{}
+    var tz = tokenizer{}
     var cur_entity = 0
     loop {
         if cur_entity == entities_len {
@@ -353,9 +376,9 @@ func main() {
         rooms[entities[cur_entity].room_id].print()
         entities[cur_entity].name.print()
         print(str_prompt)
-        inp.input()
+        tz.input()
         print(str_nl)
-        parse_input(cur_entity, inp)
+        parse_input(cur_entity, tz)
     }
 }
 
