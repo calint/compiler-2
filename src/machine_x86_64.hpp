@@ -930,7 +930,11 @@ class machine_x86_64 final : public machine {
             assembler_.add_optimization_counts();
         }
 
-        assembler_.add_separator_newline();
+        // otherwise the optimization counts open the statistics block
+        if (not assembler_.is_buffering()) {
+            assembler_.add_separator_newline();
+        }
+
         assembler_.comment(0, std::format("max scratch registers in use: {}",
                                           usage_max_scratch_regs_));
 

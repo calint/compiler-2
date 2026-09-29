@@ -601,6 +601,9 @@ class toc final {
         x.comment(token{}, 0, "           max frames in use: {}",
                   usage_max_frame_count_);
 
+        x.comment(token{}, 0, "                    dat size: {} B",
+                  total_dat_size_bytes_);
+
         x.comment(token{}, 0, "             dat var padding: {} B",
                   vars_entry_gap_);
 

@@ -77,6 +77,7 @@ class machine_rv32i : public machine {
     bool multiply_helper_used_{};
     bool divide_helper_used_{};
     std::vector<allocation> allocations_;
+    size_t usage_max_scratch_regs_{};
     std::vector<std::array<operand, 3>> bulk_registers_;
 
     // where unrolled accesses start: the address minus 'phase' is aligned to
@@ -1192,6 +1193,9 @@ class machine_rv32i : public machine {
 
             record_allocation(src_loc_tk, indent, index, type_ref, false);
 
+            usage_max_scratch_regs_ =
+                std::max(scratch_count(), usage_max_scratch_regs_);
+
             comment(src_loc_tk, indent, "allocate scratch register -> {}",
                     register_names_.at(index));
 
@@ -1891,15 +1895,22 @@ class machine_rv32i : public machine {
         assert(not variables_base_reserved_);
         assert(not frame_base_reserved_);
 
+        if (assembler_.is_buffering()) {
+            if (jump_mode_ == jump_mode::optimized) {
+                assembler_.optimize_jumps();
+            }
+            assembler_.add_optimization_counts();
+        }
+
+        // otherwise the optimization counts open the statistics block
         if (not assembler_.is_buffering()) {
-            return;
+            assembler_.add_separator_newline();
         }
 
-        if (jump_mode_ == jump_mode::optimized) {
-            assembler_.optimize_jumps();
-        }
+        assembler_.comment(0, std::format("max scratch registers in use: {}",
+                                          usage_max_scratch_regs_));
 
-        assembler_.add_optimization_counts();
+        usage_max_scratch_regs_ = 0;
     }
 
     [[nodiscard]] auto frame_base_register() const
@@ -3561,6 +3572,11 @@ class machine_rv32i : public machine {
         }
 
         return stack_bytes;
+    }
+
+    [[nodiscard]] auto scratch_count() const -> size_t {
+        return static_cast<size_t>(
+            std::ranges::count(allocations_, false, &allocation::named));
     }
 
     // 'left' already holds the source when both name the same memory

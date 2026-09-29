@@ -14,13 +14,17 @@ fi
 # the emulator requires an sd card image which the program does not use
 SDCARD="$(mktemp)"
 
-./baz --target=rv32i-fpga --checks=noub,line etc/roome/roome.baz
->etc/roome/roome.s
-tail etc/roome/roome.s
+SEP="--------------------------------------------------------------------------------"
+
+./baz --target=rv32i-fpga --checks=noub,line etc/roome/roome.baz >etc/roome/roome.s
+echo $SEP
+tail -n 9 etc/roome/roome.s
+echo $SEP
 
 IMAGE=etc/roome/roome-rv32i-fpga.bin
 
 # ctrl-c skips the emulator's terminal restore
 trap 'rm -f "$SDCARD"; stty sane 2>/dev/null || true' EXIT
 echo "$EMULATOR" "$IMAGE" "$SDCARD"
+echo $SEP
 "$EMULATOR" "$IMAGE" "$SDCARD"
