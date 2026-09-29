@@ -27,3 +27,7 @@
 > #    removed unreachable jumps: 1
 > # removed same target branches: 1
 > # inverted branches over jumps: 1
+251c243
+< #                 instructions: 101
+---
+> #                 instructions: 93

@@ -606,6 +606,12 @@ class assembler_rv32i final : public assembler {
     }
 
     // a jump to a numeric label such as '1b', which is never grown
+    // machine instructions, so pseudo instructions count as the ones they
+    // expand to, valid once jumps are resolved
+    [[nodiscard]] auto instruction_count() const -> size_t {
+        return code_size() / one_instruction_bytes;
+    }
+
     auto j(const size_t indent, const std::string_view target) -> void {
         add_instruction(indent,
                         {

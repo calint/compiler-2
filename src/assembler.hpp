@@ -316,6 +316,16 @@ class assembler {
         });
     }
 
+    // in the target's unit, removed lines have no size
+    [[nodiscard]] auto code_size() const -> size_t {
+        size_t size{};
+        for (const line& l : lines_) {
+            size += l.code_size;
+        }
+
+        return size;
+    }
+
     [[nodiscard]] auto is_capturing() const -> bool {
         return not captures_.empty();
     }

@@ -2474,17 +2474,21 @@ class machine_rv32i : public machine {
 
     // a named binary image is written together with the assembly source
     auto write_assembly(std::ostream& os) -> void override {
-        const bool buffered{assembler_.is_buffering()};
-        assembler_.set_direct_output(&os_.get());
-
         // written output was not kept to assemble
-        if (not buffered) {
+        if (not assembler_.is_buffering()) {
             return;
         }
 
         // the check precedes any output so a failing build writes nothing
         assembler_.resolve_jumps();
         check_memory_end(assembler_.memory_end_address());
+
+        // counted after resolving because grown jumps take more instructions,
+        // and added while still buffering so it ends the written lines
+        assembler_.comment(0, std::format("{:>28}: {}", "instructions",
+                                          assembler_.instruction_count()));
+
+        assembler_.set_direct_output(&os_.get());
 
         if (binary_file_name_.empty()) {
             assembler_.write_resolved(os);

@@ -115,10 +115,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5491           2107          17437
+C/C++ Header                    54           5509           2119          17485
 C++                              1             66             19            329
 -------------------------------------------------------------------------------
-SUM:                            55           5557           2126          17766
+SUM:                            55           5575           2138          17814
 -------------------------------------------------------------------------------
 ```
 
@@ -5729,9 +5729,10 @@ vars.end:
 ;    removed unreachable jumps: 2
 ; removed same target branches: 52
 ; inverted branches over jumps: 7
-
 ; max scratch registers in use: 4
 ;            max frames in use: 10
+;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
+;                 instructions: 971
 ```

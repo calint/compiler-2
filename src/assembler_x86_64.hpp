@@ -265,6 +265,10 @@ class assembler_x86_64 final : public assembler {
                              argument_text(src)));
     }
 
+    [[nodiscard]] auto instruction_count() const -> size_t {
+        return code_size();
+    }
+
     auto jcc(const size_t indent, const condition cc,
              const std::string_view target) -> void {
 
@@ -432,13 +436,12 @@ class assembler_x86_64 final : public assembler {
         return paired_mnemonic(pairs, mnemonic);
     }
 
-    // every instruction or directive counts as one
+    // every instruction counts as one
     [[nodiscard]] auto text_code_size(const std::string_view text) const
         -> size_t override {
 
         const std::string_view code{code_before(text, ";")};
-        if (code.empty() or code.back() == ':' or
-            code.starts_with("section ")) {
+        if (code.empty() or code.back() == ':' or is_directive(code)) {
             return 0;
         }
 
@@ -583,6 +586,21 @@ class assembler_x86_64 final : public assembler {
 
         const size_t first{text.find_first_not_of(" \t\n\r\f\v")};
         return first == std::string_view::npos or text[first] == ';';
+    }
+
+    // lines such as 'bits 64', 'global _start' and 'size.func.f equ 32'
+    [[nodiscard]] static auto is_directive(const std::string_view code)
+        -> bool {
+
+        constexpr std::array<std::string_view, 11> keywords{
+            "align", "bits",   "db",   "dd",      "default", "dq",
+            "dw",    "global", "resb", "section", "times",
+        };
+
+        const std::string_view first_word{code.substr(0, code.find(' '))};
+
+        return std::ranges::contains(keywords, first_word) or
+               code.contains(" equ ");
     }
 
     [[nodiscard]] static auto section_directive(const section which)

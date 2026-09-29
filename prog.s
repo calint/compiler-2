@@ -3566,3 +3566,4 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
+;                 instructions: 971

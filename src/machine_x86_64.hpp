@@ -1293,6 +1293,12 @@ class machine_x86_64 final : public machine {
     }
 
     auto write_assembly(std::ostream& os) -> void override {
+        // written output was not kept to count
+        if (assembler_.is_buffering()) {
+            assembler_.comment(0, std::format("{:>28}: {}", "instructions",
+                                              assembler_.instruction_count()));
+        }
+
         assembler_.write(os);
         assembler_.set_direct_output(&os_.get());
     }

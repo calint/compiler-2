@@ -5221,3 +5221,4 @@ vars.end:
 #                     dat size: 148304 B
 #              dat var padding: 0 B
 #                max vars size: 146 B
+#                 instructions: 1812

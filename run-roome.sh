@@ -18,7 +18,7 @@ SEP="---------------------------------------------------------------------------
 
 ./baz --target=rv32i-fpga --checks=noub,line etc/roome/roome.baz >etc/roome/roome.s
 echo $SEP
-tail -n 9 etc/roome/roome.s
+tail -n 10 etc/roome/roome.s
 echo $SEP
 
 IMAGE=etc/roome/roome-rv32i-fpga.bin
