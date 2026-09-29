@@ -7,6 +7,9 @@ dat  str_erase = "\b \b"
 
 dat str_not_understood = "not understood"
 
+dat str_action_look = "l"
+dat str_action_go = "go"
+
 func print(s i8[]) {
     write(1, s)
 }
@@ -138,14 +141,26 @@ func room.print() {
     }
 }
 
+dat str_went = "went\n"
+
+func action_go(cur_entity) {
+    print(str_went)
+}
+
 func parse_input(cur_entity, inp str) {
+    if i(inp.len) >= array_length(str_action_go) and
+       arrays_equal(str_action_go, inp.data, array_length(str_action_go)) {
+        action_go(cur_entity)
+        return
+    }
+
     print(str_not_understood)
     print(str_nl)
 }
 
 func main() {
     print(str_hello)
-    
+
     var inp = str{}
     var cur_entity = 0
     loop {
