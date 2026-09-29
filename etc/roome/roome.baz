@@ -141,49 +141,75 @@ func room.print() {
     }
 }
 
-dat str_went_to = "went to "
-dat str_go_where = "go where\n"
+type token {
+    start i16,
+    end i16,
+}
 
-func next_token(inp str, s, e) {
+func token.next(inp str) {
+    self.start = self.end
+
     # leading whitespace
     loop {
-        if s >= inp.len {
-            e = s
+        if self.start >= inp.len {
+            self.end = self.start
             return
         }
-        if inp.data[s] != ' ' break
-        s = s + 1
+        if inp.data[self.start] != ' ' break
+        self.start = self.start + 1
     }
-    # exit name
-    e = s
+
+    # token text
+    self.end = self.start
     loop {
-        if e >= inp.len break
-        if inp.data[e] == ' ' break
-        e = e + 1
+        if self.end >= inp.len break
+        if inp.data[self.end] == ' ' break
+        self.end = self.end + 1
     }
 }
 
-func action_go(cur_entity, inp str, inp_ix) {
-    var s = inp_ix
-    var e = s
-    next_token(inp, s, e)
-    if s == e {
+func token.len() res {
+    res = self.end - self.start
+}
+
+func token.print(inp str) {
+    write(1, inp.data, self.len(), self.start)
+}
+
+func token.is(inp str, str i8[]) res bool {
+    res = self.len() == array_length(str) and
+          arrays_equal(str, inp.data[self.start], array_length(str))
+}
+
+func token.is_empty() res bool {
+    res = self.start == self.end
+}
+
+dat str_went_to = "went to "
+dat str_go_where = "go where\n"
+dat str_home = "home"
+
+func action_go(cur_entity, inp str, tk token) {
+    if tk.is_empty() {
         print(str_go_where)
         return
     }
 
-    var to = str{}
-    to.len = i8(e - s)
-    array_copy(inp.data[s], to.data, to.len)
+    if tk.is(inp, str_home) {
+        exit(0)
+    }
+
     print(str_went_to)
-    to.print()
+    tk.print(inp)
     print(str_nl)
 }
 
 func parse_input(cur_entity, inp str) {
-    if i(inp.len) >= array_length(str_action_go) and
-       arrays_equal(str_action_go, inp.data, array_length(str_action_go)) {
-        action_go(cur_entity, inp, array_length(str_action_go))
+    var tk = token{}
+    tk.next(inp)
+    if tk.is(inp, str_action_go) {
+        tk.next(inp)
+        action_go(cur_entity, inp, tk)
         return
     }
 
