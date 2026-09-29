@@ -5,6 +5,8 @@ dat str_prompt = " > "
 dat     str_nl = "\n"
 dat  str_erase = "\b \b"
 
+dat str_not_understood = "not understood"
+
 func print(s i8[]) {
     write(1, s)
 }
@@ -83,7 +85,7 @@ type room {
 
 type entity {
     name name,
-    room i16,
+    room_id i16,
     messages str[16],
 }
 
@@ -136,6 +138,11 @@ func room.print() {
     }
 }
 
+func parse_input(cur_entity, inp str) {
+    print(str_not_understood)
+    print(str_nl)
+}
+
 func main() {
     print(str_hello)
     var counter = 0
@@ -146,10 +153,11 @@ func main() {
             cur_entity = 0
         }
         print(str_nl)
-        rooms[entities[cur_entity].room].print()
+        rooms[entities[cur_entity].room_id].print()
         entities[cur_entity].name.print()
         print(str_prompt)
         inp.input()
+        parse_input(cur_entity, inp)
     }
 }
 

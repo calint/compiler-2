@@ -66,6 +66,15 @@
   destination: (identifier) @variable
   initializer: (_)? @variable)
 
+; file level 'dat' and 'var' use the module color to stand out from locals
+(program
+  (data_declaration
+    destination: (identifier) @module))
+
+(program
+  (variable_declaration
+    destination: (identifier) @module))
+
 (sized_array_type type: (identifier) @type)
 
 (unsized_array_type type: (identifier) @type)
@@ -75,6 +84,11 @@
 
 (foo_statement
   array: (identifier) @variable)
+
+; references to file level 'dat' and 'var', predicate in plugin/baz-globals.lua
+; placed after the '@variable' patterns so that it wins
+((identifier) @module
+  (#baz-global? @module))
 
 (function_definition name: (identifier) @function)
 (type_definition name: (identifier) @type.definition)
