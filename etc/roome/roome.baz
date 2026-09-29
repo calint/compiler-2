@@ -147,10 +147,8 @@ type token {
     end i16,
 }
 
-func token.next(inp str) {
+func token.skip_whitespace(inp str) {
     self.start = self.end
-
-    # leading whitespace
     loop {
         if self.start >= inp.len {
             self.end = self.start
@@ -159,8 +157,11 @@ func token.next(inp str) {
         if inp.data[self.start] != ' ' break
         self.start = self.start + 1
     }
+    self.end = self.start
+}
 
-    # token text
+func token.next(inp str) {
+    self.skip_whitespace(inp)
     self.end = self.start
     loop {
         if self.end >= inp.len break
@@ -177,7 +178,7 @@ func token.print(inp str) {
     write(1, inp.data, self.len(), self.start)
 }
 
-func token.is(inp str, str i8[]) res bool {
+func token.is_str(inp str, str i8[]) res bool {
     res = self.len() == array_length(str) and
           arrays_equal(str, inp.data[self.start], array_length(str))
 }
@@ -191,10 +192,19 @@ func token.is_empty() res bool {
     res = self.start == self.end
 }
 
-func token.make_copy_to_name(inp str) res name {
-    res.len = i8(self.len())
-    res.data = {}
-    array_copy(inp.data[self.start], res.data, res.len)
+func token.copy_to_name(inp str, dst name) {
+    dst.len = i8(self.len())
+    array_copy(inp.data[self.start], dst.data, dst.len)
+}
+
+func token.copy_to_str(inp str, dst str) {
+    dst.len = i8(self.len())
+    array_copy(inp.data[self.start], dst.data, dst.len)
+}
+
+func token.to_end(inp str) {
+    self.start = self.end
+    self.end = inp.len
 }
 
 dat str_went_to = "went to "
@@ -209,7 +219,7 @@ func action_go(cur_entity, inp str, tk token) {
         return
     }
 
-    if tk.is(inp, str_home) {
+    if tk.is_str(inp, str_home) {
         exit(0)
     }
 
@@ -250,7 +260,7 @@ func find_link_name_or_make(inp str, tk token) res i16 {
         return
     }
 
-    link_names[link_names_len] = tk.make_copy_to_name(inp)
+    tk.copy_to_name(inp, link_names[link_names_len])
 
     res = link_names_len
 
@@ -275,7 +285,7 @@ func action_new_room(cur_entity, inp str, tk token) {
     var link_name_id = find_link_name_or_make(inp, tk)
 
     tk.next(inp)
-    
+
     if tk.is_empty() {
         print(str_what_exit_name_back)
         return
@@ -301,17 +311,27 @@ func action_new_room(cur_entity, inp str, tk token) {
     rooms_len = rooms_len + 1
 }
 
+func str_action_set_room_description(cur_entity, inp str, tk token) {
+    tk.skip_whitespace(inp)
+    tk.to_end(inp)
+    tk.copy_to_str(inp, rooms[entities[cur_entity].room_id].description)
+}
+
 dat str_action_go = "go"
-dat str_action_new_room = "nr"
+dat str_action_new_room = "rn"
+dat str_action_set_room_description = "rd"
 
 func parse_input(cur_entity, inp str) {
     var tk = token{}
     tk.next(inp)
-    if tk.is(inp, str_action_go) {
+    if tk.is_str(inp, str_action_go) {
         action_go(cur_entity, inp, tk)
 
-    } else if tk.is(inp, str_action_new_room) {
+    } else if tk.is_str(inp, str_action_new_room) {
         action_new_room(cur_entity, inp, tk)
+
+    } else if tk.is_str(inp, str_action_set_room_description) {
+        str_action_set_room_description(cur_entity, inp, tk)
 
     } else {
         print(str_not_understood)

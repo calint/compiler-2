@@ -1,0 +1,16 @@
+# a result discarded inside a function with a result is not written to the
+# caller's destination
+
+func two() res {
+    res = 2
+}
+
+func one() res {
+    res = 1
+    two()
+}
+
+func main() {
+    var r = one()
+    exit(r)
+}

@@ -1,0 +1,22 @@
+# a call without a result inside a function with a result is a statement, not
+# an assignment to the caller's destination
+
+type counter {
+    n,
+}
+
+func counter.bump() {
+    self.n = self.n + 1
+}
+
+func add_twice(c counter) res {
+    c.bump()
+    res = c.n
+    c.bump()
+}
+
+func main() {
+    var c = counter{5}
+    var r = add_twice(c)
+    exit(r + c.n)
+}

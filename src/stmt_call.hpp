@@ -393,7 +393,7 @@ class stmt_call : public expression {
             is_indexed_reference)};
 
         if (not has_indexed_argument) {
-            compile_inline_body(tc, indent, dst_info, func, aliases_to_add,
+            compile_inline_body(tc, indent, func, aliases_to_add,
                                 allocated_registers);
 
             return;
@@ -422,14 +422,13 @@ class stmt_call : public expression {
         x.emit_most_efficient(
             tok(), indent,
             [&] -> void {
-                compile_inline_body(tc, indent, dst_info, func, aliases_to_add,
-                                    {});
+                compile_inline_body(tc, indent, func, aliases_to_add, {});
             },
             [&] -> void {
                 emit_most_efficient_address(
                     x, indent, [&](const bool keeps) -> void {
                         compile_inline_body_with_address_registers(
-                            tc, indent, dst_info, func, aliases_to_add,
+                            tc, indent, func, aliases_to_add,
                             first_argument_alias, keeps);
                     });
             });
@@ -626,8 +625,7 @@ class stmt_call : public expression {
 
     // the registers are freed before the exit label
     auto
-    compile_inline_body(toc& tc, const size_t indent,
-                        const ident_info& dst_info, const stmt_def_func& func,
+    compile_inline_body(toc& tc, const size_t indent, const stmt_def_func& func,
                         const std::span<const alias_info> aliases_to_add,
                         const std::span<const operand> registers_to_free) const
         -> void {
@@ -661,8 +659,9 @@ class stmt_call : public expression {
             tc.add_alias(e);
         }
 
-        // compile inlined code
-        func.code().compile(tc, indent, dst_info);
+        // the result reaches the destination through the 'res' alias, so the
+        // statements of the body have no destination
+        func.code().compile(tc, indent, ident_info::make_empty());
 
         free_in_reverse(x, tok(), indent + 1, registers_to_free);
 
@@ -688,8 +687,8 @@ class stmt_call : public expression {
     // a new register per argument because the index register may belong to
     // an enclosing alias that is used after the call
     auto compile_inline_body_with_address_registers(
-        toc& tc, const size_t indent, const ident_info& dst_info,
-        const stmt_def_func& func, std::vector<alias_info> aliases_to_add,
+        toc& tc, const size_t indent, const stmt_def_func& func,
+        std::vector<alias_info> aliases_to_add,
         const size_t first_argument_alias, const bool keeps_displacement) const
         -> void {
 
@@ -714,7 +713,7 @@ class stmt_call : public expression {
                                              keeps_displacement);
         }
 
-        compile_inline_body(tc, indent, dst_info, func, aliases_to_add,
+        compile_inline_body(tc, indent, func, aliases_to_add,
                             address_registers);
     }
 
