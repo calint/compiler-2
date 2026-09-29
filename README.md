@@ -151,8 +151,9 @@ dat prompt3 = "hello "
 dat     dot = "."
 dat      nl = "\n"
 dat   colon = ": "
-dat    nums = i[4]{ 1 } # `i` is default type, remaining elements are zeroed
-dat    str1 = str{ 3 } # remaining fields are zeroed
+dat    nums = i[4]{ 1 } # `i` is default integer type of target platform
+                        # remaining elements are zeroed
+dat    str1 = str{ 3 }  # remaining fields are zeroed
 
 # default is to inline functions
 
@@ -161,44 +162,39 @@ func assert(ok bool) { if not ok exit(1) }
 
 func print(str i8[]) {
     write(1, str)
-    # write is a built-in function that operates on file descriptors
+    # `write` is a built-in function that operates on file descriptors
     # it has 2 more optional arguments: count and start index
 }
-
-# function arguments and return are equivalent to mutable references
-
-# functions can act on user types: `func point.fooz()` is called as
-# `p.fooz()`
 
 func point.fooz() {
     self.x = 0b10    # binary value 2
     self.y = 0xb     # hex value 11
 }
-
-# default argument type is i64 on x86_64 and i32 on rv32i
-# arguments are references to memory locations
+# functions can act on user types: `func point.fooz()` is called as `p.fooz()`
 
 func bar(arg) {
     if arg == 0 return
     arg = 0xff
 }
+# default function argument type is `i64` on x86_64 and `i32` on rv32i
+# function arguments and "return" are equivalent to mutable references
 
+func baz(arg) res {
+    res = arg * 2
+}
 # return is a reference to the target with optional type
 # it is accessed as a variable, in this case `res`
 
 func inv(i i32) res i32 {
     res = ~i
 }
-
-func baz(arg) res {
-    res = arg * 2
-}
-
-# array arguments are declared with [] and optional type
+# type of "return" and arguments can be defined, use `i` for default integer type
+# of target platform
 
 func faz(arg i32[]) {
     arg[1] = 0xfe
 }
+# array arguments are declared with [] and optional type
 
 func str.input() {
     var nbytes = read(0, self.data)
@@ -215,14 +211,11 @@ func point.at(x, y) self {
     self.x = x
     self.y = y
 }
-
 # a constructor builds its result `self` and must assign every field:
-# `func point.at(x, y) self` is called as `point.at(x, y)`
 
 func point.x(x) {
     self.x = x
 }
-
 # types can have methods with same name as fields
 
 func object.at(x, y, color i32) self {
@@ -233,11 +226,10 @@ func object.at(x, y, color i32) self {
 const yes = 1
 const no = 0
 const maybe = -1
-
 # constants can be declared in any scope and shadow outer declarations
 
 # limited support for non-inlined functions
-# arguments and return are references to memory locations
+# arguments and "return" are references to memory locations
 # arrays not supported
 
 func noinline print_num(num) {
@@ -283,7 +275,7 @@ func noinline print_num(num) {
 
 func main() {
     var answer = 0
-    # variables without initializer are zeroed
+    # variables must have initializer
     assert(answer == 0)
 
     answer = maybe
@@ -299,11 +291,8 @@ func main() {
     assert(maybe == -1)
 
     var arr = i32[4]{}
-    # arrays without initializer are zeroed 
 
     var ix = 1
-    # variables can have an initial expression
-
     arr[ix] = 2
     arr[ix + 1] = arr[ix]
     assert(arr[1] == 2)
@@ -316,7 +305,7 @@ func main() {
     var arr1 = i32[8]{}
     array_copy(arr, arr1, 4)
     var eq = arrays_equal(arr[1], arr1[1], 3)
-    # type `bool` is built-in
+    # type `bool` is built-in and deduced from expression type
     # `arrays_equal` is built-in function comparing source and destination
     assert(eq)
 
@@ -324,9 +313,7 @@ func main() {
     assert(not arrays_equal(arr, arr1, 4))
 
 #   arr[ix] = ~inv(arr[ix - 1])
-#   compile time error because it could ub since the "return" of the function
-#   and argument refer to same memory range (`arr`)
-#   same possible ub if anyt function arguments share the same memory region
+#   compile time error because "return" and arguments may not share same storage
 
     ix = 3
     var tmp = ~inv(arr[ix - 1])
@@ -348,7 +335,6 @@ func main() {
     #   `n`: constant array size
 
     var p = point{}
-    # user types without initializer are zeroed
 
     p.fooz()
     # call on user type method
