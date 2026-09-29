@@ -245,18 +245,8 @@ class assembler_rv32i final : public assembler {
         int64_t value{};
     };
 
-    struct macro {
-        std::string name;
-        std::vector<instruction> body;
-    };
-
-    // index in 'macros_' of the expanded macro
-    struct macro_use {
-        size_t index{};
-    };
-
     using record = std::variant<instruction, jump_registers, data_values,
-                                alignment, section_start, constant, macro_use>;
+                                alignment, section_start, constant>;
 
     static constexpr size_t section_count{4};
 
@@ -282,10 +272,6 @@ class assembler_rv32i final : public assembler {
     };
 
     std::vector<record> records_;
-    // macros outlive 'clear' because they are defined once at the start
-    std::vector<macro> macros_;
-    // receives the instructions while a macro is being defined
-    std::vector<instruction>* macro_body_{};
 
     // instructions that assemble to one 4-byte word
     static constexpr std::array<std::string_view, 46> single_instructions{
@@ -554,35 +540,6 @@ class assembler_rv32i final : public assembler {
                        .name{std::string{name}},
                        .value{value},
                    });
-    }
-
-    // writes the instructions 'emit_body' adds as a '.macro' that 'use_macro'
-    // expands, a redefinition replaces the body
-    auto define_macro(const std::string_view name,
-                      const std::function_ref<void()> emit_body) -> void {
-
-        assert(macro_body_ == nullptr);
-
-        add_text(std::format(".macro {}", name));
-
-        std::vector<instruction> body;
-        macro_body_ = &body;
-        emit_body();
-        macro_body_ = nullptr;
-
-        add_text(".endm");
-
-        for (macro& m : macros_) {
-            if (m.name == name) {
-                m.body = std::move(body);
-                return;
-            }
-        }
-
-        macros_.push_back({
-            .name{std::string{name}},
-            .body{std::move(body)},
-        });
     }
 
     auto ebreak(const size_t indent) -> void {
@@ -1021,27 +978,6 @@ class assembler_rv32i final : public assembler {
                    section_start{.which{which}});
     }
 
-    auto use_macro(const size_t indent, const std::string_view name) -> void {
-        for (size_t index{}; index < macros_.size(); ++index) {
-            const macro& m{macros_[index]};
-            if (m.name != name) {
-                continue;
-            }
-
-            size_t size_bytes{};
-            for (const instruction& ins : m.body) {
-                size_bytes += encoded_size_bytes(ins);
-            }
-
-            add_record(indentation(indent) + m.name, size_bytes,
-                       macro_use{.index{index}});
-
-            return;
-        }
-
-        throw panic_exception{std::format("undefined macro '{}'", name)};
-    }
-
     auto write_resolved(std::ostream& os) -> void {
         write_text(os);
         clear();
@@ -1090,28 +1026,18 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto inverse(const std::string_view mnemonic)
         -> std::optional<std::string_view> {
 
-        constexpr std::array<std::pair<std::string_view, std::string_view>, 8>
-            pairs{{
-                {"beq", "bne"},
-                {"blt", "bge"},
-                {"bltu", "bgeu"},
-                {"bgt", "ble"},
-                {"bgtu", "bleu"},
-                {"beqz", "bnez"},
-                {"bltz", "bgez"},
-                {"bgtz", "blez"},
-            }};
+        constexpr std::array<mnemonic_pair, 8> pairs{{
+            {"beq", "bne"},
+            {"blt", "bge"},
+            {"bltu", "bgeu"},
+            {"bgt", "ble"},
+            {"bgtu", "bleu"},
+            {"beqz", "bnez"},
+            {"bltz", "bgez"},
+            {"bgtz", "blez"},
+        }};
 
-        for (const auto& [first, second] : pairs) {
-            if (mnemonic == first) {
-                return second;
-            }
-            if (mnemonic == second) {
-                return first;
-            }
-        }
-
-        return std::nullopt;
+        return paired_mnemonic(pairs, mnemonic);
     }
 
     // an 'li' constant that fits 'addi' or has no low part is one instruction
@@ -1221,13 +1147,6 @@ class assembler_rv32i final : public assembler {
         return inverse(mnemonic);
     }
 
-    [[nodiscard]] auto is_label_text(const std::string_view text) const
-        -> bool override {
-
-        const std::string_view code{code_part(text)};
-        return not code.empty() and code.back() == ':';
-    }
-
     // an unsized instruction would make every later offset unreliable
     [[nodiscard]] auto text_code_size(const std::string_view text) const
         -> size_t override {
@@ -1259,14 +1178,6 @@ class assembler_rv32i final : public assembler {
         }
 
         std::string text{indentation(indent) + instruction_text(ins, names)};
-
-        // a macro body emits code only where the macro is used
-        if (macro_body_ != nullptr) {
-            add_record_line(std::move(text), 0, std::nullopt);
-            macro_body_->push_back(std::move(ins));
-
-            return;
-        }
 
         const size_t size_bytes{encoded_size_bytes(ins)};
         add_record(std::move(text), size_bytes, std::move(ins));
@@ -1395,21 +1306,13 @@ class assembler_rv32i final : public assembler {
             return encode_jump(l, line_index, address, symbols);
         }
 
-        const record* const structured{record_of(l)};
-
-        const instruction* const ins{std::get_if<instruction>(structured)};
-        if (ins != nullptr) {
-            return encode_instruction(*ins, line_index, address, symbols);
-        }
-
-        const macro_use* const expansion{std::get_if<macro_use>(structured)};
-        if (expansion == nullptr) {
+        const instruction* const ins{std::get_if<instruction>(record_of(l))};
+        if (ins == nullptr) {
             throw panic_exception{
                 std::format("no binary form for '{}'", trim(l.text))};
         }
 
-        return encode_macro(macros_.at(expansion->index), line_index, address,
-                            symbols);
+        return encode_instruction(*ins, line_index, address, symbols);
     }
 
     auto grow(line& l) const -> void {
@@ -1798,7 +1701,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto code_part(const std::string_view text)
         -> std::string_view {
 
-        return trim(text.substr(0, text.find('#')));
+        return code_before(text, "#");
     }
 
     [[nodiscard]] static auto data_directive(const size_t element_size_bytes)
@@ -1938,24 +1841,6 @@ class assembler_rv32i final : public assembler {
 
         return jal_encoding | imm_20 | imm_10_1 | imm_11 | imm_19_12 |
                register_fields(rd, zero_register, zero_register);
-    }
-
-    [[nodiscard]] static auto
-    encode_macro(const macro& expanded, const size_t line_index,
-                 const int64_t address, const symbol_table& symbols)
-        -> std::vector<uint32_t> {
-
-        std::vector<uint32_t> words;
-        int64_t ins_address{address};
-        for (const instruction& ins : expanded.body) {
-            std::ranges::copy(
-                encode_instruction(ins, line_index, ins_address, symbols),
-                std::back_inserter(words));
-
-            ins_address += static_cast<int64_t>(encoded_size_bytes(ins));
-        }
-
-        return words;
     }
 
     [[nodiscard]] static auto encode_store(const uint32_t encoding,
@@ -2334,8 +2219,7 @@ class assembler_rv32i final : public assembler {
         const std::string_view name{code.substr(0, code.find_first_of(" \t"))};
 
         return name == ".option" or name == ".globl" or name == ".equ" or
-               name == ".text" or name == ".data" or name == ".section" or
-               name == ".macro" or name == ".endm";
+               name == ".text" or name == ".data" or name == ".section";
     }
 
     [[nodiscard]] static auto li_size_bytes(const std::string_view arguments)
@@ -2525,17 +2409,6 @@ class assembler_rv32i final : public assembler {
         }
 
         return size_bytes;
-    }
-
-    [[nodiscard]] static auto trim(const std::string_view text)
-        -> std::string_view {
-
-        const size_t first{text.find_first_not_of(" \t\r")};
-        if (first == std::string_view::npos) {
-            return {};
-        }
-
-        return text.substr(first, text.find_last_not_of(" \t\r") - first + 1);
     }
 
     // '%hi' rounds up when the sign-extended '%lo' is negative

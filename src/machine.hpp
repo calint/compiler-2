@@ -86,11 +86,6 @@ class machine {
                             const operand& dst, const operand& address)
         -> void = 0;
 
-    virtual auto address_of_variable(const token& src_loc_tk,
-                                     const size_t indent, const operand& dst,
-                                     const int64_t offset,
-                                     const type& value_type) -> void = 0;
-
     [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
 
     virtual auto advance_array_iteration(

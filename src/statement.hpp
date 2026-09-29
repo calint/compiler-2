@@ -294,6 +294,23 @@ class statement {
         }
     }
 
+    // shared by 'dat' and 'var', 'keyword' names the declaration in the
+    // example
+    [[nodiscard]] static auto
+    parse_initializer_equals(tokenizer& tz, const std::string_view keyword)
+        -> token {
+
+        const token equals_tk{tz.is_next_char_token('=')};
+        if (equals_tk.is_empty()) {
+            throw compiler_exception{
+                tz, std::format("expected '=' followed by an initializer, "
+                                "e.g. '{} x = i32(0)'",
+                                keyword)};
+        }
+
+        return equals_tk;
+    }
+
     // shared by 'dat' and 'var' initializers, 'array_count' 0 takes the size
     // of the string
     [[nodiscard]] static auto string_array_count(const token& string_tk,

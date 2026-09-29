@@ -31,12 +31,7 @@ class stmt_def_var final : public statement {
 
         toc::assert_name_not_reserved(name_tk_);
 
-        equals_tk_ = tz.is_next_char_token('=');
-        if (equals_tk_.is_empty()) {
-            throw compiler_exception{
-                tz, "expected '=' followed by an initializer, e.g. "
-                    "'var x = i32(0)'"};
-        }
+        equals_tk_ = parse_initializer_equals(tz, "var");
 
         deduce_declaration(tc, tz);
 

@@ -59,12 +59,7 @@ class stmt_def_dat final : public statement {
 
         toc::assert_name_not_reserved(name_tk_);
 
-        equals_tk_ = tz.is_next_char_token('=');
-        if (equals_tk_.is_empty()) {
-            throw compiler_exception{
-                tz, "expected '=' followed by an initializer, e.g. "
-                    "'dat x = i32(0)'"};
-        }
+        equals_tk_ = parse_initializer_equals(tz, "dat");
 
         elroot_ = parse_initializer(tc, tz);
 

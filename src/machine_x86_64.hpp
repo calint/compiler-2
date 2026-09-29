@@ -236,18 +236,7 @@ class machine_x86_64 final : public machine {
                     const operand& dst, const operand& address)
         -> void override {
 
-        lea_into(src_loc_tk, indent, dst, address, false);
-    }
-
-    auto address_of_variable(const token& src_loc_tk, const size_t indent,
-                             const operand& dst, const int64_t offset,
-                             const type& value_type) -> void override {
-
-        const operand address{
-            operand::mem(variables_base_register_, {}, 1, offset, value_type)};
-
-        // keeps 'rbp + 0' visible in the output
-        lea_into(src_loc_tk, indent, dst, address, true);
+        lea_into(src_loc_tk, indent, dst, address);
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
@@ -798,34 +787,26 @@ class machine_x86_64 final : public machine {
 
         // both versions are buffered to count instructions, even when output
         // is otherwise written as emitted
-        std::ostream* const direct_output{assembler_.direct_output()};
-        assembler_.set_direct_output(nullptr);
+        assembler_.emit_buffered([&] -> void {
+            std::vector<assembler::line> without_scratch{
+                assembler_.capture(emit_without_scratch)};
 
-        std::vector<assembler::line> without_scratch{
-            assembler_.capture(emit_without_scratch)};
+            std::vector<assembler::line> with_scratch{
+                assembler_.capture(emit_with_scratch)};
 
-        std::vector<assembler::line> with_scratch{
-            assembler_.capture(emit_with_scratch)};
+            const size_t without_count{
+                assembler_x86_64::count_instructions(without_scratch)};
 
-        const size_t without_count{
-            assembler_x86_64::count_instructions(without_scratch)};
+            const size_t with_count{
+                assembler_x86_64::count_instructions(with_scratch)};
 
-        const size_t with_count{
-            assembler_x86_64::count_instructions(with_scratch)};
+            comment(src_loc_tk, indent,
+                    "instructions without scratch register {}, with {}",
+                    without_count, with_count);
 
-        comment(src_loc_tk, indent,
-                "instructions without scratch register {}, with {}",
-                without_count, with_count);
-
-        assembler_.append(std::move(
-            without_count <= with_count ? without_scratch : with_scratch));
-
-        if (direct_output == nullptr) {
-            return;
-        }
-
-        assembler_.set_direct_output(direct_output);
-        assembler_.write(*direct_output);
+            assembler_.append(std::move(
+                without_count <= with_count ? without_scratch : with_scratch));
+        });
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
@@ -1801,18 +1782,17 @@ class machine_x86_64 final : public machine {
     // 'lea' writes only registers so a memory destination takes the address
     // through a scratch register
     auto lea_into(const token& src_loc_tk, const size_t indent,
-                  const operand& dst, const operand& address,
-                  const bool explicit_displacement) -> void {
+                  const operand& dst, const operand& address) -> void {
 
         if (dst.is_register()) {
-            lea(indent, dst, address, explicit_displacement);
+            lea(indent, dst, address);
             return;
         }
 
         const operand reg{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-        lea(indent, reg, address, explicit_displacement);
+        lea(indent, reg, address);
         mov(src_loc_tk, indent, dst, reg);
 
         free_scratch_register(src_loc_tk, indent, reg);

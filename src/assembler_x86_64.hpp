@@ -236,15 +236,6 @@ class assembler_x86_64 final : public assembler {
         add_text(std::format("{} equ $ - {}", name, start));
     }
 
-    // writes the lines 'emit_body' adds between '%macro' and '%endmacro'
-    auto define_macro(const std::string_view name,
-                      const std::function_ref<void()> emit_body) -> void {
-
-        add_text(std::format("%macro {} 0", name));
-        emit_body();
-        add_text("%endmacro");
-    }
-
     auto global(const std::string_view name) -> void {
         add_text(std::format("global {}", name));
     }
@@ -348,10 +339,6 @@ class assembler_x86_64 final : public assembler {
         add_text(std::string{section_directive(which)});
     }
 
-    auto use_macro(const size_t indent, const std::string_view name) -> void {
-        add_text(indentation(indent) + std::string{name});
-    }
-
     //
     // statics
     //
@@ -436,37 +423,20 @@ class assembler_x86_64 final : public assembler {
     inverse_branch_mnemonic(const std::string_view mnemonic) const
         -> std::optional<std::string_view> override {
 
-        constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
-            pairs{{
-                {"je", "jne"},
-                {"jg", "jle"},
-                {"jge", "jl"},
-            }};
+        constexpr std::array<mnemonic_pair, 3> pairs{{
+            {"je", "jne"},
+            {"jg", "jle"},
+            {"jge", "jl"},
+        }};
 
-        for (const auto& [first, second] : pairs) {
-            if (mnemonic == first) {
-                return second;
-            }
-            if (mnemonic == second) {
-                return first;
-            }
-        }
-
-        return std::nullopt;
-    }
-
-    [[nodiscard]] auto is_label_text(const std::string_view text) const
-        -> bool override {
-
-        const std::string_view code{code_part(text)};
-        return not code.empty() and code.back() == ':';
+        return paired_mnemonic(pairs, mnemonic);
     }
 
     // every instruction or directive counts as one
     [[nodiscard]] auto text_code_size(const std::string_view text) const
         -> size_t override {
 
-        const std::string_view code{code_part(text)};
+        const std::string_view code{code_before(text, ";")};
         if (code.empty() or code.back() == ':' or
             code.starts_with("section ")) {
             return 0;
@@ -508,18 +478,6 @@ class assembler_x86_64 final : public assembler {
 
         return std::format("{} [{}]", size_specifier(address.size_bytes),
                            address_text(address));
-    }
-
-    [[nodiscard]] static auto code_part(const std::string_view text)
-        -> std::string_view {
-
-        const std::string_view code{text.substr(0, text.find(';'))};
-        const size_t first{code.find_first_not_of(" \t")};
-        if (first == std::string_view::npos) {
-            return {};
-        }
-
-        return code.substr(first, code.find_last_not_of(" \t") - first + 1);
     }
 
     // the marker replaces the first spaces of the indentation

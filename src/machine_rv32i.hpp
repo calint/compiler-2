@@ -42,8 +42,6 @@ class machine_rv32i : public machine {
     // the return address slot keeps sp 16-byte aligned
     static constexpr int64_t frame_save_bytes_{16};
     static constexpr size_t word_size_bytes_{4};
-    // the i/o call save area keeps sp 16-byte aligned
-    static constexpr int io_save_size_bytes_{16};
 
     static constexpr const decltype(assembler_rv32i::register_names)&
         register_names_{assembler_rv32i::register_names};
@@ -1053,22 +1051,9 @@ class machine_rv32i : public machine {
             return;
         }
 
-        assert(saved.size() * word_size_bytes_ <=
-               static_cast<size_t>(io_save_size_bytes_));
-
-        assembler_.addi(indent, "sp", "sp", -io_save_size_bytes_);
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.sw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
-
+        const size_t stack_bytes{save_registers(indent, saved)};
         assembler_.call(indent, label, "a7");
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.lw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
-
-        assembler_.addi(indent, "sp", "sp", io_save_size_bytes_);
+        restore_saved_registers(indent, saved, stack_bytes);
     }
 
   public:
@@ -1127,15 +1112,6 @@ class machine_rv32i : public machine {
         if (dst.is_memory()) {
             copy_value(src_loc_tk, indent, dst, value);
         }
-    }
-
-    auto address_of_variable(const token& src_loc_tk, const size_t indent,
-                             const operand& dst, const int64_t offset,
-                             const type& value_type) -> void override {
-
-        address_of(
-            src_loc_tk, indent, dst,
-            operand::mem(variables_base_register(), {}, 1, offset, value_type));
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
@@ -1311,21 +1287,12 @@ class machine_rv32i : public machine {
             saved.push_back(register_names_.at(allocated.register_index));
         }
 
-        constexpr size_t stack_alignment{16};
-        const size_t stack_bytes{align_storage_size(
-            saved.size() * word_size_bytes_, stack_alignment)};
-
-        if (stack_bytes != 0) {
+        if (not saved.empty()) {
             comment(src_loc_tk, indent,
                     "before call: save allocated registers");
-            assembler_.addi(indent, "sp", "sp",
-                            -static_cast<int64_t>(stack_bytes));
         }
 
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.sw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
+        const size_t stack_bytes{save_registers(indent, saved)};
 
         comment(src_loc_tk, indent, "set function frame base");
         address_of(src_loc_tk, indent,
@@ -1793,15 +1760,9 @@ class machine_rv32i : public machine {
 
         // both versions are buffered to compare sizes, even when output is
         // otherwise written as emitted
-        std::ostream* const direct_output{assembler_.direct_output()};
-        assembler_.set_direct_output(nullptr);
-        assembler_.emit_smaller(emit_without_scratch, emit_with_scratch);
-        if (direct_output == nullptr) {
-            return;
-        }
-
-        assembler_.set_direct_output(direct_output);
-        assembler_.write(*direct_output);
+        assembler_.emit_buffered([&] -> void {
+            assembler_.emit_smaller(emit_without_scratch, emit_with_scratch);
+        });
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
@@ -2579,6 +2540,19 @@ class machine_rv32i : public machine {
         return std::max(alignment, displacement_alignment);
     }
 
+    // the destination holds the computed address when that keeps its inputs
+    [[nodiscard]] auto
+    address_result_register(const token& src_loc_tk, const size_t indent,
+                            const operand& address, const operand& destination)
+        -> operand {
+
+        if (can_reuse_address_destination(address, destination)) {
+            return destination;
+        }
+
+        return alloc_scratch_register(src_loc_tk, indent, default_type());
+    }
+
     auto begin_bulk(const token& src_loc_tk, const size_t indent) -> operand {
         // argument-order allocation keeps pointer and count names easy to
         // follow
@@ -2713,23 +2687,8 @@ class machine_rv32i : public machine {
             copy_value(src_loc_tk, indent, right, source);
         }
 
-        constexpr size_t stack_alignment{16};
-        const size_t stack_bytes{
-            (((saved.size() * word_size_bytes_) + stack_alignment - 1) /
-             stack_alignment) *
-            stack_alignment};
-
-        // allocate an aligned save area only when a clobbered register is live
-        if (stack_bytes != 0) {
-            assembler_.addi(indent, "sp", "sp",
-                            -static_cast<int64_t>(stack_bytes));
-        }
-
         // save caller values before argument setup overwrites a0 or a1
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.sw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
+        const size_t stack_bytes{save_registers(indent, saved)};
 
         load_helper_arguments(src_loc_tk, indent, destination, source, left,
                               right);
@@ -3386,9 +3345,7 @@ class machine_rv32i : public machine {
         // indexed memory operand: [base + index * scale + displacement];
         // combine the register terms before applying the displacement
         const operand result{
-            can_reuse_address_destination(address, destination)
-                ? destination
-                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+            address_result_register(src_loc_tk, indent, address, destination)};
 
         // unit scale: combine the base and index without multiplication
         if (address.scale() == 1) {
@@ -3479,9 +3436,7 @@ class machine_rv32i : public machine {
         }
 
         const operand result{
-            can_reuse_address_destination(address, destination)
-                ? destination
-                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+            address_result_register(src_loc_tk, indent, address, destination)};
 
         const std::string& result_name{result.base_register()};
 
@@ -3583,6 +3538,29 @@ class machine_rv32i : public machine {
         if (stack_bytes != 0) {
             assembler_.addi(indent, "sp", "sp", stack_bytes);
         }
+    }
+
+    // an aligned stack area is allocated only when a register is saved, the
+    // returned size lets 'restore_saved_registers' free it
+    auto save_registers(const size_t indent,
+                        const std::span<const std::string_view> saved) const
+        -> size_t {
+
+        constexpr size_t stack_alignment{16};
+        const size_t stack_bytes{align_storage_size(
+            saved.size() * word_size_bytes_, stack_alignment)};
+
+        if (stack_bytes != 0) {
+            assembler_.addi(indent, "sp", "sp",
+                            -static_cast<int64_t>(stack_bytes));
+        }
+
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.sw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
+
+        return stack_bytes;
     }
 
     // 'left' already holds the source when both name the same memory

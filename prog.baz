@@ -26,7 +26,7 @@ dat prompt3 = "hello "
 dat     dot = "."
 dat      nl = "\n"
 dat   colon = ": "
-dat    nums = i[4]{ 1 } # remaining elements are zeroed
+dat    nums = [4]{ 1 } # remaining elements are zeroed
 dat    str1 = str{ 3 }  # remaining fields are zeroed
 dat    str2 = str{ 3, "baz" } # a string initializes an `i8` array
 
@@ -77,8 +77,12 @@ func inv(i i32) res i32 {
 func faz(arg i32[]) {
     arg[1] = 0xfe
 }
-# array arguments are declared with the element type followed by `[]`, `i[]`
-# for the default type
+# array arguments are declared with the element type followed by `[]`
+
+func foz(arg[]) {
+    arg[1] = 0xfe
+}
+# array without type specified defaults to target default integer type
 
 func str.input() {
     var nbytes = read(0, self.data)

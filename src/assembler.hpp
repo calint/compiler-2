@@ -12,6 +12,7 @@
 #include <optional>
 #include <ostream>
 #include <print>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -81,6 +82,10 @@ class assembler {
         // index of the target's structured form of the line
         std::optional<size_t> record;
     };
+
+  protected:
+    // a branch mnemonic and its inverse
+    using mnemonic_pair = std::pair<std::string_view, std::string_view>;
 
   private:
     // changes made by 'optimize_jumps', added by 'add_optimization_counts'
@@ -152,8 +157,18 @@ class assembler {
         return captured;
     }
 
-    [[nodiscard]] auto direct_output() const -> std::ostream* {
-        return direct_output_;
+    // 'emit' is buffered even when lines are otherwise written as added, so
+    // versions it captures can be compared before one is written
+    auto emit_buffered(const std::function_ref<void()> emit) -> void {
+        std::ostream* const os{direct_output_};
+        direct_output_ = nullptr;
+        emit();
+        if (os == nullptr) {
+            return;
+        }
+
+        direct_output_ = os;
+        write(*os);
     }
 
     [[nodiscard]] auto is_buffering() const -> bool {
@@ -337,10 +352,47 @@ class assembler {
     // statics
     //
 
+    // the text before 'comment_marker' without surrounding whitespace
+    [[nodiscard]] static auto code_before(const std::string_view text,
+                                          const std::string_view comment_marker)
+        -> std::string_view {
+
+        return trim(text.substr(0, text.find(comment_marker)));
+    }
+
     [[nodiscard]] static auto leading_whitespace(const std::string_view text)
         -> std::string_view {
 
         return text.substr(0, text.find_first_not_of(" \t"));
+    }
+
+    // the other mnemonic of the pair holding 'mnemonic'
+    [[nodiscard]] static auto
+    paired_mnemonic(const std::span<const mnemonic_pair> pairs,
+                    const std::string_view mnemonic)
+        -> std::optional<std::string_view> {
+
+        for (const auto& [first, second] : pairs) {
+            if (mnemonic == first) {
+                return second;
+            }
+            if (mnemonic == second) {
+                return first;
+            }
+        }
+
+        return std::nullopt;
+    }
+
+    [[nodiscard]] static auto trim(const std::string_view text)
+        -> std::string_view {
+
+        const size_t first{text.find_first_not_of(" \t\r")};
+        if (first == std::string_view::npos) {
+            return {};
+        }
+
+        return text.substr(first, text.find_last_not_of(" \t\r") - first + 1);
     }
 
   private:
@@ -358,9 +410,6 @@ class assembler {
     [[nodiscard]] virtual auto
     inverse_branch_mnemonic(std::string_view mnemonic) const
         -> std::optional<std::string_view> = 0;
-
-    [[nodiscard]] virtual auto is_label_text(std::string_view text) const
-        -> bool = 0;
 
     // zero for labels, comments and directives that emit no code
     [[nodiscard]] virtual auto text_code_size(std::string_view text) const
@@ -423,6 +472,13 @@ class assembler {
         l.text = std::string{leading_whitespace(l.text)} + format_jump(jump);
 
         return true;
+    }
+
+    [[nodiscard]] auto is_label_text(const std::string_view text) const
+        -> bool {
+
+        const std::string_view code{code_before(text, comment_prefix())};
+        return not code.empty() and code.back() == ':';
     }
 
     // labels named by lines other than jumps e.g. calls, addresses and
