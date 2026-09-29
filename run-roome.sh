@@ -16,6 +16,7 @@ SDCARD="$(mktemp)"
 
 ./baz --target=rv32i-fpga --checks=noub,line etc/roome/roome.baz
 >etc/roome/roome.s
+tail etc/roome/roome.s
 
 IMAGE=etc/roome/roome-rv32i-fpga.bin
 

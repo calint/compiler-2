@@ -90,6 +90,11 @@
 ((identifier) @module
   (#baz-global? @module))
 
+; references to parameters and the named return value, predicate in
+; plugin/baz-globals.lua, placed after the '@variable' patterns so that it wins
+((identifier) @variable.parameter
+  (#baz-parameter? @variable.parameter))
+
 (function_definition name: (identifier) @function)
 (type_definition name: (identifier) @type.definition)
 

@@ -58,12 +58,12 @@ type id_list {
 }
 
 type name {
-    text i8[name_len],
+    data i8[name_len],
     len i8,
 }
 
 func name.print() {
-    write(1, self.text, self.len)
+    write(1, self.data, self.len)
 }
 
 dat link_names = name[link_names_len]{
@@ -93,7 +93,7 @@ type entity {
 }
 
 func entity.print() {
-    write(1, self.name.text, self.name.len)
+    write(1, self.name.data, self.name.len)
 }
 
 dat rooms = room[rooms_len]{
@@ -102,7 +102,7 @@ dat rooms = room[rooms_len]{
         { "u r in roome", 12 },
         { "todo: find an exit", 18 },
         { { 0 }, 1 },
-        { {0, 0, 0} }, 1
+        { {0, 0, 1} }, 1
     } 
 }
 
@@ -113,9 +113,11 @@ dat entities = entity[entities_len]{
 dat entities_len = 1
 
 func room.print() {
-    self.description.print()
-    print(str_nl)
-    if(self.entities.len > 0) {
+    if self.description.len != 0 {
+        self.description.print()
+        print(str_nl)
+    }
+    if(self.entities.len != 0) {
         print(str_uc)
         var i = i16(0)
         loop {
@@ -125,7 +127,7 @@ func room.print() {
             i = i + 1
         }
     }
-    if(self.links_len > 0) {
+    if(self.links_len != 0) {
         print(str_exits)
         var i = i8(0)
         loop {
@@ -181,13 +183,21 @@ func token.is(inp str, str i8[]) res bool {
           arrays_equal(str, inp.data[self.start], array_length(str))
 }
 
+func token.is_name(inp str, nm name) res bool {
+    res = self.len() == nm.len and
+          arrays_equal(nm.data, inp.data[self.start], nm.len)
+}
+
 func token.is_empty() res bool {
     res = self.start == self.end
 }
 
 dat str_went_to = "went to "
 dat str_go_where = "go where\n"
+dat str_no_such_exit = "cannot go there\n"
 dat str_home = "home"
+
+dat flag = "\n\nFLAG\n\n"
 
 func action_go(cur_entity, inp str, tk token) {
     if tk.is_empty() {
@@ -198,6 +208,25 @@ func action_go(cur_entity, inp str, tk token) {
     if tk.is(inp, str_home) {
         exit(0)
     }
+
+    # find link
+    var i = 0
+    var room_id = entities[cur_entity].room_id
+    var links_len = rooms[room_id].links_len
+    loop {
+        if i == links_len break
+        var link_name_id = rooms[room_id].links[i].link_name_id
+        if tk.is_name(inp, link_names[link_name_id]) break
+        i = i + 1
+    }
+
+    if i == links_len {
+        print(str_no_such_exit)
+        return
+    }
+
+    # move entity
+    entities[cur_entity].room_id = rooms[room_id].links[i].to
 
     print(str_went_to)
     tk.print(inp)

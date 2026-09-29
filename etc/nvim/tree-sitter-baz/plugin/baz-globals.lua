@@ -1,5 +1,7 @@
--- '#baz-global?' predicate for queries/highlights.scm: true when the
--- identifier refers to a file level 'dat' or 'var'
+-- predicates for queries/highlights.scm:
+--   '#baz-global?' true when the identifier refers to a file level 'dat' or 'var'
+--   '#baz-parameter?' true when the identifier refers to a function parameter
+--   or the named return value
 
 -- identifiers under these parents never refer to a variable
 local non_reference_parents = {
@@ -104,34 +106,42 @@ local function is_global(program, name, source)
   return false
 end
 
--- walks outwards through blocks and functions so that locals and
--- parameters with the same name hide the global
-local function refers_to_global(node, source)
+-- walks outwards through blocks and functions so that the innermost
+-- declaration wins: returns "local", "parameter", "global" or nil
+local function declaration_kind(node, source)
   local name = vim.treesitter.get_node_text(node, source)
   local child = node
   local scope = node:parent()
   while scope do
     local t = scope:type()
     if t == "program" then
-      return is_global(scope, name, source)
+      if is_global(scope, name, source) then
+        return "global"
+      end
+      return nil
     end
     if t == "block" and declared_before(scope, child, name, source) then
-      return false
+      return "local"
     end
     if t == "function_definition" and is_parameter(scope, name, source) then
-      return false
+      return "parameter"
     end
     child = scope
     scope = scope:parent()
   end
-  return false
+  return nil
 end
 
-vim.treesitter.query.add_predicate("baz-global?", function(match, _, source, predicate)
-  for _, node in ipairs(match[predicate[2]] or {}) do
-    if not (is_reference(node) and refers_to_global(node, source)) then
-      return false
+local function add_kind_predicate(predicate_name, kind)
+  vim.treesitter.query.add_predicate(predicate_name, function(match, _, source, predicate)
+    for _, node in ipairs(match[predicate[2]] or {}) do
+      if not (is_reference(node) and declaration_kind(node, source) == kind) then
+        return false
+      end
     end
-  end
-  return true
-end, { force = true })
+    return true
+  end, { force = true })
+end
+
+add_kind_predicate("baz-global?", "global")
+add_kind_predicate("baz-parameter?", "parameter")
