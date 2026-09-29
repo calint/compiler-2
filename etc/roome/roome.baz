@@ -143,6 +143,8 @@ func room.print() {
 
 dat str_went = "went to "
 dat str_go_where = "go where\n"
+dat str_go_where2 = "go where 2\n"
+dat str_which_link = "go where 3\n"
 
 func action_go(cur_entity, inp str, inp_ix) {
     if inp_ix >= inp.len {
@@ -150,15 +152,32 @@ func action_go(cur_entity, inp str, inp_ix) {
         return
     }
 
-    var i = inp_ix
+    # leading whitespace
+    var s = inp_ix
     loop {
-        if inp.data[i] != ' ' break
-        i = i + 1
+        if s >= inp.len {
+            print(str_which_link)
+            return
+        }
+        if inp.data[s] != ' ' break
+        s = s + 1
+    }
+    # exit name
+    var e = s
+    loop {
+        if e >= inp.len break
+        if inp.data[e] == ' ' break
+        e = e + 1
     }
 
     var to = str{}
-    to.len = inp.len - i8(i)
-    array_copy(inp.data[i], to.data, to.len)
+    to.len = i8(e - s)
+    if to.len == 0 {
+        print(str_go_where2) 
+    }
+
+    array_copy(inp.data[s], to.data, to.len)
+
     print(str_went)
     to.print()
     print(str_nl)
