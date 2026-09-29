@@ -9,6 +9,7 @@ type point {x, y}
 type object {pos point, color i32}
 
 type world { locations i[8] }
+# `i` is used when using the default integer type of the target platform
 
 type str {
     len i8,
