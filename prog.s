@@ -3561,8 +3561,8 @@ vars.end:
 ;    removed unreachable jumps: 2
 ; removed same target branches: 52
 ; inverted branches over jumps: 7
-
 ; max scratch registers in use: 4
 ;            max frames in use: 10
+;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B

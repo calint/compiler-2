@@ -2020,7 +2020,15 @@ func main() {
         assert(rejected);
         backend.finish();
     }
-    assert(rejected_output.str().empty());
+
+    // 'finish' reports scratch usage even when nothing was emitted
+    std::istringstream rejected_lines{rejected_output.str()};
+    std::string rejected_line;
+    while (std::getline(rejected_lines, rejected_line)) {
+        assert(rejected_line.empty() or
+               rejected_line == "# max scratch registers in use: 0");
+    }
+
     bool rejected_i64{};
     try {
         static_cast<void>(backend.make_register_operand("a0", integer64));
