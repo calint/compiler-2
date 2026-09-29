@@ -1,0 +1,16 @@
+# a missing first argument of a record type is reported as missing rather than
+# as a malformed record value
+
+type point {
+    x,
+    y
+}
+
+func point.moved(by point) res point {
+    res = {self.x + by.x, self.y + by.y}
+}
+
+func main() {
+    var p = point{1, 2}
+    var q = p.moved()
+}

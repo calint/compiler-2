@@ -834,13 +834,16 @@ class stmt_call : public expression {
         args_.reserve(params.size());
 
         for (size_t i{first}; i < params.size(); ++i) {
+            // otherwise the missing argument is reported as a parse error of
+            // the parameter's type
+            if (i == first and tz.peek_char_after_whitespace() == ')') {
+                throw_missing_argument(tz, params[i], i);
+            }
+
             if (i != first) {
                 const token t{tz.is_next_char_token(',')};
                 if (t.is_empty()) {
-                    throw compiler_exception{tz,
-                                             std::format("expected {} ('{}')",
-                                                         describe_argument(i),
-                                                         params[i].name())};
+                    throw_missing_argument(tz, params[i], i);
                 }
                 arg_delims_tk_.emplace_back(t);
             }
@@ -953,6 +956,15 @@ class stmt_call : public expression {
         args_.front().source_to(os);
         method_dot_tk_.source_to(os);
         tok().source_to(os);
+    }
+
+    [[noreturn]] auto throw_missing_argument(const tokenizer& tz,
+                                             const stmt_def_func_param& param,
+                                             const size_t index) const -> void {
+
+        throw compiler_exception{tz, std::format("expected {} ('{}')",
+                                                 describe_argument(index),
+                                                 param.name())};
     }
 
     //

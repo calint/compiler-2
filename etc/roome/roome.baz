@@ -3,12 +3,12 @@ dat     str_uc = "u c "
 dat  str_exits = "exits: "
 dat str_prompt = " > "
 dat     str_nl = "\n"
+dat  str_comma = ", "
 dat  str_erase = "\b \b"
 
 dat str_not_understood = "not understood"
 
-dat str_action_look = "l"
-dat str_action_go = "go"
+dat flag = "\n\nFLAG\n\n"
 
 func print(s i8[]) {
     write(1, s)
@@ -69,10 +69,10 @@ func name.print() {
 dat link_names = name[link_names_len]{
     { "none", 4 } 
 }
+dat link_names_len = i16(1)
 
 type link {
     link_name_id i16,
-    from i16,
     to i16,
 }
 
@@ -85,32 +85,30 @@ type room {
     links_len i8,
     objects i16[room_objects_len],
 }
-
-type entity {
-    name name,
-    room_id i16,
-    messages str[16],
-}
-
-func entity.print() {
-    write(1, self.name.data, self.name.len)
-}
-
 dat rooms = room[rooms_len]{
     { 
         { "roome", 5 },
         { "u r in roome", 12 },
         { "todo: find an exit", 18 },
         { { 0 }, 1 },
-        { {0, 0, 1} }, 1
+        { {0, 1} }, 1
     } 
 }
+dat rooms_len = i16(1)
 
+type entity {
+    name name,
+    room_id i16,
+    messages str[16],
+}
 dat entities = entity[entities_len]{
     { { "me", 2 }, 0 }
 }
-
 dat entities_len = 1
+
+func entity.print() {
+    write(1, self.name.data, self.name.len)
+}
 
 func room.print() {
     if self.description.len != 0 {
@@ -132,10 +130,11 @@ func room.print() {
         var i = i8(0)
         loop {
             if self.links_len == i break
+            if i != 0 print(str_comma)
             link_names[self.links[i].link_name_id].print()
-            print(str_nl)
             i = i + 1
         }
+        print(str_nl)
     }
     if self.note.len != 0 {
         self.note.print()
@@ -192,14 +191,19 @@ func token.is_empty() res bool {
     res = self.start == self.end
 }
 
+func token.make_copy_to_name(inp str) res name {
+    res.len = i8(self.len())
+    res.data = {}
+    array_copy(inp.data[self.start], res.data, res.len)
+}
+
 dat str_went_to = "went to "
 dat str_go_where = "go where\n"
 dat str_no_such_exit = "cannot go there\n"
 dat str_home = "home"
 
-dat flag = "\n\nFLAG\n\n"
-
 func action_go(cur_entity, inp str, tk token) {
+    tk.next(inp)
     if tk.is_empty() {
         print(str_go_where)
         return
@@ -233,17 +237,86 @@ func action_go(cur_entity, inp str, tk token) {
     print(str_nl)
 }
 
+func find_link_name_or_make(inp str, tk token) res i16 {
+    var i = i16(0)
+    loop {
+        if i == link_names_len break
+        if tk.is_name(inp, link_names[i]) break
+        i = i + 1
+    }
+
+    if i != link_names_len {
+        res = i
+        return
+    }
+
+    link_names[link_names_len] = tk.make_copy_to_name(inp)
+
+    res = link_names_len
+
+    link_names_len = link_names_len + 1
+}
+
+dat str_what_exit_name_to = "what is exit name to new room\n"
+dat str_what_exit_name_back = "what is exit name back to this room\n"
+
+func action_new_room(cur_entity, inp str, tk token) {
+    tk.next(inp)
+
+    if tk.is_empty() {
+        print(str_what_exit_name_to)
+        return
+    }
+
+    var cur_room_id = entities[cur_entity].room_id 
+
+    var cur_room_next_link_id = rooms[cur_room_id].links_len
+
+    var link_name_id = find_link_name_or_make(inp, tk)
+
+    tk.next(inp)
+    
+    if tk.is_empty() {
+        print(str_what_exit_name_back)
+        return
+    }
+
+    var link_name_back_id = find_link_name_or_make(inp, tk)
+
+    # link to next room
+    rooms[cur_room_id].links[cur_room_next_link_id] = { 
+        link_name_id,
+        rooms_len
+    }
+    rooms[cur_room_id].links_len = cur_room_next_link_id + 1
+
+    # link back to this from from the new room
+    rooms[rooms_len].links[0] = { 
+        link_name_back_id,
+        cur_room_id
+    }
+    rooms[rooms_len].links_len = 1
+
+    # increase number of rooms
+    rooms_len = rooms_len + 1
+}
+
+dat str_action_go = "go"
+dat str_action_new_room = "nr"
+
 func parse_input(cur_entity, inp str) {
     var tk = token{}
     tk.next(inp)
     if tk.is(inp, str_action_go) {
-        tk.next(inp)
         action_go(cur_entity, inp, tk)
-        return
-    }
 
-    print(str_not_understood)
-    print(str_nl)
+    } else if tk.is(inp, str_action_new_room) {
+        action_new_room(cur_entity, inp, tk)
+
+    } else {
+        print(str_not_understood)
+        print(str_nl)
+    }
 }
 
 func main() {
@@ -260,6 +333,7 @@ func main() {
         entities[cur_entity].name.print()
         print(str_prompt)
         inp.input()
+        print(str_nl)
         parse_input(cur_entity, inp)
     }
 }
