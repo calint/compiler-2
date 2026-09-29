@@ -4,19 +4,20 @@
 
 # default type is used if omitted (`i64` on x86_64 and `i32` on rv32i)
 
-type point {x, y}
+type point { x, y }
 
-type object {pos point, color i32}
+type object { pos point, color i32, }
 
 type world { locations i[8] }
-# `i` is used when using the default integer type of the target platform
+# `i` is the default integer type of the target platform
 
 type str {
     len i8,
-    data i8[127], # trailing comma allowed
+    data i8[127],
+    # trailing comma allowed
 }
 
-# initial data is initialized before variables
+# initial data is declared before variables
 
 dat   hello = "hello world from baz\n"
 dat prompt1 = "enter name:\n"
@@ -25,8 +26,7 @@ dat prompt3 = "hello "
 dat     dot = "."
 dat      nl = "\n"
 dat   colon = ": "
-dat    nums = i[4]{ 1 } # `i` is default integer type of target platform
-                        # remaining elements are zeroed
+dat    nums = i[4]{ 1 } # remaining elements are zeroed
 dat    str1 = str{ 3, "baz" } # a string initializes an `i8` array
                              # remaining fields are zeroed
 dat greeted = "names greeted: "

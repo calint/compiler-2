@@ -131,19 +131,20 @@ SUM:                            55           5586           2122          17883
 
 # default type is used if omitted (`i64` on x86_64 and `i32` on rv32i)
 
-type point {x, y}
+type point { x, y }
 
-type object {pos point, color i32}
+type object { pos point, color i32, }
 
 type world { locations i[8] }
-# `i` is used when using the default integer type of the target platform
+# `i` is the default integer type of the target platform
 
 type str {
     len i8,
-    data i8[127], # trailing comma allowed
+    data i8[127],
+    # trailing comma allowed
 }
 
-# initial data is initialized before variables
+# initial data is declared before variables
 
 dat   hello = "hello world from baz\n"
 dat prompt1 = "enter name:\n"
@@ -152,8 +153,7 @@ dat prompt3 = "hello "
 dat     dot = "."
 dat      nl = "\n"
 dat   colon = ": "
-dat    nums = i[4]{ 1 } # `i` is default integer type of target platform
-                        # remaining elements are zeroed
+dat    nums = i[4]{ 1 } # remaining elements are zeroed
 dat    str1 = str{ 3, "baz" } # a string initializes an `i8` array
                              # remaining fields are zeroed
 dat greeted = "names greeted: "
@@ -2192,22 +2192,22 @@ lea rbp, [dat]
 ;[14:1]        len :       0 :       1 :      no :           
 ;[14:1]       data :       1 :     127 :     yes :        127
 ;
-;[21:1] dat hello = "hello world from baz\n"
-;[21:7] hello: i8[21] (21 B @ [rbp])
-;[22:1] dat prompt1 = "enter name:\n"
-;[22:5] prompt1: i8[12] (12 B @ [rbp + 21])
-;[23:1] dat prompt2 = "that is not a name.\n"
-;[23:5] prompt2: i8[20] (20 B @ [rbp + 33])
-;[24:1] dat prompt3 = "hello "
-;[24:5] prompt3: i8[6] (6 B @ [rbp + 53])
-;[25:1] dat dot = "."
-;[25:9] dot: i8[1] (1 B @ [rbp + 59])
-;[26:1] dat nl = "\n"
-;[26:10] nl: i8[1] (1 B @ [rbp + 60])
-;[27:1] dat colon = ": "
-;[27:7] colon: i8[2] (2 B @ [rbp + 61])
-;[28:1] dat nums = i[4]{ 1 }
-;[28:8] nums: i64[4] (32 B @ [rbp + 64])
+;[22:1] dat hello = "hello world from baz\n"
+;[22:7] hello: i8[21] (21 B @ [rbp])
+;[23:1] dat prompt1 = "enter name:\n"
+;[23:5] prompt1: i8[12] (12 B @ [rbp + 21])
+;[24:1] dat prompt2 = "that is not a name.\n"
+;[24:5] prompt2: i8[20] (20 B @ [rbp + 33])
+;[25:1] dat prompt3 = "hello "
+;[25:5] prompt3: i8[6] (6 B @ [rbp + 53])
+;[26:1] dat dot = "."
+;[26:9] dot: i8[1] (1 B @ [rbp + 59])
+;[27:1] dat nl = "\n"
+;[27:10] nl: i8[1] (1 B @ [rbp + 60])
+;[28:1] dat colon = ": "
+;[28:7] colon: i8[2] (2 B @ [rbp + 61])
+;[29:1] dat nums = i[4]{ 1 }
+;[29:8] nums: i64[4] (32 B @ [rbp + 64])
 ;[30:1] dat str1 = str{ 3, "baz" }
 ;[30:8] str1: str (128 B @ [rbp + 96])
 ;[32:1] dat greeted = "names greeted: "
@@ -5657,35 +5657,35 @@ baz_bounds_panic:
 section .data
 align 16
 dat:
-;[21:7] hello
-;[21:15] i8[21]
+;[22:7] hello
+;[22:15] i8[21]
 db `hello world from baz\n`
-;[22:5] prompt1
-;[22:15] i8[12]
+;[23:5] prompt1
+;[23:15] i8[12]
 db `enter name:\n`
-;[23:5] prompt2
-;[23:15] i8[20]
+;[24:5] prompt2
+;[24:15] i8[20]
 db `that is not a name.\n`
-;[24:5] prompt3
-;[24:15] i8[6]
+;[25:5] prompt3
+;[25:15] i8[6]
 db `hello `
-;[25:9] dot
-;[25:15] i8[1]
-db `.`
-;[26:10] nl
+;[26:9] dot
 ;[26:15] i8[1]
+db `.`
+;[27:10] nl
+;[27:15] i8[1]
 db `\n`
-;[27:7] colon
-;[27:15] i8[2]
+;[28:7] colon
+;[28:15] i8[2]
 db `: `
 ; padding 1 B
 times 1 db 0
-;[28:8] nums
-;[28:15] i64[4]
-;[28:21] [0]
-;[28:21] i64
+;[29:8] nums
+;[29:15] i64[4]
+;[29:21] [0]
+;[29:21] i64
 dq 1
-;[28:15] pad 3 'i64' of size 8
+;[29:15] pad 3 'i64' of size 8
 times 24 db 0
 ;[30:8] str1
 ;[30:20] i8
