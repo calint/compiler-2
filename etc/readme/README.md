@@ -163,7 +163,7 @@ dat   names = 0
 # default is to inline functions
 
 func assert(ok bool) { if not ok exit(1) }
-# exit is a built-in function
+# `exit` is a built-in function
 
 func print(str i8[]) {
     write(1, str)
