@@ -1,8 +1,8 @@
 # user types are defined using keyword `type`
 
-# built-in types are `i63`, `i32`, `i16`, `i8` and `bool`
+# built-in types are `i64`, `i32`, `i16`, `i8` and `bool`, `i64` only on x86_64
 
-# default type is used if ommitted (`i64` on x86_64 and 'i32' on rv32i)
+# default type is used if omitted (`i64` on x86_64 and `i32` on rv32i)
 
 type point {x, y}
 
@@ -26,7 +26,10 @@ dat      nl = "\n"
 dat   colon = ": "
 dat    nums = i[4]{ 1 } # `i` is default integer type of target platform
                         # remaining elements are zeroed
-dat    str1 = str{ 3 }  # remaining fields are zeroed
+dat    str1 = str{ 3, "baz" } # a string initializes an `i8` array
+                             # remaining fields are zeroed
+dat greeted = "names greeted: "
+dat   names = 0
 
 # default is to inline functions
 
@@ -44,6 +47,11 @@ func point.fooz() {
     self.y = 0xb     # hex value 11
 }
 # functions can act on user types: `func point.fooz()` is called as `p.fooz()`
+
+func point.sum() res {
+    res = self.x + self.y
+}
+# methods can have a "return"
 
 func bar(arg) {
     if arg == 0 return
@@ -67,24 +75,34 @@ func inv(i i32) res i32 {
 func faz(arg i32[]) {
     arg[1] = 0xfe
 }
-# array arguments are declared with [] and optional type
+# array arguments are declared with the element type followed by `[]`, `i[]`
+# for the default type
 
 func str.input() {
     var nbytes = read(0, self.data)
     # read is built-in function that operates on file descriptors
     # it has 2 more optional arguments: count and start index
     self.len = i8(nbytes - 1)
-} 
+}
 
 func str.print() {
     write(1, self.data, self.len)
-} 
+}
+
+func greet(name str) {
+    print(prompt3)
+    name.print()
+    print(dot)
+    print(nl)
+    names = names + 1
+}
+# data is global, any function can read and assign it
 
 func point.at(x, y) self {
     self.x = x
     self.y = y
 }
-# a constructor builds its result `self` and must assign every field:
+# a constructor builds its result `self` and must assign every field
 
 func point.x(x) {
     self.x = x
@@ -103,7 +121,7 @@ const maybe = -1
 
 # limited support for non-inlined functions
 # arguments and "return" are references to memory locations
-# arrays not supported
+# array arguments not supported
 
 func noinline print_num(num) {
     # 19 digits of an i64 plus the sign
@@ -121,7 +139,7 @@ func noinline print_num(num) {
     if n > 0 {
         n = -n
     }
- 
+
     var i = buf_count
     loop {
         i = i - 1
@@ -129,12 +147,12 @@ func noinline print_num(num) {
         n = n / 10
         if n == 0 break
     }
- 
+
     if is_negative {
         i = i - 1
         buf[i] = '-'
     }
- 
+
     var write_pos = 0
     loop {
         buf[write_pos] = buf[i]
@@ -142,9 +160,20 @@ func noinline print_num(num) {
         i = i + 1
         if i == buf_count break
     }
- 
+
     write(1, buf, write_pos)
 }
+
+func noinline factorial(n) res {
+    res = 1
+    if n <= 1 return
+
+    var m = n - 1
+    var partial = factorial(m)
+    res = n * partial
+}
+# a non-inlined function can call itself
+# `return` leaves early, "return" must be assigned on every path
 
 func main() {
     var answer = 0
@@ -162,6 +191,41 @@ func main() {
     }
 
     assert(maybe == -1)
+
+    assert(nums[0] == 1 and nums[3] == 0)
+    assert(str1.len == 3 and str1.data[2] == 'z')
+
+    var a = 7
+    assert(a & 3 == 3)
+    assert(a | 8 == 15)
+    assert(a ^ 1 == 6)
+    assert(a << 2 == 28)
+    assert(-a >> 1 == -4)
+    # bitwise and, or, xor and shifts, `>>` keeps the sign
+
+    assert(a + a << 1 == 21)
+    assert((a + a) << 1 == 28)
+    # unlike c, bitwise operations and shifts bind tighter than arithmetic
+
+    assert(a != 0 and (a >= 7 or a < 0))
+    # `and`, `or` and `not` stop evaluating as soon as the result is known
+
+    var small = i8(100)
+    small = small + small
+    assert(small == -56)
+    # `i8(100)` gives the variable type `i8`, arithmetic wraps at its width
+
+    var wide = i(i16(small))
+    assert(wide == -56)
+    # `i(x)` converts to the default type
+
+#   small = wide
+#   compile time error because the value might not fit, narrowing must be
+#   acknowledged with a conversion
+
+    var letter = '\x41'
+    assert(letter == 'A')
+    # a character literal is a byte value, escapes `\n` and `\x41` are supported
 
     var arr = i32[4]{}
 
@@ -185,8 +249,13 @@ func main() {
     arr1[2] = -1
     assert(not arrays_equal(arr, arr1, 4))
 
+    var arr4 = arr
+    assert(equal(arr, arr4))
+    # initializing from an array copies it, `equal` compares same size arrays
+
 #   arr[ix] = ~inv(arr[ix - 1])
-#   compile time error because "return" and arguments may not share same storage
+#   `--checks=alias` rejects this because "return" and the argument may share
+#   storage
 
     ix = 3
     var tmp = ~inv(arr[ix - 1])
@@ -219,7 +288,7 @@ func main() {
     # user type initializer may be an expression
 
     assert(equal(p, q))
-    # `equal` is built-in function to compare user types for equality or same 
+    # `equal` is built-in function to compare user types for equality or same
     # size arrays
 
     q.x = 3
@@ -240,18 +309,23 @@ func main() {
     k = baz(1)
     assert(k == 2)
 
+    var five = 5
+    var f = factorial(five)
+    assert(f == 120)
+
     var p0 = point{baz(3), 0}
     assert(p0.x == 6)
 
     var pt = point.at(-1, -2)
     # a constructor builds its result `self` in the destination
     # `pt` has the type of the constructor
- 
+
     assert(pt.x == -1)
     assert(pt.y == -2)
 
     pt.x(2)
     assert(pt.x == 2)
+    assert(pt.sum() == 0)
 
     var x = 1
     var y = 2
@@ -271,12 +345,26 @@ func main() {
     assert(o2.pos.y == -2)
     assert(o2.color == 0xff0000)
 
+    o2.pos = {x, y}
+    assert(o2.pos.x == 1)
+    o2.pos = point{y, x}
+    assert(o2.pos.x == 2)
+    # the type name of a record literal is optional when assigned
+
+#   o2.pos = point{o2.pos.y, o2.pos.x}
+#   compile time error because `o2.pos.x` is read after the first field
+#   overwrote it
+
     var o3 = object[2]{}
     o3[0].pos.y = 73
 
     assert(o3[0].pos.y == 73)
     o3[1] = object.at(2, 74, 0xffffff)
     assert(o3[1].pos.y == 74)
+
+    o3[1].pos.fooz()
+    assert(o3[1].pos.sum() == 13)
+    # methods can be called on fields and array elements
 
     var worlds = world[8]{}
     worlds[1].locations[1] = 0xffee
@@ -295,6 +383,7 @@ func main() {
              worlds[1].locations,
              array_length(worlds[0].locations)
           ))
+
     var arr2 = i[]{ -1, 2 }
     assert(array_length(arr2) == 2)
     assert(arr2[0] == -1)
@@ -316,11 +405,18 @@ func main() {
             print(prompt2)
             continue
         } else {
-            print(prompt3)
-            nm.print()
-            print(dot)
-            print(nl)
+            greet(nm)
         }
     }
+
+    print(greeted)
+    print_num(names)
+    print(nl)
+
+    var bye = "bye from baz\n"
+    write(1, bye, 3)
+    write(1, bye, 1, array_length(bye) - 1)
+    # a string initializes an `i8` array of its size
+    # writes 3 elements, then 1 element from the last index
 }
 
