@@ -89,7 +89,7 @@ lui sp, 2048
 # [104:5] entities: entity[32] (66176 B @ [s0 + 81752])
 # [107:1] dat entities_len = 1
 # [107:5] entities_len: i32 (4 B @ [s0 + 147928])
-# [145:1] token : 4 B    fields:
+# [145:1] tokenizer : 4 B    fields:
 # [145:1]       name :  offset :    size :  array? : array size
 # [145:1]      start :       0 :       2 :      no :           
 # [145:1]        end :       2 :       2 :      no :           
@@ -1173,23 +1173,23 @@ main:
         func.parse_input.357.9:
             # [357:9] alias cur_entity -> cur_entity
             # [357:9] alias inp -> inp
-            # [325:5] var tk = token{}
-            # [325:9] tk: token (4 B @ [s0 + 148180])
-            # [325:9] tk = token{}
+            # [325:5] var tz = tokenizer{}
+            # [325:9] tz: tokenizer (4 B @ [s0 + 148180])
+            # [325:9] tz = tokenizer{}
             # [325:14] zero remaining fields: 4 B
             # [325:14] allocate scratch register -> t0
             lui t0, 36
             add t0, t0, s0
             sw zero, 724(t0)
             # [325:14] free scratch register t0
-            # [326:8] tk.next(inp)
-            # [163:6] token.next(inp str)
-            func.token.next.326.8.357.9:
-                # [326:8] alias self -> tk
+            # [326:8] tz.next(inp)
+            # [163:6] tokenizer.next(inp str)
+            func.tokenizer.next.326.8.357.9:
+                # [326:8] alias self -> tz
                 # [326:8] alias inp -> inp
                 # [164:10] self.skip_whitespace(inp)
-                # [150:6] token.skip_whitespace(inp str)
-                func.token.skip_whitespace.164.10.326.8.357.9:
+                # [150:6] tokenizer.skip_whitespace(inp str)
+                func.tokenizer.skip_whitespace.164.10.326.8.357.9:
                     # [164:10] alias self -> self
                     # [164:10] alias inp -> inp
                     # [151:5] self.start = self.end
@@ -1235,7 +1235,7 @@ main:
                             # [154:24] free scratch register t1
                             # [154:24] free scratch register t0
                             # [155:13] return
-                            j func.token.skip_whitespace.164.10.326.8.357.9.end
+                            j func.tokenizer.skip_whitespace.164.10.326.8.357.9.end
                         if.153.9.164.10.326.8.357.9.end:
                         if.157.12.164.10.326.8.357.9:
                         # [157:12] ? inp.data[self.start] != ' '
@@ -1303,7 +1303,7 @@ main:
                     sh t0, 726(t1)
                     # [160:16] free scratch register t1
                     # [160:16] free scratch register t0
-                func.token.skip_whitespace.164.10.326.8.357.9.end:
+                func.tokenizer.skip_whitespace.164.10.326.8.357.9.end:
                 # [165:5] self.end = self.start
                 # [165:16] self.start
                 # [165:16] allocate scratch register -> t0
@@ -1390,19 +1390,19 @@ main:
                     # [169:20] free scratch register t0
                 j loop.166.5.326.8.357.9
                 loop.166.5.326.8.357.9.end:
-            func.token.next.326.8.357.9.end:
+            func.tokenizer.next.326.8.357.9.end:
             if.327.8.357.9:
-            # [327:8] ? tk.is_str(inp, str_action_go)
-            # [327:8] ? shorthand: tk.is_str(inp, str_action_go)
+            # [327:8] ? tz.is_str(inp, str_action_go)
+            # [327:8] ? shorthand: tz.is_str(inp, str_action_go)
             cmp.327.8.357.9:
             # [327:8] allocate scratch register -> t0
-                # [327:11] t0 = tk.is_str(inp, str_action_go)
+                # [327:11] t0 = tz.is_str(inp, str_action_go)
                 # [327:11] = expression
-                # [327:11] tk.is_str(inp, str_action_go)
-                # [181:6] token.is_str(inp str, str i8[]) res bool
-                func.token.is_str.327.11.357.9:
+                # [327:11] tz.is_str(inp, str_action_go)
+                # [181:6] tokenizer.is_str(inp str, str i8[]) res bool
+                func.tokenizer.is_str.327.11.357.9:
                     # [327:11] alias res -> t0
-                    # [327:11] alias self -> tk
+                    # [327:11] alias self -> tz
                     # [327:11] alias inp -> inp
                     # [327:11] alias str -> str_action_go
                     # [182:5] res = self.len() == array_length(str) and arrays_equal(str, inp.data[self.start], array_length(str))
@@ -1413,8 +1413,8 @@ main:
                         # [182:16] t1 = self.len()
                         # [182:16] = expression
                         # [182:16] self.len()
-                        # [173:6] token.len() res
-                        func.token.len.182.16.327.11.357.9:
+                        # [173:6] tokenizer.len() res
+                        func.tokenizer.len.182.16.327.11.357.9:
                             # [182:16] alias res -> t1
                             # [182:16] alias self -> self
                             # [174:5] res = self.end - self.start
@@ -1430,7 +1430,7 @@ main:
                             lh t2, 724(t2)
                             sub t1, t1, t2
                             # [174:22] free scratch register t2
-                        func.token.len.182.16.327.11.357.9.end:
+                        func.tokenizer.len.182.16.327.11.357.9.end:
                     # [182:25] allocate scratch register -> t2
                         # [182:25] t2 = array_length(str)
                         # [182:25] = expression
@@ -1529,24 +1529,24 @@ main:
                         # [183:11] free scratch register t2
                         # [183:11] free scratch register t1
                     bool.182.11.327.11.357.9.end:
-                func.token.is_str.327.11.357.9.end:
+                func.tokenizer.is_str.327.11.357.9.end:
             beq t0, zero, if.330.15.357.9
             # [327:8] free scratch register t0
             if.327.8.357.9.code:
-                # [328:9] action_go(cur_entity, inp, tk)
-                # [215:6] action_go(cur_entity, inp str, tk token)
+                # [328:9] action_go(cur_entity, inp, tz)
+                # [215:6] action_go(cur_entity, inp str, tz tokenizer)
                 func.action_go.328.9.357.9:
                     # [328:9] alias cur_entity -> cur_entity
                     # [328:9] alias inp -> inp
-                    # [328:9] alias tk -> tk
-                    # [216:8] tk.next(inp)
-                    # [163:6] token.next(inp str)
-                    func.token.next.216.8.328.9.357.9:
-                        # [216:8] alias self -> tk
+                    # [328:9] alias tz -> tz
+                    # [216:8] tz.next(inp)
+                    # [163:6] tokenizer.next(inp str)
+                    func.tokenizer.next.216.8.328.9.357.9:
+                        # [216:8] alias self -> tz
                         # [216:8] alias inp -> inp
                         # [164:10] self.skip_whitespace(inp)
-                        # [150:6] token.skip_whitespace(inp str)
-                        func.token.skip_whitespace.164.10.216.8.328.9.357.9:
+                        # [150:6] tokenizer.skip_whitespace(inp str)
+                        func.tokenizer.skip_whitespace.164.10.216.8.328.9.357.9:
                             # [164:10] alias self -> self
                             # [164:10] alias inp -> inp
                             # [151:5] self.start = self.end
@@ -1592,7 +1592,7 @@ main:
                                     # [154:24] free scratch register t1
                                     # [154:24] free scratch register t0
                                     # [155:13] return
-                                    j func.token.skip_whitespace.164.10.216.8.328.9.357.9.end
+                                    j func.tokenizer.skip_whitespace.164.10.216.8.328.9.357.9.end
                                 if.153.9.164.10.216.8.328.9.357.9.end:
                                 if.157.12.164.10.216.8.328.9.357.9:
                                 # [157:12] ? inp.data[self.start] != ' '
@@ -1660,7 +1660,7 @@ main:
                             sh t0, 726(t1)
                             # [160:16] free scratch register t1
                             # [160:16] free scratch register t0
-                        func.token.skip_whitespace.164.10.216.8.328.9.357.9.end:
+                        func.tokenizer.skip_whitespace.164.10.216.8.328.9.357.9.end:
                         # [165:5] self.end = self.start
                         # [165:16] self.start
                         # [165:16] allocate scratch register -> t0
@@ -1747,19 +1747,19 @@ main:
                             # [169:20] free scratch register t0
                         j loop.166.5.216.8.328.9.357.9
                         loop.166.5.216.8.328.9.357.9.end:
-                    func.token.next.216.8.328.9.357.9.end:
+                    func.tokenizer.next.216.8.328.9.357.9.end:
                     if.217.8.328.9.357.9:
-                    # [217:8] ? tk.is_empty()
-                    # [217:8] ? shorthand: tk.is_empty()
+                    # [217:8] ? tz.is_empty()
+                    # [217:8] ? shorthand: tz.is_empty()
                     cmp.217.8.328.9.357.9:
                     # [217:8] allocate scratch register -> t0
-                        # [217:11] t0 = tk.is_empty()
+                        # [217:11] t0 = tz.is_empty()
                         # [217:11] = expression
-                        # [217:11] tk.is_empty()
-                        # [191:6] token.is_empty() res bool
-                        func.token.is_empty.217.11.328.9.357.9:
+                        # [217:11] tz.is_empty()
+                        # [191:6] tokenizer.is_empty() res bool
+                        func.tokenizer.is_empty.217.11.328.9.357.9:
                             # [217:11] alias res -> t0
-                            # [217:11] alias self -> tk
+                            # [217:11] alias self -> tz
                             # [192:5] res = self.start == self.end
                             # [192:11] ? self.start == self.end
                             # [192:11] ? self.start == self.end
@@ -1775,7 +1775,7 @@ main:
                             sltiu t0, t0, 1
                             # [192:11] free scratch register t1
                             bool.192.11.217.11.328.9.357.9.end:
-                        func.token.is_empty.217.11.328.9.357.9.end:
+                        func.tokenizer.is_empty.217.11.328.9.357.9.end:
                     beq t0, zero, if.217.5.328.9.357.9.end
                     # [217:8] free scratch register t0
                     if.217.8.328.9.357.9.code:
@@ -1804,17 +1804,17 @@ main:
                         j func.action_go.328.9.357.9.end
                     if.217.5.328.9.357.9.end:
                     if.222.8.328.9.357.9:
-                    # [222:8] ? tk.is_str(inp, str_home)
-                    # [222:8] ? shorthand: tk.is_str(inp, str_home)
+                    # [222:8] ? tz.is_str(inp, str_home)
+                    # [222:8] ? shorthand: tz.is_str(inp, str_home)
                     cmp.222.8.328.9.357.9:
                     # [222:8] allocate scratch register -> t0
-                        # [222:11] t0 = tk.is_str(inp, str_home)
+                        # [222:11] t0 = tz.is_str(inp, str_home)
                         # [222:11] = expression
-                        # [222:11] tk.is_str(inp, str_home)
-                        # [181:6] token.is_str(inp str, str i8[]) res bool
-                        func.token.is_str.222.11.328.9.357.9:
+                        # [222:11] tz.is_str(inp, str_home)
+                        # [181:6] tokenizer.is_str(inp str, str i8[]) res bool
+                        func.tokenizer.is_str.222.11.328.9.357.9:
                             # [222:11] alias res -> t0
-                            # [222:11] alias self -> tk
+                            # [222:11] alias self -> tz
                             # [222:11] alias inp -> inp
                             # [222:11] alias str -> str_home
                             # [182:5] res = self.len() == array_length(str) and arrays_equal(str, inp.data[self.start], array_length(str))
@@ -1825,8 +1825,8 @@ main:
                                 # [182:16] t1 = self.len()
                                 # [182:16] = expression
                                 # [182:16] self.len()
-                                # [173:6] token.len() res
-                                func.token.len.182.16.222.11.328.9.357.9:
+                                # [173:6] tokenizer.len() res
+                                func.tokenizer.len.182.16.222.11.328.9.357.9:
                                     # [182:16] alias res -> t1
                                     # [182:16] alias self -> self
                                     # [174:5] res = self.end - self.start
@@ -1842,7 +1842,7 @@ main:
                                     lh t2, 724(t2)
                                     sub t1, t1, t2
                                     # [174:22] free scratch register t2
-                                func.token.len.182.16.222.11.328.9.357.9.end:
+                                func.tokenizer.len.182.16.222.11.328.9.357.9.end:
                             # [182:25] allocate scratch register -> t2
                                 # [182:25] t2 = array_length(str)
                                 # [182:25] = expression
@@ -1941,7 +1941,7 @@ main:
                                 # [183:11] free scratch register t2
                                 # [183:11] free scratch register t1
                             bool.182.11.222.11.328.9.357.9.end:
-                        func.token.is_str.222.11.328.9.357.9.end:
+                        func.tokenizer.is_str.222.11.328.9.357.9.end:
                     beq t0, zero, if.222.5.328.9.357.9.end
                     # [222:8] free scratch register t0
                     if.222.8.328.9.357.9.code:
@@ -2137,13 +2137,13 @@ main:
                         # [232:28] free scratch register t1
                         # [232:28] free scratch register t0
                         if.233.12.328.9.357.9:
-                        # [233:12] ? tk.is_name(inp, link_names[link_name_id])
-                        # [233:12] ? shorthand: tk.is_name(inp, link_names[link_name_id])
+                        # [233:12] ? tz.is_name(inp, link_names[link_name_id])
+                        # [233:12] ? shorthand: tz.is_name(inp, link_names[link_name_id])
                         cmp.233.12.328.9.357.9:
                         # [233:12] allocate scratch register -> t0
-                            # [233:15] t0 = tk.is_name(inp, link_names[link_name_id])
+                            # [233:15] t0 = tz.is_name(inp, link_names[link_name_id])
                             # [233:15] = expression
-                            # [233:15] tk.is_name(inp, link_names[link_name_id])
+                            # [233:15] tz.is_name(inp, link_names[link_name_id])
                             # [233:39] allocate scratch register -> t1
                             # [233:39] set array index
                             # [233:39] link_name_id
@@ -2170,10 +2170,10 @@ main:
                             # [233:15] allocate scratch register -> t2
                             # [233:15] address of parameter 'nm'
                             add t2, s0, t1
-                            # [186:6] token.is_name(inp str, nm name) res bool
-                            func.token.is_name.233.15.328.9.357.9:
+                            # [186:6] tokenizer.is_name(inp str, nm name) res bool
+                            func.tokenizer.is_name.233.15.328.9.357.9:
                                 # [233:15] alias res -> t0
-                                # [233:15] alias self -> tk
+                                # [233:15] alias self -> tz
                                 # [233:15] alias inp -> inp
                                 # [233:15] alias nm -> link_names
                                 # [187:5] res = self.len() == nm.len and arrays_equal(nm.data, inp.data[self.start], nm.len)
@@ -2184,8 +2184,8 @@ main:
                                     # [187:16] t3 = self.len()
                                     # [187:16] = expression
                                     # [187:16] self.len()
-                                    # [173:6] token.len() res
-                                    func.token.len.187.16.233.15.328.9.357.9:
+                                    # [173:6] tokenizer.len() res
+                                    func.tokenizer.len.187.16.233.15.328.9.357.9:
                                         # [187:16] alias res -> t3
                                         # [187:16] alias self -> self
                                         # [174:5] res = self.end - self.start
@@ -2201,7 +2201,7 @@ main:
                                         lh t4, 724(t4)
                                         sub t3, t3, t4
                                         # [174:22] free scratch register t4
-                                    func.token.len.187.16.233.15.328.9.357.9.end:
+                                    func.tokenizer.len.187.16.233.15.328.9.357.9.end:
                                 lb t0, 99(t2)
                                 xor t0, t3, t0
                                 sltiu t0, t0, 1
@@ -2292,7 +2292,7 @@ main:
                                     # [188:11] free scratch register t3
                                 bool.187.11.233.15.328.9.357.9.end:
                                 # [233:15] free scratch register t2
-                            func.token.is_name.233.15.328.9.357.9.end:
+                            func.tokenizer.is_name.233.15.328.9.357.9.end:
                                 # [233:15] free scratch register t1
                         bne t0, zero, loop.230.5.328.9.357.9.end
                         # [233:12] free scratch register t0
@@ -2470,10 +2470,10 @@ main:
                         # [14:5] free named register a1
                         # [14:5] free named register a0
                     func.print.245.5.328.9.357.9.end:
-                    # [246:8] tk.print(inp)
-                    # [177:6] token.print(inp str)
-                    func.token.print.246.8.328.9.357.9:
-                        # [246:8] alias self -> tk
+                    # [246:8] tz.print(inp)
+                    # [177:6] tokenizer.print(inp str)
+                    func.tokenizer.print.246.8.328.9.357.9:
+                        # [246:8] alias self -> tz
                         # [246:8] alias inp -> inp
                         # [178:5] write(1, inp.data, self.len(), self.start)
                         # [178:5] allocate named register a0
@@ -2484,8 +2484,8 @@ main:
                         # [178:29] a2 = self.len()
                         # [178:29] = expression
                         # [178:29] self.len()
-                        # [173:6] token.len() res
-                        func.token.len.178.29.246.8.328.9.357.9:
+                        # [173:6] tokenizer.len() res
+                        func.tokenizer.len.178.29.246.8.328.9.357.9:
                             # [178:29] alias res -> a2
                             # [178:29] alias self -> self
                             # [174:5] res = self.end - self.start
@@ -2501,7 +2501,7 @@ main:
                             lh t0, 724(t0)
                             sub a2, a2, t0
                             # [174:22] free scratch register t0
-                        func.token.len.178.29.246.8.328.9.357.9.end:
+                        func.tokenizer.len.178.29.246.8.328.9.357.9.end:
                         # [178:36] allocate scratch register -> t0
                         # [178:36] self.start
                         lui t0, 36
@@ -2535,7 +2535,7 @@ main:
                         # [178:5] free named register a2
                         # [178:5] free named register a1
                         # [178:5] free named register a0
-                    func.token.print.246.8.328.9.357.9.end:
+                    func.tokenizer.print.246.8.328.9.357.9.end:
                     # [247:5] print(str_nl)
                     # [13:6] print(s i8[])
                     func.print.247.5.328.9.357.9:
@@ -2558,17 +2558,17 @@ main:
                 func.action_go.328.9.357.9.end:
             j if.327.5.357.9.end
             if.330.15.357.9:
-            # [330:15] ? tk.is_str(inp, str_action_new_room)
-            # [330:15] ? shorthand: tk.is_str(inp, str_action_new_room)
+            # [330:15] ? tz.is_str(inp, str_action_new_room)
+            # [330:15] ? shorthand: tz.is_str(inp, str_action_new_room)
             cmp.330.15.357.9:
             # [330:15] allocate scratch register -> t0
-                # [330:18] t0 = tk.is_str(inp, str_action_new_room)
+                # [330:18] t0 = tz.is_str(inp, str_action_new_room)
                 # [330:18] = expression
-                # [330:18] tk.is_str(inp, str_action_new_room)
-                # [181:6] token.is_str(inp str, str i8[]) res bool
-                func.token.is_str.330.18.357.9:
+                # [330:18] tz.is_str(inp, str_action_new_room)
+                # [181:6] tokenizer.is_str(inp str, str i8[]) res bool
+                func.tokenizer.is_str.330.18.357.9:
                     # [330:18] alias res -> t0
-                    # [330:18] alias self -> tk
+                    # [330:18] alias self -> tz
                     # [330:18] alias inp -> inp
                     # [330:18] alias str -> str_action_new_room
                     # [182:5] res = self.len() == array_length(str) and arrays_equal(str, inp.data[self.start], array_length(str))
@@ -2579,8 +2579,8 @@ main:
                         # [182:16] t1 = self.len()
                         # [182:16] = expression
                         # [182:16] self.len()
-                        # [173:6] token.len() res
-                        func.token.len.182.16.330.18.357.9:
+                        # [173:6] tokenizer.len() res
+                        func.tokenizer.len.182.16.330.18.357.9:
                             # [182:16] alias res -> t1
                             # [182:16] alias self -> self
                             # [174:5] res = self.end - self.start
@@ -2596,7 +2596,7 @@ main:
                             lh t2, 724(t2)
                             sub t1, t1, t2
                             # [174:22] free scratch register t2
-                        func.token.len.182.16.330.18.357.9.end:
+                        func.tokenizer.len.182.16.330.18.357.9.end:
                     # [182:25] allocate scratch register -> t2
                         # [182:25] t2 = array_length(str)
                         # [182:25] = expression
@@ -2695,24 +2695,24 @@ main:
                         # [183:11] free scratch register t2
                         # [183:11] free scratch register t1
                     bool.182.11.330.18.357.9.end:
-                func.token.is_str.330.18.357.9.end:
+                func.tokenizer.is_str.330.18.357.9.end:
             beq t0, zero, if.333.15.357.9
             # [330:15] free scratch register t0
             if.330.15.357.9.code:
-                # [331:9] action_new_room(cur_entity, inp, tk)
-                # [273:6] action_new_room(cur_entity, inp str, tk token)
+                # [331:9] action_new_room(cur_entity, inp, tz)
+                # [273:6] action_new_room(cur_entity, inp str, tz tokenizer)
                 func.action_new_room.331.9.357.9:
                     # [331:9] alias cur_entity -> cur_entity
                     # [331:9] alias inp -> inp
-                    # [331:9] alias tk -> tk
-                    # [274:8] tk.next(inp)
-                    # [163:6] token.next(inp str)
-                    func.token.next.274.8.331.9.357.9:
-                        # [274:8] alias self -> tk
+                    # [331:9] alias tz -> tz
+                    # [274:8] tz.next(inp)
+                    # [163:6] tokenizer.next(inp str)
+                    func.tokenizer.next.274.8.331.9.357.9:
+                        # [274:8] alias self -> tz
                         # [274:8] alias inp -> inp
                         # [164:10] self.skip_whitespace(inp)
-                        # [150:6] token.skip_whitespace(inp str)
-                        func.token.skip_whitespace.164.10.274.8.331.9.357.9:
+                        # [150:6] tokenizer.skip_whitespace(inp str)
+                        func.tokenizer.skip_whitespace.164.10.274.8.331.9.357.9:
                             # [164:10] alias self -> self
                             # [164:10] alias inp -> inp
                             # [151:5] self.start = self.end
@@ -2758,7 +2758,7 @@ main:
                                     # [154:24] free scratch register t1
                                     # [154:24] free scratch register t0
                                     # [155:13] return
-                                    j func.token.skip_whitespace.164.10.274.8.331.9.357.9.end
+                                    j func.tokenizer.skip_whitespace.164.10.274.8.331.9.357.9.end
                                 if.153.9.164.10.274.8.331.9.357.9.end:
                                 if.157.12.164.10.274.8.331.9.357.9:
                                 # [157:12] ? inp.data[self.start] != ' '
@@ -2826,7 +2826,7 @@ main:
                             sh t0, 726(t1)
                             # [160:16] free scratch register t1
                             # [160:16] free scratch register t0
-                        func.token.skip_whitespace.164.10.274.8.331.9.357.9.end:
+                        func.tokenizer.skip_whitespace.164.10.274.8.331.9.357.9.end:
                         # [165:5] self.end = self.start
                         # [165:16] self.start
                         # [165:16] allocate scratch register -> t0
@@ -2913,19 +2913,19 @@ main:
                             # [169:20] free scratch register t0
                         j loop.166.5.274.8.331.9.357.9
                         loop.166.5.274.8.331.9.357.9.end:
-                    func.token.next.274.8.331.9.357.9.end:
+                    func.tokenizer.next.274.8.331.9.357.9.end:
                     if.276.8.331.9.357.9:
-                    # [276:8] ? tk.is_empty()
-                    # [276:8] ? shorthand: tk.is_empty()
+                    # [276:8] ? tz.is_empty()
+                    # [276:8] ? shorthand: tz.is_empty()
                     cmp.276.8.331.9.357.9:
                     # [276:8] allocate scratch register -> t0
-                        # [276:11] t0 = tk.is_empty()
+                        # [276:11] t0 = tz.is_empty()
                         # [276:11] = expression
-                        # [276:11] tk.is_empty()
-                        # [191:6] token.is_empty() res bool
-                        func.token.is_empty.276.11.331.9.357.9:
+                        # [276:11] tz.is_empty()
+                        # [191:6] tokenizer.is_empty() res bool
+                        func.tokenizer.is_empty.276.11.331.9.357.9:
                             # [276:11] alias res -> t0
-                            # [276:11] alias self -> tk
+                            # [276:11] alias self -> tz
                             # [192:5] res = self.start == self.end
                             # [192:11] ? self.start == self.end
                             # [192:11] ? self.start == self.end
@@ -2941,7 +2941,7 @@ main:
                             sltiu t0, t0, 1
                             # [192:11] free scratch register t1
                             bool.192.11.276.11.331.9.357.9.end:
-                        func.token.is_empty.276.11.331.9.357.9.end:
+                        func.tokenizer.is_empty.276.11.331.9.357.9.end:
                     beq t0, zero, if.276.5.331.9.357.9.end
                     # [276:8] free scratch register t0
                     if.276.8.331.9.357.9.code:
@@ -3057,17 +3057,17 @@ main:
                     # [283:33] free scratch register t2
                     # [283:33] free scratch register t1
                     # [283:33] free scratch register t0
-                    # [285:5] var link_name_id = find_link_name_or_make(inp, tk)
+                    # [285:5] var link_name_id = find_link_name_or_make(inp, tz)
                     # [285:9] link_name_id: i16 (2 B @ [s0 + 148188])
-                    # [285:9] link_name_id = find_link_name_or_make(inp, tk)
-                    # [285:24] link_name_id = find_link_name_or_make(inp, tk)
+                    # [285:9] link_name_id = find_link_name_or_make(inp, tz)
+                    # [285:24] link_name_id = find_link_name_or_make(inp, tz)
                     # [285:24] = expression
-                    # [285:24] find_link_name_or_make(inp, tk)
-                    # [250:6] find_link_name_or_make(inp str, tk token) res i16
+                    # [285:24] find_link_name_or_make(inp, tz)
+                    # [250:6] find_link_name_or_make(inp str, tz tokenizer) res i16
                     func.find_link_name_or_make.285.24.331.9.357.9:
                         # [285:24] alias res -> link_name_id
                         # [285:24] alias inp -> inp
-                        # [285:24] alias tk -> tk
+                        # [285:24] alias tz -> tz
                         # [251:5] var i = i16(0)
                         # [251:9] i: i16 (2 B @ [s0 + 148190])
                         # [251:9] i = i16(0)
@@ -3097,13 +3097,13 @@ main:
                                 # [253:32] break
                             if.253.9.285.24.331.9.357.9.end:
                             if.254.12.285.24.331.9.357.9:
-                            # [254:12] ? tk.is_name(inp, link_names[i])
-                            # [254:12] ? shorthand: tk.is_name(inp, link_names[i])
+                            # [254:12] ? tz.is_name(inp, link_names[i])
+                            # [254:12] ? shorthand: tz.is_name(inp, link_names[i])
                             cmp.254.12.285.24.331.9.357.9:
                             # [254:12] allocate scratch register -> t0
-                                # [254:15] t0 = tk.is_name(inp, link_names[i])
+                                # [254:15] t0 = tz.is_name(inp, link_names[i])
                                 # [254:15] = expression
-                                # [254:15] tk.is_name(inp, link_names[i])
+                                # [254:15] tz.is_name(inp, link_names[i])
                                 # [254:39] allocate scratch register -> t1
                                 # [254:39] set array index
                                 # [254:39] i
@@ -3130,10 +3130,10 @@ main:
                                 # [254:15] allocate scratch register -> t2
                                 # [254:15] address of parameter 'nm'
                                 add t2, s0, t1
-                                # [186:6] token.is_name(inp str, nm name) res bool
-                                func.token.is_name.254.15.285.24.331.9.357.9:
+                                # [186:6] tokenizer.is_name(inp str, nm name) res bool
+                                func.tokenizer.is_name.254.15.285.24.331.9.357.9:
                                     # [254:15] alias res -> t0
-                                    # [254:15] alias self -> tk
+                                    # [254:15] alias self -> tz
                                     # [254:15] alias inp -> inp
                                     # [254:15] alias nm -> link_names
                                     # [187:5] res = self.len() == nm.len and arrays_equal(nm.data, inp.data[self.start], nm.len)
@@ -3144,8 +3144,8 @@ main:
                                         # [187:16] t3 = self.len()
                                         # [187:16] = expression
                                         # [187:16] self.len()
-                                        # [173:6] token.len() res
-                                        func.token.len.187.16.254.15.285.24.331.9.357.9:
+                                        # [173:6] tokenizer.len() res
+                                        func.tokenizer.len.187.16.254.15.285.24.331.9.357.9:
                                             # [187:16] alias res -> t3
                                             # [187:16] alias self -> self
                                             # [174:5] res = self.end - self.start
@@ -3161,7 +3161,7 @@ main:
                                             lh t4, 724(t4)
                                             sub t3, t3, t4
                                             # [174:22] free scratch register t4
-                                        func.token.len.187.16.254.15.285.24.331.9.357.9.end:
+                                        func.tokenizer.len.187.16.254.15.285.24.331.9.357.9.end:
                                     lb t0, 99(t2)
                                     xor t0, t3, t0
                                     sltiu t0, t0, 1
@@ -3252,7 +3252,7 @@ main:
                                         # [188:11] free scratch register t3
                                     bool.187.11.254.15.285.24.331.9.357.9.end:
                                     # [254:15] free scratch register t2
-                                func.token.is_name.254.15.285.24.331.9.357.9.end:
+                                func.tokenizer.is_name.254.15.285.24.331.9.357.9.end:
                                     # [254:15] free scratch register t1
                             bne t0, zero, loop.252.5.285.24.331.9.357.9.end
                             # [254:12] free scratch register t0
@@ -3305,7 +3305,7 @@ main:
                             # [260:9] return
                             j func.find_link_name_or_make.285.24.331.9.357.9.end
                         if.258.5.285.24.331.9.357.9.end:
-                        # [263:8] tk.copy_to_name(inp, link_names[link_names_len])
+                        # [263:8] tz.copy_to_name(inp, link_names[link_names_len])
                         # [263:37] allocate scratch register -> t0
                         # [263:37] set array index
                         # [263:37] link_names_len
@@ -3332,9 +3332,9 @@ main:
                         # [263:8] allocate scratch register -> t1
                         # [263:8] address of parameter 'dst'
                         add t1, s0, t0
-                        # [195:6] token.copy_to_name(inp str, dst name)
-                        func.token.copy_to_name.263.8.285.24.331.9.357.9:
-                            # [263:8] alias self -> tk
+                        # [195:6] tokenizer.copy_to_name(inp str, dst name)
+                        func.tokenizer.copy_to_name.263.8.285.24.331.9.357.9:
+                            # [263:8] alias self -> tz
                             # [263:8] alias inp -> inp
                             # [263:8] alias dst -> link_names
                             # [196:5] dst.len = i8(self.len())
@@ -3344,8 +3344,8 @@ main:
                                 # [196:23] t2 = self.len()
                                 # [196:23] = expression
                                 # [196:23] self.len()
-                                # [173:6] token.len() res
-                                func.token.len.196.23.263.8.285.24.331.9.357.9:
+                                # [173:6] tokenizer.len() res
+                                func.tokenizer.len.196.23.263.8.285.24.331.9.357.9:
                                     # [196:23] alias res -> t2
                                     # [196:23] alias self -> self
                                     # [174:5] res = self.end - self.start
@@ -3361,7 +3361,7 @@ main:
                                     lh t3, 724(t3)
                                     sub t2, t2, t3
                                     # [174:22] free scratch register t3
-                                func.token.len.196.23.263.8.285.24.331.9.357.9.end:
+                                func.tokenizer.len.196.23.263.8.285.24.331.9.357.9.end:
                             sb t2, 99(t1)
                             # [196:15] free scratch register t2
                             # [197:5] array_copy(inp.data[self.start], dst.data, dst.len)
@@ -3436,7 +3436,7 @@ main:
                             # [197:5] free scratch register t3
                             # [197:5] free scratch register t2
                             # [263:8] free scratch register t1
-                        func.token.copy_to_name.263.8.285.24.331.9.357.9.end:
+                        func.tokenizer.copy_to_name.263.8.285.24.331.9.357.9.end:
                             # [263:8] free scratch register t0
                         # [265:5] res = link_names_len
                         # [265:11] link_names_len
@@ -3464,14 +3464,14 @@ main:
                         # [267:22] free scratch register t1
                         # [267:22] free scratch register t0
                     func.find_link_name_or_make.285.24.331.9.357.9.end:
-                    # [287:8] tk.next(inp)
-                    # [163:6] token.next(inp str)
-                    func.token.next.287.8.331.9.357.9:
-                        # [287:8] alias self -> tk
+                    # [287:8] tz.next(inp)
+                    # [163:6] tokenizer.next(inp str)
+                    func.tokenizer.next.287.8.331.9.357.9:
+                        # [287:8] alias self -> tz
                         # [287:8] alias inp -> inp
                         # [164:10] self.skip_whitespace(inp)
-                        # [150:6] token.skip_whitespace(inp str)
-                        func.token.skip_whitespace.164.10.287.8.331.9.357.9:
+                        # [150:6] tokenizer.skip_whitespace(inp str)
+                        func.tokenizer.skip_whitespace.164.10.287.8.331.9.357.9:
                             # [164:10] alias self -> self
                             # [164:10] alias inp -> inp
                             # [151:5] self.start = self.end
@@ -3517,7 +3517,7 @@ main:
                                     # [154:24] free scratch register t1
                                     # [154:24] free scratch register t0
                                     # [155:13] return
-                                    j func.token.skip_whitespace.164.10.287.8.331.9.357.9.end
+                                    j func.tokenizer.skip_whitespace.164.10.287.8.331.9.357.9.end
                                 if.153.9.164.10.287.8.331.9.357.9.end:
                                 if.157.12.164.10.287.8.331.9.357.9:
                                 # [157:12] ? inp.data[self.start] != ' '
@@ -3585,7 +3585,7 @@ main:
                             sh t0, 726(t1)
                             # [160:16] free scratch register t1
                             # [160:16] free scratch register t0
-                        func.token.skip_whitespace.164.10.287.8.331.9.357.9.end:
+                        func.tokenizer.skip_whitespace.164.10.287.8.331.9.357.9.end:
                         # [165:5] self.end = self.start
                         # [165:16] self.start
                         # [165:16] allocate scratch register -> t0
@@ -3672,19 +3672,19 @@ main:
                             # [169:20] free scratch register t0
                         j loop.166.5.287.8.331.9.357.9
                         loop.166.5.287.8.331.9.357.9.end:
-                    func.token.next.287.8.331.9.357.9.end:
+                    func.tokenizer.next.287.8.331.9.357.9.end:
                     if.289.8.331.9.357.9:
-                    # [289:8] ? tk.is_empty()
-                    # [289:8] ? shorthand: tk.is_empty()
+                    # [289:8] ? tz.is_empty()
+                    # [289:8] ? shorthand: tz.is_empty()
                     cmp.289.8.331.9.357.9:
                     # [289:8] allocate scratch register -> t0
-                        # [289:11] t0 = tk.is_empty()
+                        # [289:11] t0 = tz.is_empty()
                         # [289:11] = expression
-                        # [289:11] tk.is_empty()
-                        # [191:6] token.is_empty() res bool
-                        func.token.is_empty.289.11.331.9.357.9:
+                        # [289:11] tz.is_empty()
+                        # [191:6] tokenizer.is_empty() res bool
+                        func.tokenizer.is_empty.289.11.331.9.357.9:
                             # [289:11] alias res -> t0
-                            # [289:11] alias self -> tk
+                            # [289:11] alias self -> tz
                             # [192:5] res = self.start == self.end
                             # [192:11] ? self.start == self.end
                             # [192:11] ? self.start == self.end
@@ -3700,7 +3700,7 @@ main:
                             sltiu t0, t0, 1
                             # [192:11] free scratch register t1
                             bool.192.11.289.11.331.9.357.9.end:
-                        func.token.is_empty.289.11.331.9.357.9.end:
+                        func.tokenizer.is_empty.289.11.331.9.357.9.end:
                     beq t0, zero, if.289.5.331.9.357.9.end
                     # [289:8] free scratch register t0
                     if.289.8.331.9.357.9.code:
@@ -3728,17 +3728,17 @@ main:
                         # [291:9] return
                         j func.action_new_room.331.9.357.9.end
                     if.289.5.331.9.357.9.end:
-                    # [294:5] var link_name_back_id = find_link_name_or_make(inp, tk)
+                    # [294:5] var link_name_back_id = find_link_name_or_make(inp, tz)
                     # [294:9] link_name_back_id: i16 (2 B @ [s0 + 148190])
-                    # [294:9] link_name_back_id = find_link_name_or_make(inp, tk)
-                    # [294:29] link_name_back_id = find_link_name_or_make(inp, tk)
+                    # [294:9] link_name_back_id = find_link_name_or_make(inp, tz)
+                    # [294:29] link_name_back_id = find_link_name_or_make(inp, tz)
                     # [294:29] = expression
-                    # [294:29] find_link_name_or_make(inp, tk)
-                    # [250:6] find_link_name_or_make(inp str, tk token) res i16
+                    # [294:29] find_link_name_or_make(inp, tz)
+                    # [250:6] find_link_name_or_make(inp str, tz tokenizer) res i16
                     func.find_link_name_or_make.294.29.331.9.357.9:
                         # [294:29] alias res -> link_name_back_id
                         # [294:29] alias inp -> inp
-                        # [294:29] alias tk -> tk
+                        # [294:29] alias tz -> tz
                         # [251:5] var i = i16(0)
                         # [251:9] i: i16 (2 B @ [s0 + 148192])
                         # [251:9] i = i16(0)
@@ -3768,13 +3768,13 @@ main:
                                 # [253:32] break
                             if.253.9.294.29.331.9.357.9.end:
                             if.254.12.294.29.331.9.357.9:
-                            # [254:12] ? tk.is_name(inp, link_names[i])
-                            # [254:12] ? shorthand: tk.is_name(inp, link_names[i])
+                            # [254:12] ? tz.is_name(inp, link_names[i])
+                            # [254:12] ? shorthand: tz.is_name(inp, link_names[i])
                             cmp.254.12.294.29.331.9.357.9:
                             # [254:12] allocate scratch register -> t0
-                                # [254:15] t0 = tk.is_name(inp, link_names[i])
+                                # [254:15] t0 = tz.is_name(inp, link_names[i])
                                 # [254:15] = expression
-                                # [254:15] tk.is_name(inp, link_names[i])
+                                # [254:15] tz.is_name(inp, link_names[i])
                                 # [254:39] allocate scratch register -> t1
                                 # [254:39] set array index
                                 # [254:39] i
@@ -3801,10 +3801,10 @@ main:
                                 # [254:15] allocate scratch register -> t2
                                 # [254:15] address of parameter 'nm'
                                 add t2, s0, t1
-                                # [186:6] token.is_name(inp str, nm name) res bool
-                                func.token.is_name.254.15.294.29.331.9.357.9:
+                                # [186:6] tokenizer.is_name(inp str, nm name) res bool
+                                func.tokenizer.is_name.254.15.294.29.331.9.357.9:
                                     # [254:15] alias res -> t0
-                                    # [254:15] alias self -> tk
+                                    # [254:15] alias self -> tz
                                     # [254:15] alias inp -> inp
                                     # [254:15] alias nm -> link_names
                                     # [187:5] res = self.len() == nm.len and arrays_equal(nm.data, inp.data[self.start], nm.len)
@@ -3815,8 +3815,8 @@ main:
                                         # [187:16] t3 = self.len()
                                         # [187:16] = expression
                                         # [187:16] self.len()
-                                        # [173:6] token.len() res
-                                        func.token.len.187.16.254.15.294.29.331.9.357.9:
+                                        # [173:6] tokenizer.len() res
+                                        func.tokenizer.len.187.16.254.15.294.29.331.9.357.9:
                                             # [187:16] alias res -> t3
                                             # [187:16] alias self -> self
                                             # [174:5] res = self.end - self.start
@@ -3832,7 +3832,7 @@ main:
                                             lh t4, 724(t4)
                                             sub t3, t3, t4
                                             # [174:22] free scratch register t4
-                                        func.token.len.187.16.254.15.294.29.331.9.357.9.end:
+                                        func.tokenizer.len.187.16.254.15.294.29.331.9.357.9.end:
                                     lb t0, 99(t2)
                                     xor t0, t3, t0
                                     sltiu t0, t0, 1
@@ -3923,7 +3923,7 @@ main:
                                         # [188:11] free scratch register t3
                                     bool.187.11.254.15.294.29.331.9.357.9.end:
                                     # [254:15] free scratch register t2
-                                func.token.is_name.254.15.294.29.331.9.357.9.end:
+                                func.tokenizer.is_name.254.15.294.29.331.9.357.9.end:
                                     # [254:15] free scratch register t1
                             bne t0, zero, loop.252.5.294.29.331.9.357.9.end
                             # [254:12] free scratch register t0
@@ -3976,7 +3976,7 @@ main:
                             # [260:9] return
                             j func.find_link_name_or_make.294.29.331.9.357.9.end
                         if.258.5.294.29.331.9.357.9.end:
-                        # [263:8] tk.copy_to_name(inp, link_names[link_names_len])
+                        # [263:8] tz.copy_to_name(inp, link_names[link_names_len])
                         # [263:37] allocate scratch register -> t0
                         # [263:37] set array index
                         # [263:37] link_names_len
@@ -4003,9 +4003,9 @@ main:
                         # [263:8] allocate scratch register -> t1
                         # [263:8] address of parameter 'dst'
                         add t1, s0, t0
-                        # [195:6] token.copy_to_name(inp str, dst name)
-                        func.token.copy_to_name.263.8.294.29.331.9.357.9:
-                            # [263:8] alias self -> tk
+                        # [195:6] tokenizer.copy_to_name(inp str, dst name)
+                        func.tokenizer.copy_to_name.263.8.294.29.331.9.357.9:
+                            # [263:8] alias self -> tz
                             # [263:8] alias inp -> inp
                             # [263:8] alias dst -> link_names
                             # [196:5] dst.len = i8(self.len())
@@ -4015,8 +4015,8 @@ main:
                                 # [196:23] t2 = self.len()
                                 # [196:23] = expression
                                 # [196:23] self.len()
-                                # [173:6] token.len() res
-                                func.token.len.196.23.263.8.294.29.331.9.357.9:
+                                # [173:6] tokenizer.len() res
+                                func.tokenizer.len.196.23.263.8.294.29.331.9.357.9:
                                     # [196:23] alias res -> t2
                                     # [196:23] alias self -> self
                                     # [174:5] res = self.end - self.start
@@ -4032,7 +4032,7 @@ main:
                                     lh t3, 724(t3)
                                     sub t2, t2, t3
                                     # [174:22] free scratch register t3
-                                func.token.len.196.23.263.8.294.29.331.9.357.9.end:
+                                func.tokenizer.len.196.23.263.8.294.29.331.9.357.9.end:
                             sb t2, 99(t1)
                             # [196:15] free scratch register t2
                             # [197:5] array_copy(inp.data[self.start], dst.data, dst.len)
@@ -4107,7 +4107,7 @@ main:
                             # [197:5] free scratch register t3
                             # [197:5] free scratch register t2
                             # [263:8] free scratch register t1
-                        func.token.copy_to_name.263.8.294.29.331.9.357.9.end:
+                        func.tokenizer.copy_to_name.263.8.294.29.331.9.357.9.end:
                             # [263:8] free scratch register t0
                         # [265:5] res = link_names_len
                         # [265:11] link_names_len
@@ -4368,17 +4368,17 @@ main:
                 func.action_new_room.331.9.357.9.end:
             j if.327.5.357.9.end
             if.333.15.357.9:
-            # [333:15] ? tk.is_str(inp, str_action_set_room_description)
-            # [333:15] ? shorthand: tk.is_str(inp, str_action_set_room_description)
+            # [333:15] ? tz.is_str(inp, str_action_set_room_description)
+            # [333:15] ? shorthand: tz.is_str(inp, str_action_set_room_description)
             cmp.333.15.357.9:
             # [333:15] allocate scratch register -> t0
-                # [333:18] t0 = tk.is_str(inp, str_action_set_room_description)
+                # [333:18] t0 = tz.is_str(inp, str_action_set_room_description)
                 # [333:18] = expression
-                # [333:18] tk.is_str(inp, str_action_set_room_description)
-                # [181:6] token.is_str(inp str, str i8[]) res bool
-                func.token.is_str.333.18.357.9:
+                # [333:18] tz.is_str(inp, str_action_set_room_description)
+                # [181:6] tokenizer.is_str(inp str, str i8[]) res bool
+                func.tokenizer.is_str.333.18.357.9:
                     # [333:18] alias res -> t0
-                    # [333:18] alias self -> tk
+                    # [333:18] alias self -> tz
                     # [333:18] alias inp -> inp
                     # [333:18] alias str -> str_action_set_room_description
                     # [182:5] res = self.len() == array_length(str) and arrays_equal(str, inp.data[self.start], array_length(str))
@@ -4389,8 +4389,8 @@ main:
                         # [182:16] t1 = self.len()
                         # [182:16] = expression
                         # [182:16] self.len()
-                        # [173:6] token.len() res
-                        func.token.len.182.16.333.18.357.9:
+                        # [173:6] tokenizer.len() res
+                        func.tokenizer.len.182.16.333.18.357.9:
                             # [182:16] alias res -> t1
                             # [182:16] alias self -> self
                             # [174:5] res = self.end - self.start
@@ -4406,7 +4406,7 @@ main:
                             lh t2, 724(t2)
                             sub t1, t1, t2
                             # [174:22] free scratch register t2
-                        func.token.len.182.16.333.18.357.9.end:
+                        func.tokenizer.len.182.16.333.18.357.9.end:
                     # [182:25] allocate scratch register -> t2
                         # [182:25] t2 = array_length(str)
                         # [182:25] = expression
@@ -4505,20 +4505,20 @@ main:
                         # [183:11] free scratch register t2
                         # [183:11] free scratch register t1
                     bool.182.11.333.18.357.9.end:
-                func.token.is_str.333.18.357.9.end:
+                func.tokenizer.is_str.333.18.357.9.end:
             beq t0, zero, if.327.5.357.9.else
             # [333:15] free scratch register t0
             if.333.15.357.9.code:
-                # [334:9] str_action_set_room_description(cur_entity, inp, tk)
-                # [314:6] str_action_set_room_description(cur_entity, inp str, tk token)
+                # [334:9] str_action_set_room_description(cur_entity, inp, tz)
+                # [314:6] str_action_set_room_description(cur_entity, inp str, tz tokenizer)
                 func.str_action_set_room_description.334.9.357.9:
                     # [334:9] alias cur_entity -> cur_entity
                     # [334:9] alias inp -> inp
-                    # [334:9] alias tk -> tk
-                    # [315:8] tk.skip_whitespace(inp)
-                    # [150:6] token.skip_whitespace(inp str)
-                    func.token.skip_whitespace.315.8.334.9.357.9:
-                        # [315:8] alias self -> tk
+                    # [334:9] alias tz -> tz
+                    # [315:8] tz.skip_whitespace(inp)
+                    # [150:6] tokenizer.skip_whitespace(inp str)
+                    func.tokenizer.skip_whitespace.315.8.334.9.357.9:
+                        # [315:8] alias self -> tz
                         # [315:8] alias inp -> inp
                         # [151:5] self.start = self.end
                         # [151:18] self.end
@@ -4563,7 +4563,7 @@ main:
                                 # [154:24] free scratch register t1
                                 # [154:24] free scratch register t0
                                 # [155:13] return
-                                j func.token.skip_whitespace.315.8.334.9.357.9.end
+                                j func.tokenizer.skip_whitespace.315.8.334.9.357.9.end
                             if.153.9.315.8.334.9.357.9.end:
                             if.157.12.315.8.334.9.357.9:
                             # [157:12] ? inp.data[self.start] != ' '
@@ -4631,11 +4631,11 @@ main:
                         sh t0, 726(t1)
                         # [160:16] free scratch register t1
                         # [160:16] free scratch register t0
-                    func.token.skip_whitespace.315.8.334.9.357.9.end:
-                    # [316:8] tk.to_end(inp)
-                    # [205:6] token.to_end(inp str)
-                    func.token.to_end.316.8.334.9.357.9:
-                        # [316:8] alias self -> tk
+                    func.tokenizer.skip_whitespace.315.8.334.9.357.9.end:
+                    # [316:8] tz.to_end(inp)
+                    # [205:6] tokenizer.to_end(inp str)
+                    func.tokenizer.to_end.316.8.334.9.357.9:
+                        # [316:8] alias self -> tz
                         # [316:8] alias inp -> inp
                         # [206:5] self.start = self.end
                         # [206:18] self.end
@@ -4661,8 +4661,8 @@ main:
                         sh t0, 726(t1)
                         # [207:16] free scratch register t1
                         # [207:16] free scratch register t0
-                    func.token.to_end.316.8.334.9.357.9.end:
-                    # [317:8] tk.copy_to_str(inp, rooms[entities[cur_entity].room_id].description)
+                    func.tokenizer.to_end.316.8.334.9.357.9.end:
+                    # [317:8] tz.copy_to_str(inp, rooms[entities[cur_entity].room_id].description)
                     # [317:31] allocate scratch register -> t0
                     # [317:31] set array index
                     # [317:31] entities[cur_entity].room_id
@@ -4727,9 +4727,9 @@ main:
                     add t1, t1, t2
                     # [317:8] free scratch register t2
                     addi t1, t1, 1127
-                    # [200:6] token.copy_to_str(inp str, dst str)
-                    func.token.copy_to_str.317.8.334.9.357.9:
-                        # [317:8] alias self -> tk
+                    # [200:6] tokenizer.copy_to_str(inp str, dst str)
+                    func.tokenizer.copy_to_str.317.8.334.9.357.9:
+                        # [317:8] alias self -> tz
                         # [317:8] alias inp -> inp
                         # [317:8] alias dst -> rooms.description
                         # [201:5] dst.len = i8(self.len())
@@ -4739,8 +4739,8 @@ main:
                             # [201:23] t2 = self.len()
                             # [201:23] = expression
                             # [201:23] self.len()
-                            # [173:6] token.len() res
-                            func.token.len.201.23.317.8.334.9.357.9:
+                            # [173:6] tokenizer.len() res
+                            func.tokenizer.len.201.23.317.8.334.9.357.9:
                                 # [201:23] alias res -> t2
                                 # [201:23] alias self -> self
                                 # [174:5] res = self.end - self.start
@@ -4756,7 +4756,7 @@ main:
                                 lh t3, 724(t3)
                                 sub t2, t2, t3
                                 # [174:22] free scratch register t3
-                            func.token.len.201.23.317.8.334.9.357.9.end:
+                            func.tokenizer.len.201.23.317.8.334.9.357.9.end:
                         sb t2, 127(t1)
                         # [201:15] free scratch register t2
                         # [202:5] array_copy(inp.data[self.start], dst.data, dst.len)
@@ -4831,7 +4831,7 @@ main:
                         # [202:5] free scratch register t3
                         # [202:5] free scratch register t2
                         # [317:8] free scratch register t1
-                    func.token.copy_to_str.317.8.334.9.357.9.end:
+                    func.tokenizer.copy_to_str.317.8.334.9.357.9.end:
                         # [317:8] free scratch register t0
                 func.str_action_set_room_description.334.9.357.9.end:
             j if.327.5.357.9.end
