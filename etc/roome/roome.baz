@@ -141,16 +141,33 @@ func room.print() {
     }
 }
 
-dat str_went = "went\n"
+dat str_went = "went to "
+dat str_go_where = "go where\n"
 
-func action_go(cur_entity) {
+func action_go(cur_entity, inp str, inp_ix) {
+    if inp_ix >= inp.len {
+        print(str_go_where)
+        return
+    }
+
+    var i = inp_ix
+    loop {
+        if inp.data[i] != ' ' break
+        i = i + 1
+    }
+
+    var to = str{}
+    to.len = inp.len - i8(i)
+    array_copy(inp.data[i], to.data, to.len)
     print(str_went)
+    to.print()
+    print(str_nl)
 }
 
 func parse_input(cur_entity, inp str) {
     if i(inp.len) >= array_length(str_action_go) and
        arrays_equal(str_action_go, inp.data, array_length(str_action_go)) {
-        action_go(cur_entity)
+        action_go(cur_entity, inp, array_length(str_action_go))
         return
     }
 
