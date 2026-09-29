@@ -141,8 +141,8 @@ func room.print() {
     }
 }
 
-dat str_went = "went to "
-dat str_which_link = "go where\n"
+dat str_went_to = "went to "
+dat str_go_where = "go where\n"
 
 func next_token(inp str, s, e) {
     # leading whitespace
@@ -168,14 +168,14 @@ func action_go(cur_entity, inp str, inp_ix) {
     var e = s
     next_token(inp, s, e)
     if s == e {
-        print(str_which_link)
+        print(str_go_where)
         return
     }
 
     var to = str{}
     to.len = i8(e - s)
     array_copy(inp.data[s], to.data, to.len)
-    print(str_went)
+    print(str_went_to)
     to.print()
     print(str_nl)
 }
