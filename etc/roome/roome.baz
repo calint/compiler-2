@@ -1,4 +1,4 @@
-dat  str_hello = "\nwelcome to adventure #6\n    type 'help'\n\n"
+dat  str_hello = "\nwelcome to adventure #6\n    type 'help'\n"
 dat     str_uc = "u c "
 dat  str_exits = "exits: "
 dat str_prompt = " > "
@@ -43,7 +43,7 @@ const id_list_len = 32
 const room_objects_len = 64
 const room_entities_len = 32
 const room_links_len = 8
-const names_len = 1024
+const link_names_len = 1024
 const rooms_len = 128
 const entities_len = 32
 
@@ -61,12 +61,12 @@ func name.print() {
     write(1, self.text, self.len)
 }
 
-dat names = name[names_len]{
+dat link_names = name[link_names_len]{
     { "none", 4 } 
 }
 
 type link {
-    name i16,
+    link_name_id i16,
     from i16,
     to i16,
 }
@@ -125,13 +125,15 @@ func room.print() {
         var i = i8(0)
         loop {
             if self.links_len == i break
-            names[self.links[i].name].print()
+            link_names[self.links[i].link_name_id].print()
             print(str_nl)
             i = i + 1
         }
     }
-    self.note.print()
-    print(str_nl)
+    if self.note.len != 0 {
+        self.note.print()
+        print(str_nl)
+    }
 }
 
 func main() {
@@ -143,6 +145,7 @@ func main() {
         if cur_entity == entities_len {
             cur_entity = 0
         }
+        print(str_nl)
         rooms[entities[cur_entity].room].print()
         entities[cur_entity].name.print()
         print(str_prompt)
