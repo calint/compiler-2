@@ -112,6 +112,7 @@ func entity.print() {
 }
 
 dat str_u_r_in = "u r in "
+
 func room.print() {
     if self.name.len != 0 {
         print(str_u_r_in)
