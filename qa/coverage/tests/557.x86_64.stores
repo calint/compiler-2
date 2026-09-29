@@ -1,4 +1,4 @@
-=== 11: dat expected_high[] i8 = "\xff\x80\x7f\x01"
+=== 11: dat expected_high = "\xff\x80\x7f\x01"
 === 16:     zeros = "\0\0"
     mov word [rbp + 16], 0
     mov word [rbp + 18], 0

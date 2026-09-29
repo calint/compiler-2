@@ -3553,7 +3553,7 @@ dat.end:
 section .bss.vars nobits alloc write
 align 16
 vars:
-resb 131072
+resb 65536
 vars.end:
 ; free named register rbp
 

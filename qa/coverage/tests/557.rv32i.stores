@@ -1,4 +1,4 @@
-=== 11: dat expected_high[] i8 = "\xff\x80\x7f\x01"
+=== 11: dat expected_high = "\xff\x80\x7f\x01"
 === 16:     zeros = "\0\0"
     sh zero, 16(s0)
     sh zero, 18(s0)
