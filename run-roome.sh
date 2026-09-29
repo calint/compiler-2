@@ -17,7 +17,7 @@ fi
 # the emulator requires an sd card image which the program does not use
 SDCARD="$(mktemp)"
 
-./baz --target=rv32i-fpga --vars=131072 --checks=upper,lower,line,alias \
+./baz --target=rv32i-fpga --vars=131072 --checks=noub \
     etc/roome/roome.baz >etc/roome/roome.s
 
 # ctrl-c skips the emulator's terminal restore

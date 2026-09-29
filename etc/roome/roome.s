@@ -91,6 +91,24 @@ main:
         sw t0, 128(s0)
         # [89:19] free scratch register t0
         # [90:9] print_num(counter)
+        # [90:9] frame capacity check (--checks=frame)
+        # [90:9] allocate scratch register -> t0
+        # [90:9] allocate scratch register -> t1
+        addi t0, s0, 260
+        bltu t0, s0, 1f
+        la t1, vars
+        bltu t0, t1, 1f
+        la t1, vars.end
+        bltu t1, t0, 1f
+        sub t1, t1, t0
+        lui t0, %hi(size.func.print_num)
+        addi t0, t0, %lo(size.func.print_num)
+        bgeu t1, t0, 2f
+        1:
+        j baz_frame_overflow
+        2:
+        # [90:9] free scratch register t1
+        # [90:9] free scratch register t0
         # [90:9] address of argument 'counter' to parameter 'num'
         # [90:9] allocate scratch register -> t0
         addi t0, s0, 128
@@ -194,8 +212,6 @@ main:
                     li t2, 127
                     bgeu t2, t3, 2f
                     1:
-                    # [24:34] line number (--checks=line)
-                    li a0, 24
                     j baz_bounds_panic
                     2:
                     # [24:34] free scratch register t3
@@ -231,8 +247,6 @@ main:
                 li t1, 127
                 bltu t0, t1, 2f
                 1:
-                # [25:22] line number (--checks=line)
-                li a0, 25
                 j baz_bounds_panic
                 2:
                 # [25:22] free scratch register t1
@@ -304,8 +318,6 @@ main:
                 li t1, 127
                 bgeu t1, t2, 2f
                 1:
-                # [32:32] line number (--checks=line)
-                li a0, 32
                 j baz_bounds_panic
                 2:
                 # [32:32] free scratch register t2
@@ -335,8 +347,6 @@ main:
                 li t1, 127
                 bltu t0, t1, 2f
                 1:
-                # [33:22] line number (--checks=line)
-                li a0, 33
                 j baz_bounds_panic
                 2:
                 # [33:22] free scratch register t1
@@ -445,8 +455,6 @@ main:
                 li t0, 127
                 bgeu t0, a2, 2f
                 1:
-                # [16:14] line number (--checks=line)
-                li a0, 16
                 j baz_bounds_panic
                 2:
                 # [16:14] free scratch register t0
@@ -595,8 +603,6 @@ func.print_num:
         li t1, 20
         bltu t0, t1, 2f
         1:
-        # [59:13] line number (--checks=line)
-        li a0, 59
         j baz_bounds_panic
         2:
         # [59:13] free scratch register t1
@@ -676,8 +682,6 @@ func.print_num:
         li t1, 20
         bltu t0, t1, 2f
         1:
-        # [66:13] line number (--checks=line)
-        li a0, 66
         j baz_bounds_panic
         2:
         # [66:13] free scratch register t1
@@ -711,8 +715,6 @@ func.print_num:
         li t1, 20
         bltu t0, t1, 2f
         1:
-        # [71:13] line number (--checks=line)
-        li a0, 71
         j baz_bounds_panic
         2:
         # [71:13] free scratch register t1
@@ -729,8 +731,6 @@ func.print_num:
         li t2, 20
         bltu t1, t2, 2f
         1:
-        # [71:30] line number (--checks=line)
-        li a0, 71
         j baz_bounds_panic
         2:
         # [71:30] free scratch register t2
@@ -793,8 +793,6 @@ func.print_num:
     li t0, 20
     bgeu t0, a2, 2f
     1:
-    # [77:14] line number (--checks=line)
-    li a0, 77
     j baz_bounds_panic
     2:
     # [77:14] free scratch register t0
@@ -810,53 +808,22 @@ func.print_num:
     ret
 # free named register s1
 .equ size.func.print_num, 40
-# bounds failure handler (--checks=upper or --checks=lower)
-baz_bounds_panic:
-    mv s2, a0
+# frame overflow handler (--checks=frame)
+baz_frame_overflow:
     li a0, 2
-    la a1, .Lbaz_bounds_message
+    la a1, .Lbaz_frame_message
     li a2, 22
     call a7, .Lbaz_write
-    addi sp, sp, -16
-    mv a1, sp
-    li a2, 0
-    la t0, .Lbaz_decimal_places
-1:
-    lw t1, 0(t0)
-    li t2, 0
-2:
-    bltu s2, t1, 3f
-    sub s2, s2, t1
-    addi t2, t2, 1
-    j 2b
-3:
-    or t3, a2, t2
-    bnez t3, 4f
-    li t3, 1
-    bne t1, t3, 5f
-4:
-    addi t2, t2, 48
-    sb t2, 0(a1)
-    addi a1, a1, 1
-    addi a2, a2, 1
-5:
-    addi t0, t0, 4
-    li t3, 1
-    bne t1, t3, 1b
-    li t2, 10
-    sb t2, 0(a1)
-    addi a2, a2, 1
-    mv a1, sp
-    li a0, 2
-    call a7, .Lbaz_write
     li a0, 255
+    j .Lbaz_exit
 .section .rodata
-.Lbaz_bounds_message:
-.ascii "panic: bounds at line "
-.balign 4
-.Lbaz_decimal_places:
-.word 1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1
+.Lbaz_frame_message:
+.ascii "panic: frame overflow"
+.byte 10
 .text
+# bounds failure handler (--checks=upper or --checks=lower)
+baz_bounds_panic:
+    li a0, 255
 .Lbaz_exit:
 1:
     ebreak

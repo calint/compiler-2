@@ -19,6 +19,6 @@ echo make
 echo compile prog
 ./run.sh --checks=noub
 echo compile roome
-./run.sh --checks=noub roome.baz
+./run-roome.sh
 echo make readme
 etc/readme/make.sh
