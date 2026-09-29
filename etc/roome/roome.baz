@@ -142,42 +142,39 @@ func room.print() {
 }
 
 dat str_went = "went to "
-dat str_go_where = "go where\n"
-dat str_go_where2 = "go where 2\n"
-dat str_which_link = "go where 3\n"
+dat str_which_link = "go where\n"
 
-func action_go(cur_entity, inp str, inp_ix) {
-    if inp_ix >= inp.len {
-        print(str_go_where)
-        return
-    }
-
+func next_token(inp str, s, e) {
     # leading whitespace
-    var s = inp_ix
     loop {
         if s >= inp.len {
-            print(str_which_link)
+            e = s
             return
         }
         if inp.data[s] != ' ' break
         s = s + 1
     }
     # exit name
-    var e = s
+    e = s
     loop {
         if e >= inp.len break
         if inp.data[e] == ' ' break
         e = e + 1
     }
+}
+
+func action_go(cur_entity, inp str, inp_ix) {
+    var s = inp_ix
+    var e = s
+    next_token(inp, s, e)
+    if s == e {
+        print(str_which_link)
+        return
+    }
 
     var to = str{}
     to.len = i8(e - s)
-    if to.len == 0 {
-        print(str_go_where2) 
-    }
-
     array_copy(inp.data[s], to.data, to.len)
-
     print(str_went)
     to.print()
     print(str_nl)
