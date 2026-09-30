@@ -1,17 +1,17 @@
 #!/bin/bash
 # runs roome.baz on the fpga emulator with the lines of roome.in as uart input
 # and compares the uart output with roome.out
-# usage: test-roome.sh [update]
+# usage: test.sh [update]
 # 'update' rewrites roome.out with the current output
 set -eu
-cd "$(dirname "$0")/../.."
+DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$DIR/../.."
 
 EMULATOR=fpga-emulator/osqa
 if [[ ! -x $EMULATOR ]]; then
     fpga-emulator/make.sh
 fi
 
-DIR=etc/roome
 IMAGE=$DIR/roome-rv32i-fpga.bin
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT

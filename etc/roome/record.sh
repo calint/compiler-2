@@ -2,16 +2,16 @@
 # records an interactive roome session: what is typed becomes roome.in and,
 # after confirming the session behaved correctly, roome.out is generated
 # end the session with 'go home'
-# usage: record-roome.sh
+# usage: record.sh
 set -eu
-cd "$(dirname "$0")/../.."
+DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$DIR/../.."
 
 EMULATOR=fpga-emulator/osqa
 if [[ ! -x $EMULATOR ]]; then
     fpga-emulator/make.sh
 fi
 
-DIR=etc/roome
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -48,4 +48,4 @@ fi
 cp "$WORK/roome.in" "$DIR/roome.in"
 
 # the expected output comes from a replay so that it has the same form as in the test
-"$DIR/test-roome.sh" update
+"$DIR/test.sh" update
