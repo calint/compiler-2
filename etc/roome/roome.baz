@@ -596,8 +596,9 @@ func action_drop(cur_entity, tz tokenizer) {
 
 dat str_give_what = "give what\n"
 dat str_give_to_whom = "give to whom\n"
-dat str_nobody_here = "nobody is not here\n"
+dat str_is_not_here = " is not here\n"
 dat str_gave = "gave "
+dat str_to = " to "
 
 func action_give(cur_entity, tz tokenizer) {
     tz.next()
@@ -645,7 +646,8 @@ func action_give(cur_entity, tz tokenizer) {
     }
 
     if to_entity == room_entities_len {
-        print(str_nobody_here)
+        tz.print()
+        print(str_is_not_here)
         return
     }
 
@@ -655,6 +657,8 @@ func action_give(cur_entity, tz tokenizer) {
 
     print(str_gave)
     object_name.print()
+    print(str_to)
+    entities.array[to_entity].name.print()
     print(str_nl)
 }
 
