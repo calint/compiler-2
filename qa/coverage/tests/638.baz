@@ -1,0 +1,5 @@
+# data array initializer with trailing comma
+
+dat a = i16[2]{ 1, }
+
+func main() {}

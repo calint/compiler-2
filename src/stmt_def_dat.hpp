@@ -204,6 +204,14 @@ class stmt_def_dat final : public statement {
             return parse_array_literal(tc, tz);
         }
 
+        // a record initializer cannot deduce its type, e.g. 'dat p = {1, 2}'
+        if (const token brace_tk{tz.is_next_char_token('{')};
+            not brace_tk.is_empty()) {
+
+            throw compiler_exception{
+                brace_tk, "expected type name before '{', e.g. 'point{1, 2}'"};
+        }
+
         const token tk{tz.next_token()};
 
         if (is_array_literal(tc, tk, tz)) {
@@ -481,6 +489,13 @@ class stmt_def_dat final : public statement {
         elem el{};
         el.uops = unary_ops{tz};
         el.tk = tz.next_token();
+
+        // e.g. '{ 1 }' or a trailing ',' where a single value is expected
+        if (el.tk.is_empty()) {
+            throw compiler_exception{
+                el.tk, std::format("expected a constant for '{}'", tp.name())};
+        }
+
         if (&tp == &tc.get_type_bool()) {
             el.value = parse_bool_value(el.tk, tp);
             return el;

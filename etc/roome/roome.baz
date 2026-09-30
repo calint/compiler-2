@@ -102,10 +102,18 @@ type entity {
     room_id i16,
     messages str[16],
 }
-dat entities = entity[entities_len]{
-    { { "me", 2 }, 0 }
+
+type entities {
+    array entity[entities_len],
+    len,
 }
-dat entities_len = 1
+
+dat entities = entities{
+    { # array begin
+        { { "me", 2 }, 0 } # entity[0]
+    }, # array end
+    1 # array len
+}
 
 func entity.print() {
     write(1, self.name.data, self.name.len)
@@ -126,7 +134,7 @@ func room.print() {
     if(self.entities.len != 0) {
         print(str_uc)
         foo self.entities.ids, self.entities.len {
-            entities[e].print()
+            entities.array[e].print()
             print(str_nl)
         }
     }
@@ -243,7 +251,7 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     # find link
-    var room_id = entities[cur_entity].room_id
+    var room_id = entities.array[cur_entity].room_id
     var links_len = rooms[room_id].links_len
     var found_ix = links_len
     foo rooms[room_id].links, links_len {
@@ -259,7 +267,7 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     # move entity
-    entities[cur_entity].room_id = rooms[room_id].links[found_ix].to
+    entities.array[cur_entity].room_id = rooms[room_id].links[found_ix].to
 
     print(str_went_to)
     tz.print()
@@ -295,7 +303,7 @@ func action_new_room(cur_entity, tz tokenizer) {
         return
     }
 
-    var cur_room_id = entities[cur_entity].room_id 
+    var cur_room_id = entities.array[cur_entity].room_id 
 
     var cur_room_next_link_id = rooms[cur_room_id].links_len
 
@@ -331,7 +339,7 @@ func action_new_room(cur_entity, tz tokenizer) {
 func str_action_set_room_description(cur_entity, tz tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    tz.copy_to_str(rooms[entities[cur_entity].room_id].description)
+    tz.copy_to_str(rooms[entities.array[cur_entity].room_id].description)
 }
 
 dat str_action_go = "go"
@@ -366,8 +374,8 @@ func main() {
             cur_entity = 0
         }
         print(str_nl)
-        rooms[entities[cur_entity].room_id].print()
-        entities[cur_entity].name.print()
+        rooms[entities.array[cur_entity].room_id].print()
+        entities.array[cur_entity].name.print()
         print(str_prompt)
         tz.input()
         print(str_nl)

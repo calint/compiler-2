@@ -1,0 +1,7 @@
+# data record initializer requires the type name
+
+type point { x i16, y i16 }
+
+dat p = { 1, 2 }
+
+func main() {}
