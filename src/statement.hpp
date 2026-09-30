@@ -376,6 +376,18 @@ class statement {
             // a '#' inside a string or character literal does not start a
             // comment
             if (quote != '\0') {
+                // dropped so a crlf continuation looks like a lf one
+                if (ch == '\r') {
+                    continue;
+                }
+
+                // a continuation joins the lines, the comment stays on one
+                if (escaped and ch == '\n') {
+                    out.pop_back();
+                    escaped = false;
+                    continue;
+                }
+
                 out.push_back(ch);
                 if (not escaped and ch == quote) {
                     quote = '\0';

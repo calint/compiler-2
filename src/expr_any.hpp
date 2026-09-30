@@ -404,7 +404,7 @@ class expr_any final : public statement {
         machine& x{tc.machine()};
 
         const std::optional<std::string> bytes{
-            token::decode_string(string_tk_.text())};
+            token::decode_string(string_tk_.string_text())};
 
         if (not bytes) {
             throw compiler_exception{

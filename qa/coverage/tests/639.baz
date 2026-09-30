@@ -1,0 +1,23 @@
+# a backslash at the end of a line continues the string on the next line,
+# leading whitespace of the next line is part of the string
+
+dat joined = "ab\
+cd\
+  ef"
+
+func assert(x bool) { if not x exit(1) }
+
+func main() {
+    assert(array_length(joined) == 8)
+    assert(joined[0] == 'a')
+    assert(joined[3] == 'd')
+    assert(joined[4] == ' ')
+    assert(joined[5] == ' ')
+    assert(joined[7] == 'f')
+
+    var local = "xy\
+z\n"
+    assert(array_length(local) == 4)
+    assert(local[2] == 'z')
+    assert(local[3] == '\n')
+}

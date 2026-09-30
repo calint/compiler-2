@@ -24,7 +24,7 @@ trap 'rm -rf "$WORK"' EXIT
 # the input must end with 'go home', at the end of input the emulator would
 # make the program wait for input forever, so the run is limited by a timeout
 status=0
-timeout 10 "$EMULATOR" "$IMAGE" "$WORK/sdcard" <"$DIR/roome.in" >"$WORK/actual" || status=$?
+timeout 10 "$EMULATOR" "$IMAGE" "$WORK/sdcard" <"$DIR/roome.in" >"$DIR/diff" || status=$?
 
 if [[ $status -eq 124 ]]; then
     echo "roome: timeout, does roome.in end with 'go home'?"
@@ -32,12 +32,12 @@ if [[ $status -eq 124 ]]; then
 fi
 
 if [[ ${1:-} == update ]]; then
-    cp "$WORK/actual" "$DIR/roome.out"
+    cp "$DIR/diff" "$DIR/roome.out"
     echo "roome: updated $DIR/roome.out"
     exit 0
 fi
 
-if ! diff -u "$DIR/roome.out" "$WORK/actual"; then
+if ! diff -u "$DIR/roome.out" "$DIR/diff"; then
     echo "roome: output differs from $DIR/roome.out"
     exit 1
 fi

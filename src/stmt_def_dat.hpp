@@ -273,7 +273,7 @@ class stmt_def_dat final : public statement {
         // note: only i8[] can be initialized with string token
 
         if (elroot.tk.is_string()) {
-            x.emit_string_data(elroot.tk.text());
+            x.emit_string_data(elroot.tk.string_text());
             const size_t size_bytes{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_count != 0 and size_bytes < elroot.array_count) {

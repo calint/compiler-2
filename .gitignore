@@ -8,7 +8,7 @@
 # binaries built by run.sh are named after their source
 /prog
 /prog-uart
-/roome
+/etc/roome/diff
 # rv32i images are named after their source and target
 *-rv32i*.bin
 /diff.baz

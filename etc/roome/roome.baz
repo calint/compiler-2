@@ -522,7 +522,13 @@ func action_inventory(cur_entity, tz tokenizer) {
     print(str_nl)
 }
 
-dat str_help = "\ninventory: ei\ngo to exit: go <exit>\ncreate new room: rn <to exit> <from exit>\nset room description: rd <text>\ncreate new entity: en <name>\ncreate new object: on <name>\n"
+dat str_help = "\
+inventory: ei\n\
+go to exit: go <exit>\n\
+create new room: rn <to exit> <from exit>\n\
+set room description: rd <text>\n\
+create new entity: en <name>\n\
+create new object: on <name>\n"
 
 func action_help(entity_id, tz tokenizer) {
     print(str_help)

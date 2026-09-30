@@ -70,7 +70,8 @@ class token final {
 
     [[nodiscard]] auto string_size_bytes() const -> size_t {
         size_t len{};
-        const std::string_view s{text_};
+        const std::string joined{string_text()};
+        const std::string_view s{joined};
         for (size_t i{}; i < s.size(); ++i, ++len) {
             if (s[i] != '\\' or i + 1 >= s.size()) {
                 continue;
@@ -81,6 +82,38 @@ class token final {
         }
 
         return len;
+    }
+
+    // string text with each backslash before a line end removed together
+    // with the line end, so the string continues on the next line
+    [[nodiscard]] auto string_text() const -> std::string {
+        std::string joined;
+        joined.reserve(text_.size());
+        for (size_t i{}; i < text_.size(); ++i) {
+            if (text_[i] != '\\' or i + 1 >= text_.size()) {
+                joined += text_[i];
+                continue;
+            }
+
+            if (text_[i + 1] == '\n') {
+                i += 1;
+                continue;
+            }
+
+            // crlf line ends
+            if (text_.substr(i + 1).starts_with("\r\n")) {
+                i += 2;
+                continue;
+            }
+
+            // keep the pair so an escaped backslash is not taken as a
+            // continuation
+            joined += text_[i];
+            joined += text_[i + 1];
+            i += 1;
+        }
+
+        return joined;
     }
 
     [[nodiscard]] auto text() const -> std::string_view { return text_; }

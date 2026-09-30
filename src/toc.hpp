@@ -416,7 +416,7 @@ class toc final {
         -> std::string {
 
         return add_read_only_constant("str", string_tk,
-                                      std::string{string_tk.text()});
+                                      string_tk.string_text());
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
