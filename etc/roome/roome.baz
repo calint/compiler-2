@@ -596,7 +596,7 @@ func action_drop(cur_entity, tz tokenizer) {
 
 dat str_give_what = "give what\n"
 dat str_give_to_whom = "give to whom\n"
-dat str_nobody_here = "nobody like that here\n"
+dat str_nobody_here = "nobody is not here\n"
 dat str_gave = "gave "
 
 func action_give(cur_entity, tz tokenizer) {
