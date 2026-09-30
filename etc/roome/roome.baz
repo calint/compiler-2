@@ -53,8 +53,39 @@ const max_rooms_len = 128
 const max_entities_len = 32
 
 type id_list {
-    ids[max_id_list_len],
+    array[max_id_list_len],
     len,
+}
+
+func id_list.delete_index(ix) {
+    # array copy it away
+    array_copy(
+        self.array[ix + 1],
+        self.array[ix],
+        self.len - ix + 1
+    )
+
+    # set new len
+    self.len = self.len - 1
+}
+
+func id_list.delete_element(id) {
+    var found_ix = self.len
+    foo self.array, self.len {
+        if e == id {
+            found_ix = i
+            break
+        }
+    }
+
+    if found_ix == self.len return
+
+    self.delete_index(found_ix)
+}
+
+func id_list.add(ix) { 
+    self.array[self.len] = ix
+    self.len = self.len + 1
 }
 
 type name {
@@ -64,6 +95,37 @@ type name {
 
 func name.print() {
     write(1, self.data, self.len)
+}
+
+func name.equals(nm name) res bool {
+    if self.len != nm.len {
+        res = false
+        return
+    }
+
+    res = arrays_equal(self.data, nm.data, self.len)
+}
+
+type entity {
+    name name,
+    room_id,
+    messages str[16],
+}
+
+type entities {
+    array entity[max_entities_len],
+    len,
+}
+
+dat entities = entities{
+    { # array begin
+        { { "me", 2 }, 0 } # entity[0]
+    }, # array end
+    1 # len
+}
+
+func entity.print() {
+    write(1, self.name.data, self.name.len)
 }
 
 type link_names {
@@ -94,6 +156,23 @@ type room {
     objects_len,
 }
 
+func room.remove_entity(id) {
+    # find entity
+    var found_ix = self.entities.len
+    var name = entities.array[id].name
+    foo self.entities.array, self.entities.len {
+        if entities.array[e].name.equals(name) {
+            found_ix = i
+            break
+        }
+    }
+
+    # check program error
+    if found_ix == self.entities.len exit(1)
+
+    self.entities.delete_index(found_ix)
+}
+
 type rooms {
     array room[max_rooms_len],
     len,
@@ -113,28 +192,6 @@ dat rooms = rooms{
     1 # len
 }
 
-type entity {
-    name name,
-    room_id,
-    messages str[16],
-}
-
-type entities {
-    array entity[max_entities_len],
-    len,
-}
-
-dat entities = entities{
-    { # array begin
-        { { "me", 2 }, 0 } # entity[0]
-    }, # array end
-    1 # len
-}
-
-func entity.print() {
-    write(1, self.name.data, self.name.len)
-}
-
 dat str_u_r_in = "u r in "
 
 func room.print() {
@@ -149,10 +206,11 @@ func room.print() {
     }
     if(self.entities.len != 0) {
         print(str_uc)
-        foo self.entities.ids, self.entities.len {
+        foo self.entities.array, self.entities.len {
+            if i != 0 print(str_comma)
             entities.array[e].print()
-            print(str_nl)
         }
+        print(str_nl)
     }
     if(self.links_len != 0) {
         print(str_exits)
@@ -267,10 +325,11 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     # find link
-    var room_id = entities.array[cur_entity].room_id
-    var links_len = rooms.array[room_id].links_len
+    var cur_room_id = entities.array[cur_entity].room_id
+
+    var links_len = rooms.array[cur_room_id].links_len
     var found_ix = links_len
-    foo rooms.array[room_id].links, links_len {
+    foo rooms.array[cur_room_id].links, links_len {
         if tz.is_name(link_names.array[e.link_name_id]) {
             found_ix = i
             break
@@ -283,7 +342,10 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     # move entity
-    entities.array[cur_entity].room_id = rooms.array[room_id].links[found_ix].to
+    var to_id = rooms.array[cur_room_id].links[found_ix].to
+    entities.array[cur_entity].room_id = to_id 
+    rooms.array[to_id].entities.add(cur_entity)
+    rooms.array[cur_room_id].entities.delete_element(cur_entity)
 
     print(str_went_to)
     tz.print()
