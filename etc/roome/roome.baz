@@ -307,20 +307,16 @@ func tokenizer.is_empty() res bool {
     res = self.start == self.end
 }
 
-func tokenizer.copy_to_name(dst name) {
-    dst.len = self.len()
-    array_copy(self.str.array[self.start], dst.array, dst.len)
-}
-
 func tokenizer.to_name() dst name {
     dst.len = self.len()
     dst.array = {}
     array_copy(self.str.array[self.start], dst.array, dst.len)
 }
 
-func tokenizer.copy_to_str(dst str) {
-    dst.len = self.len()
-    array_copy(self.str.array[self.start], dst.array, dst.len)
+func tokenizer.to_str() res str {
+    res.len = self.len()
+    res.array = {}
+    array_copy(self.str.array[self.start], res.array, res.len)
 }
 
 func tokenizer.to_end() {
@@ -383,7 +379,7 @@ func find_link_name_or_make(tz tokenizer) res {
 
     if res != link_names.len return
 
-    tz.copy_to_name(link_names.array[link_names.len])
+    link_names.array[link_names.len] = tz.to_name()
 
     res = link_names.len
 
@@ -437,7 +433,7 @@ func action_new_room(cur_entity, tz tokenizer) {
 func action_set_room_description(cur_entity, tz tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    tz.copy_to_str(rooms.array[entities.array[cur_entity].room_id].description)
+    rooms.array[entities.array[cur_entity].room_id].description = tz.to_str()
 }
 
 dat str_what_name = "what name"
