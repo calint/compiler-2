@@ -63,7 +63,7 @@ func id_list.delete_index(ix) {
     array_copy(
         self.array[ix + 1],
         self.array[ix],
-        self.len - ix + 1
+        self.len - ix - 1
     )
 
     # set new len
@@ -229,19 +229,29 @@ func room.print(cur_entity) {
         self.description.print()
         print(str_nl)
     }
-    if(self.entities.len > 1) {
-        var first_elem_printed = false
-        foo self.entities.array, self.entities.len {
-            if e == cur_entity continue
-            if not first_elem_printed {
-                print(str_uc)
-            }
-            if first_elem_printed {
-                print(str_comma)
-            }
-            entities.array[e].print()
-            first_elem_printed = true
+    var first_elem_printed = false
+    foo self.entities.array, self.entities.len {
+        if e == cur_entity continue
+        if not first_elem_printed {
+            print(str_uc)
         }
+        if first_elem_printed {
+            print(str_comma)
+        }
+        entities.array[e].print()
+        first_elem_printed = true
+    }
+    foo self.objects.array, self.objects.len {
+        if not first_elem_printed {
+            print(str_uc)
+        }
+        if first_elem_printed {
+            print(str_comma)
+        }
+        objects.array[e].name.print()
+        first_elem_printed = true
+    }
+    if first_elem_printed {
         print(str_nl)
     }
     if(self.links_len != 0) {
@@ -454,7 +464,31 @@ func action_set_room_description(cur_entity, tz tokenizer) {
     rooms.array[entities.array[cur_entity].room_id].description = tz.to_str()
 }
 
+func action_set_room_note(cur_entity, tz tokenizer) {
+    tz.skip_whitespace()
+    tz.to_end()
+    rooms.array[entities.array[cur_entity].room_id].note = tz.to_str()
+}
+
 dat str_what_name = "what name"
+dat str_name_too_long = "name too long\n"
+
+func action_set_room_name(cur_entity, tz tokenizer) {
+    tz.next()
+
+    if tz.is_empty() {
+        print(str_what_name)
+        return
+    }
+
+    if tz.len() > max_name_len {
+        print(str_name_too_long)
+        return
+    }
+
+    rooms.array[entities.array[cur_entity].room_id].name = tz.to_name()
+}
+
 dat str_new_entity_created = "new entity created\n"
 
 func action_new_entity(cur_entity, tz tokenizer) {
@@ -522,13 +556,53 @@ func action_inventory(cur_entity, tz tokenizer) {
     print(str_nl)
 }
 
+dat str_drop_what = "drop what\n"
+dat str_not_carrying = "u do not have that\n"
+dat str_dropped = "dropped "
+
+func action_drop(cur_entity, tz tokenizer) {
+    tz.next()
+
+    if tz.is_empty() {
+        print(str_drop_what)
+        return
+    }
+
+    # find object in inventory
+    var len = entities.array[cur_entity].objects.len
+    var found_ix = len
+    foo entities.array[cur_entity].objects.array, len {
+        if tz.is_name(objects.array[e].name) {
+            found_ix = i
+            break
+        }
+    }
+
+    if found_ix == len {
+        print(str_not_carrying)
+        return
+    }
+
+    # move object from inventory to room
+    var object_id = entities.array[cur_entity].objects.array[found_ix]
+    var room_id = entities.array[cur_entity].room_id
+    var discarded = rooms.array[room_id].objects.add(object_id)
+    entities.array[cur_entity].objects.delete_index(found_ix)
+
+    print(str_dropped)
+    tz.print()
+    print(str_nl)
+}
+
 dat str_help = "\
-inventory: ei\n\
-go to exit: go <exit>\n\
-create new room: rn <to exit> <from exit>\n\
-set room description: rd <text>\n\
-create new entity: en <name>\n\
-create new object: on <name>\n"
+  inventory: ei\n\
+  drop object: d <object>\n\
+  go to exit: go <exit>\n\
+  create new room: rnm <to exit> <from exit>\n\
+  set room description: rd <text>\n\
+  set room note: rnt <text>\n\
+  create new entity: en <name>\n\
+  create new object: on <name>\n"
 
 func action_help(entity_id, tz tokenizer) {
     print(str_help)
@@ -537,10 +611,13 @@ func action_help(entity_id, tz tokenizer) {
 dat str_action_help = "help"
 dat str_action_go = "go"
 dat str_action_new_room = "rn"
+dat str_action_set_room_name = "rnm"
 dat str_action_set_room_description = "rd"
+dat str_action_set_room_note = "rnt"
 dat str_action_new_entity = "en"
 dat str_action_new_object = "on"
 dat str_action_inventory = "ei"
+dat str_action_drop = "d"
 
 func parse_input(cur_entity, tz tokenizer) {
     tz.first()
@@ -554,6 +631,12 @@ func parse_input(cur_entity, tz tokenizer) {
     } else if tz.is_str(str_action_set_room_description) {
         action_set_room_description(cur_entity, tz)
 
+    } else if tz.is_str(str_action_set_room_note) {
+        action_set_room_note(cur_entity, tz)
+
+    } else if tz.is_str(str_action_set_room_name) {
+        action_set_room_name(cur_entity, tz)
+
     } else if tz.is_str(str_action_new_entity) {
         action_new_entity(cur_entity, tz)
 
@@ -562,6 +645,9 @@ func parse_input(cur_entity, tz tokenizer) {
 
     } else if tz.is_str(str_action_inventory) {
         action_inventory(cur_entity, tz)
+
+    } else if tz.is_str(str_action_drop) {
+        action_drop(cur_entity, tz)
 
     } else if tz.is_str(str_action_help) {
         action_help(cur_entity, tz)
