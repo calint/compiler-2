@@ -95,112 +95,39 @@ class expr_arith final : public expression {
 
         while (true) {
 
-            if (enclosed_) {
-                // this is a sub-expression, check if it is closed
-                close_paren_tk_ = tz.is_next_char_token(')');
-                if (not close_paren_tk_.is_empty()) {
-                    // it is closed
-                    // validate that it is arithmetic containing no bools
-                    validate_arithmetic_operands(tc);
-
-                    // return from recursion
-                    return;
-                }
+            // a sub-expression is closed by its ')'
+            if (is_closed(tz)) {
+                validate_arithmetic_operands(tc);
+                return;
             }
 
             // an operator may start the next line after the trailing
             // whitespace of the previous element
             const token ws_before_op_tk{tz.next_whitespace_token()};
 
-            // is it parsed within a function argument?
-            if (in_args) {
-                // yes, exit when ',' or ')' is found
-                if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
-                    tz.put_back_token(ws_before_op_tk);
-                    validate_arithmetic_operands(tc);
-
-                    return;
-                }
-            }
-
-            // next arithmetic operation
-
-            if (tz.is_peek_char('+')) {
-                ops_.emplace_back('+');
-            } else if (tz.is_peek_char('-')) {
-                ops_.emplace_back('-');
-            } else if (tz.is_peek_char('*')) {
-                ops_.emplace_back('*');
-            } else if (tz.is_peek_char('/')) {
-                ops_.emplace_back('/');
-            } else if (tz.is_peek_char('%')) {
-                ops_.emplace_back('%');
-            } else if (tz.is_peek_char('&')) {
-                ops_.emplace_back('&');
-            } else if (tz.is_peek_char('|')) {
-                ops_.emplace_back('|');
-            } else if (tz.is_peek_char('^')) {
-                ops_.emplace_back('^');
-            } else if (tz.is_peek_char('<') and tz.is_peek_char2('<')) {
-                ops_.emplace_back('<');
-            } else if (tz.is_peek_char('>') and tz.is_peek_char2('>')) {
-                ops_.emplace_back('>');
-            } else {
-                // no more operations, return
-                tz.put_back_token(ws_before_op_tk);
-                validate_arithmetic_operands(tc);
-
+            // no operator also ends a list in function arguments at ',' or ')'
+            const std::optional<char> next_op{peek_operator(tz)};
+            if (not next_op) {
+                end_list(tc, tz, ws_before_op_tk);
                 return;
             }
 
-            // check if precedence increased in which case open an implied
-            // sub-expression
-            //   a + b * c  ->  [a] + [b * c]
+            ops_.emplace_back(*next_op);
 
-            const uint8_t next_precedence{precedence_for_op(ops_.back())};
+            const uint8_t next_precedence{precedence_for_op(*next_op)};
+
+            // a higher precedence groups the previous element with what
+            // follows, so parse that as a sub-expression
             if (next_precedence > precedence) {
-                // last read operator has higher precedence than previous
-                // create an implied sub-expression
-                // move the last element to be the first element of the
-                // sub-expression
-
-                // remove the operator which has higher precedence, it will be
-                // parsed in the sub-expression before the second element
-                ops_.pop_back();
-                tz.put_back_token(ws_before_op_tk);
-
-                // move the last element out of the list
-                std::unique_ptr<statement> last_elem_in_list{
-                    std::move(exprs_.back())};
-
-                exprs_.pop_back();
-
-                // forward it to the sub-expression including its precedence
-                exprs_.emplace_back(make_unique<expr_arith>(
-                    tc, tz, in_args, false, token{}, true, unary_ops{},
-                    next_precedence, std::move(last_elem_in_list)));
-
-                // continue parsing when the precedence has been lowered
+                open_implied_subexpression(tc, tz, in_args, next_precedence,
+                                           ws_before_op_tk);
                 continue;
             }
 
-            // is this in an implied sub-expression and precedence has gone
-            // lower?
-
-            if (precedence != initial_precedence and
-                next_precedence < precedence and is_implied_subexpression_) {
-
-                // lower precedence returns to the parent list
-                //   want:  a - b * c + 3  ->  [a] - [b * c] + [3]
-                //   if not returning then becomes: a - [b * c + 3]
-
-                // remove the operator that has lower precedence, it will be
-                // parsed by the parent expression
+            // a lower precedence returns to the parent list
+            if (is_end_of_implied_subexpression(precedence, next_precedence)) {
                 ops_.pop_back();
-                tz.put_back_token(ws_before_op_tk);
-
-                validate_arithmetic_operands(tc);
-
+                end_list(tc, tz, ws_before_op_tk);
                 return;
             }
 
@@ -686,6 +613,14 @@ class expr_arith final : public expression {
         uops_.compile(tc, indent, dst_info.operand);
     }
 
+    // 'ws_before_op_tk' belongs to what follows the list
+    auto end_list(const toc& tc, tokenizer& tz,
+                  const token& ws_before_op_tk) const -> void {
+
+        tz.put_back_token(ws_before_op_tk);
+        validate_arithmetic_operands(tc);
+    }
+
     // the first element is added in an additive list and a factor in a list
     // led by '*' or a bitwise operation, otherwise it is the dividend or the
     // shifted value
@@ -700,6 +635,29 @@ class expr_arith final : public expression {
         }
 
         return is_commutative(first) ? first : '=';
+    }
+
+    // a sub-expression is enclosed in parentheses
+    [[nodiscard]] auto is_closed(tokenizer& tz) -> bool {
+        if (not enclosed_) {
+            return false;
+        }
+
+        close_paren_tk_ = tz.is_next_char_token(')');
+
+        return not close_paren_tk_.is_empty();
+    }
+
+    // a sub-expression ends when the operator has a lower precedence than its
+    // own list
+    //   want:  a - b * c + 3  ->  [a] - [b * c] + [3]
+    //   if not returning then becomes: a - [b * c + 3]
+    [[nodiscard]] auto is_end_of_implied_subexpression(
+        const uint8_t precedence, const uint8_t next_precedence) const -> bool {
+
+        return is_implied_subexpression_ and
+               precedence != initial_precedence and
+               next_precedence < precedence;
     }
 
     // unary ops on a memory destination are a load, modify and store on a
@@ -739,6 +697,28 @@ class expr_arith final : public expression {
         }
 
         return steps;
+    }
+
+    // moves the last element to the front of a sub-expression that takes the
+    // operator with the higher precedence
+    //   a + b * c  ->  [a] + [b * c]
+    auto open_implied_subexpression(toc& tc, tokenizer& tz, const bool in_args,
+                                    const uint8_t next_precedence,
+                                    const token& ws_before_op_tk) -> void {
+
+        // the operator is parsed by the sub-expression before its second
+        // element
+        ops_.pop_back();
+        tz.put_back_token(ws_before_op_tk);
+
+        std::unique_ptr<statement> last_elem_in_list{std::move(exprs_.back())};
+
+        exprs_.pop_back();
+
+        // the sub-expression continues with the precedence of the operator
+        exprs_.emplace_back(make_unique<expr_arith>(
+            tc, tz, in_args, false, token{}, true, unary_ops{}, next_precedence,
+            std::move(last_elem_in_list)));
     }
 
     // a plain first element is copied before anything writes the destination
@@ -1332,7 +1312,6 @@ class expr_arith final : public expression {
         return product;
     }
 
-    // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
     [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
                                             const bool in_args)
         -> std::unique_ptr<statement> {
@@ -1350,6 +1329,31 @@ class expr_arith final : public expression {
         uo.put_back(tz);
 
         return create_statement_in_expr_arith(tc, tz);
+    }
+
+    // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
+    // the operator at the next character, not consumed
+    [[nodiscard]] static auto peek_operator(tokenizer& tz)
+        -> std::optional<char> {
+
+        constexpr std::string_view single_char_operators{"+-*/%&|^"};
+
+        for (const char op : single_char_operators) {
+            if (tz.is_peek_char(op)) {
+                return op;
+            }
+        }
+
+        // shifts are two characters stored as one
+        if (tz.is_peek_char('<') and tz.is_peek_char2('<')) {
+            return '<';
+        }
+
+        if (tz.is_peek_char('>') and tz.is_peek_char2('>')) {
+            return '>';
+        }
+
+        return std::nullopt;
     }
 
     // higher value higher precedence

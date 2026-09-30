@@ -1355,7 +1355,6 @@ class toc final {
             }
 
             if (not cur_frame.has_alias(id.base())) {
-                // add an empty
                 lea_path.emplace_back();
 
                 return as_element_if(
@@ -1381,35 +1380,7 @@ class toc final {
 
             lea_path.emplace_back(alias.lea);
 
-            ident_path new_id{std::string{alias.to}};
-
-            // big note: the fishy resizing of the 'lea_path' happens when the
-            //           'new_id' extended past fields that do not need lea
-            //           if 'lea_path' is not extended then the types, id path
-            //           elements and lea path vectors are not in sync
-
-            const size_t new_id_count{new_id.path().size()};
-            const size_t lea_count{lea_path.size()};
-            if ((new_id_count > lea_count) and (new_id_count - lea_count > 1)) {
-                lea_path.resize(lea_path.size() + new_id.path().size() - 2);
-                // note: -2 because last element is current element and first
-                //       will be processed
-            }
-
-            // this is an alias
-            // e.g.
-            //   res -> pt.x becomes pt.x
-            //   pt.x -> p becomes p.x
-            //   lnk.count -> world.room.link becomes
-            //   world.room.link.count
-
-            for (const std::string& s : id.path() | std::views::drop(1)) {
-                new_id.append(s);
-            }
-
-            id = new_id;
-
-            assert(not id.path().empty());
+            id = replace_alias_base(alias, id, lea_path);
         }
 
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);
@@ -1468,6 +1439,44 @@ class toc final {
         info.array_len = 0;
 
         return info;
+    }
+
+    // makes room in 'lea_path' for the elements 'target_count' adds
+    //
+    // 'lea_path' has one entry per element of the identifier, an empty entry
+    // where no address is known; the entries are built while walking the
+    // frames outwards, so a target with several elements needs entries
+    // between the alias address just added and the next base
+    static auto pad_lea_path(std::vector<operand>& lea_path,
+                             const size_t target_count) -> void {
+
+        const size_t lea_count{lea_path.size()};
+
+        if (target_count > lea_count and target_count - lea_count > 1) {
+            // -2 because the last element is the alias address and the
+            // first is added when its own frame is walked
+            lea_path.resize(lea_count + target_count - 2);
+        }
+    }
+
+    // 'id' with the base replaced by what the alias refers to, e.g.
+    //   res -> pt.x becomes pt.x
+    //   pt.x -> p becomes p.x
+    //   lnk.count -> world.room.link becomes world.room.link.count
+    [[nodiscard]] static auto replace_alias_base(const alias_info& alias,
+                                                 const ident_path& id,
+                                                 std::vector<operand>& lea_path)
+        -> ident_path {
+
+        ident_path target{std::string{alias.to}};
+
+        pad_lea_path(lea_path, target.path().size());
+
+        for (const std::string& s : id.path() | std::views::drop(1)) {
+            target.append(s);
+        }
+
+        return target;
     }
 
     // variable name without the field path

@@ -163,6 +163,17 @@ class machine_rv32i : public machine {
         operand value;
     };
 
+    // a multiplier as signed digits: a factor of 2^i is added or subtracted per
+    // nonzero digit
+    struct digit_sequence {
+        std::array<int, multiplier_digit_count> digits;
+        // the digits build the negated multiplier
+        bool negate;
+        // the highest and the lowest nonzero digit
+        size_t top;
+        size_t lowest;
+    };
+
     // a store of constant bytes at 'offset' with 'size_bytes' of 1, 2 or 4
     struct byte_part {
         size_t offset{};
@@ -1965,19 +1976,10 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, product.type_ref());
         validate_scalar(src_loc_tk, factor.type_ref());
-
-        // the product must be writable storage
-        if (not(product.is_register() or product.is_memory())) {
-            throw compiler_exception{src_loc_tk,
-                                     "invalid RV32I multiply destination"};
-        }
+        validate_destination_storage(src_loc_tk, product, "multiply");
 
         // validate memory operands even when a constant eliminates the
         // operation
-
-        if (product.is_memory()) {
-            validate_address(src_loc_tk, product);
-        }
 
         if (factor.is_memory()) {
             validate_address(src_loc_tk, factor);
@@ -1992,125 +1994,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        // the factor is now a known constant; keep only the bits that fit
-        // in the product's type before choosing how to multiply
-
-        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
-
-        const size_t bits{product.type_ref().size_bytes() * 8};
-
-        const uint32_t mask{std::numeric_limits<uint32_t>::max() >>
-                            (register_bits - bits)};
-
-        const uint32_t multiplier{static_cast<uint32_t>(*constant) & mask};
-
-        // constant zero and one need no multiplication machinery
-        if (multiplier == 0) {
-            store_constant_result(src_loc_tk, indent, product, 0);
-            return;
-        }
-
-        if (multiplier == 1) {
-            return;
-        }
-
-        // all low bits set is multiplication by minus one at this width
-        if (multiplier == mask) {
-            unary(indent, '-', product);
-            return;
-        }
-
-        // a power of two requires only a shift
-        if (std::has_single_bit(multiplier)) {
-            shift(src_loc_tk, indent, '<', product,
-                  operand::imm(std::format("{}", std::countr_zero(multiplier)),
-                               default_type()));
-
-            return;
-        }
-
-        // the remaining constant needs shifts and adds; keep the original
-        // value for the additions while the result changes
-
-        const address_scope scope{*this, product, factor};
-
-        // the original value stays here until the last add or sub, which
-        // writes the result in its place so no copy is needed
-        const loaded_destination loaded{
-            load_destination(src_loc_tk, indent, product)};
-
-        // known multipliers use an unrolled sequence of shifts with adds or
-        // subtracts
-
-        std::array<int, multiplier_digit_count> digits{
-            multiplier_digits(multiplier)};
-
-        // a digit at the product width vanishes modulo the width, leaving a
-        // negative multiplier that is cheaper to build positive then negate
-        const bool negate{digits.at(bits) != 0};
-        if (negate) {
-            digits.at(bits) = 0;
-            for (int& digit : digits) {
-                digit = -digit;
-            }
-        }
-
-        // the leading nonzero digit is now plus one and starts the result
-        size_t top{digits.size() - 1};
-        while (digits.at(top) == 0) {
-            --top;
-        }
-
-        size_t lowest{};
-        while (digits.at(lowest) == 0) {
-            ++lowest;
-        }
-
-        // a single digit needs only the final shift
-        const operand partial{
-            lowest == top
-                ? operand{}
-                : alloc_scratch_register(src_loc_tk, indent, default_type())};
-
-        std::string_view shifted{loaded.value.base_register()};
-        int pending_shift{};
-
-        for (size_t bit{top}; bit != lowest;) {
-            --bit;
-            ++pending_shift;
-
-            if (digits.at(bit) == 0) {
-                continue;
-            }
-
-            assembler_.slli(indent, partial.base_register(), shifted,
-                            pending_shift);
-
-            const std::string_view sum{bit == lowest
-                                           ? loaded.value.base_register()
-                                           : partial.base_register()};
-
-            assembler_.register_op(
-                indent, digits.at(bit) < 0 ? op::sub : op::add, sum,
-                partial.base_register(), loaded.value.base_register());
-
-            shifted = partial.base_register();
-            pending_shift = 0;
-        }
-
-        // the zero bits below the lowest digit
-        if (lowest != 0) {
-            assembler_.slli(indent, loaded.value.base_register(),
-                            loaded.value.base_register(), lowest);
-        }
-
-        if (negate) {
-            assembler_.sub(indent, loaded.value.base_register(), "zero",
-                           loaded.value.base_register());
-        }
-
-        store_operation_result(indent, product, loaded.address, loaded.value,
-                               true);
+        multiply_by_constant(src_loc_tk, indent, product, factor, *constant);
     }
 
     auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -2271,19 +2155,16 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_shift_operand(src_loc_tk, count);
-        if (not(dst.is_register() or dst.is_memory())) {
-            throw compiler_exception{src_loc_tk,
-                                     "invalid RV32I shift destination"};
-        }
-        if (dst.is_memory()) {
-            validate_address(src_loc_tk, dst);
-        }
+        validate_destination_storage(src_loc_tk, dst, "shift");
+
         const std::optional<int32_t> constant{immediate_value(count)};
+
         // immediate shifts must be resolved here rather than by the assembler
         if (count.is_immediate() and not constant.has_value()) {
             throw compiler_exception{src_loc_tk,
                                      "invalid RV32I immediate shift count"};
         }
+
         const uint32_t shift_count{static_cast<uint32_t>(constant.value_or(0)) &
                                    31U};
         const size_t bits{dst.type_ref().size_bytes() * 8};
@@ -2305,49 +2186,14 @@ class machine_rv32i : public machine {
         const loaded_destination loaded{
             load_destination(src_loc_tk, indent, dst)};
 
-        // a narrow register shifts to the top and back, extending in one pair
-        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
-        if (constant.has_value() and operation == '<' and
-            bits < register_bits and dst.is_register()) {
-
-            assembler_.slli(indent, loaded.value.base_register(),
-                            loaded.value.base_register(),
-                            register_bits - bits + shift_count);
-
-            assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
-                                    loaded.value.base_register(),
-                                    loaded.value.base_register(),
-                                    register_bits - bits);
-
-            store_operation_result(indent, dst, loaded.address, loaded.value,
-                                   false);
-
-            return;
-        }
-
-        // known counts already have rv32's five-bit shift semantics applied
         if (constant.has_value()) {
-            assembler_.immediate_op(indent,
-                                    operation == '<' ? op::slli : op::srai,
-                                    loaded.value.base_register(),
-                                    loaded.value.base_register(), shift_count);
-
-            store_operation_result(indent, dst, loaded.address, loaded.value,
-                                   operation == '<');
+            shift_by_constant(indent, operation, dst, loaded, shift_count,
+                              bits);
 
             return;
         }
 
-        const operand amount{source_register(src_loc_tk, indent, dst, count,
-                                             loaded.value, std::nullopt)};
-
-        assembler_.register_op(indent, operation == '<' ? op::sll : op::sra,
-                               loaded.value.base_register(),
-                               loaded.value.base_register(),
-                               amount.base_register());
-
-        store_operation_result(indent, dst, loaded.address, loaded.value,
-                               operation == '<');
+        shift_by_register(src_loc_tk, indent, operation, dst, count, loaded);
     }
 
     auto start() -> void override {
@@ -3168,6 +3014,57 @@ class machine_rv32i : public machine {
                        swapped ? left.base_register() : right.base_register());
     }
 
+    // the result replaces the value in 'loaded', a partial sum goes through a
+    // scratch register
+    //   x * 10  =>  t = x << 2; x = t + x; x = x << 1
+    auto emit_shift_add_sequence(const token& src_loc_tk, const size_t indent,
+                                 const loaded_destination& loaded,
+                                 const digit_sequence& sequence) -> void {
+
+        // a single digit needs only the final shift
+        const operand partial{
+            sequence.lowest == sequence.top
+                ? operand{}
+                : alloc_scratch_register(src_loc_tk, indent, default_type())};
+
+        std::string_view shifted{loaded.value.base_register()};
+        int pending_shift{};
+
+        for (size_t bit{sequence.top}; bit != sequence.lowest;) {
+            --bit;
+            ++pending_shift;
+
+            if (sequence.digits.at(bit) == 0) {
+                continue;
+            }
+
+            assembler_.slli(indent, partial.base_register(), shifted,
+                            pending_shift);
+
+            const std::string_view sum{bit == sequence.lowest
+                                           ? loaded.value.base_register()
+                                           : partial.base_register()};
+
+            assembler_.register_op(
+                indent, sequence.digits.at(bit) < 0 ? op::sub : op::add, sum,
+                partial.base_register(), loaded.value.base_register());
+
+            shifted = partial.base_register();
+            pending_shift = 0;
+        }
+
+        // the zero bits below the lowest digit
+        if (sequence.lowest != 0) {
+            assembler_.slli(indent, loaded.value.base_register(),
+                            loaded.value.base_register(), sequence.lowest);
+        }
+
+        if (sequence.negate) {
+            assembler_.sub(indent, loaded.value.base_register(), "zero",
+                           loaded.value.base_register());
+        }
+    }
+
     // a register that is zero exactly when the operands are equal
     auto equality_tested_register(const size_t indent,
                                   const std::string_view result,
@@ -3472,6 +3369,73 @@ class machine_rv32i : public machine {
         return operand::mem(result_name, {}, 1, parts.low, address.type_ref());
     }
 
+    // the factor is a known constant, keep only the bits that fit in the
+    // product's type before choosing how to multiply
+    auto multiply_by_constant(const token& src_loc_tk, const size_t indent,
+                              const operand& product, const operand& factor,
+                              const int32_t constant) -> void {
+
+        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
+
+        const size_t bits{product.type_ref().size_bytes() * 8};
+
+        const uint32_t mask{std::numeric_limits<uint32_t>::max() >>
+                            (register_bits - bits)};
+
+        const uint32_t multiplier{static_cast<uint32_t>(constant) & mask};
+
+        // constant zero and one need no multiplication machinery
+        if (multiplier == 0) {
+            store_constant_result(src_loc_tk, indent, product, 0);
+            return;
+        }
+
+        if (multiplier == 1) {
+            return;
+        }
+
+        // all low bits set is multiplication by minus one at this width
+        if (multiplier == mask) {
+            unary(indent, '-', product);
+            return;
+        }
+
+        // a power of two requires only a shift
+        if (std::has_single_bit(multiplier)) {
+            shift(src_loc_tk, indent, '<', product,
+                  operand::imm(std::format("{}", std::countr_zero(multiplier)),
+                               default_type()));
+
+            return;
+        }
+
+        multiply_by_shifts_and_adds(src_loc_tk, indent, product, factor,
+                                    multiplier, bits);
+    }
+
+    // the remaining constant needs shifts and adds; keep the original value
+    // for the additions while the result changes
+    auto
+    multiply_by_shifts_and_adds(const token& src_loc_tk, const size_t indent,
+                                const operand& product, const operand& factor,
+                                const uint32_t multiplier, const size_t bits)
+        -> void {
+
+        const address_scope scope{*this, product, factor};
+
+        // the original value stays here until the last add or sub, which
+        // writes the result in its place so no copy is needed
+        const loaded_destination loaded{
+            load_destination(src_loc_tk, indent, product)};
+
+        const digit_sequence sequence{make_digit_sequence(multiplier, bits)};
+
+        emit_shift_add_sequence(src_loc_tk, indent, loaded, sequence);
+
+        store_operation_result(indent, product, loaded.address, loaded.value,
+                               true);
+    }
+
     // a register holding the result after the saved registers are restored
     auto preserved_helper_result(const token& src_loc_tk, const size_t indent,
                                  const operand& result, const operand& staged,
@@ -3589,6 +3553,56 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto scratch_count() const -> size_t {
         return static_cast<size_t>(
             std::ranges::count(allocations_, false, &allocation::named));
+    }
+
+    // a narrow register shifts to the top and back, extending in one pair
+    auto shift_by_constant(const size_t indent, const char operation,
+                           const operand& dst, const loaded_destination& loaded,
+                           const uint32_t shift_count, const size_t bits)
+        -> void {
+
+        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
+
+        if (operation == '<' and bits < register_bits and dst.is_register()) {
+            assembler_.slli(indent, loaded.value.base_register(),
+                            loaded.value.base_register(),
+                            register_bits - bits + shift_count);
+
+            assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
+                                    loaded.value.base_register(),
+                                    loaded.value.base_register(),
+                                    register_bits - bits);
+
+            store_operation_result(indent, dst, loaded.address, loaded.value,
+                                   false);
+
+            return;
+        }
+
+        // known counts already have rv32's five-bit shift semantics applied
+        assembler_.immediate_op(indent, operation == '<' ? op::slli : op::srai,
+                                loaded.value.base_register(),
+                                loaded.value.base_register(), shift_count);
+
+        store_operation_result(indent, dst, loaded.address, loaded.value,
+                               operation == '<');
+    }
+
+    auto shift_by_register(const token& src_loc_tk, const size_t indent,
+                           const char operation, const operand& dst,
+                           const operand& count,
+                           const loaded_destination& loaded) -> void {
+
+        const operand amount{source_register(src_loc_tk, indent, dst, count,
+                                             loaded.value, std::nullopt)};
+
+        assembler_.register_op(indent, operation == '<' ? op::sll : op::sra,
+                               loaded.value.base_register(),
+                               loaded.value.base_register(),
+                               amount.base_register());
+
+        store_operation_result(indent, dst, loaded.address, loaded.value,
+                               operation == '<');
     }
 
     // 'left' already holds the source when both name the same memory
@@ -4063,6 +4077,42 @@ class machine_rv32i : public machine {
         return op::lb;
     }
 
+    [[nodiscard]] static auto make_digit_sequence(const uint32_t multiplier,
+                                                  const size_t bits)
+        -> digit_sequence {
+
+        std::array<int, multiplier_digit_count> digits{
+            multiplier_digits(multiplier)};
+
+        // a digit at the product width vanishes modulo the width, leaving a
+        // negative multiplier that is cheaper to build positive then negate
+        const bool negate{digits.at(bits) != 0};
+        if (negate) {
+            digits.at(bits) = 0;
+            for (int& digit : digits) {
+                digit = -digit;
+            }
+        }
+
+        // the leading nonzero digit is now plus one and starts the result
+        size_t top{digits.size() - 1};
+        while (digits.at(top) == 0) {
+            --top;
+        }
+
+        size_t lowest{};
+        while (digits.at(lowest) == 0) {
+            ++lowest;
+        }
+
+        return {
+            .digits{digits},
+            .negate{negate},
+            .top{top},
+            .lowest{lowest},
+        };
+    }
+
     // non-adjacent form turns a run of set bits into one subtraction, e.g. 7
     // as 8 - 1, so each run costs one shift and add instead of one per bit
     [[nodiscard]] static auto multiplier_digits(const uint32_t multiplier)
@@ -4319,6 +4369,23 @@ class machine_rv32i : public machine {
             address.scale() > UINT32_MAX) {
             throw compiler_exception{src_loc_tk,
                                      "index scale exceeds RV32I address range"};
+        }
+    }
+
+    // the result is written in place
+    static auto validate_destination_storage(const token& src_loc_tk,
+                                             const operand& dst,
+                                             const std::string_view operation)
+        -> void {
+
+        if (not(dst.is_register() or dst.is_memory())) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("invalid RV32I {} destination", operation)};
+        }
+
+        if (dst.is_memory()) {
+            validate_address(src_loc_tk, dst);
         }
     }
 

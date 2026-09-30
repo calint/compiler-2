@@ -1578,6 +1578,67 @@ class machine_x86_64 final : public machine {
                                });
     }
 
+    // an immediate that does not fit the instruction goes through a register
+    auto emit_immediate_op(const token& src_loc_tk, const size_t indent,
+                           const op code, const operand& dst_op,
+                           const operand& src_op) -> void {
+
+        if (not needs_immediate_register(code, dst_op, src_op)) {
+            emit(indent, code, dst_op, src_op);
+            return;
+        }
+
+        const operand reg{
+            alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
+
+        emit(indent, op::mov, reg, src_op);
+        emit(indent, code, dst_op, reg);
+        free_scratch_register(src_loc_tk, indent, reg);
+    }
+
+    // x86 has no memory to memory form, the source goes through a register of
+    // the destination width
+    auto emit_memory_to_memory_op(const token& src_loc_tk, const size_t indent,
+                                  const op code, const operand& dst_op,
+                                  const operand& src_op) -> void {
+
+        const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
+        const size_t src_size_bytes{src_op.type_ref().size_bytes()};
+
+        const operand reg{alloc_scratch_register(
+            src_loc_tk, indent, builtin_type_for_size_bytes(dst_size_bytes))};
+
+        if (dst_size_bytes > src_size_bytes) {
+            emit(indent, op::movsx, reg, src_op);
+        } else if (dst_size_bytes < src_size_bytes) {
+            emit(indent, op::mov, reg, sized_memory(src_op, dst_size_bytes));
+        } else {
+            emit(indent, op::mov, reg, src_op);
+        }
+
+        emit(indent, code, dst_op, reg);
+
+        free_scratch_register(src_loc_tk, indent, reg);
+    }
+
+    // the low part of the source is used, so a narrower destination needs no
+    // extension
+    auto emit_narrowing_op(const size_t indent, const op code,
+                           const operand& dst_op, const operand& src_op)
+        -> void {
+
+        const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
+
+        if (src_op.is_register()) {
+            emit(indent, code, dst_op, sized_register(src_op, dst_size_bytes));
+            return;
+        }
+
+        assert(dst_op.is_register() and src_op.is_memory());
+
+        emit(indent, code, dst_op, sized_memory(src_op, dst_size_bytes));
+    }
+
     // matches the widths of the operands with scratch registers and sign
     // extension, and lowers addresses x86 cannot encode
     auto emit_op(const token& src_loc_tk, const size_t indent, const op code,
@@ -1598,46 +1659,18 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
-        const size_t src_size_bytes{src_op.type_ref().size_bytes()};
-
         if (src_op.is_immediate()) {
-            if (needs_immediate_register(code, dst_op, src_op)) {
-                const operand reg{
-                    alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
-
-                emit(indent, op::mov, reg, src_op);
-                emit(indent, code, dst_op, reg);
-                free_scratch_register(src_loc_tk, indent, reg);
-
-                return;
-            }
-
-            emit(indent, code, dst_op, src_op);
-
+            emit_immediate_op(src_loc_tk, indent, code, dst_op, src_op);
             return;
         }
 
         if (dst_op.is_memory() and src_op.is_memory()) {
-            const operand reg{alloc_scratch_register(
-                src_loc_tk, indent,
-                builtin_type_for_size_bytes(dst_size_bytes))};
-
-            if (dst_size_bytes > src_size_bytes) {
-                emit(indent, op::movsx, reg, src_op);
-            } else if (dst_size_bytes < src_size_bytes) {
-                emit(indent, op::mov, reg,
-                     sized_memory(src_op, dst_size_bytes));
-            } else {
-                emit(indent, op::mov, reg, src_op);
-            }
-
-            emit(indent, code, dst_op, reg);
-
-            free_scratch_register(src_loc_tk, indent, reg);
-
+            emit_memory_to_memory_op(src_loc_tk, indent, code, dst_op, src_op);
             return;
         }
+
+        const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
+        const size_t src_size_bytes{src_op.type_ref().size_bytes()};
 
         if (dst_size_bytes == src_size_bytes) {
             emit(indent, code, dst_op, src_op);
@@ -1645,47 +1678,11 @@ class machine_x86_64 final : public machine {
         }
 
         if (dst_size_bytes > src_size_bytes) {
-            // 'movsx' needs a register destination, so the source register is
-            // extended in place, its low bits keep the value
-            if (code == op::mov and dst_op.is_memory()) {
-                const operand wide{sized_register(src_op, dst_size_bytes)};
-
-                emit(indent, op::movsx, wide, src_op);
-                emit(indent, op::mov, dst_op, wide);
-
-                return;
-            }
-            if (code == op::mov) {
-                emit(indent, op::movsx, dst_op, src_op);
-                return;
-            }
-            if (code == op::sal or code == op::sar) {
-                emit(indent, code, dst_op, src_op);
-                return;
-            }
-            // the scratch register must match 'dst' so the op has equal-size
-            // operands
-            const operand reg_sx{alloc_scratch_register(
-                src_loc_tk, indent,
-                builtin_type_for_size_bytes(dst_size_bytes))};
-
-            emit(indent, op::movsx, reg_sx, src_op);
-
-            emit(indent, code, dst_op, reg_sx);
-
-            free_scratch_register(src_loc_tk, indent, reg_sx);
-
+            emit_widening_op(src_loc_tk, indent, code, dst_op, src_op);
             return;
         }
 
-        if (src_op.is_register()) {
-            emit(indent, code, dst_op, sized_register(src_op, dst_size_bytes));
-            return;
-        }
-
-        assert(dst_op.is_register() and src_op.is_memory());
-
-        emit(indent, code, dst_op, sized_memory(src_op, dst_size_bytes));
+        emit_narrowing_op(indent, code, dst_op, src_op);
     }
 
     auto emit_panic_exit() -> void {
@@ -1739,6 +1736,47 @@ class machine_x86_64 final : public machine {
                 [[maybe_unused]] const operand& empty) -> void {
                 assembler_.instruction(indent, code, to_argument(lowered));
             });
+    }
+
+    // the source is sign extended to the destination width
+    auto emit_widening_op(const token& src_loc_tk, const size_t indent,
+                          const op code, const operand& dst_op,
+                          const operand& src_op) -> void {
+
+        const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
+
+        // 'movsx' needs a register destination, so the source register is
+        // extended in place, its low bits keep the value
+        if (code == op::mov and dst_op.is_memory()) {
+            const operand wide{sized_register(src_op, dst_size_bytes)};
+
+            emit(indent, op::movsx, wide, src_op);
+            emit(indent, op::mov, dst_op, wide);
+
+            return;
+        }
+
+        if (code == op::mov) {
+            emit(indent, op::movsx, dst_op, src_op);
+            return;
+        }
+
+        // the count of a shift is not extended
+        if (code == op::sal or code == op::sar) {
+            emit(indent, code, dst_op, src_op);
+            return;
+        }
+
+        // the scratch register must match 'dst' so the op has equal-size
+        // operands
+        const operand reg_sx{alloc_scratch_register(
+            src_loc_tk, indent, builtin_type_for_size_bytes(dst_size_bytes))};
+
+        emit(indent, op::movsx, reg_sx, src_op);
+
+        emit(indent, code, dst_op, reg_sx);
+
+        free_scratch_register(src_loc_tk, indent, reg_sx);
     }
 
     auto idiv(const size_t indent, const operand& value) -> void {
