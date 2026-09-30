@@ -53,8 +53,8 @@ const rooms_len = 128
 const entities_len = 32
 
 type id_list {
-    ids i16[id_list_len],
-    len i16
+    ids[id_list_len],
+    len,
 }
 
 type name {
@@ -66,14 +66,21 @@ func name.print() {
     write(1, self.data, self.len)
 }
 
-dat link_names = name[link_names_len]{
-    { "none", 4 } 
+type link_names {
+    array name[link_names_len],
+    len
 }
-dat link_names_len = i16(1)
+
+dat link_names = link_names{
+    {
+        { "none", 4 }
+    },
+    1
+}
 
 type link {
-    link_name_id i16,
-    to i16,
+    link_name_id,
+    to,
 }
 
 type room {
@@ -82,9 +89,9 @@ type room {
     note str,
     entities id_list,
     links link[room_links_len],
-    links_len i16,
-    objects i16[room_objects_len],
-    objects_len i16,
+    links_len,
+    objects[room_objects_len],
+    objects_len,
 }
 dat rooms = room[rooms_len]{
     { 
@@ -95,11 +102,11 @@ dat rooms = room[rooms_len]{
         { {0, 1} }, 1
     } 
 }
-dat rooms_len = i16(1)
+dat rooms_len = 1
 
 type entity {
     name name,
-    room_id i16,
+    room_id,
     messages str[16],
 }
 
@@ -142,7 +149,7 @@ func room.print() {
         print(str_exits)
         foo self.links, self.links_len {
             if i != 0 print(str_comma)
-            link_names[e.link_name_id].print()
+            link_names.array[e.link_name_id].print()
         }
         print(str_nl)
     }
@@ -154,8 +161,8 @@ func room.print() {
 
 type tokenizer {
     str str,
-    start i16,
-    end i16,
+    start,
+    end,
 }
 
 func tokenizer.input() {
@@ -255,8 +262,8 @@ func action_go(cur_entity, tz tokenizer) {
     var links_len = rooms[room_id].links_len
     var found_ix = links_len
     foo rooms[room_id].links, links_len {
-        if tz.is_name(link_names[e.link_name_id]) {
-            found_ix = i16(i)
+        if tz.is_name(link_names.array[e.link_name_id]) {
+            found_ix = i
             break
         }
     }
@@ -274,22 +281,22 @@ func action_go(cur_entity, tz tokenizer) {
     print(str_nl)
 }
 
-func find_link_name_or_make(tz tokenizer) res i16 {
-    res = link_names_len
-    foo link_names, link_names_len {
+func find_link_name_or_make(tz tokenizer) res {
+    res = link_names.len
+    foo link_names.array, link_names.len {
         if tz.is_name(e) {
-            res = i16(i)
+            res = i
             break
         }
     }
 
     if res != link_names_len return
 
-    tz.copy_to_name(link_names[link_names_len])
+    tz.copy_to_name(link_names.array[link_names.len])
 
-    res = link_names_len
+    res = link_names.len
 
-    link_names_len = link_names_len + 1
+    link_names.len = link_names.len + 1
 }
 
 dat str_what_exit_name_to = "what is exit name to new room\n"
