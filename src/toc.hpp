@@ -991,7 +991,7 @@ class toc final {
         return ident_info::make_register(reg.base_register(), reg);
     }
 
-    // the value is the byte, e.g. 'a' is 97 and '\xff' is 255
+    // the value is the byte, e.g. 'a' is 97 and '\\xff' is 255
     [[nodiscard]] static auto parse_character(const token& src_loc_tk,
                                               const std::string_view str)
         -> int64_t {
@@ -1101,7 +1101,7 @@ class toc final {
 
         // the iterator 'e' is memory at its register, the counter 'i' is the
         // register
-        const operand& reg{var.value_register.is_empty() ? var.reg
+        const operand& reg{var.value_register.is_empty() ? var.pointer_register
                                                          : var.value_register};
 
         if (not reg.is_empty()) {

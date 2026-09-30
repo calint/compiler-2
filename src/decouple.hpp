@@ -265,7 +265,7 @@ struct var_info {
     bool is_pointer{};
     bool is_read_only{};
     size_t array_len{};
-    operand reg; // variable location is in register
+    operand pointer_register; // variable location is in register
     std::string_view base_register;
     operand value_register; // variable value is in register, no storage
 };

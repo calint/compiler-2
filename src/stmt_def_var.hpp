@@ -184,7 +184,7 @@ class stmt_def_var final : public statement {
             .src_loc_tk{name_tk_},
             .is_array{is_array_},
             .array_len{array_count_},
-            .reg{},
+            .pointer_register{},
             .base_register{},
             .value_register{},
         };

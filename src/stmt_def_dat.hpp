@@ -123,7 +123,7 @@ class stmt_def_dat final : public statement {
             .src_loc_tk{name_tk_},
             .is_array{elroot_.is_array},
             .array_len{elroot_.array_count},
-            .reg{},
+            .pointer_register{},
             .base_register{},
             .value_register{},
         };

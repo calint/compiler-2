@@ -73,7 +73,7 @@ class type final {
         }
 
         const int64_t idx{
-            var.reg.is_empty()
+            var.pointer_register.is_empty()
                 ? add_address_offset(var.offset, address_offset(offset))
                 : address_offset(offset)};
 
@@ -85,9 +85,11 @@ class type final {
             tp = tp->fields_[0].type_ptr;
         }
 
-        const operand op{operand::mem(
-            var.reg.is_empty() ? storage_base : var.reg.base_register(), "", 1,
-            idx, *tp)};
+        const operand op{
+            operand::mem(var.pointer_register.is_empty()
+                             ? storage_base
+                             : var.pointer_register.base_register(),
+                         "", 1, idx, *tp)};
 
         return ident_info::make_var(std::string{ident}, path,
                                     std::move(type_path), op, idx, array_count,
