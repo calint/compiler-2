@@ -24,7 +24,7 @@ compiler writes the binary image itself.
 * constants
 * arrays
 * array iteration
-* string, character, record and array literals
+* string, character, use type and array initializers
 * opt-in checks against undefined behavior
   * array bounds at runtime, optionally reporting the line number
   * non-inlined function frame capacity at runtime
