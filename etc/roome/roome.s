@@ -4529,9 +4529,9 @@ main:
             beq t0, zero, if.367.5.397.9.else
             # [373:15] free scratch register t0
             if.373.15.397.9.code:
-                # [374:9] str_action_set_room_description(cur_entity, tz)
-                # [354:6] str_action_set_room_description(cur_entity, tz tokenizer)
-                func.str_action_set_room_description.374.9.397.9:
+                # [374:9] action_set_room_description(cur_entity, tz)
+                # [354:6] action_set_room_description(cur_entity, tz tokenizer)
+                func.action_set_room_description.374.9.397.9:
                     # [374:9] alias cur_entity -> cur_entity
                     # [374:9] alias tz -> tz
                     # [355:8] tz.skip_whitespace()
@@ -4854,7 +4854,7 @@ main:
                         # [357:8] free scratch register t1
                     func.tokenizer.copy_to_str.357.8.374.9.397.9.end:
                         # [357:8] free scratch register t0
-                func.str_action_set_room_description.374.9.397.9.end:
+                func.action_set_room_description.374.9.397.9.end:
             j if.367.5.397.9.end
             if.367.5.397.9.else:
                 # [377:9] print(str_not_understood)

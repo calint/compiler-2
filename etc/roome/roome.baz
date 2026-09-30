@@ -351,7 +351,7 @@ func action_new_room(cur_entity, tz tokenizer) {
     rooms.len = rooms.len + 1
 }
 
-func str_action_set_room_description(cur_entity, tz tokenizer) {
+func action_set_room_description(cur_entity, tz tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
     tz.copy_to_str(rooms.array[entities.array[cur_entity].room_id].description)
@@ -371,7 +371,7 @@ func parse_input(cur_entity, tz tokenizer) {
         action_new_room(cur_entity, tz)
 
     } else if tz.is_str(str_action_set_room_description) {
-        str_action_set_room_description(cur_entity, tz)
+        action_set_room_description(cur_entity, tz)
 
     } else {
         print(str_not_understood)
