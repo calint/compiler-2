@@ -23,6 +23,9 @@ echo $SEP
 
 IMAGE=etc/roome/roome-rv32i-fpga.bin
 
+ls -l "$IMAGE"
+echo $SEP
+
 # ctrl-c skips the emulator's terminal restore
 trap 'rm -f "$SDCARD"; stty sane 2>/dev/null || true' EXIT
 echo "$EMULATOR" "$IMAGE" "$SDCARD"
