@@ -101,12 +101,13 @@ type rooms {
 
 dat rooms = rooms{
     { # array
-        { # array[0] 
-            { "roome", 5 },
-            { },
-            { "todo: find an exit", 18 },
-            { { 0 }, 1 },
-            { {0, 1} }, 1
+        { # room[0] 
+            { "roome", 5 }, # name
+            { }, # description
+            { "todo: find an exit", 18 }, # note
+            { { 0 }, 1 }, # entities id_list
+            { {0, 1} }, # links array
+            1 # links array len
         }
     },
     1 # len
