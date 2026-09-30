@@ -594,15 +594,83 @@ func action_drop(cur_entity, tz tokenizer) {
     print(str_nl)
 }
 
+dat str_give_what = "give what\n"
+dat str_give_to_whom = "give to whom\n"
+dat str_nobody_here = "nobody like that here\n"
+dat str_gave = "gave "
+
+func action_give(cur_entity, tz tokenizer) {
+    tz.next()
+
+    if tz.is_empty() {
+        print(str_give_what)
+        return
+    }
+
+    # find object in inventory
+    var len = entities.array[cur_entity].objects.len
+    var found_ix = len
+    foo entities.array[cur_entity].objects.array, len {
+        if tz.is_name(objects.array[e].name) {
+            found_ix = i
+            break
+        }
+    }
+
+    if found_ix == len {
+        print(str_not_carrying)
+        return
+    }
+
+    var object_id = entities.array[cur_entity].objects.array[found_ix]
+    var object_name = objects.array[object_id].name
+
+    tz.next()
+
+    if tz.is_empty() {
+        print(str_give_to_whom)
+        return
+    }
+
+    # find other entity in the same room
+    var room_id = entities.array[cur_entity].room_id
+    var room_entities_len = rooms.array[room_id].entities.len
+    var to_entity = room_entities_len
+    foo rooms.array[room_id].entities.array, room_entities_len {
+        if e == cur_entity continue
+        if tz.is_name(entities.array[e].name) {
+            to_entity = e
+            break
+        }
+    }
+
+    if to_entity == room_entities_len {
+        print(str_nobody_here)
+        return
+    }
+
+    # move object between inventories
+    var discarded = entities.array[to_entity].objects.add(object_id)
+    entities.array[cur_entity].objects.delete_index(found_ix)
+
+    print(str_gave)
+    object_name.print()
+    print(str_nl)
+}
+
 dat str_help = "\
-  inventory: ei\n\
+  help: this message\n\
+  go to: go <exit>\n\
+  inventory: i\n\
+  create new object: on <name>\n\
   drop object: d <object>\n\
-  go to exit: go <exit>\n\
-  create new room: rnm <to exit> <from exit>\n\
+  give object: g <object> <entity>\n\
+  new room: rn <to exit> <from exit>\n\
+  set room name: rnm <text>\n\
   set room description: rd <text>\n\
   set room note: rnt <text>\n\
-  create new entity: en <name>\n\
-  create new object: on <name>\n"
+  new entity: en <name>\n\
+"
 
 func action_help(entity_id, tz tokenizer) {
     print(str_help)
@@ -610,14 +678,15 @@ func action_help(entity_id, tz tokenizer) {
 
 dat str_action_help = "help"
 dat str_action_go = "go"
+dat str_action_inventory = "i"
+dat str_action_new_object = "on"
+dat str_action_drop = "d"
+dat str_action_give = "g"
 dat str_action_new_room = "rn"
 dat str_action_set_room_name = "rnm"
 dat str_action_set_room_description = "rd"
 dat str_action_set_room_note = "rnt"
 dat str_action_new_entity = "en"
-dat str_action_new_object = "on"
-dat str_action_inventory = "ei"
-dat str_action_drop = "d"
 
 func parse_input(cur_entity, tz tokenizer) {
     tz.first()
@@ -648,6 +717,9 @@ func parse_input(cur_entity, tz tokenizer) {
 
     } else if tz.is_str(str_action_drop) {
         action_drop(cur_entity, tz)
+
+    } else if tz.is_str(str_action_give) {
+        action_give(cur_entity, tz)
 
     } else if tz.is_str(str_action_help) {
         action_help(cur_entity, tz)

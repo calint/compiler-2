@@ -49,5 +49,117 @@ u r in roome
 u c me
 exits: none, office
 todo: find an exit
+u > i
+
+u have nothing
+
+u r in roome
+u c u
+exits: none, office
+todo: find an exit
+me > on key
+
+new object created
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+u > i
+
+u have nothing
+
+u r in roome
+u c u
+exits: none, office
+todo: find an exit
+me > i
+
+u have: key
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+u > g key me
+
+u do not have that
+
+u r in roome
+u c u
+exits: none, office
+todo: find an exit
+me > g key
+
+give to whom
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+u > d
+
+drop what
+
+u r in roome
+u c u
+exits: none, office
+todo: find an exit
+me > g key nobody
+
+nobody like that here
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+u > d key
+
+u do not have that
+
+u r in roome
+u c u
+exits: none, office
+todo: find an exit
+me > g key u
+
+gave key
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+u > i
+
+u have: key
+
+u r in roome
+u c u
+exits: none, office
+todo: find an exit
+me > g
+
+give what
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+u > d key
+
+dropped key
+
+u r in roome
+u c u, key
+exits: none, office
+todo: find an exit
+me > d key
+
+u do not have that
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
 u > go home
 
