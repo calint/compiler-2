@@ -1346,7 +1346,7 @@ class machine_rv32i : public machine {
         assert(frame_address.index_register().empty());
         assert(frame_size_bytes.is_immediate());
 
-        comment(src_loc_tk, indent, "frame capacity check (--checks=frame)");
+        comment(src_loc_tk, indent, "frame capacity check begin");
 
         const address_scope scope{*this, frame_address, frame_size_bytes};
         const operand start{
@@ -1383,6 +1383,7 @@ class machine_rv32i : public machine {
         assembler_.label(indent, "1");
         branch(indent, failure_label);
         assembler_.label(indent, "2");
+        comment(src_loc_tk, indent, "frame capacity check end");
     }
 
     auto comment(const token& src_loc_tk, const size_t indent,

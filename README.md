@@ -115,10 +115,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5537           2134          17596
+C/C++ Header                    54           5537           2134          17598
 C++                              1             66             19            329
 -------------------------------------------------------------------------------
-SUM:                            55           5603           2153          17925
+SUM:                            55           5603           2153          17927
 -------------------------------------------------------------------------------
 ```
 
@@ -3837,7 +3837,7 @@ main:
 ;   [319:13] f = factorial(five)
 ;   [319:13] = expression
 ;   [319:13] factorial(five)
-;   [319:13] frame capacity check (--checks=frame)
+;   [319:13] frame capacity check begin
 ;   [319:13] allocate scratch register -> r15
 ;   [319:13] allocate scratch register -> r14
     lea r15, [rbp + 592]
@@ -3853,6 +3853,7 @@ main:
     ja baz_frame_overflow
 ;   [319:13] free scratch register r14
 ;   [319:13] free scratch register r15
+;   [319:13] frame capacity check end
 ;   [319:13] result address in callee frame
 ;   [319:13] allocate scratch register -> r15
     lea r15, [rbp + 584]
@@ -4934,7 +4935,7 @@ main:
 ;       [402:19] src: folded constant '+ 1'
         add qword [rbp + 1280], 1
 ;       [403:9] print_num(counter)
-;       [403:9] frame capacity check (--checks=frame)
+;       [403:9] frame capacity check begin
 ;       [403:9] allocate scratch register -> r15
 ;       [403:9] allocate scratch register -> r14
         lea r15, [rbp + 1416]
@@ -4950,6 +4951,7 @@ main:
         ja baz_frame_overflow
 ;       [403:9] free scratch register r14
 ;       [403:9] free scratch register r15
+;       [403:9] frame capacity check end
 ;       [403:9] address of argument 'counter' to parameter 'num'
 ;       [403:9] allocate scratch register -> r15
         lea r15, [rbp + 1280]
@@ -5199,7 +5201,7 @@ main:
 ;       [42:5] free named register rdi
     func.print.418.5.end:
 ;   [419:5] print_num(names)
-;   [419:5] frame capacity check (--checks=frame)
+;   [419:5] frame capacity check begin
 ;   [419:5] allocate scratch register -> r15
 ;   [419:5] allocate scratch register -> r14
     lea r15, [rbp + 1416]
@@ -5215,6 +5217,7 @@ main:
     ja baz_frame_overflow
 ;   [419:5] free scratch register r14
 ;   [419:5] free scratch register r15
+;   [419:5] frame capacity check end
 ;   [419:5] address of argument 'names' to parameter 'num'
 ;   [419:5] allocate scratch register -> r15
     lea r15, [rbp + 368]
@@ -5612,7 +5615,7 @@ func.factorial:
 ;   [178:19] partial = factorial(m)
 ;   [178:19] = expression
 ;   [178:19] factorial(m)
-;   [178:19] frame capacity check (--checks=frame)
+;   [178:19] frame capacity check begin
 ;   [178:19] allocate scratch register -> r15
 ;   [178:19] allocate scratch register -> r14
     lea r15, [rbx + 32]
@@ -5628,6 +5631,7 @@ func.factorial:
     ja baz_frame_overflow
 ;   [178:19] free scratch register r14
 ;   [178:19] free scratch register r15
+;   [178:19] frame capacity check end
 ;   [178:19] result address in callee frame
 ;   [178:19] allocate scratch register -> r15
     lea r15, [rbx + 24]

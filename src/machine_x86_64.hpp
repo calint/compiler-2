@@ -462,7 +462,7 @@ class machine_x86_64 final : public machine {
         assert(frame_address.is_memory());
         assert(frame_size_bytes.is_immediate());
 
-        comment(src_loc_tk, indent, "frame capacity check (--checks=frame)");
+        comment(src_loc_tk, indent, "frame capacity check begin");
 
         const operand start{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
@@ -489,6 +489,7 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(indent, condition::a, failure_label);
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
+        comment(src_loc_tk, indent, "frame capacity check end");
     }
 
     auto comment(const token& src_loc_tk, const size_t indent,
