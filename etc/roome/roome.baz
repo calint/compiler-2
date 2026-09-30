@@ -43,22 +43,22 @@ func str.input() {
     self.len = i8(nbytes)
 }
 
-const name_len = 16
-const id_list_len = 32
-const room_objects_len = 64
-const room_entities_len = 32
-const room_links_len = 8
-const link_names_len = 1024
-const rooms_len = 128
-const entities_len = 32
+const max_name_len = 16
+const max_id_list_len = 32
+const max_room_objects_len = 64
+const max_room_entities_len = 32
+const max_room_links_len = 8
+const max_link_names_len = 1024
+const max_rooms_len = 128
+const max_entities_len = 32
 
 type id_list {
-    ids[id_list_len],
+    ids[max_id_list_len],
     len,
 }
 
 type name {
-    data i8[name_len],
+    data i8[max_name_len],
     len i8,
 }
 
@@ -67,15 +67,15 @@ func name.print() {
 }
 
 type link_names {
-    array name[link_names_len],
+    array name[max_link_names_len],
     len
 }
 
 dat link_names = link_names{
-    {
+    { # array begin
         { "none", 4 }
-    },
-    1
+    }, # array end
+    1 # len
 }
 
 type link {
@@ -88,14 +88,14 @@ type room {
     description str,
     note str,
     entities id_list,
-    links link[room_links_len],
+    links link[max_room_links_len],
     links_len,
-    objects[room_objects_len],
+    objects[max_room_objects_len],
     objects_len,
 }
 
 type rooms {
-    array room[rooms_len],
+    array room[max_rooms_len],
     len,
 }
 
@@ -119,7 +119,7 @@ type entity {
 }
 
 type entities {
-    array entity[entities_len],
+    array entity[max_entities_len],
     len,
 }
 
@@ -127,7 +127,7 @@ dat entities = entities{
     { # array begin
         { { "me", 2 }, 0 } # entity[0]
     }, # array end
-    1 # array len
+    1 # len
 }
 
 func entity.print() {
@@ -298,7 +298,7 @@ func find_link_name_or_make(tz tokenizer) res {
         }
     }
 
-    if res != link_names_len return
+    if res != link_names.len return
 
     tz.copy_to_name(link_names.array[link_names.len])
 
@@ -336,7 +336,7 @@ func action_new_room(cur_entity, tz tokenizer) {
     # link to next room
     rooms.array[cur_room_id].links[cur_room_next_link_id] = { 
         link_name_id,
-        rooms_len
+        rooms.len
     }
     rooms.array[cur_room_id].links_len = cur_room_next_link_id + 1
 
@@ -385,7 +385,7 @@ func main() {
     var tz = tokenizer{}
     var cur_entity = 0
     loop {
-        if cur_entity == entities_len {
+        if cur_entity == entities.len {
             cur_entity = 0
         }
         print(str_nl)

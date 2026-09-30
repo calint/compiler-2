@@ -38,14 +38,14 @@ lui sp, 2048
 # [17:1]       data :       0 :     127 :     yes :        127
 # [17:1]        len :     127 :       1 :      no :           
 #
-# [46:7] const name_len = 16
-# [47:7] const id_list_len = 32
-# [48:7] const room_objects_len = 64
-# [49:7] const room_entities_len = 32
-# [50:7] const room_links_len = 8
-# [51:7] const link_names_len = 1024
-# [52:7] const rooms_len = 128
-# [53:7] const entities_len = 32
+# [46:7] const max_name_len = 16
+# [47:7] const max_id_list_len = 32
+# [48:7] const max_room_objects_len = 64
+# [49:7] const max_room_entities_len = 32
+# [50:7] const max_room_links_len = 8
+# [51:7] const max_link_names_len = 1024
+# [52:7] const max_rooms_len = 128
+# [53:7] const max_entities_len = 32
 # [55:1] id_list : 132 B    fields:
 # [55:1]       name :  offset :    size :  array? : array size
 # [55:1]        ids :       0 :     128 :     yes :         32
@@ -177,15 +177,17 @@ main:
     # [387:5] label
     loop.387.5:
         if.388.12:
-        # [388:12] ? cur_entity == entities_len
-        # [388:12] ? cur_entity == entities_len
+        # [388:12] ? cur_entity == entities.len
+        # [388:12] ? cur_entity == entities.len
         cmp.388.12:
         # [388:12] allocate scratch register -> t0
         lui t0, 44
         add t0, t0, s0
         lw t0, -1944(t0)
         # [388:12] allocate scratch register -> t1
-        li t1, 32
+        lui t1, 43
+        add t1, t1, s0
+        lw t1, 1884(t1)
         bne t0, t1, if.388.9.end
         # [388:12] free scratch register t1
         # [388:12] free scratch register t0
@@ -3320,15 +3322,17 @@ main:
                         # [294:5] free scratch register t1
                         # [294:5] free scratch register t0
                         if.301.8.325.24.371.9.397.9:
-                        # [301:8] ? res != link_names_len
-                        # [301:8] ? res != link_names_len
+                        # [301:8] ? res != link_names.len
+                        # [301:8] ? res != link_names.len
                         cmp.301.8.325.24.371.9.397.9:
                         # [301:8] allocate scratch register -> t0
                         lui t0, 44
                         add t0, t0, s0
                         lw t0, -1932(t0)
                         # [301:8] allocate scratch register -> t1
-                        li t1, 1024
+                        lui t1, 4
+                        add t1, t1, s0
+                        lw t1, 1108(t1)
                         bne t0, t1, func.find_link_name_or_make.325.24.371.9.397.9.end
                         # [301:8] free scratch register t1
                         # [301:8] free scratch register t0
@@ -3967,15 +3971,17 @@ main:
                         # [294:5] free scratch register t1
                         # [294:5] free scratch register t0
                         if.301.8.334.29.371.9.397.9:
-                        # [301:8] ? res != link_names_len
-                        # [301:8] ? res != link_names_len
+                        # [301:8] ? res != link_names.len
+                        # [301:8] ? res != link_names.len
                         cmp.301.8.334.29.371.9.397.9:
                         # [301:8] allocate scratch register -> t0
                         lui t0, 44
                         add t0, t0, s0
                         lw t0, -1928(t0)
                         # [301:8] allocate scratch register -> t1
-                        li t1, 1024
+                        lui t1, 4
+                        add t1, t1, s0
+                        lw t1, 1108(t1)
                         bne t0, t1, func.find_link_name_or_make.334.29.371.9.397.9.end
                         # [301:8] free scratch register t1
                         # [301:8] free scratch register t0
@@ -4143,7 +4149,7 @@ main:
                         # [307:22] free scratch register t1
                         # [307:22] free scratch register t0
                     func.find_link_name_or_make.334.29.371.9.397.9.end:
-                    # [337:5] rooms.array[cur_room_id].links[cur_room_next_link_id] = { link_name_id, rooms_len }
+                    # [337:5] rooms.array[cur_room_id].links[cur_room_next_link_id] = { link_name_id, rooms.len }
                     # [337:17] allocate scratch register -> t0
                     # [337:17] set array index
                     # [337:17] cur_room_id
@@ -4210,11 +4216,13 @@ main:
                     # [338:9] free scratch register t2
                     # [339:9] copy field 'to'
                     # [339:9] allocate scratch register -> t2
-                    slli t2, t1, 3
-                    add t2, t2, t0
+                    lui t2, 27
+                    add t2, t2, s0
+                    lw t2, 1112(t2)
                     # [339:9] allocate scratch register -> t3
-                    li t3, 128
-                    sw t3, 4(t2)
+                    slli t3, t1, 3
+                    add t3, t3, t0
+                    sw t2, 4(t3)
                     # [339:9] free scratch register t3
                     # [339:9] free scratch register t2
                     # [337:5] free scratch register t1
@@ -5180,4 +5188,4 @@ vars.end:
 #                     dat size: 178132 B
 #              dat var padding: 12 B
 #                max vars size: 173 B
-#                 instructions: 1768
+#                 instructions: 1776
