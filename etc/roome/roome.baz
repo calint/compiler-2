@@ -16,7 +16,7 @@ func print(s i8[]) {
 
 type str {
     array i8[127],
-    len i8,
+    len,
 }
 
 func str.print() {
@@ -40,7 +40,7 @@ func str.input() {
         if self.array[nbytes] == '\n' break
         nbytes = nbytes + 1
     }
-    self.len = i8(nbytes)
+    self.len = nbytes
 }
 
 const max_name_len = 16
@@ -319,7 +319,7 @@ func tokenizer.to_name() dst name {
 }
 
 func tokenizer.copy_to_str(dst str) {
-    dst.len = i8(self.len())
+    dst.len = self.len()
     array_copy(self.str.array[self.start], dst.array, dst.len)
 }
 
