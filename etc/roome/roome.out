@@ -1,0 +1,30 @@
+
+welcome to adventure #6
+    type 'help'
+
+u r in roome
+u c me
+exits: none
+todo: find an exit
+me > rn office roome
+
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+me > go office
+
+went to office
+
+exits: roome
+me > go roome
+
+went to roome
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+me > go home
+

@@ -20,5 +20,7 @@ echo compile prog
 ./run.sh --checks=noub
 echo compile roome
 ./run-roome.sh
+echo test roome
+etc/roome/test.sh
 echo make readme
 etc/readme/make.sh
