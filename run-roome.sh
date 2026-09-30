@@ -16,7 +16,7 @@ SDCARD="$(mktemp)"
 SEP="--------------------------------------------------------------------------------"
 
 # a '--checks' in the arguments replaces the default one
-./baz --target=rv32i-fpga --checks=noub,line "$@" etc/roome/roome.baz >etc/roome/roome.s
+./baz --target=rv32i-fpga --vars=131072 --checks=noub,line "$@" etc/roome/roome.baz >etc/roome/roome.s
 echo $SEP
 
 tail -n 10 etc/roome/roome.s

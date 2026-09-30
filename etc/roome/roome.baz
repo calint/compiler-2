@@ -15,29 +15,29 @@ func print(s i8[]) {
 }
 
 type str {
-    data i8[127],
+    array i8[127],
     len i8,
 }
 
 func str.print() {
-    write(1, self.data, self.len)
+    write(1, self.array, self.len)
 }
 
 func str.input() {
     # the uart does not echo, so each byte is written back as it is read
     var nbytes = 0
     loop {
-        if nbytes == array_length(self.data) break
-        if read(0, self.data, 1, nbytes) == 0 break
-        if self.data[nbytes] == '\x7f' {
+        if nbytes == array_length(self.array) break
+        if read(0, self.array, 1, nbytes) == 0 break
+        if self.array[nbytes] == '\x7f' {
             if nbytes > 0 {
                 nbytes = nbytes - 1
                 write(1, str_erase)
             }
             continue
         }
-        write(1, self.data, 1, nbytes)
-        if self.data[nbytes] == '\n' break
+        write(1, self.array, 1, nbytes)
+        if self.array[nbytes] == '\n' break
         nbytes = nbytes + 1
     }
     self.len = i8(nbytes)
@@ -83,18 +83,19 @@ func id_list.delete_element(id) {
     self.delete_index(found_ix)
 }
 
-func id_list.add(ix) { 
+func id_list.add(ix) res { 
     self.array[self.len] = ix
+    res = self.len
     self.len = self.len + 1
 }
 
 type name {
-    data i8[max_name_len],
-    len i8,
+    array i8[max_name_len],
+    len,
 }
 
 func name.print() {
-    write(1, self.data, self.len)
+    write(1, self.array, self.len)
 }
 
 func name.equals(nm name) res bool {
@@ -103,13 +104,17 @@ func name.equals(nm name) res bool {
         return
     }
 
-    res = arrays_equal(self.data, nm.data, self.len)
+    res = arrays_equal(self.array, nm.array, self.len)
 }
 
 type entity {
     name name,
     room_id,
     messages str[16],
+}
+
+func entity.print() {
+    write(1, self.name.array, self.name.len)
 }
 
 type entities {
@@ -124,8 +129,10 @@ dat entities = entities{
     1 # len
 }
 
-func entity.print() {
-    write(1, self.name.data, self.name.len)
+func entities.add(nm name, room_id) entity_id {
+    self.array[self.len] = { nm, room_id } 
+    entity_id = self.len
+    self.len = self.len + 1
 }
 
 type link_names {
@@ -194,7 +201,7 @@ dat rooms = rooms{
 
 dat str_u_r_in = "u r in "
 
-func room.print() {
+func room.print(cur_entity) {
     if self.name.len != 0 {
         print(str_u_r_in)
         self.name.print()
@@ -206,9 +213,12 @@ func room.print() {
     }
     if(self.entities.len != 0) {
         print(str_uc)
+        var first_elem_printed = false
         foo self.entities.array, self.entities.len {
-            if i != 0 print(str_comma)
+            if e == cur_entity continue
+            if first_elem_printed print(str_comma)
             entities.array[e].print()
+            first_elem_printed = true
         }
         print(str_nl)
     }
@@ -245,7 +255,7 @@ func tokenizer.skip_whitespace() {
             self.end = self.start
             return
         }
-        if self.str.data[self.start] != ' ' break
+        if self.str.array[self.start] != ' ' break
         self.start = self.start + 1
     }
     self.end = self.start
@@ -256,7 +266,7 @@ func tokenizer.first() {
     self.end = self.start
     loop {
         if self.end >= self.str.len break
-        if self.str.data[self.end] == ' ' break
+        if self.str.array[self.end] == ' ' break
         self.end = self.end + 1
     }
 }
@@ -266,7 +276,7 @@ func tokenizer.next() {
     self.end = self.start
     loop {
         if self.end >= self.str.len break
-        if self.str.data[self.end] == ' ' break
+        if self.str.array[self.end] == ' ' break
         self.end = self.end + 1
     }
 }
@@ -276,17 +286,17 @@ func tokenizer.len() res {
 }
 
 func tokenizer.print() {
-    write(1, self.str.data, self.len(), self.start)
+    write(1, self.str.array, self.len(), self.start)
 }
 
 func tokenizer.is_str(str i8[]) res bool {
     res = self.len() == array_length(str) and
-          arrays_equal(str, self.str.data[self.start], array_length(str))
+          arrays_equal(str, self.str.array[self.start], array_length(str))
 }
 
 func tokenizer.is_name(nm name) res bool {
     res = self.len() == nm.len and
-          arrays_equal(nm.data, self.str.data[self.start], nm.len)
+          arrays_equal(nm.array, self.str.array[self.start], nm.len)
 }
 
 func tokenizer.is_empty() res bool {
@@ -294,13 +304,19 @@ func tokenizer.is_empty() res bool {
 }
 
 func tokenizer.copy_to_name(dst name) {
-    dst.len = i8(self.len())
-    array_copy(self.str.data[self.start], dst.data, dst.len)
+    dst.len = self.len()
+    array_copy(self.str.array[self.start], dst.array, dst.len)
+}
+
+func tokenizer.to_name() dst name {
+    dst.len = self.len()
+    dst.array = {}
+    array_copy(self.str.array[self.start], dst.array, dst.len)
 }
 
 func tokenizer.copy_to_str(dst str) {
     dst.len = i8(self.len())
-    array_copy(self.str.data[self.start], dst.data, dst.len)
+    array_copy(self.str.array[self.start], dst.array, dst.len)
 }
 
 func tokenizer.to_end() {
@@ -344,7 +360,7 @@ func action_go(cur_entity, tz tokenizer) {
     # move entity
     var to_id = rooms.array[cur_room_id].links[found_ix].to
     entities.array[cur_entity].room_id = to_id 
-    rooms.array[to_id].entities.add(cur_entity)
+    var discarded = rooms.array[to_id].entities.add(cur_entity)
     rooms.array[cur_room_id].entities.delete_element(cur_entity)
 
     print(str_went_to)
@@ -420,9 +436,29 @@ func action_set_room_description(cur_entity, tz tokenizer) {
     tz.copy_to_str(rooms.array[entities.array[cur_entity].room_id].description)
 }
 
+dat str_what_name = "what name"
+
+func action_new_entity(cur_entity, tz tokenizer) {
+    tz.next()
+
+    if tz.is_empty() {
+        print(str_what_name)
+        return
+    }
+
+    var name = tz.to_name()
+
+    var room_id = entities.array[cur_entity].room_id
+
+    var entity_id = entities.add(name, room_id)
+
+    var discarded = rooms.array[room_id].entities.add(entity_id)
+}
+
 dat str_action_go = "go"
 dat str_action_new_room = "rn"
 dat str_action_set_room_description = "rd"
+dat str_action_new_entity = "en"
 
 func parse_input(cur_entity, tz tokenizer) {
     tz.first()
@@ -435,6 +471,9 @@ func parse_input(cur_entity, tz tokenizer) {
 
     } else if tz.is_str(str_action_set_room_description) {
         action_set_room_description(cur_entity, tz)
+
+    } else if tz.is_str(str_action_new_entity) {
+        action_new_entity(cur_entity, tz)
 
     } else {
         print(str_not_understood)
@@ -452,12 +491,13 @@ func main() {
             cur_entity = 0
         }
         print(str_nl)
-        rooms.array[entities.array[cur_entity].room_id].print()
+        rooms.array[entities.array[cur_entity].room_id].print(cur_entity)
         entities.array[cur_entity].name.print()
         print(str_prompt)
         tz.input()
         print(str_nl)
         parse_input(cur_entity, tz)
+        cur_entity = cur_entity + 1
     }
 }
 
