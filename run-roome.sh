@@ -1,7 +1,6 @@
 #!/bin/bash
 # runs a flat rv32i image on the fpga emulator, the image is loaded at 0 and
 # the uart is the terminal
-# usage: run-roome.sh [roome-rv32i-fpga.bin]
 # the emulator exits with the program's exit code
 set -eu
 cd "$(dirname "$0")"
@@ -18,6 +17,7 @@ SEP="---------------------------------------------------------------------------
 
 ./baz --target=rv32i-fpga --checks=noub,line etc/roome/roome.baz >etc/roome/roome.s
 echo $SEP
+
 tail -n 10 etc/roome/roome.s
 echo $SEP
 
