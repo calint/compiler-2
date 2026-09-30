@@ -6,7 +6,7 @@ dat     str_nl = "\n"
 dat  str_comma = ", "
 dat  str_erase = "\b \b"
 
-dat str_not_understood = "not understood"
+dat str_not_understood = "not understood\n"
 
 dat flag = "\n\nFLAG\n\n"
 
@@ -51,6 +51,7 @@ const max_room_links_len = 8
 const max_link_names_len = 1024
 const max_rooms_len = 128
 const max_entities_len = 32
+const max_objects_len = 1024
 
 type id_list {
     array[max_id_list_len],
@@ -110,6 +111,7 @@ func name.equals(nm name) res bool {
 type entity {
     name name,
     room_id,
+    objects id_list,
     messages str[16],
 }
 
@@ -152,6 +154,23 @@ type link {
     to,
 }
 
+type object {
+    name name,
+}
+
+type objects {
+    array object[max_objects_len],
+    len,
+}
+
+func objects.add(name name) object_id {
+    self.array[self.len] = { name }
+    object_id = self.len
+    self.len = self.len + 1
+}
+
+dat objects = objects{}
+
 type room {
     name name,
     description str,
@@ -159,8 +178,7 @@ type room {
     entities id_list,
     links link[max_room_links_len],
     links_len,
-    objects[max_room_objects_len],
-    objects_len,
+    objects id_list,
 }
 
 func room.remove_entity(id) {
@@ -211,7 +229,7 @@ func room.print(cur_entity) {
         self.description.print()
         print(str_nl)
     }
-    if(self.entities.len != 0) {
+    if(self.entities.len > 1) {
         var first_elem_printed = false
         foo self.entities.array, self.entities.len {
             if e == cur_entity continue
@@ -437,6 +455,7 @@ func action_set_room_description(cur_entity, tz tokenizer) {
 }
 
 dat str_what_name = "what name"
+dat str_new_entity_created = "new entity created\n"
 
 func action_new_entity(cur_entity, tz tokenizer) {
     tz.next()
@@ -453,12 +472,69 @@ func action_new_entity(cur_entity, tz tokenizer) {
     var entity_id = entities.add(name, room_id)
 
     var discarded = rooms.array[room_id].entities.add(entity_id)
+
+    print(str_new_entity_created)
 }
 
+dat str_new_object_created = "new object created\n"
+
+func action_new_object(cur_entity, tz tokenizer) {
+    tz.next()
+
+    if tz.is_empty() {
+        print(str_what_name)
+        return
+    }
+
+    var name = tz.to_name()
+
+    var object_id = objects.add(name)
+
+    var discarded = entities.array[cur_entity].objects.add(object_id)
+
+    print(str_new_object_created)
+}
+
+dat str_u_have = "u have: "
+dat str_u_have_nothing = "u have nothing\n"
+
+func action_inventory(cur_entity, tz tokenizer) {
+    var len = entities.array[cur_entity].objects.len
+    if  len == 0 {
+        print(str_u_have_nothing)
+        return
+    }
+
+    var first_printed = false
+
+    foo entities.array[cur_entity].objects.array, len {
+
+        if not first_printed {
+            print(str_u_have)
+            first_printed = true
+        } else {
+            print(str_comma)
+        }
+
+        objects.array[e].name.print()
+    }
+
+    print(str_nl)
+}
+
+dat str_help = "\ninventory: ei\ngo to exit: go <exit>\ncreate new room: rn <to exit> <from exit>\nset room description: rd <text>\ncreate new entity: en <name>\ncreate new object: on <name>\n"
+
+func action_help(entity_id, tz tokenizer) {
+    print(str_help)
+}
+
+dat str_action_help = "help"
 dat str_action_go = "go"
 dat str_action_new_room = "rn"
 dat str_action_set_room_description = "rd"
 dat str_action_new_entity = "en"
+dat str_action_new_object = "on"
+dat str_action_inventory = "ei"
 
 func parse_input(cur_entity, tz tokenizer) {
     tz.first()
@@ -475,9 +551,17 @@ func parse_input(cur_entity, tz tokenizer) {
     } else if tz.is_str(str_action_new_entity) {
         action_new_entity(cur_entity, tz)
 
+    } else if tz.is_str(str_action_new_object) {
+        action_new_object(cur_entity, tz)
+
+    } else if tz.is_str(str_action_inventory) {
+        action_inventory(cur_entity, tz)
+
+    } else if tz.is_str(str_action_help) {
+        action_help(cur_entity, tz)
+
     } else {
         print(str_not_understood)
-        print(str_nl)
     }
 }
 
