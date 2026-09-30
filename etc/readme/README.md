@@ -115,10 +115,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5535           2128          17582
+C/C++ Header                    54           5535           2131          17588
 C++                              1             66             19            329
 -------------------------------------------------------------------------------
-SUM:                            55           5601           2147          17911
+SUM:                            55           5601           2150          17917
 -------------------------------------------------------------------------------
 ```
 
@@ -2817,13 +2817,14 @@ main:
 ;   [239:9] set array index
 ;   [239:9] ix
     mov r15, qword [rbp + 440]
-;   [239:9] bounds check
+;   [239:9] bounds check begin
 ;   [239:9] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
 ;   [239:9] upper bound (--checks=upper)
     cmp r15, 4
     jge baz_bounds_panic
+;   [239:9] bounds check end
 ;   [239:15] 2
     mov dword [rbp + r15 * 4 + 424], 2
 ;   [239:5] free scratch register r15
@@ -2835,25 +2836,27 @@ main:
 ;   [240:9] r15 + 1
 ;   [240:9] src: folded constant '+ 1'
     add r15, 1
-;   [240:9] bounds check
+;   [240:9] bounds check begin
 ;   [240:9] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
 ;   [240:9] upper bound (--checks=upper)
     cmp r15, 4
     jge baz_bounds_panic
+;   [240:9] bounds check end
 ;   [240:19] arr[ix]
 ;   [240:23] allocate scratch register -> r14
 ;   [240:23] set array index
 ;   [240:23] ix
     mov r14, qword [rbp + 440]
-;   [240:23] bounds check
+;   [240:23] bounds check begin
 ;   [240:23] lower bound (--checks=lower)
     test r14, r14
     js baz_bounds_panic
 ;   [240:23] upper bound (--checks=upper)
     cmp r14, 4
     jge baz_bounds_panic
+;   [240:23] bounds check end
 ;   [240:19] allocate scratch register -> r13
     mov r13d, dword [rbp + r14 * 4 + 424]
     mov dword [rbp + r15 * 4 + 424], r13d
@@ -2926,7 +2929,7 @@ main:
 ;   [244:20] set array index
 ;   [244:20] 2
     mov r14, 2
-;   [244:20] bounds check
+;   [244:20] bounds check begin
 ;   [244:20] lower bound (--checks=lower)
     test r14, r14
     js baz_bounds_panic
@@ -2939,14 +2942,16 @@ main:
     cmp r13, 4
 ;   [244:20] free scratch register r13
     jg baz_bounds_panic
+;   [244:20] bounds check end
 ;   [244:24] arr
-;   [244:24] bounds check
+;   [244:24] bounds check begin
 ;   [244:24] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
 ;   [244:24] upper bound (--checks=upper)
     cmp r15, 4
     jg baz_bounds_panic
+;   [244:24] bounds check end
 ;   [244:5] size <= 16 B, use mov
 ;   [244:5] allocate named register rax
     mov rax, qword [rbp + r14 * 4 + 424]
@@ -2997,21 +3002,23 @@ main:
 ;   [249:27] 4
     mov r15, 4
 ;   [249:16] arr
-;   [249:16] bounds check
+;   [249:16] bounds check begin
 ;   [249:16] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
 ;   [249:16] upper bound (--checks=upper)
     cmp r15, 4
     jg baz_bounds_panic
+;   [249:16] bounds check end
 ;   [249:21] arr1
-;   [249:21] bounds check
+;   [249:21] bounds check begin
 ;   [249:21] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
 ;   [249:21] upper bound (--checks=upper)
     cmp r15, 8
     jg baz_bounds_panic
+;   [249:21] bounds check end
 ;   [249:5] size <= 16 B, use mov
 ;   [249:5] allocate named register rax
     mov rax, qword [rbp + 424]
@@ -3038,7 +3045,7 @@ main:
 ;       [250:31] set array index
 ;       [250:31] 1
         mov r15, 1
-;       [250:31] bounds check
+;       [250:31] bounds check begin
 ;       [250:31] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
@@ -3051,6 +3058,7 @@ main:
         cmp r14, 4
 ;       [250:31] free scratch register r14
         jg baz_bounds_panic
+;       [250:31] bounds check end
         lea rsi, [rbp + r15 * 4 + 424]
 ;       [250:14] free scratch register r15
 ;       [250:35] arr1[1]
@@ -3058,7 +3066,7 @@ main:
 ;       [250:40] set array index
 ;       [250:40] 1
         mov r15, 1
-;       [250:40] bounds check
+;       [250:40] bounds check begin
 ;       [250:40] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
@@ -3071,6 +3079,7 @@ main:
         cmp r14, 8
 ;       [250:40] free scratch register r14
         jg baz_bounds_panic
+;       [250:40] bounds check end
         lea rdi, [rbp + r15 * 4 + 448]
 ;       [250:14] free scratch register r15
         shl rcx, 2
@@ -3125,22 +3134,24 @@ main:
 ;       [256:40] 4
         mov rcx, 4
 ;       [256:29] arr
-;       [256:29] bounds check
+;       [256:29] bounds check begin
 ;       [256:29] lower bound (--checks=lower)
         test rcx, rcx
         js baz_bounds_panic
 ;       [256:29] upper bound (--checks=upper)
         cmp rcx, 4
         jg baz_bounds_panic
+;       [256:29] bounds check end
         lea rsi, [rbp + 424]
 ;       [256:34] arr1
-;       [256:34] bounds check
+;       [256:34] bounds check begin
 ;       [256:34] lower bound (--checks=lower)
         test rcx, rcx
         js baz_bounds_panic
 ;       [256:34] upper bound (--checks=upper)
         cmp rcx, 8
         jg baz_bounds_panic
+;       [256:34] bounds check end
         lea rdi, [rbp + 448]
         shl rcx, 2
         test rcx, rcx
@@ -3239,13 +3250,14 @@ main:
 ;   [267:24] r15 - 1
 ;   [267:24] src: folded constant '- 1'
     sub r15, 1
-;   [267:24] bounds check
+;   [267:24] bounds check begin
 ;   [267:24] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
 ;   [267:24] upper bound (--checks=upper)
     cmp r15, 4
     jge baz_bounds_panic
+;   [267:24] bounds check end
 ;   [267:16] instructions without scratch register 6, with 7
 ;   [71:6] inv(i i32) res i32
     func.inv.267.16:
@@ -3267,13 +3279,14 @@ main:
 ;   [268:9] set array index
 ;   [268:9] ix
     mov r15, qword [rbp + 440]
-;   [268:9] bounds check
+;   [268:9] bounds check begin
 ;   [268:9] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
 ;   [268:9] upper bound (--checks=upper)
     cmp r15, 4
     jge baz_bounds_panic
+;   [268:9] bounds check end
 ;   [268:15] tmp
 ;   [268:15] allocate scratch register -> r14
     mov r14d, dword [rbp + 500]
@@ -3289,13 +3302,14 @@ main:
 ;   [269:16] set array index
 ;   [269:16] ix
     mov r14, qword [rbp + 440]
-;   [269:16] bounds check
+;   [269:16] bounds check begin
 ;   [269:16] lower bound (--checks=lower)
     test r14, r14
     js baz_bounds_panic
 ;   [269:16] upper bound (--checks=upper)
     cmp r14, 4
     jge baz_bounds_panic
+;   [269:16] bounds check end
     cmp dword [rbp + r14 * 4 + 424], 2
 ;   [269:12] free scratch register r14
     sete r15b
@@ -3368,7 +3382,7 @@ main:
     lea r15, [rbp + 504]
 ;   [275:5] allocate scratch register -> r14
 ;   [275:9] e: i64 (r15)
-;   [275:9] i: i64 = r14
+;   [275:9] i: i64 (r14)
 ;   [275:9] const n = 2
 ;   [275:5] initiate counter i
     mov r14, 0
@@ -4662,22 +4676,24 @@ main:
 ;   [382:9] array_length(worlds[0].locations)
     mov rcx, 8
 ;   [380:9] worlds[1].locations
-;   [380:9] bounds check
+;   [380:9] bounds check begin
 ;   [380:9] lower bound (--checks=lower)
     test rcx, rcx
     js baz_bounds_panic
 ;   [380:9] upper bound (--checks=upper)
     cmp rcx, 8
     jg baz_bounds_panic
+;   [380:9] bounds check end
     lea rsi, [rbp + 816]
 ;   [381:9] worlds[0].locations
-;   [381:9] bounds check
+;   [381:9] bounds check begin
 ;   [381:9] lower bound (--checks=lower)
     test rcx, rcx
     js baz_bounds_panic
 ;   [381:9] upper bound (--checks=upper)
     cmp rcx, 8
     jg baz_bounds_panic
+;   [381:9] bounds check end
     lea rdi, [rbp + 752]
     shl rcx, 3
     rep movsb
@@ -4727,22 +4743,24 @@ main:
 ;       [390:14] array_length(worlds[0].locations)
         mov rcx, 8
 ;       [388:14] worlds[0].locations
-;       [388:14] bounds check
+;       [388:14] bounds check begin
 ;       [388:14] lower bound (--checks=lower)
         test rcx, rcx
         js baz_bounds_panic
 ;       [388:14] upper bound (--checks=upper)
         cmp rcx, 8
         jg baz_bounds_panic
+;       [388:14] bounds check end
         lea rsi, [rbp + 752]
 ;       [389:14] worlds[1].locations
-;       [389:14] bounds check
+;       [389:14] bounds check begin
 ;       [389:14] lower bound (--checks=lower)
         test rcx, rcx
         js baz_bounds_panic
 ;       [389:14] upper bound (--checks=upper)
         cmp rcx, 8
         jg baz_bounds_panic
+;       [389:14] bounds check end
         lea rdi, [rbp + 816]
         shl rcx, 3
         test rcx, rcx
@@ -5093,13 +5111,14 @@ main:
                     mov rdi, 1
 ;                   [95:25] self.len
                     movsx rdx, byte [rbp + 1288]
-;                   [95:14] bounds check
+;                   [95:14] bounds check begin
 ;                   [95:14] lower bound (--checks=lower)
                     test rdx, rdx
                     js baz_bounds_panic
 ;                   [95:14] upper bound (--checks=upper)
                     cmp rdx, 127
                     jg baz_bounds_panic
+;                   [95:14] bounds check end
                     lea rsi, [rbp + 1289]
 ;                   [95:5] allocate named register rax
                     mov rax, 1
@@ -5240,13 +5259,14 @@ main:
     mov rdi, 1
 ;   [423:19] 3
     mov rdx, 3
-;   [423:14] bounds check
+;   [423:14] bounds check begin
 ;   [423:14] lower bound (--checks=lower)
     test rdx, rdx
     js baz_bounds_panic
 ;   [423:14] upper bound (--checks=upper)
     cmp rdx, 13
     jg baz_bounds_panic
+;   [423:14] bounds check end
     lea rsi, [rbp + 1416]
 ;   [423:5] allocate named register rax
     mov rax, 1
@@ -5271,7 +5291,7 @@ main:
 ;   [424:22] r15 - 1
 ;   [424:22] src: folded constant '- 1'
     sub r15, 1
-;   [424:22] bounds check
+;   [424:22] bounds check begin
 ;   [424:22] lower bound (--checks=lower)
     test r15, r15
     js baz_bounds_panic
@@ -5284,6 +5304,7 @@ main:
     cmp r14, 13
 ;   [424:22] free scratch register r14
     jg baz_bounds_panic
+;   [424:22] bounds check end
     lea rsi, [rbp + 1416]
     add rsi, r15
 ;   [424:5] free scratch register r15
@@ -5366,13 +5387,14 @@ func.print_num:
 ;       [152:13] set array index
 ;       [152:13] i
         mov r15, qword [rbx + 48]
-;       [152:13] bounds check
+;       [152:13] bounds check begin
 ;       [152:13] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
 ;       [152:13] upper bound (--checks=upper)
         cmp r15, 20
         jge baz_bounds_panic
+;       [152:13] bounds check end
 ;       [152:18] buf = i8('0' - n % 10)
 ;       [152:18] = expression
 ;       [152:18] allocate scratch register -> r14
@@ -5446,13 +5468,14 @@ func.print_num:
 ;       [159:13] set array index
 ;       [159:13] i
         mov r15, qword [rbx + 48]
-;       [159:13] bounds check
+;       [159:13] bounds check begin
 ;       [159:13] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
 ;       [159:13] upper bound (--checks=upper)
         cmp r15, 20
         jge baz_bounds_panic
+;       [159:13] bounds check end
 ;       [159:18] '-'
         mov byte [rbx + r15 + 8], 45
 ;       [159:9] free scratch register r15
@@ -5469,25 +5492,27 @@ func.print_num:
 ;       [164:13] set array index
 ;       [164:13] write_pos
         mov r15, qword [rbx + 56]
-;       [164:13] bounds check
+;       [164:13] bounds check begin
 ;       [164:13] lower bound (--checks=lower)
         test r15, r15
         js baz_bounds_panic
 ;       [164:13] upper bound (--checks=upper)
         cmp r15, 20
         jge baz_bounds_panic
+;       [164:13] bounds check end
 ;       [164:26] buf[i]
 ;       [164:30] allocate scratch register -> r14
 ;       [164:30] set array index
 ;       [164:30] i
         mov r14, qword [rbx + 48]
-;       [164:30] bounds check
+;       [164:30] bounds check begin
 ;       [164:30] lower bound (--checks=lower)
         test r14, r14
         js baz_bounds_panic
 ;       [164:30] upper bound (--checks=upper)
         cmp r14, 20
         jge baz_bounds_panic
+;       [164:30] bounds check end
 ;       [164:26] allocate scratch register -> r13
         mov r13b, byte [rbx + r14 + 8]
         mov byte [rbx + r15 + 8], r13b
@@ -5524,13 +5549,14 @@ func.print_num:
     mov rdi, 1
 ;   [170:19] write_pos
     mov rdx, qword [rbx + 56]
-;   [170:14] bounds check
+;   [170:14] bounds check begin
 ;   [170:14] lower bound (--checks=lower)
     test rdx, rdx
     js baz_bounds_panic
 ;   [170:14] upper bound (--checks=upper)
     cmp rdx, 20
     jg baz_bounds_panic
+;   [170:14] bounds check end
     lea rsi, [rbx + 8]
 ;   [170:5] allocate named register rax
     mov rax, 1

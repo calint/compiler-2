@@ -407,7 +407,7 @@ class machine_x86_64 final : public machine {
         }
 
         const condition out_of_bounds{allow_end ? condition::g : condition::ge};
-        comment(src_loc_tk, indent, "bounds check");
+        comment(src_loc_tk, indent, "bounds check begin");
 
         operand reg_line_num;
         if (options.with_line) {
@@ -445,6 +445,8 @@ class machine_x86_64 final : public machine {
         if (options.with_line) {
             free_scratch_register(src_loc_tk, indent, reg_line_num);
         }
+
+        comment(src_loc_tk, indent, "bounds check end");
     }
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,

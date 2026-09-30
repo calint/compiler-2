@@ -220,7 +220,7 @@ main:
         lui t1, 36
         add t1, t1, s0
         lw t1, 980(t1)
-        # [369:24] bounds check
+        # [369:24] bounds check begin
         # [369:24] lower bound (--checks=lower)
         bltz t1, 1f
         # [369:24] upper bound (--checks=upper)
@@ -233,6 +233,7 @@ main:
         j baz_bounds_panic
         2:
         # [369:24] free scratch register t2
+        # [369:24] bounds check end
         # [369:24] allocate scratch register -> t2
         slli t2, t1, 7
         add t2, t2, t1
@@ -247,7 +248,7 @@ main:
         # [369:15] free scratch register t2
         lh t0, 106(t0)
         # [369:15] free scratch register t1
-        # [369:15] bounds check
+        # [369:15] bounds check begin
         # [369:15] lower bound (--checks=lower)
         bltz t0, 1f
         # [369:15] upper bound (--checks=upper)
@@ -260,6 +261,7 @@ main:
         j baz_bounds_panic
         2:
         # [369:15] free scratch register t1
+        # [369:15] bounds check end
         # [369:15] allocate scratch register -> t1
         slli t1, t0, 6
         sub t0, t1, t0
@@ -318,7 +320,7 @@ main:
                     li a0, 1
                     # [66:25] self.len
                     lb a2, 16(t1)
-                    # [66:14] bounds check
+                    # [66:14] bounds check begin
                     # [66:14] lower bound (--checks=lower)
                     bltz a2, 1f
                     # [66:14] upper bound (--checks=upper)
@@ -331,6 +333,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [66:14] free scratch register t2
+                    # [66:14] bounds check end
                     addi a1, t1, 0
                     # [66:5] allocate named register a7
                     call a7, .Lbaz_write
@@ -380,7 +383,7 @@ main:
                     li a0, 1
                     # [23:25] self.len
                     lb a2, 144(t1)
-                    # [23:14] bounds check
+                    # [23:14] bounds check begin
                     # [23:14] lower bound (--checks=lower)
                     bltz a2, 1f
                     # [23:14] upper bound (--checks=upper)
@@ -393,6 +396,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [23:14] free scratch register t2
+                    # [23:14] bounds check end
                     addi a1, t1, 17
                     # [23:5] allocate named register a7
                     call a7, .Lbaz_write
@@ -459,7 +463,7 @@ main:
                 # [128:32] count self.entities.len
                 # [128:32] self.entities.len
                 lh t3, 338(t1)
-                # [128:32] bounds check
+                # [128:32] bounds check begin
                 # [128:32] lower bound (--checks=lower)
                 bltz t3, 1f
                 # [128:32] upper bound (--checks=upper)
@@ -472,9 +476,10 @@ main:
                 j baz_bounds_panic
                 2:
                 # [128:32] free scratch register t4
+                # [128:32] bounds check end
                 # [128:9] allocate scratch register -> t4
                 # [128:13] e: i16 (t2)
-                # [128:13] i: i32 = t4
+                # [128:13] i: i32 (t4)
                 # [128:13] const n = 32
                 # [128:9] initiate counter i
                 li t4, 0
@@ -485,7 +490,7 @@ main:
                     # [129:22] set array index
                     # [129:22] e
                     lh t5, 0(t2)
-                    # [129:22] bounds check
+                    # [129:22] bounds check begin
                     # [129:22] lower bound (--checks=lower)
                     bltz t5, 1f
                     # [129:22] upper bound (--checks=upper)
@@ -498,6 +503,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [129:22] free scratch register t6
+                    # [129:22] bounds check end
                     # [129:22] allocate scratch register -> t6
                     slli t6, t5, 7
                     add t6, t6, t5
@@ -524,7 +530,7 @@ main:
                         li a0, 1
                         # [111:30] self.name.len
                         lb a2, 16(t6)
-                        # [111:14] bounds check
+                        # [111:14] bounds check begin
                         # [111:14] lower bound (--checks=lower)
                         bltz a2, 1f
                         # [111:14] upper bound (--checks=upper)
@@ -537,6 +543,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [111:14] free scratch register s1
+                        # [111:14] bounds check end
                         addi a1, t6, 0
                         # [111:5] allocate named register a7
                         call a7, .Lbaz_write
@@ -613,7 +620,7 @@ main:
                 # [135:25] count self.links_len
                 # [135:25] self.links_len
                 lh t3, 372(t1)
-                # [135:25] bounds check
+                # [135:25] bounds check begin
                 # [135:25] lower bound (--checks=lower)
                 bltz t3, 1f
                 # [135:25] upper bound (--checks=upper)
@@ -626,9 +633,10 @@ main:
                 j baz_bounds_panic
                 2:
                 # [135:25] free scratch register t4
+                # [135:25] bounds check end
                 # [135:9] allocate scratch register -> t4
                 # [135:13] e: link (t2)
-                # [135:13] i: i32 = t4
+                # [135:13] i: i32 (t4)
                 # [135:13] const n = 8
                 # [135:9] initiate counter i
                 li t4, 0
@@ -665,7 +673,7 @@ main:
                     # [137:24] set array index
                     # [137:24] e.link_name_id
                     lh t5, 0(t2)
-                    # [137:24] bounds check
+                    # [137:24] bounds check begin
                     # [137:24] lower bound (--checks=lower)
                     bltz t5, 1f
                     # [137:24] upper bound (--checks=upper)
@@ -678,6 +686,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [137:24] free scratch register t6
+                    # [137:24] bounds check end
                     # [137:24] allocate scratch register -> t6
                     slli t6, t5, 4
                     add t5, t6, t5
@@ -696,7 +705,7 @@ main:
                         li a0, 1
                         # [66:25] self.len
                         lb a2, 99(t6)
-                        # [66:14] bounds check
+                        # [66:14] bounds check begin
                         # [66:14] lower bound (--checks=lower)
                         bltz a2, 1f
                         # [66:14] upper bound (--checks=upper)
@@ -709,6 +718,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [66:14] free scratch register s1
+                        # [66:14] bounds check end
                         addi a1, t6, 83
                         # [66:5] allocate named register a7
                         call a7, .Lbaz_write
@@ -768,7 +778,7 @@ main:
                     li a0, 1
                     # [23:25] self.len
                     lb a2, 272(t1)
-                    # [23:14] bounds check
+                    # [23:14] bounds check begin
                     # [23:14] lower bound (--checks=lower)
                     bltz a2, 1f
                     # [23:14] upper bound (--checks=upper)
@@ -781,6 +791,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [23:14] free scratch register t2
+                    # [23:14] bounds check end
                     addi a1, t1, 145
                     # [23:5] allocate named register a7
                     call a7, .Lbaz_write
@@ -819,7 +830,7 @@ main:
         lui t0, 36
         add t0, t0, s0
         lw t0, 980(t0)
-        # [370:18] bounds check
+        # [370:18] bounds check begin
         # [370:18] lower bound (--checks=lower)
         bltz t0, 1f
         # [370:18] upper bound (--checks=upper)
@@ -832,6 +843,7 @@ main:
         j baz_bounds_panic
         2:
         # [370:18] free scratch register t1
+        # [370:18] bounds check end
         # [370:18] allocate scratch register -> t1
         slli t1, t0, 7
         add t1, t1, t0
@@ -858,7 +870,7 @@ main:
             li a0, 1
             # [66:25] self.len
             lb a2, 16(t1)
-            # [66:14] bounds check
+            # [66:14] bounds check begin
             # [66:14] lower bound (--checks=lower)
             bltz a2, 1f
             # [66:14] upper bound (--checks=upper)
@@ -871,6 +883,7 @@ main:
             j baz_bounds_panic
             2:
             # [66:14] free scratch register t2
+            # [66:14] bounds check end
             addi a1, t1, 0
             # [66:5] allocate named register a7
             call a7, .Lbaz_write
@@ -972,7 +985,7 @@ main:
                         lui t1, 36
                         add t1, t1, s0
                         lw t1, 984(t1)
-                        # [31:34] bounds check
+                        # [31:34] bounds check begin
                         # [31:34] lower bound (--checks=lower)
                         bltz t1, 1f
                         bltz a2, 1f
@@ -989,6 +1002,7 @@ main:
                         2:
                         # [31:34] free scratch register t3
                         # [31:34] free scratch register t2
+                        # [31:34] bounds check end
                         lui a1, 36
                         add a1, a1, s0
                         addi a1, a1, 848
@@ -1016,7 +1030,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lw t0, 984(t0)
-                    # [32:22] bounds check
+                    # [32:22] bounds check begin
                     # [32:22] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [32:22] upper bound (--checks=upper)
@@ -1029,6 +1043,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [32:22] free scratch register t1
+                    # [32:22] bounds check end
                     # [32:12] allocate scratch register -> t1
                     add t1, s0, t0
                     # [32:12] allocate scratch register -> t2
@@ -1098,7 +1113,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lw t0, 984(t0)
-                    # [39:32] bounds check
+                    # [39:32] bounds check begin
                     # [39:32] lower bound (--checks=lower)
                     bltz t0, 1f
                     bltz a2, 1f
@@ -1115,6 +1130,7 @@ main:
                     2:
                     # [39:32] free scratch register t2
                     # [39:32] free scratch register t1
+                    # [39:32] bounds check end
                     lui a1, 36
                     add a1, a1, s0
                     addi a1, a1, 848
@@ -1136,7 +1152,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lw t0, 984(t0)
-                    # [40:22] bounds check
+                    # [40:22] bounds check begin
                     # [40:22] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [40:22] upper bound (--checks=upper)
@@ -1149,6 +1165,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [40:22] free scratch register t1
+                    # [40:22] bounds check end
                     # [40:12] allocate scratch register -> t1
                     add t1, s0, t0
                     # [40:12] allocate scratch register -> t2
@@ -1283,7 +1300,7 @@ main:
                         lui t0, 36
                         add t0, t0, s0
                         lh t0, 976(t0)
-                        # [166:26] bounds check
+                        # [166:26] bounds check begin
                         # [166:26] lower bound (--checks=lower)
                         bltz t0, 1f
                         # [166:26] upper bound (--checks=upper)
@@ -1296,6 +1313,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [166:26] free scratch register t1
+                        # [166:26] bounds check end
                         # [166:12] allocate scratch register -> t1
                         add t1, s0, t0
                         # [166:12] allocate scratch register -> t2
@@ -1382,7 +1400,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lh t0, 978(t0)
-                    # [177:26] bounds check
+                    # [177:26] bounds check begin
                     # [177:26] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [177:26] upper bound (--checks=upper)
@@ -1395,6 +1413,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [177:26] free scratch register t1
+                    # [177:26] bounds check end
                     # [177:12] allocate scratch register -> t1
                     add t1, s0, t0
                     # [177:12] allocate scratch register -> t2
@@ -1489,7 +1508,7 @@ main:
                         # [202:56] array_length(str)
                         li t3, 2
                         # [202:24] str
-                        # [202:24] bounds check
+                        # [202:24] bounds check begin
                         # [202:24] lower bound (--checks=lower)
                         bltz t3, 1f
                         # [202:24] upper bound (--checks=upper)
@@ -1502,6 +1521,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [202:24] free scratch register t4
+                        # [202:24] bounds check end
                         lui t1, 36
                         add t1, t1, s0
                         addi t1, t1, 842
@@ -1512,7 +1532,7 @@ main:
                         lui t4, 36
                         add t4, t4, s0
                         lh t4, 976(t4)
-                        # [202:43] bounds check
+                        # [202:43] bounds check begin
                         # [202:43] lower bound (--checks=lower)
                         bltz t4, 1f
                         bltz t3, 1f
@@ -1529,6 +1549,7 @@ main:
                         2:
                         # [202:43] free scratch register t6
                         # [202:43] free scratch register t5
+                        # [202:43] bounds check end
                         add t2, s0, t4
                         # allocate scratch register -> t5
                         lui t5, 36
@@ -1636,7 +1657,7 @@ main:
                                 lui t0, 36
                                 add t0, t0, s0
                                 lh t0, 976(t0)
-                                # [166:26] bounds check
+                                # [166:26] bounds check begin
                                 # [166:26] lower bound (--checks=lower)
                                 bltz t0, 1f
                                 # [166:26] upper bound (--checks=upper)
@@ -1649,6 +1670,7 @@ main:
                                 j baz_bounds_panic
                                 2:
                                 # [166:26] free scratch register t1
+                                # [166:26] bounds check end
                                 # [166:12] allocate scratch register -> t1
                                 add t1, s0, t0
                                 # [166:12] allocate scratch register -> t2
@@ -1735,7 +1757,7 @@ main:
                             lui t0, 36
                             add t0, t0, s0
                             lh t0, 978(t0)
-                            # [187:26] bounds check
+                            # [187:26] bounds check begin
                             # [187:26] lower bound (--checks=lower)
                             bltz t0, 1f
                             # [187:26] upper bound (--checks=upper)
@@ -1748,6 +1770,7 @@ main:
                             j baz_bounds_panic
                             2:
                             # [187:26] free scratch register t1
+                            # [187:26] bounds check end
                             # [187:12] allocate scratch register -> t1
                             add t1, s0, t0
                             # [187:12] allocate scratch register -> t2
@@ -1897,7 +1920,7 @@ main:
                                 # [202:56] array_length(str)
                                 li t3, 4
                                 # [202:24] str
-                                # [202:24] bounds check
+                                # [202:24] bounds check begin
                                 # [202:24] lower bound (--checks=lower)
                                 bltz t3, 1f
                                 # [202:24] upper bound (--checks=upper)
@@ -1910,6 +1933,7 @@ main:
                                 j baz_bounds_panic
                                 2:
                                 # [202:24] free scratch register t4
+                                # [202:24] bounds check end
                                 lui t1, 36
                                 add t1, t1, s0
                                 addi t1, t1, 772
@@ -1920,7 +1944,7 @@ main:
                                 lui t4, 36
                                 add t4, t4, s0
                                 lh t4, 976(t4)
-                                # [202:43] bounds check
+                                # [202:43] bounds check begin
                                 # [202:43] lower bound (--checks=lower)
                                 bltz t4, 1f
                                 bltz t3, 1f
@@ -1937,6 +1961,7 @@ main:
                                 2:
                                 # [202:43] free scratch register t6
                                 # [202:43] free scratch register t5
+                                # [202:43] bounds check end
                                 add t2, s0, t4
                                 # allocate scratch register -> t5
                                 lui t5, 36
@@ -1993,7 +2018,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lw t0, 980(t0)
-                    # [246:28] bounds check
+                    # [246:28] bounds check begin
                     # [246:28] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [246:28] upper bound (--checks=upper)
@@ -2006,6 +2031,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [246:28] free scratch register t1
+                    # [246:28] bounds check end
                     # [246:28] allocate scratch register -> t1
                     slli t1, t0, 7
                     add t1, t1, t0
@@ -2037,7 +2063,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lh t0, 984(t0)
-                    # [247:27] bounds check
+                    # [247:27] bounds check begin
                     # [247:27] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [247:27] upper bound (--checks=upper)
@@ -2050,6 +2076,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [247:27] free scratch register t1
+                    # [247:27] bounds check end
                     # [247:27] allocate scratch register -> t1
                     slli t1, t0, 6
                     sub t0, t1, t0
@@ -2092,7 +2119,7 @@ main:
                     lui t1, 36
                     add t1, t1, s0
                     lh t1, 984(t1)
-                    # [249:15] bounds check
+                    # [249:15] bounds check begin
                     # [249:15] lower bound (--checks=lower)
                     bltz t1, 1f
                     # [249:15] upper bound (--checks=upper)
@@ -2105,6 +2132,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [249:15] free scratch register t2
+                    # [249:15] bounds check end
                     # [249:15] allocate scratch register -> t2
                     slli t2, t1, 6
                     sub t1, t2, t1
@@ -2123,7 +2151,7 @@ main:
                     lui t1, 36
                     add t1, t1, s0
                     lh t1, 986(t1)
-                    # [249:31] bounds check
+                    # [249:31] bounds check begin
                     # [249:31] lower bound (--checks=lower)
                     bltz t1, 1f
                     # [249:31] upper bound (--checks=upper)
@@ -2136,9 +2164,10 @@ main:
                     j baz_bounds_panic
                     2:
                     # [249:31] free scratch register t2
+                    # [249:31] bounds check end
                     # [249:5] allocate scratch register -> t2
                     # [249:9] e: link (t0)
-                    # [249:9] i: i32 = t2
+                    # [249:9] i: i32 (t2)
                     # [249:9] const n = 8
                     # [249:5] initiate counter i
                     li t2, 0
@@ -2156,7 +2185,7 @@ main:
                             # [250:34] set array index
                             # [250:34] e.link_name_id
                             lh t4, 0(t0)
-                            # [250:34] bounds check
+                            # [250:34] bounds check begin
                             # [250:34] lower bound (--checks=lower)
                             bltz t4, 1f
                             # [250:34] upper bound (--checks=upper)
@@ -2169,6 +2198,7 @@ main:
                             j baz_bounds_panic
                             2:
                             # [250:34] free scratch register t5
+                            # [250:34] bounds check end
                             # [250:34] allocate scratch register -> t5
                             slli t5, t4, 4
                             add t4, t5, t4
@@ -2223,7 +2253,7 @@ main:
                                     # [207:60] nm.len
                                     lb s2, 99(t5)
                                     # [207:24] nm.data
-                                    # [207:24] bounds check
+                                    # [207:24] bounds check begin
                                     # [207:24] lower bound (--checks=lower)
                                     bltz s2, 1f
                                     # [207:24] upper bound (--checks=upper)
@@ -2236,6 +2266,7 @@ main:
                                     j baz_bounds_panic
                                     2:
                                     # [207:24] free scratch register s3
+                                    # [207:24] bounds check end
                                     addi t6, t5, 83
                                     # [207:33] self.str.data[self.start]
                                     # [207:47] allocate scratch register -> s3
@@ -2244,7 +2275,7 @@ main:
                                     lui s3, 36
                                     add s3, s3, s0
                                     lh s3, 976(s3)
-                                    # [207:47] bounds check
+                                    # [207:47] bounds check begin
                                     # [207:47] lower bound (--checks=lower)
                                     bltz s3, 1f
                                     bltz s2, 1f
@@ -2261,6 +2292,7 @@ main:
                                     2:
                                     # [207:47] free scratch register s5
                                     # [207:47] free scratch register s4
+                                    # [207:47] bounds check end
                                     add s1, s0, s3
                                     # allocate scratch register -> s4
                                     lui s4, 36
@@ -2369,7 +2401,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lw t0, 980(t0)
-                    # [262:14] bounds check
+                    # [262:14] bounds check begin
                     # [262:14] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [262:14] upper bound (--checks=upper)
@@ -2382,6 +2414,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [262:14] free scratch register t1
+                    # [262:14] bounds check end
                     # [262:14] allocate scratch register -> t1
                     slli t1, t0, 7
                     add t1, t1, t0
@@ -2396,7 +2429,7 @@ main:
                     lui t1, 36
                     add t1, t1, s0
                     lh t1, 984(t1)
-                    # [262:42] bounds check
+                    # [262:42] bounds check begin
                     # [262:42] lower bound (--checks=lower)
                     bltz t1, 1f
                     # [262:42] upper bound (--checks=upper)
@@ -2409,6 +2442,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [262:42] free scratch register t2
+                    # [262:42] bounds check end
                     # [262:42] allocate scratch register -> t2
                     slli t2, t1, 6
                     sub t1, t2, t1
@@ -2426,7 +2460,7 @@ main:
                     lui t2, 36
                     add t2, t2, s0
                     lh t2, 988(t2)
-                    # [262:57] bounds check
+                    # [262:57] bounds check begin
                     # [262:57] lower bound (--checks=lower)
                     bltz t2, 1f
                     # [262:57] upper bound (--checks=upper)
@@ -2439,6 +2473,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [262:57] free scratch register t3
+                    # [262:57] bounds check end
                     # [262:36] allocate scratch register -> t3
                     slli t3, t2, 2
                     add t3, t3, t1
@@ -2512,7 +2547,7 @@ main:
                         lui t0, 36
                         add t0, t0, s0
                         lh t0, 976(t0)
-                        # [197:41] bounds check
+                        # [197:41] bounds check begin
                         # [197:41] lower bound (--checks=lower)
                         bltz t0, 1f
                         bltz a2, 1f
@@ -2529,6 +2564,7 @@ main:
                         2:
                         # [197:41] free scratch register t2
                         # [197:41] free scratch register t1
+                        # [197:41] bounds check end
                         lui a1, 36
                         add a1, a1, s0
                         addi a1, a1, 848
@@ -2624,7 +2660,7 @@ main:
                         # [202:56] array_length(str)
                         li t3, 2
                         # [202:24] str
-                        # [202:24] bounds check
+                        # [202:24] bounds check begin
                         # [202:24] lower bound (--checks=lower)
                         bltz t3, 1f
                         # [202:24] upper bound (--checks=upper)
@@ -2637,6 +2673,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [202:24] free scratch register t4
+                        # [202:24] bounds check end
                         lui t1, 36
                         add t1, t1, s0
                         addi t1, t1, 844
@@ -2647,7 +2684,7 @@ main:
                         lui t4, 36
                         add t4, t4, s0
                         lh t4, 976(t4)
-                        # [202:43] bounds check
+                        # [202:43] bounds check begin
                         # [202:43] lower bound (--checks=lower)
                         bltz t4, 1f
                         bltz t3, 1f
@@ -2664,6 +2701,7 @@ main:
                         2:
                         # [202:43] free scratch register t6
                         # [202:43] free scratch register t5
+                        # [202:43] bounds check end
                         add t2, s0, t4
                         # allocate scratch register -> t5
                         lui t5, 36
@@ -2771,7 +2809,7 @@ main:
                                 lui t0, 36
                                 add t0, t0, s0
                                 lh t0, 976(t0)
-                                # [166:26] bounds check
+                                # [166:26] bounds check begin
                                 # [166:26] lower bound (--checks=lower)
                                 bltz t0, 1f
                                 # [166:26] upper bound (--checks=upper)
@@ -2784,6 +2822,7 @@ main:
                                 j baz_bounds_panic
                                 2:
                                 # [166:26] free scratch register t1
+                                # [166:26] bounds check end
                                 # [166:12] allocate scratch register -> t1
                                 add t1, s0, t0
                                 # [166:12] allocate scratch register -> t2
@@ -2870,7 +2909,7 @@ main:
                             lui t0, 36
                             add t0, t0, s0
                             lh t0, 978(t0)
-                            # [187:26] bounds check
+                            # [187:26] bounds check begin
                             # [187:26] lower bound (--checks=lower)
                             bltz t0, 1f
                             # [187:26] upper bound (--checks=upper)
@@ -2883,6 +2922,7 @@ main:
                             j baz_bounds_panic
                             2:
                             # [187:26] free scratch register t1
+                            # [187:26] bounds check end
                             # [187:12] allocate scratch register -> t1
                             add t1, s0, t0
                             # [187:12] allocate scratch register -> t2
@@ -2980,7 +3020,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lw t0, 980(t0)
-                    # [298:32] bounds check
+                    # [298:32] bounds check begin
                     # [298:32] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [298:32] upper bound (--checks=upper)
@@ -2993,6 +3033,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [298:32] free scratch register t1
+                    # [298:32] bounds check end
                     # [298:32] allocate scratch register -> t1
                     slli t1, t0, 7
                     add t1, t1, t0
@@ -3024,7 +3065,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lh t0, 984(t0)
-                    # [300:39] bounds check
+                    # [300:39] bounds check begin
                     # [300:39] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [300:39] upper bound (--checks=upper)
@@ -3037,6 +3078,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [300:39] free scratch register t1
+                    # [300:39] bounds check end
                     # [300:39] allocate scratch register -> t1
                     slli t1, t0, 6
                     sub t0, t1, t0
@@ -3088,7 +3130,7 @@ main:
                         lui t1, 4
                         add t1, t1, s0
                         lh t1, 1108(t1)
-                        # [271:21] bounds check
+                        # [271:21] bounds check begin
                         # [271:21] lower bound (--checks=lower)
                         bltz t1, 1f
                         # [271:21] upper bound (--checks=upper)
@@ -3101,9 +3143,10 @@ main:
                         j baz_bounds_panic
                         2:
                         # [271:21] free scratch register t2
+                        # [271:21] bounds check end
                         # [271:5] allocate scratch register -> t2
                         # [271:9] e: name (t0)
-                        # [271:9] i: i32 = t2
+                        # [271:9] i: i32 (t2)
                         # [271:9] const n = 1024
                         # [271:5] initiate counter i
                         li t2, 0
@@ -3164,7 +3207,7 @@ main:
                                         # [207:60] nm.len
                                         lb t6, 16(t0)
                                         # [207:24] nm.data
-                                        # [207:24] bounds check
+                                        # [207:24] bounds check begin
                                         # [207:24] lower bound (--checks=lower)
                                         bltz t6, 1f
                                         # [207:24] upper bound (--checks=upper)
@@ -3177,6 +3220,7 @@ main:
                                         j baz_bounds_panic
                                         2:
                                         # [207:24] free scratch register s1
+                                        # [207:24] bounds check end
                                         addi t4, t0, 0
                                         # [207:33] self.str.data[self.start]
                                         # [207:47] allocate scratch register -> s1
@@ -3185,7 +3229,7 @@ main:
                                         lui s1, 36
                                         add s1, s1, s0
                                         lh s1, 976(s1)
-                                        # [207:47] bounds check
+                                        # [207:47] bounds check begin
                                         # [207:47] lower bound (--checks=lower)
                                         bltz s1, 1f
                                         bltz t6, 1f
@@ -3202,6 +3246,7 @@ main:
                                         2:
                                         # [207:47] free scratch register s3
                                         # [207:47] free scratch register s2
+                                        # [207:47] bounds check end
                                         add t5, s0, s1
                                         # allocate scratch register -> s2
                                         lui s2, 36
@@ -3286,7 +3331,7 @@ main:
                         lui t0, 4
                         add t0, t0, s0
                         lh t0, 1108(t0)
-                        # [280:32] bounds check
+                        # [280:32] bounds check begin
                         # [280:32] lower bound (--checks=lower)
                         bltz t0, 1f
                         # [280:32] upper bound (--checks=upper)
@@ -3299,6 +3344,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [280:32] free scratch register t1
+                        # [280:32] bounds check end
                         # [280:32] allocate scratch register -> t1
                         slli t1, t0, 4
                         add t0, t1, t0
@@ -3352,7 +3398,7 @@ main:
                             lui t5, 36
                             add t5, t5, s0
                             lh t5, 976(t5)
-                            # [216:30] bounds check
+                            # [216:30] bounds check begin
                             # [216:30] lower bound (--checks=lower)
                             bltz t5, 1f
                             bltz t4, 1f
@@ -3369,6 +3415,7 @@ main:
                             2:
                             # [216:30] free scratch register s1
                             # [216:30] free scratch register t6
+                            # [216:30] bounds check end
                             add t2, s0, t5
                             # allocate scratch register -> t6
                             lui t6, 36
@@ -3377,7 +3424,7 @@ main:
                             addi t2, t2, 848
                             # [216:5] free scratch register t5
                             # [216:43] dst.data
-                            # [216:43] bounds check
+                            # [216:43] bounds check begin
                             # [216:43] lower bound (--checks=lower)
                             bltz t4, 1f
                             # [216:43] upper bound (--checks=upper)
@@ -3390,6 +3437,7 @@ main:
                             j baz_bounds_panic
                             2:
                             # [216:43] free scratch register t5
+                            # [216:43] bounds check end
                             addi t3, t1, 83
                             # [216:5] t4: elements to bytes (1 bytes/element)
                             # [216:5] allocate scratch register -> t5
@@ -3500,7 +3548,7 @@ main:
                                 lui t0, 36
                                 add t0, t0, s0
                                 lh t0, 976(t0)
-                                # [166:26] bounds check
+                                # [166:26] bounds check begin
                                 # [166:26] lower bound (--checks=lower)
                                 bltz t0, 1f
                                 # [166:26] upper bound (--checks=upper)
@@ -3513,6 +3561,7 @@ main:
                                 j baz_bounds_panic
                                 2:
                                 # [166:26] free scratch register t1
+                                # [166:26] bounds check end
                                 # [166:12] allocate scratch register -> t1
                                 add t1, s0, t0
                                 # [166:12] allocate scratch register -> t2
@@ -3599,7 +3648,7 @@ main:
                             lui t0, 36
                             add t0, t0, s0
                             lh t0, 978(t0)
-                            # [187:26] bounds check
+                            # [187:26] bounds check begin
                             # [187:26] lower bound (--checks=lower)
                             bltz t0, 1f
                             # [187:26] upper bound (--checks=upper)
@@ -3612,6 +3661,7 @@ main:
                             j baz_bounds_panic
                             2:
                             # [187:26] free scratch register t1
+                            # [187:26] bounds check end
                             # [187:12] allocate scratch register -> t1
                             add t1, s0, t0
                             # [187:12] allocate scratch register -> t2
@@ -3731,7 +3781,7 @@ main:
                         lui t1, 4
                         add t1, t1, s0
                         lh t1, 1108(t1)
-                        # [271:21] bounds check
+                        # [271:21] bounds check begin
                         # [271:21] lower bound (--checks=lower)
                         bltz t1, 1f
                         # [271:21] upper bound (--checks=upper)
@@ -3744,9 +3794,10 @@ main:
                         j baz_bounds_panic
                         2:
                         # [271:21] free scratch register t2
+                        # [271:21] bounds check end
                         # [271:5] allocate scratch register -> t2
                         # [271:9] e: name (t0)
-                        # [271:9] i: i32 = t2
+                        # [271:9] i: i32 (t2)
                         # [271:9] const n = 1024
                         # [271:5] initiate counter i
                         li t2, 0
@@ -3807,7 +3858,7 @@ main:
                                         # [207:60] nm.len
                                         lb t6, 16(t0)
                                         # [207:24] nm.data
-                                        # [207:24] bounds check
+                                        # [207:24] bounds check begin
                                         # [207:24] lower bound (--checks=lower)
                                         bltz t6, 1f
                                         # [207:24] upper bound (--checks=upper)
@@ -3820,6 +3871,7 @@ main:
                                         j baz_bounds_panic
                                         2:
                                         # [207:24] free scratch register s1
+                                        # [207:24] bounds check end
                                         addi t4, t0, 0
                                         # [207:33] self.str.data[self.start]
                                         # [207:47] allocate scratch register -> s1
@@ -3828,7 +3880,7 @@ main:
                                         lui s1, 36
                                         add s1, s1, s0
                                         lh s1, 976(s1)
-                                        # [207:47] bounds check
+                                        # [207:47] bounds check begin
                                         # [207:47] lower bound (--checks=lower)
                                         bltz s1, 1f
                                         bltz t6, 1f
@@ -3845,6 +3897,7 @@ main:
                                         2:
                                         # [207:47] free scratch register s3
                                         # [207:47] free scratch register s2
+                                        # [207:47] bounds check end
                                         add t5, s0, s1
                                         # allocate scratch register -> s2
                                         lui s2, 36
@@ -3929,7 +3982,7 @@ main:
                         lui t0, 4
                         add t0, t0, s0
                         lh t0, 1108(t0)
-                        # [280:32] bounds check
+                        # [280:32] bounds check begin
                         # [280:32] lower bound (--checks=lower)
                         bltz t0, 1f
                         # [280:32] upper bound (--checks=upper)
@@ -3942,6 +3995,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [280:32] free scratch register t1
+                        # [280:32] bounds check end
                         # [280:32] allocate scratch register -> t1
                         slli t1, t0, 4
                         add t0, t1, t0
@@ -3995,7 +4049,7 @@ main:
                             lui t5, 36
                             add t5, t5, s0
                             lh t5, 976(t5)
-                            # [216:30] bounds check
+                            # [216:30] bounds check begin
                             # [216:30] lower bound (--checks=lower)
                             bltz t5, 1f
                             bltz t4, 1f
@@ -4012,6 +4066,7 @@ main:
                             2:
                             # [216:30] free scratch register s1
                             # [216:30] free scratch register t6
+                            # [216:30] bounds check end
                             add t2, s0, t5
                             # allocate scratch register -> t6
                             lui t6, 36
@@ -4020,7 +4075,7 @@ main:
                             addi t2, t2, 848
                             # [216:5] free scratch register t5
                             # [216:43] dst.data
-                            # [216:43] bounds check
+                            # [216:43] bounds check begin
                             # [216:43] lower bound (--checks=lower)
                             bltz t4, 1f
                             # [216:43] upper bound (--checks=upper)
@@ -4033,6 +4088,7 @@ main:
                             j baz_bounds_panic
                             2:
                             # [216:43] free scratch register t5
+                            # [216:43] bounds check end
                             addi t3, t1, 83
                             # [216:5] t4: elements to bytes (1 bytes/element)
                             # [216:5] allocate scratch register -> t5
@@ -4087,7 +4143,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lh t0, 984(t0)
-                    # [314:11] bounds check
+                    # [314:11] bounds check begin
                     # [314:11] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [314:11] upper bound (--checks=upper)
@@ -4100,6 +4156,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [314:11] free scratch register t1
+                    # [314:11] bounds check end
                     # [314:11] allocate scratch register -> t1
                     slli t1, t0, 6
                     sub t0, t1, t0
@@ -4117,7 +4174,7 @@ main:
                     lui t1, 36
                     add t1, t1, s0
                     lh t1, 986(t1)
-                    # [314:30] bounds check
+                    # [314:30] bounds check begin
                     # [314:30] lower bound (--checks=lower)
                     bltz t1, 1f
                     # [314:30] upper bound (--checks=upper)
@@ -4130,6 +4187,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [314:30] free scratch register t2
+                    # [314:30] bounds check end
                     # [315:9] copy field 'link_name_id'
                     # [315:9] allocate scratch register -> t2
                     lui t2, 36
@@ -4161,7 +4219,7 @@ main:
                     lui t0, 36
                     add t0, t0, s0
                     lh t0, 984(t0)
-                    # [318:11] bounds check
+                    # [318:11] bounds check begin
                     # [318:11] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [318:11] upper bound (--checks=upper)
@@ -4174,6 +4232,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [318:11] free scratch register t1
+                    # [318:11] bounds check end
                     # [318:11] allocate scratch register -> t1
                     slli t1, t0, 6
                     sub t0, t1, t0
@@ -4204,7 +4263,7 @@ main:
                     lui t0, 20
                     add t0, t0, s0
                     lh t0, 86(t0)
-                    # [321:11] bounds check
+                    # [321:11] bounds check begin
                     # [321:11] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [321:11] upper bound (--checks=upper)
@@ -4217,6 +4276,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [321:11] free scratch register t1
+                    # [321:11] bounds check end
                     # [321:11] allocate scratch register -> t1
                     slli t1, t0, 6
                     sub t0, t1, t0
@@ -4258,7 +4318,7 @@ main:
                     lui t0, 20
                     add t0, t0, s0
                     lh t0, 86(t0)
-                    # [325:11] bounds check
+                    # [325:11] bounds check begin
                     # [325:11] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [325:11] upper bound (--checks=upper)
@@ -4271,6 +4331,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [325:11] free scratch register t1
+                    # [325:11] bounds check end
                     # [325:11] allocate scratch register -> t1
                     slli t1, t0, 6
                     sub t0, t1, t0
@@ -4366,7 +4427,7 @@ main:
                         # [202:56] array_length(str)
                         li t3, 2
                         # [202:24] str
-                        # [202:24] bounds check
+                        # [202:24] bounds check begin
                         # [202:24] lower bound (--checks=lower)
                         bltz t3, 1f
                         # [202:24] upper bound (--checks=upper)
@@ -4379,6 +4440,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [202:24] free scratch register t4
+                        # [202:24] bounds check end
                         lui t1, 36
                         add t1, t1, s0
                         addi t1, t1, 846
@@ -4389,7 +4451,7 @@ main:
                         lui t4, 36
                         add t4, t4, s0
                         lh t4, 976(t4)
-                        # [202:43] bounds check
+                        # [202:43] bounds check begin
                         # [202:43] lower bound (--checks=lower)
                         bltz t4, 1f
                         bltz t3, 1f
@@ -4406,6 +4468,7 @@ main:
                         2:
                         # [202:43] free scratch register t6
                         # [202:43] free scratch register t5
+                        # [202:43] bounds check end
                         add t2, s0, t4
                         # allocate scratch register -> t5
                         lui t5, 36
@@ -4509,7 +4572,7 @@ main:
                             lui t0, 36
                             add t0, t0, s0
                             lh t0, 976(t0)
-                            # [166:26] bounds check
+                            # [166:26] bounds check begin
                             # [166:26] lower bound (--checks=lower)
                             bltz t0, 1f
                             # [166:26] upper bound (--checks=upper)
@@ -4522,6 +4585,7 @@ main:
                             j baz_bounds_panic
                             2:
                             # [166:26] free scratch register t1
+                            # [166:26] bounds check end
                             # [166:12] allocate scratch register -> t1
                             add t1, s0, t0
                             # [166:12] allocate scratch register -> t2
@@ -4605,7 +4669,7 @@ main:
                     lui t1, 36
                     add t1, t1, s0
                     lw t1, 980(t1)
-                    # [334:35] bounds check
+                    # [334:35] bounds check begin
                     # [334:35] lower bound (--checks=lower)
                     bltz t1, 1f
                     # [334:35] upper bound (--checks=upper)
@@ -4618,6 +4682,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [334:35] free scratch register t2
+                    # [334:35] bounds check end
                     # [334:35] allocate scratch register -> t2
                     slli t2, t1, 7
                     add t2, t2, t1
@@ -4632,7 +4697,7 @@ main:
                     # [334:26] free scratch register t2
                     lh t0, 106(t0)
                     # [334:26] free scratch register t1
-                    # [334:26] bounds check
+                    # [334:26] bounds check begin
                     # [334:26] lower bound (--checks=lower)
                     bltz t0, 1f
                     # [334:26] upper bound (--checks=upper)
@@ -4645,6 +4710,7 @@ main:
                     j baz_bounds_panic
                     2:
                     # [334:26] free scratch register t1
+                    # [334:26] bounds check end
                     # [334:26] allocate scratch register -> t1
                     slli t1, t0, 6
                     sub t0, t1, t0
@@ -4704,7 +4770,7 @@ main:
                         lui t5, 36
                         add t5, t5, s0
                         lh t5, 976(t5)
-                        # [221:30] bounds check
+                        # [221:30] bounds check begin
                         # [221:30] lower bound (--checks=lower)
                         bltz t5, 1f
                         bltz t4, 1f
@@ -4721,6 +4787,7 @@ main:
                         2:
                         # [221:30] free scratch register s1
                         # [221:30] free scratch register t6
+                        # [221:30] bounds check end
                         add t2, s0, t5
                         # allocate scratch register -> t6
                         lui t6, 36
@@ -4729,7 +4796,7 @@ main:
                         addi t2, t2, 848
                         # [221:5] free scratch register t5
                         # [221:43] dst.data
-                        # [221:43] bounds check
+                        # [221:43] bounds check begin
                         # [221:43] lower bound (--checks=lower)
                         bltz t4, 1f
                         # [221:43] upper bound (--checks=upper)
@@ -4742,6 +4809,7 @@ main:
                         j baz_bounds_panic
                         2:
                         # [221:43] free scratch register t5
+                        # [221:43] bounds check end
                         addi t3, t1, 0
                         # [221:5] t4: elements to bytes (1 bytes/element)
                         # [221:5] allocate scratch register -> t5

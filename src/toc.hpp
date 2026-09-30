@@ -1099,17 +1099,13 @@ class toc final {
             text += std::format("[{}]", var.array_len);
         }
 
-        if (not var.value_register.is_empty()) {
-            x.comment(src_loc_tk, indent, "{} = {}", text,
-                      var.value_register.base_register());
+        // the iterator 'e' is memory at its register, the counter 'i' is the
+        // register
+        const operand& reg{var.value_register.is_empty() ? var.reg
+                                                         : var.value_register};
 
-            return;
-        }
-
-        if (not var.reg.is_empty()) {
-            x.comment(src_loc_tk, indent, "{} ({})", text,
-                      var.reg.base_register());
-
+        if (not reg.is_empty()) {
+            x.comment(src_loc_tk, indent, "{} ({})", text, reg.base_register());
             return;
         }
 

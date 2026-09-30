@@ -1332,30 +1332,10 @@ class machine_rv32i : public machine {
                                      "bounds check exceeds RV32I range"};
         }
 
-        const address_scope scope{*this, reg_to_check, reg_count};
-
-        const std::string_view index{reg_to_check.base_register()};
-
-        comment(src_loc_tk, indent, "bounds check");
-
-        if (options.lower) {
-            comment(src_loc_tk, indent, "lower bound (--checks=lower)");
-            check_lower_bounds(indent, index, reg_count, not options.upper);
-        }
-
-        if (options.upper) {
-            comment(src_loc_tk, indent, "upper bound (--checks=upper)");
-            check_upper_bound(src_loc_tk, indent, index, array_count, allow_end,
-                              reg_count, options.lower);
-        }
-
-        assembler_.label(indent, "1");
-        if (options.with_line) {
-            comment(src_loc_tk, indent, "line number (--checks=line)");
-            assembler_.li(indent, "a0", src_loc_tk.at_line());
-        }
-        branch(indent, "baz_bounds_panic");
-        assembler_.label(indent, "2");
+        comment(src_loc_tk, indent, "bounds check begin");
+        emit_bounds_check(src_loc_tk, indent, reg_to_check, array_count,
+                          allow_end, reg_count, options);
+        comment(src_loc_tk, indent, "bounds check end");
     }
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
@@ -3007,6 +2987,37 @@ class machine_rv32i : public machine {
         if (inverted != complement) {
             assembler_.xori(indent, result, result, 1);
         }
+    }
+
+    // the address scope frees its temporaries before the end comment
+    auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
+                           const operand& reg_to_check,
+                           const size_t array_count, const bool allow_end,
+                           const operand& reg_count,
+                           const bounds_check_options& options) -> void {
+
+        const address_scope scope{*this, reg_to_check, reg_count};
+
+        const std::string_view index{reg_to_check.base_register()};
+
+        if (options.lower) {
+            comment(src_loc_tk, indent, "lower bound (--checks=lower)");
+            check_lower_bounds(indent, index, reg_count, not options.upper);
+        }
+
+        if (options.upper) {
+            comment(src_loc_tk, indent, "upper bound (--checks=upper)");
+            check_upper_bound(src_loc_tk, indent, index, array_count, allow_end,
+                              reg_count, options.lower);
+        }
+
+        assembler_.label(indent, "1");
+        if (options.with_line) {
+            comment(src_loc_tk, indent, "line number (--checks=line)");
+            assembler_.li(indent, "a0", src_loc_tk.at_line());
+        }
+        branch(indent, "baz_bounds_panic");
+        assembler_.label(indent, "2");
     }
 
     // the address scopes end on return, before the caller frees its registers
