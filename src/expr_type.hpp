@@ -152,6 +152,26 @@ class expr_type final : public statement {
                         const ident_info& dst_info, operand& dst_op) const
         -> void;
 
+    // out-of-line: calls 'stmt_call'
+    auto compile_call_field(toc& tc, const size_t indent, const type& dst_type,
+                            const ident_info& dst_info, operand& dst_op) const
+        -> void;
+
+    // out-of-line: calls 'expr_any'
+    auto compile_field(toc& tc, const size_t indent, const expr_any& src,
+                       const type_field& field, ident_info& dst_info,
+                       operand& dst_op) const -> void;
+
+    // out-of-line: calls 'expr_any'
+    auto compile_field_list(toc& tc, const size_t indent, const type& dst_type,
+                            const ident_info& dst_info, operand& dst_op) const
+        -> void;
+
+    // out-of-line: calls 'stmt_identifier'
+    auto compile_identifier_copy(toc& tc, const size_t indent,
+                                 const type& dst_type, operand& dst_op) const
+        -> void;
+
     // out-of-line: creates the 'stmt_call' or 'stmt_identifier'
     auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
 

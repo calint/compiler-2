@@ -183,45 +183,7 @@ class stmt_call : public expression {
             return;
         }
 
-        // without base + index addressing each result access adds base and
-        // index again, computing the address once can be shorter
-        if (get_unary_ops().is_empty() and
-            not dst_info.operand.index_register().empty()) {
-
-            x.emit_most_efficient(
-                tok(), indent,
-                [&] -> void { compile_inline(tc, indent, dst_info, func); },
-                [&] -> void {
-                    emit_most_efficient_address(
-                        x, indent, [&](const bool keeps) -> void {
-                            compile_inline_with_address_register(
-                                tc, indent, dst_info, func, keeps);
-                        });
-                });
-
-            return;
-        }
-
-        if (get_unary_ops().is_empty()) {
-            compile_inline(tc, indent, dst_info, func);
-            return;
-        }
-
-        // unary ops on a memory result are a load, modify and store on a
-        // load/store machine, a scratch register can be shorter
-        x.emit_most_efficient(
-            tok(), indent,
-            [&] -> void { compile_inline(tc, indent, dst_info, func); },
-            [&] -> void {
-                const operand reg{x.alloc_scratch_register(
-                    tok(), indent, dst_info.type_ref())};
-
-                compile_inline(tc, indent,
-                               toc::make_ident_info_from_register(reg), func);
-
-                x.copy_value(tok(), indent, dst_info.operand, reg);
-                x.free_scratch_register(tok(), indent, reg);
-            });
+        compile_inline_to_memory(tc, indent, dst_info, func);
     }
 
     // reported at the call because an inlined result aliases the destination
@@ -364,16 +326,7 @@ class stmt_call : public expression {
         if (ret) {
             assert_result_type(dst_info, func);
 
-            operand dst_lea{dst_info.use_operand or dst_info.has_lea()
-                                ? dst_info.operand
-                                : operand{}};
-
-            // a destination such as 'arr[1]' is not an array
-            aliases_to_add.emplace_back(
-                std::string{ret->ident_tk.text()}, dst_info.id,
-                std::move(dst_lea), ret->type_ptr,
-                dst_info.is_register() ? dst_info.operand : operand{},
-                not dst_info.is_array);
+            aliases_to_add.push_back(make_result_alias(dst_info, *ret));
         }
 
         // scratch registers stay allocated until the inlined body is compiled
@@ -546,6 +499,41 @@ class stmt_call : public expression {
     }
 
   private:
+    // an argument reaches its parameter by reference, so a value that has no
+    // storage or an array of the wrong shape cannot be passed
+    auto assert_argument_usable(const toc& tc, const size_t index,
+                                const expr_any& arg,
+                                const stmt_def_func_param& param) const
+        -> void {
+
+        // todo: literals and call results need a temporary to be
+        //       passed, see etc/todo.txt
+        if (not param.get_type().is_builtin() and not arg.is_identifier()) {
+            throw compiler_exception{arg.tok(),
+                                     std::format("{} cannot be a temporary",
+                                                 describe_argument(index))};
+        }
+
+        if (param.is_array()) {
+            const ident_info arg_info{tc.make_ident_info(arg)};
+
+            // an element would give the parameter the whole array's
+            // length, pass the array and a start index instead
+            if (not arg_info.is_array) {
+                throw compiler_exception{
+                    arg.tok(), std::format("parameter {} requires an array",
+                                           index + 1 - first_argument_index())};
+            }
+
+            return;
+        }
+
+        // the alias would make the parameter name the whole array
+        if (arg.is_identifier()) {
+            toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
+        }
+    }
+
     // the callee reaches the result and arguments through their addresses
     auto assert_noninline_call(const toc& tc, const ident_info& dst_info,
                                const stmt_def_func& func) const -> void {
@@ -717,6 +705,56 @@ class stmt_call : public expression {
                             address_registers);
     }
 
+    // the result is written to memory by the body of the function
+    auto compile_inline_to_memory(toc& tc, const size_t indent,
+                                  const ident_info& dst_info,
+                                  const stmt_def_func& func) const -> void {
+
+        machine& x{tc.machine()};
+
+        const bool has_unary_ops{not get_unary_ops().is_empty()};
+        const bool has_indexed_result{
+            not dst_info.operand.index_register().empty()};
+
+        // without base + index addressing each result access adds base and
+        // index again, computing the address once can be shorter
+        if (not has_unary_ops and has_indexed_result) {
+            x.emit_most_efficient(
+                tok(), indent,
+                [&] -> void { compile_inline(tc, indent, dst_info, func); },
+                [&] -> void {
+                    emit_most_efficient_address(
+                        x, indent, [&](const bool keeps) -> void {
+                            compile_inline_with_address_register(
+                                tc, indent, dst_info, func, keeps);
+                        });
+                });
+
+            return;
+        }
+
+        if (not has_unary_ops) {
+            compile_inline(tc, indent, dst_info, func);
+            return;
+        }
+
+        // unary ops on a memory result are a load, modify and store on a
+        // load/store machine, a scratch register can be shorter
+        x.emit_most_efficient(
+            tok(), indent,
+            [&] -> void { compile_inline(tc, indent, dst_info, func); },
+            [&] -> void {
+                const operand reg{x.alloc_scratch_register(
+                    tok(), indent, dst_info.type_ref())};
+
+                compile_inline(tc, indent,
+                               toc::make_ident_info_from_register(reg), func);
+
+                x.copy_value(tok(), indent, dst_info.operand, reg);
+                x.free_scratch_register(tok(), indent, reg);
+            });
+    }
+
     // a new register because the index register may belong to an enclosing
     // alias that is used after the call
     auto compile_inline_with_address_register(
@@ -856,35 +894,7 @@ class stmt_call : public expression {
         }
 
         for (size_t i{}; i < args_.size(); ++i) {
-            const expr_any& arg{args_[i]};
-            const stmt_def_func_param& param{params[i]};
-
-            // todo: literals and call results need a temporary to be
-            //       passed, see etc/todo.txt
-            if (not param.get_type().is_builtin() and not arg.is_identifier()) {
-                throw compiler_exception{arg.tok(),
-                                         std::format("{} cannot be a temporary",
-                                                     describe_argument(i))};
-            }
-
-            if (param.is_array()) {
-                const ident_info arg_info{tc.make_ident_info(arg)};
-
-                // an element would give the parameter the whole array's
-                // length, pass the array and a start index instead
-                if (not arg_info.is_array) {
-                    throw compiler_exception{
-                        arg.tok(), std::format("parameter {} requires an array",
-                                               i + 1 - first_argument_index())};
-                }
-
-                continue;
-            }
-
-            // the alias would make the parameter name the whole array
-            if (arg.is_identifier()) {
-                toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
-            }
+            assert_argument_usable(tc, i, args_[i], params[i]);
         }
     }
 
@@ -1135,6 +1145,27 @@ class stmt_call : public expression {
             .type_ptr{&param.get_type()},
             .register_operand{},
             .is_element{arg.is_array_element()},
+        };
+    }
+
+    // the result name of the function refers to the destination
+    [[nodiscard]] static auto make_result_alias(const ident_info& dst_info,
+                                                const func_return_info& ret)
+        -> alias_info {
+
+        operand dst_lea{dst_info.use_operand or dst_info.has_lea()
+                            ? dst_info.operand
+                            : operand{}};
+
+        // a destination such as 'arr[1]' is not an array
+        return {
+            .from{std::string{ret.ident_tk.text()}},
+            .to{dst_info.id},
+            .lea{std::move(dst_lea)},
+            .type_ptr{ret.type_ptr},
+            .register_operand{dst_info.is_register() ? dst_info.operand
+                                                     : operand{}},
+            .is_element{not dst_info.is_array},
         };
     }
 

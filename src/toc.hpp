@@ -286,6 +286,12 @@ class toc final {
         const type* type_ptr;
     };
 
+    // where a variable is placed, 'storage_frame' is null at the variables base
+    struct storage_location {
+        frame* storage_frame;
+        size_t base_offset;
+    };
+
     std::reference_wrapper<::machine> machine_;
     std::string_view source_;
     std::vector<frame> frames_;
@@ -431,16 +437,7 @@ class toc final {
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  const bool is_dat) -> void {
 
-        // check if the variable is already declared in this scope
-        if (frames_.back().has_var(var.name)) {
-            const var_info& decl_var{
-                frames_.back().get_var_const_ref(var.name)};
-
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("variable '{}' already declared at {}", var.name,
-                            source_location_hr(decl_var.src_loc_tk))};
-        }
+        assert_not_declared_in_scope(src_loc_tk, var.name);
 
         // the value lives in its register for the whole scope
         if (not var.value_register.is_empty()) {
@@ -469,22 +466,10 @@ class toc final {
 
         // offsets are relative to the variables base or to the nearest frame
         // with its own storage base, both are aligned
-        frame* storage_frame{};
-        size_t base_offset{vars_size_bytes_};
+        const storage_location location{find_storage_location(is_dat)};
 
-        if (not is_dat) {
-            size_t local_size_bytes{};
-            for (frame& frm : frames_ | std::views::reverse) {
-                local_size_bytes = add_storage_size(
-                    local_size_bytes, frm.allocated_stack_size_bytes());
-                if (not frm.storage_base_register().empty()) {
-                    storage_frame = &frm;
-                    base_offset = local_size_bytes;
-
-                    break;
-                }
-            }
-        }
+        frame* const storage_frame{location.storage_frame};
+        const size_t base_offset{location.base_offset};
 
         const size_t padding_bytes{
             align_storage_size(base_offset, var_alignment) - base_offset};
@@ -493,14 +478,7 @@ class toc final {
             add_storage_size(padding_bytes, var_size_bytes)};
 
         if (not is_dat) {
-            if (allocated_size_bytes >
-                vars_capacity_bytes_ - used_vars_size_bytes()) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("variable '{}' would overflow allocated vars "
-                                "section",
-                                var.name)};
-            }
+            assert_vars_capacity(src_loc_tk, var.name, allocated_size_bytes);
         }
 
         var.offset = address_offset(base_offset + padding_bytes);
@@ -1084,6 +1062,38 @@ class toc final {
         return string_constants_.back().label;
     }
 
+    auto assert_not_declared_in_scope(const token& src_loc_tk,
+                                      const std::string_view name) const
+        -> void {
+
+        if (not frames_.back().has_var(name)) {
+            return;
+        }
+
+        const var_info& decl_var{frames_.back().get_var_const_ref(name)};
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("variable '{}' already declared at {}", name,
+                        source_location_hr(decl_var.src_loc_tk))};
+    }
+
+    auto assert_vars_capacity(const token& src_loc_tk,
+                              const std::string_view name,
+                              const size_t allocated_size_bytes) const -> void {
+
+        if (allocated_size_bytes <=
+            vars_capacity_bytes_ - used_vars_size_bytes()) {
+
+            return;
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("variable '{}' would overflow allocated vars section",
+                        name)};
+    }
+
     // the resolved name shows where the variable is stored
     auto comment_var(const token& src_loc_tk, const size_t indent,
                      const var_info& var) -> void {
@@ -1146,6 +1156,30 @@ class toc final {
         }
 
         return nullptr;
+    }
+
+    // a local starts after the storage in use of the nearest frame with its own
+    // storage base and of the frames inside it, other variables and dats start
+    // at the variables base
+    [[nodiscard]] auto find_storage_location(const bool is_dat)
+        -> storage_location {
+
+        if (is_dat) {
+            return {.storage_frame{}, .base_offset{vars_size_bytes_}};
+        }
+
+        size_t local_size_bytes{};
+
+        for (frame& frm : frames_ | std::views::reverse) {
+            local_size_bytes = add_storage_size(
+                local_size_bytes, frm.allocated_stack_size_bytes());
+
+            if (not frm.storage_base_register().empty()) {
+                return {.storage_frame{&frm}, .base_offset{local_size_bytes}};
+            }
+        }
+
+        return {.storage_frame{}, .base_offset{vars_size_bytes_}};
     }
 
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,

@@ -431,55 +431,58 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
                                const type& dst_type, const ident_info& dst_info,
                                operand& dst_op) const -> void {
 
-    // e.g. 'f()' in '{f(), 3}' writes the field in place
     if (stmt_call_) {
-        ident_info call_dst_info{dst_info};
-        call_dst_info.operand = operand::mem(dst_op, dst_type);
-        call_dst_info.use_operand = true;
-
-        stmt_call_->compile(tc, indent, call_dst_info);
-
-        dst_op.increment_offset(address_offset(dst_type.size_bytes()));
-
+        compile_call_field(tc, indent, dst_type, dst_info, dst_op);
         return;
     }
 
-    // e.g. 'pt1 = pt2'
     if (is_identifier()) {
-        const ident_info src_info{tc.make_ident_info(*this)};
-
-        // 'expr_type' validates the source type before entering here
-
-        assert(dst_type.name() == src_info.type_ref().name());
-
-        // the copy size comes from the source, a whole array would overflow
-        if (src_info.is_array and not is_array_destination_) {
-            throw compiler_exception{tok(), "source must not be an array"};
-        }
-
-        if (is_array_destination_ and not src_info.is_array) {
-            throw compiler_exception{tok(), "source must be an array"};
-        }
-
-        std::vector<operand> allocated_registers;
-        const operand src_op{
-            tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
-
-        const size_t size_bytes{multiply_storage_size(
-            dst_type.size_bytes(), src_info.is_array ? src_info.array_len : 1)};
-
-        machine& x{tc.machine()};
-
-        x.copy(tok(), indent, src_op, dst_op, size_bytes, dst_type.alignment());
-
-        dst_op.increment_offset(address_offset(size_bytes));
-
-        x.free_scratch_registers(tok(), indent, allocated_registers);
-
+        compile_identifier_copy(tc, indent, dst_type, dst_op);
         return;
     }
 
-    // initialize fields
+    compile_field_list(tc, indent, dst_type, dst_info, dst_op);
+}
+
+// declared in 'expr_type.hpp'
+// e.g. 'f()' in '{f(), 3}' writes the field in place
+auto expr_type::compile_call_field(toc& tc, const size_t indent,
+                                   const type& dst_type,
+                                   const ident_info& dst_info,
+                                   operand& dst_op) const -> void {
+
+    ident_info call_dst_info{dst_info};
+    call_dst_info.operand = operand::mem(dst_op, dst_type);
+    call_dst_info.use_operand = true;
+
+    stmt_call_->compile(tc, indent, call_dst_info);
+
+    dst_op.increment_offset(address_offset(dst_type.size_bytes()));
+}
+
+// declared in 'expr_type.hpp'
+// advances 'dst_op' past the field, a record field does it in the recursion
+auto expr_type::compile_field(toc& tc, const size_t indent, const expr_any& src,
+                              const type_field& field, ident_info& dst_info,
+                              operand& dst_op) const -> void {
+
+    if (not field.type().is_builtin()) {
+        compile_record_field(tc, indent, src, field, dst_info, dst_op);
+        return;
+    }
+
+    write_builtin_field(tc, indent, src, field, dst_info, dst_op);
+
+    dst_op.increment_offset(address_offset(field.size_bytes));
+}
+
+// declared in 'expr_type.hpp'
+// e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
+// and the padding
+auto expr_type::compile_field_list(toc& tc, const size_t indent,
+                                   const type& dst_type,
+                                   const ident_info& dst_info,
+                                   operand& dst_op) const -> void {
 
     ident_info cur_dst_info{dst_info};
     cur_dst_info.operand = dst_op;
@@ -509,22 +512,9 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
 
         cur_dst_info.push(field.name, field.type_ptr, {});
 
-        if (not field.type().is_builtin()) {
-            compile_record_field(tc, indent, *expr, field, cur_dst_info,
-                                 dst_op);
-            // note: dst_op was mutated in the recursive call
-            cur_dst_info.increment_offset(address_offset(field.size_bytes));
-            cur_dst_info.pop();
-            continue;
-        }
+        compile_field(tc, indent, *expr, field, cur_dst_info, dst_op);
 
-        // built-in
-
-        write_builtin_field(tc, indent, *expr, field, cur_dst_info, dst_op);
-
-        const int64_t size_bytes{address_offset(field.size_bytes)};
-        dst_op.increment_offset(size_bytes);
-        cur_dst_info.increment_offset(size_bytes);
+        cur_dst_info.increment_offset(address_offset(field.size_bytes));
         cur_dst_info.pop();
     }
 
@@ -537,6 +527,43 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
         exprs_.size() == flds.size() ? "padding" : "remaining fields",
         remaining_bytes, offset_alignment(written_bytes, dst_type.alignment()),
         dst_op);
+}
+
+// declared in 'expr_type.hpp'
+// e.g. 'pt1 = pt2'
+auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
+                                        const type& dst_type,
+                                        operand& dst_op) const -> void {
+
+    const ident_info src_info{tc.make_ident_info(*this)};
+
+    // 'expr_type' validates the source type before entering here
+
+    assert(dst_type.name() == src_info.type_ref().name());
+
+    // the copy size comes from the source, a whole array would overflow
+    if (src_info.is_array and not is_array_destination_) {
+        throw compiler_exception{tok(), "source must not be an array"};
+    }
+
+    if (is_array_destination_ and not src_info.is_array) {
+        throw compiler_exception{tok(), "source must be an array"};
+    }
+
+    std::vector<operand> allocated_registers;
+    const operand src_op{
+        tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
+
+    const size_t size_bytes{multiply_storage_size(
+        dst_type.size_bytes(), src_info.is_array ? src_info.array_len : 1)};
+
+    machine& x{tc.machine()};
+
+    x.copy(tok(), indent, src_op, dst_op, size_bytes, dst_type.alignment());
+
+    dst_op.increment_offset(address_offset(size_bytes));
+
+    x.free_scratch_registers(tok(), indent, allocated_registers);
 }
 
 // declared in 'expr_type.hpp'

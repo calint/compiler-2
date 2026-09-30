@@ -254,48 +254,16 @@ class stmt_identifier : public statement {
 
             // an unindexed element only needs a possible range bounds check
             if (not cur_elem.array_index_expr) {
-
-                if (cur_info.is_array and is_last_elem and
-                    not reg_count.is_empty()) {
-
-                    check_array_bounds(tc, indent, src_loc_tk, reg_count,
-                                       cur_info.array_len, true);
-                }
+                check_unindexed_range(tc, indent, src_loc_tk, cur_info,
+                                      is_last_elem, reg_count);
 
                 continue;
             }
 
-            const operand range_count{is_last_elem ? reg_count : operand{}};
-
-            const std::optional<int64_t> constant_index{
-                cur_elem.array_index_expr->constant_value(tc)};
-
-            if (constant_index) {
-                assert_index_in_bounds(cur_elem, cur_info, *constant_index,
-                                       not range_count.is_empty());
-            }
-
-            // with a range count the run-time check covers 'index + count'
-            if (constant_index and range_count.is_empty()) {
-                address.increment_offset(
-                    address_offset(static_cast<size_t>(*constant_index) *
-                                   cur_info.type_ref().size_bytes()));
-
-                continue;
-            }
-
-            // an operand holds one index, so an earlier one is folded first
-            if (not address.index_register().empty()) {
-                address = operand::mem(
-                    fold_indexed_address(
-                        tc, indent, src_loc_tk, allocated_registers, owned_from,
-                        address, address_register, index_register),
-                    cur_info.type_ref());
-            }
-
-            address = add_index(tc, cur_elem.array_index_expr->tok(), indent,
-                                allocated_registers, cur_elem, cur_info,
-                                range_count, address, index_register);
+            address = compile_indexed_element(
+                tc, indent, src_loc_tk, allocated_registers, owned_from,
+                cur_elem, cur_info, is_last_elem ? reg_count : operand{},
+                address, address_register, index_register);
         }
 
         return operand::mem(address, *parent_type);
@@ -484,6 +452,21 @@ class stmt_identifier : public statement {
                                  name_tk.text(), info.type_ref().name())};
     }
 
+    // a field covers its trailing padding so that assigning every field
+    // assigns the whole record
+    [[nodiscard]] auto field_range(const type& parent_type,
+                                   const ident_elem& elem) const
+        -> field_coverage::range {
+
+        return {
+            .offset{
+                access_range_.offset +
+                parent_type.field_offset(elem.name_tk, elem.name_tk.text())},
+            .size_bytes{parent_type.field_extent_bytes(elem.name_tk,
+                                                       elem.name_tk.text())},
+        };
+    }
+
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] auto is_method_name(const toc& tc, tokenizer& tz,
                                       const token& path_tk,
@@ -583,23 +566,9 @@ class stmt_identifier : public statement {
             const ident_info info{tc.make_ident_info(elem.name_tk, path)};
 
             // inside an unknown element only the types are followed
-            // a field covers its trailing padding so that assigning every
-            // field assigns the whole record
-            if (is_exact_access_ and is_root) {
-                access_range_ = {
-                    .offset{access_range_.offset},
-                    .size_bytes{storage_size_bytes(info)},
-                };
-            }
-
-            if (is_exact_access_ and not is_root) {
-                access_range_ = {
-                    .offset{access_range_.offset +
-                            parent_type->field_offset(elem.name_tk,
-                                                      elem.name_tk.text())},
-                    .size_bytes{parent_type->field_extent_bytes(
-                        elem.name_tk, elem.name_tk.text())},
-                };
+            if (is_exact_access_) {
+                access_range_ = is_root ? root_range(info)
+                                        : field_range(*parent_type, elem);
             }
 
             parent_type = &info.type_ref();
@@ -608,6 +577,16 @@ class stmt_identifier : public statement {
                 narrow_to_element(tc, *elem.array_index_expr, info);
             }
         }
+    }
+
+    // the variable keeps the offset and covers its whole storage
+    [[nodiscard]] auto root_range(const ident_info& info) const
+        -> field_coverage::range {
+
+        return {
+            .offset{access_range_.offset},
+            .size_bytes{storage_size_bytes(info)},
+        };
     }
 
     //
@@ -686,6 +665,21 @@ class stmt_identifier : public statement {
                        allow_end, range_count, tc.bounds_check_options());
     }
 
+    // the range of an unindexed array is checked once, at the last element
+    static auto check_unindexed_range(toc& tc, const size_t indent,
+                                      const token& src_loc_tk,
+                                      const ident_info& cur_info,
+                                      const bool is_last_elem,
+                                      const operand& reg_count) -> void {
+
+        if (not cur_info.is_array or not is_last_elem or reg_count.is_empty()) {
+            return;
+        }
+
+        check_array_bounds(tc, indent, src_loc_tk, reg_count,
+                           cur_info.array_len, true);
+    }
+
     [[nodiscard]] static auto
     compile_checked_index(toc& tc, const size_t indent,
                           const expr_any& index_expr, operand index_register,
@@ -704,6 +698,48 @@ class stmt_identifier : public statement {
                            range_count);
 
         return index_register;
+    }
+
+    // the address after the element index, a constant index goes into the
+    // displacement and any other one into an index register
+    [[nodiscard]] static auto compile_indexed_element(
+        toc& tc, const size_t indent, const token& src_loc_tk,
+        std::vector<operand>& allocated_registers, const size_t owned_from,
+        const ident_elem& cur_elem, const ident_info& cur_info,
+        const operand& range_count, const operand& address,
+        const operand& address_register, operand& index_register) -> operand {
+
+        const std::optional<int64_t> constant_index{
+            cur_elem.array_index_expr->constant_value(tc)};
+
+        if (constant_index) {
+            assert_index_in_bounds(cur_elem, cur_info, *constant_index,
+                                   not range_count.is_empty());
+        }
+
+        // with a range count the run-time check covers 'index + count'
+        if (constant_index and range_count.is_empty()) {
+            operand folded{address};
+            folded.increment_offset(
+                address_offset(static_cast<size_t>(*constant_index) *
+                               cur_info.type_ref().size_bytes()));
+
+            return folded;
+        }
+
+        // an operand holds one index, so an earlier one is folded first
+        operand base{address};
+        if (not address.index_register().empty()) {
+            base = operand::mem(
+                fold_indexed_address(tc, indent, src_loc_tk,
+                                     allocated_registers, owned_from, address,
+                                     address_register, index_register),
+                cur_info.type_ref());
+        }
+
+        return add_index(tc, cur_elem.array_index_expr->tok(), indent,
+                         allocated_registers, cur_elem, cur_info, range_count,
+                         base, index_register);
     }
 
     [[nodiscard]] static auto

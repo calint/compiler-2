@@ -48,27 +48,18 @@ class expr_bool_op final : public statement {
 
         ws_pre_op_ = tz.next_whitespace_token();
 
-        if (tz.is_next_char('=')) {
-            if (not tz.is_next_char('=')) {
-                throw compiler_exception{tz, "expected '=='"};
-            }
-            op_ = "==";
-        } else if (tz.is_next_char('!')) {
-            if (not tz.is_next_char('=')) {
-                throw compiler_exception{tz, "expected '!='"};
-            }
-            op_ = "!=";
-        } else if (tz.is_next_char('<')) {
-            op_ = tz.is_next_char('=') ? "<=" : "<";
-        } else if (tz.is_next_char('>')) {
-            op_ = tz.is_next_char('=') ? ">=" : ">";
-        } else {
-            // e.g. if a ...
+        const std::optional<std::string_view> comparison{
+            parse_comparison_operator(tz)};
+
+        // e.g. if a ...
+        if (not comparison) {
             is_shorthand_ = true;
             resolve_if_op_is_expression();
 
             return;
         }
+
+        op_ = *comparison;
 
         ws_post_op_ = tz.next_whitespace_token();
 
@@ -503,6 +494,37 @@ class expr_bool_op final : public statement {
         }
 
         return op;
+    }
+
+    // the comparison at the next characters, none for a shorthand condition
+    [[nodiscard]] static auto parse_comparison_operator(tokenizer& tz)
+        -> std::optional<std::string_view> {
+
+        if (tz.is_next_char('=')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz, "expected '=='"};
+            }
+
+            return "==";
+        }
+
+        if (tz.is_next_char('!')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz, "expected '!='"};
+            }
+
+            return "!=";
+        }
+
+        if (tz.is_next_char('<')) {
+            return tz.is_next_char('=') ? "<=" : "<";
+        }
+
+        if (tz.is_next_char('>')) {
+            return tz.is_next_char('=') ? ">=" : ">";
+        }
+
+        return std::nullopt;
     }
 
     [[nodiscard]] static auto

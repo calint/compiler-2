@@ -56,27 +56,7 @@ class stmt_def_func final : public statement {
                                      "expected '(' after function name"};
         }
 
-        // read parameter definitions
-        size_t counter{};
-        while (true) {
-            close_paren_tk_ = tz.is_next_char_token(')');
-            if (not close_paren_tk_.is_empty()) {
-                break;
-            }
-
-            if (counter++) {
-                const token t{tz.is_next_char_token(',')};
-                if (t.is_empty()) {
-                    throw compiler_exception{
-                        tz,
-                        std::format("expected ',' or ')' after parameter '{}'",
-                                    params_.back().tok().text())};
-                }
-                param_delims_tk_.emplace_back(t);
-            }
-
-            params_.emplace_back(tc, tz);
-        }
+        parse_params(tc, tz);
 
         parse_returns(tc, tz);
 
@@ -309,6 +289,32 @@ class stmt_def_func final : public statement {
 
         name_ =
             std::format("{}.{}", receiver_type.name(), method_name_tk_.text());
+    }
+
+    auto parse_param_delimiter(tokenizer& tz) -> void {
+        const token t{tz.is_next_char_token(',')};
+        if (t.is_empty()) {
+            throw compiler_exception{
+                tz, std::format("expected ',' or ')' after parameter '{}'",
+                                params_.back().tok().text())};
+        }
+
+        param_delims_tk_.emplace_back(t);
+    }
+
+    // e.g. 'a i32, b i32' up to the closing parenthesis
+    auto parse_params(toc& tc, tokenizer& tz) -> void {
+        close_paren_tk_ = tz.is_next_char_token(')');
+
+        while (close_paren_tk_.is_empty()) {
+            if (not params_.empty()) {
+                parse_param_delimiter(tz);
+            }
+
+            params_.emplace_back(tc, tz);
+
+            close_paren_tk_ = tz.is_next_char_token(')');
+        }
     }
 
     // 'name [type]' of the returned value, without a name the type is void

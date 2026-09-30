@@ -9,8 +9,16 @@
 #include "stmt_if_branch.hpp"
 
 class stmt_if final : public statement {
+    // e.g. 'else if' of 'else if c == d {y = 2}'
+    struct else_if_tokens {
+        token else_tk;
+        token if_tk;
+    };
+
     std::vector<stmt_if_branch> branches_;
-    std::vector<token> else_if_tokens_;
+    // one for each branch after the first, kept to reproduce the source
+    std::vector<else_if_tokens> else_if_tokens_;
+    token else_tk_;
     stmt_block else_code_;
 
   public:
@@ -22,36 +30,11 @@ class stmt_if final : public statement {
 
         // note: 'if' token has been read
 
-        while (true) {
-            // read branch e.g. a == b {x = 1}
+        // read branch e.g. a == b {x = 1}
+        branches_.emplace_back(tc, tz);
+
+        while (parse_else(tc, tz)) {
             branches_.emplace_back(tc, tz);
-
-            // check if it is an 'else if' or 'else' or a new statement
-            const token tkn{tz.next_token()};
-            if (not tkn.is_text("else")) {
-                // not 'else', push the token back in stream and exit
-                tz.put_back_token(tkn);
-
-                return;
-            }
-            // is 'else'
-            // check if it is 'else if'
-            const token tkn2{tz.next_token()};
-            if (not tkn2.is_text("if")) {
-                // not 'else if', push token back in stream
-                tz.put_back_token(tkn2);
-                // 'else' branch
-                // save tokens to be able to reproduce the source
-                else_if_tokens_.emplace_back(tkn);
-                // read the 'else' code
-                else_code_ = {tc, tz};
-
-                return;
-            }
-            // 'else if': continue reading if branches
-            // save tokens to be able to reproduce the source
-            else_if_tokens_.emplace_back(tkn);
-            else_if_tokens_.emplace_back(tkn2);
         }
     }
 
@@ -68,18 +51,16 @@ class stmt_if final : public statement {
         branch.source_to(os);
         // output the remaining 'else if' branches
         const auto else_if_branches{branches_ | std::views::drop(1)};
-        const auto token_pairs{else_if_tokens_ | std::views::chunk(2)};
         for (const auto [b, t] :
-             std::views::zip(else_if_branches, token_pairs)) {
+             std::views::zip(else_if_branches, else_if_tokens_)) {
 
-            // 'else if' tokens as read from source
-            t[0].source_to(os);
-            t[1].source_to(os);
+            t.else_tk.source_to(os);
+            t.if_tk.source_to(os);
             b.source_to(os);
         }
         // the 'else' code
         if (not else_code_.is_empty()) {
-            else_if_tokens_.back().source_to(os);
+            else_tk_.source_to(os);
             else_code_.source_to(os);
         }
     }
@@ -154,6 +135,32 @@ class stmt_if final : public statement {
     }
 
   private:
+    // reads what follows a branch: 'else if' continues the chain, 'else' ends
+    // it with the else code, anything else is a new statement
+    auto parse_else(toc& tc, tokenizer& tz) -> bool {
+        const token else_tk{tz.next_token()};
+        if (not else_tk.is_text("else")) {
+            tz.put_back_token(else_tk);
+            return false;
+        }
+
+        const token if_tk{tz.next_token()};
+        if (if_tk.is_text("if")) {
+            else_if_tokens_.push_back({
+                .else_tk{else_tk},
+                .if_tk{if_tk},
+            });
+
+            return true;
+        }
+
+        tz.put_back_token(if_tk);
+        else_tk_ = else_tk;
+        else_code_ = {tc, tz};
+
+        return false;
+    }
+
     //
     // statics
     //

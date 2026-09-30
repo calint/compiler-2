@@ -88,37 +88,7 @@ class expr_any final : public statement {
             return;
         }
 
-        while (true) {
-            close_brace_tk_ = tz.is_next_char_token('}');
-            if (not close_brace_tk_.is_empty()) {
-                break;
-            }
-
-            if (not vars_.empty()) {
-                const token t{tz.is_next_char_token(',')};
-                if (t.is_empty()) {
-                    throw compiler_exception{
-                        tz, std::format("expected ',' followed by initializer "
-                                        "for type '{}'",
-                                        tp.name())};
-                }
-                var_delims_tk_.emplace_back(t);
-            }
-
-            // the remaining count would wrap around past the array size
-            if (array_count_ != 0 and vars_.size() == array_count_) {
-                throw compiler_exception{
-                    tz, std::format("too many elements specified for array of "
-                                    "size {}",
-                                    array_count_)};
-            }
-
-            vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
-        }
-
-        if (array_count_ == 0) {
-            array_count_ = vars_.size();
-        }
+        parse_braced_elements(tc, tz, tp, in_args);
     }
 
     // a method receiver, the first argument of the call
@@ -383,6 +353,18 @@ class expr_any final : public statement {
     }
 
   private:
+    // the remaining count would wrap around past the array size
+    auto assert_room_for_element(const tokenizer& tz) const -> void {
+        if (array_count_ == 0 or vars_.size() != array_count_) {
+            return;
+        }
+
+        throw compiler_exception{
+            tz, std::format("too many elements specified for array of "
+                            "size {}",
+                            array_count_)};
+    }
+
     // constant elements are stored like a string so the backend can pack them
     // into wider immediates or copy them from read-only data, 'dst_info'
     // advances past the listed elements
@@ -506,6 +488,41 @@ class expr_any final : public statement {
         }
 
         return array_count_;
+    }
+
+    // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
+    auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
+                               const bool in_args) -> void {
+
+        close_brace_tk_ = tz.is_next_char_token('}');
+
+        while (close_brace_tk_.is_empty()) {
+            if (not vars_.empty()) {
+                parse_element_delimiter(tz, tp);
+            }
+
+            assert_room_for_element(tz);
+
+            vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
+
+            close_brace_tk_ = tz.is_next_char_token('}');
+        }
+
+        if (array_count_ == 0) {
+            array_count_ = vars_.size();
+        }
+    }
+
+    auto parse_element_delimiter(tokenizer& tz, const type& tp) -> void {
+        const token t{tz.is_next_char_token(',')};
+        if (t.is_empty()) {
+            throw compiler_exception{
+                tz, std::format("expected ',' followed by initializer "
+                                "for type '{}'",
+                                tp.name())};
+        }
+
+        var_delims_tk_.emplace_back(t);
     }
 
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
