@@ -93,16 +93,24 @@ type room {
     objects[room_objects_len],
     objects_len,
 }
-dat rooms = room[rooms_len]{
-    { 
-        { "roome", 5 },
-        { },
-        { "todo: find an exit", 18 },
-        { { 0 }, 1 },
-        { {0, 1} }, 1
-    } 
+
+type rooms {
+    array room[rooms_len],
+    len,
 }
-dat rooms_len = 1
+
+dat rooms = rooms{
+    { # array
+        { # array[0] 
+            { "roome", 5 },
+            { },
+            { "todo: find an exit", 18 },
+            { { 0 }, 1 },
+            { {0, 1} }, 1
+        }
+    },
+    1 # len
+}
 
 type entity {
     name name,
@@ -259,9 +267,9 @@ func action_go(cur_entity, tz tokenizer) {
 
     # find link
     var room_id = entities.array[cur_entity].room_id
-    var links_len = rooms[room_id].links_len
+    var links_len = rooms.array[room_id].links_len
     var found_ix = links_len
-    foo rooms[room_id].links, links_len {
+    foo rooms.array[room_id].links, links_len {
         if tz.is_name(link_names.array[e.link_name_id]) {
             found_ix = i
             break
@@ -274,7 +282,7 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     # move entity
-    entities.array[cur_entity].room_id = rooms[room_id].links[found_ix].to
+    entities.array[cur_entity].room_id = rooms.array[room_id].links[found_ix].to
 
     print(str_went_to)
     tz.print()
@@ -312,7 +320,7 @@ func action_new_room(cur_entity, tz tokenizer) {
 
     var cur_room_id = entities.array[cur_entity].room_id 
 
-    var cur_room_next_link_id = rooms[cur_room_id].links_len
+    var cur_room_next_link_id = rooms.array[cur_room_id].links_len
 
     var link_name_id = find_link_name_or_make(tz)
 
@@ -326,27 +334,27 @@ func action_new_room(cur_entity, tz tokenizer) {
     var link_name_back_id = find_link_name_or_make(tz)
 
     # link to next room
-    rooms[cur_room_id].links[cur_room_next_link_id] = { 
+    rooms.array[cur_room_id].links[cur_room_next_link_id] = { 
         link_name_id,
         rooms_len
     }
-    rooms[cur_room_id].links_len = cur_room_next_link_id + 1
+    rooms.array[cur_room_id].links_len = cur_room_next_link_id + 1
 
     # link back to this from from the new room
-    rooms[rooms_len].links[0] = { 
+    rooms.array[rooms.len].links[0] = { 
         link_name_back_id,
         cur_room_id
     }
-    rooms[rooms_len].links_len = 1
+    rooms.array[rooms.len].links_len = 1
 
     # increase number of rooms
-    rooms_len = rooms_len + 1
+    rooms.len = rooms.len + 1
 }
 
 func str_action_set_room_description(cur_entity, tz tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    tz.copy_to_str(rooms[entities.array[cur_entity].room_id].description)
+    tz.copy_to_str(rooms.array[entities.array[cur_entity].room_id].description)
 }
 
 dat str_action_go = "go"
@@ -381,7 +389,7 @@ func main() {
             cur_entity = 0
         }
         print(str_nl)
-        rooms[entities.array[cur_entity].room_id].print()
+        rooms.array[entities.array[cur_entity].room_id].print()
         entities.array[cur_entity].name.print()
         print(str_prompt)
         tz.input()
