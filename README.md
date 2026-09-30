@@ -849,21 +849,30 @@ main:
     mov qword [rbp + 432], 0
     mov qword [rbp + 440], 1
     mov r15, qword [rbp + 440]
+    mov r14, 239
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
     cmp r15, 4
+    cmovge rbp, r14
     jge baz_bounds_panic
     mov dword [rbp + r15 * 4 + 424], 2
     mov r15, qword [rbp + 440]
     add r15, 1
+    mov r14, 240
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
     cmp r15, 4
+    cmovge rbp, r14
     jge baz_bounds_panic
     mov r14, qword [rbp + 440]
+    mov r13, 240
     test r14, r14
+    cmovs rbp, r13
     js baz_bounds_panic
     cmp r14, 4
+    cmovge rbp, r13
     jge baz_bounds_panic
     mov r13d, dword [rbp + r14 * 4 + 424]
     mov dword [rbp + r15 * 4 + 424], r13d
@@ -899,17 +908,24 @@ main:
     func.assert.242.5.end:
     mov r15, 2
     mov r14, 2
+    mov r13, 244
     test r14, r14
+    cmovs rbp, r13
     js baz_bounds_panic
     test r15, r15
+    cmovs rbp, r13
     js baz_bounds_panic
-    mov r13, r15
-    add r13, r14
-    cmp r13, 4
+    mov r12, r15
+    add r12, r14
+    cmp r12, 4
+    cmovg rbp, r13
     jg baz_bounds_panic
+    mov r13, 244
     test r15, r15
+    cmovs rbp, r13
     js baz_bounds_panic
     cmp r15, 4
+    cmovg rbp, r13
     jg baz_bounds_panic
     mov rax, qword [rbp + r14 * 4 + 424]
     mov qword [rbp + 424], rax
@@ -933,13 +949,19 @@ main:
     mov qword [rbp + 464], 0
     mov qword [rbp + 472], 0
     mov r15, 4
+    mov r14, 249
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
     cmp r15, 4
+    cmovg rbp, r14
     jg baz_bounds_panic
+    mov r14, 249
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
     cmp r15, 8
+    cmovg rbp, r14
     jg baz_bounds_panic
     mov rax, qword [rbp + 424]
     mov qword [rbp + 448], rax
@@ -948,23 +970,31 @@ main:
     cmp.250.14:
         mov rcx, 3
         mov r15, 1
+        mov r14, 250
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
-        mov r14, rcx
-        add r14, r15
-        cmp r14, 4
+        mov r13, rcx
+        add r13, r15
+        cmp r13, 4
+        cmovg rbp, r14
         jg baz_bounds_panic
         lea rsi, [rbp + r15 * 4 + 424]
         mov r15, 1
+        mov r14, 250
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
-        mov r14, rcx
-        add r14, r15
-        cmp r14, 8
+        mov r13, rcx
+        add r13, r15
+        cmp r13, 8
+        cmovg rbp, r14
         jg baz_bounds_panic
         lea rdi, [rbp + r15 * 4 + 448]
         shl rcx, 2
@@ -989,14 +1019,20 @@ main:
     mov dword [rbp + 456], -1
     cmp.256.12:
         mov rcx, 4
+        mov r14, 256
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp rcx, 4
+        cmovg rbp, r14
         jg baz_bounds_panic
         lea rsi, [rbp + 424]
+        mov r14, 256
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp rcx, 8
+        cmovg rbp, r14
         jg baz_bounds_panic
         lea rdi, [rbp + 448]
         shl rcx, 2
@@ -1042,9 +1078,12 @@ main:
     mov qword [rbp + 440], 3
     mov r15, qword [rbp + 440]
     sub r15, 1
+    mov r14, 267
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
     cmp r15, 4
+    cmovge rbp, r14
     jge baz_bounds_panic
     func.inv.267.16:
         mov r14d, dword [rbp + r15 * 4 + 424]
@@ -1053,17 +1092,23 @@ main:
     func.inv.267.16.end:
     not dword [rbp + 500]
     mov r15, qword [rbp + 440]
+    mov r14, 268
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
     cmp r15, 4
+    cmovge rbp, r14
     jge baz_bounds_panic
     mov r14d, dword [rbp + 500]
     mov dword [rbp + r15 * 4 + 424], r14d
     cmp.269.12:
     mov r14, qword [rbp + 440]
+    mov r13, 269
     test r14, r14
+    cmovs rbp, r13
     js baz_bounds_panic
     cmp r14, 4
+    cmovge rbp, r13
     jge baz_bounds_panic
     cmp dword [rbp + r14 * 4 + 424], 2
     sete r15b
@@ -1700,14 +1745,20 @@ main:
         if.38.24.377.5.end:
     func.assert.377.5.end:
     mov rcx, 8
+    mov r15, 380
     test rcx, rcx
+    cmovs rbp, r15
     js baz_bounds_panic
     cmp rcx, 8
+    cmovg rbp, r15
     jg baz_bounds_panic
     lea rsi, [rbp + 816]
+    mov r15, 381
     test rcx, rcx
+    cmovs rbp, r15
     js baz_bounds_panic
     cmp rcx, 8
+    cmovg rbp, r15
     jg baz_bounds_panic
     lea rdi, [rbp + 752]
     shl rcx, 3
@@ -1729,14 +1780,20 @@ main:
     func.assert.386.5.end:
     cmp.387.12:
         mov rcx, 8
+        mov r14, 388
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp rcx, 8
+        cmovg rbp, r14
         jg baz_bounds_panic
         lea rsi, [rbp + 752]
+        mov r14, 389
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp rcx, 8
+        cmovg rbp, r14
         jg baz_bounds_panic
         lea rdi, [rbp + 816]
         shl rcx, 3
@@ -1887,9 +1944,12 @@ main:
                 func.str.print.100.10.414.13:
                     mov rdi, 1
                     movsx rdx, byte [rbp + 1288]
+                    mov r15, 95
                     test rdx, rdx
+                    cmovs rbp, r15
                     js baz_bounds_panic
                     cmp rdx, 127
+                    cmovg rbp, r15
                     jg baz_bounds_panic
                     lea rsi, [rbp + 1289]
                     mov rax, 1
@@ -1949,9 +2009,12 @@ main:
     mov byte [rbp + 1428], 10
     mov rdi, 1
     mov rdx, 3
+    mov r15, 423
     test rdx, rdx
+    cmovs rbp, r15
     js baz_bounds_panic
     cmp rdx, 13
+    cmovg rbp, r15
     jg baz_bounds_panic
     lea rsi, [rbp + 1416]
     mov rax, 1
@@ -1960,13 +2023,17 @@ main:
     mov rdx, 1
     mov r15, 13
     sub r15, 1
+    mov r14, 424
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
     test rdx, rdx
+    cmovs rbp, r14
     js baz_bounds_panic
-    mov r14, rdx
-    add r14, r15
-    cmp r14, 13
+    mov r13, rdx
+    add r13, r15
+    cmp r13, 13
+    cmovg rbp, r14
     jg baz_bounds_panic
     lea rsi, [rbp + 1416]
     add rsi, r15
@@ -2001,9 +2068,12 @@ func.print_num:
     loop.150.5:
         sub qword [rbx + 48], 1
         mov r15, qword [rbx + 48]
+        mov r14, 152
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp r15, 20
+        cmovge rbp, r14
         jge baz_bounds_panic
             mov r14, 48
             mov r13, qword [rbx + 32]
@@ -2033,23 +2103,32 @@ func.print_num:
     if.157.8.code:
         sub qword [rbx + 48], 1
         mov r15, qword [rbx + 48]
+        mov r14, 159
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp r15, 20
+        cmovge rbp, r14
         jge baz_bounds_panic
         mov byte [rbx + r15 + 8], 45
     if.157.5.end:
     mov qword [rbx + 56], 0
     loop.163.5:
         mov r15, qword [rbx + 56]
+        mov r14, 164
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
         cmp r15, 20
+        cmovge rbp, r14
         jge baz_bounds_panic
         mov r14, qword [rbx + 48]
+        mov r13, 164
         test r14, r14
+        cmovs rbp, r13
         js baz_bounds_panic
         cmp r14, 20
+        cmovge rbp, r13
         jge baz_bounds_panic
         mov r13b, byte [rbx + r14 + 8]
         mov byte [rbx + r15 + 8], r13b
@@ -2064,9 +2143,12 @@ func.print_num:
     loop.163.5.end:
     mov rdi, 1
     mov rdx, qword [rbx + 56]
+    mov r15, 170
     test rdx, rdx
+    cmovs rbp, r15
     js baz_bounds_panic
     cmp rdx, 20
+    cmovg rbp, r15
     jg baz_bounds_panic
     lea rsi, [rbx + 8]
     mov rax, 1
@@ -2129,9 +2211,41 @@ db `panic: frame overflow\n`
 msg_frame_overflow_len equ $ - msg_frame_overflow
 section .text
 baz_bounds_panic:
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_panic]
+    mov rdx, msg_panic_len
+    syscall
+    mov rax, rbp
+    mov rdi, strict qword num_buffer + 19
+    mov byte [rdi], 10
+    dec rdi
+    mov rcx, 10
+.convert_loop:
+    xor rdx, rdx
+    div rcx
+    add dl, '0'
+    mov [rdi], dl
+    dec rdi
+    test rax, rax
+    jnz .convert_loop
+    inc rdi
+    mov rax, 1
+    mov rsi, rdi
+    mov rdx, strict qword num_buffer + 20
+    sub rdx, rdi
+    mov rdi, 2
+    syscall
     mov rax, 60
     mov rdi, 255
     syscall
+section .rodata
+msg_panic:
+db `panic: bounds at line `
+msg_panic_len equ $ - msg_panic
+section .bss
+num_buffer:
+resb 21
 section .data
 align 16
 dat:
@@ -2818,12 +2932,18 @@ main:
 ;   [239:9] ix
     mov r15, qword [rbp + 440]
 ;   [239:9] bounds check begin
-;   [239:9] lower bound (--checks=lower)
+;   [239:9] allocate scratch register -> r14
+;   [239:9] source line
+    mov r14, 239
+;   [239:9] lower bound
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-;   [239:9] upper bound (--checks=upper)
+;   [239:9] upper bound
     cmp r15, 4
+    cmovge rbp, r14
     jge baz_bounds_panic
+;   [239:9] free scratch register r14
 ;   [239:9] bounds check end
 ;   [239:15] 2
     mov dword [rbp + r15 * 4 + 424], 2
@@ -2837,12 +2957,18 @@ main:
 ;   [240:9] src: folded constant '+ 1'
     add r15, 1
 ;   [240:9] bounds check begin
-;   [240:9] lower bound (--checks=lower)
+;   [240:9] allocate scratch register -> r14
+;   [240:9] source line
+    mov r14, 240
+;   [240:9] lower bound
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-;   [240:9] upper bound (--checks=upper)
+;   [240:9] upper bound
     cmp r15, 4
+    cmovge rbp, r14
     jge baz_bounds_panic
+;   [240:9] free scratch register r14
 ;   [240:9] bounds check end
 ;   [240:19] arr[ix]
 ;   [240:23] allocate scratch register -> r14
@@ -2850,12 +2976,18 @@ main:
 ;   [240:23] ix
     mov r14, qword [rbp + 440]
 ;   [240:23] bounds check begin
-;   [240:23] lower bound (--checks=lower)
+;   [240:23] allocate scratch register -> r13
+;   [240:23] source line
+    mov r13, 240
+;   [240:23] lower bound
     test r14, r14
+    cmovs rbp, r13
     js baz_bounds_panic
-;   [240:23] upper bound (--checks=upper)
+;   [240:23] upper bound
     cmp r14, 4
+    cmovge rbp, r13
     jge baz_bounds_panic
+;   [240:23] free scratch register r13
 ;   [240:23] bounds check end
 ;   [240:19] allocate scratch register -> r13
     mov r13d, dword [rbp + r14 * 4 + 424]
@@ -2930,27 +3062,40 @@ main:
 ;   [244:20] 2
     mov r14, 2
 ;   [244:20] bounds check begin
-;   [244:20] lower bound (--checks=lower)
+;   [244:20] allocate scratch register -> r13
+;   [244:20] source line
+    mov r13, 244
+;   [244:20] lower bound
     test r14, r14
+    cmovs rbp, r13
     js baz_bounds_panic
     test r15, r15
+    cmovs rbp, r13
     js baz_bounds_panic
-;   [244:20] upper bound (--checks=upper)
-;   [244:20] allocate scratch register -> r13
-    mov r13, r15
-    add r13, r14
-    cmp r13, 4
-;   [244:20] free scratch register r13
+;   [244:20] upper bound
+;   [244:20] allocate scratch register -> r12
+    mov r12, r15
+    add r12, r14
+    cmp r12, 4
+;   [244:20] free scratch register r12
+    cmovg rbp, r13
     jg baz_bounds_panic
+;   [244:20] free scratch register r13
 ;   [244:20] bounds check end
 ;   [244:24] arr
 ;   [244:24] bounds check begin
-;   [244:24] lower bound (--checks=lower)
+;   [244:24] allocate scratch register -> r13
+;   [244:24] source line
+    mov r13, 244
+;   [244:24] lower bound
     test r15, r15
+    cmovs rbp, r13
     js baz_bounds_panic
-;   [244:24] upper bound (--checks=upper)
+;   [244:24] upper bound
     cmp r15, 4
+    cmovg rbp, r13
     jg baz_bounds_panic
+;   [244:24] free scratch register r13
 ;   [244:24] bounds check end
 ;   [244:5] size <= 16 B, use mov
 ;   [244:5] allocate named register rax
@@ -3003,21 +3148,33 @@ main:
     mov r15, 4
 ;   [249:16] arr
 ;   [249:16] bounds check begin
-;   [249:16] lower bound (--checks=lower)
+;   [249:16] allocate scratch register -> r14
+;   [249:16] source line
+    mov r14, 249
+;   [249:16] lower bound
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-;   [249:16] upper bound (--checks=upper)
+;   [249:16] upper bound
     cmp r15, 4
+    cmovg rbp, r14
     jg baz_bounds_panic
+;   [249:16] free scratch register r14
 ;   [249:16] bounds check end
 ;   [249:21] arr1
 ;   [249:21] bounds check begin
-;   [249:21] lower bound (--checks=lower)
+;   [249:21] allocate scratch register -> r14
+;   [249:21] source line
+    mov r14, 249
+;   [249:21] lower bound
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-;   [249:21] upper bound (--checks=upper)
+;   [249:21] upper bound
     cmp r15, 8
+    cmovg rbp, r14
     jg baz_bounds_panic
+;   [249:21] free scratch register r14
 ;   [249:21] bounds check end
 ;   [249:5] size <= 16 B, use mov
 ;   [249:5] allocate named register rax
@@ -3046,18 +3203,25 @@ main:
 ;       [250:31] 1
         mov r15, 1
 ;       [250:31] bounds check begin
-;       [250:31] lower bound (--checks=lower)
+;       [250:31] allocate scratch register -> r14
+;       [250:31] source line
+        mov r14, 250
+;       [250:31] lower bound
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [250:31] upper bound (--checks=upper)
-;       [250:31] allocate scratch register -> r14
-        mov r14, rcx
-        add r14, r15
-        cmp r14, 4
-;       [250:31] free scratch register r14
+;       [250:31] upper bound
+;       [250:31] allocate scratch register -> r13
+        mov r13, rcx
+        add r13, r15
+        cmp r13, 4
+;       [250:31] free scratch register r13
+        cmovg rbp, r14
         jg baz_bounds_panic
+;       [250:31] free scratch register r14
 ;       [250:31] bounds check end
         lea rsi, [rbp + r15 * 4 + 424]
 ;       [250:14] free scratch register r15
@@ -3067,18 +3231,25 @@ main:
 ;       [250:40] 1
         mov r15, 1
 ;       [250:40] bounds check begin
-;       [250:40] lower bound (--checks=lower)
+;       [250:40] allocate scratch register -> r14
+;       [250:40] source line
+        mov r14, 250
+;       [250:40] lower bound
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [250:40] upper bound (--checks=upper)
-;       [250:40] allocate scratch register -> r14
-        mov r14, rcx
-        add r14, r15
-        cmp r14, 8
-;       [250:40] free scratch register r14
+;       [250:40] upper bound
+;       [250:40] allocate scratch register -> r13
+        mov r13, rcx
+        add r13, r15
+        cmp r13, 8
+;       [250:40] free scratch register r13
+        cmovg rbp, r14
         jg baz_bounds_panic
+;       [250:40] free scratch register r14
 ;       [250:40] bounds check end
         lea rdi, [rbp + r15 * 4 + 448]
 ;       [250:14] free scratch register r15
@@ -3135,22 +3306,34 @@ main:
         mov rcx, 4
 ;       [256:29] arr
 ;       [256:29] bounds check begin
-;       [256:29] lower bound (--checks=lower)
+;       [256:29] allocate scratch register -> r14
+;       [256:29] source line
+        mov r14, 256
+;       [256:29] lower bound
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [256:29] upper bound (--checks=upper)
+;       [256:29] upper bound
         cmp rcx, 4
+        cmovg rbp, r14
         jg baz_bounds_panic
+;       [256:29] free scratch register r14
 ;       [256:29] bounds check end
         lea rsi, [rbp + 424]
 ;       [256:34] arr1
 ;       [256:34] bounds check begin
-;       [256:34] lower bound (--checks=lower)
+;       [256:34] allocate scratch register -> r14
+;       [256:34] source line
+        mov r14, 256
+;       [256:34] lower bound
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [256:34] upper bound (--checks=upper)
+;       [256:34] upper bound
         cmp rcx, 8
+        cmovg rbp, r14
         jg baz_bounds_panic
+;       [256:34] free scratch register r14
 ;       [256:34] bounds check end
         lea rdi, [rbp + 448]
         shl rcx, 2
@@ -3242,7 +3425,7 @@ main:
 ;   [267:16] tmp = ~inv(arr[ix - 1])
 ;   [267:16] = expression
 ;   [267:16] ~inv(arr[ix - 1])
-;   [267:16] instructions without scratch register 12, with 12
+;   [267:16] instructions without scratch register 15, with 15
 ;   [267:24] allocate scratch register -> r15
 ;   [267:24] set array index
 ;   [267:24] ix
@@ -3251,12 +3434,18 @@ main:
 ;   [267:24] src: folded constant '- 1'
     sub r15, 1
 ;   [267:24] bounds check begin
-;   [267:24] lower bound (--checks=lower)
+;   [267:24] allocate scratch register -> r14
+;   [267:24] source line
+    mov r14, 267
+;   [267:24] lower bound
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-;   [267:24] upper bound (--checks=upper)
+;   [267:24] upper bound
     cmp r15, 4
+    cmovge rbp, r14
     jge baz_bounds_panic
+;   [267:24] free scratch register r14
 ;   [267:24] bounds check end
 ;   [267:16] instructions without scratch register 6, with 7
 ;   [71:6] inv(i i32) res i32
@@ -3280,12 +3469,18 @@ main:
 ;   [268:9] ix
     mov r15, qword [rbp + 440]
 ;   [268:9] bounds check begin
-;   [268:9] lower bound (--checks=lower)
+;   [268:9] allocate scratch register -> r14
+;   [268:9] source line
+    mov r14, 268
+;   [268:9] lower bound
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
-;   [268:9] upper bound (--checks=upper)
+;   [268:9] upper bound
     cmp r15, 4
+    cmovge rbp, r14
     jge baz_bounds_panic
+;   [268:9] free scratch register r14
 ;   [268:9] bounds check end
 ;   [268:15] tmp
 ;   [268:15] allocate scratch register -> r14
@@ -3303,12 +3498,18 @@ main:
 ;   [269:16] ix
     mov r14, qword [rbp + 440]
 ;   [269:16] bounds check begin
-;   [269:16] lower bound (--checks=lower)
+;   [269:16] allocate scratch register -> r13
+;   [269:16] source line
+    mov r13, 269
+;   [269:16] lower bound
     test r14, r14
+    cmovs rbp, r13
     js baz_bounds_panic
-;   [269:16] upper bound (--checks=upper)
+;   [269:16] upper bound
     cmp r14, 4
+    cmovge rbp, r13
     jge baz_bounds_panic
+;   [269:16] free scratch register r13
 ;   [269:16] bounds check end
     cmp dword [rbp + r14 * 4 + 424], 2
 ;   [269:12] free scratch register r14
@@ -4678,22 +4879,34 @@ main:
     mov rcx, 8
 ;   [380:9] worlds[1].locations
 ;   [380:9] bounds check begin
-;   [380:9] lower bound (--checks=lower)
+;   [380:9] allocate scratch register -> r15
+;   [380:9] source line
+    mov r15, 380
+;   [380:9] lower bound
     test rcx, rcx
+    cmovs rbp, r15
     js baz_bounds_panic
-;   [380:9] upper bound (--checks=upper)
+;   [380:9] upper bound
     cmp rcx, 8
+    cmovg rbp, r15
     jg baz_bounds_panic
+;   [380:9] free scratch register r15
 ;   [380:9] bounds check end
     lea rsi, [rbp + 816]
 ;   [381:9] worlds[0].locations
 ;   [381:9] bounds check begin
-;   [381:9] lower bound (--checks=lower)
+;   [381:9] allocate scratch register -> r15
+;   [381:9] source line
+    mov r15, 381
+;   [381:9] lower bound
     test rcx, rcx
+    cmovs rbp, r15
     js baz_bounds_panic
-;   [381:9] upper bound (--checks=upper)
+;   [381:9] upper bound
     cmp rcx, 8
+    cmovg rbp, r15
     jg baz_bounds_panic
+;   [381:9] free scratch register r15
 ;   [381:9] bounds check end
     lea rdi, [rbp + 752]
     shl rcx, 3
@@ -4745,22 +4958,34 @@ main:
         mov rcx, 8
 ;       [388:14] worlds[0].locations
 ;       [388:14] bounds check begin
-;       [388:14] lower bound (--checks=lower)
+;       [388:14] allocate scratch register -> r14
+;       [388:14] source line
+        mov r14, 388
+;       [388:14] lower bound
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [388:14] upper bound (--checks=upper)
+;       [388:14] upper bound
         cmp rcx, 8
+        cmovg rbp, r14
         jg baz_bounds_panic
+;       [388:14] free scratch register r14
 ;       [388:14] bounds check end
         lea rsi, [rbp + 752]
 ;       [389:14] worlds[1].locations
 ;       [389:14] bounds check begin
-;       [389:14] lower bound (--checks=lower)
+;       [389:14] allocate scratch register -> r14
+;       [389:14] source line
+        mov r14, 389
+;       [389:14] lower bound
         test rcx, rcx
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [389:14] upper bound (--checks=upper)
+;       [389:14] upper bound
         cmp rcx, 8
+        cmovg rbp, r14
         jg baz_bounds_panic
+;       [389:14] free scratch register r14
 ;       [389:14] bounds check end
         lea rdi, [rbp + 816]
         shl rcx, 3
@@ -5114,12 +5339,18 @@ main:
 ;                   [95:25] self.len
                     movsx rdx, byte [rbp + 1288]
 ;                   [95:14] bounds check begin
-;                   [95:14] lower bound (--checks=lower)
+;                   [95:14] allocate scratch register -> r15
+;                   [95:14] source line
+                    mov r15, 95
+;                   [95:14] lower bound
                     test rdx, rdx
+                    cmovs rbp, r15
                     js baz_bounds_panic
-;                   [95:14] upper bound (--checks=upper)
+;                   [95:14] upper bound
                     cmp rdx, 127
+                    cmovg rbp, r15
                     jg baz_bounds_panic
+;                   [95:14] free scratch register r15
 ;                   [95:14] bounds check end
                     lea rsi, [rbp + 1289]
 ;                   [95:5] allocate named register rax
@@ -5263,12 +5494,18 @@ main:
 ;   [423:19] 3
     mov rdx, 3
 ;   [423:14] bounds check begin
-;   [423:14] lower bound (--checks=lower)
+;   [423:14] allocate scratch register -> r15
+;   [423:14] source line
+    mov r15, 423
+;   [423:14] lower bound
     test rdx, rdx
+    cmovs rbp, r15
     js baz_bounds_panic
-;   [423:14] upper bound (--checks=upper)
+;   [423:14] upper bound
     cmp rdx, 13
+    cmovg rbp, r15
     jg baz_bounds_panic
+;   [423:14] free scratch register r15
 ;   [423:14] bounds check end
     lea rsi, [rbp + 1416]
 ;   [423:5] allocate named register rax
@@ -5295,18 +5532,25 @@ main:
 ;   [424:22] src: folded constant '- 1'
     sub r15, 1
 ;   [424:22] bounds check begin
-;   [424:22] lower bound (--checks=lower)
+;   [424:22] allocate scratch register -> r14
+;   [424:22] source line
+    mov r14, 424
+;   [424:22] lower bound
     test r15, r15
+    cmovs rbp, r14
     js baz_bounds_panic
     test rdx, rdx
+    cmovs rbp, r14
     js baz_bounds_panic
-;   [424:22] upper bound (--checks=upper)
-;   [424:22] allocate scratch register -> r14
-    mov r14, rdx
-    add r14, r15
-    cmp r14, 13
-;   [424:22] free scratch register r14
+;   [424:22] upper bound
+;   [424:22] allocate scratch register -> r13
+    mov r13, rdx
+    add r13, r15
+    cmp r13, 13
+;   [424:22] free scratch register r13
+    cmovg rbp, r14
     jg baz_bounds_panic
+;   [424:22] free scratch register r14
 ;   [424:22] bounds check end
     lea rsi, [rbp + 1416]
     add rsi, r15
@@ -5391,12 +5635,18 @@ func.print_num:
 ;       [152:13] i
         mov r15, qword [rbx + 48]
 ;       [152:13] bounds check begin
-;       [152:13] lower bound (--checks=lower)
+;       [152:13] allocate scratch register -> r14
+;       [152:13] source line
+        mov r14, 152
+;       [152:13] lower bound
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [152:13] upper bound (--checks=upper)
+;       [152:13] upper bound
         cmp r15, 20
+        cmovge rbp, r14
         jge baz_bounds_panic
+;       [152:13] free scratch register r14
 ;       [152:13] bounds check end
 ;       [152:18] buf = i8('0' - n % 10)
 ;       [152:18] = expression
@@ -5472,12 +5722,18 @@ func.print_num:
 ;       [159:13] i
         mov r15, qword [rbx + 48]
 ;       [159:13] bounds check begin
-;       [159:13] lower bound (--checks=lower)
+;       [159:13] allocate scratch register -> r14
+;       [159:13] source line
+        mov r14, 159
+;       [159:13] lower bound
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [159:13] upper bound (--checks=upper)
+;       [159:13] upper bound
         cmp r15, 20
+        cmovge rbp, r14
         jge baz_bounds_panic
+;       [159:13] free scratch register r14
 ;       [159:13] bounds check end
 ;       [159:18] '-'
         mov byte [rbx + r15 + 8], 45
@@ -5496,12 +5752,18 @@ func.print_num:
 ;       [164:13] write_pos
         mov r15, qword [rbx + 56]
 ;       [164:13] bounds check begin
-;       [164:13] lower bound (--checks=lower)
+;       [164:13] allocate scratch register -> r14
+;       [164:13] source line
+        mov r14, 164
+;       [164:13] lower bound
         test r15, r15
+        cmovs rbp, r14
         js baz_bounds_panic
-;       [164:13] upper bound (--checks=upper)
+;       [164:13] upper bound
         cmp r15, 20
+        cmovge rbp, r14
         jge baz_bounds_panic
+;       [164:13] free scratch register r14
 ;       [164:13] bounds check end
 ;       [164:26] buf[i]
 ;       [164:30] allocate scratch register -> r14
@@ -5509,12 +5771,18 @@ func.print_num:
 ;       [164:30] i
         mov r14, qword [rbx + 48]
 ;       [164:30] bounds check begin
-;       [164:30] lower bound (--checks=lower)
+;       [164:30] allocate scratch register -> r13
+;       [164:30] source line
+        mov r13, 164
+;       [164:30] lower bound
         test r14, r14
+        cmovs rbp, r13
         js baz_bounds_panic
-;       [164:30] upper bound (--checks=upper)
+;       [164:30] upper bound
         cmp r14, 20
+        cmovge rbp, r13
         jge baz_bounds_panic
+;       [164:30] free scratch register r13
 ;       [164:30] bounds check end
 ;       [164:26] allocate scratch register -> r13
         mov r13b, byte [rbx + r14 + 8]
@@ -5553,12 +5821,18 @@ func.print_num:
 ;   [170:19] write_pos
     mov rdx, qword [rbx + 56]
 ;   [170:14] bounds check begin
-;   [170:14] lower bound (--checks=lower)
+;   [170:14] allocate scratch register -> r15
+;   [170:14] source line
+    mov r15, 170
+;   [170:14] lower bound
     test rdx, rdx
+    cmovs rbp, r15
     js baz_bounds_panic
-;   [170:14] upper bound (--checks=upper)
+;   [170:14] upper bound
     cmp rdx, 20
+    cmovg rbp, r15
     jg baz_bounds_panic
+;   [170:14] free scratch register r15
 ;   [170:14] bounds check end
     lea rsi, [rbx + 8]
 ;   [170:5] allocate named register rax
@@ -5686,10 +5960,46 @@ msg_frame_overflow_len equ $ - msg_frame_overflow
 section .text
 ; bounds failure handler (--checks=upper or --checks=lower)
 baz_bounds_panic:
+;    print message to stderr
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_panic]
+    mov rdx, msg_panic_len
+    syscall
+;    line number is in `rbp`
+    mov rax, rbp
+;    convert to string
+    mov rdi, strict qword num_buffer + 19
+    mov byte [rdi], 10
+    dec rdi
+    mov rcx, 10
+.convert_loop:
+    xor rdx, rdx
+    div rcx
+    add dl, '0'
+    mov [rdi], dl
+    dec rdi
+    test rax, rax
+    jnz .convert_loop
+    inc rdi
+;    print line number to stderr
+    mov rax, 1
+    mov rsi, rdi
+    mov rdx, strict qword num_buffer + 20
+    sub rdx, rdi
+    mov rdi, 2
+    syscall
 ;    exit with error code 255
     mov rax, 60
     mov rdi, 255
     syscall
+section .rodata
+msg_panic:
+db `panic: bounds at line `
+msg_panic_len equ $ - msg_panic
+section .bss
+num_buffer:
+resb 21
 
 section .data
 align 16
@@ -5762,5 +6072,5 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 970
+;                 instructions: 1076
 ```

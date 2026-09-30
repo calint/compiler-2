@@ -2844,19 +2844,19 @@ class machine_rv32i : public machine {
         const std::string_view index{reg_to_check.base_register()};
 
         if (options.lower) {
-            comment(src_loc_tk, indent, "lower bound (--checks=lower)");
+            comment(src_loc_tk, indent, "lower bound");
             check_lower_bounds(indent, index, reg_count, not options.upper);
         }
 
         if (options.upper) {
-            comment(src_loc_tk, indent, "upper bound (--checks=upper)");
+            comment(src_loc_tk, indent, "upper bound");
             check_upper_bound(src_loc_tk, indent, index, array_count, allow_end,
                               reg_count, options.lower);
         }
 
         assembler_.label(indent, "1");
         if (options.with_line) {
-            comment(src_loc_tk, indent, "line number (--checks=line)");
+            comment(src_loc_tk, indent, "source line");
             assembler_.li(indent, "a0", src_loc_tk.at_line());
         }
         branch(indent, "baz_bounds_panic");

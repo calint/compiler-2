@@ -414,13 +414,13 @@ class machine_x86_64 final : public machine {
             reg_line_num =
                 alloc_scratch_register(src_loc_tk, indent, *default_type_);
 
-            comment(src_loc_tk, indent, "line number (--checks=line)");
+            comment(src_loc_tk, indent, "source line");
             mov(src_loc_tk, indent, reg_line_num,
                 immediate(src_loc_tk.at_line()));
         }
 
         if (options.lower) {
-            comment(src_loc_tk, indent, "lower bound (--checks=lower)");
+            comment(src_loc_tk, indent, "lower bound");
 
             // a negative count passes 'start + count' but spans the address
             // space
@@ -435,7 +435,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (options.upper) {
-            comment(src_loc_tk, indent, "upper bound (--checks=upper)");
+            comment(src_loc_tk, indent, "upper bound");
             compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
                                 reg_count);
 

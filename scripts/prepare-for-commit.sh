@@ -17,7 +17,7 @@ qa/coverage/test-all.sh
 echo make
 ./make.sh build
 echo compile prog
-./run.sh --checks=noub
+./run.sh
 echo compile roome
 ./run-roome.sh
 echo test roome

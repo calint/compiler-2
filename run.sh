@@ -37,9 +37,10 @@ fi
 
 SEP="--------------------------------------------------------------------------------"
 echo $SEP
-printf './baz'
+printf './baz --checks=noub,line'
 printf ' %q' "$@"
 printf '\n'
+# a '--checks' in the arguments replaces the default one
 ./baz --checks=noub,line "$@" >"$ASM"
 echo $SEP
 COMMENT=';'

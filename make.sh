@@ -116,4 +116,4 @@ if [ $BUILD_ONLY -eq 1 ]; then
     exit 0
 fi
 
-./run.sh prog.baz --vars=131072 --checks=noub
+./run.sh prog.baz
