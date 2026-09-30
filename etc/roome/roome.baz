@@ -1,5 +1,3 @@
-dat  str_hello = "\nwelcome to adventure #6\n    type 'help'\n"
-
 dat str_ascii_art = "\
                                    oOo.o.\n\
           frameless osca          oOo.oOo\n\
@@ -29,6 +27,8 @@ dat str_ascii_art = "\
      /\\_-_/\\\n\
        | |\n\
 \n"
+
+dat  str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
 dat     str_uc = "u c "
 dat  str_exits = "exits: "
 dat str_prompt = " > "
