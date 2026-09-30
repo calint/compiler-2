@@ -162,7 +162,7 @@ func message.print() {
     self.text.print()
 }
 
-func entity.show_messages() {
+func entity.print_messages() {
     foo self.messages.array, self.messages.len {
         e.print()
         print(str_nl)
@@ -715,7 +715,7 @@ func action_give(cur_entity, tz tokenizer) {
 dat str_tell_whom = "tell whom\n"
 dat str_tell_what = "tell what\n"
 dat str_does_not_exist = " does not exist\n"
-dat str_mailbox_full = " has too many messages\n"
+dat str_has_too_many_messages = " has too many messages\n"
 
 func action_tell(cur_entity, tz tokenizer) {
     tz.next()
@@ -742,7 +742,7 @@ func action_tell(cur_entity, tz tokenizer) {
 
     if entities.array[to_entity].messages.len == max_entity_messages_len {
         tz.print()
-        print(str_mailbox_full)
+        print(str_has_too_many_messages)
         return
     }
 
@@ -779,7 +779,6 @@ func action_say(cur_entity, tz tokenizer) {
     foo rooms.array[room_id].entities.array, room_entities_len {
         if e == cur_entity continue
 
-        # a full mailbox silently misses the message
         if entities.array[e].messages.len == max_entity_messages_len continue
 
         entities.array[e].messages.add(cur_entity, true, text)
@@ -876,7 +875,7 @@ func main() {
         if cur_entity == entities.len {
             cur_entity = 0
         }
-        entities.array[cur_entity].show_messages()
+        entities.array[cur_entity].print_messages()
         print(str_nl)
         rooms.array[entities.array[cur_entity].room_id].print(cur_entity)
         entities.array[cur_entity].name.print()
