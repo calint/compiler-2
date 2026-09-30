@@ -48,6 +48,7 @@
 (typed_array_initializer type: (identifier) @type)
 (type_definition name: (identifier) @type.definition)
 (member_field name: (identifier) @variable.member)
+(member_access (identifier) @variable.member)
 (member_field type: (_) @type)
 (parameter name: (identifier) @variable.parameter)
 (return_annotation
