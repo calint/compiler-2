@@ -1137,16 +1137,10 @@ class machine_rv32i : public machine {
                      operand::imm(std::format("{}", element_size_bytes),
                                   default_type()));
 
-        const operand value{working_register(token{}, indent, counter)};
-
-        copy_value(token{}, indent, value, counter);
-
-        add_subtract(token{}, indent, '+', value,
+        add_subtract(token{}, indent, '+', counter,
                      operand::imm("1", default_type()));
 
-        copy_value(token{}, indent, counter, value);
-
-        emit_comparison(token{}, indent, value, limit,
+        emit_comparison(token{}, indent, counter, limit,
                         {
                             .operation{"!="},
                             .inverted{},
@@ -1544,12 +1538,14 @@ class machine_rv32i : public machine {
             validate_address(src_loc_tk, src);
         }
 
+        // skip self assignment
         if (dst.is_memory() and src.is_memory() and
             dst.type_ref().name() == src.type_ref().name() and
             dst.base_register() == src.base_register() and
             dst.index_register() == src.index_register() and
             dst.scale() == src.scale() and
             dst.displacement() == src.displacement()) {
+
             return;
         }
 
@@ -1566,7 +1562,6 @@ class machine_rv32i : public machine {
 
         operand value{dst};
         if (not dst.is_register()) {
-
             value = src.is_register() ? src
                                       : alloc_scratch_register(
                                             src_loc_tk, indent, default_type());
@@ -1594,6 +1589,7 @@ class machine_rv32i : public machine {
         // discard high bits, then sign-extend integers or zero-extend bool
         assembler_.slli(indent, value.base_register(), value.base_register(),
                         shift);
+
         assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
                                 value.base_register(), value.base_register(),
                                 shift);
