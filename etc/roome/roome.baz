@@ -33,6 +33,7 @@ dat     str_uc = "u c "
 dat  str_exits = "exits: "
 dat str_prompt = " > "
 dat     str_nl = "\n"
+dat str_turn_end = "--\n"
 dat  str_comma = ", "
 dat  str_erase = "\b \b"
 
@@ -51,6 +52,11 @@ type str {
 
 func str.print() {
     write(1, self.array, self.len)
+}
+
+func str.add(s i8[]) {
+    array_copy(s, self.array[self.len], array_length(s))
+    self.len = self.len + array_length(s)
 }
 
 func str.input() {
@@ -139,12 +145,22 @@ func name.equals(nm name) res bool {
     res = arrays_equal(self.array, nm.array, self.len)
 }
 
+func str.add_name(nm name) {
+    array_copy(nm.array, self.array[self.len], nm.len)
+    self.len = self.len + nm.len
+}
+
 dat str_told_u = " told u "
 dat str_said = " said "
+dat str_space = " "
+
+const message_told = 0
+const message_said = 1
+const message_event = 2
 
 type message {
     from,
-    said bool,
+    kind,
     text str,
 }
 
@@ -153,8 +169,8 @@ type messages {
     len,
 }
 
-func messages.add(from, said bool, text str) {
-    self.array[self.len] = { from, said, text }
+func messages.add(from, kind, text str) {
+    self.array[self.len] = { from, kind, text }
     self.len = self.len + 1
 }
 
@@ -184,11 +200,14 @@ dat entities = entities{
 
 func message.print() {
     entities.array[self.from].name.print()
-    if self.said {
+    if self.kind == message_said {
         print(str_said)
     }
-    if not self.said {
+    if self.kind == message_told {
         print(str_told_u)
+    }
+    if self.kind == message_event {
+        print(str_space)
     }
     self.text.print()
 }
@@ -428,6 +447,17 @@ dat str_go_where = "go where\n"
 dat str_no_such_exit = "cannot go there\n"
 dat str_home = "home"
 
+func notify_room(room_id, from, kind, text str) {
+    var room_entities_len = rooms.array[room_id].entities.len
+    foo rooms.array[room_id].entities.array, room_entities_len {
+        if e == from continue
+
+        if entities.array[e].messages.len == max_entity_messages_len continue
+
+        entities.array[e].messages.add(from, kind, text)
+    }
+}
+
 func action_go(cur_entity, tz tokenizer) {
     tz.next()
     if tz.is_empty() {
@@ -465,6 +495,12 @@ func action_go(cur_entity, tz tokenizer) {
     print(str_went_to)
     tz.print()
     print(str_nl)
+
+    # the ones left behind see it
+    var went_text = str{}
+    went_text.add(str_went_to)
+    went_text.add_name(link_names.array[rooms.array[cur_room_id].links[found_ix].link_name_id])
+    notify_room(cur_room_id, cur_entity, message_event, went_text)
 }
 
 func find_link_name_or_make(tz tokenizer) res {
@@ -741,6 +777,13 @@ func action_give(cur_entity, tz tokenizer) {
     print(str_to)
     entities.array[to_entity].name.print()
     print(str_nl)
+
+    var gave_text = str{}
+    gave_text.add(str_gave)
+    gave_text.add_name(entities.array[to_entity].name)
+    gave_text.add(str_space)
+    gave_text.add_name(object_name)
+    notify_room(room_id, cur_entity, message_event, gave_text)
 }
 
 dat str_tell_whom = "tell whom\n"
@@ -788,7 +831,7 @@ func action_tell(cur_entity, tz tokenizer) {
 
     var text = tz.to_str()
 
-    entities.array[to_entity].messages.add(cur_entity, false, text)
+    entities.array[to_entity].messages.add(cur_entity, message_told, text)
 }
 
 dat str_say_what = "say what\n"
@@ -805,15 +848,7 @@ func action_say(cur_entity, tz tokenizer) {
 
     var text = tz.to_str()
 
-    var room_id = entities.array[cur_entity].room_id
-    var room_entities_len = rooms.array[room_id].entities.len
-    foo rooms.array[room_id].entities.array, room_entities_len {
-        if e == cur_entity continue
-
-        if entities.array[e].messages.len == max_entity_messages_len continue
-
-        entities.array[e].messages.add(cur_entity, true, text)
-    }
+    notify_room(entities.array[cur_entity].room_id, cur_entity, message_said, text)
 }
 
 dat str_help = "\
@@ -915,6 +950,7 @@ func main() {
         tz.input()
         print(str_nl)
         parse_input(cur_entity, tz)
+        print(str_turn_end)
         cur_entity = cur_entity + 1
     }
 }
