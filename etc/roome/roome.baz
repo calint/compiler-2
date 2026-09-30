@@ -212,11 +212,15 @@ func room.print(cur_entity) {
         print(str_nl)
     }
     if(self.entities.len != 0) {
-        print(str_uc)
         var first_elem_printed = false
         foo self.entities.array, self.entities.len {
             if e == cur_entity continue
-            if first_elem_printed print(str_comma)
+            if not first_elem_printed {
+                print(str_uc)
+            }
+            if first_elem_printed {
+                print(str_comma)
+            }
             entities.array[e].print()
             first_elem_printed = true
         }

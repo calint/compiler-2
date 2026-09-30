@@ -3,19 +3,47 @@ welcome to adventure #6
     type 'help'
 
 u r in roome
-u c me
+
+exits: none
+todo: find an exit
+me > 
+
+not understood
+
+u r in roome
+
 exits: none
 todo: find an exit
 me > rn office roome
 
 
 u r in roome
-u c me
+
 exits: none, office
 todo: find an exit
 me > go office
 
 went to office
+
+
+exits: roome
+me > rd a pleasant location
+
+
+a pleasant location
+
+exits: roome
+me > en u
+
+
+a pleasant location
+u c me
+exits: roome
+u > go roome
+
+went to roome
+
+a pleasant location
 
 exits: roome
 me > go roome
@@ -26,5 +54,5 @@ u r in roome
 u c me
 exits: none, office
 todo: find an exit
-me > go home
+u > go home
 

@@ -15,7 +15,7 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-./baz --target=rv32i-fpga --checks=noub,line "$DIR/roome.baz" >"$WORK/roome.s"
+./baz --target=rv32i-fpga --vars=131072 --checks=noub,line "$DIR/roome.baz" >"$WORK/roome.s"
 
 # the emulator requires an sd card image which the program does not use
 : >"$WORK/sdcard"
