@@ -3,9 +3,9 @@
        __________________________  .oOo.
       O\        -_   .. \    ___ \   ||
      O  \                \   \ \\ \ //\\
-    o   /\    risc-v      \   \|\\ \
-   .   //\\    fpga        \   ||   \
-    .  \\/\\    baz         \  \_\   \
+    o   /\     rv32i      \   \|\\ \
+   .   //\\      fpga      \   ||   \
+    .  \\/\\       baz      \  \_\   \
      .  \\//\________________\________\
       .  \/_/, \\\--\\..\\ - /\_____  /
        .  \ \ . \\\__\\__\\./ / \__/ /
@@ -31,18 +31,28 @@ welcome to adventure #7
     type 'help'
 
 u r in roome
+u c me
 exits: none
 todo: find an exit
-me > 
+u > 
 
 not understood
 
 u r in roome
+u c u
 exits: none
 todo: find an exit
 me > rn office roome
 
 new room created
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
+u > go office
+
+went to office
 
 u r in roome
 exits: none, office
@@ -51,35 +61,32 @@ me > go office
 
 went to office
 
+u c me
 exits: roome
-me > rd a pleasant location
+u > rd a pleasant location
 
 new room description
 
 a pleasant location
+u c u
 exits: roome
 me > rnm
 
 what name
 
 a pleasant location
+u c me
 exits: roome
-me > rnm abcdefghijklmnopq
+u > rnm abcdefghijklmnopq
 
 name too long
 
 a pleasant location
+u c u
 exits: roome
 me > rnm study
 
 new room name
-
-u r in study
-a pleasant location
-exits: roome
-me > en u
-
-new entity created
 
 u r in study
 a pleasant location
@@ -281,21 +288,21 @@ u > en w
 new entity created
 
 u r in roome
-u c u, me, key
-exits: none, office
-todo: find an exit
-w > s hi both
-
-w said hi both
-
-u r in roome
 u c u, w, key
 exits: none, office
 todo: find an exit
-me > s everyone
+me > s hi both
 
-w said hi both
-me said everyone
+me said hi both
+
+u r in roome
+u c u, me, key
+exits: none, office
+todo: find an exit
+w > s everyone
+
+me said hi both
+w said everyone
 
 u r in roome
 u c me, w, key
@@ -304,19 +311,19 @@ todo: find an exit
 u > go office
 
 went to office
-me said everyone
-
-u r in roome
-u c me, key
-exits: none, office
-todo: find an exit
-w > s anyone here
-
-w said anyone here
+w said everyone
 
 u r in roome
 u c w, key
 exits: none, office
 todo: find an exit
-me > go home
+me > s anyone here
+
+me said anyone here
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > go home
 

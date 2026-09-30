@@ -4,9 +4,9 @@ dat str_ascii_art = "\
        __________________________  .oOo.\n\
       O\\        -_   .. \\    ___ \\   ||\n\
      O  \\                \\   \\ \\\\ \\ //\\\\\n\
-    o   /\\    risc-v      \\   \\|\\\\ \\\n\
-   .   //\\\\    fpga        \\   ||   \\\n\
-    .  \\\\/\\\\    baz         \\  \\_\\   \\\n\
+    o   /\\     rv32i      \\   \\|\\\\ \\\n\
+   .   //\\\\      fpga      \\   ||   \\\n\
+    .  \\\\/\\\\       baz      \\  \\_\\   \\\n\
      .  \\\\//\\________________\\________\\\n\
       .  \\/_/, \\\\\\--\\\\..\\\\ - /\\_____  /\n\
        .  \\ \\ . \\\\\\__\\\\__\\\\./ / \\__/ /\n\
@@ -176,9 +176,10 @@ type entities {
 
 dat entities = entities{
     { # array begin
-        { { "me", 2 }, 0 } # entity[0]
+        { { "u", 1 }, 0 },  # entity[1]
+        { { "me", 2 }, 0 }  # entity[0]
     }, # array end
-    1 # len
+    2 # len
 }
 
 func message.print() {
@@ -279,7 +280,7 @@ dat rooms = rooms{
             { "roome", 5 }, # name
             { }, # description
             { "todo: find an exit", 18 }, # note
-            { { 0 }, 1 }, # entities id_list
+            { { 0, 1 }, 2 }, # entities id_list
             { {0, 1} }, # links array
             1 # links array len
         }
