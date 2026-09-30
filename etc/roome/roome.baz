@@ -1,4 +1,34 @@
 dat  str_hello = "\nwelcome to adventure #6\n    type 'help'\n"
+
+dat str_ascii_art = "\
+                                   oOo.o.\n\
+          frameless osca          oOo.oOo\n\
+       __________________________  .oOo.\n\
+      O\\        -_   .. \\    ___ \\   ||\n\
+     O  \\                \\   \\ \\\\ \\ //\\\\\n\
+    o   /\\    risc-v      \\   \\|\\\\ \\\n\
+   .   //\\\\    fpga        \\   ||   \\\n\
+    .  \\\\/\\\\    baz         \\  \\_\\   \\\n\
+     .  \\\\//\\________________\\________\\\n\
+      .  \\/_/, \\\\\\--\\\\..\\\\ - /\\_____  /\n\
+       .  \\ \\ . \\\\\\__\\\\__\\\\./ / \\__/ /\n\
+        .  \\ \\ , \\    \\\\ ///./ ,/./ /\n\
+         .  \\ \\___\\ sticky notes / /\n\
+          .  \\/\\________________/ /\n\
+     ./\\.  . / /                 /\n\
+     /--\\   .\\/_________________/\n\
+          ___.                 .\n\
+         |o o|. . . . . . . . .\n\
+         /| |\\ . .\n\
+     ____       . .\n\
+    |O  O|       . .\n\
+    |_ -_|        . .\n\
+     /||\\\n\
+       ___\n\
+      /- -\\\n\
+     /\\_-_/\\\n\
+       | |\n\
+\n"
 dat     str_uc = "u c "
 dat  str_exits = "exits: "
 dat str_prompt = " > "
@@ -867,6 +897,7 @@ func parse_input(cur_entity, tz tokenizer) {
 }
 
 func main() {
+    print(str_ascii_art)
     print(str_hello)
 
     var tz = tokenizer{}
