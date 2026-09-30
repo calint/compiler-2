@@ -74,6 +74,13 @@ class stmt_assign_var final : public statement {
                                    var_dst_info.const_value)};
         }
 
+        // e.g. the counter 'i' of 'foo', also when reached through an alias
+        if (var_dst_info.is_read_only) {
+            throw compiler_exception{
+                tok(), std::format("cannot assign to read-only '{}'",
+                                   stmt_ident_.identifier())};
+        }
+
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
 

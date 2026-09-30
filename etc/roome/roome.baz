@@ -125,22 +125,16 @@ func room.print() {
     }
     if(self.entities.len != 0) {
         print(str_uc)
-        var i = i16(0)
-        loop {
-            if self.entities.len == i break
-            entities[self.entities.ids[i]].print()
+        foo self.entities.ids, self.entities.len {
+            entities[e].print()
             print(str_nl)
-            i = i + 1
         }
     }
     if(self.links_len != 0) {
         print(str_exits)
-        var i = i8(0)
-        loop {
-            if self.links_len == i break
+        foo self.links, self.links_len {
             if i != 0 print(str_comma)
-            link_names[self.links[i].link_name_id].print()
-            i = i + 1
+            link_names[e.link_name_id].print()
         }
         print(str_nl)
     }
@@ -249,23 +243,23 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     # find link
-    var i = 0
     var room_id = entities[cur_entity].room_id
     var links_len = rooms[room_id].links_len
-    loop {
-        if i == links_len break
-        var link_name_id = rooms[room_id].links[i].link_name_id
-        if tz.is_name(link_names[link_name_id]) break
-        i = i + 1
+    var found_ix = links_len
+    foo rooms[room_id].links, links_len {
+        if tz.is_name(link_names[e.link_name_id]) {
+            found_ix = i16(i)
+            break
+        }
     }
 
-    if i == links_len {
+    if found_ix == links_len {
         print(str_no_such_exit)
         return
     }
 
     # move entity
-    entities[cur_entity].room_id = rooms[room_id].links[i].to
+    entities[cur_entity].room_id = rooms[room_id].links[found_ix].to
 
     print(str_went_to)
     tz.print()
@@ -273,17 +267,15 @@ func action_go(cur_entity, tz tokenizer) {
 }
 
 func find_link_name_or_make(tz tokenizer) res i16 {
-    var i = i16(0)
-    loop {
-        if i == link_names_len break
-        if tz.is_name(link_names[i]) break
-        i = i + 1
+    res = link_names_len
+    foo link_names, link_names_len {
+        if tz.is_name(e) {
+            res = i16(i)
+            break
+        }
     }
 
-    if i != link_names_len {
-        res = i
-        return
-    }
+    if res != link_names_len return
 
     tz.copy_to_name(link_names[link_names_len])
 

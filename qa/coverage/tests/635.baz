@@ -1,0 +1,12 @@
+# the foo counter 'i' is read-only also through a parameter
+
+func skip(ix) {
+    ix = ix + 1
+}
+
+func main() {
+    var arr = []{ 1, 2, 3 }
+    foo arr {
+        skip(i)
+    }
+}

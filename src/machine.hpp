@@ -88,9 +88,10 @@ class machine {
 
     [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
 
+    // 'limit' is the constant array size or a register holding a count
     virtual auto advance_array_iteration(
         const size_t indent, const operand& iterator, const operand& counter,
-        const size_t element_size_bytes, const size_t array_count,
+        const size_t element_size_bytes, const operand& limit,
         const std::string_view loop_label) -> void = 0;
 
     [[nodiscard]] virtual auto

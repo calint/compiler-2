@@ -266,6 +266,7 @@ class stmt_def_func final : public statement {
                            .is_pointer{is_pointer},
                            .reg{},
                            .base_register{},
+                           .value_register{},
                        },
                        false);
         }
@@ -280,6 +281,7 @@ class stmt_def_func final : public statement {
                            .is_pointer{is_pointer},
                            .reg{},
                            .base_register{},
+                           .value_register{},
                        },
                        false);
         }

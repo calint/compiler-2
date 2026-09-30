@@ -1,0 +1,11 @@
+# negative foo count fails the lower bound check
+
+func main() {
+    var arr = []{ 1, 2, 3 }
+    var count = -1
+    var sum = 0
+    foo arr, count {
+        sum = sum + e
+    }
+    exit(sum)
+}

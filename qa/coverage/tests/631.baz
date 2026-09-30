@@ -1,0 +1,88 @@
+# foo with a count visits the first 'count' elements
+
+type holder { vals[3], len i16 }
+
+dat holders =
+    holder[2]{
+        { { 1, 2, 3 }, 2 },
+        { { 4, 5, 6 }, 3 }
+    }
+
+func assert(x bool) { if not x exit(1) }
+
+func main() {
+    var arr = []{ 1, 2, 3, 4, 5 }
+
+    # a narrower count
+    var len = i16(3)
+    var sum = 0
+    foo arr, len {
+        assert(n == 5)
+        sum = sum + e
+    }
+    assert(sum == 1 + 2 + 3)
+
+    # a count equal to the array size visits every element
+    sum = 0
+    foo arr, 5 {
+        sum = sum + i
+    }
+    assert(sum == 0 + 1 + 2 + 3 + 4)
+
+    # a zero count skips the body
+    var zero = 0
+    foo arr, zero {
+        exit(2)
+    }
+
+    # the count is an expression
+    sum = 0
+    foo arr, len - 1 {
+        sum = sum + e
+    }
+    assert(sum == 1 + 2)
+
+    # continue and break
+    sum = 0
+    foo arr, 4 {
+        if i == 1 continue
+        if i == 3 break
+        sum = sum + e
+    }
+    assert(sum == 1 + 3)
+
+    # elements are changed through 'e'
+    foo arr, 3 {
+        e = e + i
+    }
+    assert(arr[0] == 1)
+    assert(arr[1] == 3)
+    assert(arr[2] == 5)
+    assert(arr[3] == 4)
+
+    # the count of a nested foo uses the outer 'e'
+    var counts = []{ 0, 1, 2, 3 }
+    sum = 0
+    foo counts {
+        foo arr, e {
+            sum = sum + i
+        }
+    }
+    assert(sum == 0 + 0 + (0 + 1) + (0 + 1 + 2))
+
+    # the array and the count of a nested foo use the outer 'i'
+    sum = 0
+    foo holders {
+        foo holders[i].vals, holders[i].len {
+            sum = sum + e
+        }
+    }
+    assert(sum == 1 + 2 + 4 + 5 + 6)
+
+    # an element count from a field
+    sum = 0
+    foo holders[0].vals, holders[0].len {
+        sum = sum + e
+    }
+    assert(sum == 1 + 2)
+}

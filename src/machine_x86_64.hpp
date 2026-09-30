@@ -246,13 +246,13 @@ class machine_x86_64 final : public machine {
     auto advance_array_iteration(const size_t indent, const operand& iterator,
                                  const operand& counter,
                                  const size_t element_size_bytes,
-                                 const size_t array_count,
+                                 const operand& limit,
                                  const std::string_view loop_label)
         -> void override {
 
         add(indent, iterator, immediate(element_size_bytes));
         inc(indent, counter);
-        cmp(indent, counter, immediate(array_count));
+        cmp(indent, counter, limit);
         assembler_.jcc(indent, condition::ne, loop_label);
     }
 

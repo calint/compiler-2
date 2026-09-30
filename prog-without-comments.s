@@ -540,15 +540,14 @@ main:
     mov qword [rbp + 504], 3
     mov qword [rbp + 512], 5
     lea r15, [rbp + 504]
-    mov qword [rbp + 528], 0
+    mov r14, 0
     foo.275.5:
-        mov r14, qword [rbp + 528]
         add qword [r15], r14
         add qword [r15], 2
         foo.275.5.continue:
             add r15, 8
-            inc qword [rbp + 528]
-            cmp qword [rbp + 528], 2
+            inc r14
+            cmp r14, 2
             jne foo.275.5
     foo.275.5.end:
     cmp.278.12:

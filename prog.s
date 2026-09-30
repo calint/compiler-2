@@ -1197,32 +1197,31 @@ main:
     mov qword [rbp + 512], 5
 ;   [275:5] foo arr3
 ;   [275:9] allocate scratch register -> r15
-;   [275:9] e: i64 (r15)
-;   [275:9] i: i64 (8 B @ [rbp + 528])
-;   [275:9] const n = 2
 ;   [275:9] initiate iterator e
     lea r15, [rbp + 504]
-;   [275:9] initiate counter i
-    mov qword [rbp + 528], 0
+;   [275:5] allocate scratch register -> r14
+;   [275:9] e: i64 (r15)
+;   [275:9] i: i64 = r14
+;   [275:9] const n = 2
+;   [275:5] initiate counter i
+    mov r14, 0
     foo.275.5:
 ;       [276:9] e = e + i + n
-;       [276:13] instructions without scratch register 3, with 4
+;       [276:13] instructions without scratch register 2, with 4
 ;       [276:13] e
 ;       [276:17] e + i
 ;       [276:17] src: operand
-;       [276:17] allocate scratch register -> r14
-        mov r14, qword [rbp + 528]
         add qword [r15], r14
-;       [276:17] free scratch register r14
 ;       [276:13] e + 2
 ;       [276:13] src: folded constant '+ n'
         add qword [r15], 2
         foo.275.5.continue:
             add r15, 8
-            inc qword [rbp + 528]
-            cmp qword [rbp + 528], 2
+            inc r14
+            cmp r14, 2
             jne foo.275.5
     foo.275.5.end:
+;   [275:5] free scratch register r14
 ;   [275:5] free scratch register r15
 ;   [278:5] assert(arr3[0] == 3 + 0 + 2)
 ;   [278:12] allocate scratch register -> r15
@@ -3566,4 +3565,4 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 971
+;                 instructions: 970

@@ -125,6 +125,7 @@ class stmt_def_dat final : public statement {
             .array_len{elroot_.array_count},
             .reg{},
             .base_register{},
+            .value_register{},
         };
     }
 

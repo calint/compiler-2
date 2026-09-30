@@ -789,7 +789,8 @@ auto main(const int argc, const char* argv[]) -> int {
                 "    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1");
             backend.advance_array_iteration(
                 1, operand::reg("s2", integer),
-                operand::mem("sp", {}, 1, 0, integer), stride, 3, loop_label);
+                operand::mem("sp", {}, 1, 0, integer), stride,
+                operand::imm("3", integer), loop_label);
             std::println("    li t0, {}\n    beq s2, t0, 1f\n"
                          "    j long_loop_failure\n1:\n"
                          "    lw t1, 0(sp)\n    li t0, 3\n"
@@ -843,7 +844,8 @@ auto main(const int argc, const char* argv[]) -> int {
             backend.add_subtract(token{}, 1, '+', iterator,
                                  operand::imm("1", integer));
 
-            backend.advance_array_iteration(1, iterator, counter, 4, 3,
+            backend.advance_array_iteration(1, iterator, counter, 4,
+                                            operand::imm("3", integer),
                                             loop_label);
 
             backend.compare_and_branch(token{}, 1, operand::reg("s2", integer),

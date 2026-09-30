@@ -263,9 +263,11 @@ struct var_info {
     int64_t offset{}; // location offset from base register
     bool is_array{};
     bool is_pointer{};
+    bool is_read_only{};
     size_t array_len{};
     operand reg; // variable location is in register
     std::string_view base_register;
+    operand value_register; // variable value is in register, no storage
 };
 
 struct ident_info {
@@ -283,6 +285,7 @@ struct ident_info {
     size_t array_len{};
     bool is_array{};
     bool is_pointer{};
+    bool is_read_only{};
     bool use_operand{}; // operand overrides any location calculation
     kind kind{};
 

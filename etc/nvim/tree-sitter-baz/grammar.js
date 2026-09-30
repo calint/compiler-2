@@ -234,10 +234,11 @@ module.exports = grammar({
       field('body', $._body),
     ),
 
-    // foo array body
+    // foo array [, count] body
     foo_statement: $ => seq(
       $.foo_keyword,
       field('array', $._access_chain),
+      optional(seq(',', field('count', $._expression))),
       field('body', $._body),
     ),
 

@@ -1122,12 +1122,11 @@ class machine_rv32i : public machine {
     auto advance_array_iteration(const size_t indent, const operand& iterator,
                                  const operand& counter,
                                  const size_t element_size_bytes,
-                                 const size_t array_count,
+                                 const operand& limit,
                                  const std::string_view loop_label)
         -> void override {
 
-        if (element_size_bytes > std::numeric_limits<uint32_t>::max() or
-            array_count > std::numeric_limits<uint32_t>::max()) {
+        if (element_size_bytes > std::numeric_limits<uint32_t>::max()) {
             throw compiler_exception{token{},
                                      "array iteration exceeds RV32I range"};
         }
@@ -1147,13 +1146,14 @@ class machine_rv32i : public machine {
 
         copy_value(token{}, indent, counter, value);
 
-        const operand limit{
-            alloc_scratch_register(token{}, indent, default_type())};
-
-        assembler_.li(indent, limit.base_register(), array_count);
-
-        emit_jump(indent, op::bne, value.base_register(), limit.base_register(),
-                  loop_label);
+        emit_comparison(token{}, indent, value, limit,
+                        {
+                            .operation{"!="},
+                            .inverted{},
+                            .destination{},
+                            .target{loop_label},
+                            .branch_on_true{true},
+                        });
     }
 
     [[nodiscard]] auto

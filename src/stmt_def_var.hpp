@@ -186,6 +186,7 @@ class stmt_def_var final : public statement {
             .array_len{array_count_},
             .reg{},
             .base_register{},
+            .value_register{},
         };
     }
 

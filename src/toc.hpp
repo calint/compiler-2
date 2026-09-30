@@ -442,6 +442,14 @@ class toc final {
                             source_location_hr(decl_var.src_loc_tk))};
         }
 
+        // the value lives in its register for the whole scope
+        if (not var.value_register.is_empty()) {
+            frames_.back().add_var(var, 0, is_dat);
+            comment_var(src_loc_tk, indent, var);
+
+            return;
+        }
+
         const size_t var_size_bytes{
             var.is_pointer
                 ? machine_.get().address_size_bytes()
@@ -1091,6 +1099,13 @@ class toc final {
             text += std::format("[{}]", var.array_len);
         }
 
+        if (not var.value_register.is_empty()) {
+            x.comment(src_loc_tk, indent, "{} = {}", text,
+                      var.value_register.base_register());
+
+            return;
+        }
+
         if (not var.reg.is_empty()) {
             x.comment(src_loc_tk, indent, "{} ({})", text,
                       var.reg.base_register());
@@ -1210,9 +1225,20 @@ class toc final {
         const ident_path& id, const var_info& var,
         std::vector<operand> lea_path) const -> ident_info {
 
+        if (var.value_register.is_register() and id.path().size() == 1) {
+            ident_info reg_info{
+                ident_info::make_register(ident, var.value_register)};
+
+            reg_info.is_read_only = var.is_read_only;
+
+            return reg_info;
+        }
+
         ident_info ii{
             var.type_ptr->accessor(src_loc_tk, ident, id.path(), var,
                                    machine_.get().variables_base_register())};
+
+        ii.is_read_only = var.is_read_only;
 
         lea_path.resize(id.path().size());
         // note: pad with empty for the remaining elements in the id path
