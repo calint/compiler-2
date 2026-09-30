@@ -14,6 +14,7 @@ exits: none
 todo: find an exit
 me > rn office roome
 
+new room created
 
 u r in roome
 exits: none, office
@@ -25,13 +26,34 @@ went to office
 exits: roome
 me > rd a pleasant location
 
+new room description
 
+a pleasant location
+exits: roome
+me > rnm
+
+what name
+
+a pleasant location
+exits: roome
+me > rnm abcdefghijklmnopq
+
+name too long
+
+a pleasant location
+exits: roome
+me > rnm study
+
+new room name
+
+u r in study
 a pleasant location
 exits: roome
 me > en u
 
 new entity created
 
+u r in study
 a pleasant location
 u c me
 exits: roome
@@ -39,6 +61,7 @@ u > go roome
 
 went to roome
 
+u r in study
 a pleasant location
 exits: roome
 me > go roome
@@ -161,5 +184,111 @@ u r in roome
 u c me, key
 exits: none, office
 todo: find an exit
-u > go home
+u > t me hello there
+
+u told u hello there
+
+u r in roome
+u c u, key
+exits: none, office
+todo: find an exit
+me > t nobody hi
+
+nobody does not exist
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+u > t me
+
+tell what
+
+u r in roome
+u c u, key
+exits: none, office
+todo: find an exit
+me > t
+
+tell whom
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+u > t u note to self
+
+
+u r in roome
+u c u, key
+exits: none, office
+todo: find an exit
+me > t u reply
+
+u told u note to self
+me told u reply
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+u > s hello all
+
+u said hello all
+
+u r in roome
+u c u, key
+exits: none, office
+todo: find an exit
+me > s
+
+say what
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+u > en w
+
+new entity created
+
+u r in roome
+u c u, me, key
+exits: none, office
+todo: find an exit
+w > s hi both
+
+w said hi both
+
+u r in roome
+u c u, w, key
+exits: none, office
+todo: find an exit
+me > s everyone
+
+w said hi both
+me said everyone
+
+u r in roome
+u c me, w, key
+exits: none, office
+todo: find an exit
+u > go office
+
+went to office
+me said everyone
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > s anyone here
+
+w said anyone here
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > go home
 

@@ -52,6 +52,7 @@ const max_link_names_len = 1024
 const max_rooms_len = 128
 const max_entities_len = 32
 const max_objects_len = 1024
+const max_entity_messages_len = 16
 
 type id_list {
     array[max_id_list_len],
@@ -108,11 +109,30 @@ func name.equals(nm name) res bool {
     res = arrays_equal(self.array, nm.array, self.len)
 }
 
+dat str_told_u = " told u "
+dat str_said = " said "
+
+type message {
+    from,
+    said bool,
+    text str,
+}
+
+type messages {
+    array message[max_entity_messages_len],
+    len,
+}
+
+func messages.add(from, said bool, text str) {
+    self.array[self.len] = { from, said, text }
+    self.len = self.len + 1
+}
+
 type entity {
     name name,
     room_id,
     objects id_list,
-    messages str[16],
+    messages messages,
 }
 
 func entity.print() {
@@ -129,6 +149,26 @@ dat entities = entities{
         { { "me", 2 }, 0 } # entity[0]
     }, # array end
     1 # len
+}
+
+func message.print() {
+    entities.array[self.from].name.print()
+    if self.said {
+        print(str_said)
+    }
+    if not self.said {
+        print(str_told_u)
+    }
+    self.text.print()
+}
+
+func entity.show_messages() {
+    foo self.messages.array, self.messages.len {
+        e.print()
+        print(str_nl)
+    }
+
+    self.messages.len = 0
 }
 
 func entities.add(nm name, room_id) entity_id {
@@ -416,6 +456,7 @@ func find_link_name_or_make(tz tokenizer) res {
 
 dat str_what_exit_name_to = "what is exit name to new room\n"
 dat str_what_exit_name_back = "what is exit name back to this room\n"
+dat str_new_room_created = "new room created\n"
 
 func action_new_room(cur_entity, tz tokenizer) {
     tz.next()
@@ -456,12 +497,18 @@ func action_new_room(cur_entity, tz tokenizer) {
 
     # increase number of rooms
     rooms.len = rooms.len + 1
+
+    print(str_new_room_created)
 }
+
+dat str_new_room_description = "new room description\n"
 
 func action_set_room_description(cur_entity, tz tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
     rooms.array[entities.array[cur_entity].room_id].description = tz.to_str()
+
+    print(str_new_room_description)
 }
 
 func action_set_room_note(cur_entity, tz tokenizer) {
@@ -470,8 +517,9 @@ func action_set_room_note(cur_entity, tz tokenizer) {
     rooms.array[entities.array[cur_entity].room_id].note = tz.to_str()
 }
 
-dat str_what_name = "what name"
+dat str_what_name = "what name\n"
 dat str_name_too_long = "name too long\n"
+dat str_new_room_name = "new room name\n"
 
 func action_set_room_name(cur_entity, tz tokenizer) {
     tz.next()
@@ -487,6 +535,8 @@ func action_set_room_name(cur_entity, tz tokenizer) {
     }
 
     rooms.array[entities.array[cur_entity].room_id].name = tz.to_name()
+
+    print(str_new_room_name)
 }
 
 dat str_new_entity_created = "new entity created\n"
@@ -662,6 +712,80 @@ func action_give(cur_entity, tz tokenizer) {
     print(str_nl)
 }
 
+dat str_tell_whom = "tell whom\n"
+dat str_tell_what = "tell what\n"
+dat str_does_not_exist = " does not exist\n"
+dat str_mailbox_full = " has too many messages\n"
+
+func action_tell(cur_entity, tz tokenizer) {
+    tz.next()
+
+    if tz.is_empty() {
+        print(str_tell_whom)
+        return
+    }
+
+    # find entity anywhere
+    var to_entity = entities.len
+    foo entities.array, entities.len {
+        if tz.is_name(e.name) {
+            to_entity = i
+            break
+        }
+    }
+
+    if to_entity == entities.len {
+        tz.print()
+        print(str_does_not_exist)
+        return
+    }
+
+    if entities.array[to_entity].messages.len == max_entity_messages_len {
+        tz.print()
+        print(str_mailbox_full)
+        return
+    }
+
+    # the message is the rest of the line
+    tz.skip_whitespace()
+    tz.to_end()
+
+    if tz.is_empty() {
+        print(str_tell_what)
+        return
+    }
+
+    var text = tz.to_str()
+
+    entities.array[to_entity].messages.add(cur_entity, false, text)
+}
+
+dat str_say_what = "say what\n"
+
+func action_say(cur_entity, tz tokenizer) {
+    # the text is the rest of the line
+    tz.skip_whitespace()
+    tz.to_end()
+
+    if tz.is_empty() {
+        print(str_say_what)
+        return
+    }
+
+    var text = tz.to_str()
+
+    var room_id = entities.array[cur_entity].room_id
+    var room_entities_len = rooms.array[room_id].entities.len
+    foo rooms.array[room_id].entities.array, room_entities_len {
+        if e == cur_entity continue
+
+        # a full mailbox silently misses the message
+        if entities.array[e].messages.len == max_entity_messages_len continue
+
+        entities.array[e].messages.add(cur_entity, true, text)
+    }
+}
+
 dat str_help = "\
   help: this message\n\
   go to: go <exit>\n\
@@ -669,6 +793,8 @@ dat str_help = "\
   create new object: on <name>\n\
   drop object: d <object>\n\
   give object: g <object> <entity>\n\
+  tell entity: t <entity> <message>\n\
+  say to room: s <text>\n\
   new room: rn <to exit> <from exit>\n\
   set room name: rnm <text>\n\
   set room description: rd <text>\n\
@@ -686,6 +812,8 @@ dat str_action_inventory = "i"
 dat str_action_new_object = "on"
 dat str_action_drop = "d"
 dat str_action_give = "g"
+dat str_action_tell = "t"
+dat str_action_say = "s"
 dat str_action_new_room = "rn"
 dat str_action_set_room_name = "rnm"
 dat str_action_set_room_description = "rd"
@@ -725,6 +853,12 @@ func parse_input(cur_entity, tz tokenizer) {
     } else if tz.is_str(str_action_give) {
         action_give(cur_entity, tz)
 
+    } else if tz.is_str(str_action_tell) {
+        action_tell(cur_entity, tz)
+
+    } else if tz.is_str(str_action_say) {
+        action_say(cur_entity, tz)
+
     } else if tz.is_str(str_action_help) {
         action_help(cur_entity, tz)
 
@@ -742,6 +876,7 @@ func main() {
         if cur_entity == entities.len {
             cur_entity = 0
         }
+        entities.array[cur_entity].show_messages()
         print(str_nl)
         rooms.array[entities.array[cur_entity].room_id].print(cur_entity)
         entities.array[cur_entity].name.print()
