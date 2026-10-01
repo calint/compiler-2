@@ -136,11 +136,12 @@ module.exports = grammar({
       $.identifier
     ),
 
-    // e.g. 'i8[4]', or '[4]' with the default type
+    // e.g. 'i8[4]', '[4]' with the default type or 'i8[max_len]', the size is
+    // a constant expression
     sized_array_type: $ => seq(
       optional(field('type', $._base_type)),
       '[',
-      field('size', choice($.number_literal, $.character_literal)),
+      field('size', $._expression),
       ']',
     ),
 
@@ -437,9 +438,10 @@ module.exports = grammar({
       token.immediate('"'),
     ),
 
+    // a backslash at the end of a line continues the string
     escape_sequence: $ => token.immediate(seq(
       '\\',
-      choice(/x[0-9a-fA-F]{2}/, /[^x\n]/),
+      choice(/x[0-9a-fA-F]{2}/, /[^x]/),
     )),
 
     number_literal: $ => choice(

@@ -16,6 +16,8 @@ cp queries/aerial.scm ~/.local/share/nvim/site/queries/baz/aerial.scm
 # the highlights query needs the '#baz-global?' predicate from the plugin
 mkdir -p ~/.local/share/nvim/site/plugin
 cp plugin/baz-globals.lua ~/.local/share/nvim/site/plugin/
+# in-process language server for symbols, definition, references and rename
+cp plugin/baz-lsp.lua ~/.local/share/nvim/site/plugin/
 # copy to `tree-sitter-baz` project
 echo copy to $(realpath $TREESITTER)
 cp grammar.js $TREESITTER/
@@ -24,3 +26,4 @@ cp queries/highlights.scm $TREESITTER/queries/
 cp queries/aerial.scm $TREESITTER/queries/
 mkdir -p $TREESITTER/plugin
 cp plugin/baz-globals.lua $TREESITTER/plugin/
+cp plugin/baz-lsp.lua $TREESITTER/plugin/

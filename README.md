@@ -55,6 +55,7 @@ compiler writes the binary image itself.
 * `qa/coverage/test-all.sh` runs the tests, coverage report in
   `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
+* lsp support for symbols view, go to definition and rename
 * todo list of planned fixes and features in `etc/todo.txt`
 
 ## Usage
