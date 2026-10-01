@@ -3,7 +3,7 @@
 #
 # test-constant-folding.sh checks the instructions of lines marked '# folds'
 
-const two = 2
+let two = 2
 
 type point {x i32, y i32}
 

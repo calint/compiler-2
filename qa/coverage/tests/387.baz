@@ -20,7 +20,7 @@ dat values =
         }
     }
 
-func increment(value data_holder) {
+func increment(mut value data_holder) {
     value.data[2].x = value.data[2].x + 10
 }
 

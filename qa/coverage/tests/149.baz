@@ -2,9 +2,9 @@
 
 func assert(expr bool) { if not expr exit(1) }
 
-const yes = 1
-const no = 0
-const maybe = -1
+let yes = 1
+let no = 0
+let maybe = -1
 
 type point { x, y }
 

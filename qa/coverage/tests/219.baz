@@ -1,4 +1,4 @@
 # constant values require known identifiers
 
-const x = nope
+let x = nope
 func main() {}

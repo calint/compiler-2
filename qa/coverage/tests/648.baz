@@ -1,6 +1,6 @@
-# --checks=alias: a writable parameter still conflicts with a 'const' one
+# --checks=alias: a 'mut' parameter still conflicts with a read-only one
 
-func f(const a, b) {
+func f(a, mut b) {
     b = a + 1
 }
 

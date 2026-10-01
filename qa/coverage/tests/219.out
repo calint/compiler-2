@@ -1,2 +1,2 @@
 
-219.baz:3:11: cannot resolve identifier 'nope'
+219.baz:3:9: cannot resolve identifier 'nope'

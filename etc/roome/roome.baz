@@ -52,17 +52,17 @@ func printer.set_silenced(silenced bool) {
     self.silenced = silenced
 }
 
-func printer.print_at(const s i8[], const count, const start) {
+func printer.print_at(s i8[], count, start) {
     if self.silenced return
 
     write(1, s, count, start)
 }
 
-func printer.print(const s i8[], const count) {
+func printer.print(s i8[], count) {
     self.print_at(s, count, 0)
 }
 
-func printer.print_all(const s i8[]) {
+func printer.print_all(s i8[]) {
     self.print(s, array_length(s))
 }
 
@@ -70,7 +70,7 @@ func printer.println() {
     self.print_all(str_nl)
 }
 
-func printer.println_all(const s i8[]) {
+func printer.println_all(s i8[]) {
     self.print_all(s)
     self.println()
 }
@@ -109,16 +109,16 @@ func str.input() {
     self.len = nbytes
 }
 
-const max_name_len = 16
-const max_id_list_len = 32
-const max_room_objects_len = 64
-const max_room_entities_len = 32
-const max_room_links_len = 8
-const max_link_names_len = 1024
-const max_rooms_len = 128
-const max_entities_len = 32
-const max_objects_len = 1024
-const max_entity_messages_len = 16
+let max_name_len = 16
+let max_id_list_len = 32
+let max_room_objects_len = 64
+let max_room_entities_len = 32
+let max_room_links_len = 8
+let max_link_names_len = 1024
+let max_rooms_len = 128
+let max_entities_len = 32
+let max_objects_len = 1024
+let max_entity_messages_len = 16
 
 type id_list {
     array[max_id_list_len],
@@ -184,9 +184,9 @@ dat str_told_u = " told u "
 dat str_said = " said "
 dat str_space = " "
 
-const message_told = 0
-const message_said = 1
-const message_event = 2
+let message_told = 0
+let message_said = 1
+let message_event = 2
 
 type message {
     from,
@@ -348,7 +348,7 @@ func room.print(cur_entity) {
 func room.remove_entity(id) {
     # find entity
     var found_ix = self.entities.len
-    const name = entities.array[id].name
+    let name = entities.array[id].name
     foo self.entities.array, self.entities.len {
         if entities.array[e].name.equals(name) {
             found_ix = i
@@ -472,7 +472,7 @@ func tokenizer.to_end() {
 }
 
 func notify_room(room_id, from, kind, text str) {
-    const room_entities_len = rooms.array[room_id].entities.len
+    let room_entities_len = rooms.array[room_id].entities.len
     foo rooms.array[room_id].entities.array, room_entities_len {
         if e == from continue
 
@@ -488,7 +488,7 @@ dat str_no_such_exit = "cannot go there\n"
 dat str_home = "home"
 dat str_arrived_from = "arrived from "
 
-func action_go(cur_entity, tz tokenizer) {
+func action_go(cur_entity, mut tz tokenizer) {
     tz.next()
     if tz.is_empty() {
         out.print_all(str_go_where)
@@ -498,9 +498,9 @@ func action_go(cur_entity, tz tokenizer) {
     if tz.is_str(str_home) exit(0)
 
     # find link
-    const cur_room_id = entities.array[cur_entity].room_id
+    let cur_room_id = entities.array[cur_entity].room_id
 
-    const links_len = rooms.array[cur_room_id].links_len
+    let links_len = rooms.array[cur_room_id].links_len
     var found_ix = links_len
     foo rooms.array[cur_room_id].links, links_len {
         if tz.is_name(link_names.array[e.link_name_id]) {
@@ -515,10 +515,10 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     # move entity
-    const to_room_id = rooms.array[cur_room_id].links[found_ix].to
+    let to_room_id = rooms.array[cur_room_id].links[found_ix].to
     entities.array[cur_entity].room_id = to_room_id 
 
-    const discarded = rooms.array[to_room_id].entities.add(cur_entity)
+    let discarded = rooms.array[to_room_id].entities.add(cur_entity)
     rooms.array[cur_room_id].entities.delete_element(cur_entity)
 
     out.print_all(str_went_to)
@@ -532,7 +532,7 @@ func action_go(cur_entity, tz tokenizer) {
 
     notify_room(cur_room_id, cur_entity, message_event, went_text)
 
-    const to_links_len = rooms.array[to_room_id].links_len
+    let to_links_len = rooms.array[to_room_id].links_len
     var to_found_ix = to_links_len
     foo rooms.array[to_room_id].links, to_links_len {
         if e.to == cur_room_id {
@@ -577,7 +577,7 @@ dat str_what_exit_name_to = "what is exit name to new room\n"
 dat str_what_exit_name_back = "what is exit name back to this room\n"
 dat str_new_room_created = "new room created\n"
 
-func action_new_room(cur_entity, tz tokenizer) {
+func action_new_room(cur_entity, mut tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -585,11 +585,11 @@ func action_new_room(cur_entity, tz tokenizer) {
         return
     }
 
-    const cur_room_id = entities.array[cur_entity].room_id 
+    let cur_room_id = entities.array[cur_entity].room_id 
 
-    const cur_room_next_link_id = rooms.array[cur_room_id].links_len
+    let cur_room_next_link_id = rooms.array[cur_room_id].links_len
 
-    const link_name_id = find_link_name_or_make(tz)
+    let link_name_id = find_link_name_or_make(tz)
 
     tz.next()
 
@@ -598,7 +598,7 @@ func action_new_room(cur_entity, tz tokenizer) {
         return
     }
 
-    const link_name_back_id = find_link_name_or_make(tz)
+    let link_name_back_id = find_link_name_or_make(tz)
 
     # link to next room
     rooms.array[cur_room_id].links[cur_room_next_link_id] = { 
@@ -622,7 +622,7 @@ func action_new_room(cur_entity, tz tokenizer) {
 
 dat str_new_room_description = "new room description\n"
 
-func action_set_room_description(cur_entity, tz tokenizer) {
+func action_set_room_description(cur_entity, mut tz tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
     rooms.array[entities.array[cur_entity].room_id].description = tz.to_str()
@@ -630,7 +630,7 @@ func action_set_room_description(cur_entity, tz tokenizer) {
     out.print_all(str_new_room_description)
 }
 
-func action_set_room_note(cur_entity, tz tokenizer) {
+func action_set_room_note(cur_entity, mut tz tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
     rooms.array[entities.array[cur_entity].room_id].note = tz.to_str()
@@ -640,7 +640,7 @@ dat str_what_name = "what name\n"
 dat str_name_too_long = "name too long\n"
 dat str_new_room_name = "new room name\n"
 
-func action_set_room_name(cur_entity, tz tokenizer) {
+func action_set_room_name(cur_entity, mut tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -660,7 +660,7 @@ func action_set_room_name(cur_entity, tz tokenizer) {
 
 dat str_new_entity_created = "new entity created\n"
 
-func action_new_entity(cur_entity, tz tokenizer) {
+func action_new_entity(cur_entity, mut tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -668,20 +668,20 @@ func action_new_entity(cur_entity, tz tokenizer) {
         return
     }
 
-    const name = tz.to_name()
+    let name = tz.to_name()
 
-    const room_id = entities.array[cur_entity].room_id
+    let room_id = entities.array[cur_entity].room_id
 
-    const entity_id = entities.add(name, room_id)
+    let entity_id = entities.add(name, room_id)
 
-    const discarded = rooms.array[room_id].entities.add(entity_id)
+    let discarded = rooms.array[room_id].entities.add(entity_id)
 
     out.print_all(str_new_entity_created)
 }
 
 dat str_new_object_created = "new object created\n"
 
-func action_new_object(cur_entity, tz tokenizer) {
+func action_new_object(cur_entity, mut tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -689,11 +689,11 @@ func action_new_object(cur_entity, tz tokenizer) {
         return
     }
 
-    const name = tz.to_name()
+    let name = tz.to_name()
 
-    const object_id = objects.add(name)
+    let object_id = objects.add(name)
 
-    const discarded = entities.array[cur_entity].objects.add(object_id)
+    let discarded = entities.array[cur_entity].objects.add(object_id)
 
     out.print_all(str_new_object_created)
 }
@@ -702,7 +702,7 @@ dat str_u_have = "u have: "
 dat str_u_have_nothing = "u have nothing\n"
 
 func action_inventory(cur_entity, tz tokenizer) {
-    const len = entities.array[cur_entity].objects.len
+    let len = entities.array[cur_entity].objects.len
     if  len == 0 {
         out.print_all(str_u_have_nothing)
         return
@@ -729,7 +729,7 @@ dat str_drop_what = "drop what\n"
 dat str_not_carrying = "u do not have that\n"
 dat str_dropped = "dropped "
 
-func action_drop(cur_entity, tz tokenizer) {
+func action_drop(cur_entity, mut tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -738,7 +738,7 @@ func action_drop(cur_entity, tz tokenizer) {
     }
 
     # find object in inventory
-    const len = entities.array[cur_entity].objects.len
+    let len = entities.array[cur_entity].objects.len
     var found_ix = len
     foo entities.array[cur_entity].objects.array, len {
         if tz.is_name(objects.array[e].name) {
@@ -753,9 +753,9 @@ func action_drop(cur_entity, tz tokenizer) {
     }
 
     # move object from inventory to room
-    const object_id = entities.array[cur_entity].objects.array[found_ix]
-    const room_id = entities.array[cur_entity].room_id
-    const discarded = rooms.array[room_id].objects.add(object_id)
+    let object_id = entities.array[cur_entity].objects.array[found_ix]
+    let room_id = entities.array[cur_entity].room_id
+    let discarded = rooms.array[room_id].objects.add(object_id)
     entities.array[cur_entity].objects.delete_index(found_ix)
 
     out.print_all(str_dropped)
@@ -769,7 +769,7 @@ dat str_is_not_here = " is not here\n"
 dat str_gave = "gave "
 dat str_to = " to "
 
-func action_give(cur_entity, tz tokenizer) {
+func action_give(cur_entity, mut tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -778,7 +778,7 @@ func action_give(cur_entity, tz tokenizer) {
     }
 
     # find object in inventory
-    const len = entities.array[cur_entity].objects.len
+    let len = entities.array[cur_entity].objects.len
     var found_ix = len
     foo entities.array[cur_entity].objects.array, len {
         if tz.is_name(objects.array[e].name) {
@@ -792,8 +792,8 @@ func action_give(cur_entity, tz tokenizer) {
         return
     }
 
-    const object_id = entities.array[cur_entity].objects.array[found_ix]
-    const object_name = objects.array[object_id].name
+    let object_id = entities.array[cur_entity].objects.array[found_ix]
+    let object_name = objects.array[object_id].name
 
     tz.next()
 
@@ -803,8 +803,8 @@ func action_give(cur_entity, tz tokenizer) {
     }
 
     # find other entity in the same room
-    const room_id = entities.array[cur_entity].room_id
-    const room_entities_len = rooms.array[room_id].entities.len
+    let room_id = entities.array[cur_entity].room_id
+    let room_entities_len = rooms.array[room_id].entities.len
     var to_entity = room_entities_len
     foo rooms.array[room_id].entities.array, room_entities_len {
         if e == cur_entity continue
@@ -821,7 +821,7 @@ func action_give(cur_entity, tz tokenizer) {
     }
 
     # move object between inventories
-    const discarded = entities.array[to_entity].objects.add(object_id)
+    let discarded = entities.array[to_entity].objects.add(object_id)
     entities.array[cur_entity].objects.delete_index(found_ix)
 
     out.print_all(str_gave)
@@ -844,7 +844,7 @@ dat str_tell_what = "tell what\n"
 dat str_does_not_exist = " does not exist\n"
 dat str_has_too_many_messages = " has too many messages\n"
 
-func action_tell(cur_entity, tz tokenizer) {
+func action_tell(cur_entity, mut tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -882,14 +882,14 @@ func action_tell(cur_entity, tz tokenizer) {
         return
     }
 
-    const text = tz.to_str()
+    let text = tz.to_str()
 
     entities.array[to_entity].messages.add(cur_entity, message_told, text)
 }
 
 dat str_say_what = "say what\n"
 
-func action_say(cur_entity, tz tokenizer) {
+func action_say(cur_entity, mut tz tokenizer) {
     # the text is the rest of the line
     tz.skip_whitespace()
     tz.to_end()
@@ -899,7 +899,7 @@ func action_say(cur_entity, tz tokenizer) {
         return
     }
 
-    const text = tz.to_str()
+    let text = tz.to_str()
 
     notify_room(entities.array[cur_entity].room_id, cur_entity, message_said, text)
 }
@@ -938,7 +938,7 @@ dat str_action_set_room_description = "rd"
 dat str_action_set_room_note = "rnt"
 dat str_action_new_entity = "en"
 
-func parse_input(cur_entity, tz tokenizer) {
+func parse_input(mut cur_entity, mut tz tokenizer) {
     tz.first()
 
     if tz.is_str(str_action_go) {
@@ -995,7 +995,7 @@ go roome\n\
 en me\n"
 
 # runs the lines of the script as the bare entity, a line ends with '\n'
-func run_creation_script(tz tokenizer) {
+func run_creation_script(mut tz tokenizer) {
     var line_start = 0
     var i = 0
     loop {

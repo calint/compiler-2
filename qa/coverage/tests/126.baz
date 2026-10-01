@@ -19,7 +19,7 @@ type str {
     data i8[127]
 }
 
-func str_in(s str) {
+func str_in(mut s str) {
     var nbytes = read(0, s.data, array_length(s.data))
     s.len = i8(nbytes - 1)
 } 
@@ -56,7 +56,7 @@ type location {
     exits list
 }
 
-func foozi(src location, dst location) {
+func foozi(src location, mut dst location) {
     dst.name = {src.name.len, src.name.data}
     dst.note = src.note
 }

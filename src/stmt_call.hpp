@@ -215,7 +215,7 @@ class stmt_call : public expression {
 
     // the callee writes a result or by-reference parameter in place, so
     // storage shared with another reference could be read after it changed,
-    // unless both parameters are 'const' and nothing is written
+    // unless both parameters are not 'mut' and nothing is written
     auto assert_no_shared_storage(const toc& tc, const ident_info& dst_info,
                                   const stmt_def_func& func) const -> void {
 
@@ -1035,7 +1035,7 @@ class stmt_call : public expression {
         if (info.is_read_only and not param.is_read_only()) {
             throw compiler_exception{
                 arg.tok(), std::format("read-only '{}' cannot be passed to a "
-                                       "writable parameter",
+                                       "'mut' parameter",
                                        arg.identifier())};
         }
     }

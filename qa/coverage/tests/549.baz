@@ -18,7 +18,7 @@ dat expected_motto = "strings longer than 16!\n"
 dat cleared = i8[3]{}
 
 # an unsized parameter takes the size of the argument
-func greet(dst i8[]) {
+func greet(mut dst i8[]) {
     dst = "hi"
 }
 

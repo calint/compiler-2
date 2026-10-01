@@ -44,7 +44,7 @@ struct alias_info {
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
 
-    // the parameter was declared 'const', writes through it are rejected
+    // the parameter is not 'mut', writes through it are rejected
     bool is_read_only{};
 
     //
@@ -868,7 +868,7 @@ class toc final {
         return info;
     }
 
-    // the variable declared last in this scope, e.g. a 'const' variable once
+    // the variable declared last in this scope, e.g. a 'let' variable once
     // its initializer has written it
     auto make_var_read_only(const std::string_view name) -> void {
         frames_.back().make_var_read_only(name);
@@ -1338,10 +1338,10 @@ class toc final {
         // an alias of an element names the element, not the array holding it
         bool is_element{};
 
-        // one 'const' parameter in the alias chain makes the data read-only
+        // one parameter not 'mut' in the alias chain makes the data read-only
         bool is_read_only{};
 
-        // the name is then not the one declared with 'const'
+        // the name is then not the one declared with 'let'
         bool is_alias_followed{};
 
         for (const frame& cur_frame : frames_ | std::views::reverse) {
@@ -1442,7 +1442,7 @@ class toc final {
     // statics
     //
 
-    // an alias names the data of a 'const' variable without being declared
+    // an alias names the data of a 'let' variable without being declared
     // with it
     [[nodiscard]] static auto as_declared_if(const bool is_declared,
                                              ident_info info) -> ident_info {

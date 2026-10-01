@@ -4,7 +4,7 @@ func assert(err, expr bool) { if not expr exit(err) }
 
 func pass(x) res { res = x }
 
-const c = 5
+let c = 5
 
 func main() {
     assert(1, pass(~1) == -2)

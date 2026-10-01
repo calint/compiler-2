@@ -1,4 +1,4 @@
-; symbols for aerial.nvim: functions (methods as 'type.name'), types and file level 'const', 'dat' and 'var'
+; symbols for aerial.nvim: functions (methods as 'type.name'), types and file level 'let', 'dat' and 'var'
 
 (function_definition
   receiver_type: (identifier)? @receiver
@@ -11,7 +11,7 @@
   (#set! "kind" "Struct")) @symbol
 
 (program
-  (const_definition
+  (let_definition
     destination: (identifier) @name
     (#set! "kind" "Constant")) @symbol)
 

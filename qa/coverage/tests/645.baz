@@ -1,6 +1,6 @@
-# the element of 'foo' over a 'const' array parameter cannot be assigned
+# the element of 'foo' over an array parameter without 'mut' cannot be assigned
 
-func f(const d i8[], const n) {
+func f(d i8[], n) {
     foo d, n {
         e = 1
     }

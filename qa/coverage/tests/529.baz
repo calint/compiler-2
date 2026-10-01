@@ -1,6 +1,6 @@
 # --checks=alias: two by-reference arguments may share storage
 
-func add_into(dst, src) {
+func add_into(mut dst, src) {
     dst = dst + src
     dst = dst + src
 }

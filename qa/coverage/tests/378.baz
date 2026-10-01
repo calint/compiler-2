@@ -11,7 +11,7 @@ dat holders =
 
 func assert(x bool) { if not x exit(1) }
 
-func update(h holder[]) {
+func update(mut h holder[]) {
     foo h[1].points  {
         e.y = e.y + 10
     }

@@ -1,6 +1,6 @@
-# a 'const' parameter cannot be assigned
+# a parameter without 'mut' cannot be assigned
 
-func f(const a) {
+func f(a) {
     a = 1
 }
 

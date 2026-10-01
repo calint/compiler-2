@@ -10,15 +10,15 @@ type room { name string, description string, note string, links link[6] }
 
 type world { rooms room[128] }
 
-func f3(to i16) {
+func f3(mut to i16) {
     to = 2
 }
 
-func f2(link link) {
+func f2(mut link link) {
     f3(link.to)
 }
 
-func f1(room room) {
+func f1(mut room room) {
     f2(room.links[2])
 }
 

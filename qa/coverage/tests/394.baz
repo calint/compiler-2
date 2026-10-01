@@ -16,11 +16,11 @@ func inv8(v i8) out i8 {
     out = ~v
 }
 
-func triple(v) {
+func triple(mut v) {
     v = v * 3
 }
 
-func swap_into(src bytepair, dst bytepair) {
+func swap_into(src bytepair, mut dst bytepair) {
     var src_a = src.a
     var src_b = src.b
     dst = {src_b, src_a}

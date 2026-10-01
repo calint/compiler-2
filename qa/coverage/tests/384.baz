@@ -10,7 +10,7 @@ dat values =
         { {5, 6} }
     }
 
-func increment(value point) {
+func increment(mut value point) {
     value.y = value.y + 10
 }
 

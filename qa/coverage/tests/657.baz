@@ -1,10 +1,10 @@
-# a 'const' variable cannot be passed to a writable non-inline parameter
+# a 'let' variable cannot be passed to a 'mut' non-inline parameter
 
-func noinline set(a) {
+func noinline set(mut a) {
     a = 1
 }
 
 func main() {
-    const x = 5 + 0
+    let x = 5 + 0
     set(x)
 }

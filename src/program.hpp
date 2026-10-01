@@ -185,7 +185,7 @@ class program final {
         if (tk.is_text("type")) {
             return std::make_unique<stmt_def_type>(tc, tk, tz);
         }
-        if (tk.is_text("const")) {
+        if (tk.is_text("let")) {
             if (stmt_def_const::is_constant_definition(tc, tz)) {
                 return std::make_unique<stmt_def_const>(tc, tk, tz);
             }

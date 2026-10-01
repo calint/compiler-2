@@ -2,12 +2,12 @@
 
 func assert(expr bool) { if not expr exit(1) }
 
-func mutate_and_return(x) res {
+func mutate_and_return(mut x) res {
     x = x * 2
     res = x + 1
 }
 
-func mutate_only(x i32) {
+func mutate_only(mut x i32) {
     x = 0xff
 }
 

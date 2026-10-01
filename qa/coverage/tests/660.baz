@@ -1,6 +1,6 @@
-# a file level 'const' variable cannot be assigned in a function
+# a file level 'let' variable cannot be assigned in a function
 
-const limit = 5 * 2
+let limit = 5 * 2
 
 func main() {
     limit = 11

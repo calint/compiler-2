@@ -1,6 +1,6 @@
 # constant-sized array declaration
 
-const n = 3
+let n = 3
 
 dat values = i8[n]{1,2,3}
 

@@ -4,7 +4,7 @@ func print(str i8[], len) {
     write(1, str, len)
 }
 
-func input(str i8[], len) nbytes_read {
+func input(mut str i8[], len) nbytes_read {
     nbytes_read = read(0, str, len)
 }
 

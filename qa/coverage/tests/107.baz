@@ -13,11 +13,11 @@ type world {
     flgs flags[4]
 }
 
-func foozi(data i8[]) {
+func foozi(mut data i8[]) {
     data[2] = 0x10
 }
 
-func bar(flg flags) {
+func bar(mut flg flags) {
     flg.data[3] = 0x20
 }
 

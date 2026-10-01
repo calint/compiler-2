@@ -5,7 +5,7 @@ func print(str i8[], len) {
     write(1, str, len)
 }
 
-func bar(a,b,hello i8[]){
+func bar(a, mut b, hello i8[]){
     loop{
         if b==0 return
         print(hello,array_length(hello))

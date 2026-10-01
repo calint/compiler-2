@@ -4,7 +4,7 @@ func baz(arg) res {
     res = arg * 2
 }
 
-func bazi(i) { 
+func bazi(mut i) { 
     i = i * 3
 }
 

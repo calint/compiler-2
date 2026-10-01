@@ -7,7 +7,7 @@ type pair {
     value i16
 }
 
-func foozi(kv pair) {
+func foozi(mut kv pair) {
     kv.value = 0x50
 }
 

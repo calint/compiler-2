@@ -1,6 +1,6 @@
 # negative constant index into an array argument is rejected at compile
 
-func legacy_write(values i8[]) {
+func legacy_write(mut values i8[]) {
     values[-1] = 1
 }
 

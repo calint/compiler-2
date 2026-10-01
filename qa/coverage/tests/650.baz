@@ -1,6 +1,6 @@
-# 'const' needs a parameter name
+# 'mut' needs a parameter name
 
-func f(const) {
+func f(mut) {
 }
 
 func main() {

@@ -1,2 +1,2 @@
 
-653.baz:10:5: cannot assign to read-only 'p.x', 'p' is declared with 'const'
+653.baz:10:5: cannot assign to read-only 'p.x', 'p' is declared with 'let'

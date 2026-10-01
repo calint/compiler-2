@@ -1,5 +1,5 @@
 # --checks=alias: arguments sharing storage are allowed when both parameters
-# are 'const', for inline and non-inline functions
+# are not 'mut', for inline and non-inline functions
 
 type buf {
     data i8[4],
@@ -8,18 +8,18 @@ type buf {
 
 func assert(x bool) { if not x exit(1) }
 
-func total(const d i8[], const n) res {
+func total(d i8[], n) res {
     res = 0
     foo d, n {
         res = res + e
     }
 }
 
-func sum(const a, const b) res {
+func sum(a, b) res {
     res = a + b
 }
 
-func noinline sum_noinline(const a, const b) res {
+func noinline sum_noinline(a, b) res {
     res = a + b
 }
 

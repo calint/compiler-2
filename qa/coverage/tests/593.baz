@@ -3,7 +3,7 @@
 #
 # test-constant-folding.sh checks the instructions of lines marked '# folds'
 
-const c = 4
+let c = 4
 
 func assert(err, expr bool) { if not expr exit(err) }
 

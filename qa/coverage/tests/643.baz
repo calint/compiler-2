@@ -1,6 +1,6 @@
-# 'array_copy' cannot copy into a 'const' array parameter
+# 'array_copy' cannot copy into an array parameter without 'mut'
 
-func f(const d i8[], const s i8[]) {
+func f(d i8[], s i8[]) {
     array_copy(s, d, 2)
 }
 

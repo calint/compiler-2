@@ -23,13 +23,13 @@ local non_reference_fields = {
   function_call = "function",
   typed_initializer = "type",
   typed_array_initializer = "type",
-  const_definition = "destination",
+  let_definition = "destination",
   data_declaration = "destination",
   variable_declaration = "destination",
 }
 
 local declaration_types = {
-  const_definition = true,
+  let_definition = true,
   data_declaration = true,
   variable_declaration = true,
 }

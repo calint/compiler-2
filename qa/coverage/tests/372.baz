@@ -21,7 +21,7 @@ func main() {
 
     foo inner_data {
         var j = 0
-        const n2 = n
+        let n2 = n
         loop {
             j = j + 1
             if j == 2 continue

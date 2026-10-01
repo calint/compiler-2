@@ -55,12 +55,12 @@ func point.sum() res {
 }
 # methods can have a "return"
 
-func bar(arg) {
+func bar(mut arg) {
     if arg == 0 return
     arg = 0xff
 }
 # default function argument type is `i64` on x86_64 and `i32` on rv32i
-# function arguments and "return" are equivalent to mutable references
+# function arguments are read-only references, `mut` allows writing them
 
 func baz(arg) res {
     res = arg * 2
@@ -74,12 +74,12 @@ func inv(i i32) res i32 {
 # type of "return" and arguments can be defined, use `i` for default integer type
 # of target platform
 
-func faz(arg i32[]) {
+func faz(mut arg i32[]) {
     arg[1] = 0xfe
 }
 # array arguments are declared with the element type followed by `[]`
 
-func foz(arg[]) {
+func foz(mut arg[]) {
     arg[1] = 0xfe
 }
 # array without type specified defaults to target default integer type
@@ -120,9 +120,9 @@ func object.at(x, y, color i32) self {
     self.color = color
 }
 
-const yes = 1
-const no = 0
-const maybe = -1
+let yes = 1
+let no = 0
+let maybe = -1
 # constants can be declared in any scope and shadow outer declarations
 
 # limited support for non-inlined functions
@@ -131,7 +131,7 @@ const maybe = -1
 
 func noinline print_num(num) {
     # 19 digits of an i64 plus the sign
-    const buf_count = 20
+    let buf_count = 20
 
     var buf = i8[buf_count]{}
     var n = num
@@ -192,7 +192,7 @@ func main() {
     {
         # a code block opens a new scope
         # constants and variables shadow outer scope
-        const maybe = 33
+        let maybe = 33
         assert(maybe == 33)
     }
 

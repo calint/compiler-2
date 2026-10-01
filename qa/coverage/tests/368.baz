@@ -2,12 +2,12 @@
 
 func assert(x bool) { if not x exit(1) }
 
-const value = 1
+let value = 1
 
 func main() {
     assert(value == 1)
     {
-        const value = 2
+        let value = 2
         assert(value == 2)
     }
     assert(value == 1)

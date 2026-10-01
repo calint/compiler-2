@@ -195,7 +195,7 @@ class stmt_block final : public statement {
         if (tk.is_text("var")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
-        if (tk.is_text("const")) {
+        if (tk.is_text("let")) {
             if (stmt_def_const::is_constant_definition(tc, tz)) {
                 return std::make_unique<stmt_def_const>(tc, tk, tz);
             }

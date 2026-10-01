@@ -1,6 +1,6 @@
-# 'read' cannot fill a 'const' array parameter
+# 'read' cannot fill an array parameter without 'mut'
 
-func f(const d i8[]) {
+func f(d i8[]) {
     read(0, d)
 }
 

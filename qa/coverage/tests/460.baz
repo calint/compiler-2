@@ -3,7 +3,7 @@ type triple { bytes i8[3] }
 type wide { bytes i8[300] }
 type page { bytes i8[256] }
 func assert(ok bool) { if not ok exit(1) }
-func update(values wide[], index) { values[index].bytes[299] = 42 }
+func update(mut values wide[], index) { values[index].bytes[299] = 42 }
 func noinline read_wide(value wide) result i8 { result = value.bytes[299] }
 func main() {
     var triples = triple[3]{}

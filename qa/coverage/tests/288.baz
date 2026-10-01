@@ -4,7 +4,7 @@ type point { x, y }
 
 func assert(expr bool) { if not expr exit(1) }
 
-func inspect(points point[]) {
+func inspect(mut points point[]) {
     points[1].y = 3
     assert(points[1].y == 3 and points[0].y == 0)
 }

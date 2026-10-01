@@ -13,7 +13,7 @@ func assert(ok bool) { if not ok exit(1) }
 #
 
 func constants_and_variables() {
-    const answer = 42
+    let answer = 42
     # a constant is known at compile time and takes no storage
 
     var count = 1
@@ -24,9 +24,9 @@ func constants_and_variables() {
     assert(count == 43)
     # '=' assigns and '==' compares, statements need no semicolons
 
-    const doubled = count * 2
+    let doubled = count * 2
     assert(doubled == 86)
-    # a 'const' with a non-constant initializer is a variable that is read-only
+    # a 'let' with a non-constant initializer is a variable that is read-only
     # after its initializer, 'doubled = 0' is a compile error
 }
 
@@ -181,10 +181,10 @@ func control_flow() {
 #
 
 func scopes() {
-    const level = 1
+    let level = 1
     var x = 1
     {
-        const level = 2
+        let level = 2
         var x = 2
         assert(level == 2 and x == 2)
     }
@@ -213,9 +213,9 @@ func arrays() {
     assert(primes[2] == 14)
     # indexes start at 0 and can be expressions
 
-    const table = []{10, 20, 30}
+    let table = []{10, 20, 30}
     assert(table[1] == 20)
-    # a read-only 'const' array and the fields of a read-only 'const' record
+    # a read-only 'let' array and the fields of a read-only 'let' record
     # are read-only too, 'table[1] = 0' is a compile error
 
     var sum = 0
@@ -304,10 +304,11 @@ func twice(v) res {
 # the result 'res' is named and assigned like a variable
 # argument and result types are the default type when omitted
 
-func increment(v) {
+func increment(mut v) {
     v = v + 1
 }
-# arguments are references, assigning 'v' changes the variable of the caller
+# arguments are read-only, 'mut' before an argument name allows writing it
+# and 'v = v + 1' changes the variable of the caller
 
 func sign(v) res {
     res = 0
@@ -329,19 +330,20 @@ func first(arr i32[]) res i32 {
 # an array argument has '[]' after the type, only '[]' for the default type,
 # its size comes from the caller
 
-func sum_of(const a, const b) res {
+func sum_of(a, b) res {
     res = a + b
 }
-# 'const' before an argument name makes it read-only, 'a = 0' is a compile
-# error and the caller can pass a 'const' to it
+# an argument without 'mut' is read-only, 'a = 0' is a compile error and the
+# caller can pass a 'let' to it
 
-func total(const values[]) res {
+func total(values[]) res {
     res = 0
     foo values {
         res = res + e
     }
 }
-# a 'const' array argument cannot be written either, not even through 'e'
+# an array argument without 'mut' cannot be written either, not even through
+# 'e'
 
 func functions() {
     var x = 3
@@ -361,9 +363,9 @@ func functions() {
     assert(first(arr) == 9)
     # functions are inlined at every call by default
 
-    const fixed = 5
+    let fixed = 5
     assert(sum_of(x, fixed) == 9)
-    const items = []{1, 2, 3}
+    let items = []{1, 2, 3}
     assert(total(items) == 6)
 }
 

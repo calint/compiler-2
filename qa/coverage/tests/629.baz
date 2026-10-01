@@ -9,7 +9,7 @@ func counter.bump() {
     self.n = self.n + 1
 }
 
-func add_twice(c counter) res {
+func add_twice(mut c counter) res {
     c.bump()
     res = c.n
     c.bump()

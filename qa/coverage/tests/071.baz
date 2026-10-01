@@ -4,7 +4,7 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func foozi(i) {
+func foozi(mut i) {
     i = 0xfe5e + 1
 }
 

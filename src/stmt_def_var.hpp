@@ -17,7 +17,7 @@
 #include "token.hpp"
 #include "type.hpp"
 
-// e.g. 'var x = i32(0)', the initializer gives the type; 'const' with a
+// e.g. 'var x = i32(0)', the initializer gives the type; 'let' with a
 // non-constant initializer is a 'var' that is read-only once initialized
 class stmt_def_var final : public statement {
     token name_tk_;
@@ -30,7 +30,7 @@ class stmt_def_var final : public statement {
   public:
     stmt_def_var(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
-          is_const_{tk.is_text("const")} {
+          is_const_{tk.is_text("let")} {
 
         toc::assert_name_not_reserved(name_tk_);
 

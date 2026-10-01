@@ -10,7 +10,7 @@ func foozi(world i8[]){
     print(world,len-1)
 }
 
-func bar(n,x,hello i8[]){
+func bar(mut n, x, hello i8[]){
     var i=x
     loop{
         var b=2

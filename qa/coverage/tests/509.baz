@@ -2,8 +2,8 @@
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-const c = -9223372036854775808
-const d = -c
+let c = -9223372036854775808
+let d = -c
 
 func main() {
     var x = c

@@ -8,7 +8,7 @@ func op_on_arr(e i32) res i32 {
   res = e + 1
 }
 
-func op_on_arr2(e i32) {
+func op_on_arr2(mut e i32) {
   e = e + 2
 }
 

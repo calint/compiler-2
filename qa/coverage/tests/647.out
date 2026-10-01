@@ -1,2 +1,2 @@
 
-647.baz:8:9: read-only 'a' cannot be passed to a writable parameter
+647.baz:8:9: read-only 'a' cannot be passed to a 'mut' parameter

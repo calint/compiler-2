@@ -34,8 +34,9 @@ compiler writes the binary image itself.
 * limited support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
-* keywords: `func`, `noinline`, `type`, `dat`, `var`, `const`, `foo`, `loop`,
-  `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`, `not`
+* keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
+  `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
+  `not`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
   `write`, `exit`, `i`, `i8`, `i16`, `i32`, `i64`
 

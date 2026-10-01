@@ -1,2 +1,2 @@
 
-657.baz:9:9: read-only 'x' cannot be passed to a writable parameter
+657.baz:9:9: read-only 'x' cannot be passed to a 'mut' parameter

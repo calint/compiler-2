@@ -16,7 +16,7 @@ func inv8(v i8) out i8 {
     out = ~v
 }
 
-func copy_name(src location, dst location) {
+func copy_name(src location, mut dst location) {
     dst.name = {src.name.len, src.name.data}
 }
 

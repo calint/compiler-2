@@ -1,11 +1,11 @@
-# a field of a 'const' parameter cannot be assigned
+# a field of a parameter without 'mut' cannot be assigned
 
 type point {
     x,
     y,
 }
 
-func f(const p point) {
+func f(p point) {
     p.x = 1
 }
 

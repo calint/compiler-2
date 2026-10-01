@@ -1,5 +1,5 @@
 # spaced unary negative constant
 
-const n = - 1
+let n = - 1
 
 func main() {}

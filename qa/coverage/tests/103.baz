@@ -20,11 +20,11 @@ type world {
     loc location
 }
 
-func faaz(sz i8) {
+func faaz(mut sz i8) {
     sz = 1
 }
 
-func fooz(lnk link) {
+func fooz(mut lnk link) {
     lnk.name[0] = 0x61 # 'a'
     faaz(lnk.name_len)
     # lnk.name_len = 1

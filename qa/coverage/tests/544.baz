@@ -2,8 +2,8 @@
 
 func assert(err, ok bool) { if not ok exit(err) }
 
-const letter_a = 'a'
-const minus_a = -'a'
+let letter_a = 'a'
+let minus_a = -'a'
 
 type glyph {
     ch i8,

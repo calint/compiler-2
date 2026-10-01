@@ -43,7 +43,7 @@ module.exports = grammar({
       // Structural Block
       $.block,
       // State Management
-      $.const_definition,
+      $.let_definition,
       $.data_declaration,
       $.variable_declaration,
       $.assignment_statement,
@@ -66,7 +66,7 @@ module.exports = grammar({
     _definition: $ => choice(
       $.function_definition,
       $.type_definition,
-      $.const_definition,
+      $.let_definition,
       $.data_declaration,
       $.variable_declaration,
     ),
@@ -101,10 +101,10 @@ module.exports = grammar({
 
     parameter_list: $ => sep1($.parameter, ','),
 
-    // [const] identifier type_name (type is optional), 'const' makes the
-    // parameter read-only
+    // [mut] identifier type_name (type is optional), a parameter without
+    // 'mut' is read-only
     parameter: $ => seq(
-      optional(field('modifier', $.const_keyword)),
+      optional(field('modifier', $.mut_keyword)),
       field('name', $.identifier),
       optional(field('type', $._parameter_type)),
     ),
@@ -158,11 +158,11 @@ module.exports = grammar({
     // 4. STATEMENT IMPLEMENTATIONS
     // -------------------------------------------------------------------------
 
-    // const identifier = expression, a compile-time constant or, when the
+    // let identifier = expression, a compile-time constant or, when the
     // initializer is not constant, a variable that is read-only after its
     // initializer
-    const_definition: $ => seq(
-      $.const_keyword,
+    let_definition: $ => seq(
+      $.let_keyword,
       field('destination', $.identifier),
       '=',
       field('initializer', $._expression)
@@ -459,7 +459,8 @@ module.exports = grammar({
     comment: $ => /#.*/,
 
     // Definition Keywords
-    const_keyword: $ => 'const',
+    let_keyword: $ => 'let',
+    mut_keyword: $ => 'mut',
     dat_keyword: $ => 'dat',
     func_keyword: $ => 'func',
     noinline_keyword: $ => 'noinline',

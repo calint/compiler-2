@@ -10,7 +10,7 @@ dat values =
         { { {9, 10}, {11, 12} } }
     }
 
-func increment(value item) {
+func increment(mut value item) {
     value.data[1].y = value.data[1].y + 10
 }
 

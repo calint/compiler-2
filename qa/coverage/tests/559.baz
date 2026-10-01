@@ -3,14 +3,14 @@
 
 func assert(err, ok bool) { if not ok exit(err) }
 
-const seven = 7
+let seven = 7
 
 type holder {
     tag i8,
     values i16[5]
 }
 
-func fill(dst i16[]) {
+func fill(mut dst i16[]) {
     dst = {-1, 2}
 }
 

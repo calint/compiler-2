@@ -1,10 +1,10 @@
-# a 'const' parameter cannot be written through an inline callee
+# a parameter without 'mut' cannot be written through an inline callee
 
-func set(a) {
+func set(mut a) {
     a = 1
 }
 
-func f(const a) {
+func f(a) {
     set(a)
 }
 

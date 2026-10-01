@@ -9,7 +9,8 @@
 (noinline_keyword) @keyword.modifier
 (type_keyword) @keyword.type
 (dat_keyword) @keyword.storage
-(const_keyword) @keyword.storage
+(let_keyword) @keyword.storage
+(mut_keyword) @keyword.modifier
 (var_keyword) @keyword.storage
 (if_keyword) @keyword.conditional
 (loop_keyword) @keyword.repeat
@@ -23,7 +24,7 @@
 (and_keyword) @keyword.operator
 (or_keyword) @keyword.operator
 
-(const_definition
+(let_definition
   destination: (identifier) @constant
   initializer: (_)? @constant)
 

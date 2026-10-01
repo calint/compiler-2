@@ -1,4 +1,4 @@
-# 'const' with a non-constant initializer is a 'var' that cannot be assigned
+# 'let' with a non-constant initializer is a 'var' that cannot be assigned
 # after its initializer
 
 type point {
@@ -6,66 +6,66 @@ type point {
     y,
 }
 
-const limit = 5 * 2
+let limit = 5 * 2
 
 func assert(x bool) { if not x exit(1) }
 
-func twice(const a) res {
+func twice(a) res {
     res = a * 2
 }
 
-func noinline thrice(const a) res {
+func noinline thrice(a) res {
     res = a * 3
 }
 
-func total(const d i8[], const n) res {
+func total(d i8[], n) res {
     res = 0
     foo d, n {
         res = res + e
     }
 }
 
-# 'const' variable inside an inline function
-func successor(const v) res {
-    const w = v + 1
+# 'let' variable inside an inline function
+func successor(v) res {
+    let w = v + 1
     res = w
 }
 
 func main() {
-    const a = 1 + 2
+    let a = 1 + 2
     assert(a == 3)
 
-    const b = a + limit
+    let b = a + limit
     assert(b == 13)
 
-    const ok = a < b
+    let ok = a < b
     assert(ok)
 
-    const p = point{1, 2}
+    let p = point{1, 2}
     assert(p.x + p.y == 3)
 
-    const arr = i8[]{1, 2, 3}
+    let arr = i8[]{1, 2, 3}
     var t = total(arr, 3)
     assert(t == 6)
     assert(arr[1] == 2)
 
-    const copy = arr
+    let copy = arr
     assert(copy[2] == 3)
 
     # initialized from inline and non-inline calls
-    const u = twice(a)
+    let u = twice(a)
     assert(u == 6)
 
-    const v = thrice(a)
+    let v = thrice(a)
     assert(v == 9)
 
-    const s = successor(a)
+    let s = successor(a)
     assert(s == 4)
 
     # each iteration declares it again
     var sum = 0
     foo arr, 3 {
-        const sq = e * e
+        let sq = e * e
         sum = sum + sq
     }
     assert(sum == 14)

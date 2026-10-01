@@ -126,7 +126,8 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
   private:
-    // e.g. the counter 'i' of 'foo', a 'const' parameter or a 'const' variable
+    // e.g. the counter 'i' of 'foo', a parameter not declared 'mut' or a 'let'
+    // variable
     auto assert_not_read_only(const ident_info& dst_info) const -> void {
         if (not dst_info.is_read_only) {
             return;
@@ -135,7 +136,7 @@ class stmt_assign_var final : public statement {
         if (dst_info.is_const_var) {
             throw compiler_exception{
                 tok(), std::format("cannot assign to read-only '{}', '{}' is "
-                                   "declared with 'const'",
+                                   "declared with 'let'",
                                    stmt_ident_.identifier(),
                                    stmt_ident_.first_token().text())};
         }

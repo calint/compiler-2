@@ -4,7 +4,7 @@ func assert(expr bool) {
     if not expr exit(1)
 }
 
-func arrarg(arg[]) {
+func arrarg(mut arg[]) {
     arg[1] = 0xfe
 }
 

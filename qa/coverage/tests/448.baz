@@ -7,7 +7,7 @@ func assert(ok bool) { if not ok exit(1) }
 func noinline twice(value i32) result i32 { result = value * 2 }
 func sum(values[]) result { result = values[0] + values[1] }
 func identity(value) result { result = value }
-func fooz(pt point) { pt.y = 9 }
+func fooz(mut pt point) { pt.y = 9 }
 func main() {
     var pt = point{ 1, 2, { 3, 4 } }
     fooz(pt)

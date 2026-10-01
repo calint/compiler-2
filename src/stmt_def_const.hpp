@@ -70,7 +70,7 @@ class stmt_def_const final : public statement {
     // statics
     //
 
-    // after 'const', e.g. 'x = 5' and 'y = -x' define a compile-time constant
+    // after 'let', e.g. 'x = 5' and 'y = -x' define a compile-time constant
     // while 'z = a + 1' and 'p = point{1, 2}' define a read-only variable;
     // malformed definitions count as constants so they report the constant
     // errors; the tokenizer position is restored
@@ -97,7 +97,7 @@ class stmt_def_const final : public statement {
             return true;
         }
 
-        // an array of the default type, e.g. 'const a = []{1, 2}'
+        // an array of the default type, e.g. 'let a = []{1, 2}'
         if (tz.peek_char_after_whitespace() == '[') {
             return false;
         }
@@ -117,7 +117,7 @@ class stmt_def_const final : public statement {
             return false;
         }
 
-        // an operator or postfix continues the expression, e.g. 'const x = 1 +
+        // an operator or postfix continues the expression, e.g. 'let x = 1 +
         // y'; no statement starts with one of these characters
         constexpr std::string_view continues_expression{"+-*/%&|^<>=!([."};
 

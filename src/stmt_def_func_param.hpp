@@ -7,13 +7,14 @@
 #include "toc.hpp"
 
 class stmt_def_func_param final : public statement {
-    token const_tk_;
+    token mut_tk_;
     token type_tk_;
     token open_bracket_tk_;
     token close_bracket_tk_;
     bool is_array_{};
 
-    // the body cannot write it, so arguments sharing storage are not a hazard
+    // not declared 'mut', so the body cannot write it and arguments sharing
+    // storage are not a hazard
     bool is_read_only_{};
 
     // the 'self' of a method is not written in the source
@@ -40,7 +41,7 @@ class stmt_def_func_param final : public statement {
             return;
         }
 
-        const_tk_.source_to(os);
+        mut_tk_.source_to(os);
         statement::source_to(os);
         if (not type_tk_.is_empty()) {
             type_tk_.source_to(os);
@@ -62,12 +63,12 @@ class stmt_def_func_param final : public statement {
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 
   private:
-    // 'first_tk' is the name or the 'const' before it
+    // 'first_tk' is the name or the 'mut' before it
     stmt_def_func_param(const toc& tc, tokenizer& tz, const token first_tk)
-        : statement{first_tk.is_text("const") ? read_name_after_const(tz)
-                                              : first_tk},
-          const_tk_{first_tk.is_text("const") ? first_tk : token{}},
-          is_read_only_{first_tk.is_text("const")} {
+        : statement{first_tk.is_text("mut") ? read_name_after_mut(tz)
+                                            : first_tk},
+          mut_tk_{first_tk.is_text("mut") ? first_tk : token{}},
+          is_read_only_{not first_tk.is_text("mut")} {
 
         assert(not tok().text().empty());
 
@@ -112,12 +113,11 @@ class stmt_def_func_param final : public statement {
     // statics
     //
 
-    [[nodiscard]] static auto read_name_after_const(tokenizer& tz) -> token {
+    [[nodiscard]] static auto read_name_after_mut(tokenizer& tz) -> token {
         const char next{tz.peek_char_after_whitespace()};
 
         if (next == ',' or next == ')') {
-            throw compiler_exception{tz,
-                                     "expected parameter name after 'const'"};
+            throw compiler_exception{tz, "expected parameter name after 'mut'"};
         }
 
         return tz.next_token();

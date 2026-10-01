@@ -23,7 +23,7 @@ type world {
     locations location[7]
 }
 
-func fuz(lnks link[]) {
+func fuz(mut lnks link[]) {
     lnks[1].loc = 0xba
     lnks[1].pos.y = 0xab
     array_copy(lnks[1], lnks[4], 1)

@@ -8,7 +8,7 @@
 -- 'self' and the names injected by 'foo' cannot be renamed
 
 local declaration_types = {
-  const_definition = true,
+  let_definition = true,
   data_declaration = true,
   variable_declaration = true,
 }
@@ -29,7 +29,7 @@ local injected = { e = true, i = true, n = true }
 
 local keywords = {}
 for word in
-  ([[const dat func noinline type var return if loop foo else break continue
+  ([[let mut dat func noinline type var return if loop foo else break continue
   not and or true false bool i8 i16 i32 i64]]):gmatch("%S+")
 do
   keywords[word] = true
@@ -76,7 +76,7 @@ local function range_of(node)
 end
 
 -- file level lookup, order does not matter; kind is "function" for free
--- functions, "type" or "value" for 'const', 'dat' and 'var'
+-- functions, "type" or "value" for 'let', 'dat' and 'var'
 local function top_level(root, bufnr, kind, name)
   for child in root:iter_children() do
     local t = child:type()
@@ -575,7 +575,7 @@ handlers["textDocument/documentSymbol"] = function(params)
     end
     if declaration_types[t] then
       local id = child:field("destination")[1]
-      local kind = t == "const_definition" and SymbolKind.Constant or SymbolKind.Variable
+      local kind = t == "let_definition" and SymbolKind.Constant or SymbolKind.Variable
       symbols[#symbols + 1] = symbol(text(id, bufnr), kind, child, id)
     end
   end

@@ -8,7 +8,7 @@ type rgb { r i8, g i8, b i8 }
 
 type pixel { fg rgb, bg rgb, alpha i8, depth i8 }
 
-func check_zero(err, z i8[]) {
+func check_zero(err, mut z i8[]) {
     var i = 0
     loop {
         if i == array_length(z) break

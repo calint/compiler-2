@@ -1,6 +1,6 @@
-# --checks=alias: a 'const' parameter may not share storage with the result
+# --checks=alias: a parameter without 'mut' may not share storage with the result
 
-func f(const a) res {
+func f(a) res {
     res = a + 1
 }
 
