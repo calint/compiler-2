@@ -65,6 +65,7 @@ me > go office
 
 went to office
 --
+me arrived from roome
 
 u c me
 exits: roome
@@ -114,6 +115,7 @@ me > go roome
 
 went to roome
 --
+me arrived from office
 
 u r in roome
 u c me

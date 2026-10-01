@@ -300,7 +300,7 @@ dat rooms = rooms{
             { }, # description
             { "todo: find an exit", 18 }, # note
             { { 0, 1 }, 2 }, # entities id_list
-            { {0, 1} }, # links array
+            { {0, 0} }, # links array
             1 # links array len
         }
     },
@@ -442,11 +442,6 @@ func tokenizer.to_end() {
     self.end = self.str.len
 }
 
-dat str_went_to = "went to "
-dat str_go_where = "go where\n"
-dat str_no_such_exit = "cannot go there\n"
-dat str_home = "home"
-
 func notify_room(room_id, from, kind, text str) {
     var room_entities_len = rooms.array[room_id].entities.len
     foo rooms.array[room_id].entities.array, room_entities_len {
@@ -457,6 +452,12 @@ func notify_room(room_id, from, kind, text str) {
         entities.array[e].messages.add(from, kind, text)
     }
 }
+
+dat str_went_to = "went to "
+dat str_go_where = "go where\n"
+dat str_no_such_exit = "cannot go there\n"
+dat str_home = "home"
+dat str_arrived_from = "arrived from "
 
 func action_go(cur_entity, tz tokenizer) {
     tz.next()
@@ -487,9 +488,10 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     # move entity
-    var to_id = rooms.array[cur_room_id].links[found_ix].to
-    entities.array[cur_entity].room_id = to_id 
-    var discarded = rooms.array[to_id].entities.add(cur_entity)
+    var to_room_id = rooms.array[cur_room_id].links[found_ix].to
+    entities.array[cur_entity].room_id = to_room_id 
+
+    var discarded = rooms.array[to_room_id].entities.add(cur_entity)
     rooms.array[cur_room_id].entities.delete_element(cur_entity)
 
     print(str_went_to)
@@ -500,7 +502,30 @@ func action_go(cur_entity, tz tokenizer) {
     var went_text = str{}
     went_text.add(str_went_to)
     went_text.add_name(link_names.array[rooms.array[cur_room_id].links[found_ix].link_name_id])
+
     notify_room(cur_room_id, cur_entity, message_event, went_text)
+
+    var to_links_len = rooms.array[to_room_id].links_len
+    var to_found_ix = to_links_len
+    foo rooms.array[to_room_id].links, to_links_len {
+        if e.to == cur_room_id {
+            to_found_ix = i
+            break
+        }
+    }
+
+    # missing link back is program error
+    if to_found_ix == to_links_len exit(2)
+
+    var arrived_text = str{}
+    arrived_text.add(str_arrived_from)
+    arrived_text.add_name(
+        link_names.array[
+            rooms.array[to_room_id].links[to_found_ix].link_name_id
+        ]
+    )
+
+    notify_room(to_room_id, cur_entity, message_event, arrived_text)
 }
 
 func find_link_name_or_make(tz tokenizer) res {
@@ -783,6 +808,7 @@ func action_give(cur_entity, tz tokenizer) {
     gave_text.add_name(entities.array[to_entity].name)
     gave_text.add(str_space)
     gave_text.add_name(object_name)
+
     notify_room(room_id, cur_entity, message_event, gave_text)
 }
 
