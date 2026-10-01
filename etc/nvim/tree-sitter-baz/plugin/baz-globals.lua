@@ -2,6 +2,9 @@
 --   '#baz-global?' true when the identifier refers to a file level 'dat' or 'var'
 --   '#baz-parameter?' true when the identifier refers to a function parameter
 --   or the named return value
+-- directive for queries/aerial.scm:
+--   '#baz-qualified-name! @receiver @name' sets the text of @name to
+--   'receiver.name', or leaves it alone when there is no receiver
 
 -- identifiers under these parents never refer to a variable
 local non_reference_parents = {
@@ -145,3 +148,15 @@ end
 
 add_kind_predicate("baz-global?", "global")
 add_kind_predicate("baz-parameter?", "parameter")
+
+vim.treesitter.query.add_directive("baz-qualified-name!", function(match, _, source, predicate, metadata)
+  local receiver = (match[predicate[2]] or {})[1]
+  local name = (match[predicate[3]] or {})[1]
+  if not receiver or not name then
+    return
+  end
+  metadata[predicate[3]] = metadata[predicate[3]] or {}
+  metadata[predicate[3]].text = vim.treesitter.get_node_text(receiver, source)
+    .. "."
+    .. vim.treesitter.get_node_text(name, source)
+end, { force = true })

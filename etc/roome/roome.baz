@@ -271,42 +271,6 @@ type room {
     objects id_list,
 }
 
-func room.remove_entity(id) {
-    # find entity
-    var found_ix = self.entities.len
-    var name = entities.array[id].name
-    foo self.entities.array, self.entities.len {
-        if entities.array[e].name.equals(name) {
-            found_ix = i
-            break
-        }
-    }
-
-    # check program error
-    if found_ix == self.entities.len exit(1)
-
-    self.entities.delete_index(found_ix)
-}
-
-type rooms {
-    array room[max_rooms_len],
-    len,
-}
-
-dat rooms = rooms{
-    { # array
-        { # room[0] 
-            { "roome", 5 }, # name
-            { }, # description
-            { "todo: find an exit", 18 }, # note
-            { { 0, 1 }, 2 }, # entities id_list
-            { {0, 0} }, # links array
-            1 # links array len
-        }
-    },
-    1 # len
-}
-
 dat str_u_r_in = "u r in "
 
 func room.print(cur_entity) {
@@ -354,6 +318,42 @@ func room.print(cur_entity) {
         self.note.print()
         print(str_nl)
     }
+}
+
+func room.remove_entity(id) {
+    # find entity
+    var found_ix = self.entities.len
+    var name = entities.array[id].name
+    foo self.entities.array, self.entities.len {
+        if entities.array[e].name.equals(name) {
+            found_ix = i
+            break
+        }
+    }
+
+    # check program error
+    if found_ix == self.entities.len exit(1)
+
+    self.entities.delete_index(found_ix)
+}
+
+type rooms {
+    array room[max_rooms_len],
+    len,
+}
+
+dat rooms = rooms{
+    { # array
+        { # room[0] 
+            { "roome", 5 }, # name
+            { }, # description
+            { "todo: find an exit", 18 }, # note
+            { { 0, 1 }, 2 }, # entities id_list
+            { {0, 0} }, # links array
+            1 # links array len
+        }
+    },
+    1 # len
 }
 
 type tokenizer {
