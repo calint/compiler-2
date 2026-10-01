@@ -1,2 +1,2 @@
 
-646.baz:8:9: argument 1 'a' is read-only but 'set' writes it, parameter 'a' is not declared 'mut'
+646.baz:8:9: read-only 'a' cannot be passed to a 'mut' parameter, parameter 'a' is not declared 'mut'

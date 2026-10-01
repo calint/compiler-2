@@ -1,0 +1,11 @@
+# a constructor builds 'self' so it needs no 'mut'
+
+type point { x, y }
+
+func mut point.at(x, y) self {
+    self.x = x
+    self.y = y
+}
+
+func main() {
+}

@@ -19,11 +19,11 @@ type holder {
     lists list[2]
 }
 
-func list.clear() {
+func mut list.clear() {
     self.count = 0
 }
 
-func list.add(value) {
+func mut list.add(value) {
     self.items[self.count] = value
     self.count = self.count + 1
 }
@@ -43,7 +43,7 @@ func list.sum() res {
 }
 
 # a method calling another method of the same receiver
-func list.add_twice(value) {
+func mut list.add_twice(value) {
     self.add(value)
     self.add(value)
 }
@@ -56,7 +56,7 @@ func point.shifted(dx, dy) res point {
     res = {self.x + dx, self.y + dy}
 }
 
-func noinline point.move(dx) {
+func noinline mut point.move(dx) {
     self.x = self.x + dx
 }
 
@@ -65,7 +65,7 @@ func noinline point.length_sq() res {
 }
 
 # 'self' is a pointer in a non-inline method and forwarded to both kinds
-func noinline point.move_twice(dx) {
+func noinline mut point.move_twice(dx) {
     self.move(dx)
     var q = self.shifted(dx, 0)
     self.x = q.x

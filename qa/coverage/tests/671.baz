@@ -1,0 +1,14 @@
+# a method without 'mut' cannot call a 'mut' method on 'self'
+
+type tk { start, end }
+
+func mut tk.reset() {
+    self.start = 0
+}
+
+func tk.clear() {
+    self.reset()
+}
+
+func main() {
+}

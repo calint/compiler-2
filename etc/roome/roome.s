@@ -260,7 +260,7 @@ main:
     # [1020:14] free scratch register t1
     # [1020:14] free scratch register t0
     # [1022:9] out.set_silenced(true)
-    # [53:6] printer.set_silenced(silenced bool)
+    # [53:10] mut printer.set_silenced(silenced bool)
     func.printer.set_silenced.1022.9:
         # [1022:9] alias self -> out
         # [1022:9] alias silenced -> 1
@@ -374,7 +374,7 @@ main:
                 lw t1, 1964(t1)
                 sub t0, t0, t1
                 # [1011:62] free scratch register t1
-                # [402:6] tokenizer.set_line(script i8[], line_start, count)
+                # [402:10] mut tokenizer.set_line(script i8[], line_start, count)
                 func.tokenizer.set_line.1011.16.1023.5:
                     # [1011:16] alias self -> tz
                     # [1011:16] alias script -> str_creation_script
@@ -484,11 +484,11 @@ main:
                     # [1012:13] alias cur_entity -> 0
                     # [1012:13] alias tz -> tz
                     # [949:8] tz.first()
-                    # [422:6] tokenizer.first()
+                    # [422:10] mut tokenizer.first()
                     func.tokenizer.first.949.8.1012.13.1023.5:
                         # [949:8] alias self -> tz
                         # [423:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.423.10.949.8.1012.13.1023.5:
                             # [423:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -843,11 +843,11 @@ main:
                             # [952:9] alias cur_entity -> 0
                             # [952:9] alias tz -> tz
                             # [499:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.499.8.952.9.1012.13.1023.5:
                                 # [499:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.499.8.952.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -1857,7 +1857,7 @@ main:
                             add t1, t1, t2
                             # [528:54] free scratch register t2
                             addi t1, t1, 208
-                            # [156:6] id_list.add(ix) res
+                            # [156:10] mut id_list.add(ix) res
                             func.id_list.add.528.54.952.9.1012.13.1023.5:
                                 # [528:54] alias res -> discarded
                                 # [528:54] alias self -> rooms.array.entities
@@ -1948,7 +1948,7 @@ main:
                             add t1, t1, t2
                             # [529:39] free scratch register t2
                             addi t1, t1, 208
-                            # [142:6] id_list.delete_element(id)
+                            # [142:10] mut id_list.delete_element(id)
                             func.id_list.delete_element.529.39.952.9.1012.13.1023.5:
                                 # [529:39] alias self -> rooms.array.entities
                                 # [529:39] alias id -> 0
@@ -2038,7 +2038,7 @@ main:
                                     # [151:29] return
                                 if.151.5.529.39.952.9.1012.13.1023.5.end:
                                 # [153:10] self.delete_index(found_ix)
-                                # [130:6] id_list.delete_index(ix)
+                                # [130:10] mut id_list.delete_index(ix)
                                 func.id_list.delete_index.153.10.529.39.952.9.1012.13.1023.5:
                                     # [153:10] alias self -> self
                                     # [153:10] alias ix -> found_ix
@@ -2439,7 +2439,7 @@ main:
                             # [536:21] free scratch register t1
                             # [536:21] free scratch register t0
                             # [537:15] went_text.add(str_went_to)
-                            # [89:6] str.add(s i8[])
+                            # [89:10] mut str.add(s i8[])
                             func.str.add.537.15.952.9.1012.13.1023.5:
                                 # [537:15] alias self -> went_text
                                 # [537:15] alias s -> str_went_to
@@ -2629,7 +2629,7 @@ main:
                             add t1, t1, t2
                             # [538:15] free scratch register t2
                             addi t1, t1, -92
-                            # [180:6] str.add_name(nm name)
+                            # [180:10] mut str.add_name(nm name)
                             func.str.add_name.538.15.952.9.1012.13.1023.5:
                                 # [538:15] alias self -> went_text
                                 # [538:15] alias nm -> link_names.array
@@ -2935,7 +2935,7 @@ main:
                                     # [488:36] allocate scratch register -> t4
                                     # [488:36] address of parameter 'self'
                                     add t4, s0, t3
-                                    # [204:6] messages.add(from, kind, text str)
+                                    # [204:10] mut messages.add(from, kind, text str)
                                     func.messages.add.488.36.540.5.952.9.1012.13.1023.5:
                                         # [488:36] alias self -> entities.array.messages
                                         # [488:36] alias from -> 0
@@ -3247,7 +3247,7 @@ main:
                             # [554:24] free scratch register t1
                             # [554:24] free scratch register t0
                             # [555:18] arrived_text.add(str_arrived_from)
-                            # [89:6] str.add(s i8[])
+                            # [89:10] mut str.add(s i8[])
                             func.str.add.555.18.952.9.1012.13.1023.5:
                                 # [555:18] alias self -> arrived_text
                                 # [555:18] alias s -> str_arrived_from
@@ -3437,7 +3437,7 @@ main:
                             add t1, t1, t2
                             # [556:18] free scratch register t2
                             addi t1, t1, -92
-                            # [180:6] str.add_name(nm name)
+                            # [180:10] mut str.add_name(nm name)
                             func.str.add_name.556.18.952.9.1012.13.1023.5:
                                 # [556:18] alias self -> arrived_text
                                 # [556:18] alias nm -> link_names.array
@@ -3743,7 +3743,7 @@ main:
                                     # [488:36] allocate scratch register -> t4
                                     # [488:36] address of parameter 'self'
                                     add t4, s0, t3
-                                    # [204:6] messages.add(from, kind, text str)
+                                    # [204:10] mut messages.add(from, kind, text str)
                                     func.messages.add.488.36.562.5.952.9.1012.13.1023.5:
                                         # [488:36] alias self -> entities.array.messages
                                         # [488:36] alias from -> 0
@@ -3991,11 +3991,11 @@ main:
                             # [955:9] alias cur_entity -> 0
                             # [955:9] alias tz -> tz
                             # [588:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.588.8.955.9.1012.13.1023.5:
                                 # [588:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.588.8.955.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -4781,11 +4781,11 @@ main:
                                 # [580:22] free scratch register t0
                             func.find_link_name_or_make.599.24.955.9.1012.13.1023.5.end:
                             # [601:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.601.8.955.9.1012.13.1023.5:
                                 # [601:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.601.8.955.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -5983,7 +5983,7 @@ main:
                             # [958:9] alias cur_entity -> 0
                             # [958:9] alias tz -> tz
                             # [633:8] tz.skip_whitespace()
-                            # [409:6] tokenizer.skip_whitespace()
+                            # [409:10] mut tokenizer.skip_whitespace()
                             func.tokenizer.skip_whitespace.633.8.958.9.1012.13.1023.5:
                                 # [633:8] alias self -> tz
                                 # [410:5] self.start = self.end
@@ -6100,7 +6100,7 @@ main:
                                 # [419:16] free scratch register t0
                             func.tokenizer.skip_whitespace.633.8.958.9.1012.13.1023.5.end:
                             # [634:8] tz.to_end()
-                            # [476:6] tokenizer.to_end()
+                            # [476:10] mut tokenizer.to_end()
                             func.tokenizer.to_end.634.8.958.9.1012.13.1023.5:
                                 # [634:8] alias self -> tz
                                 # [477:5] self.start = self.end
@@ -6514,7 +6514,7 @@ main:
                             # [961:9] alias cur_entity -> 0
                             # [961:9] alias tz -> tz
                             # [641:8] tz.skip_whitespace()
-                            # [409:6] tokenizer.skip_whitespace()
+                            # [409:10] mut tokenizer.skip_whitespace()
                             func.tokenizer.skip_whitespace.641.8.961.9.1012.13.1023.5:
                                 # [641:8] alias self -> tz
                                 # [410:5] self.start = self.end
@@ -6631,7 +6631,7 @@ main:
                                 # [419:16] free scratch register t0
                             func.tokenizer.skip_whitespace.641.8.961.9.1012.13.1023.5.end:
                             # [642:8] tz.to_end()
-                            # [476:6] tokenizer.to_end()
+                            # [476:10] mut tokenizer.to_end()
                             func.tokenizer.to_end.642.8.961.9.1012.13.1023.5:
                                 # [642:8] alias self -> tz
                                 # [477:5] self.start = self.end
@@ -6967,11 +6967,11 @@ main:
                             # [964:9] alias cur_entity -> 0
                             # [964:9] alias tz -> tz
                             # [651:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.651.8.964.9.1012.13.1023.5:
                                 # [651:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.651.8.964.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -7789,11 +7789,11 @@ main:
                             # [967:9] alias cur_entity -> 0
                             # [967:9] alias tz -> tz
                             # [671:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.671.8.967.9.1012.13.1023.5:
                                 # [671:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.671.8.967.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -8252,7 +8252,7 @@ main:
                             # [682:30] entity_id = entities.add(name, room_id)
                             # [682:30] = expression
                             # [682:30] entities.add(name, room_id)
-                            # [256:6] entities.add(nm name, room_id) entity_id
+                            # [256:10] mut entities.add(nm name, room_id) entity_id
                             func.entities.add.682.30.967.9.1012.13.1023.5:
                                 # [682:30] alias entity_id -> entity_id
                                 # [682:30] alias self -> entities
@@ -8407,7 +8407,7 @@ main:
                             add t1, t1, t2
                             # [684:51] free scratch register t2
                             addi t1, t1, 208
-                            # [156:6] id_list.add(ix) res
+                            # [156:10] mut id_list.add(ix) res
                             func.id_list.add.684.51.967.9.1012.13.1023.5:
                                 # [684:51] alias res -> discarded
                                 # [684:51] alias self -> rooms.array.entities
@@ -8694,11 +8694,11 @@ main:
                             # [970:9] alias cur_entity -> 0
                             # [970:9] alias tz -> tz
                             # [692:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.692.8.970.9.1012.13.1023.5:
                                 # [692:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.692.8.970.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -9145,7 +9145,7 @@ main:
                             # [701:29] object_id = objects.add(name)
                             # [701:29] = expression
                             # [701:29] objects.add(name)
-                            # [283:6] objects.add(name name) object_id
+                            # [283:10] mut objects.add(name name) object_id
                             func.objects.add.701.29.970.9.1012.13.1023.5:
                                 # [701:29] alias object_id -> object_id
                                 # [701:29] alias self -> objects
@@ -9237,7 +9237,7 @@ main:
                             # [703:56] discarded = entities.array[cur_entity].objects.add(object_id)
                             # [703:56] = expression
                             # [703:56] entities.array[cur_entity].objects.add(object_id)
-                            # [156:6] id_list.add(ix) res
+                            # [156:10] mut id_list.add(ix) res
                             func.id_list.add.703.56.970.9.1012.13.1023.5:
                                 # [703:56] alias res -> discarded
                                 # [703:56] alias self -> entities.array.objects
@@ -10184,11 +10184,11 @@ main:
                             # [976:9] alias cur_entity -> 0
                             # [976:9] alias tz -> tz
                             # [740:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.740.8.976.9.1012.13.1023.5:
                                 # [740:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.740.8.976.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -10934,7 +10934,7 @@ main:
                             add t1, t1, t2
                             # [765:50] free scratch register t2
                             addi t1, t1, 408
-                            # [156:6] id_list.add(ix) res
+                            # [156:10] mut id_list.add(ix) res
                             func.id_list.add.765.50.976.9.1012.13.1023.5:
                                 # [765:50] alias res -> discarded
                                 # [765:50] alias self -> rooms.array.objects
@@ -10993,7 +10993,7 @@ main:
                             func.id_list.add.765.50.976.9.1012.13.1023.5.end:
                                 # [765:50] free scratch register t0
                             # [766:40] entities.array[cur_entity].objects.delete_index(found_ix)
-                            # [130:6] id_list.delete_index(ix)
+                            # [130:10] mut id_list.delete_index(ix)
                             func.id_list.delete_index.766.40.976.9.1012.13.1023.5:
                                 # [766:40] alias self -> entities.array.objects
                                 # [766:40] alias ix -> found_ix
@@ -11526,11 +11526,11 @@ main:
                             # [979:9] alias cur_entity -> 0
                             # [979:9] alias tz -> tz
                             # [780:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.780.8.979.9.1012.13.1023.5:
                                 # [780:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.780.8.979.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -12278,11 +12278,11 @@ main:
                             # [803:23] free scratch register t1
                             # [803:23] free scratch register t0
                             # [805:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.805.8.979.9.1012.13.1023.5:
                                 # [805:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.805.8.979.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -13160,7 +13160,7 @@ main:
                             # [831:55] allocate scratch register -> t1
                             # [831:55] address of parameter 'self'
                             add t1, s0, t0
-                            # [156:6] id_list.add(ix) res
+                            # [156:10] mut id_list.add(ix) res
                             func.id_list.add.831.55.979.9.1012.13.1023.5:
                                 # [831:55] alias res -> discarded
                                 # [831:55] alias self -> entities.array.objects
@@ -13219,7 +13219,7 @@ main:
                             func.id_list.add.831.55.979.9.1012.13.1023.5.end:
                                 # [831:55] free scratch register t0
                             # [832:40] entities.array[cur_entity].objects.delete_index(found_ix)
-                            # [130:6] id_list.delete_index(ix)
+                            # [130:10] mut id_list.delete_index(ix)
                             func.id_list.delete_index.832.40.979.9.1012.13.1023.5:
                                 # [832:40] alias self -> entities.array.objects
                                 # [832:40] alias ix -> found_ix
@@ -13784,7 +13784,7 @@ main:
                             # [840:21] free scratch register t1
                             # [840:21] free scratch register t0
                             # [841:15] gave_text.add(str_gave)
-                            # [89:6] str.add(s i8[])
+                            # [89:10] mut str.add(s i8[])
                             func.str.add.841.15.979.9.1012.13.1023.5:
                                 # [841:15] alias self -> gave_text
                                 # [841:15] alias s -> str_gave
@@ -13916,7 +13916,7 @@ main:
                             # [842:15] allocate scratch register -> t1
                             # [842:15] address of parameter 'nm'
                             add t1, s0, t0
-                            # [180:6] str.add_name(nm name)
+                            # [180:10] mut str.add_name(nm name)
                             func.str.add_name.842.15.979.9.1012.13.1023.5:
                                 # [842:15] alias self -> gave_text
                                 # [842:15] alias nm -> entities.array.name
@@ -14013,7 +14013,7 @@ main:
                             func.str.add_name.842.15.979.9.1012.13.1023.5.end:
                                 # [842:15] free scratch register t0
                             # [843:15] gave_text.add(str_space)
-                            # [89:6] str.add(s i8[])
+                            # [89:10] mut str.add(s i8[])
                             func.str.add.843.15.979.9.1012.13.1023.5:
                                 # [843:15] alias self -> gave_text
                                 # [843:15] alias s -> str_space
@@ -14111,7 +14111,7 @@ main:
                                 # [91:27] free scratch register t0
                             func.str.add.843.15.979.9.1012.13.1023.5.end:
                             # [844:15] gave_text.add_name(object_name)
-                            # [180:6] str.add_name(nm name)
+                            # [180:10] mut str.add_name(nm name)
                             func.str.add_name.844.15.979.9.1012.13.1023.5:
                                 # [844:15] alias self -> gave_text
                                 # [844:15] alias nm -> object_name
@@ -14421,7 +14421,7 @@ main:
                                     # [488:36] allocate scratch register -> t4
                                     # [488:36] address of parameter 'self'
                                     add t4, s0, t3
-                                    # [204:6] messages.add(from, kind, text str)
+                                    # [204:10] mut messages.add(from, kind, text str)
                                     func.messages.add.488.36.846.5.979.9.1012.13.1023.5:
                                         # [488:36] alias self -> entities.array.messages
                                         # [488:36] alias from -> 0
@@ -14669,11 +14669,11 @@ main:
                             # [982:9] alias cur_entity -> 0
                             # [982:9] alias tz -> tz
                             # [855:8] tz.next()
-                            # [432:6] tokenizer.next()
+                            # [432:10] mut tokenizer.next()
                             func.tokenizer.next.855.8.982.9.1012.13.1023.5:
                                 # [855:8] alias self -> tz
                                 # [433:10] self.skip_whitespace()
-                                # [409:6] tokenizer.skip_whitespace()
+                                # [409:10] mut tokenizer.skip_whitespace()
                                 func.tokenizer.skip_whitespace.433.10.855.8.982.9.1012.13.1023.5:
                                     # [433:10] alias self -> self
                                     # [410:5] self.start = self.end
@@ -15592,7 +15592,7 @@ main:
                                 j func.action_tell.982.9.1012.13.1023.5.end
                             if.877.5.982.9.1012.13.1023.5.end:
                             # [884:8] tz.skip_whitespace()
-                            # [409:6] tokenizer.skip_whitespace()
+                            # [409:10] mut tokenizer.skip_whitespace()
                             func.tokenizer.skip_whitespace.884.8.982.9.1012.13.1023.5:
                                 # [884:8] alias self -> tz
                                 # [410:5] self.start = self.end
@@ -15709,7 +15709,7 @@ main:
                                 # [419:16] free scratch register t0
                             func.tokenizer.skip_whitespace.884.8.982.9.1012.13.1023.5.end:
                             # [885:8] tz.to_end()
-                            # [476:6] tokenizer.to_end()
+                            # [476:10] mut tokenizer.to_end()
                             func.tokenizer.to_end.885.8.982.9.1012.13.1023.5:
                                 # [885:8] alias self -> tz
                                 # [477:5] self.start = self.end
@@ -16017,7 +16017,7 @@ main:
                             # [894:40] allocate scratch register -> t1
                             # [894:40] address of parameter 'self'
                             add t1, s0, t0
-                            # [204:6] messages.add(from, kind, text str)
+                            # [204:10] mut messages.add(from, kind, text str)
                             func.messages.add.894.40.982.9.1012.13.1023.5:
                                 # [894:40] alias self -> entities.array.messages
                                 # [894:40] alias from -> 0
@@ -16253,7 +16253,7 @@ main:
                             # [985:9] alias cur_entity -> 0
                             # [985:9] alias tz -> tz
                             # [901:8] tz.skip_whitespace()
-                            # [409:6] tokenizer.skip_whitespace()
+                            # [409:10] mut tokenizer.skip_whitespace()
                             func.tokenizer.skip_whitespace.901.8.985.9.1012.13.1023.5:
                                 # [901:8] alias self -> tz
                                 # [410:5] self.start = self.end
@@ -16370,7 +16370,7 @@ main:
                                 # [419:16] free scratch register t0
                             func.tokenizer.skip_whitespace.901.8.985.9.1012.13.1023.5.end:
                             # [902:8] tz.to_end()
-                            # [476:6] tokenizer.to_end()
+                            # [476:10] mut tokenizer.to_end()
                             func.tokenizer.to_end.902.8.985.9.1012.13.1023.5:
                                 # [902:8] alias self -> tz
                                 # [477:5] self.start = self.end
@@ -16851,7 +16851,7 @@ main:
                                     # [488:36] allocate scratch register -> t4
                                     # [488:36] address of parameter 'self'
                                     add t4, s0, t3
-                                    # [204:6] messages.add(from, kind, text str)
+                                    # [204:10] mut messages.add(from, kind, text str)
                                     func.messages.add.488.36.911.5.985.9.1012.13.1023.5:
                                         # [488:36] alias self -> entities.array.messages
                                         # [488:36] alias from -> 0
@@ -17290,7 +17290,7 @@ main:
         loop.1008.5.1023.5.end:
     func.run_creation_script.1023.5.end:
     # [1024:9] out.set_silenced(false)
-    # [53:6] printer.set_silenced(silenced bool)
+    # [53:10] mut printer.set_silenced(silenced bool)
     func.printer.set_silenced.1024.9:
         # [1024:9] alias self -> out
         # [1024:9] alias silenced -> 0
@@ -17570,7 +17570,7 @@ main:
         # [1039:36] allocate scratch register -> t1
         # [1039:36] address of parameter 'self'
         add t1, s0, t0
-        # [247:6] entity.print_messages()
+        # [247:10] mut entity.print_messages()
         func.entity.print_messages.1039.36:
             # [1039:36] alias self -> entities.array
             # [248:5] foo self.messages.array, self.messages.len
@@ -20174,7 +20174,7 @@ main:
             func.printer.print.68.10.1043.13.end:
         func.printer.print_all.1043.13.end:
         # [1044:12] tz.input()
-        # [396:6] tokenizer.input()
+        # [396:10] mut tokenizer.input()
         func.tokenizer.input.1044.12:
             # [1044:12] alias self -> tz
             # [397:5] self.start = 0
@@ -20192,7 +20192,7 @@ main:
             sw zero, 1960(t0)
             # [398:16] free scratch register t0
             # [399:14] self.str.input()
-            # [94:6] str.input()
+            # [94:10] mut str.input()
             func.str.input.399.14.1044.12:
                 # [399:14] alias self -> self.str
                 # [96:5] var nbytes = 0
@@ -20639,11 +20639,11 @@ main:
             # [1046:9] alias cur_entity -> cur_entity
             # [1046:9] alias tz -> tz
             # [949:8] tz.first()
-            # [422:6] tokenizer.first()
+            # [422:10] mut tokenizer.first()
             func.tokenizer.first.949.8.1046.9:
                 # [949:8] alias self -> tz
                 # [423:10] self.skip_whitespace()
-                # [409:6] tokenizer.skip_whitespace()
+                # [409:10] mut tokenizer.skip_whitespace()
                 func.tokenizer.skip_whitespace.423.10.949.8.1046.9:
                     # [423:10] alias self -> self
                     # [410:5] self.start = self.end
@@ -20998,11 +20998,11 @@ main:
                     # [952:9] alias cur_entity -> cur_entity
                     # [952:9] alias tz -> tz
                     # [499:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.499.8.952.9.1046.9:
                         # [499:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.499.8.952.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -22076,7 +22076,7 @@ main:
                     add t1, t1, t2
                     # [528:54] free scratch register t2
                     addi t1, t1, 208
-                    # [156:6] id_list.add(ix) res
+                    # [156:10] mut id_list.add(ix) res
                     func.id_list.add.528.54.952.9.1046.9:
                         # [528:54] alias res -> discarded
                         # [528:54] alias self -> rooms.array.entities
@@ -22172,7 +22172,7 @@ main:
                     add t1, t1, t2
                     # [529:39] free scratch register t2
                     addi t1, t1, 208
-                    # [142:6] id_list.delete_element(id)
+                    # [142:10] mut id_list.delete_element(id)
                     func.id_list.delete_element.529.39.952.9.1046.9:
                         # [529:39] alias self -> rooms.array.entities
                         # [529:39] alias id -> cur_entity
@@ -22267,7 +22267,7 @@ main:
                             # [151:29] return
                         if.151.5.529.39.952.9.1046.9.end:
                         # [153:10] self.delete_index(found_ix)
-                        # [130:6] id_list.delete_index(ix)
+                        # [130:10] mut id_list.delete_index(ix)
                         func.id_list.delete_index.153.10.529.39.952.9.1046.9:
                             # [153:10] alias self -> self
                             # [153:10] alias ix -> found_ix
@@ -22668,7 +22668,7 @@ main:
                     # [536:21] free scratch register t1
                     # [536:21] free scratch register t0
                     # [537:15] went_text.add(str_went_to)
-                    # [89:6] str.add(s i8[])
+                    # [89:10] mut str.add(s i8[])
                     func.str.add.537.15.952.9.1046.9:
                         # [537:15] alias self -> went_text
                         # [537:15] alias s -> str_went_to
@@ -22858,7 +22858,7 @@ main:
                     add t1, t1, t2
                     # [538:15] free scratch register t2
                     addi t1, t1, -92
-                    # [180:6] str.add_name(nm name)
+                    # [180:10] mut str.add_name(nm name)
                     func.str.add_name.538.15.952.9.1046.9:
                         # [538:15] alias self -> went_text
                         # [538:15] alias nm -> link_names.array
@@ -23169,7 +23169,7 @@ main:
                             # [488:36] allocate scratch register -> t4
                             # [488:36] address of parameter 'self'
                             add t4, s0, t3
-                            # [204:6] messages.add(from, kind, text str)
+                            # [204:10] mut messages.add(from, kind, text str)
                             func.messages.add.488.36.540.5.952.9.1046.9:
                                 # [488:36] alias self -> entities.array.messages
                                 # [488:36] alias from -> from
@@ -23486,7 +23486,7 @@ main:
                     # [554:24] free scratch register t1
                     # [554:24] free scratch register t0
                     # [555:18] arrived_text.add(str_arrived_from)
-                    # [89:6] str.add(s i8[])
+                    # [89:10] mut str.add(s i8[])
                     func.str.add.555.18.952.9.1046.9:
                         # [555:18] alias self -> arrived_text
                         # [555:18] alias s -> str_arrived_from
@@ -23676,7 +23676,7 @@ main:
                     add t1, t1, t2
                     # [556:18] free scratch register t2
                     addi t1, t1, -92
-                    # [180:6] str.add_name(nm name)
+                    # [180:10] mut str.add_name(nm name)
                     func.str.add_name.556.18.952.9.1046.9:
                         # [556:18] alias self -> arrived_text
                         # [556:18] alias nm -> link_names.array
@@ -23987,7 +23987,7 @@ main:
                             # [488:36] allocate scratch register -> t4
                             # [488:36] address of parameter 'self'
                             add t4, s0, t3
-                            # [204:6] messages.add(from, kind, text str)
+                            # [204:10] mut messages.add(from, kind, text str)
                             func.messages.add.488.36.562.5.952.9.1046.9:
                                 # [488:36] alias self -> entities.array.messages
                                 # [488:36] alias from -> from
@@ -24240,11 +24240,11 @@ main:
                     # [955:9] alias cur_entity -> cur_entity
                     # [955:9] alias tz -> tz
                     # [588:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.588.8.955.9.1046.9:
                         # [588:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.588.8.955.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -25061,11 +25061,11 @@ main:
                         # [580:22] free scratch register t0
                     func.find_link_name_or_make.599.24.955.9.1046.9.end:
                     # [601:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.601.8.955.9.1046.9:
                         # [601:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.601.8.955.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -26263,7 +26263,7 @@ main:
                     # [958:9] alias cur_entity -> cur_entity
                     # [958:9] alias tz -> tz
                     # [633:8] tz.skip_whitespace()
-                    # [409:6] tokenizer.skip_whitespace()
+                    # [409:10] mut tokenizer.skip_whitespace()
                     func.tokenizer.skip_whitespace.633.8.958.9.1046.9:
                         # [633:8] alias self -> tz
                         # [410:5] self.start = self.end
@@ -26380,7 +26380,7 @@ main:
                         # [419:16] free scratch register t0
                     func.tokenizer.skip_whitespace.633.8.958.9.1046.9.end:
                     # [634:8] tz.to_end()
-                    # [476:6] tokenizer.to_end()
+                    # [476:10] mut tokenizer.to_end()
                     func.tokenizer.to_end.634.8.958.9.1046.9:
                         # [634:8] alias self -> tz
                         # [477:5] self.start = self.end
@@ -26825,7 +26825,7 @@ main:
                     # [961:9] alias cur_entity -> cur_entity
                     # [961:9] alias tz -> tz
                     # [641:8] tz.skip_whitespace()
-                    # [409:6] tokenizer.skip_whitespace()
+                    # [409:10] mut tokenizer.skip_whitespace()
                     func.tokenizer.skip_whitespace.641.8.961.9.1046.9:
                         # [641:8] alias self -> tz
                         # [410:5] self.start = self.end
@@ -26942,7 +26942,7 @@ main:
                         # [419:16] free scratch register t0
                     func.tokenizer.skip_whitespace.641.8.961.9.1046.9.end:
                     # [642:8] tz.to_end()
-                    # [476:6] tokenizer.to_end()
+                    # [476:10] mut tokenizer.to_end()
                     func.tokenizer.to_end.642.8.961.9.1046.9:
                         # [642:8] alias self -> tz
                         # [477:5] self.start = self.end
@@ -27309,11 +27309,11 @@ main:
                     # [964:9] alias cur_entity -> cur_entity
                     # [964:9] alias tz -> tz
                     # [651:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.651.8.964.9.1046.9:
                         # [651:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.651.8.964.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -28162,11 +28162,11 @@ main:
                     # [967:9] alias cur_entity -> cur_entity
                     # [967:9] alias tz -> tz
                     # [671:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.671.8.967.9.1046.9:
                         # [671:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.671.8.967.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -28656,7 +28656,7 @@ main:
                     # [682:30] entity_id = entities.add(name, room_id)
                     # [682:30] = expression
                     # [682:30] entities.add(name, room_id)
-                    # [256:6] entities.add(nm name, room_id) entity_id
+                    # [256:10] mut entities.add(nm name, room_id) entity_id
                     func.entities.add.682.30.967.9.1046.9:
                         # [682:30] alias entity_id -> entity_id
                         # [682:30] alias self -> entities
@@ -28811,7 +28811,7 @@ main:
                     add t1, t1, t2
                     # [684:51] free scratch register t2
                     addi t1, t1, 208
-                    # [156:6] id_list.add(ix) res
+                    # [156:10] mut id_list.add(ix) res
                     func.id_list.add.684.51.967.9.1046.9:
                         # [684:51] alias res -> discarded
                         # [684:51] alias self -> rooms.array.entities
@@ -29098,11 +29098,11 @@ main:
                     # [970:9] alias cur_entity -> cur_entity
                     # [970:9] alias tz -> tz
                     # [692:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.692.8.970.9.1046.9:
                         # [692:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.692.8.970.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -29549,7 +29549,7 @@ main:
                     # [701:29] object_id = objects.add(name)
                     # [701:29] = expression
                     # [701:29] objects.add(name)
-                    # [283:6] objects.add(name name) object_id
+                    # [283:10] mut objects.add(name name) object_id
                     func.objects.add.701.29.970.9.1046.9:
                         # [701:29] alias object_id -> object_id
                         # [701:29] alias self -> objects
@@ -29673,7 +29673,7 @@ main:
                     # [703:56] allocate scratch register -> t1
                     # [703:56] address of parameter 'self'
                     add t1, s0, t0
-                    # [156:6] id_list.add(ix) res
+                    # [156:10] mut id_list.add(ix) res
                     func.id_list.add.703.56.970.9.1046.9:
                         # [703:56] alias res -> discarded
                         # [703:56] alias self -> entities.array.objects
@@ -30684,11 +30684,11 @@ main:
                     # [976:9] alias cur_entity -> cur_entity
                     # [976:9] alias tz -> tz
                     # [740:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.740.8.976.9.1046.9:
                         # [740:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.740.8.976.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -31559,7 +31559,7 @@ main:
                     add t1, t1, t2
                     # [765:50] free scratch register t2
                     addi t1, t1, 408
-                    # [156:6] id_list.add(ix) res
+                    # [156:10] mut id_list.add(ix) res
                     func.id_list.add.765.50.976.9.1046.9:
                         # [765:50] alias res -> discarded
                         # [765:50] alias self -> rooms.array.objects
@@ -31651,7 +31651,7 @@ main:
                     # [766:40] address of parameter 'self'
                     add t1, s0, t0
                     addi t1, t1, 952
-                    # [130:6] id_list.delete_index(ix)
+                    # [130:10] mut id_list.delete_index(ix)
                     func.id_list.delete_index.766.40.976.9.1046.9:
                         # [766:40] alias self -> entities.array.objects
                         # [766:40] alias ix -> found_ix
@@ -32184,11 +32184,11 @@ main:
                     # [979:9] alias cur_entity -> cur_entity
                     # [979:9] alias tz -> tz
                     # [780:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.780.8.979.9.1046.9:
                         # [780:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.780.8.979.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -33030,11 +33030,11 @@ main:
                     # [803:23] free scratch register t1
                     # [803:23] free scratch register t0
                     # [805:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.805.8.979.9.1046.9:
                         # [805:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.805.8.979.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -33948,7 +33948,7 @@ main:
                     # [831:55] allocate scratch register -> t1
                     # [831:55] address of parameter 'self'
                     add t1, s0, t0
-                    # [156:6] id_list.add(ix) res
+                    # [156:10] mut id_list.add(ix) res
                     func.id_list.add.831.55.979.9.1046.9:
                         # [831:55] alias res -> discarded
                         # [831:55] alias self -> entities.array.objects
@@ -34040,7 +34040,7 @@ main:
                     # [832:40] address of parameter 'self'
                     add t1, s0, t0
                     addi t1, t1, 952
-                    # [130:6] id_list.delete_index(ix)
+                    # [130:10] mut id_list.delete_index(ix)
                     func.id_list.delete_index.832.40.979.9.1046.9:
                         # [832:40] alias self -> entities.array.objects
                         # [832:40] alias ix -> found_ix
@@ -34605,7 +34605,7 @@ main:
                     # [840:21] free scratch register t1
                     # [840:21] free scratch register t0
                     # [841:15] gave_text.add(str_gave)
-                    # [89:6] str.add(s i8[])
+                    # [89:10] mut str.add(s i8[])
                     func.str.add.841.15.979.9.1046.9:
                         # [841:15] alias self -> gave_text
                         # [841:15] alias s -> str_gave
@@ -34737,7 +34737,7 @@ main:
                     # [842:15] allocate scratch register -> t1
                     # [842:15] address of parameter 'nm'
                     add t1, s0, t0
-                    # [180:6] str.add_name(nm name)
+                    # [180:10] mut str.add_name(nm name)
                     func.str.add_name.842.15.979.9.1046.9:
                         # [842:15] alias self -> gave_text
                         # [842:15] alias nm -> entities.array.name
@@ -34834,7 +34834,7 @@ main:
                     func.str.add_name.842.15.979.9.1046.9.end:
                         # [842:15] free scratch register t0
                     # [843:15] gave_text.add(str_space)
-                    # [89:6] str.add(s i8[])
+                    # [89:10] mut str.add(s i8[])
                     func.str.add.843.15.979.9.1046.9:
                         # [843:15] alias self -> gave_text
                         # [843:15] alias s -> str_space
@@ -34932,7 +34932,7 @@ main:
                         # [91:27] free scratch register t0
                     func.str.add.843.15.979.9.1046.9.end:
                     # [844:15] gave_text.add_name(object_name)
-                    # [180:6] str.add_name(nm name)
+                    # [180:10] mut str.add_name(nm name)
                     func.str.add_name.844.15.979.9.1046.9:
                         # [844:15] alias self -> gave_text
                         # [844:15] alias nm -> object_name
@@ -35247,7 +35247,7 @@ main:
                             # [488:36] allocate scratch register -> t4
                             # [488:36] address of parameter 'self'
                             add t4, s0, t3
-                            # [204:6] messages.add(from, kind, text str)
+                            # [204:10] mut messages.add(from, kind, text str)
                             func.messages.add.488.36.846.5.979.9.1046.9:
                                 # [488:36] alias self -> entities.array.messages
                                 # [488:36] alias from -> from
@@ -35500,11 +35500,11 @@ main:
                     # [982:9] alias cur_entity -> cur_entity
                     # [982:9] alias tz -> tz
                     # [855:8] tz.next()
-                    # [432:6] tokenizer.next()
+                    # [432:10] mut tokenizer.next()
                     func.tokenizer.next.855.8.982.9.1046.9:
                         # [855:8] alias self -> tz
                         # [433:10] self.skip_whitespace()
-                        # [409:6] tokenizer.skip_whitespace()
+                        # [409:10] mut tokenizer.skip_whitespace()
                         func.tokenizer.skip_whitespace.433.10.855.8.982.9.1046.9:
                             # [433:10] alias self -> self
                             # [410:5] self.start = self.end
@@ -36423,7 +36423,7 @@ main:
                         j func.action_tell.982.9.1046.9.end
                     if.877.5.982.9.1046.9.end:
                     # [884:8] tz.skip_whitespace()
-                    # [409:6] tokenizer.skip_whitespace()
+                    # [409:10] mut tokenizer.skip_whitespace()
                     func.tokenizer.skip_whitespace.884.8.982.9.1046.9:
                         # [884:8] alias self -> tz
                         # [410:5] self.start = self.end
@@ -36540,7 +36540,7 @@ main:
                         # [419:16] free scratch register t0
                     func.tokenizer.skip_whitespace.884.8.982.9.1046.9.end:
                     # [885:8] tz.to_end()
-                    # [476:6] tokenizer.to_end()
+                    # [476:10] mut tokenizer.to_end()
                     func.tokenizer.to_end.885.8.982.9.1046.9:
                         # [885:8] alias self -> tz
                         # [477:5] self.start = self.end
@@ -36848,7 +36848,7 @@ main:
                     # [894:40] allocate scratch register -> t1
                     # [894:40] address of parameter 'self'
                     add t1, s0, t0
-                    # [204:6] messages.add(from, kind, text str)
+                    # [204:10] mut messages.add(from, kind, text str)
                     func.messages.add.894.40.982.9.1046.9:
                         # [894:40] alias self -> entities.array.messages
                         # [894:40] alias from -> cur_entity
@@ -37089,7 +37089,7 @@ main:
                     # [985:9] alias cur_entity -> cur_entity
                     # [985:9] alias tz -> tz
                     # [901:8] tz.skip_whitespace()
-                    # [409:6] tokenizer.skip_whitespace()
+                    # [409:10] mut tokenizer.skip_whitespace()
                     func.tokenizer.skip_whitespace.901.8.985.9.1046.9:
                         # [901:8] alias self -> tz
                         # [410:5] self.start = self.end
@@ -37206,7 +37206,7 @@ main:
                         # [419:16] free scratch register t0
                     func.tokenizer.skip_whitespace.901.8.985.9.1046.9.end:
                     # [902:8] tz.to_end()
-                    # [476:6] tokenizer.to_end()
+                    # [476:10] mut tokenizer.to_end()
                     func.tokenizer.to_end.902.8.985.9.1046.9:
                         # [902:8] alias self -> tz
                         # [477:5] self.start = self.end
@@ -37724,7 +37724,7 @@ main:
                             # [488:36] allocate scratch register -> t6
                             # [488:36] address of parameter 'self'
                             add t6, s0, t5
-                            # [204:6] messages.add(from, kind, text str)
+                            # [204:10] mut messages.add(from, kind, text str)
                             func.messages.add.488.36.911.5.985.9.1046.9:
                                 # [488:36] alias self -> entities.array.messages
                                 # [488:36] alias from -> from

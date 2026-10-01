@@ -9,7 +9,6 @@
 #include <memory>
 #include <optional>
 #include <ranges>
-#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -110,12 +109,6 @@ class frame final {
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
-    // parameters and results the body writes, noted while parsing
-    std::set<std::string, std::less<>> written_names_;
-
-    // the array a 'foo' frame walks, its 'e' is an element of it
-    std::string walked_array_;
-
     frame_type type_{frame_type::FUNC}; // frame type
     bool is_inlined_{true};
     std::string_view storage_base_register_;
@@ -151,10 +144,6 @@ class frame final {
         if (not is_dat) {
             non_dat_var_has_been_added_ = true;
         }
-    }
-
-    auto add_written(const std::string_view name) -> void {
-        written_names_.emplace(name);
     }
 
     [[nodiscard]] auto allocated_stack_size_bytes() const -> size_t {
@@ -255,26 +244,8 @@ class frame final {
         stack_padding_size_bytes_ = size_bytes;
     }
 
-    auto set_walked_array(const std::string_view name) -> void {
-        assert(is_foo());
-
-        walked_array_ = name;
-    }
-
     [[nodiscard]] auto storage_base_register() const -> std::string_view {
         return storage_base_register_;
-    }
-
-    [[nodiscard]] auto walked_array() const -> std::string_view {
-        assert(is_foo());
-
-        return walked_array_;
-    }
-
-    [[nodiscard]] auto written_names() const
-        -> const std::set<std::string, std::less<>>& {
-
-        return written_names_;
     }
 };
 
@@ -928,13 +899,6 @@ class toc final {
                             get_type_address());
     }
 
-    // parsing a write to 'name', e.g. 'p' of 'p.x = 1', tells the function
-    // frame that declares it that the body writes it, a caller then knows
-    // the argument is written
-    auto note_write(const std::string_view name) -> void {
-        note_write_below(frames_.size(), name);
-    }
-
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
         for (const frame& frm : frames_ | std::views::reverse) {
             if (not frm.storage_base_register().empty()) {
@@ -957,11 +921,6 @@ class toc final {
 
     auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
 
-    // 'name' is the array the 'foo' frame being parsed walks
-    auto set_walked_array(const std::string_view name) -> void {
-        frames_.back().set_walked_array(name);
-    }
-
     [[nodiscard]] auto source() const -> std::string_view { return source_; }
 
     [[nodiscard]] auto
@@ -982,15 +941,6 @@ class toc final {
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
-    }
-
-    // of the function frame being parsed
-    [[nodiscard]] auto written_names() const
-        -> const std::set<std::string, std::less<>>& {
-
-        assert(frames_.back().is_func());
-
-        return frames_.back().written_names();
     }
 
     //
@@ -1463,32 +1413,6 @@ class toc final {
 
         throw compiler_exception{
             src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
-    }
-
-    // finds the frame below the first 'frame_count' frames that declares
-    // 'name', a function frame holds its parameters and result, the 'e' of a
-    // 'foo' stands for the array it walks and other frames hold locals
-    auto note_write_below(const size_t frame_count, const std::string_view name)
-        -> void {
-
-        for (size_t i{frame_count}; i-- > 0;) {
-            frame& frm{frames_[i]};
-
-            if (not frm.has_var(name)) {
-                continue;
-            }
-
-            if (frm.is_func()) {
-                frm.add_written(name);
-                return;
-            }
-
-            if (frm.is_foo() and name == "e") {
-                note_write_below(i, frm.walked_array());
-            }
-
-            return;
-        }
     }
 
     // the root frame applies the dat var gap again when it is entered anew

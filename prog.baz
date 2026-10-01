@@ -44,11 +44,12 @@ func print(str i8[]) {
     # it has 2 more optional arguments: count and start index
 }
 
-func point.fooz() {
+func mut point.fooz() {
     self.x = 0b10    # binary value 2
     self.y = 0xb     # hex value 11
 }
 # functions can act on user types: `func point.fooz()` is called as `p.fooz()`
+# a function that writes to `self` is declared as `mut`
 
 func point.sum() res {
     res = self.x + self.y
@@ -84,7 +85,7 @@ func foz(mut arg[]) {
 }
 # array without type specified defaults to target default integer type
 
-func str.input() {
+func mut str.input() {
     var nbytes = read(0, self.data)
     # read is built-in function that operates on file descriptors
     # it has 2 more optional arguments: count and start index
@@ -110,7 +111,7 @@ func point.at(x, y) self {
 }
 # a constructor builds its result `self` and must assign every field
 
-func point.x(x) {
+func mut point.x(x) {
     self.x = x
 }
 # types can have methods with same name as fields

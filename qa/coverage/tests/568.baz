@@ -5,7 +5,7 @@ type list {
     items[4]
 }
 
-func list.append(other list) {
+func mut list.append(other list) {
     self.items[self.count] = other.count
     self.count = self.count + 1
 }

@@ -413,17 +413,19 @@ func user_types() {
 # methods
 #
 
-func point.move(dx, dy) {
+func mut point.move(dx, dy) {
     self.x = self.x + dx
     self.y = self.y + dy
 }
 # a method on a user type is called as 'p.move(1, 2)', 'self' refers to 'p'
+# 'mut' before the type allows the method to write 'self', without it 'self' is
+# read-only like an argument and the method also works on a 'let' receiver
 
 func point.sum() res {
     res = self.x + self.y
 }
 
-func point.x(x) {
+func mut point.x(x) {
     self.x = x
 }
 # a method can have the name of a field, 'p.x(1)' calls the method and 'p.x'
@@ -471,12 +473,12 @@ type stack {
 }
 # a field can be an array, its size is part of the type
 
-func stack.push(v) {
+func mut stack.push(v) {
     self.items[self.count] = v
     self.count = self.count + 1
 }
 
-func stack.pop() res {
+func mut stack.pop() res {
     self.count = self.count - 1
     res = self.items[self.count]
 }

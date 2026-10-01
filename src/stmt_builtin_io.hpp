@@ -28,8 +28,6 @@ class stmt_builtin_io final : public stmt_call {
             if (info.is_var()) {
                 assert_not_read_only(buffer, info);
             }
-
-            tc.note_write(info.root_id());
         }
     }
 

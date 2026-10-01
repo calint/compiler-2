@@ -5,7 +5,7 @@ type counter {
     n,
 }
 
-func counter.bump() {
+func mut counter.bump() {
     self.n = self.n + 1
 }
 

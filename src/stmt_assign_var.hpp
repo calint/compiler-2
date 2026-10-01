@@ -31,8 +31,6 @@ class stmt_assign_var final : public statement {
         // also in functions that are never called, which are not compiled
         assert_not_read_only(dst_info);
 
-        tc.note_write(stmt_ident_.first_token().text());
-
         set_type(dst_info.type_ref());
 
         expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_count};

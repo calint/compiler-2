@@ -8,7 +8,7 @@ type point {
     y
 }
 
-func point.x(v) {
+func mut point.x(v) {
     self.x = v
 }
 

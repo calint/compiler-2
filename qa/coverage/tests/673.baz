@@ -1,0 +1,8 @@
+# 'mut' marks the receiver of a method, a function has none
+
+func mut zero() res {
+    res = 0
+}
+
+func main() {
+}

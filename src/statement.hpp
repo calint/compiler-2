@@ -303,6 +303,10 @@ class statement {
         }
 
         if (info.read_only_why == read_only_cause::PARAM) {
+            if (root == "self") {
+                return ", the method is not declared 'mut'";
+            }
+
             return std::format(", parameter '{}' is not declared 'mut'", root);
         }
 

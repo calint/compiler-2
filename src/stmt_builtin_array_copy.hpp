@@ -47,8 +47,6 @@ class stmt_builtin_array_copy final : public statement {
         // also in functions that are never called, which are not compiled
         assert_not_read_only(tc.make_ident_info(dst_));
 
-        tc.note_write(dst_.first_token().text());
-
         dst_delim_tk_ = tz.is_next_char_token(',');
         if (dst_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' followed by 'count'"};

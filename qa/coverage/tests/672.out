@@ -1,0 +1,2 @@
+
+672.baz:5:6: a constructor builds 'self', 'mut' is not needed

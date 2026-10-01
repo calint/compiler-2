@@ -1,0 +1,10 @@
+# a method without 'mut' cannot write 'self'
+
+type tk { start, end }
+
+func tk.reset() {
+    self.start = 0
+}
+
+func main() {
+}

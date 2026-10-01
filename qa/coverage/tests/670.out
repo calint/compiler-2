@@ -1,0 +1,2 @@
+
+670.baz:6:5: cannot assign to read-only 'self.start', the method is not declared 'mut'

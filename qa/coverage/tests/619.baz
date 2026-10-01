@@ -2,7 +2,7 @@
 
 type point {x, y}
 
-func point.move(dx) {
+func mut point.move(dx) {
     self.x = self.x + dx
 }
 

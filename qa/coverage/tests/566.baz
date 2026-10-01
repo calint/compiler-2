@@ -5,7 +5,7 @@ type list {
     items[4]
 }
 
-func list.clear() {
+func mut list.clear() {
     self.count = 0
 }
 

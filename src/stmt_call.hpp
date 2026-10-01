@@ -562,6 +562,48 @@ class stmt_call : public expression {
         }
     }
 
+    // a callee that writes its parameter writes the variable of the caller:
+    // a read-only argument is rejected here, also in a function that is never
+    // called
+    auto assert_argument_writable(const toc& tc, const size_t index,
+                                  const stmt_def_func& func) const -> void {
+
+        const expr_any& arg{args_[index]};
+
+        // expressions and unary operators pass a copied value
+        if (not arg.is_identifier() or arg.is_expression() or
+            not arg.get_unary_ops().is_empty()) {
+
+            return;
+        }
+
+        if (not func.writes_param(index)) {
+            return;
+        }
+
+        const ident_info info{tc.make_ident_info(arg)};
+
+        // constants pass their value
+        if (not info.is_var() or not info.is_read_only) {
+            return;
+        }
+
+        if (is_method() and index == 0) {
+            throw compiler_exception{
+                arg.tok(),
+                std::format("read-only '{}' cannot be the receiver of 'mut' "
+                            "method '{}'{}",
+                            arg.identifier(), func_name_,
+                            read_only_hint(info, info.root_id()))};
+        }
+
+        throw compiler_exception{
+            arg.tok(), std::format("read-only '{}' cannot be passed to a "
+                                   "'mut' parameter{}",
+                                   arg.identifier(),
+                                   read_only_hint(info, info.root_id()))};
+    }
+
     // the callee reaches the result and arguments through their addresses
     auto assert_noninline_call(const toc& tc, const ident_info& dst_info,
                                const stmt_def_func& func) const -> void {
@@ -913,51 +955,6 @@ class stmt_call : public expression {
                             location.type_ref());
     }
 
-    // a callee that writes its parameter writes the variable of the caller:
-    // a read-only argument is rejected here, also in a function that is never
-    // called, and the function being parsed writes the argument itself
-    auto note_written_argument(toc& tc, const size_t index,
-                               const stmt_def_func& func) const -> void {
-
-        const expr_any& arg{args_[index]};
-
-        // expressions and unary operators pass a copied value
-        if (not arg.is_identifier() or arg.is_expression() or
-            not arg.get_unary_ops().is_empty()) {
-
-            return;
-        }
-
-        if (not func.writes_param(index)) {
-            return;
-        }
-
-        const ident_info info{tc.make_ident_info(arg)};
-
-        // constants pass their value
-        if (not info.is_var()) {
-            return;
-        }
-
-        if (info.is_read_only and not func.is_inlined()) {
-            throw compiler_exception{
-                arg.tok(), std::format("read-only '{}' cannot be passed to a "
-                                       "'mut' parameter{}",
-                                       arg.identifier(),
-                                       read_only_hint(info, info.root_id()))};
-        }
-
-        if (info.is_read_only) {
-            throw compiler_exception{
-                arg.tok(),
-                std::format("{} '{}' is read-only but '{}' writes it{}",
-                            describe_argument(index), arg.identifier(),
-                            func_name_, read_only_hint(info, info.root_id()))};
-        }
-
-        tc.note_write(info.root_id());
-    }
-
     // a method receiver is already in 'args_'
     auto parse_arguments(toc& tc, tokenizer& tz, const stmt_def_func& func)
         -> void {
@@ -992,7 +989,7 @@ class stmt_call : public expression {
 
         for (size_t i{}; i < args_.size(); ++i) {
             assert_argument_usable(tc, i, args_[i], params[i]);
-            note_written_argument(tc, i, func);
+            assert_argument_writable(tc, i, func);
         }
     }
 

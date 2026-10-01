@@ -220,6 +220,14 @@ generated assembly, easiest first
 --------------------------------------------------------------------------------
 other, easiest first
 --------------------------------------------------------------------------------
+[x] 'mut' methods like C++ const methods: 'func mut point.move(dx, dy)' and
+    'func noinline mut point.move(dx, dy)', 'self' is read-only without 'mut'
+    => a write to 'self' in a method without 'mut' is a compile error, so the
+       write tracking (note_write, written_names) is gone: 'writes_param' is
+       the declaration for inline and non-inline functions; a read-only
+       argument cannot be passed to a 'mut' parameter or be the receiver of a
+       'mut' method; an unwritten 'mut' parameter still needs a writable
+       argument; tests 670-674, goldens of 635, 646, 658 and 663-667 changed
 [ ] stmt_call: check arguments vs parameters in constructor instead of at
     compile
 [ ] implement "size_of" for fields
@@ -273,8 +281,8 @@ other, easiest first
     => an argument is that it is a magic string and should be dat
 [x] func f(p : point const) const is default. same as "func f(p : point)"
     => arguments are read-only by default, 'mut' before the name allows
-       writing it: 'func f(mut p point)'; the implicit 'self' of a method stays
-       writable; 'const' definitions are now 'let'
+       writing it: 'func f(mut p point)'; the 'self' of a method is writable
+       only in a 'mut' method; 'const' definitions are now 'let'
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] break: exit current block instead of just loop?
 [ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries

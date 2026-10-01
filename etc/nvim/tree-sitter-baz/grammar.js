@@ -71,12 +71,18 @@ module.exports = grammar({
       $.variable_declaration,
     ),
 
-    // func [noinline] [type.]identifier ( parameters ) return_annotation body
+    // func [noinline] [mut] [type.]identifier ( parameters ) return_annotation
+    // body, 'mut' lets a method write its 'self'
     function_definition: $ => seq(
       $.func_keyword,
       optional(field('modifier', $.noinline_keyword)),
+      optional(field('modifier', $.mut_keyword)),
       optional(seq(field('receiver_type', $.identifier), '.')),
-      field('name', choice($.identifier, alias($.noinline_keyword, $.identifier))),
+      field('name', choice(
+        $.identifier,
+        alias($.noinline_keyword, $.identifier),
+        alias($.mut_keyword, $.identifier),
+      )),
       '(',
       optional($.parameter_list),
       ')',

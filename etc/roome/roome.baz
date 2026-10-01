@@ -50,7 +50,7 @@ type printer {
 
 dat out = printer{}
 
-func printer.set_silenced(silenced bool) {
+func mut printer.set_silenced(silenced bool) {
     self.silenced = silenced
 }
 
@@ -86,12 +86,12 @@ func str.print() {
     out.print(self.array, self.len)
 }
 
-func str.add(s i8[]) {
+func mut str.add(s i8[]) {
     array_copy(s, self.array[self.len], array_length(s))
     self.len = self.len + array_length(s)
 }
 
-func str.input() {
+func mut str.input() {
     # the uart does not echo, so each byte is written back as it is read
     var nbytes = 0
     loop {
@@ -127,7 +127,7 @@ type id_list {
     len,
 }
 
-func id_list.delete_index(ix) {
+func mut id_list.delete_index(ix) {
     # array copy it away
     array_copy(
         self.array[ix + 1],
@@ -139,7 +139,7 @@ func id_list.delete_index(ix) {
     self.len = self.len - 1
 }
 
-func id_list.delete_element(id) {
+func mut id_list.delete_element(id) {
     var found_ix = self.len
     foo self.array, self.len {
         if e == id {
@@ -153,7 +153,7 @@ func id_list.delete_element(id) {
     self.delete_index(found_ix)
 }
 
-func id_list.add(ix) res { 
+func mut id_list.add(ix) res { 
     self.array[self.len] = ix
     res = self.len
     self.len = self.len + 1
@@ -177,7 +177,7 @@ func name.equals(nm name) res bool {
     res = arrays_equal(self.array, nm.array, self.len)
 }
 
-func str.add_name(nm name) {
+func mut str.add_name(nm name) {
     array_copy(nm.array, self.array[self.len], nm.len)
     self.len = self.len + nm.len
 }
@@ -201,7 +201,7 @@ type messages {
     len,
 }
 
-func messages.add(from, kind, text str) {
+func mut messages.add(from, kind, text str) {
     self.array[self.len] = { from, kind, text }
     self.len = self.len + 1
 }
@@ -244,7 +244,7 @@ func message.print() {
     self.text.print()
 }
 
-func entity.print_messages() {
+func mut entity.print_messages() {
     foo self.messages.array, self.messages.len {
         e.print()
         out.println()
@@ -253,7 +253,7 @@ func entity.print_messages() {
     self.messages.len = 0
 }
 
-func entities.add(nm name, room_id) entity_id {
+func mut entities.add(nm name, room_id) entity_id {
     self.array[self.len] = { nm, room_id } 
     entity_id = self.len
     self.len = self.len + 1
@@ -280,7 +280,7 @@ type objects {
     len,
 }
 
-func objects.add(name name) object_id {
+func mut objects.add(name name) object_id {
     self.array[self.len] = { name }
     object_id = self.len
     self.len = self.len + 1
@@ -347,7 +347,7 @@ func room.print(cur_entity) {
     }
 }
 
-func room.remove_entity(id) {
+func mut room.remove_entity(id) {
     # find entity
     var found_ix = self.entities.len
     let name = entities.array[id].name
@@ -388,25 +388,25 @@ type tokenizer {
     end,
 }
 
-func tokenizer.reset() {
+func mut tokenizer.reset() {
     self.start = 0
     self.end = 0
 }
 
-func tokenizer.input() {
+func mut tokenizer.input() {
     self.start = 0
     self.end = 0
     self.str.input()
 }
 
-func tokenizer.set_line(script i8[], line_start, count) {
+func mut tokenizer.set_line(script i8[], line_start, count) {
     self.start = 0
     self.end = 0
     array_copy(script[line_start], self.str.array, count)
     self.str.len = count
 }
 
-func tokenizer.skip_whitespace() {
+func mut tokenizer.skip_whitespace() {
     self.start = self.end
     loop {
         if self.start >= self.str.len {
@@ -419,7 +419,7 @@ func tokenizer.skip_whitespace() {
     self.end = self.start
 }
 
-func tokenizer.first() {
+func mut tokenizer.first() {
     self.skip_whitespace()
     self.end = self.start
     loop {
@@ -429,7 +429,7 @@ func tokenizer.first() {
     }
 }
 
-func tokenizer.next() {
+func mut tokenizer.next() {
     self.skip_whitespace()
     self.end = self.start
     loop {
@@ -473,7 +473,7 @@ func tokenizer.to_str() res str {
     array_copy(self.str.array[self.start], res.array, res.len)
 }
 
-func tokenizer.to_end() {
+func mut tokenizer.to_end() {
     self.start = self.end
     self.end = self.str.len
 }

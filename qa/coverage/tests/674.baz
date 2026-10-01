@@ -1,0 +1,52 @@
+# 'mut' before the receiver type lets a method write 'self', other methods
+# work on read-only receivers, a function can still be named 'mut'
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type point {
+    x,
+    y,
+}
+
+func mut point.move(dx, dy) {
+    self.x = self.x + dx
+    self.y = self.y + dy
+}
+
+func point.sum() res {
+    res = self.x + self.y
+}
+
+func noinline mut point.reset() {
+    self.x = 0
+    self.y = 0
+}
+
+func noinline point.product() res {
+    res = self.x * self.y
+}
+
+func mut(v) res {
+    res = v + 1
+}
+
+func read_only_sum(p point) res {
+    var product = p.product()
+    res = p.sum() + product
+}
+
+func main() {
+    var p = point{1, 2}
+    p.move(2, 3)
+    assert(1, p.sum() == 8)
+    assert(2, read_only_sum(p) == 23)
+
+    let q = point{4, 5}
+    assert(3, q.sum() == 9)
+    var q_product = q.product()
+    assert(4, q_product == 20)
+
+    p.reset()
+    assert(5, p.x == 0 and p.y == 0)
+    assert(6, mut(1) == 2)
+}

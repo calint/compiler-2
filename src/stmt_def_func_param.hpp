@@ -24,8 +24,8 @@ class stmt_def_func_param final : public statement {
     stmt_def_func_param(const toc& tc, tokenizer& tz)
         : stmt_def_func_param{tc, tz, tz.next_token()} {}
 
-    stmt_def_func_param(const token tk, const type& tp)
-        : statement{tk}, is_implicit_{true} {
+    stmt_def_func_param(const token tk, const type& tp, const bool is_read_only)
+        : statement{tk}, is_read_only_{is_read_only}, is_implicit_{true} {
 
         set_type(tp);
     }

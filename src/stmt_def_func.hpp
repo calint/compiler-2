@@ -4,7 +4,6 @@
 #include <optional>
 #include <ostream>
 #include <ranges>
-#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -17,6 +16,7 @@
 
 class stmt_def_func final : public statement {
     token noinline_tk_;
+    token mut_tk_;
     token name_tk_;
     token method_dot_tk_;
     token method_name_tk_;
@@ -28,9 +28,6 @@ class stmt_def_func final : public statement {
     std::optional<func_return_info> returns_;
     stmt_block code_;
 
-    // parameters and result the inlined body writes, known after parsing it
-    std::set<std::string, std::less<>> written_names_;
-
   public:
     stmt_def_func(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
@@ -38,6 +35,13 @@ class stmt_def_func final : public statement {
 
         if (name_tk_.is_text("noinline") and open_paren_tk_.is_empty()) {
             noinline_tk_ = name_tk_;
+            name_tk_ = tz.next_token();
+            open_paren_tk_ = tz.is_next_char_token('(');
+        }
+
+        // a function named 'mut' is followed by '('
+        if (name_tk_.is_text("mut") and open_paren_tk_.is_empty()) {
+            mut_tk_ = name_tk_;
             name_tk_ = tz.next_token();
             open_paren_tk_ = tz.is_next_char_token('(');
         }
@@ -64,6 +68,8 @@ class stmt_def_func final : public statement {
 
         parse_returns(tc, tz);
 
+        assert_mut_has_receiver();
+
         // known only after the result: a constructor builds 'self' instead
         if (is_method()) {
             add_self_param(tc);
@@ -85,8 +91,6 @@ class stmt_def_func final : public statement {
         add_signature_vars(tc, 0, false);
 
         code_ = {tc, tz, true};
-
-        written_names_ = tc.written_names();
 
         tc.exit_func(name());
     }
@@ -193,6 +197,7 @@ class stmt_def_func final : public statement {
             statement::source_to(os);
         }
         noinline_tk_.source_to(os);
+        mut_tk_.source_to(os);
         name_tk_.source_to(os);
         if (not method_dot_tk_.is_empty()) {
             method_dot_tk_.source_to(os);
@@ -222,13 +227,9 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // a non-inline body gets a pointer to every parameter declared 'mut'
+    // the receiver of a method is writable only when the method is 'mut'
     [[nodiscard]] auto writes_param(const size_t ix) const -> bool {
-        if (not is_inlined()) {
-            return not params_[ix].is_read_only();
-        }
-
-        return written_names_.contains(params_[ix].name());
+        return not params_[ix].is_read_only();
     }
 
   private:
@@ -243,8 +244,9 @@ class stmt_def_func final : public statement {
 
         params_.insert(
             params_.begin(),
-            stmt_def_func_param{
-                self_tk, tc.get_type_or_throw(name_tk_, name_tk_.text())});
+            stmt_def_func_param{self_tk,
+                                tc.get_type_or_throw(name_tk_, name_tk_.text()),
+                                mut_tk_.is_empty()});
     }
 
     // a non-inline body reaches the result and the arguments through pointer
@@ -284,6 +286,21 @@ class stmt_def_func final : public statement {
                        },
                        false);
         }
+    }
+
+    // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
+    auto assert_mut_has_receiver() const -> void {
+        if (mut_tk_.is_empty() or is_method()) {
+            return;
+        }
+
+        if (is_constructor()) {
+            throw compiler_exception{
+                mut_tk_, "a constructor builds 'self', 'mut' is not needed"};
+        }
+
+        throw compiler_exception{mut_tk_,
+                                 "'mut' requires a method 'type.name'"};
     }
 
     // 'name_tk_' is the receiver type, a method gets an implicit first
