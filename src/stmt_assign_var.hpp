@@ -28,6 +28,9 @@ class stmt_assign_var final : public statement {
 
         const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
+        // also in functions that are never called, which are not compiled
+        assert_not_read_only(dst_info);
+
         set_type(dst_info.type_ref());
 
         expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_count};
@@ -74,12 +77,9 @@ class stmt_assign_var final : public statement {
                                    var_dst_info.const_value)};
         }
 
-        // e.g. the counter 'i' of 'foo', also when reached through an alias
-        if (var_dst_info.is_read_only) {
-            throw compiler_exception{
-                tok(), std::format("cannot assign to read-only '{}'",
-                                   stmt_ident_.identifier())};
-        }
+        // e.g. the counter 'i' of 'foo', also when reached through an alias,
+        // which only exists once a call is expanded
+        assert_not_read_only(var_dst_info);
 
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
@@ -124,4 +124,24 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
+
+  private:
+    // e.g. the counter 'i' of 'foo', a 'const' parameter or a 'let'
+    auto assert_not_read_only(const ident_info& dst_info) const -> void {
+        if (not dst_info.is_read_only) {
+            return;
+        }
+
+        if (dst_info.is_let) {
+            throw compiler_exception{
+                tok(), std::format("cannot assign to read-only '{}', '{}' is "
+                                   "declared with 'let'",
+                                   stmt_ident_.identifier(),
+                                   stmt_ident_.first_token().text())};
+        }
+
+        throw compiler_exception{tok(),
+                                 std::format("cannot assign to read-only '{}'",
+                                             stmt_ident_.identifier())};
+    }
 };

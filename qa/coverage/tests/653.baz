@@ -1,0 +1,11 @@
+# a field of a 'let' cannot be assigned
+
+type point {
+    x,
+    y,
+}
+
+func main() {
+    let p = point{1, 2}
+    p.x = 3
+}

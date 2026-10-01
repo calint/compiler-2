@@ -101,8 +101,10 @@ module.exports = grammar({
 
     parameter_list: $ => sep1($.parameter, ','),
 
-    // identifier type_name (type is optional)
+    // [const] identifier type_name (type is optional), 'const' makes the
+    // parameter read-only
     parameter: $ => seq(
+      optional(field('modifier', $.const_keyword)),
       field('name', $.identifier),
       optional(field('type', $._parameter_type)),
     ),
@@ -172,9 +174,10 @@ module.exports = grammar({
       field('initializer', $._expression)
     ),
 
-    // var identifier = expression, the initializer gives the type
+    // var identifier = expression, the initializer gives the type; 'let' is a
+    // 'var' that is read-only after its initializer
     variable_declaration: $ => seq(
-      $.var_keyword,
+      choice($.var_keyword, $.let_keyword),
       field('destination', $.identifier),
       '=',
       field('initializer', $._expression)
@@ -463,6 +466,7 @@ module.exports = grammar({
 
     // Statement Keywords
     var_keyword: $ => 'var',
+    let_keyword: $ => 'let',
     return_keyword: $ => 'return',
     if_keyword: $ => 'if',
     loop_keyword: $ => 'loop',

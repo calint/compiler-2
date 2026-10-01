@@ -219,6 +219,10 @@ class frame final {
         return name_ == name;
     }
 
+    auto make_var_read_only(const std::string_view name) -> void {
+        vars_.get_ref(name).is_read_only = true;
+    }
+
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
     [[nodiscard]] auto peak_storage_size_bytes() const -> size_t {
@@ -864,6 +868,12 @@ class toc final {
         return info;
     }
 
+    // the variable declared last in this scope, e.g. a 'let' once its
+    // initializer has written it
+    auto make_var_read_only(const std::string_view name) -> void {
+        frames_.back().make_var_read_only(name);
+    }
+
     // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
         const size_t frame_alignment{machine_.get().address_size_bytes()};
@@ -1273,6 +1283,7 @@ class toc final {
                                    machine_.get().variables_base_register())};
 
         ii.is_read_only = var.is_read_only;
+        ii.is_let = var.is_let;
 
         lea_path.resize(id.path().size());
         // note: pad with empty for the remaining elements in the id path
@@ -1330,15 +1341,18 @@ class toc final {
         // one 'const' parameter in the alias chain makes the data read-only
         bool is_read_only{};
 
+        // the name is then not the one declared with 'let'
+        bool is_alias_followed{};
+
         for (const frame& cur_frame : frames_ | std::views::reverse) {
 
             // does this frame contain the variable?
             if (cur_frame.has_var(id.base())) {
-                return as_read_only_if(
-                    is_read_only,
-                    as_element_if(is_element, make_ident_info_from_frame(
-                                                  cur_frame, src_loc_tk, ident,
-                                                  id, std::move(lea_path))));
+                ident_info info{make_ident_info_from_frame(
+                    cur_frame, src_loc_tk, ident, id, std::move(lea_path))};
+
+                return as_seen_through_aliases(std::move(info), is_read_only,
+                                               is_element, is_alias_followed);
             }
 
             // from the root frame of a function aliases are followed to the
@@ -1350,11 +1364,11 @@ class toc final {
             if (not cur_frame.has_alias(id.base())) {
                 lea_path.emplace_back();
 
-                return as_read_only_if(
-                    is_read_only,
-                    as_element_if(is_element, make_ident_info_from_frame(
-                                                  cur_frame, src_loc_tk, ident,
-                                                  id, std::move(lea_path))));
+                ident_info info{make_ident_info_from_frame(
+                    cur_frame, src_loc_tk, ident, id, std::move(lea_path))};
+
+                return as_seen_through_aliases(std::move(info), is_read_only,
+                                               is_element, is_alias_followed);
             }
 
             // this is an alias, continue resolving until it is a variable,
@@ -1363,6 +1377,7 @@ class toc final {
             const alias_info& alias{cur_frame.get_alias(id.base())};
 
             is_read_only = is_read_only or alias.is_read_only;
+            is_alias_followed = true;
 
             if (alias.register_operand.is_register() and
                 id.path().size() == 1) {
@@ -1427,6 +1442,15 @@ class toc final {
     // statics
     //
 
+    // an alias names the data of a 'let' without being declared with it
+    [[nodiscard]] static auto as_declared_if(const bool is_declared,
+                                             ident_info info) -> ident_info {
+
+        info.is_let = info.is_let and is_declared;
+
+        return info;
+    }
+
     [[nodiscard]] static auto as_element_if(const bool is_element,
                                             ident_info info) -> ident_info {
 
@@ -1445,6 +1469,18 @@ class toc final {
 
         info.is_read_only = info.is_read_only or is_read_only;
         return info;
+    }
+
+    // what the aliases followed to the variable changed about its name
+    [[nodiscard]] static auto
+    as_seen_through_aliases(ident_info info, const bool is_read_only,
+                            const bool is_element, const bool is_alias_followed)
+        -> ident_info {
+
+        info = as_declared_if(not is_alias_followed, std::move(info));
+        info = as_element_if(is_element, std::move(info));
+
+        return as_read_only_if(is_read_only, std::move(info));
     }
 
     // makes room in 'lea_path' for the elements 'target_count' adds

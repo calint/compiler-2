@@ -1,0 +1,8 @@
+# a 'const' parameter cannot be assigned in a function that is never called
+
+func unused(const a) {
+    a = 2
+}
+
+func main() {
+}

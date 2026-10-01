@@ -1,0 +1,7 @@
+# a file level 'let' cannot be assigned in a function
+
+let limit = 10
+
+func main() {
+    limit = 11
+}

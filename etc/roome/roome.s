@@ -1313,7 +1313,7 @@ main:
                                 j .Lbaz_exit
                                 # [498:28] free named register a0
                             if.498.5.945.9.1005.13.1016.5.end:
-                            # [501:5] var cur_room_id = entities.array[cur_entity].room_id
+                            # [501:5] let cur_room_id = entities.array[cur_entity].room_id
                             # [501:9] cur_room_id: i32 (4 B @ [s0 + 198580])
                             # [501:9] cur_room_id = entities.array[cur_entity].room_id
                             # [501:23] entities.array[cur_entity].room_id
@@ -1325,7 +1325,7 @@ main:
                             sw t0, 1972(t1)
                             # [501:23] free scratch register t1
                             # [501:23] free scratch register t0
-                            # [503:5] var links_len = rooms.array[cur_room_id].links_len
+                            # [503:5] let links_len = rooms.array[cur_room_id].links_len
                             # [503:9] links_len: i32 (4 B @ [s0 + 198584])
                             # [503:9] links_len = rooms.array[cur_room_id].links_len
                             # [503:21] rooms.array[cur_room_id].links_len
@@ -1735,7 +1735,7 @@ main:
                                 # [514:9] return
                                 j func.action_go.945.9.1005.13.1016.5.end
                             if.512.5.945.9.1005.13.1016.5.end:
-                            # [518:5] var to_room_id = rooms.array[cur_room_id].links[found_ix].to
+                            # [518:5] let to_room_id = rooms.array[cur_room_id].links[found_ix].to
                             # [518:9] to_room_id: i32 (4 B @ [s0 + 198592])
                             # [518:9] to_room_id = rooms.array[cur_room_id].links[found_ix].to
                             # [518:22] rooms.array[cur_room_id].links[found_ix].to
@@ -1814,7 +1814,7 @@ main:
                             lw t0, 1984(t0)
                             sw t0, 948(s0)
                             # [519:42] free scratch register t0
-                            # [521:5] var discarded = rooms.array[to_room_id].entities.add(cur_entity)
+                            # [521:5] let discarded = rooms.array[to_room_id].entities.add(cur_entity)
                             # [521:9] discarded: i32 (4 B @ [s0 + 198596])
                             # [521:9] discarded = rooms.array[to_room_id].entities.add(cur_entity)
                             # [521:54] discarded = rooms.array[to_room_id].entities.add(cur_entity)
@@ -2732,7 +2732,7 @@ main:
                                 # [533:5] alias from -> 0
                                 # [533:5] alias kind -> 2
                                 # [533:5] alias text -> went_text
-                                # [475:5] var room_entities_len = rooms.array[room_id].entities.len
+                                # [475:5] let room_entities_len = rooms.array[room_id].entities.len
                                 # [475:9] room_entities_len: i32 (4 B @ [s0 + 198732])
                                 # [475:9] room_entities_len = rooms.array[room_id].entities.len
                                 # [475:29] rooms.array[room_id].entities.len
@@ -3032,7 +3032,7 @@ main:
                                 # [476:5] free scratch register t1
                                 # [476:5] free scratch register t0
                             func.notify_room.533.5.945.9.1005.13.1016.5.end:
-                            # [535:5] var to_links_len = rooms.array[to_room_id].links_len
+                            # [535:5] let to_links_len = rooms.array[to_room_id].links_len
                             # [535:9] to_links_len: i32 (4 B @ [s0 + 198732])
                             # [535:9] to_links_len = rooms.array[to_room_id].links_len
                             # [535:24] rooms.array[to_room_id].links_len
@@ -3528,7 +3528,7 @@ main:
                                 # [555:5] alias from -> 0
                                 # [555:5] alias kind -> 2
                                 # [555:5] alias text -> arrived_text
-                                # [475:5] var room_entities_len = rooms.array[room_id].entities.len
+                                # [475:5] let room_entities_len = rooms.array[room_id].entities.len
                                 # [475:9] room_entities_len: i32 (4 B @ [s0 + 198872])
                                 # [475:9] room_entities_len = rooms.array[room_id].entities.len
                                 # [475:29] rooms.array[room_id].entities.len
@@ -4299,7 +4299,7 @@ main:
                                 # [585:9] return
                                 j func.action_new_room.948.9.1005.13.1016.5.end
                             if.583.5.948.9.1005.13.1016.5.end:
-                            # [588:5] var cur_room_id = entities.array[cur_entity].room_id
+                            # [588:5] let cur_room_id = entities.array[cur_entity].room_id
                             # [588:9] cur_room_id: i32 (4 B @ [s0 + 198580])
                             # [588:9] cur_room_id = entities.array[cur_entity].room_id
                             # [588:23] entities.array[cur_entity].room_id
@@ -4311,7 +4311,7 @@ main:
                             sw t0, 1972(t1)
                             # [588:23] free scratch register t1
                             # [588:23] free scratch register t0
-                            # [590:5] var cur_room_next_link_id = rooms.array[cur_room_id].links_len
+                            # [590:5] let cur_room_next_link_id = rooms.array[cur_room_id].links_len
                             # [590:9] cur_room_next_link_id: i32 (4 B @ [s0 + 198584])
                             # [590:9] cur_room_next_link_id = rooms.array[cur_room_id].links_len
                             # [590:33] rooms.array[cur_room_id].links_len
@@ -4358,7 +4358,7 @@ main:
                             # [590:33] free scratch register t2
                             # [590:33] free scratch register t1
                             # [590:33] free scratch register t0
-                            # [592:5] var link_name_id = find_link_name_or_make(tz)
+                            # [592:5] let link_name_id = find_link_name_or_make(tz)
                             # [592:9] link_name_id: i32 (4 B @ [s0 + 198588])
                             # [592:9] link_name_id = find_link_name_or_make(tz)
                             # [592:24] link_name_id = find_link_name_or_make(tz)
@@ -5089,7 +5089,7 @@ main:
                                 # [598:9] return
                                 j func.action_new_room.948.9.1005.13.1016.5.end
                             if.596.5.948.9.1005.13.1016.5.end:
-                            # [601:5] var link_name_back_id = find_link_name_or_make(tz)
+                            # [601:5] let link_name_back_id = find_link_name_or_make(tz)
                             # [601:9] link_name_back_id: i32 (4 B @ [s0 + 198592])
                             # [601:9] link_name_back_id = find_link_name_or_make(tz)
                             # [601:29] link_name_back_id = find_link_name_or_make(tz)
@@ -8097,7 +8097,7 @@ main:
                                 # [668:9] return
                                 j func.action_new_entity.960.9.1005.13.1016.5.end
                             if.666.5.960.9.1005.13.1016.5.end:
-                            # [671:5] var name = tz.to_name()
+                            # [671:5] let name = tz.to_name()
                             # [671:9] name: name (20 B @ [s0 + 198580])
                             # [671:9] name = tz.to_name()
                             # [671:19] tz.to_name()
@@ -8222,7 +8222,7 @@ main:
                                 # [460:5] free scratch register t1
                                 # [460:5] free scratch register t0
                             func.tokenizer.to_name.671.19.960.9.1005.13.1016.5.end:
-                            # [673:5] var room_id = entities.array[cur_entity].room_id
+                            # [673:5] let room_id = entities.array[cur_entity].room_id
                             # [673:9] room_id: i32 (4 B @ [s0 + 198600])
                             # [673:9] room_id = entities.array[cur_entity].room_id
                             # [673:19] entities.array[cur_entity].room_id
@@ -8234,7 +8234,7 @@ main:
                             sw t0, 1992(t1)
                             # [673:19] free scratch register t1
                             # [673:19] free scratch register t0
-                            # [675:5] var entity_id = entities.add(name, room_id)
+                            # [675:5] let entity_id = entities.add(name, room_id)
                             # [675:9] entity_id: i32 (4 B @ [s0 + 198604])
                             # [675:9] entity_id = entities.add(name, room_id)
                             # [675:30] entity_id = entities.add(name, room_id)
@@ -8352,7 +8352,7 @@ main:
                                 # [257:16] free scratch register t1
                                 # [257:16] free scratch register t0
                             func.entities.add.675.30.960.9.1005.13.1016.5.end:
-                            # [677:5] var discarded = rooms.array[room_id].entities.add(entity_id)
+                            # [677:5] let discarded = rooms.array[room_id].entities.add(entity_id)
                             # [677:9] discarded: i32 (4 B @ [s0 + 198608])
                             # [677:9] discarded = rooms.array[room_id].entities.add(entity_id)
                             # [677:51] discarded = rooms.array[room_id].entities.add(entity_id)
@@ -9002,7 +9002,7 @@ main:
                                 # [689:9] return
                                 j func.action_new_object.963.9.1005.13.1016.5.end
                             if.687.5.963.9.1005.13.1016.5.end:
-                            # [692:5] var name = tz.to_name()
+                            # [692:5] let name = tz.to_name()
                             # [692:9] name: name (20 B @ [s0 + 198580])
                             # [692:9] name = tz.to_name()
                             # [692:19] tz.to_name()
@@ -9127,7 +9127,7 @@ main:
                                 # [460:5] free scratch register t1
                                 # [460:5] free scratch register t0
                             func.tokenizer.to_name.692.19.963.9.1005.13.1016.5.end:
-                            # [694:5] var object_id = objects.add(name)
+                            # [694:5] let object_id = objects.add(name)
                             # [694:9] object_id: i32 (4 B @ [s0 + 198600])
                             # [694:9] object_id = objects.add(name)
                             # [694:29] object_id = objects.add(name)
@@ -9219,7 +9219,7 @@ main:
                                 # [284:16] free scratch register t1
                                 # [284:16] free scratch register t0
                             func.objects.add.694.29.963.9.1005.13.1016.5.end:
-                            # [696:5] var discarded = entities.array[cur_entity].objects.add(object_id)
+                            # [696:5] let discarded = entities.array[cur_entity].objects.add(object_id)
                             # [696:9] discarded: i32 (4 B @ [s0 + 198604])
                             # [696:9] discarded = entities.array[cur_entity].objects.add(object_id)
                             # [696:56] discarded = entities.array[cur_entity].objects.add(object_id)
@@ -9509,7 +9509,7 @@ main:
                         func.action_inventory.966.9.1005.13.1016.5:
                             # [966:9] alias cur_entity -> 0
                             # [966:9] alias tz -> tz
-                            # [705:5] var len = entities.array[cur_entity].objects.len
+                            # [705:5] let len = entities.array[cur_entity].objects.len
                             # [705:9] len: i32 (4 B @ [s0 + 198580])
                             # [705:9] len = entities.array[cur_entity].objects.len
                             # [705:15] entities.array[cur_entity].objects.len
@@ -10492,7 +10492,7 @@ main:
                                 # [737:9] return
                                 j func.action_drop.969.9.1005.13.1016.5.end
                             if.735.5.969.9.1005.13.1016.5.end:
-                            # [741:5] var len = entities.array[cur_entity].objects.len
+                            # [741:5] let len = entities.array[cur_entity].objects.len
                             # [741:9] len: i32 (4 B @ [s0 + 198580])
                             # [741:9] len = entities.array[cur_entity].objects.len
                             # [741:15] entities.array[cur_entity].objects.len
@@ -10832,7 +10832,7 @@ main:
                                 # [752:9] return
                                 j func.action_drop.969.9.1005.13.1016.5.end
                             if.750.5.969.9.1005.13.1016.5.end:
-                            # [756:5] var object_id = entities.array[cur_entity].objects.array[found_ix]
+                            # [756:5] let object_id = entities.array[cur_entity].objects.array[found_ix]
                             # [756:9] object_id: i32 (4 B @ [s0 + 198588])
                             # [756:9] object_id = entities.array[cur_entity].objects.array[found_ix]
                             # [756:21] entities.array[cur_entity].objects.array[found_ix]
@@ -10867,7 +10867,7 @@ main:
                             # [756:21] free scratch register t2
                             # [756:21] free scratch register t1
                             # [756:21] free scratch register t0
-                            # [757:5] var room_id = entities.array[cur_entity].room_id
+                            # [757:5] let room_id = entities.array[cur_entity].room_id
                             # [757:9] room_id: i32 (4 B @ [s0 + 198592])
                             # [757:9] room_id = entities.array[cur_entity].room_id
                             # [757:19] entities.array[cur_entity].room_id
@@ -10879,7 +10879,7 @@ main:
                             sw t0, 1984(t1)
                             # [757:19] free scratch register t1
                             # [757:19] free scratch register t0
-                            # [758:5] var discarded = rooms.array[room_id].objects.add(object_id)
+                            # [758:5] let discarded = rooms.array[room_id].objects.add(object_id)
                             # [758:9] discarded: i32 (4 B @ [s0 + 198596])
                             # [758:9] discarded = rooms.array[room_id].objects.add(object_id)
                             # [758:50] discarded = rooms.array[room_id].objects.add(object_id)
@@ -11834,7 +11834,7 @@ main:
                                 # [777:9] return
                                 j func.action_give.972.9.1005.13.1016.5.end
                             if.775.5.972.9.1005.13.1016.5.end:
-                            # [781:5] var len = entities.array[cur_entity].objects.len
+                            # [781:5] let len = entities.array[cur_entity].objects.len
                             # [781:9] len: i32 (4 B @ [s0 + 198580])
                             # [781:9] len = entities.array[cur_entity].objects.len
                             # [781:15] entities.array[cur_entity].objects.len
@@ -12174,7 +12174,7 @@ main:
                                 # [792:9] return
                                 j func.action_give.972.9.1005.13.1016.5.end
                             if.790.5.972.9.1005.13.1016.5.end:
-                            # [795:5] var object_id = entities.array[cur_entity].objects.array[found_ix]
+                            # [795:5] let object_id = entities.array[cur_entity].objects.array[found_ix]
                             # [795:9] object_id: i32 (4 B @ [s0 + 198588])
                             # [795:9] object_id = entities.array[cur_entity].objects.array[found_ix]
                             # [795:21] entities.array[cur_entity].objects.array[found_ix]
@@ -12209,7 +12209,7 @@ main:
                             # [795:21] free scratch register t2
                             # [795:21] free scratch register t1
                             # [795:21] free scratch register t0
-                            # [796:5] var object_name = objects.array[object_id].name
+                            # [796:5] let object_name = objects.array[object_id].name
                             # [796:9] object_name: name (20 B @ [s0 + 198592])
                             # [796:9] object_name = objects.array[object_id].name
                             # [796:37] allocate scratch register -> t0
@@ -12586,7 +12586,7 @@ main:
                                 # [802:9] return
                                 j func.action_give.972.9.1005.13.1016.5.end
                             if.800.5.972.9.1005.13.1016.5.end:
-                            # [806:5] var room_id = entities.array[cur_entity].room_id
+                            # [806:5] let room_id = entities.array[cur_entity].room_id
                             # [806:9] room_id: i32 (4 B @ [s0 + 198612])
                             # [806:9] room_id = entities.array[cur_entity].room_id
                             # [806:19] entities.array[cur_entity].room_id
@@ -12598,7 +12598,7 @@ main:
                             sw t0, 2004(t1)
                             # [806:19] free scratch register t1
                             # [806:19] free scratch register t0
-                            # [807:5] var room_entities_len = rooms.array[room_id].entities.len
+                            # [807:5] let room_entities_len = rooms.array[room_id].entities.len
                             # [807:9] room_entities_len: i32 (4 B @ [s0 + 198616])
                             # [807:9] room_entities_len = rooms.array[room_id].entities.len
                             # [807:29] rooms.array[room_id].entities.len
@@ -13110,7 +13110,7 @@ main:
                                 # [820:9] return
                                 j func.action_give.972.9.1005.13.1016.5.end
                             if.817.5.972.9.1005.13.1016.5.end:
-                            # [824:5] var discarded = entities.array[to_entity].objects.add(object_id)
+                            # [824:5] let discarded = entities.array[to_entity].objects.add(object_id)
                             # [824:9] discarded: i32 (4 B @ [s0 + 198624])
                             # [824:9] discarded = entities.array[to_entity].objects.add(object_id)
                             # [824:55] discarded = entities.array[to_entity].objects.add(object_id)
@@ -14206,7 +14206,7 @@ main:
                                 # [839:5] alias from -> 0
                                 # [839:5] alias kind -> 2
                                 # [839:5] alias text -> gave_text
-                                # [475:5] var room_entities_len = rooms.array[room_id].entities.len
+                                # [475:5] let room_entities_len = rooms.array[room_id].entities.len
                                 # [475:9] room_entities_len: i32 (4 B @ [s0 + 198760])
                                 # [475:9] room_entities_len = rooms.array[room_id].entities.len
                                 # [475:29] rooms.array[room_id].entities.len
@@ -15837,7 +15837,7 @@ main:
                                 # [882:9] return
                                 j func.action_tell.975.9.1005.13.1016.5.end
                             if.880.5.975.9.1005.13.1016.5.end:
-                            # [885:5] var text = tz.to_str()
+                            # [885:5] let text = tz.to_str()
                             # [885:9] text: str (132 B @ [s0 + 198584])
                             # [885:9] text = tz.to_str()
                             # [885:19] tz.to_str()
@@ -16498,7 +16498,7 @@ main:
                                 # [899:9] return
                                 j func.action_say.978.9.1005.13.1016.5.end
                             if.897.5.978.9.1005.13.1016.5.end:
-                            # [902:5] var text = tz.to_str()
+                            # [902:5] let text = tz.to_str()
                             # [902:9] text: str (132 B @ [s0 + 198580])
                             # [902:9] text = tz.to_str()
                             # [902:19] tz.to_str()
@@ -16640,7 +16640,7 @@ main:
                                 # [904:5] alias from -> 0
                                 # [904:5] alias kind -> 1
                                 # [904:5] alias text -> text
-                                # [475:5] var room_entities_len = rooms.array[room_id].entities.len
+                                # [475:5] let room_entities_len = rooms.array[room_id].entities.len
                                 # [475:9] room_entities_len: i32 (4 B @ [s0 + 198712])
                                 # [475:9] room_entities_len = rooms.array[room_id].entities.len
                                 # [475:29] rooms.array[room_id].entities.len
@@ -21456,7 +21456,7 @@ main:
                         j .Lbaz_exit
                         # [498:28] free named register a0
                     if.498.5.945.9.1039.9.end:
-                    # [501:5] var cur_room_id = entities.array[cur_entity].room_id
+                    # [501:5] let cur_room_id = entities.array[cur_entity].room_id
                     # [501:9] cur_room_id: i32 (4 B @ [s0 + 198576])
                     # [501:9] cur_room_id = entities.array[cur_entity].room_id
                     # [501:23] entities.array[cur_entity].room_id
@@ -21499,7 +21499,7 @@ main:
                     # [501:23] free scratch register t2
                     # [501:23] free scratch register t1
                     # [501:23] free scratch register t0
-                    # [503:5] var links_len = rooms.array[cur_room_id].links_len
+                    # [503:5] let links_len = rooms.array[cur_room_id].links_len
                     # [503:9] links_len: i32 (4 B @ [s0 + 198580])
                     # [503:9] links_len = rooms.array[cur_room_id].links_len
                     # [503:21] rooms.array[cur_room_id].links_len
@@ -21909,7 +21909,7 @@ main:
                         # [514:9] return
                         j func.action_go.945.9.1039.9.end
                     if.512.5.945.9.1039.9.end:
-                    # [518:5] var to_room_id = rooms.array[cur_room_id].links[found_ix].to
+                    # [518:5] let to_room_id = rooms.array[cur_room_id].links[found_ix].to
                     # [518:9] to_room_id: i32 (4 B @ [s0 + 198588])
                     # [518:9] to_room_id = rooms.array[cur_room_id].links[found_ix].to
                     # [518:22] rooms.array[cur_room_id].links[found_ix].to
@@ -22021,7 +22021,7 @@ main:
                     # [519:42] free scratch register t2
                     # [519:42] free scratch register t1
                     # [519:5] free scratch register t0
-                    # [521:5] var discarded = rooms.array[to_room_id].entities.add(cur_entity)
+                    # [521:5] let discarded = rooms.array[to_room_id].entities.add(cur_entity)
                     # [521:9] discarded: i32 (4 B @ [s0 + 198592])
                     # [521:9] discarded = rooms.array[to_room_id].entities.add(cur_entity)
                     # [521:54] discarded = rooms.array[to_room_id].entities.add(cur_entity)
@@ -22949,7 +22949,7 @@ main:
                         # [533:5] alias from -> cur_entity
                         # [533:5] alias kind -> 2
                         # [533:5] alias text -> went_text
-                        # [475:5] var room_entities_len = rooms.array[room_id].entities.len
+                        # [475:5] let room_entities_len = rooms.array[room_id].entities.len
                         # [475:9] room_entities_len: i32 (4 B @ [s0 + 198728])
                         # [475:9] room_entities_len = rooms.array[room_id].entities.len
                         # [475:29] rooms.array[room_id].entities.len
@@ -23259,7 +23259,7 @@ main:
                         # [476:5] free scratch register t1
                         # [476:5] free scratch register t0
                     func.notify_room.533.5.945.9.1039.9.end:
-                    # [535:5] var to_links_len = rooms.array[to_room_id].links_len
+                    # [535:5] let to_links_len = rooms.array[to_room_id].links_len
                     # [535:9] to_links_len: i32 (4 B @ [s0 + 198728])
                     # [535:9] to_links_len = rooms.array[to_room_id].links_len
                     # [535:24] rooms.array[to_room_id].links_len
@@ -23755,7 +23755,7 @@ main:
                         # [555:5] alias from -> cur_entity
                         # [555:5] alias kind -> 2
                         # [555:5] alias text -> arrived_text
-                        # [475:5] var room_entities_len = rooms.array[room_id].entities.len
+                        # [475:5] let room_entities_len = rooms.array[room_id].entities.len
                         # [475:9] room_entities_len: i32 (4 B @ [s0 + 198868])
                         # [475:9] room_entities_len = rooms.array[room_id].entities.len
                         # [475:29] rooms.array[room_id].entities.len
@@ -24536,7 +24536,7 @@ main:
                         # [585:9] return
                         j func.action_new_room.948.9.1039.9.end
                     if.583.5.948.9.1039.9.end:
-                    # [588:5] var cur_room_id = entities.array[cur_entity].room_id
+                    # [588:5] let cur_room_id = entities.array[cur_entity].room_id
                     # [588:9] cur_room_id: i32 (4 B @ [s0 + 198576])
                     # [588:9] cur_room_id = entities.array[cur_entity].room_id
                     # [588:23] entities.array[cur_entity].room_id
@@ -24579,7 +24579,7 @@ main:
                     # [588:23] free scratch register t2
                     # [588:23] free scratch register t1
                     # [588:23] free scratch register t0
-                    # [590:5] var cur_room_next_link_id = rooms.array[cur_room_id].links_len
+                    # [590:5] let cur_room_next_link_id = rooms.array[cur_room_id].links_len
                     # [590:9] cur_room_next_link_id: i32 (4 B @ [s0 + 198580])
                     # [590:9] cur_room_next_link_id = rooms.array[cur_room_id].links_len
                     # [590:33] rooms.array[cur_room_id].links_len
@@ -24626,7 +24626,7 @@ main:
                     # [590:33] free scratch register t2
                     # [590:33] free scratch register t1
                     # [590:33] free scratch register t0
-                    # [592:5] var link_name_id = find_link_name_or_make(tz)
+                    # [592:5] let link_name_id = find_link_name_or_make(tz)
                     # [592:9] link_name_id: i32 (4 B @ [s0 + 198584])
                     # [592:9] link_name_id = find_link_name_or_make(tz)
                     # [592:24] link_name_id = find_link_name_or_make(tz)
@@ -25357,7 +25357,7 @@ main:
                         # [598:9] return
                         j func.action_new_room.948.9.1039.9.end
                     if.596.5.948.9.1039.9.end:
-                    # [601:5] var link_name_back_id = find_link_name_or_make(tz)
+                    # [601:5] let link_name_back_id = find_link_name_or_make(tz)
                     # [601:9] link_name_back_id: i32 (4 B @ [s0 + 198588])
                     # [601:9] link_name_back_id = find_link_name_or_make(tz)
                     # [601:29] link_name_back_id = find_link_name_or_make(tz)
@@ -28458,7 +28458,7 @@ main:
                         # [668:9] return
                         j func.action_new_entity.960.9.1039.9.end
                     if.666.5.960.9.1039.9.end:
-                    # [671:5] var name = tz.to_name()
+                    # [671:5] let name = tz.to_name()
                     # [671:9] name: name (20 B @ [s0 + 198576])
                     # [671:9] name = tz.to_name()
                     # [671:19] tz.to_name()
@@ -28583,7 +28583,7 @@ main:
                         # [460:5] free scratch register t1
                         # [460:5] free scratch register t0
                     func.tokenizer.to_name.671.19.960.9.1039.9.end:
-                    # [673:5] var room_id = entities.array[cur_entity].room_id
+                    # [673:5] let room_id = entities.array[cur_entity].room_id
                     # [673:9] room_id: i32 (4 B @ [s0 + 198596])
                     # [673:9] room_id = entities.array[cur_entity].room_id
                     # [673:19] entities.array[cur_entity].room_id
@@ -28626,7 +28626,7 @@ main:
                     # [673:19] free scratch register t2
                     # [673:19] free scratch register t1
                     # [673:19] free scratch register t0
-                    # [675:5] var entity_id = entities.add(name, room_id)
+                    # [675:5] let entity_id = entities.add(name, room_id)
                     # [675:9] entity_id: i32 (4 B @ [s0 + 198600])
                     # [675:9] entity_id = entities.add(name, room_id)
                     # [675:30] entity_id = entities.add(name, room_id)
@@ -28744,7 +28744,7 @@ main:
                         # [257:16] free scratch register t1
                         # [257:16] free scratch register t0
                     func.entities.add.675.30.960.9.1039.9.end:
-                    # [677:5] var discarded = rooms.array[room_id].entities.add(entity_id)
+                    # [677:5] let discarded = rooms.array[room_id].entities.add(entity_id)
                     # [677:9] discarded: i32 (4 B @ [s0 + 198604])
                     # [677:9] discarded = rooms.array[room_id].entities.add(entity_id)
                     # [677:51] discarded = rooms.array[room_id].entities.add(entity_id)
@@ -29394,7 +29394,7 @@ main:
                         # [689:9] return
                         j func.action_new_object.963.9.1039.9.end
                     if.687.5.963.9.1039.9.end:
-                    # [692:5] var name = tz.to_name()
+                    # [692:5] let name = tz.to_name()
                     # [692:9] name: name (20 B @ [s0 + 198576])
                     # [692:9] name = tz.to_name()
                     # [692:19] tz.to_name()
@@ -29519,7 +29519,7 @@ main:
                         # [460:5] free scratch register t1
                         # [460:5] free scratch register t0
                     func.tokenizer.to_name.692.19.963.9.1039.9.end:
-                    # [694:5] var object_id = objects.add(name)
+                    # [694:5] let object_id = objects.add(name)
                     # [694:9] object_id: i32 (4 B @ [s0 + 198596])
                     # [694:9] object_id = objects.add(name)
                     # [694:29] object_id = objects.add(name)
@@ -29611,7 +29611,7 @@ main:
                         # [284:16] free scratch register t1
                         # [284:16] free scratch register t0
                     func.objects.add.694.29.963.9.1039.9.end:
-                    # [696:5] var discarded = entities.array[cur_entity].objects.add(object_id)
+                    # [696:5] let discarded = entities.array[cur_entity].objects.add(object_id)
                     # [696:9] discarded: i32 (4 B @ [s0 + 198600])
                     # [696:9] discarded = entities.array[cur_entity].objects.add(object_id)
                     # [696:56] discarded = entities.array[cur_entity].objects.add(object_id)
@@ -29935,7 +29935,7 @@ main:
                 func.action_inventory.966.9.1039.9:
                     # [966:9] alias cur_entity -> cur_entity
                     # [966:9] alias tz -> tz
-                    # [705:5] var len = entities.array[cur_entity].objects.len
+                    # [705:5] let len = entities.array[cur_entity].objects.len
                     # [705:9] len: i32 (4 B @ [s0 + 198576])
                     # [705:9] len = entities.array[cur_entity].objects.len
                     # [705:15] entities.array[cur_entity].objects.len
@@ -30980,7 +30980,7 @@ main:
                         # [737:9] return
                         j func.action_drop.969.9.1039.9.end
                     if.735.5.969.9.1039.9.end:
-                    # [741:5] var len = entities.array[cur_entity].objects.len
+                    # [741:5] let len = entities.array[cur_entity].objects.len
                     # [741:9] len: i32 (4 B @ [s0 + 198576])
                     # [741:9] len = entities.array[cur_entity].objects.len
                     # [741:15] entities.array[cur_entity].objects.len
@@ -31382,7 +31382,7 @@ main:
                         # [752:9] return
                         j func.action_drop.969.9.1039.9.end
                     if.750.5.969.9.1039.9.end:
-                    # [756:5] var object_id = entities.array[cur_entity].objects.array[found_ix]
+                    # [756:5] let object_id = entities.array[cur_entity].objects.array[found_ix]
                     # [756:9] object_id: i32 (4 B @ [s0 + 198584])
                     # [756:9] object_id = entities.array[cur_entity].objects.array[found_ix]
                     # [756:21] entities.array[cur_entity].objects.array[found_ix]
@@ -31449,7 +31449,7 @@ main:
                     # [756:21] free scratch register t2
                     # [756:21] free scratch register t1
                     # [756:21] free scratch register t0
-                    # [757:5] var room_id = entities.array[cur_entity].room_id
+                    # [757:5] let room_id = entities.array[cur_entity].room_id
                     # [757:9] room_id: i32 (4 B @ [s0 + 198588])
                     # [757:9] room_id = entities.array[cur_entity].room_id
                     # [757:19] entities.array[cur_entity].room_id
@@ -31492,7 +31492,7 @@ main:
                     # [757:19] free scratch register t2
                     # [757:19] free scratch register t1
                     # [757:19] free scratch register t0
-                    # [758:5] var discarded = rooms.array[room_id].objects.add(object_id)
+                    # [758:5] let discarded = rooms.array[room_id].objects.add(object_id)
                     # [758:9] discarded: i32 (4 B @ [s0 + 198592])
                     # [758:9] discarded = rooms.array[room_id].objects.add(object_id)
                     # [758:50] discarded = rooms.array[room_id].objects.add(object_id)
@@ -32480,7 +32480,7 @@ main:
                         # [777:9] return
                         j func.action_give.972.9.1039.9.end
                     if.775.5.972.9.1039.9.end:
-                    # [781:5] var len = entities.array[cur_entity].objects.len
+                    # [781:5] let len = entities.array[cur_entity].objects.len
                     # [781:9] len: i32 (4 B @ [s0 + 198576])
                     # [781:9] len = entities.array[cur_entity].objects.len
                     # [781:15] entities.array[cur_entity].objects.len
@@ -32882,7 +32882,7 @@ main:
                         # [792:9] return
                         j func.action_give.972.9.1039.9.end
                     if.790.5.972.9.1039.9.end:
-                    # [795:5] var object_id = entities.array[cur_entity].objects.array[found_ix]
+                    # [795:5] let object_id = entities.array[cur_entity].objects.array[found_ix]
                     # [795:9] object_id: i32 (4 B @ [s0 + 198584])
                     # [795:9] object_id = entities.array[cur_entity].objects.array[found_ix]
                     # [795:21] entities.array[cur_entity].objects.array[found_ix]
@@ -32949,7 +32949,7 @@ main:
                     # [795:21] free scratch register t2
                     # [795:21] free scratch register t1
                     # [795:21] free scratch register t0
-                    # [796:5] var object_name = objects.array[object_id].name
+                    # [796:5] let object_name = objects.array[object_id].name
                     # [796:9] object_name: name (20 B @ [s0 + 198588])
                     # [796:9] object_name = objects.array[object_id].name
                     # [796:37] allocate scratch register -> t0
@@ -33326,7 +33326,7 @@ main:
                         # [802:9] return
                         j func.action_give.972.9.1039.9.end
                     if.800.5.972.9.1039.9.end:
-                    # [806:5] var room_id = entities.array[cur_entity].room_id
+                    # [806:5] let room_id = entities.array[cur_entity].room_id
                     # [806:9] room_id: i32 (4 B @ [s0 + 198608])
                     # [806:9] room_id = entities.array[cur_entity].room_id
                     # [806:19] entities.array[cur_entity].room_id
@@ -33369,7 +33369,7 @@ main:
                     # [806:19] free scratch register t2
                     # [806:19] free scratch register t1
                     # [806:19] free scratch register t0
-                    # [807:5] var room_entities_len = rooms.array[room_id].entities.len
+                    # [807:5] let room_entities_len = rooms.array[room_id].entities.len
                     # [807:9] room_entities_len: i32 (4 B @ [s0 + 198612])
                     # [807:9] room_entities_len = rooms.array[room_id].entities.len
                     # [807:29] rooms.array[room_id].entities.len
@@ -33886,7 +33886,7 @@ main:
                         # [820:9] return
                         j func.action_give.972.9.1039.9.end
                     if.817.5.972.9.1039.9.end:
-                    # [824:5] var discarded = entities.array[to_entity].objects.add(object_id)
+                    # [824:5] let discarded = entities.array[to_entity].objects.add(object_id)
                     # [824:9] discarded: i32 (4 B @ [s0 + 198620])
                     # [824:9] discarded = entities.array[to_entity].objects.add(object_id)
                     # [824:55] discarded = entities.array[to_entity].objects.add(object_id)
@@ -35015,7 +35015,7 @@ main:
                         # [839:5] alias from -> cur_entity
                         # [839:5] alias kind -> 2
                         # [839:5] alias text -> gave_text
-                        # [475:5] var room_entities_len = rooms.array[room_id].entities.len
+                        # [475:5] let room_entities_len = rooms.array[room_id].entities.len
                         # [475:9] room_entities_len: i32 (4 B @ [s0 + 198756])
                         # [475:9] room_entities_len = rooms.array[room_id].entities.len
                         # [475:29] rooms.array[room_id].entities.len
@@ -36656,7 +36656,7 @@ main:
                         # [882:9] return
                         j func.action_tell.975.9.1039.9.end
                     if.880.5.975.9.1039.9.end:
-                    # [885:5] var text = tz.to_str()
+                    # [885:5] let text = tz.to_str()
                     # [885:9] text: str (132 B @ [s0 + 198580])
                     # [885:9] text = tz.to_str()
                     # [885:19] tz.to_str()
@@ -37322,7 +37322,7 @@ main:
                         # [899:9] return
                         j func.action_say.978.9.1039.9.end
                     if.897.5.978.9.1039.9.end:
-                    # [902:5] var text = tz.to_str()
+                    # [902:5] let text = tz.to_str()
                     # [902:9] text: str (132 B @ [s0 + 198576])
                     # [902:9] text = tz.to_str()
                     # [902:19] tz.to_str()
@@ -37496,7 +37496,7 @@ main:
                         # [904:5] alias from -> cur_entity
                         # [904:5] alias kind -> 1
                         # [904:5] alias text -> text
-                        # [475:5] var room_entities_len = rooms.array[room_id].entities.len
+                        # [475:5] let room_entities_len = rooms.array[room_id].entities.len
                         # [475:9] room_entities_len: i32 (4 B @ [s0 + 198708])
                         # [475:9] room_entities_len = rooms.array[room_id].entities.len
                         # [475:29] rooms.array[room_id].entities.len

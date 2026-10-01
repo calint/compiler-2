@@ -23,6 +23,11 @@ func constants_and_variables() {
     count = count + answer
     assert(count == 43)
     # '=' assigns and '==' compares, statements need no semicolons
+
+    let doubled = count * 2
+    assert(doubled == 86)
+    # 'let' is a variable that is read-only after its initializer, 'doubled = 0'
+    # is a compile error
 }
 
 #
@@ -165,6 +170,10 @@ func control_flow() {
     assert(sum == 1 + 2 + 4 + 5)
     # 'loop' repeats until 'break', 'continue' starts the next iteration
     # there is no 'while' or 'for'
+
+    if sum != 12 exit(3)
+    # 'exit' ends the program at once with an exit code, 0 is success, the
+    # 'assert' helper exits with 1 and here the code is never reached
 }
 
 #
@@ -204,6 +213,11 @@ func arrays() {
     assert(primes[2] == 14)
     # indexes start at 0 and can be expressions
 
+    let table = []{10, 20, 30}
+    assert(table[1] == 20)
+    # a 'let' array and the fields of a 'let' record are read-only too,
+    # 'table[1] = 0' is a compile error
+
     var sum = 0
     foo primes {
         sum = sum + e
@@ -219,6 +233,16 @@ func arrays() {
     }
     assert(primes[0] == 4 and primes[3] == 7)
     # 'e' refers to the element, assigning it changes the array
+
+    var part = 1
+    part = part + 2
+    var partial = 0
+    foo primes, part {
+        partial = partial + e
+    }
+    assert(partial == 4 + 5 + 6)
+    # 'foo' with a count visits only the first elements, 'n' is still the
+    # size of the array
 
     var copy = primes
     copy[0] = 0
@@ -260,6 +284,16 @@ func strings() {
     # writes 2 elements from index 1, then the newline at index 3
 }
 
+func reading() {
+    var line = i8[16]{}
+    var got = read(0, line, 16)
+    write(1, line, got)
+    # 'read' fills an array from a file descriptor, here 0 is standard input
+    # it returns the number of elements read, 0 at the end of the input, and
+    # takes the same optional count and start index as 'write'
+    # 'main' does not call this function because it waits for input
+}
+
 #
 # functions
 #
@@ -295,6 +329,20 @@ func first(arr i32[]) res i32 {
 # an array argument has '[]' after the type, only '[]' for the default type,
 # its size comes from the caller
 
+func sum_of(const a, const b) res {
+    res = a + b
+}
+# 'const' before an argument name makes it read-only, 'a = 0' is a compile
+# error and the caller can pass a 'let' to it
+
+func total(const values[]) res {
+    res = 0
+    foo values {
+        res = res + e
+    }
+}
+# a 'const' array argument cannot be written either, not even through 'e'
+
 func functions() {
     var x = 3
     assert(twice(x) == 6)
@@ -312,6 +360,11 @@ func functions() {
     var arr = i32[]{9, 8}
     assert(first(arr) == 9)
     # functions are inlined at every call by default
+
+    let fixed = 5
+    assert(sum_of(x, fixed) == 9)
+    let items = []{1, 2, 3}
+    assert(total(items) == 6)
 }
 
 #

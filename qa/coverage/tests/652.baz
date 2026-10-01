@@ -1,0 +1,6 @@
+# a 'let' cannot be assigned
+
+func main() {
+    let a = 1
+    a = 2
+}

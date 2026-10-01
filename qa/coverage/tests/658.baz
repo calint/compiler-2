@@ -1,0 +1,10 @@
+# a 'let' cannot be written through an inline callee
+
+func set(a) {
+    a = 1
+}
+
+func main() {
+    let x = 5
+    set(x)
+}

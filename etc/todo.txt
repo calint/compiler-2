@@ -271,8 +271,6 @@ other, easiest first
 [ ] consider not allowing single statement blocks
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
-[x] const allowed in function declaration and code
-    foo(ix : const i32) { const x = ix }
 [ ] func f(p : point const) const is default. same as "func f(p : point)"
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] break: exit current block instead of just loop?
@@ -285,22 +283,6 @@ other, easiest first
 [ ] consider result being an array
     func make_points() : point[] res {...}
     => confusing. better is func init_points(pts : point[]) {...}
-[ ] 'let i = expr': read-only variable initialized by a runtime expression
-    (not a compile-time 'const')
-    plan:
-    - parse like 'var' (optional type, arrays, record literals), initializer
-      required; 'let' becomes a keyword in 'stmt_block' and 'program'
-    - storage and initialization reuse 'stmt_def_var', 'var_info' gets
-      'is_read_only' carried through 'ident_info' and aliases
-    - reject every write path at compile: assignment (incl. fields and
-      elements), 'read' destination, 'array_copy' destination, noninline
-      arguments (passed by reference), inline arguments whose parameter the
-      callee writes (aliases write caller storage; needs a 'visit_writes'
-      next to 'visit_reads'), method receivers written through 'self'
-    - 'const' stays for compile-time values; a 'let' with a constant
-      initializer is still a variable
-    - tree-sitter grammar, source reproduction, tests: run, each rejected
-      write path as COMPERR, reproduce-source
 
 --------------------------------------------------------------------------------
 hard
@@ -442,6 +424,24 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] const allowed in function declaration and code
+    foo(ix : const i32) { const x = ix }
+[x] 'let i = expr': read-only variable initialized by a runtime expression
+    (not a compile-time 'const')
+    plan:
+    - parse like 'var' (optional type, arrays, record literals), initializer
+      required; 'let' becomes a keyword in 'stmt_block' and 'program'
+    - storage and initialization reuse 'stmt_def_var', 'var_info' gets
+      'is_read_only' carried through 'ident_info' and aliases
+    - reject every write path at compile: assignment (incl. fields and
+      elements), 'read' destination, 'array_copy' destination, noninline
+      arguments (passed by reference), inline arguments whose parameter the
+      callee writes (aliases write caller storage; needs a 'visit_writes'
+      next to 'visit_reads'), method receivers written through 'self'
+    - 'const' stays for compile-time values; a 'let' with a constant
+      initializer is still a variable
+    - tree-sitter grammar, source reproduction, tests: run, each rejected
+      write path as COMPERR, reproduce-source
 [x] machine_x86_64 and machine_rv32i duplicate state and code the 'machine'
     base could own (found in the 2026-09-29 clean-up)
     => plan:

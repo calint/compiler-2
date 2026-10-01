@@ -11,6 +11,7 @@
 (dat_keyword) @keyword.storage
 (const_keyword) @keyword.storage
 (var_keyword) @keyword
+(let_keyword) @keyword.storage
 (if_keyword) @keyword.conditional
 (loop_keyword) @keyword.repeat
 (foo_keyword) @keyword.repeat
@@ -67,7 +68,8 @@
   destination: (identifier) @variable
   initializer: (_)? @variable)
 
-; file level 'dat' and 'var' use the module color to stand out from locals
+; file level 'dat', 'var' and 'let' use the module color to stand out from
+; locals
 (program
   (data_declaration
     destination: (identifier) @module))
@@ -86,7 +88,8 @@
 (foo_statement
   array: (identifier) @variable)
 
-; references to file level 'dat' and 'var', predicate in plugin/baz-globals.lua
+; references to file level 'dat', 'var' and 'let', predicate in
+; plugin/baz-globals.lua
 ; placed after the '@variable' patterns so that it wins
 ((identifier) @module
   (#baz-global? @module))

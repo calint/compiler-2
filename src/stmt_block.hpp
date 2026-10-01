@@ -192,7 +192,7 @@ class stmt_block final : public statement {
                                               const token tk)
         -> std::unique_ptr<statement> {
 
-        if (tk.is_text("var")) {
+        if (tk.is_text("var") or tk.is_text("let")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
         if (tk.is_text("const")) {

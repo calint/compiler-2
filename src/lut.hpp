@@ -31,6 +31,15 @@ template <class T> class lut final {
         throw panic_exception{std::format("element not found: {}", key)};
     }
 
+    [[nodiscard]] auto get_ref(const std::string_view key) -> T& {
+        for (elem& e : elems_) {
+            if (e.key == key) {
+                return e.data;
+            }
+        }
+        throw panic_exception{std::format("element not found: {}", key)};
+    }
+
     [[nodiscard]] auto has(const std::string_view key) const -> bool {
         return std::ranges::contains(elems_, key, &elem::key);
     }

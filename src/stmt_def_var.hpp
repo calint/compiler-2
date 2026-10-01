@@ -17,23 +17,25 @@
 #include "token.hpp"
 #include "type.hpp"
 
-// e.g. 'var x = i32(0)', the initializer gives the type
+// e.g. 'var x = i32(0)', the initializer gives the type; 'let' is a 'var' that
+// is read-only once initialized
 class stmt_def_var final : public statement {
     token name_tk_;
     size_t array_count_{};
     token equals_tk_;
     stmt_assign_var assign_var_;
     bool is_array_{};
+    bool is_let_{};
 
   public:
     stmt_def_var(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()} {
+        : statement{tk}, name_tk_{tz.next_token()}, is_let_{tk.is_text("let")} {
 
         toc::assert_name_not_reserved(name_tk_);
 
         const token after_name_tk{tz.cur_position_token()};
 
-        equals_tk_ = parse_initializer_equals(tz, "var");
+        equals_tk_ = parse_initializer_equals(tz, tk.text());
 
         deduce_declaration(tc, tz);
 
@@ -45,7 +47,7 @@ class stmt_def_var final : public statement {
         // 'var a = [2]{}' would read as an index
         tz.rewind_to_position(after_name_tk);
         stmt_identifier si{tc, {}, name_tk_, tz};
-        equals_tk_ = parse_initializer_equals(tz, "var");
+        equals_tk_ = parse_initializer_equals(tz, tk.text());
 
         assign_var_ = {tc,         tz,        std::move(si),
                        equals_tk_, is_array_, array_count_};
@@ -55,6 +57,12 @@ class stmt_def_var final : public statement {
             name_tk_.text(),
             field_coverage{multiply_storage_size(
                 get_type().size_bytes(), is_array_ ? array_count_ : 1)});
+
+        if (is_let_) {
+            // statements parsed from here on cannot assign it, also in a
+            // function that is never called and so never compiled
+            tc.make_var_read_only(name_tk_.text());
+        }
     }
 
     stmt_def_var() = default;
@@ -85,6 +93,14 @@ class stmt_def_var final : public statement {
             tc.make_ident_info(name_tk_, name_tk_.text())};
 
         assign_var_.compile(tc, indent, var_dst_info);
+
+        if (not is_let_) {
+            return;
+        }
+
+        // marked after the initializer, which writes the variable, e.g. as
+        // the result of an inline call
+        tc.make_var_read_only(name_tk_.text());
     }
 
     auto visit_reads(const std::string_view var,
@@ -183,6 +199,7 @@ class stmt_def_var final : public statement {
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
             .is_array{is_array_},
+            .is_let{is_let_},
             .array_len{array_count_},
             .pointer_register{},
             .base_register{},
