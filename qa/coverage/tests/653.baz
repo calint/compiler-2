@@ -1,4 +1,4 @@
-# a field of a 'let' cannot be assigned
+# a field of a 'const' variable cannot be assigned
 
 type point {
     x,
@@ -6,6 +6,6 @@ type point {
 }
 
 func main() {
-    let p = point{1, 2}
+    const p = point{1, 2}
     p.x = 3
 }

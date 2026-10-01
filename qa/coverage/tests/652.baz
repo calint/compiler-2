@@ -1,6 +1,6 @@
-# a 'let' cannot be assigned
+# a 'const' variable cannot be assigned
 
 func main() {
-    let a = 1
+    const a = 1 + 0
     a = 2
 }

@@ -1,7 +1,7 @@
-# 'array_copy' cannot copy into a 'let' array
+# 'array_copy' cannot copy into a 'const' array
 
 func main() {
-    let d = i8[]{1, 2}
+    const d = i8[]{1, 2}
     var s = i8[]{3, 4}
     array_copy(s, d, 2)
 }

@@ -264,7 +264,7 @@ struct var_info {
     bool is_array{};
     bool is_pointer{};
     bool is_read_only{};
-    bool is_let{}; // declared with 'let'
+    bool is_const_var{}; // declared with 'const'
     size_t array_len{};
     operand pointer_register; // variable location is in register
     std::string_view base_register;
@@ -287,8 +287,8 @@ struct ident_info {
     bool is_array{};
     bool is_pointer{};
     bool is_read_only{};
-    bool is_let{};      // the data is declared with 'let' under this name
-    bool use_operand{}; // operand overrides any location calculation
+    bool is_const_var{}; // the data is declared with 'const' under this name
+    bool use_operand{};  // operand overrides any location calculation
     kind kind{};
 
     [[nodiscard]] auto has_lea() const -> bool {

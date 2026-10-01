@@ -1,11 +1,12 @@
-# 'let' is a 'var' that cannot be assigned after its initializer
+# 'const' with a non-constant initializer is a 'var' that cannot be assigned
+# after its initializer
 
 type point {
     x,
     y,
 }
 
-let limit = 10
+const limit = 5 * 2
 
 func assert(x bool) { if not x exit(1) }
 
@@ -24,47 +25,47 @@ func total(const d i8[], const n) res {
     }
 }
 
-# 'let' inside an inline function
+# 'const' variable inside an inline function
 func successor(const v) res {
-    let w = v + 1
+    const w = v + 1
     res = w
 }
 
 func main() {
-    let a = 3
+    const a = 1 + 2
     assert(a == 3)
 
-    let b = a + limit
+    const b = a + limit
     assert(b == 13)
 
-    let ok = a < b
+    const ok = a < b
     assert(ok)
 
-    let p = point{1, 2}
+    const p = point{1, 2}
     assert(p.x + p.y == 3)
 
-    let arr = i8[]{1, 2, 3}
+    const arr = i8[]{1, 2, 3}
     var t = total(arr, 3)
     assert(t == 6)
     assert(arr[1] == 2)
 
-    let copy = arr
+    const copy = arr
     assert(copy[2] == 3)
 
     # initialized from inline and non-inline calls
-    let u = twice(a)
+    const u = twice(a)
     assert(u == 6)
 
-    let v = thrice(a)
+    const v = thrice(a)
     assert(v == 9)
 
-    let s = successor(a)
+    const s = successor(a)
     assert(s == 4)
 
     # each iteration declares it again
     var sum = 0
     foo arr, 3 {
-        let sq = e * e
+        const sq = e * e
         sum = sum + sq
     }
     assert(sum == 14)

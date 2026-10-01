@@ -1,6 +1,6 @@
-# an element of a 'let' array cannot be assigned
+# an element of a 'const' array cannot be assigned
 
 func main() {
-    let a = i8[]{1, 2}
+    const a = i8[]{1, 2}
     a[0] = 3
 }

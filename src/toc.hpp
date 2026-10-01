@@ -868,8 +868,8 @@ class toc final {
         return info;
     }
 
-    // the variable declared last in this scope, e.g. a 'let' once its
-    // initializer has written it
+    // the variable declared last in this scope, e.g. a 'const' variable once
+    // its initializer has written it
     auto make_var_read_only(const std::string_view name) -> void {
         frames_.back().make_var_read_only(name);
     }
@@ -1283,7 +1283,7 @@ class toc final {
                                    machine_.get().variables_base_register())};
 
         ii.is_read_only = var.is_read_only;
-        ii.is_let = var.is_let;
+        ii.is_const_var = var.is_const_var;
 
         lea_path.resize(id.path().size());
         // note: pad with empty for the remaining elements in the id path
@@ -1341,7 +1341,7 @@ class toc final {
         // one 'const' parameter in the alias chain makes the data read-only
         bool is_read_only{};
 
-        // the name is then not the one declared with 'let'
+        // the name is then not the one declared with 'const'
         bool is_alias_followed{};
 
         for (const frame& cur_frame : frames_ | std::views::reverse) {
@@ -1442,12 +1442,12 @@ class toc final {
     // statics
     //
 
-    // an alias names the data of a 'let' without being declared with it
+    // an alias names the data of a 'const' variable without being declared
+    // with it
     [[nodiscard]] static auto as_declared_if(const bool is_declared,
                                              ident_info info) -> ident_info {
 
-        info.is_let = info.is_let and is_declared;
-
+        info.is_const_var = info.is_const_var and is_declared;
         return info;
     }
 

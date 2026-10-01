@@ -29,7 +29,7 @@ local injected = { e = true, i = true, n = true }
 
 local keywords = {}
 for word in
-  ([[const dat func noinline type var let return if loop foo else break continue
+  ([[const dat func noinline type var return if loop foo else break continue
   not and or true false bool i8 i16 i32 i64]]):gmatch("%S+")
 do
   keywords[word] = true

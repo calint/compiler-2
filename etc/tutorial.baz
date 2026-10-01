@@ -24,10 +24,10 @@ func constants_and_variables() {
     assert(count == 43)
     # '=' assigns and '==' compares, statements need no semicolons
 
-    let doubled = count * 2
+    const doubled = count * 2
     assert(doubled == 86)
-    # 'let' is a variable that is read-only after its initializer, 'doubled = 0'
-    # is a compile error
+    # a 'const' with a non-constant initializer is a variable that is read-only
+    # after its initializer, 'doubled = 0' is a compile error
 }
 
 #
@@ -213,10 +213,10 @@ func arrays() {
     assert(primes[2] == 14)
     # indexes start at 0 and can be expressions
 
-    let table = []{10, 20, 30}
+    const table = []{10, 20, 30}
     assert(table[1] == 20)
-    # a 'let' array and the fields of a 'let' record are read-only too,
-    # 'table[1] = 0' is a compile error
+    # a read-only 'const' array and the fields of a read-only 'const' record
+    # are read-only too, 'table[1] = 0' is a compile error
 
     var sum = 0
     foo primes {
@@ -333,7 +333,7 @@ func sum_of(const a, const b) res {
     res = a + b
 }
 # 'const' before an argument name makes it read-only, 'a = 0' is a compile
-# error and the caller can pass a 'let' to it
+# error and the caller can pass a 'const' to it
 
 func total(const values[]) res {
     res = 0
@@ -361,9 +361,9 @@ func functions() {
     assert(first(arr) == 9)
     # functions are inlined at every call by default
 
-    let fixed = 5
+    const fixed = 5
     assert(sum_of(x, fixed) == 9)
-    let items = []{1, 2, 3}
+    const items = []{1, 2, 3}
     assert(total(items) == 6)
 }
 

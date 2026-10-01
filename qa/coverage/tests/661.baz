@@ -1,7 +1,7 @@
-# a 'let' cannot be assigned in a function that is never called
+# a 'const' variable cannot be assigned in a function that is never called
 
 func unused() {
-    let a = 1
+    const a = 1 + 0
     a = 2
 }
 

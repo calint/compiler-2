@@ -186,12 +186,16 @@ class program final {
             return std::make_unique<stmt_def_type>(tc, tk, tz);
         }
         if (tk.is_text("const")) {
-            return std::make_unique<stmt_def_const>(tc, tk, tz);
+            if (stmt_def_const::is_constant_definition(tc, tz)) {
+                return std::make_unique<stmt_def_const>(tc, tk, tz);
+            }
+
+            return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
         if (tk.is_text("dat")) {
             return std::make_unique<stmt_def_dat>(tc, tk, tz);
         }
-        if (tk.is_text("var") or tk.is_text("let")) {
+        if (tk.is_text("var")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
 

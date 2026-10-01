@@ -1,6 +1,6 @@
-# 'read' cannot fill a 'let' array
+# 'read' cannot fill a 'const' array
 
 func main() {
-    let d = i8[]{1, 2}
+    const d = i8[]{1, 2}
     read(0, d)
 }

@@ -424,6 +424,14 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] merge 'let' into 'const': 'const x = expr' is a compile-time constant when
+    the initializer is a single constant, otherwise a read-only variable
+    => 'stmt_def_const::is_constant_definition' looks ahead after the name and
+       '='; a number, character literal or known constant not followed by an
+       operator is a constant, anything else (names, arrays, records,
+       expressions) goes to 'stmt_def_var'; 'let' is no longer a keyword
+    => 'const x = nope' now reports 'cannot resolve identifier'
+    => later: 'const x = 1 + 2' could fold to a compile-time constant
 [x] const allowed in function declaration and code
     foo(ix : const i32) { const x = ix }
 [x] 'let i = expr': read-only variable initialized by a runtime expression

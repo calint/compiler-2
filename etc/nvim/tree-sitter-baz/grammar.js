@@ -158,7 +158,9 @@ module.exports = grammar({
     // 4. STATEMENT IMPLEMENTATIONS
     // -------------------------------------------------------------------------
 
-    // const identifier = expression
+    // const identifier = expression, a compile-time constant or, when the
+    // initializer is not constant, a variable that is read-only after its
+    // initializer
     const_definition: $ => seq(
       $.const_keyword,
       field('destination', $.identifier),
@@ -174,10 +176,9 @@ module.exports = grammar({
       field('initializer', $._expression)
     ),
 
-    // var identifier = expression, the initializer gives the type; 'let' is a
-    // 'var' that is read-only after its initializer
+    // var identifier = expression, the initializer gives the type
     variable_declaration: $ => seq(
-      choice($.var_keyword, $.let_keyword),
+      $.var_keyword,
       field('destination', $.identifier),
       '=',
       field('initializer', $._expression)
@@ -466,7 +467,6 @@ module.exports = grammar({
 
     // Statement Keywords
     var_keyword: $ => 'var',
-    let_keyword: $ => 'let',
     return_keyword: $ => 'return',
     if_keyword: $ => 'if',
     loop_keyword: $ => 'loop',

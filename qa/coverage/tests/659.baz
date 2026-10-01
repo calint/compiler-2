@@ -1,5 +1,5 @@
-# a 'let' needs an initializer
+# a 'const' needs an initializer
 
 func main() {
-    let a
+    const a
 }

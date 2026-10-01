@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <string>
+#include <string_view>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -10,6 +11,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
+#include "unary_ops.hpp"
 
 class stmt_def_const final : public statement {
     token name_tk_;
@@ -62,5 +64,64 @@ class stmt_def_const final : public statement {
         -> void override {
 
         tc.add_const(name_tk_, indent, name_tk_.text(), const_.value());
+    }
+
+    //
+    // statics
+    //
+
+    // after 'const', e.g. 'x = 5' and 'y = -x' define a compile-time constant
+    // while 'z = a + 1' and 'p = point{1, 2}' define a read-only variable;
+    // malformed definitions count as constants so they report the constant
+    // errors; the tokenizer position is restored
+    [[nodiscard]] static auto is_constant_definition(const toc& tc,
+                                                     tokenizer& tz) -> bool {
+
+        const token start_tk{tz.cur_position_token()};
+        const bool is_constant{has_constant_initializer(tc, tz)};
+        tz.rewind_to_position(start_tk);
+
+        return is_constant;
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto has_constant_initializer(const toc& tc,
+                                                       tokenizer& tz) -> bool {
+
+        const token name_tk{tz.next_token()};
+        if (name_tk.is_empty() or tz.is_next_char_token('=').is_empty()) {
+            return true;
+        }
+
+        // an array of the default type, e.g. 'const a = []{1, 2}'
+        if (tz.peek_char_after_whitespace() == '[') {
+            return false;
+        }
+
+        const unary_ops uops{tz};
+        const token literal_tk{tz.next_token()};
+        const std::string_view text{literal_tk.text()};
+        if (text.empty()) {
+            return true;
+        }
+
+        const bool is_constant_operand{
+            tc.has_const(text) or toc::is_character_literal(text) or
+            (text.front() >= '0' and text.front() <= '9')};
+
+        if (not is_constant_operand) {
+            return false;
+        }
+
+        // an operator or postfix continues the expression, e.g. 'const x = 1 +
+        // y'; no statement starts with one of these characters
+        constexpr std::string_view continues_expression{"+-*/%&|^<>=!([."};
+
+        return not continues_expression.contains(
+            tz.peek_char_after_whitespace());
     }
 };

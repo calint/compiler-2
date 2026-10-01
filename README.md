@@ -34,8 +34,8 @@ compiler writes the binary image itself.
 * limited support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
-* keywords: `func`, `noinline`, `type`, `dat`, `var`, `let`, `const`, `foo`,
-  `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`, `not`
+* keywords: `func`, `noinline`, `type`, `dat`, `var`, `const`, `foo`, `loop`,
+  `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`, `not`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
   `write`, `exit`, `i`, `i8`, `i16`, `i32`, `i64`
 
@@ -116,10 +116,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5711           2199          18023
+C/C++ Header                    54           5725           2213          18065
 C++                              1             99             21            380
 -------------------------------------------------------------------------------
-SUM:                            55           5810           2220          18403
+SUM:                            55           5824           2234          18445
 -------------------------------------------------------------------------------
 ```
 
