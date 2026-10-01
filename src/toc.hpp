@@ -44,13 +44,16 @@ struct alias_info {
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
 
+    // the parameter was declared 'const', writes through it are rejected
+    bool is_read_only{};
+
     //
     // statics
     //
 
-    [[nodiscard]] static auto make_register(const std::string_view name,
-                                            const type& alias_type,
-                                            const operand& reg) -> alias_info {
+    [[nodiscard]] static auto
+    make_register(const std::string_view name, const type& alias_type,
+                  const operand& reg, const bool is_read_only) -> alias_info {
 
         assert(reg.is_register());
 
@@ -61,6 +64,7 @@ struct alias_info {
             .type_ptr{&alias_type},
             .register_operand{reg},
             .is_element{},
+            .is_read_only{is_read_only},
         };
     }
 };
@@ -1323,14 +1327,18 @@ class toc final {
         // an alias of an element names the element, not the array holding it
         bool is_element{};
 
+        // one 'const' parameter in the alias chain makes the data read-only
+        bool is_read_only{};
+
         for (const frame& cur_frame : frames_ | std::views::reverse) {
 
             // does this frame contain the variable?
             if (cur_frame.has_var(id.base())) {
-                return as_element_if(
-                    is_element,
-                    make_ident_info_from_frame(cur_frame, src_loc_tk, ident, id,
-                                               std::move(lea_path)));
+                return as_read_only_if(
+                    is_read_only,
+                    as_element_if(is_element, make_ident_info_from_frame(
+                                                  cur_frame, src_loc_tk, ident,
+                                                  id, std::move(lea_path))));
             }
 
             // from the root frame of a function aliases are followed to the
@@ -1342,10 +1350,11 @@ class toc final {
             if (not cur_frame.has_alias(id.base())) {
                 lea_path.emplace_back();
 
-                return as_element_if(
-                    is_element,
-                    make_ident_info_from_frame(cur_frame, src_loc_tk, ident, id,
-                                               std::move(lea_path)));
+                return as_read_only_if(
+                    is_read_only,
+                    as_element_if(is_element, make_ident_info_from_frame(
+                                                  cur_frame, src_loc_tk, ident,
+                                                  id, std::move(lea_path))));
             }
 
             // this is an alias, continue resolving until it is a variable,
@@ -1353,9 +1362,14 @@ class toc final {
 
             const alias_info& alias{cur_frame.get_alias(id.base())};
 
+            is_read_only = is_read_only or alias.is_read_only;
+
             if (alias.register_operand.is_register() and
                 id.path().size() == 1) {
-                return ident_info::make_register(ident, alias.register_operand);
+
+                return as_read_only_if(
+                    is_read_only,
+                    ident_info::make_register(ident, alias.register_operand));
             }
 
             // a field path such as 'p.x' gets its array-ness from the field
@@ -1423,6 +1437,13 @@ class toc final {
         info.is_array = false;
         info.array_len = 0;
 
+        return info;
+    }
+
+    [[nodiscard]] static auto as_read_only_if(const bool is_read_only,
+                                              ident_info info) -> ident_info {
+
+        info.is_read_only = info.is_read_only or is_read_only;
         return info;
     }
 

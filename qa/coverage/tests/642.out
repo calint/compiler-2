@@ -1,0 +1,2 @@
+
+642.baz:9:5: cannot assign to read-only 'p.x'

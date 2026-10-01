@@ -259,6 +259,7 @@ class stmt_def_func final : public statement {
                            .src_loc_tk{param.tok()},
                            .is_array{param.is_array()},
                            .is_pointer{is_pointer},
+                           .is_read_only{param.is_read_only()},
                            .pointer_register{},
                            .base_register{},
                            .value_register{},

@@ -1,0 +1,14 @@
+# a 'const' parameter cannot be passed to a writable non-inline parameter
+
+func noinline set(a) {
+    a = 1
+}
+
+func f(const a) {
+    set(a)
+}
+
+func main() {
+    var x = 5
+    f(x)
+}

@@ -1,0 +1,10 @@
+# 'read' cannot fill a 'const' array parameter
+
+func f(const d i8[]) {
+    read(0, d)
+}
+
+func main() {
+    var a = i8[2]{ 1, 2 }
+    f(a)
+}

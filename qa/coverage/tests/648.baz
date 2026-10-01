@@ -1,0 +1,10 @@
+# --checks=alias: a writable parameter still conflicts with a 'const' one
+
+func f(const a, b) {
+    b = a + 1
+}
+
+func main() {
+    var x = 5
+    f(x, x)
+}

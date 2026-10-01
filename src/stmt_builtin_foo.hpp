@@ -226,6 +226,7 @@ class stmt_builtin_foo final : public statement {
                        .name{"e"},
                        .type_ptr{&array_info.type_ref()},
                        .src_loc_tk{decl_tk},
+                       .is_read_only{array_info.is_read_only},
                        .pointer_register{iterator},
                        .base_register{},
                        .value_register{},

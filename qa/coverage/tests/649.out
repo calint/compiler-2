@@ -1,0 +1,2 @@
+
+649.baz:9:11: argument 1 may share storage with the result destination, use a separate variable

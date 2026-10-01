@@ -1,0 +1,8 @@
+# 'const' needs a parameter name
+
+func f(const) {
+}
+
+func main() {
+    f(1)
+}

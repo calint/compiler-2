@@ -1,0 +1,10 @@
+# --checks=alias: a 'const' parameter may not share storage with the result
+
+func f(const a) res {
+    res = a + 1
+}
+
+func main() {
+    var x = 5
+    x = f(x)
+}

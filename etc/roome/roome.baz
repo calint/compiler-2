@@ -41,8 +41,38 @@ dat str_not_understood = "not understood\n"
 
 dat flag = "\n\nFLAG\n\n"
 
-func print(s i8[]) {
-    write(1, s)
+# all output goes through the printer, it is silenced while the creation script runs
+type printer {
+    silenced bool,
+}
+
+dat out = printer{}
+
+func printer.set_silenced(silenced bool) {
+    self.silenced = silenced
+}
+
+func printer.print_at(const s i8[], const count, const start) {
+    if self.silenced return
+
+    write(1, s, count, start)
+}
+
+func printer.print(const s i8[], const count) {
+    self.print_at(s, count, 0)
+}
+
+func printer.print_all(const s i8[]) {
+    self.print(s, array_length(s))
+}
+
+func printer.println() {
+    self.print_all(str_nl)
+}
+
+func printer.println_all(const s i8[]) {
+    self.print_all(s)
+    self.println()
 }
 
 type str {
@@ -51,7 +81,7 @@ type str {
 }
 
 func str.print() {
-    write(1, self.array, self.len)
+    out.print(self.array, self.len)
 }
 
 func str.add(s i8[]) {
@@ -68,11 +98,11 @@ func str.input() {
         if self.array[nbytes] == '\x7f' {
             if nbytes > 0 {
                 nbytes = nbytes - 1
-                write(1, str_erase)
+                out.print_all(str_erase)
             }
             continue
         }
-        write(1, self.array, 1, nbytes)
+        out.print_at(self.array, 1, nbytes)
         if self.array[nbytes] == '\n' break
         nbytes = nbytes + 1
     }
@@ -133,7 +163,7 @@ type name {
 }
 
 func name.print() {
-    write(1, self.array, self.len)
+    out.print(self.array, self.len)
 }
 
 func name.equals(nm name) res bool {
@@ -182,7 +212,7 @@ type entity {
 }
 
 func entity.print() {
-    write(1, self.name.array, self.name.len)
+    out.print(self.name.array, self.name.len)
 }
 
 type entities {
@@ -190,24 +220,24 @@ type entities {
     len,
 }
 
+# the bare entity, the creation script makes the rest
 dat entities = entities{
     { # array begin
-        { { "u", 1 }, 0 },  # entity[1]
-        { { "me", 2 }, 0 }  # entity[0]
+        { { "u", 1 }, 0 }  # entity[0]
     }, # array end
-    2 # len
+    1 # len
 }
 
 func message.print() {
     entities.array[self.from].name.print()
     if self.kind == message_said {
-        print(str_said)
+        out.print_all(str_said)
     }
     if self.kind == message_told {
-        print(str_told_u)
+        out.print_all(str_told_u)
     }
     if self.kind == message_event {
-        print(str_space)
+        out.print_all(str_space)
     }
     self.text.print()
 }
@@ -215,7 +245,7 @@ func message.print() {
 func entity.print_messages() {
     foo self.messages.array, self.messages.len {
         e.print()
-        print(str_nl)
+        out.println()
     }
 
     self.messages.len = 0
@@ -232,12 +262,7 @@ type link_names {
     len
 }
 
-dat link_names = link_names{
-    { # array begin
-        { "none", 4 }
-    }, # array end
-    1 # len
-}
+dat link_names = link_names{}
 
 type link {
     link_name_id,
@@ -275,48 +300,48 @@ dat str_u_r_in = "u r in "
 
 func room.print(cur_entity) {
     if self.name.len != 0 {
-        print(str_u_r_in)
+        out.print_all(str_u_r_in)
         self.name.print()
-        print(str_nl)
+        out.println()
     }
     if self.description.len != 0 {
         self.description.print()
-        print(str_nl)
+        out.println()
     }
     var first_elem_printed = false
     foo self.entities.array, self.entities.len {
         if e == cur_entity continue
         if not first_elem_printed {
-            print(str_uc)
+            out.print_all(str_uc)
         } else {
-            print(str_comma)
+            out.print_all(str_comma)
         }
         entities.array[e].print()
         first_elem_printed = true
     }
     foo self.objects.array, self.objects.len {
         if not first_elem_printed {
-            print(str_uc)
+            out.print_all(str_uc)
         } else {
-            print(str_comma)
+            out.print_all(str_comma)
         }
         objects.array[e].name.print()
         first_elem_printed = true
     }
     if first_elem_printed {
-        print(str_nl)
+        out.println()
     }
     if(self.links_len != 0) {
-        print(str_exits)
+        out.print_all(str_exits)
         foo self.links, self.links_len {
-            if i != 0 print(str_comma)
+            if i != 0 out.print_all(str_comma)
             link_names.array[e.link_name_id].print()
         }
-        print(str_nl)
+        out.println()
     }
     if self.note.len != 0 {
         self.note.print()
-        print(str_nl)
+        out.println()
     }
 }
 
@@ -342,15 +367,14 @@ type rooms {
     len,
 }
 
+# the bare room, the creation script makes the rest
 dat rooms = rooms{
     { # array
-        { # room[0] 
-            { "roome", 5 }, # name
+        { # room[0]
+            { }, # name
             { }, # description
-            { "todo: find an exit", 18 }, # note
-            { { 0, 1 }, 2 }, # entities id_list
-            { {0, 0} }, # links array
-            1 # links array len
+            { }, # note
+            { { 0 }, 1 } # entities id_list
         }
     },
     1 # len
@@ -366,6 +390,13 @@ func tokenizer.input() {
     self.start = 0
     self.end = 0
     self.str.input()
+}
+
+func tokenizer.set_line(script i8[], line_start, count) {
+    self.start = 0
+    self.end = 0
+    array_copy(script[line_start], self.str.array, count)
+    self.str.len = count
 }
 
 func tokenizer.skip_whitespace() {
@@ -406,7 +437,7 @@ func tokenizer.len() res {
 }
 
 func tokenizer.print() {
-    write(1, self.str.array, self.len(), self.start)
+    out.print_at(self.str.array, self.len(), self.start)
 }
 
 func tokenizer.is_str(str i8[]) res bool {
@@ -460,7 +491,7 @@ dat str_arrived_from = "arrived from "
 func action_go(cur_entity, tz tokenizer) {
     tz.next()
     if tz.is_empty() {
-        print(str_go_where)
+        out.print_all(str_go_where)
         return
     }
 
@@ -479,7 +510,7 @@ func action_go(cur_entity, tz tokenizer) {
     }
 
     if found_ix == links_len {
-        print(str_no_such_exit)
+        out.print_all(str_no_such_exit)
         return
     }
 
@@ -490,9 +521,9 @@ func action_go(cur_entity, tz tokenizer) {
     var discarded = rooms.array[to_room_id].entities.add(cur_entity)
     rooms.array[cur_room_id].entities.delete_element(cur_entity)
 
-    print(str_went_to)
+    out.print_all(str_went_to)
     tz.print()
-    print(str_nl)
+    out.println()
 
     # the ones left behind see it
     var went_text = str{}
@@ -550,7 +581,7 @@ func action_new_room(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_what_exit_name_to)
+        out.print_all(str_what_exit_name_to)
         return
     }
 
@@ -563,7 +594,7 @@ func action_new_room(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_what_exit_name_back)
+        out.print_all(str_what_exit_name_back)
         return
     }
 
@@ -586,7 +617,7 @@ func action_new_room(cur_entity, tz tokenizer) {
     # increase number of rooms
     rooms.len = rooms.len + 1
 
-    print(str_new_room_created)
+    out.print_all(str_new_room_created)
 }
 
 dat str_new_room_description = "new room description\n"
@@ -596,7 +627,7 @@ func action_set_room_description(cur_entity, tz tokenizer) {
     tz.to_end()
     rooms.array[entities.array[cur_entity].room_id].description = tz.to_str()
 
-    print(str_new_room_description)
+    out.print_all(str_new_room_description)
 }
 
 func action_set_room_note(cur_entity, tz tokenizer) {
@@ -613,18 +644,18 @@ func action_set_room_name(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_what_name)
+        out.print_all(str_what_name)
         return
     }
 
     if tz.len() > max_name_len {
-        print(str_name_too_long)
+        out.print_all(str_name_too_long)
         return
     }
 
     rooms.array[entities.array[cur_entity].room_id].name = tz.to_name()
 
-    print(str_new_room_name)
+    out.print_all(str_new_room_name)
 }
 
 dat str_new_entity_created = "new entity created\n"
@@ -633,7 +664,7 @@ func action_new_entity(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_what_name)
+        out.print_all(str_what_name)
         return
     }
 
@@ -645,7 +676,7 @@ func action_new_entity(cur_entity, tz tokenizer) {
 
     var discarded = rooms.array[room_id].entities.add(entity_id)
 
-    print(str_new_entity_created)
+    out.print_all(str_new_entity_created)
 }
 
 dat str_new_object_created = "new object created\n"
@@ -654,7 +685,7 @@ func action_new_object(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_what_name)
+        out.print_all(str_what_name)
         return
     }
 
@@ -664,7 +695,7 @@ func action_new_object(cur_entity, tz tokenizer) {
 
     var discarded = entities.array[cur_entity].objects.add(object_id)
 
-    print(str_new_object_created)
+    out.print_all(str_new_object_created)
 }
 
 dat str_u_have = "u have: "
@@ -673,7 +704,7 @@ dat str_u_have_nothing = "u have nothing\n"
 func action_inventory(cur_entity, tz tokenizer) {
     var len = entities.array[cur_entity].objects.len
     if  len == 0 {
-        print(str_u_have_nothing)
+        out.print_all(str_u_have_nothing)
         return
     }
 
@@ -682,16 +713,16 @@ func action_inventory(cur_entity, tz tokenizer) {
     foo entities.array[cur_entity].objects.array, len {
 
         if not first_printed {
-            print(str_u_have)
+            out.print_all(str_u_have)
             first_printed = true
         } else {
-            print(str_comma)
+            out.print_all(str_comma)
         }
 
         objects.array[e].name.print()
     }
 
-    print(str_nl)
+    out.println()
 }
 
 dat str_drop_what = "drop what\n"
@@ -702,7 +733,7 @@ func action_drop(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_drop_what)
+        out.print_all(str_drop_what)
         return
     }
 
@@ -717,7 +748,7 @@ func action_drop(cur_entity, tz tokenizer) {
     }
 
     if found_ix == len {
-        print(str_not_carrying)
+        out.print_all(str_not_carrying)
         return
     }
 
@@ -727,9 +758,9 @@ func action_drop(cur_entity, tz tokenizer) {
     var discarded = rooms.array[room_id].objects.add(object_id)
     entities.array[cur_entity].objects.delete_index(found_ix)
 
-    print(str_dropped)
+    out.print_all(str_dropped)
     tz.print()
-    print(str_nl)
+    out.println()
 }
 
 dat str_give_what = "give what\n"
@@ -742,7 +773,7 @@ func action_give(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_give_what)
+        out.print_all(str_give_what)
         return
     }
 
@@ -757,7 +788,7 @@ func action_give(cur_entity, tz tokenizer) {
     }
 
     if found_ix == len {
-        print(str_not_carrying)
+        out.print_all(str_not_carrying)
         return
     }
 
@@ -767,7 +798,7 @@ func action_give(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_give_to_whom)
+        out.print_all(str_give_to_whom)
         return
     }
 
@@ -785,7 +816,7 @@ func action_give(cur_entity, tz tokenizer) {
 
     if to_entity == room_entities_len {
         tz.print()
-        print(str_is_not_here)
+        out.print_all(str_is_not_here)
         return
     }
 
@@ -793,11 +824,11 @@ func action_give(cur_entity, tz tokenizer) {
     var discarded = entities.array[to_entity].objects.add(object_id)
     entities.array[cur_entity].objects.delete_index(found_ix)
 
-    print(str_gave)
+    out.print_all(str_gave)
     object_name.print()
-    print(str_to)
+    out.print_all(str_to)
     entities.array[to_entity].name.print()
-    print(str_nl)
+    out.println()
 
     var gave_text = str{}
     gave_text.add(str_gave)
@@ -817,7 +848,7 @@ func action_tell(cur_entity, tz tokenizer) {
     tz.next()
 
     if tz.is_empty() {
-        print(str_tell_whom)
+        out.print_all(str_tell_whom)
         return
     }
 
@@ -832,13 +863,13 @@ func action_tell(cur_entity, tz tokenizer) {
 
     if to_entity == entities.len {
         tz.print()
-        print(str_does_not_exist)
+        out.print_all(str_does_not_exist)
         return
     }
 
     if entities.array[to_entity].messages.len == max_entity_messages_len {
         tz.print()
-        print(str_has_too_many_messages)
+        out.print_all(str_has_too_many_messages)
         return
     }
 
@@ -847,7 +878,7 @@ func action_tell(cur_entity, tz tokenizer) {
     tz.to_end()
 
     if tz.is_empty() {
-        print(str_tell_what)
+        out.print_all(str_tell_what)
         return
     }
 
@@ -864,7 +895,7 @@ func action_say(cur_entity, tz tokenizer) {
     tz.to_end()
 
     if tz.is_empty() {
-        print(str_say_what)
+        out.print_all(str_say_what)
         return
     }
 
@@ -890,7 +921,7 @@ dat str_help = "\
 "
 
 func action_help(entity_id, tz tokenizer) {
-    print(str_help)
+    out.print_all(str_help)
 }
 
 dat str_action_help = "help"
@@ -950,29 +981,63 @@ func parse_input(cur_entity, tz tokenizer) {
         action_help(cur_entity, tz)
 
     } else {
-        print(str_not_understood)
+        out.print_all(str_not_understood)
+    }
+}
+
+dat str_creation_script = "\
+rnm roome\n\
+rnt todo: find an exit\n\
+rn none roome\n\
+go none\n\
+rnm office\n\
+go roome\n\
+en me\n"
+
+# runs the lines of the script as the bare entity, a line ends with '\n'
+func run_creation_script(tz tokenizer) {
+    var line_start = 0
+    var i = 0
+    loop {
+        if i == array_length(str_creation_script) break
+        if str_creation_script[i] == '\n' {
+            tz.set_line(str_creation_script, line_start, i - line_start)
+            parse_input(0, tz)
+            line_start = i + 1
+        }
+        i = i + 1
     }
 }
 
 func main() {
-    print(str_ascii_art)
-    print(str_hello)
-
     var tz = tokenizer{}
+
+    out.set_silenced(true)
+    run_creation_script(tz)
+    out.set_silenced(false)
+
+    # messages made by the script are not for the players
+    foo entities.array, entities.len {
+        e.messages.len = 0
+    }
+
+    out.print_all(str_ascii_art)
+    out.print_all(str_hello)
+
     var cur_entity = 0
     loop {
         if cur_entity == entities.len {
             cur_entity = 0
         }
         entities.array[cur_entity].print_messages()
-        print(str_nl)
+        out.println()
         rooms.array[entities.array[cur_entity].room_id].print(cur_entity)
         entities.array[cur_entity].name.print()
-        print(str_prompt)
+        out.print_all(str_prompt)
         tz.input()
-        print(str_nl)
+        out.println()
         parse_input(cur_entity, tz)
-        print(str_turn_end)
+        out.print_all(str_turn_end)
         cur_entity = cur_entity + 1
     }
 }

@@ -171,7 +171,7 @@ class stmt_call : public expression {
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
-        assert_no_shared_storage(tc, dst_info);
+        assert_no_shared_storage(tc, dst_info, func);
 
         if (not func.is_inlined()) {
             compile_noninline(tc, indent, dst_info, func);
@@ -214,15 +214,22 @@ class stmt_call : public expression {
     [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
 
     // the callee writes a result or by-reference parameter in place, so
-    // storage shared with another reference could be read after it changed
-    auto assert_no_shared_storage(const toc& tc,
-                                  const ident_info& dst_info) const -> void {
+    // storage shared with another reference could be read after it changed,
+    // unless both parameters are 'const' and nothing is written
+    auto assert_no_shared_storage(const toc& tc, const ident_info& dst_info,
+                                  const stmt_def_func& func) const -> void {
 
         if (not tc.is_alias_check()) {
             return;
         }
 
-        std::vector<std::pair<size_t, ident_info>> references;
+        struct reference {
+            size_t index;
+            ident_info info;
+            bool is_read_only;
+        };
+
+        std::vector<reference> references;
 
         for (size_t i{}; i < args_.size(); ++i) {
             const expr_any& arg{args_[i]};
@@ -247,18 +254,28 @@ class stmt_call : public expression {
                                 describe_argument(i))};
             }
 
-            for (const auto& [other_index, other] : references) {
-                if (may_share_storage(tc, other, info)) {
+            const bool is_read_only{func.param(i).is_read_only()};
+
+            for (const reference& other : references) {
+                if (is_read_only and other.is_read_only) {
+                    continue;
+                }
+
+                if (may_share_storage(tc, other.info, info)) {
                     throw compiler_exception{
                         arg.tok(),
                         std::format("{} may share storage with {}, use a "
                                     "separate variable",
                                     describe_argument(i),
-                                    describe_argument(other_index))};
+                                    describe_argument(other.index))};
                 }
             }
 
-            references.emplace_back(i, std::move(info));
+            references.push_back({
+                .index{i},
+                .info{std::move(info)},
+                .is_read_only{is_read_only},
+            });
         }
     }
 
@@ -1012,6 +1029,15 @@ class stmt_call : public expression {
         if (&info.type_ref() != &param.get_type()) {
             throw_parameter_type_mismatch(arg, param, info);
         }
+
+        // the callee reaches the data through a pointer that does not carry
+        // the read-only mark
+        if (info.is_read_only and not param.is_read_only()) {
+            throw compiler_exception{
+                arg.tok(), std::format("read-only '{}' cannot be passed to a "
+                                       "writable parameter",
+                                       arg.identifier())};
+        }
     }
 
     static auto free_in_reverse(machine& x, const token& src_loc_tk,
@@ -1092,7 +1118,7 @@ class stmt_call : public expression {
         arg.get_unary_ops().compile(tc, indent, reg);
 
         return alias_info::make_register(param.identifier(), param.get_type(),
-                                         reg);
+                                         reg, param.is_read_only());
     }
 
     // a constant lets the inlined body be decided at compile time
@@ -1116,7 +1142,7 @@ class stmt_call : public expression {
         arg.compile(tc, indent, toc::make_ident_info_from_register(reg));
 
         return alias_info::make_register(param.identifier(), param.get_type(),
-                                         reg);
+                                         reg, param.is_read_only());
     }
 
     // an indexed argument keeps its computed address, e.g. [rbp + r14 * 4 +
@@ -1145,6 +1171,7 @@ class stmt_call : public expression {
             .type_ptr{&param.get_type()},
             .register_operand{},
             .is_element{arg.is_array_element()},
+            .is_read_only{param.is_read_only()},
         };
     }
 
@@ -1166,6 +1193,7 @@ class stmt_call : public expression {
             .register_operand{dst_info.is_register() ? dst_info.operand
                                                      : operand{}},
             .is_element{not dst_info.is_array},
+            .is_read_only{},
         };
     }
 
@@ -1180,6 +1208,7 @@ class stmt_call : public expression {
             .type_ptr{&param.get_type()},
             .register_operand{},
             .is_element{},
+            .is_read_only{param.is_read_only()},
         };
     }
 };

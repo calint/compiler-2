@@ -78,6 +78,14 @@ class stmt_builtin_io final : public stmt_call {
         if (buffer.is_identifier()) {
             const ident_info info{tc.make_ident_info(buffer)};
             if (info.is_var() and info.is_array) {
+                // 'read' fills the buffer, 'write' only reads it
+                if (tok().is_text("read") and info.is_read_only) {
+                    throw compiler_exception{
+                        buffer.tok(),
+                        std::format("cannot read into read-only '{}'",
+                                    buffer.identifier())};
+                }
+
                 return;
             }
         }

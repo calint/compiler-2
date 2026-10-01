@@ -1,0 +1,39 @@
+# --checks=alias: arguments sharing storage are allowed when both parameters
+# are 'const', for inline and non-inline functions
+
+type buf {
+    data i8[4],
+    len,
+}
+
+func assert(x bool) { if not x exit(1) }
+
+func total(const d i8[], const n) res {
+    res = 0
+    foo d, n {
+        res = res + e
+    }
+}
+
+func sum(const a, const b) res {
+    res = a + b
+}
+
+func noinline sum_noinline(const a, const b) res {
+    res = a + b
+}
+
+func main() {
+    var b = buf{ { 1, 2, 3, 4 }, 3 }
+
+    # the array and its length are fields of the same variable
+    var t = total(b.data, b.len)
+    assert(t == 6)
+
+    var x = 5
+    var y = sum(x, x)
+    assert(y == 10)
+
+    var z = sum_noinline(x, x)
+    assert(z == 10)
+}

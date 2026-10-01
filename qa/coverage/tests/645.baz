@@ -1,0 +1,12 @@
+# the element of 'foo' over a 'const' array parameter cannot be assigned
+
+func f(const d i8[], const n) {
+    foo d, n {
+        e = 1
+    }
+}
+
+func main() {
+    var a = i8[2]{ 1, 2 }
+    f(a, 2)
+}

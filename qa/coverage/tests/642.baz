@@ -1,0 +1,15 @@
+# a field of a 'const' parameter cannot be assigned
+
+type point {
+    x,
+    y,
+}
+
+func f(const p point) {
+    p.x = 1
+}
+
+func main() {
+    var q = point{ 1, 2 }
+    f(q)
+}

@@ -271,7 +271,7 @@ other, easiest first
 [ ] consider not allowing single statement blocks
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
-[ ] const allowed in function declaration and code
+[x] const allowed in function declaration and code
     foo(ix : const i32) { const x = ix }
 [ ] func f(p : point const) const is default. same as "func f(p : point)"
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'

@@ -85,6 +85,12 @@ class stmt_builtin_array_copy final : public statement {
         const ident_info array_src_info{tc.make_ident_info(src_)};
         const ident_info array_dst_info{tc.make_ident_info(dst_)};
 
+        if (array_dst_info.is_read_only) {
+            throw compiler_exception{
+                dst_.tok(), std::format("cannot copy into read-only '{}'",
+                                        dst_.identifier())};
+        }
+
         if (array_src_info.type_ref().name() !=
             array_dst_info.type_ref().name()) {
             throw compiler_exception{
