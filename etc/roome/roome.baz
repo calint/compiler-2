@@ -28,14 +28,14 @@ dat str_ascii_art = "\
        | |\n\
 \n"
 
-dat  str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
-dat     str_uc = "u c "
-dat  str_exits = "exits: "
-dat str_prompt = " > "
-dat     str_nl = "\n"
+dat    str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
+dat       str_uc = "u c "
+dat    str_exits = "exits: "
+dat   str_prompt = " > "
+dat       str_nl = "\n"
 dat str_turn_end = "--\n"
-dat  str_comma = ", "
-dat  str_erase = "\b \b"
+dat    str_comma = ", "
+dat    str_erase = "\b \b"
 
 dat str_not_understood = "not understood\n"
 
