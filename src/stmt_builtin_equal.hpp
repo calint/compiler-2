@@ -75,14 +75,8 @@ class stmt_builtin_equal final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info lhs_info{tc.make_ident_info(lhs_)};
-        if (lhs_info.is_const()) {
-            throw compiler_exception{lhs_.tok(), "constant not supported"};
-        }
-        const ident_info rhs_info{tc.make_ident_info(rhs_)};
-        if (rhs_info.is_const()) {
-            throw compiler_exception{rhs_.tok(), "constant not supported"};
-        }
+        const ident_info lhs_info{make_operand_info(tc, lhs_)};
+        const ident_info rhs_info{make_operand_info(tc, rhs_)};
 
         if (lhs_info.type_ref().name() != rhs_info.type_ref().name()) {
             throw compiler_exception{
@@ -137,5 +131,24 @@ class stmt_builtin_equal final : public expression {
 
         lhs_.visit_reads(var, reader);
         rhs_.visit_reads(var, reader);
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    // memory is compared, so a constant has nothing to compare
+    [[nodiscard]] static auto
+    make_operand_info(const toc& tc, const stmt_identifier& identifier)
+        -> ident_info {
+
+        ident_info info{tc.make_ident_info(identifier)};
+        if (info.is_const()) {
+            throw compiler_exception{identifier.tok(),
+                                     "constant not supported"};
+        }
+
+        return info;
     }
 };

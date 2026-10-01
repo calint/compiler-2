@@ -67,56 +67,16 @@ class stmt_identifier : public statement {
         token tk_prv{tk};
 
         while (true) {
-            if (not tc.is_func(path_as_string_)) {
-                const ident_info cur_ident_info{
-                    tc.make_ident_info(tk, path_as_string_)};
-
-                if (tz.peek_char_after_whitespace() == '[' and
-                    not cur_ident_info.is_array) {
-                    throw compiler_exception{
-                        tk, std::format("cannot index non-array '{}'",
-                                        path_as_string_)};
-                }
-            }
-
+            assert_indexable(tc, tz, tk);
             parse_element(tc, tz, tk);
 
-            if (const token t{tz.is_next_char_token('.')}; not t.is_empty()) {
-                const token next_tk{tz.next_token()};
-                if (not is_method_name(tc, tz, tk, next_tk)) {
-                    assert_element_selected(tc, tk);
-                    assert_not_method_call(tc, tz, tk, next_tk);
-                    elem_delims_tk_.emplace_back(t);
-                    tk_prv = tk;
-                    tk = next_tk;
-                    path_as_string_.push_back('.');
-                    path_as_string_ += tk.text();
-                    continue;
-                }
-
-                // the path so far is resolved as the receiver below
-                method_dot_tk_ = t;
-                method_name_tk_ = next_tk;
-            }
-
-            if (tc.is_func(path_as_string_)) {
+            if (not extends_path(tc, tz, tk, tk_prv)) {
                 break;
             }
+        }
 
-            const ident_info ii{tc.make_ident_info(tk_prv, path_as_string_)};
-
-            set_type(ii.type_ref());
-
-            if (elems_.back().array_index_expr != nullptr) {
-                // if the last element has an index expression then this is
-                // technically no longer an array but an element
-                break;
-            }
-
-            is_array_ = ii.is_array;
-            array_count_ = ii.array_len;
-
-            break;
+        if (not tc.is_func(path_as_string_)) {
+            resolve_type(tc, tk_prv);
         }
 
         resolve_access_range(tc);
@@ -431,6 +391,26 @@ class stmt_identifier : public statement {
             tk, std::format("array '{}' must be indexed", path_as_string_)};
     }
 
+    // the '[' of an element needs an array
+    auto assert_indexable(const toc& tc, tokenizer& tz, const token& tk) const
+        -> void {
+
+        if (tc.is_func(path_as_string_)) {
+            return;
+        }
+
+        const ident_info cur_ident_info{
+            tc.make_ident_info(tk, path_as_string_)};
+
+        if (tz.peek_char_after_whitespace() == '[' and
+            not cur_ident_info.is_array) {
+
+            throw compiler_exception{
+                tk,
+                std::format("cannot index non-array '{}'", path_as_string_)};
+        }
+    }
+
     // without a method 'T.m' a following '(' would otherwise be reported as a
     // missing field
     auto assert_not_method_call(const toc& tc, tokenizer& tz,
@@ -450,6 +430,38 @@ class stmt_identifier : public statement {
         throw compiler_exception{
             name_tk, std::format("method '{}' not found in type '{}'",
                                  name_tk.text(), info.type_ref().name())};
+    }
+
+    // a '.' followed by a field continues the path with that field, a method
+    // name ends it with the path as the receiver; 'tk' becomes the field and
+    // 'tk_prv' the token before it
+    [[nodiscard]] auto extends_path(toc& tc, tokenizer& tz, token& tk,
+                                    token& tk_prv) -> bool {
+
+        const token dot_tk{tz.is_next_char_token('.')};
+        if (dot_tk.is_empty()) {
+            return false;
+        }
+
+        const token next_tk{tz.next_token()};
+        if (is_method_name(tc, tz, tk, next_tk)) {
+            // the path so far is resolved as the receiver
+            method_dot_tk_ = dot_tk;
+            method_name_tk_ = next_tk;
+
+            return false;
+        }
+
+        assert_element_selected(tc, tk);
+        assert_not_method_call(tc, tz, tk, next_tk);
+
+        elem_delims_tk_.emplace_back(dot_tk);
+        tk_prv = tk;
+        tk = next_tk;
+        path_as_string_.push_back('.');
+        path_as_string_ += tk.text();
+
+        return true;
     }
 
     // a field covers its trailing padding so that assigning every field
@@ -577,6 +589,21 @@ class stmt_identifier : public statement {
                 narrow_to_element(tc, *elem.array_index_expr, info);
             }
         }
+    }
+
+    // the path is an array only while its last element is not indexed
+    auto resolve_type(const toc& tc, const token& tk_prv) -> void {
+        const ident_info ii{tc.make_ident_info(tk_prv, path_as_string_)};
+
+        set_type(ii.type_ref());
+
+        // an indexed element is technically no longer an array but an element
+        if (elems_.back().array_index_expr != nullptr) {
+            return;
+        }
+
+        is_array_ = ii.is_array;
+        array_count_ = ii.array_len;
     }
 
     // the variable keeps the offset and covers its whole storage

@@ -524,33 +524,31 @@ class stmt_def_dat final : public statement {
                                          const bool is_array,
                                          const size_t array_count) -> elem {
 
+        if (not is_array and tp.is_builtin()) {
+            return parse_builtin(tc, tz, tp);
+        }
+
+        // user-defined type
         if (not is_array) {
-            if (tp.is_builtin()) {
-                return parse_builtin(tc, tz, tp);
-            }
-
-            // user-defined type
-
             return parse_type(tc, tz, tp);
         }
 
-        // array
-
-        // special case for string
-        if (tp.is_builtin()) {
-            const token tk{tz.next_token()};
-            if (tk.is_string()) {
-                elem el{};
-                el.is_array = is_array;
-                el.tk = tk;
-                el.array_count = string_array_count(tk, tp, array_count);
-
-                return el;
-            }
-            tz.put_back_token(tk);
+        // array, a string is the special case
+        if (not tp.is_builtin()) {
+            return parse_array(tc, tz, src_loc_tk, tp, array_count);
         }
 
-        return parse_array(tc, tz, src_loc_tk, tp, array_count);
+        const token tk{tz.next_token()};
+        if (not tk.is_string()) {
+            tz.put_back_token(tk);
+            return parse_array(tc, tz, src_loc_tk, tp, array_count);
+        }
+
+        elem el{};
+        el.is_array = true;
+        el.tk = tk;
+        el.array_count = string_array_count(tk, tp, array_count);
+        return el;
     }
 
     [[nodiscard]] static auto parse_type(const toc& tc, tokenizer& tz,

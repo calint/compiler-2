@@ -111,45 +111,21 @@ class stmt_builtin_io final : public stmt_call {
         argument(0).compile(tc, indent,
                             toc::make_ident_info_from_register(descriptor));
 
-        const statement& buffer{argument(1)};
-        const ident_info buffer_info{tc.make_ident_info(buffer)};
+        const ident_info buffer_info{tc.make_ident_info(argument(1))};
+
+        compile_count(tc, indent, count, buffer_info);
 
         const bool has_count{argument_count() >= 3};
         const bool has_start{argument_count() == 4};
 
-        if (has_count) {
-            argument(2).compile(tc, indent,
-                                toc::make_ident_info_from_register(count));
-        }
-
-        // without a count the whole array is transferred
-        if (not has_count) {
-            x.copy_value(tok(), indent, count,
-                         operand::imm(std::format("{}", buffer_info.array_len),
-                                      type_default));
-        }
-
-        // a start is checked here, a bare count is checked by 'compile_lea'
         operand start;
         if (has_start) {
-            const statement& start_arg{argument(3)};
-            start =
-                x.alloc_scratch_register(start_arg.tok(), indent, type_default);
-            start_arg.compile(tc, indent,
-                              toc::make_ident_info_from_register(start));
-            x.check_bounds(start_arg.tok(), indent, start,
-                           buffer_info.array_len, true, count,
-                           tc.bounds_check_options());
+            start = compile_start(tc, indent, count, buffer_info);
         }
 
-        const operand range{has_count and not has_start ? count : operand{}};
-
-        std::vector<operand> lea_registers;
-        const operand buffer_lea{buffer.compile_lea(tc, indent, buffer.tok(),
-                                                    lea_registers, range,
-                                                    buffer_info.lea_path, {})};
-        x.address_of(tok(), indent, buffer_reg, buffer_lea);
-        x.free_scratch_registers(tok(), indent, lea_registers);
+        // a start is checked with the start, a bare count by 'compile_lea'
+        compile_buffer_address(tc, indent, buffer_reg, buffer_info,
+                               has_count and not has_start ? count : operand{});
 
         const operand element_size_bytes{
             operand::imm(std::format("{}", buffer_info.type_ref().size_bytes()),
@@ -164,6 +140,68 @@ class stmt_builtin_io final : public stmt_call {
         x.multiply(tok(), indent, count, element_size_bytes);
 
         return args;
+    }
+
+    // the buffer register receives the address of the array, 'range' is the
+    // count that a bare count check covers
+    auto compile_buffer_address(toc& tc, const size_t indent,
+                                const operand& buffer_reg,
+                                const ident_info& buffer_info,
+                                const operand& range) const -> void {
+
+        machine& x{tc.machine()};
+
+        const statement& buffer{argument(1)};
+
+        std::vector<operand> lea_registers;
+
+        const operand buffer_lea{buffer.compile_lea(tc, indent, buffer.tok(),
+                                                    lea_registers, range,
+                                                    buffer_info.lea_path, {})};
+
+        x.address_of(tok(), indent, buffer_reg, buffer_lea);
+
+        x.free_scratch_registers(tok(), indent, lea_registers);
+    }
+
+    // without a count the whole array is transferred
+    auto compile_count(toc& tc, const size_t indent, const operand& count,
+                       const ident_info& buffer_info) const -> void {
+
+        if (argument_count() >= 3) {
+            argument(2).compile(tc, indent,
+                                toc::make_ident_info_from_register(count));
+
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        x.copy_value(tok(), indent, count,
+                     operand::imm(std::format("{}", buffer_info.array_len),
+                                  tc.get_type_default()));
+    }
+
+    // the start register stays allocated for the caller
+    [[nodiscard]] auto compile_start(toc& tc, const size_t indent,
+                                     const operand& count,
+                                     const ident_info& buffer_info) const
+        -> operand {
+
+        machine& x{tc.machine()};
+
+        const statement& start_arg{argument(3)};
+
+        const operand start{x.alloc_scratch_register(start_arg.tok(), indent,
+                                                     tc.get_type_default())};
+
+        start_arg.compile(tc, indent,
+                          toc::make_ident_info_from_register(start));
+
+        x.check_bounds(start_arg.tok(), indent, start, buffer_info.array_len,
+                       true, count, tc.bounds_check_options());
+
+        return start;
     }
 
     auto emit_call(machine& x, const size_t indent, const operand& result,

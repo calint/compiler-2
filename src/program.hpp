@@ -107,85 +107,20 @@ class program final {
     auto compile(toc& tc, const size_t indent) const -> void {
         tc.reset_usage();
 
-        machine& x{tc.machine()};
-
         tc.enter_block();
 
         for (const std::unique_ptr<statement>& s : statements_) {
             s->compile(tc, indent, ident_info::make_empty());
         }
-        const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
 
-        if (not func_main.is_inlined()) {
-            throw compiler_exception{func_main.tok(),
-                                     "main cannot be declared noinline"};
-        }
+        compile_main(tc, indent);
+        compile_noninline_functions(tc, indent);
 
-        x.comment({}, 0, "");
-
-        x.label(0, "main");
-        tc.enter_func("main", {});
-        func_main.code().compile(tc, indent, ident_info::make_empty());
-        tc.exit_func("main");
-
-        // code after an 'exit' or 'return' on every path would never run
-        if (is_end_reachable(func_main)) {
-            x.end_main();
-        }
-
-        for (const stmt_def_func* f : tc.get_func_defs()) {
-            if (f->is_inlined()) {
-                continue;
-            }
-            x.comment({}, 0, "");
-            f->source_def_comment_to(x, 0);
-            x.label(indent, f->body_label());
-            const size_t frame_size_bytes{f->compile_body(tc, indent)};
-            x.define_constant(f->frame_size_label(), frame_size_bytes);
-        }
         tc.exit_block();
 
-        if (tc.is_frame_check()) {
-            x.comment({}, 0, "frame overflow handler (--checks=frame)");
-            x.emit_frame_overflow_handler();
-        }
-
-        if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
-            x.comment({}, 0,
-                      "bounds failure handler (--checks=upper or "
-                      "--checks=lower)");
-            x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
-        }
-
-        // no section switches without strings
-        if (not tc.get_string_constants().empty()) {
-            x.comment({}, 0, "");
-            x.emit_string_constants(tc.get_string_constants());
-        }
-
-        // data section
-        const size_t alignment{x.data_alignment()};
-        x.begin_data(alignment);
-
-        // zero padding places each dat at the offset 'toc::add_var' gave it
-        size_t dat_offset{};
-        for (const statement* s : tc.get_data()) {
-            const size_t padding_bytes{
-                align_storage_size(dat_offset, s->get_type().alignment()) -
-                dat_offset};
-
-            if (padding_bytes != 0) {
-                x.comment({}, 0, "padding {} B", padding_bytes);
-                x.emit_zero_data(padding_bytes);
-            }
-
-            s->compile_data(tc);
-
-            dat_offset = add_storage_size(dat_offset + padding_bytes,
-                                          s->dat_size_bytes());
-        }
-
-        x.reserve_variables(alignment, vars_size_bytes_);
+        emit_failure_handlers(tc);
+        emit_read_only_data(tc);
+        emit_data_section(tc);
     }
 
     auto source_to(std::ostream& os) const -> void {
@@ -262,5 +197,109 @@ class program final {
 
         throw compiler_exception{
             tk, std::format("unexpected keyword '{}'", tk.text())};
+    }
+
+  private:
+    auto emit_data_section(toc& tc) const -> void {
+        machine& x{tc.machine()};
+
+        const size_t alignment{x.data_alignment()};
+        x.begin_data(alignment);
+
+        // zero padding places each dat at the offset 'toc::add_var' gave it
+        size_t dat_offset{};
+        for (const statement* s : tc.get_data()) {
+            const size_t padding_bytes{
+                align_storage_size(dat_offset, s->get_type().alignment()) -
+                dat_offset};
+
+            if (padding_bytes != 0) {
+                x.comment({}, 0, "padding {} B", padding_bytes);
+                x.emit_zero_data(padding_bytes);
+            }
+
+            s->compile_data(tc);
+
+            dat_offset = add_storage_size(dat_offset + padding_bytes,
+                                          s->dat_size_bytes());
+        }
+
+        x.reserve_variables(alignment, vars_size_bytes_);
+    }
+
+    //
+    // statics
+    //
+
+    // the main function is compiled where the program starts
+    static auto compile_main(toc& tc, const size_t indent) -> void {
+        const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
+
+        if (not func_main.is_inlined()) {
+            throw compiler_exception{func_main.tok(),
+                                     "main cannot be declared noinline"};
+        }
+
+        machine& x{tc.machine()};
+
+        x.comment({}, 0, "");
+
+        x.label(0, "main");
+        tc.enter_func("main", {});
+        func_main.code().compile(tc, indent, ident_info::make_empty());
+        tc.exit_func("main");
+
+        // code after an 'exit' or 'return' on every path would never run
+        if (is_end_reachable(func_main)) {
+            x.end_main();
+        }
+    }
+
+    // each noninline function has one body, after 'main'
+    static auto compile_noninline_functions(toc& tc, const size_t indent)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        for (const stmt_def_func* f : tc.get_func_defs()) {
+            if (f->is_inlined()) {
+                continue;
+            }
+
+            x.comment({}, 0, "");
+            f->source_def_comment_to(x, 0);
+            x.label(indent, f->body_label());
+            const size_t frame_size_bytes{f->compile_body(tc, indent)};
+            x.define_constant(f->frame_size_label(), frame_size_bytes);
+        }
+    }
+
+    // only the checks the user asked for have a handler
+    static auto emit_failure_handlers(toc& tc) -> void {
+        machine& x{tc.machine()};
+
+        if (tc.is_frame_check()) {
+            x.comment({}, 0, "frame overflow handler (--checks=frame)");
+            x.emit_frame_overflow_handler();
+        }
+
+        if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
+            x.comment({}, 0,
+                      "bounds failure handler (--checks=upper or "
+                      "--checks=lower)");
+            x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
+        }
+    }
+
+    static auto emit_read_only_data(toc& tc) -> void {
+        // no section switches without strings
+        if (tc.get_string_constants().empty()) {
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        x.comment({}, 0, "");
+        x.emit_string_constants(tc.get_string_constants());
     }
 };

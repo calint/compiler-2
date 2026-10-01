@@ -95,12 +95,19 @@ auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
                                        tz);
 }
 
+// a type name hidden by a var or alias is an identifier instead
+static auto is_type_name_followed_by(const toc& tc, const token& tk,
+                                     tokenizer& tz, const char next) -> bool {
+
+    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
+           tz.peek_char_after_whitespace() == next;
+}
+
 // declared in 'decouple.hpp'
 // e.g. 'i8[]{1, 2}' or 'point[]{{1, 2}}', a type name followed by '[' has no
 // other meaning
 auto is_array_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
-    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
-           tz.peek_char_after_whitespace() == '[';
+    return is_type_name_followed_by(tc, tk, tz, '[');
 }
 
 // declared in 'decouple.hpp'
@@ -114,22 +121,17 @@ auto is_default_array_literal(tokenizer& tz) -> bool {
 auto is_constructor_call(const toc& tc, const token& tk, tokenizer& tz)
     -> bool {
 
-    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
-           tz.peek_char_after_whitespace() == '.';
+    return is_type_name_followed_by(tc, tk, tz, '.');
 }
 
 // declared in 'decouple.hpp'
 // e.g. 'point{1, 2}', a record type name followed by '{' has no other meaning
 auto is_record_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
-    if (not tc.has_type(tk.text()) or tc.is_var_or_alias(tk.text())) {
+    if (not is_type_name_followed_by(tc, tk, tz, '{')) {
         return false;
     }
 
-    if (tc.get_type_or_throw(tk, tk.text()).is_builtin()) {
-        return false;
-    }
-
-    return tz.peek_char_after_whitespace() == '{';
+    return not tc.get_type_or_throw(tk, tk.text()).is_builtin();
 }
 
 // declared in 'decouple.hpp'

@@ -1284,56 +1284,7 @@ class toc final {
             return ii;
         }
 
-        // identifier is built-in type
-
-        // find the first element from the top that has a 'lea' and get
-        // accessor relative to that
-
-        operand lea;
-        size_t lea_index{ii.elem_path.size()};
-        while (lea_index--) {
-            if (not ii.lea_path[lea_index].is_empty()) {
-                lea = ii.lea_path[lea_index];
-                break;
-            }
-        }
-
-        if (lea.is_empty()) {
-            return ii;
-        }
-
-        // identifier has lea, construct operand
-
-        // example of resulting data structure:
-        //
-        // type string { len : i8, data : i8[127] }
-        // type room { name : string, description : string, note : string }
-        // type world { rooms : room[128] }
-        //
-        // id path     |  type  |  lea          |
-        // ------------|--------|---------------|
-        // wld         | world  | -             |
-        // rooms[2]    | room   | r15           |
-        // description | string | -             |
-        // data        | i8     | r15 + 129     |
-        //
-        // the indexing in 'rooms' is done at runtime thus the memory
-        // location of 'rooms[2]' cannot be deduced statically, thus the
-        // last lea encountered is the starting point when accessing
-        // identifiers
-
-        // start from the lea address and calculate offset to referred field
-        const std::span<std::string> elem_path_from_lea{
-            std::span{ii.elem_path}.subspan(lea_index)};
-
-        // navigate to referred element and get offset
-        const size_t offset{ii.type_path[lea_index]->field_offset(
-            src_loc_tk, elem_path_from_lea)};
-
-        ii.operand = operand::mem(lea, ii.type_ref());
-        if (offset != 0) {
-            ii.operand.increment_offset(address_offset(offset));
-        }
+        place_operand_from_lea(src_loc_tk, ii);
 
         return ii;
     }
@@ -1490,6 +1441,60 @@ class toc final {
             // -2 because the last element is the alias address and the
             // first is added when its own frame is walked
             lea_path.resize(lea_count + target_count - 2);
+        }
+    }
+
+    // a built-in identifier below a run-time indexed element is addressed from
+    // the last address held, e.g. 'wld.rooms[ix].description.data'
+    static auto place_operand_from_lea(const token& src_loc_tk, ident_info& ii)
+        -> void {
+
+        // find the first element from the top that has a 'lea' and get
+        // accessor relative to that
+        operand lea;
+        size_t lea_index{ii.elem_path.size()};
+        while (lea_index--) {
+            if (not ii.lea_path[lea_index].is_empty()) {
+                lea = ii.lea_path[lea_index];
+                break;
+            }
+        }
+
+        if (lea.is_empty()) {
+            return;
+        }
+
+        // identifier has lea, construct operand
+
+        // example of resulting data structure:
+        //
+        // type string { len : i8, data : i8[127] }
+        // type room { name : string, description : string, note : string }
+        // type world { rooms : room[128] }
+        //
+        // id path     |  type  |  lea          |
+        // ------------|--------|---------------|
+        // wld         | world  | -             |
+        // rooms[2]    | room   | r15           |
+        // description | string | -             |
+        // data        | i8     | r15 + 129     |
+        //
+        // the indexing in 'rooms' is done at runtime thus the memory
+        // location of 'rooms[2]' cannot be deduced statically, thus the
+        // last lea encountered is the starting point when accessing
+        // identifiers
+
+        // start from the lea address and calculate offset to referred field
+        const std::span<std::string> elem_path_from_lea{
+            std::span{ii.elem_path}.subspan(lea_index)};
+
+        // navigate to referred element and get offset
+        const size_t offset{ii.type_path[lea_index]->field_offset(
+            src_loc_tk, elem_path_from_lea)};
+
+        ii.operand = operand::mem(lea, ii.type_ref());
+        if (offset != 0) {
+            ii.operand.increment_offset(address_offset(offset));
         }
     }
 
