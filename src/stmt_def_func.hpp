@@ -78,7 +78,7 @@ class stmt_def_func final : public statement {
         tc.add_func(name_tk_, name_, statement::get_type(), this);
 
         // establish the function scope before parsing its body
-        tc.enter_func(name(), returns_, {}, {}, is_inlined());
+        tc.enter_func(name(), {}, {}, is_inlined());
 
         // register variables without emitting output so that the function body
         // can be parsed
@@ -137,7 +137,7 @@ class stmt_def_func final : public statement {
         machine& x{tc.machine()};
 
         x.reserve_frame_base();
-        tc.enter_func(name(), returns_, {}, {}, false, x.frame_base_register());
+        tc.enter_func(name(), {}, {}, false, x.frame_base_register());
         add_signature_vars(tc, indent + 1, true);
         code_.compile(tc, indent, ident_info::make_empty());
         x.return_function(indent + 1);

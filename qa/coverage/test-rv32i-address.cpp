@@ -145,7 +145,8 @@ auto main(const int argc, const char* argv[]) -> int {
             }
             assembler.optimize_jumps();
             std::ostringstream output;
-            assembler.resolve_and_write(output);
+            assembler.resolve_jumps();
+            assembler.write_resolved(output);
 
             return output.str();
         };
@@ -256,7 +257,8 @@ auto main(const int argc, const char* argv[]) -> int {
             assembler.label(0, "end");
             assembler.optimize_jumps();
             std::ostringstream output;
-            assembler.resolve_and_write(output);
+            assembler.resolve_jumps();
+            assembler.write_resolved(output);
             assert(output.str() == "bne a0, a1, end\n.data\n.word 1\n.text\n"
                                    "skip:\necall\nend:\n");
         }
@@ -280,7 +282,8 @@ auto main(const int argc, const char* argv[]) -> int {
 
         const auto written = [](assembler_rv32i& assembler) -> std::string {
             std::ostringstream output;
-            assembler.resolve_and_write(output);
+            assembler.resolve_jumps();
+            assembler.write_resolved(output);
 
             return output.str();
         };
@@ -442,8 +445,7 @@ auto main(const int argc, const char* argv[]) -> int {
     const type empty{"void", 0, true};
     if (argc > 1 and std::string_view{argv[1]} == "x86-scales") {
         machine_x86_64 backend{std::cout, {}};
-        backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+        backend.set_builtin_types(integer64, integer, half, byte);
         std::println("bits 64\nsection .text\nglobal _start\n_start:");
         for (const uint64_t scale : {UINT64_C(256), UINT64_C(4294967296),
                                      UINT64_C(9223372036854775808)}) {
@@ -492,8 +494,7 @@ auto main(const int argc, const char* argv[]) -> int {
               assembler::jump_mode::optimized}) {
             std::ostringstream output;
             machine_rv32i backend{output, {}, jumps};
-            backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                      empty);
+            backend.set_builtin_types(integer64, integer, half, byte);
             backend.start();
 
             const operand result{operand::reg("a0", integer)};
@@ -524,8 +525,7 @@ auto main(const int argc, const char* argv[]) -> int {
         // the backend's jumps and labels reach the optimizer
         std::ostringstream output;
         machine_rv32i backend{output, {}, assembler::jump_mode::optimized};
-        backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+        backend.set_builtin_types(integer64, integer, half, byte);
         backend.start();
 
         const operand left{operand::reg("a0", integer)};
@@ -565,8 +565,7 @@ auto main(const int argc, const char* argv[]) -> int {
     {
         assembly_output copies;
         machine_rv32i backend{copies};
-        backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+        backend.set_builtin_types(integer64, integer, half, byte);
         const operand address{operand::mem("s0", {}, 1, 24, integer)};
         backend.copy_value(token{}, 0, address, address);
         assert(copies.str().empty());
@@ -598,8 +597,7 @@ auto main(const int argc, const char* argv[]) -> int {
         located.comment(location, 1, "assignment");
         located.comment(token{}, 0, "generated");
         assert(comments.str() == "    # [2:5] assignment\n# generated\n");
-        located.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+        located.set_builtin_types(integer64, integer, half, byte);
         comments.str({});
         const operand scratch{
             located.alloc_scratch_register(location, 1, integer)};
@@ -649,8 +647,7 @@ auto main(const int argc, const char* argv[]) -> int {
     if (argc > 1 and std::string_view{argv[1]} == "noninline") {
         // hand-written lines are interleaved with the backend's output
         machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
-        backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+        backend.set_builtin_types(integer64, integer, half, byte);
         backend.start();
         std::println("    addi sp, sp, -128\n    sw sp, 124(sp)");
         // a call keeps only allocated registers, the variables base s0 is
@@ -722,8 +719,7 @@ auto main(const int argc, const char* argv[]) -> int {
     if (argc > 1 and std::string_view{argv[1]} == "frame-checks") {
         // hand-written lines are interleaved with the backend's output
         machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
-        backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+        backend.set_builtin_types(integer64, integer, half, byte);
         backend.start();
         const operand continuation{
             backend.alloc_named_register(token{}, 0, "s3", integer)};
@@ -779,8 +775,7 @@ auto main(const int argc, const char* argv[]) -> int {
     if (argc > 1 and std::string_view{argv[1]} == "long-loop") {
         // hand-written lines are interleaved with the backend's output
         machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
-        backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+        backend.set_builtin_types(integer64, integer, half, byte);
         backend.start();
         std::println("    addi sp, sp, -16");
         for (const size_t stride : {4U, 2047U, 2048U, 4094U, 4095U, 8192U}) {
@@ -815,8 +810,7 @@ auto main(const int argc, const char* argv[]) -> int {
                               mode == "far-jumps"
                                   ? assembler::jump_mode::resolved
                                   : assembler::jump_mode::optimized};
-        backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+        backend.set_builtin_types(integer64, integer, half, byte);
         backend.start();
 
         // buffered output must come from the backend, so pad with 'xori' on a
@@ -1104,8 +1098,7 @@ func main() {
     }
     if (argc > 1) {
         machine_rv32i bounds_backend{std::cout};
-        bounds_backend.set_builtin_types(integer64, integer, half, byte,
-                                         boolean, empty);
+        bounds_backend.set_builtin_types(integer64, integer, half, byte);
         std::println(
             ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
         if (std::string_view{argv[1]} == "bounds-silent") {
@@ -1181,8 +1174,7 @@ func main() {
     }
     std::ostringstream x86_output;
     machine_x86_64 x86_backend{x86_output, {}};
-    x86_backend.set_builtin_types(integer64, integer, half, byte, boolean,
-                                  empty);
+    x86_backend.set_builtin_types(integer64, integer, half, byte);
     constexpr std::array<std::string_view, 14> x86_scratch_order{
         "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
         "r11", "rbx", "rsi", "rdi", "rcx", "rdx", "rax"};
@@ -1332,7 +1324,7 @@ func main() {
     // later checks capture this backend's output by redirecting the buffer
     std::ostream backend_output{std::cout.rdbuf()};
     machine_rv32i backend{backend_output};
-    backend.set_builtin_types(integer64, integer, half, byte, boolean, empty);
+    backend.set_builtin_types(integer64, integer, half, byte);
     assert(&backend.default_type() == &integer);
     assert(backend.address_size_bytes() == 4);
     assert(backend.can_lower_index_scale(1));
@@ -2125,8 +2117,7 @@ func main() {
     for (const char operation : {'*', '/', '%', '+'}) {
         std::ostringstream output;
         machine_rv32i helper_backend{output};
-        helper_backend.set_builtin_types(integer64, integer, half, byte,
-                                         boolean, empty);
+        helper_backend.set_builtin_types(integer64, integer, half, byte);
         if (operation != '+') {
             const auto emit = [&]() {
                 if (operation == '*') {

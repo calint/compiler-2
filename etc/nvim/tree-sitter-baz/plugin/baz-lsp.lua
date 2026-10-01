@@ -27,6 +27,14 @@ local type_parents = {
 -- names 'foo' injects into its body
 local injected = { e = true, i = true, n = true }
 
+-- built-in functions have no declaration in the source, they match by name
+local builtin_functions = {}
+for word in
+  ([[array_copy array_length arrays_equal equal exit read write]]):gmatch("%S+")
+do
+  builtin_functions[word] = true
+end
+
 local keywords = {}
 for word in
   ([[let mut dat func noinline type var return if loop foo else break continue
@@ -382,6 +390,10 @@ local function resolve_call(root, bufnr, node)
   local call = node:parent()
   local receiver = call:field("receiver")[1]
   if not receiver then
+    -- the compiler checks the built-in names before user functions
+    if builtin_functions[name] then
+      return { kind = "builtin", decls = {}, exact = true, builtin = name }
+    end
     local id = top_level(root, bufnr, "function", name)
     if not id then
       return nil
@@ -476,6 +488,12 @@ local function references(root, bufnr, target, include_declaration)
   each_identifier(root, function(id)
     local r = resolve(root, bufnr, id)
     if not r then
+      return
+    end
+    if target.builtin then
+      if r.builtin == target.builtin then
+        found[#found + 1] = id
+      end
       return
     end
     local is_declaration = #r.decls == 1 and node_key(r.decls[1]) == node_key(id)
@@ -588,7 +606,8 @@ handlers["textDocument/definition"] = function(params)
   local node = identifier_at(root, params.position)
   local target = node and resolve(root, bufnr, node)
   if not target then
-    return vim.NIL
+    -- vim.NIL is truthy and breaks the client's 'res.result or {}'
+    return {}
   end
   return locations(uri, target.decls)
 end
@@ -599,7 +618,7 @@ handlers["textDocument/references"] = function(params)
   local node = identifier_at(root, params.position)
   local target = node and resolve(root, bufnr, node)
   if not target then
-    return vim.NIL
+    return {}
   end
   return locations(uri, references(root, bufnr, target, params.context.includeDeclaration))
 end

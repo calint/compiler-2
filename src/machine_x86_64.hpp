@@ -30,10 +30,6 @@ class token;
 class type;
 
 class machine_x86_64 final : public machine {
-    // buffered modes hold output from 'start' to 'finish' so jumps can
-    // be optimized
-    using jump_mode = assembler::jump_mode;
-
     using op = assembler_x86_64::op;
 
     using condition = assembler_x86_64::condition;
@@ -186,35 +182,20 @@ class machine_x86_64 final : public machine {
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
     std::vector<allocation> allocations_;
-    size_t usage_max_scratch_regs_{};
     // numbers the labels after the parts of a memory compare
     size_t equal_label_count_{};
 
-    std::string_view source_;
-
-    const type* default_type_{};
-    const type* type_bool_{};
-    const type* type_i64_{};
-    const type* type_i32_{};
-    const type* type_i16_{};
-    const type* type_i8_{};
-    const type* type_void_{};
-
-    std::reference_wrapper<std::ostream> os_;
-    jump_mode jump_mode_{};
-    // buffering output is no more logical state than writing to 'os_'
+    // buffering output is no more logical state than writing to the stream
     mutable assembler_x86_64 assembler_;
 
   public:
     explicit machine_x86_64(std::ostream& os_ref, const std::string_view source,
                             const jump_mode jumps = jump_mode::resolved)
-        : source_{source}, os_{os_ref}, jump_mode_{jumps} {
+        : machine{os_ref, source, jumps} {
 
         // output before 'start' is written as emitted in every mode
-        assembler_.set_direct_output(&os_.get());
+        assembler_.set_direct_output(&stream());
     }
-
-    using machine::comment;
 
     using machine::emit_data_array;
 
@@ -285,8 +266,7 @@ class machine_x86_64 final : public machine {
 
             push_allocation(src_loc_tk, register_name, type_ref, false);
 
-            usage_max_scratch_regs_ =
-                std::max(scratch_count(), usage_max_scratch_regs_);
+            record_scratch_register_count(scratch_count());
 
             operand result{make_register_operand(register_name, type_ref)};
 
@@ -378,7 +358,7 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "set function frame base");
         lea(indent,
-            make_register_operand(frame_base_register(), *default_type_),
+            make_register_operand(frame_base_register(), default_type()),
             frame_address, true);
 
         assembler_.call(indent, label);
@@ -412,7 +392,7 @@ class machine_x86_64 final : public machine {
         operand reg_line_num;
         if (options.with_line) {
             reg_line_num =
-                alloc_scratch_register(src_loc_tk, indent, *default_type_);
+                alloc_scratch_register(src_loc_tk, indent, default_type());
 
             comment(src_loc_tk, indent, "source line");
             mov(src_loc_tk, indent, reg_line_num,
@@ -465,10 +445,10 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "frame capacity check begin");
 
         const operand start{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
 
         const operand remaining{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
 
         lea(indent, start, frame_address, true);
         assembler_.instruction(indent, op::lea, to_argument(remaining),
@@ -490,20 +470,6 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
-    }
-
-    auto comment(const token& src_loc_tk, const size_t indent,
-                 const std::string_view text) -> void override {
-
-        if (src_loc_tk.at_line() == 0) {
-            assembler_.comment(indent, text);
-            return;
-        }
-
-        const auto [line, column]{line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
-
-        assembler_.comment(indent, line, column, text);
     }
 
     auto comment_alias(const token& src_loc_tk, const size_t indent,
@@ -568,7 +534,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "size <= {} B, use mov",
                 threshold_for_rep_movs_size_bytes);
 
-        reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rax", default_type());
         for_each_part(
             size_bytes, size_qword,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
@@ -644,9 +610,7 @@ class machine_x86_64 final : public machine {
     }
 
     [[nodiscard]] auto default_type() const -> const type& override {
-        assert(default_type_);
-
-        return *default_type_;
+        return builtin_type_i64();
     }
 
     auto define_constant(const std::string_view name, const size_t value)
@@ -661,10 +625,10 @@ class machine_x86_64 final : public machine {
 
         assert(operation == '/' or operation == '%');
 
-        reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rax", default_type());
         mov(src_loc_tk, indent, qword_register("rax"), dst);
 
-        reserve_named_register(src_loc_tk, indent, "rdx", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rdx", default_type());
         assembler_.instruction(indent, op::cqo);
 
         emit_signed_divide(src_loc_tk, indent, divisor);
@@ -926,26 +890,11 @@ class machine_x86_64 final : public machine {
             release_variables_base();
         }
 
-        if (assembler_.is_buffering()) {
-            if (jump_mode_ == jump_mode::optimized) {
-                assembler_.optimize_jumps();
-            }
-            assembler_.add_optimization_counts();
-        }
-
-        // otherwise the optimization counts open the statistics block
-        if (not assembler_.is_buffering()) {
-            assembler_.add_separator_newline();
-        }
-
-        assembler_.comment(0, std::format("max scratch registers in use: {}",
-                                          usage_max_scratch_regs_));
+        finish_output();
 
         assert(allocations_.empty());
         assert(unavailable_registers_ == 0);
         assert(not frame_base_reserved_);
-
-        usage_max_scratch_regs_ = 0;
     }
 
     [[nodiscard]] auto frame_base_register() const
@@ -1008,10 +957,10 @@ class machine_x86_64 final : public machine {
 
         if (product.type_ref().size_bytes() == size_byte) {
             const operand left{
-                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+                alloc_scratch_register(src_loc_tk, indent, default_type())};
 
             const operand right{
-                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+                alloc_scratch_register(src_loc_tk, indent, default_type())};
 
             mov(src_loc_tk, indent, left, product);
             mov(src_loc_tk, indent, right, factor);
@@ -1095,7 +1044,7 @@ class machine_x86_64 final : public machine {
         assert(not frame_base_reserved_);
         assert(scratch_count() == 0);
 
-        push_allocation(token{}, frame_base_register(), *default_type_, true);
+        push_allocation(token{}, frame_base_register(), default_type(), true);
 
         frame_base_reserved_ = true;
     }
@@ -1116,7 +1065,7 @@ class machine_x86_64 final : public machine {
         assert(not variables_base_reserved_);
 
         reserve_named_register(token{}, 0, variables_base_register_,
-                               *default_type_);
+                               default_type());
 
         variables_base_reserved_ = true;
     }
@@ -1145,20 +1094,6 @@ class machine_x86_64 final : public machine {
         lea(indent, qword_register("rsi"), address);
     }
 
-    auto set_builtin_types(const type& t_i64, const type& t_i32,
-                           const type& t_i16, const type& t_i8,
-                           const type& t_bool, const type& t_void)
-        -> void override {
-
-        default_type_ = &t_i64;
-        type_i64_ = &t_i64;
-        type_i32_ = &t_i32;
-        type_i16_ = &t_i16;
-        type_i8_ = &t_i8;
-        type_bool_ = &t_bool;
-        type_void_ = &t_void;
-    }
-
     auto set_memory_equal_left(const size_t indent, const operand& address)
         -> void override {
 
@@ -1185,7 +1120,7 @@ class machine_x86_64 final : public machine {
         }
 
         validate_shift_operand(src_loc_tk, count);
-        reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rcx", default_type());
         mov(src_loc_tk, indent,
             sized_register("rcx", dst.type_ref().size_bytes()), count);
         emit_op(src_loc_tk, indent, code, dst,
@@ -1194,14 +1129,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto start() -> void override {
-        // resolved and optimized jumps need every line before writing
-        assembler_.set_direct_output(
-            jump_mode_ == jump_mode::as_emitted ? &os_.get() : nullptr);
+        start_output();
 
-        assembler_.comment(0, "");
-        assembler_.comment(0, "generated by baz");
-        assembler_.comment(0, "");
-        assembler_.add_separator_newline();
         assembler_.default_rel();
         assembler_.add_separator_newline();
 
@@ -1282,7 +1211,7 @@ class machine_x86_64 final : public machine {
         }
 
         assembler_.write(os);
-        assembler_.set_direct_output(&os_.get());
+        assembler_.set_direct_output(&stream());
     }
 
     auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -1290,12 +1219,13 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         if (size_bytes > threshold_for_rep_stos_size_bytes) {
-            reserve_named_register(src_loc_tk, indent, "rax", *default_type_);
-            reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
-            reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
-            xor_op(indent,
-                   machine_x86_64::make_register_operand("al", *type_i8_),
-                   machine_x86_64::make_register_operand("al", *type_i8_));
+            reserve_named_register(src_loc_tk, indent, "rax", default_type());
+            reserve_named_register(src_loc_tk, indent, "rdi", default_type());
+            reserve_named_register(src_loc_tk, indent, "rcx", default_type());
+            xor_op(
+                indent,
+                machine_x86_64::make_register_operand("al", builtin_type_i8()),
+                machine_x86_64::make_register_operand("al", builtin_type_i8()));
             lea(indent, qword_register("rdi"), dst);
             mov(src_loc_tk, indent, qword_register("rcx"),
                 immediate(size_bytes));
@@ -1387,6 +1317,15 @@ class machine_x86_64 final : public machine {
         return 0;
     }
 
+  protected:
+    //
+    // overridden methods
+    //
+
+    [[nodiscard]] auto target_assembler() const -> assembler& override {
+        return assembler_;
+    }
+
   private:
     auto add(const size_t indent, const operand& dst, const operand& src)
         -> void {
@@ -1410,7 +1349,7 @@ class machine_x86_64 final : public machine {
         }
 
         const operand scaled{
-            alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
+            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64())};
 
         registers.push_back(scaled);
         const std::string_view multiple{scaled.base_register()};
@@ -1444,9 +1383,9 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto alloc_bulk_registers(const token& src_loc_tk,
                                             const size_t indent) -> operand {
 
-        reserve_named_register(src_loc_tk, indent, "rsi", *default_type_);
-        reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
-        return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rsi", default_type());
+        reserve_named_register(src_loc_tk, indent, "rdi", default_type());
+        return alloc_named_register(src_loc_tk, indent, "rcx", default_type());
     }
 
     auto branch_comparison(const size_t indent,
@@ -1476,16 +1415,16 @@ class machine_x86_64 final : public machine {
 
         switch (size_bytes) {
         case size_qword:
-            return *type_i64_;
+            return builtin_type_i64();
 
         case size_dword:
-            return *type_i32_;
+            return builtin_type_i32();
 
         case size_word:
-            return *type_i16_;
+            return builtin_type_i16();
 
         case size_byte:
-            return *type_i8_;
+            return builtin_type_i8();
 
         default:
             std::unreachable();
@@ -1525,7 +1464,7 @@ class machine_x86_64 final : public machine {
         }
 
         const operand reg_top_idx{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
 
         mov(src_loc_tk, indent, reg_top_idx, reg_count);
         add(indent, reg_top_idx, reg_to_check);
@@ -1540,9 +1479,9 @@ class machine_x86_64 final : public machine {
         const std::function_ref<void(const operand&)> load_source_address)
         -> void {
 
-        reserve_named_register(src_loc_tk, indent, "rsi", *default_type_);
-        reserve_named_register(src_loc_tk, indent, "rdi", *default_type_);
-        reserve_named_register(src_loc_tk, indent, "rcx", *default_type_);
+        reserve_named_register(src_loc_tk, indent, "rsi", default_type());
+        reserve_named_register(src_loc_tk, indent, "rdi", default_type());
+        reserve_named_register(src_loc_tk, indent, "rcx", default_type());
 
         load_source_address(qword_register("rsi"));
         lea(indent, qword_register("rdi"), dst);
@@ -1582,7 +1521,7 @@ class machine_x86_64 final : public machine {
         }
 
         const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
+            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64())};
 
         emit(indent, op::mov, reg, src_op);
         emit(indent, code, dst_op, reg);
@@ -1713,7 +1652,7 @@ class machine_x86_64 final : public machine {
         }
 
         const operand scratch_reg{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
 
         mov(src_loc_tk, indent, scratch_reg, divisor);
         idiv(indent, scratch_reg);
@@ -1778,7 +1717,7 @@ class machine_x86_64 final : public machine {
 
     template <std::integral value_t>
     [[nodiscard]] auto immediate(const value_t value) const -> operand {
-        return operand::imm(std::format("{}", value), *default_type_);
+        return operand::imm(std::format("{}", value), default_type());
     }
 
     auto imul(const token& src_loc_tk, const size_t indent,
@@ -1834,7 +1773,7 @@ class machine_x86_64 final : public machine {
         }
 
         const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            alloc_scratch_register(src_loc_tk, indent, default_type())};
 
         lea(indent, reg, address);
         mov(src_loc_tk, indent, dst, reg);
@@ -1852,7 +1791,7 @@ class machine_x86_64 final : public machine {
         }
 
         const operand address{
-            alloc_scratch_register(src_loc_tk, indent, *type_i64_)};
+            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64())};
         registers.push_back(address);
         const std::string_view sum{address.base_register()};
         assembler_.instruction(indent, op::mov, sum, value.displacement());
@@ -1996,7 +1935,7 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto qword_register(const std::string_view name) const
         -> operand {
 
-        return make_register_operand(name, *type_i64_);
+        return make_register_operand(name, builtin_type_i64());
     }
 
     auto release_bulk_registers(const token& src_loc_tk, const size_t indent)
@@ -2115,7 +2054,7 @@ class machine_x86_64 final : public machine {
         }
 
         const auto [line, col]{line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+            src_loc_tk.at_line(), src_loc_tk.start_index(), source())};
 
         return std::format("{}:{}", line, col);
     }

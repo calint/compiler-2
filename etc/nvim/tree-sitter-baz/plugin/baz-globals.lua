@@ -1,5 +1,5 @@
 -- predicates for queries/highlights.scm:
---   '#baz-global?' true when the identifier refers to a file level 'dat' or 'var'
+--   '#baz-global?' true when the identifier refers to a file level 'dat', 'var' or 'let'
 --   '#baz-parameter?' true when the identifier refers to a function parameter
 --   or the named return value
 -- directive for queries/aerial.scm:
@@ -102,7 +102,7 @@ end
 local function is_global(program, name, source)
   for c in program:iter_children() do
     local t = c:type()
-    if (t == "data_declaration" or t == "variable_declaration") and declares(c, name, source) then
+    if declaration_types[t] and declares(c, name, source) then
       return true
     end
   end

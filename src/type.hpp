@@ -98,8 +98,7 @@ class type final {
 
     // fields are placed at offsets aligned to their type and the size is
     // rounded up so that array elements stay aligned
-    auto add_field([[maybe_unused]] const token& src_loc_tk,
-                   const std::string_view name, const type& tp,
+    auto add_field(const std::string_view name, const type& tp,
                    const bool is_array, const size_t array_count) -> void {
 
         const size_t total_size_bytes{

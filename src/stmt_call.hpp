@@ -713,8 +713,7 @@ class stmt_call : public expression {
 
         // enter function scope
 
-        tc.enter_func(func.name(), func.returns(), new_call_path,
-                      ret_jmp_label);
+        tc.enter_func(func.name(), new_call_path, ret_jmp_label);
 
         // add aliases
         for (const alias_info& e : aliases_to_add) {

@@ -293,6 +293,33 @@ class assembler_rv32i final : public assembler {
     static constexpr size_t one_instruction_bytes{4};
     static constexpr size_t two_instructions_bytes{8};
 
+    //
+    // overridden methods
+    //
+
+    auto comment(const size_t indent, const std::string_view text)
+        -> void override {
+
+        if (text.empty()) {
+            add_text(indentation(indent) + "#");
+            return;
+        }
+
+        add_text(std::format("{}# {}", indentation(indent), text));
+    }
+
+    // 'line' and 'column' locate the source the comment is about
+    auto comment(const size_t indent, const size_t line, const size_t column,
+                 const std::string_view text) -> void override {
+
+        add_text(std::format("{}# [{}:{}] {}", indentation(indent), line,
+                             column, text));
+    }
+
+    //
+    // class methods
+    //
+
     auto add(const size_t indent, const std::string_view rd,
              const std::string_view rs1, const std::string_view rs2) -> void {
 
@@ -495,23 +522,6 @@ class assembler_rv32i final : public assembler {
                             .target{std::string{target}},
                         },
                         {.rd{link}, .rs1{}, .rs2{}});
-    }
-
-    auto comment(const size_t indent, const std::string_view text) -> void {
-        if (text.empty()) {
-            add_text(indentation(indent) + "#");
-            return;
-        }
-
-        add_text(std::format("{}# {}", indentation(indent), text));
-    }
-
-    // 'line' and 'column' locate the source the comment is about
-    auto comment(const size_t indent, const size_t line, const size_t column,
-                 const std::string_view text) -> void {
-
-        add_text(std::format("{}# [{}:{}] {}", indentation(indent), line,
-                             column, text));
     }
 
     auto data(const size_t element_size_bytes,
@@ -813,11 +823,6 @@ class assembler_rv32i final : public assembler {
             });
 
         add_text(".endr");
-    }
-
-    auto resolve_and_write(std::ostream& os) -> void {
-        resolve_jumps();
-        write_resolved(os);
     }
 
     auto resolve_jumps() -> void {

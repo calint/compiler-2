@@ -67,8 +67,7 @@ class program final {
 
         machine& x{tc_.machine()};
 
-        x.set_builtin_types(type_i64, type_i32, type_i16, type_i8, type_bool,
-                            type_void);
+        x.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
 
         tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr);
         tc_.add_func(src_loc_tk, "write", tc_.get_type_default(), nullptr);
@@ -245,7 +244,7 @@ class program final {
         x.comment({}, 0, "");
 
         x.label(0, "main");
-        tc.enter_func("main", {});
+        tc.enter_func("main");
         func_main.code().compile(tc, indent, ident_info::make_empty());
         tc.exit_func("main");
 

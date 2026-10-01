@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <bit>
+#include <cassert>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -15,12 +17,27 @@
 #include <string_view>
 #include <utility>
 
+#include "assembler.hpp"
 #include "decouple.hpp"
+#include "token.hpp"
 
-class token;
 class type;
 
 class machine {
+    std::reference_wrapper<std::ostream> os_;
+    std::string_view source_;
+    assembler::jump_mode jump_mode_;
+    const type* type_i64_{};
+    const type* type_i32_{};
+    const type* type_i16_{};
+    const type* type_i8_{};
+    size_t usage_max_scratch_regs_{};
+
+  protected:
+    // buffered modes hold output from 'start' to 'finish' so jumps can be
+    // optimized and grown to reach their targets
+    using jump_mode = assembler::jump_mode;
+
   public:
     enum class builtin_function : uint8_t { read, write, exit };
 
@@ -66,7 +83,11 @@ class machine {
         std::string_view result;
     };
 
-    machine() = default;
+    // 'source' locates the tokens of comments, backend tests may leave it empty
+    machine(std::ostream& os, const std::string_view source,
+            const jump_mode jumps)
+        : os_{os}, source_{source}, jump_mode_{jumps} {}
+
     machine(const machine&) = delete;
     machine(machine&&) = delete;
     auto operator=(const machine&) -> machine& = delete;
@@ -150,9 +171,6 @@ class machine {
                                       const operand& frame_size_bytes,
                                       const std::string_view failure_label,
                                       const bool enabled = {}) -> void = 0;
-
-    virtual auto comment(const token& src_loc_tk, const size_t indent,
-                         const std::string_view text) -> void = 0;
 
     virtual auto comment_alias(const token& src_loc_tk, const size_t indent,
                                const std::string_view from,
@@ -313,11 +331,6 @@ class machine {
     virtual auto set_array_copy_source(const size_t indent,
                                        const operand& address) -> void = 0;
 
-    virtual auto set_builtin_types(const type& t_i64, const type& t_i32,
-                                   const type& t_i16, const type& t_i8,
-                                   const type& t_bool, const type& t_void)
-        -> void = 0;
-
     virtual auto set_memory_equal_left(const size_t indent,
                                        const operand& address) -> void = 0;
 
@@ -362,6 +375,21 @@ class machine {
     //
     // class methods
     //
+
+    // synthetic tokens and standalone backend calls have no source location
+    auto comment(const token& src_loc_tk, const size_t indent,
+                 const std::string_view text) -> void {
+
+        if (src_loc_tk.at_line() == 0 or source_.empty()) {
+            target_assembler().comment(indent, text);
+            return;
+        }
+
+        const auto [line, column]{line_and_col_num_for_char_index(
+            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+
+        target_assembler().comment(indent, line, column, text);
+    }
 
     template <typename... args_t>
     auto comment(const token& src_loc_tk, const size_t indent,
@@ -412,7 +440,96 @@ class machine {
         }
     }
 
+    auto set_builtin_types(const type& t_i64, const type& t_i32,
+                           const type& t_i16, const type& t_i8) -> void {
+
+        type_i64_ = &t_i64;
+        type_i32_ = &t_i32;
+        type_i16_ = &t_i16;
+        type_i8_ = &t_i8;
+    }
+
   protected:
+    //
+    // virtual methods
+    //
+
+    // the assembler the target writes its output with
+    [[nodiscard]] virtual auto target_assembler() const -> assembler& = 0;
+
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto builtin_type_i16() const -> const type& {
+        assert(type_i16_ != nullptr);
+
+        return *type_i16_;
+    }
+
+    [[nodiscard]] auto builtin_type_i32() const -> const type& {
+        assert(type_i32_ != nullptr);
+
+        return *type_i32_;
+    }
+
+    [[nodiscard]] auto builtin_type_i64() const -> const type& {
+        assert(type_i64_ != nullptr);
+
+        return *type_i64_;
+    }
+
+    [[nodiscard]] auto builtin_type_i8() const -> const type& {
+        assert(type_i8_ != nullptr);
+
+        return *type_i8_;
+    }
+
+    // writes the statistics block that ends the output, after the optional
+    // jump optimization of buffered output
+    auto finish_output() -> void {
+        assembler& output{target_assembler()};
+
+        if (output.is_buffering()) {
+            if (jump_mode_ == jump_mode::optimized) {
+                output.optimize_jumps();
+            }
+            output.add_optimization_counts();
+        }
+
+        // otherwise the optimization counts open the statistics block
+        if (not output.is_buffering()) {
+            output.add_separator_newline();
+        }
+
+        output.comment(0, std::format("max scratch registers in use: {}",
+                                      usage_max_scratch_regs_));
+
+        usage_max_scratch_regs_ = 0;
+    }
+
+    // keeps the greatest count of scratch registers in use at once
+    auto record_scratch_register_count(const size_t count) -> void {
+        usage_max_scratch_regs_ = std::max(usage_max_scratch_regs_, count);
+    }
+
+    [[nodiscard]] auto source() const -> std::string_view { return source_; }
+
+    // resolved and optimized jumps need every line before writing
+    auto start_output() -> void {
+        assembler& output{target_assembler()};
+
+        output.set_direct_output(
+            jump_mode_ == jump_mode::as_emitted ? &os_.get() : nullptr);
+
+        output.comment(0, "");
+        output.comment(0, "generated by baz");
+        output.comment(0, "");
+        output.add_separator_newline();
+    }
+
+    [[nodiscard]] auto stream() const -> std::ostream& { return os_.get(); }
+
     //
     // statics
     //

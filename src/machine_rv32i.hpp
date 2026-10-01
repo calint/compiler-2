@@ -18,12 +18,6 @@
 #include "type.hpp"
 
 class machine_rv32i : public machine {
-  protected:
-    // buffered modes hold output from 'start' to 'finish' so jumps can
-    // be optimized and grown to reach their targets
-    using jump_mode = assembler::jump_mode;
-
-  private:
     using op = assembler_rv32i::op;
 
     using section = assembler_rv32i::section;
@@ -62,21 +56,16 @@ class machine_rv32i : public machine {
         bool named;
     };
 
-    std::reference_wrapper<std::ostream> os_;
-    std::string_view source_;
-    jump_mode jump_mode_{};
     // empty when no binary image is written
     std::string binary_file_name_;
-    // buffering output is no more logical state than writing to 'os_'
+    // buffering output is no more logical state than writing to the stream
     mutable assembler_rv32i assembler_;
-    const type* type_i32_{};
     uint32_t unavailable_registers_{};
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
     bool multiply_helper_used_{};
     bool divide_helper_used_{};
     std::vector<allocation> allocations_;
-    size_t usage_max_scratch_regs_{};
     std::vector<std::array<operand, 3>> bulk_registers_;
 
     // where unrolled accesses start: the address minus 'phase' is aligned to
@@ -1013,6 +1002,14 @@ class machine_rv32i : public machine {
 
   protected:
     //
+    // overridden methods
+    //
+
+    [[nodiscard]] auto target_assembler() const -> ::assembler& override {
+        return assembler_;
+    }
+
+    //
     // virtual methods
     //
 
@@ -1074,14 +1071,12 @@ class machine_rv32i : public machine {
                            const std::string_view source = {},
                            const jump_mode jumps = jump_mode::resolved,
                            const std::string_view binary_file_name = {})
-        : os_{os_ref}, source_{source}, jump_mode_{jumps},
-          binary_file_name_{binary_file_name} {
+        : machine{os_ref, source, jumps}, binary_file_name_{binary_file_name} {
 
         // output before 'start' is written as emitted in every mode
-        assembler_.set_direct_output(&os_.get());
+        assembler_.set_direct_output(&stream());
     }
 
-    using machine::comment;
     using machine::emit_data_array;
 
     //
@@ -1197,8 +1192,7 @@ class machine_rv32i : public machine {
 
             record_allocation(src_loc_tk, indent, index, false);
 
-            usage_max_scratch_regs_ =
-                std::max(scratch_count(), usage_max_scratch_regs_);
+            record_scratch_register_count(scratch_count());
 
             comment(src_loc_tk, indent, "allocate scratch register -> {}",
                     register_names_.at(index));
@@ -1394,21 +1388,6 @@ class machine_rv32i : public machine {
         branch(indent, failure_label);
         assembler_.label(indent, "2");
         comment(src_loc_tk, indent, "frame capacity check end");
-    }
-
-    auto comment(const token& src_loc_tk, const size_t indent,
-                 const std::string_view text) -> void override {
-
-        // synthetic tokens and standalone backend calls have no source location
-        if (src_loc_tk.at_line() == 0 or source_.empty()) {
-            assembler_.comment(indent, text);
-            return;
-        }
-
-        const auto [line, column]{line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
-
-        assembler_.comment(indent, line, column, text);
     }
 
     auto comment_alias(const token& src_loc_tk, const size_t indent,
@@ -1611,9 +1590,7 @@ class machine_rv32i : public machine {
     }
 
     [[nodiscard]] auto default_type() const -> const type& override {
-        assert(type_i32_ != nullptr);
-
-        return *type_i32_;
+        return builtin_type_i32();
     }
 
     auto define_constant(const std::string_view name, const size_t value)
@@ -1882,22 +1859,7 @@ class machine_rv32i : public machine {
         assert(not variables_base_reserved_);
         assert(not frame_base_reserved_);
 
-        if (assembler_.is_buffering()) {
-            if (jump_mode_ == jump_mode::optimized) {
-                assembler_.optimize_jumps();
-            }
-            assembler_.add_optimization_counts();
-        }
-
-        // otherwise the optimization counts open the statistics block
-        if (not assembler_.is_buffering()) {
-            assembler_.add_separator_newline();
-        }
-
-        assembler_.comment(0, std::format("max scratch registers in use: {}",
-                                          usage_max_scratch_regs_));
-
-        usage_max_scratch_regs_ = 0;
+        finish_output();
     }
 
     [[nodiscard]] auto frame_base_register() const
@@ -2112,17 +2074,6 @@ class machine_rv32i : public machine {
         address_of(token{}, indent, bulk_registers_.back().at(0), address);
     }
 
-    auto set_builtin_types([[maybe_unused]] const type& t_i64,
-                           const type& t_i32,
-                           [[maybe_unused]] const type& t_i16,
-                           [[maybe_unused]] const type& t_i8,
-                           [[maybe_unused]] const type& t_bool,
-                           [[maybe_unused]] const type& t_void)
-        -> void override {
-
-        type_i32_ = &t_i32;
-    }
-
     auto set_memory_equal_left(const size_t indent, const operand& address)
         -> void override {
 
@@ -2188,14 +2139,7 @@ class machine_rv32i : public machine {
         multiply_helper_used_ = false;
         divide_helper_used_ = false;
 
-        // resolved and optimized jumps need every line before writing
-        assembler_.set_direct_output(
-            jump_mode_ == jump_mode::as_emitted ? &os_.get() : nullptr);
-
-        assembler_.comment(0, "");
-        assembler_.comment(0, "generated by baz");
-        assembler_.comment(0, "");
-        assembler_.add_separator_newline();
+        start_output();
 
         assembler_.option_norvc();
         assembler_.option_norelax();
@@ -2299,7 +2243,7 @@ class machine_rv32i : public machine {
         assembler_.comment(0, std::format("{:>28}: {}", "instructions",
                                           assembler_.instruction_count()));
 
-        assembler_.set_direct_output(&os_.get());
+        assembler_.set_direct_output(&stream());
 
         if (binary_file_name_.empty()) {
             assembler_.write_resolved(os);

@@ -68,8 +68,12 @@
   destination: (identifier) @variable
   initializer: (_)? @variable)
 
-; file level 'dat' and 'var' use the module color to stand out from
+; file level 'dat', 'var' and 'let' use the module color to stand out from
 ; locals
+(program
+  (let_definition
+    destination: (identifier) @module))
+
 (program
   (data_declaration
     destination: (identifier) @module))
@@ -88,7 +92,7 @@
 (foo_statement
   array: (identifier) @variable)
 
-; references to file level 'dat' and 'var', predicate in
+; references to file level 'dat', 'var' and 'let', predicate in
 ; plugin/baz-globals.lua
 ; placed after the '@variable' patterns so that it wins
 ((identifier) @module

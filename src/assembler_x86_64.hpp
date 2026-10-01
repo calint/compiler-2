@@ -169,6 +169,33 @@ class assembler_x86_64 final : public assembler {
     static constexpr size_t op_count{std::to_underlying(op::cmpsq) + 1};
 
   public:
+    //
+    // overridden methods
+    //
+
+    auto comment(const size_t indent, const std::string_view text)
+        -> void override {
+
+        if (text.empty()) {
+            add_text(comment_start(indent));
+            return;
+        }
+
+        add_text(std::format("{} {}", comment_start(indent), text));
+    }
+
+    // 'line' and 'column' locate the source the comment is about
+    auto comment(const size_t indent, const size_t line, const size_t column,
+                 const std::string_view text) -> void override {
+
+        add_text(std::format("{}[{}:{}] {}", comment_start(indent), line,
+                             column, text));
+    }
+
+    //
+    // class methods
+    //
+
     auto align(const size_t size_bytes) -> void {
         add_text(std::format("align {}", size_bytes));
     }
@@ -185,23 +212,6 @@ class assembler_x86_64 final : public assembler {
         add_text(std::format("{}cmov{} {}, {}", indentation(indent),
                              condition_suffix(cc), argument_text(dst),
                              argument_text(src)));
-    }
-
-    auto comment(const size_t indent, const std::string_view text) -> void {
-        if (text.empty()) {
-            add_text(comment_start(indent));
-            return;
-        }
-
-        add_text(std::format("{} {}", comment_start(indent), text));
-    }
-
-    // 'line' and 'column' locate the source the comment is about
-    auto comment(const size_t indent, const size_t line, const size_t column,
-                 const std::string_view text) -> void {
-
-        add_text(std::format("{}[{}:{}] {}", comment_start(indent), line,
-                             column, text));
     }
 
     auto data(const size_t element_size_bytes,

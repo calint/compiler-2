@@ -99,9 +99,6 @@ class frame final {
     // the label to jump to when exiting an inlined function
     std::string func_ret_label_;
 
-    // info about the function return
-    std::optional<func_return_info> func_ret_;
-
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
@@ -112,13 +109,12 @@ class frame final {
 
   public:
     frame(const std::string_view name, const frame_type frm_type,
-          const std::optional<func_return_info>& func_ret_info = {},
           std::string call_path = "", std::string func_ret_label = "",
           const bool is_inlined = true,
           const std::string_view storage_base_register = {}) noexcept
         : name_{name}, call_path_{std::move(call_path)},
-          func_ret_label_{std::move(func_ret_label)}, func_ret_{func_ret_info},
-          type_{frm_type}, is_inlined_{is_inlined},
+          func_ret_label_{std::move(func_ret_label)}, type_{frm_type},
+          is_inlined_{is_inlined},
           storage_base_register_{storage_base_register} {}
 
     auto add_alias(const alias_info& ai) -> void {
@@ -543,7 +539,6 @@ class toc final {
     }
 
     auto enter_func(const std::string_view name,
-                    const std::optional<func_return_info>& returns,
                     const std::string_view call_path = {},
                     const std::string_view return_jmp_label = {},
                     const bool is_inlined = true,
@@ -552,7 +547,7 @@ class toc final {
         assert(storage_base_register.empty() or not is_inlined);
 
         frames_.emplace_back(
-            name, frame::frame_type::FUNC, returns, std::string{call_path},
+            name, frame::frame_type::FUNC, std::string{call_path},
             std::string{return_jmp_label}, is_inlined, storage_base_register);
 
         refresh_usage();
@@ -704,13 +699,12 @@ class toc final {
                                          const std::string_view name) const
         -> const type& {
 
-        const std::string name_str{name};
-        if (not types_.has(name_str)) {
+        if (not types_.has(name)) {
             throw compiler_exception{src_loc_tk,
                                      std::format("type '{}' not found", name)};
         }
 
-        return *types_.get_const_ref(name_str).type_ptr;
+        return *types_.get_const_ref(name).type_ptr;
     }
 
     [[nodiscard]] auto get_type_void() const -> const type& {
@@ -763,7 +757,7 @@ class toc final {
     }
 
     [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
-        return types_.has(std::string{name});
+        return types_.has(name);
     }
 
     [[nodiscard]] auto is_alias_check() const -> bool { return alias_check_; }

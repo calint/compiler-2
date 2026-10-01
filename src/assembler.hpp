@@ -112,6 +112,22 @@ class assembler {
 
     virtual ~assembler() = default;
 
+    //
+    // virtual methods
+    //
+
+    virtual auto comment(const size_t indent, const std::string_view text)
+        -> void = 0;
+
+    // 'line' and 'column' locate the source the comment is about
+    virtual auto comment(const size_t indent, const size_t line,
+                         const size_t column, const std::string_view text)
+        -> void = 0;
+
+    //
+    // class methods
+    //
+
     // adds the optimization counts as comments aligned with the usage
     // statistics that follow
     auto add_optimization_counts() -> void {
