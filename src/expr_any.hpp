@@ -168,6 +168,12 @@ class expr_any final : public statement {
 
         ident_info cur_dst_info{dst_info};
 
+        // a call element writes at the element, not at the array start the
+        // identifier names, and an element is not an array
+        cur_dst_info.use_operand = true;
+        cur_dst_info.is_array = false;
+        cur_dst_info.array_len = 0;
+
         compile_elements(tc, indent, cur_dst_info);
 
         expr_type::zero_remaining_elements(

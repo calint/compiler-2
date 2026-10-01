@@ -1,4 +1,11 @@
-# non-inline result cannot target a whole array
+# a non-inline result is written to an element of an array literal
+
+func assert(err, ok bool) { if not ok exit(err) }
 
 func noinline target() result { result = 1 }
-func main() { var result = [2]{target()} }
+
+func main() {
+    var result = [2]{target()}
+    assert(1, result[0] == 1)
+    assert(2, result[1] == 0)
+}

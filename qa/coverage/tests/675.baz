@@ -1,0 +1,89 @@
+# 'equal' compares the bytes of the fields, the padding of a record is not
+# compared: a constructor leaves the padding as the storage held it
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type padded {
+    a i8,
+    b i32,
+    c i16,
+}
+
+type nested {
+    inner padded,
+    d i8,
+}
+
+func padded.at(a i8, b i32, c i16) self {
+    self.a = a
+    self.b = b
+    self.c = c
+}
+
+func nested.at(a i8, b i32, c i16, d i8) self {
+    self.inner = padded.at(a, b, c)
+    self.d = d
+}
+
+func main() {
+    # the storage of the next variables is first filled with bytes, ones for
+    # the first record and zeros for the second
+    if true {
+        var scribble = i8[24]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+    }
+
+    var p = padded.at(1, 2, 3)
+    var q = padded.at(1, 2, 3)
+
+    assert(1, equal(p, q))
+    assert(2, not not equal(p, q))
+    assert(3, not (not equal(p, q)))
+
+    q.b = 5
+    assert(4, not equal(p, q))
+
+    q.b = 2
+    q.c = 4
+    assert(5, not equal(p, q))
+
+    q.c = 3
+    q.a = 0
+    assert(6, not equal(p, q))
+
+    q.a = 1
+    assert(7, equal(p, q))
+
+    var same = equal(p, q)
+    assert(8, same)
+
+    var differs = false
+    q.b = 7
+    differs = equal(p, q)
+    assert(9, not differs)
+
+    # padding inside a record field
+    var n = nested.at(1, 2, 3, 4)
+    var m = nested.at(1, 2, 3, 4)
+    assert(10, equal(n, m))
+
+    m.d = 5
+    assert(11, not equal(n, m))
+
+    m.d = 4
+    m.inner.c = 9
+    assert(12, not equal(n, m))
+
+    m.inner.c = 3
+    assert(13, equal(n.inner, m.inner))
+
+    # records in an array, one with a run-time index
+    var ps = padded[2]{}
+    ps[0] = padded.at(1, 2, 3)
+    ps[1] = padded.at(1, 2, 3)
+    var ix = 1
+    assert(14, equal(ps[0], ps[ix]))
+    assert(15, equal(ps[ix], p))
+
+    ps[ix].c = 8
+    assert(16, not equal(ps[ix], p))
+}

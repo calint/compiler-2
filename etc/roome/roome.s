@@ -6156,6 +6156,15 @@ main:
                             add t0, t1, t0
                             slli t0, t0, 3
                             # [640:17] free scratch register t1
+                            # [640:70] zero padding: 1 B
+                            # [640:70] allocate scratch register -> t1
+                            add t1, s0, t0
+                            # [640:70] allocate scratch register -> t2
+                            lui t2, 29
+                            add t1, t1, t2
+                            # [640:70] free scratch register t2
+                            sb zero, 71(t1)
+                            # [640:70] free scratch register t1
                             # [640:73] tz.to_str()
                             # [640:73] allocate scratch register -> t1
                             # [640:73] address of indexed result 'rooms.array.description'
@@ -6687,6 +6696,15 @@ main:
                             add t0, t1, t0
                             slli t0, t0, 3
                             # [648:17] free scratch register t1
+                            # [648:63] zero padding: 1 B
+                            # [648:63] allocate scratch register -> t1
+                            add t1, s0, t0
+                            # [648:63] allocate scratch register -> t2
+                            lui t2, 29
+                            add t1, t1, t2
+                            # [648:63] free scratch register t2
+                            sb zero, 203(t1)
+                            # [648:63] free scratch register t1
                             # [648:66] tz.to_str()
                             # [648:66] allocate scratch register -> t1
                             # [648:66] address of indexed result 'rooms.array.note'
@@ -15852,6 +15870,12 @@ main:
                             # [897:5] let text = tz.to_str()
                             # [897:9] text: str (132 B @ [s0 + 198584])
                             # [897:9] text = tz.to_str()
+                            # [897:16] zero padding: 1 B
+                            # [897:16] allocate scratch register -> t0
+                            lui t0, 49
+                            add t0, t0, s0
+                            sb zero, -1993(t0)
+                            # [897:16] free scratch register t0
                             # [897:19] tz.to_str()
                             # [471:6] tokenizer.to_str() res str
                             func.tokenizer.to_str.897.19.988.9.1018.13.1029.5:
@@ -16513,6 +16537,12 @@ main:
                             # [914:5] let text = tz.to_str()
                             # [914:9] text: str (132 B @ [s0 + 198580])
                             # [914:9] text = tz.to_str()
+                            # [914:16] zero padding: 1 B
+                            # [914:16] allocate scratch register -> t0
+                            lui t0, 49
+                            add t0, t0, s0
+                            sb zero, -1997(t0)
+                            # [914:16] free scratch register t0
                             # [914:19] tz.to_str()
                             # [471:6] tokenizer.to_str() res str
                             func.tokenizer.to_str.914.19.991.9.1018.13.1029.5:
@@ -26467,6 +26497,15 @@ main:
                     add t0, t1, t0
                     slli t0, t0, 3
                     # [640:17] free scratch register t1
+                    # [640:70] zero padding: 1 B
+                    # [640:70] allocate scratch register -> t1
+                    add t1, s0, t0
+                    # [640:70] allocate scratch register -> t2
+                    lui t2, 29
+                    add t1, t1, t2
+                    # [640:70] free scratch register t2
+                    sb zero, 71(t1)
+                    # [640:70] free scratch register t1
                     # [640:73] tz.to_str()
                     # [640:73] allocate scratch register -> t1
                     # [640:73] address of indexed result 'rooms.array.description'
@@ -27029,6 +27068,15 @@ main:
                     add t0, t1, t0
                     slli t0, t0, 3
                     # [648:17] free scratch register t1
+                    # [648:63] zero padding: 1 B
+                    # [648:63] allocate scratch register -> t1
+                    add t1, s0, t0
+                    # [648:63] allocate scratch register -> t2
+                    lui t2, 29
+                    add t1, t1, t2
+                    # [648:63] free scratch register t2
+                    sb zero, 203(t1)
+                    # [648:63] free scratch register t1
                     # [648:66] tz.to_str()
                     # [648:66] allocate scratch register -> t1
                     # [648:66] address of indexed result 'rooms.array.note'
@@ -36683,6 +36731,12 @@ main:
                     # [897:5] let text = tz.to_str()
                     # [897:9] text: str (132 B @ [s0 + 198580])
                     # [897:9] text = tz.to_str()
+                    # [897:16] zero padding: 1 B
+                    # [897:16] allocate scratch register -> t0
+                    lui t0, 49
+                    add t0, t0, s0
+                    sb zero, -1997(t0)
+                    # [897:16] free scratch register t0
                     # [897:19] tz.to_str()
                     # [471:6] tokenizer.to_str() res str
                     func.tokenizer.to_str.897.19.988.9.1052.9:
@@ -37349,6 +37403,12 @@ main:
                     # [914:5] let text = tz.to_str()
                     # [914:9] text: str (132 B @ [s0 + 198576])
                     # [914:9] text = tz.to_str()
+                    # [914:16] zero padding: 1 B
+                    # [914:16] allocate scratch register -> t0
+                    lui t0, 49
+                    add t0, t0, s0
+                    sb zero, -2001(t0)
+                    # [914:16] free scratch register t0
                     # [914:19] tz.to_str()
                     # [471:6] tokenizer.to_str() res str
                     func.tokenizer.to_str.914.19.991.9.1052.9:
@@ -38593,4 +38653,4 @@ vars.end:
 #                     dat size: 198427 B
 #              dat var padding: 5 B
 #                max vars size: 2552 B
-#                 instructions: 13083
+#                 instructions: 13111

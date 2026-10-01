@@ -180,6 +180,30 @@ class expr_type final : public statement {
                              const type_field& field, ident_info& dst_info,
                              const operand& dst_op) const -> void;
 
+    // a call writes the fields only, so the padding is zeroed before it and
+    // 'equal' can compare records byte by byte
+    auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
+                      const operand& dst_op) const -> void {
+
+        operand cursor{dst_op};
+
+        // bytes of the record before 'cursor', fields in order then padding
+        size_t covered_bytes{};
+
+        for (const byte_range& r : dst_type.data_ranges()) {
+            zero_unwritten(
+                tc, indent, "padding", r.offset - covered_bytes,
+                offset_alignment(covered_bytes, dst_type.alignment()), cursor);
+
+            cursor.increment_offset(address_offset(r.size_bytes));
+            covered_bytes = r.offset + r.size_bytes;
+        }
+
+        zero_unwritten(
+            tc, indent, "padding", dst_type.size_bytes() - covered_bytes,
+            offset_alignment(covered_bytes, dst_type.alignment()), cursor);
+    }
+
     // padding is zeroed too so that records compare equal byte by byte
     auto zero_unwritten(toc& tc, const size_t indent,
                         const std::string_view what, const size_t size_bytes,

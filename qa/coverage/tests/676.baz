@@ -1,0 +1,36 @@
+# an array literal with call elements writes each result at its element
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type pair {
+    a i8,
+    b i32,
+}
+
+func pair.at(a i8, b i32) self {
+    self.a = a
+    self.b = b
+}
+
+func noinline pair.late(a i8, b i32) self {
+    self.a = a
+    self.b = b
+}
+
+func main() {
+    # a non-inline call takes variables as arguments
+    var three = i8(3)
+    var four = i32(4)
+
+    var ps = pair[3]{pair.at(1, 2), pair.late(three, four), pair.at(5, 6)}
+    assert(1, ps[0].a == 1 and ps[0].b == 2)
+    assert(2, ps[1].a == 3 and ps[1].b == 4)
+    assert(3, ps[2].a == 5 and ps[2].b == 6)
+
+    # assigned later, with a listed element after the calls
+    var qs = pair[3]{}
+    qs = pair[3]{pair.at(7, 8), pair.at(9, 10)}
+    assert(4, qs[0].a == 7 and qs[0].b == 8)
+    assert(5, qs[1].a == 9 and qs[1].b == 10)
+    assert(6, qs[2].a == 0 and qs[2].b == 0)
+}

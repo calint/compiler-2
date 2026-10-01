@@ -122,10 +122,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5736           2250          18041
+C/C++ Header                    54           5759           2262          18099
 C++                              1            104             22            394
 -------------------------------------------------------------------------------
-SUM:                            55           5840           2272          18435
+SUM:                            55           5863           2284          18493
 -------------------------------------------------------------------------------
 ```
 
@@ -1687,6 +1687,7 @@ main:
             syscall
         if.38.24.368.5.end:
     func.assert.368.5.end:
+    mov dword [rbp + 748], 0
     func.object.at.369.13:
         func.point.at.120.16.369.13:
             mov qword [rbp + 728], 2
@@ -4723,6 +4724,9 @@ main:
 ;       [368:5] free scratch register r15
     func.assert.368.5.end:
 ;   [369:5] o3[1] = object.at(2, 74, 0xffffff)
+;   [369:13] zero padding: 4 B
+;   [369:13] size <= 32 B, use mov
+    mov dword [rbp + 748], 0
 ;   [369:13] object.at(2, 74, 0xffffff)
 ;   [119:6] object.at(x, y, color i32) self
     func.object.at.369.13:
@@ -6080,5 +6084,5 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 1076
+;                 instructions: 1077
 ```

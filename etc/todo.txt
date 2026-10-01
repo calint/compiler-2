@@ -226,8 +226,16 @@ other, easiest first
 [ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
     tests
 [ ] change all array access using [ ] to checked using .at
-[ ] 'equal' on records compares the padding bytes; a record set by a call
+[x] 'equal' on records compares the padding bytes; a record set by a call
     result keeps whatever padding bytes its storage held
+    => the padding is zeroed before a call writes a record ('expr_type::
+       zero_padding'), 'equal' keeps comparing all bytes; test 675
+[x] an array literal with call elements writes every result to element 0:
+    'padded[2]{padded.at(1, 2, 3), padded.at(4, 5, 6)}' ('self' aliases the
+    array start, found while writing test 675, also at HEAD)
+    => 'expr_any::compile' gives the elements an element destination
+       (operand used, not an array); non-inline calls now work there, the
+       result-array guard in 'stmt_call' became an assert, tests 422 and 676
 [ ] rv32i: check loop iteration regarding large span
 [ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
     => there is a longer jump way +/- 2 GB that can be implemented later

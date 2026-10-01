@@ -369,6 +369,7 @@ auto expr_type::compile(toc& tc, const size_t indent,
                         const ident_info& dst_info) const -> void {
 
     if (stmt_call_) {
+        zero_padding(tc, indent, dst_info.type_ref(), dst_info.operand);
         stmt_call_->compile(tc, indent, dst_info);
         return;
     }
@@ -457,6 +458,7 @@ auto expr_type::compile_call_field(toc& tc, const size_t indent,
     call_dst_info.operand = operand::mem(dst_op, dst_type);
     call_dst_info.use_operand = true;
 
+    zero_padding(tc, indent, dst_type, dst_op);
     stmt_call_->compile(tc, indent, call_dst_info);
 
     dst_op.increment_offset(address_offset(dst_type.size_bytes()));

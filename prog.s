@@ -2434,6 +2434,9 @@ main:
 ;       [368:5] free scratch register r15
     func.assert.368.5.end:
 ;   [369:5] o3[1] = object.at(2, 74, 0xffffff)
+;   [369:13] zero padding: 4 B
+;   [369:13] size <= 32 B, use mov
+    mov dword [rbp + 748], 0
 ;   [369:13] object.at(2, 74, 0xffffff)
 ;   [119:6] object.at(x, y, color i32) self
     func.object.at.369.13:
@@ -3791,4 +3794,4 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 1076
+;                 instructions: 1077

@@ -1119,6 +1119,7 @@ main:
             syscall
         if.38.24.368.5.end:
     func.assert.368.5.end:
+    mov dword [rbp + 748], 0
     func.object.at.369.13:
         func.point.at.120.16.369.13:
             mov qword [rbp + 728], 2

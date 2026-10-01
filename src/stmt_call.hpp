@@ -621,10 +621,8 @@ class stmt_call : public expression {
                     tok(), "result destination must be a memory location"};
             }
 
-            if (dst_info.is_array) {
-                throw compiler_exception{
-                    tok(), "array result destinations are unsupported"};
-            }
+            // an array literal gives its call elements an element destination
+            assert(not dst_info.is_array);
 
             assert_result_type(dst_info, func);
         }

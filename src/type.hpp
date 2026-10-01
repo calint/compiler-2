@@ -28,6 +28,12 @@ struct type_field {
     [[nodiscard]] auto type() const -> const type& { return *type_ptr; }
 };
 
+// a run of bytes at 'offset' within a value
+struct byte_range {
+    size_t offset{};
+    size_t size_bytes{};
+};
+
 class type final {
     std::string name_;
     size_t size_bytes_{};       // total size of type in bytes including padding
@@ -117,6 +123,36 @@ class type final {
 
     [[nodiscard]] auto alignment() const -> size_t { return alignment_; }
 
+    // the bytes of a value without padding, adjacent fields are merged
+    [[nodiscard]] auto data_ranges() const -> std::vector<byte_range> {
+        std::vector<byte_range> ranges;
+
+        if (is_builtin_) {
+            append_range(ranges, 0, size_bytes_);
+
+            return ranges;
+        }
+
+        for (const type_field& f : fields_) {
+            const std::vector<byte_range> element_ranges{
+                f.type().data_ranges()};
+
+            const size_t element_count{f.is_array ? f.array_count : 1};
+
+            for (size_t i{}; i < element_count; ++i) {
+                const size_t element_offset{f.offset +
+                                            (i * f.type().size_bytes_)};
+
+                for (const byte_range& r : element_ranges) {
+                    append_range(ranges, element_offset + r.offset,
+                                 r.size_bytes);
+                }
+            }
+        }
+
+        return ranges;
+    }
+
     [[nodiscard]] auto field(const token& src_loc_tk,
                              const std::string_view name) const
         -> const type_field& {
@@ -193,5 +229,32 @@ class type final {
         throw compiler_exception{
             src_loc_tk,
             std::format("field '{}' not found in type '{}'", name, name_)};
+    }
+
+    //
+    // statics
+    //
+
+    // fields that touch each other form one range
+    static auto append_range(std::vector<byte_range>& ranges,
+                             const size_t offset, const size_t size_bytes)
+        -> void {
+
+        if (size_bytes == 0) {
+            return;
+        }
+
+        if (not ranges.empty() and
+            ranges.back().offset + ranges.back().size_bytes == offset) {
+
+            ranges.back().size_bytes += size_bytes;
+
+            return;
+        }
+
+        ranges.push_back({
+            .offset{offset},
+            .size_bytes{size_bytes},
+        });
     }
 };
