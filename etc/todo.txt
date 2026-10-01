@@ -424,11 +424,13 @@ resolved
 --------------------------------------------------------------------------------
 [x] simple LSP supporting rename
 [x] read-only state was a bool plus a cause in 'var_info' and 'ident_info'
-    => 'read_only_cause' alone: NONE is writable, 'ALIAS' is data reached
-       through a name it was not declared with; 'is_read_only()' is derived,
-       'as_declared_if'/'as_read_only_if' became
-       'as_read_only_through_aliases'; 'alias_info' keeps its bool since it
-       holds no cause
+    => 'read_only_cause' alone: NONE is writable, 'is_read_only()' is derived
+    => read-only is a parse-time property: every write and call is rejected
+       at parse against the declaring name, a probe over all tests on both
+       targets found no compile-time hit, so the compile-time re-checks and
+       the alias propagation ('alias_info::is_read_only', the ALIAS cause,
+       'as_read_only_through_aliases') were deleted; add them back if a
+       write path appears that is only visible once a call is expanded
 [x] func f(p : point const) const is default. same as "func f(p : point)"
     => arguments are read-only by default, 'mut' after the name allows
        writing it: 'func f(p mut point)'; the 'self' of a method is writable
@@ -436,8 +438,9 @@ resolved
 [x] 'mut' methods like C++ const methods: 'func mut point.move(dx, dy)' and
     'func noinline mut point.move(dx, dy)', 'self' is read-only without 'mut'
     => a write to 'self' in a method without 'mut' is a compile error, so the
-       write tracking (note_write, written_names) is gone: 'writes_param' is
-       the declaration for inline and non-inline functions; a read-only
+       write tracking (note_write, written_names) is gone: the parameter's
+       'is_read_only()' is the declaration for inline and non-inline
+       functions; a read-only
        argument cannot be passed to a 'mut' parameter or be the receiver of a
        'mut' method; an unwritten 'mut' parameter still needs a writable
        argument; tests 670-674, goldens of 635, 646, 658 and 663-667 changed

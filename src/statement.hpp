@@ -257,7 +257,8 @@ class statement {
     // statics
     //
 
-    // 'action' completes "cannot ...", e.g. 'assign to' or 'copy into'
+    // writes are rejected at parse, so a function that is never called is
+    // checked too; 'action' completes "cannot ...", e.g. 'assign to'
     static auto assert_not_read_only(const token& tk,
                                      const std::string_view action,
                                      const std::string_view name,
@@ -307,8 +308,7 @@ class statement {
         return equals_tk;
     }
 
-    // why the name cannot be written, e.g. ", 'x' is declared with 'let'",
-    // empty when it is read-only through an alias
+    // why the name cannot be written, e.g. ", 'x' is declared with 'let'"
     [[nodiscard]] static auto read_only_hint(const ident_info& info)
         -> std::string {
 
@@ -331,11 +331,9 @@ class statement {
                                root);
         }
 
-        if (info.read_only_why == read_only_cause::FOO_COUNTER) {
-            return std::format(", '{}' is the counter of 'foo'", root);
-        }
+        assert(info.read_only_why == read_only_cause::FOO_COUNTER);
 
-        return {};
+        return std::format(", '{}' is the counter of 'foo'", root);
     }
 
     // shared by 'dat' and 'var' initializers, 'array_count' 0 takes the size

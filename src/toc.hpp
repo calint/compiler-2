@@ -44,16 +44,13 @@ struct alias_info {
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
 
-    // the parameter is not 'mut', writes through it are rejected
-    bool is_read_only{};
-
     //
     // statics
     //
 
-    [[nodiscard]] static auto
-    make_register(const std::string_view name, const type& alias_type,
-                  const operand& reg, const bool is_read_only) -> alias_info {
+    [[nodiscard]] static auto make_register(const std::string_view name,
+                                            const type& alias_type,
+                                            const operand& reg) -> alias_info {
 
         assert(reg.is_register());
 
@@ -64,7 +61,6 @@ struct alias_info {
             .type_ptr{&alias_type},
             .register_operand{reg},
             .is_element{},
-            .is_read_only{is_read_only},
         };
     }
 };
@@ -871,7 +867,7 @@ class toc final {
     }
 
     // the variable declared last in this scope, e.g. a 'let' variable once
-    // its initializer has written it
+    // its initializer is parsed
     auto make_var_read_only(const std::string_view name,
                             const read_only_cause cause) -> void {
 
@@ -1274,12 +1270,7 @@ class toc final {
         std::vector<operand> lea_path) const -> ident_info {
 
         if (var.value_register.is_register() and id.path().size() == 1) {
-            ident_info reg_info{
-                ident_info::make_register(ident, var.value_register)};
-
-            reg_info.read_only_why = var.read_only_why;
-
-            return reg_info;
+            return ident_info::make_register(ident, var.value_register);
         }
 
         ident_info ii{
@@ -1341,12 +1332,6 @@ class toc final {
         // an alias of an element names the element, not the array holding it
         bool is_element{};
 
-        // one parameter not 'mut' in the alias chain makes the data read-only
-        bool is_read_only{};
-
-        // the name is then not the one the variable is declared with
-        bool is_alias_followed{};
-
         for (const frame& cur_frame : frames_ | std::views::reverse) {
 
             // does this frame contain the variable?
@@ -1354,8 +1339,7 @@ class toc final {
                 ident_info info{make_ident_info_from_frame(
                     cur_frame, src_loc_tk, ident, id, std::move(lea_path))};
 
-                return as_seen_through_aliases(std::move(info), is_read_only,
-                                               is_element, is_alias_followed);
+                return as_element_if(is_element, std::move(info));
             }
 
             // from the root frame of a function aliases are followed to the
@@ -1370,8 +1354,7 @@ class toc final {
                 ident_info info{make_ident_info_from_frame(
                     cur_frame, src_loc_tk, ident, id, std::move(lea_path))};
 
-                return as_seen_through_aliases(std::move(info), is_read_only,
-                                               is_element, is_alias_followed);
+                return as_element_if(is_element, std::move(info));
             }
 
             // this is an alias, continue resolving until it is a variable,
@@ -1379,15 +1362,10 @@ class toc final {
 
             const alias_info& alias{cur_frame.get_alias(id.base())};
 
-            is_read_only = is_read_only or alias.is_read_only;
-            is_alias_followed = true;
-
             if (alias.register_operand.is_register() and
                 id.path().size() == 1) {
 
-                return as_read_only_through_aliases(
-                    is_alias_followed, is_read_only,
-                    ident_info::make_register(ident, alias.register_operand));
+                return ident_info::make_register(ident, alias.register_operand);
             }
 
             // a field path such as 'p.x' gets its array-ness from the field
@@ -1456,36 +1434,6 @@ class toc final {
         info.array_len = 0;
 
         return info;
-    }
-
-    // under the name of an alias the data was not declared with its cause,
-    // e.g. a 'let' variable reached through a parameter
-    [[nodiscard]] static auto
-    as_read_only_through_aliases(const bool is_alias_followed,
-                                 const bool is_alias_read_only, ident_info info)
-        -> ident_info {
-
-        if (not is_alias_followed) {
-            return info;
-        }
-
-        if (info.is_read_only() or is_alias_read_only) {
-            info.read_only_why = read_only_cause::ALIAS;
-        }
-
-        return info;
-    }
-
-    // what the aliases followed to the variable changed about its name
-    [[nodiscard]] static auto
-    as_seen_through_aliases(ident_info info, const bool is_read_only,
-                            const bool is_element, const bool is_alias_followed)
-        -> ident_info {
-
-        info = as_element_if(is_element, std::move(info));
-
-        return as_read_only_through_aliases(is_alias_followed, is_read_only,
-                                            std::move(info));
     }
 
     // makes room in 'lea_path' for the elements 'target_count' adds

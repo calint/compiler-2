@@ -256,16 +256,13 @@ class operand {
     }
 };
 
-// why a name cannot be written, for the diagnostic; NONE is writable and
-// ALIAS is data declared elsewhere that a callee reaches through a parameter
-// not declared 'mut'
+// why a name cannot be written, for the diagnostic; NONE is writable
 enum class read_only_cause : uint8_t {
     NONE,
     LET,
     PARAM,
     FOO_ELEMENT,
-    FOO_COUNTER,
-    ALIAS
+    FOO_COUNTER
 };
 
 struct var_info {

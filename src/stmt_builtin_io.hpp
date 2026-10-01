@@ -24,7 +24,6 @@ class stmt_builtin_io final : public stmt_call {
         if (tok().is_text("read") and buffer.is_identifier()) {
             const ident_info info{tc.make_ident_info(buffer)};
 
-            // also in functions that are never called, which are not compiled
             if (info.is_var()) {
                 assert_not_read_only(buffer.tok(), "read into",
                                      buffer.identifier(), info);
@@ -90,12 +89,6 @@ class stmt_builtin_io final : public stmt_call {
         if (buffer.is_identifier()) {
             const ident_info info{tc.make_ident_info(buffer)};
             if (info.is_var() and info.is_array) {
-                // 'read' fills the buffer, 'write' only reads it
-                if (tok().is_text("read")) {
-                    assert_not_read_only(buffer.tok(), "read into",
-                                         buffer.identifier(), info);
-                }
-
                 return;
             }
         }

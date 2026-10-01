@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -8,6 +9,7 @@
 #include "decouple.hpp"
 #include "statement.hpp"
 #include "stmt_const.hpp"
+#include "stmt_def_var.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -70,18 +72,16 @@ class stmt_def_const final : public statement {
     // statics
     //
 
-    // after 'let', e.g. 'x = 5' and 'y = -x' define a compile-time constant
-    // while 'z = a + 1' and 'p = point{1, 2}' define a read-only variable;
-    // malformed definitions count as constants so they report the constant
-    // errors; the tokenizer position is restored
-    [[nodiscard]] static auto is_constant_definition(const toc& tc,
-                                                     tokenizer& tz) -> bool {
+    // 'tk' is the 'let' keyword; 'let x = 5' defines a compile-time constant,
+    // anything else a variable that is read-only once initialized
+    [[nodiscard]] static auto parse_let(toc& tc, tokenizer& tz, const token tk)
+        -> std::unique_ptr<statement> {
 
-        const token start_tk{tz.cur_position_token()};
-        const bool is_constant{has_constant_initializer(tc, tz)};
-        tz.rewind_to_position(start_tk);
+        if (is_constant_definition(tc, tz)) {
+            return std::make_unique<stmt_def_const>(tc, tk, tz);
+        }
 
-        return is_constant;
+        return std::make_unique<stmt_def_var>(tc, tk, tz);
     }
 
   private:
@@ -123,5 +123,19 @@ class stmt_def_const final : public statement {
 
         return not continues_expression.contains(
             tz.peek_char_after_whitespace());
+    }
+
+    // after 'let', e.g. 'x = 5' and 'y = -x' define a compile-time constant
+    // while 'z = a + 1' and 'p = point{1, 2}' define a read-only variable;
+    // malformed definitions count as constants so they report the constant
+    // errors; the tokenizer position is restored
+    [[nodiscard]] static auto is_constant_definition(const toc& tc,
+                                                     tokenizer& tz) -> bool {
+
+        const token start_tk{tz.cur_position_token()};
+        const bool is_constant{has_constant_initializer(tc, tz)};
+        tz.rewind_to_position(start_tk);
+
+        return is_constant;
     }
 };

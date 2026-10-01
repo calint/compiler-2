@@ -186,11 +186,7 @@ class program final {
             return std::make_unique<stmt_def_type>(tc, tk, tz);
         }
         if (tk.is_text("let")) {
-            if (stmt_def_const::is_constant_definition(tc, tz)) {
-                return std::make_unique<stmt_def_const>(tc, tk, tz);
-            }
-
-            return std::make_unique<stmt_def_var>(tc, tk, tz);
+            return stmt_def_const::parse_let(tc, tz, tk);
         }
         if (tk.is_text("dat")) {
             return std::make_unique<stmt_def_dat>(tc, tk, tz);

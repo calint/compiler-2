@@ -44,7 +44,6 @@ class stmt_builtin_array_copy final : public statement {
 
         dst_ = {tc, {}, tz.next_token(), tz};
 
-        // also in functions that are never called, which are not compiled
         assert_not_read_only(dst_.tok(), "copy into", dst_.identifier(),
                              tc.make_ident_info(dst_));
 
@@ -88,11 +87,6 @@ class stmt_builtin_array_copy final : public statement {
 
         const ident_info array_src_info{tc.make_ident_info(src_)};
         const ident_info array_dst_info{tc.make_ident_info(dst_)};
-
-        // also when reached through an alias, which only exists once a call
-        // is expanded
-        assert_not_read_only(dst_.tok(), "copy into", dst_.identifier(),
-                             array_dst_info);
 
         if (array_src_info.type_ref().name() !=
             array_dst_info.type_ref().name()) {

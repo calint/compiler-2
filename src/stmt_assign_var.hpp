@@ -28,7 +28,6 @@ class stmt_assign_var final : public statement {
 
         const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
-        // also in functions that are never called, which are not compiled
         assert_not_read_only(tok(), "assign to", stmt_ident_.identifier(),
                              dst_info);
 
@@ -77,11 +76,6 @@ class stmt_assign_var final : public statement {
                 tok(), std::format("cannot assign to constant '{}'",
                                    var_dst_info.const_value)};
         }
-
-        // e.g. the counter 'i' of 'foo', also when reached through an alias,
-        // which only exists once a call is expanded
-        assert_not_read_only(tok(), "assign to", stmt_ident_.identifier(),
-                             var_dst_info);
 
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};

@@ -58,9 +58,9 @@ class stmt_def_var final : public statement {
             field_coverage{multiply_storage_size(
                 get_type().size_bytes(), is_array_ ? array_count_ : 1)});
 
+        // marked after the initializer, which writes the variable; statements
+        // parsed from here on cannot assign it
         if (is_let_) {
-            // statements parsed from here on cannot assign it, also in a
-            // function that is never called and so never compiled
             tc.make_var_read_only(name_tk_.text(), read_only_cause::LET);
         }
     }
@@ -93,14 +93,6 @@ class stmt_def_var final : public statement {
             tc.make_ident_info(name_tk_, name_tk_.text())};
 
         assign_var_.compile(tc, indent, var_dst_info);
-
-        if (not is_let_) {
-            return;
-        }
-
-        // marked after the initializer, which writes the variable, e.g. as
-        // the result of an inline call
-        tc.make_var_read_only(name_tk_.text(), read_only_cause::LET);
     }
 
     auto visit_reads(const std::string_view var,
