@@ -3,6 +3,8 @@
 
 #include <exception>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "token.hpp"
 
@@ -11,6 +13,13 @@ class tokenizer;
 
 class compiler_exception final : public std::exception {
   public:
+    // an inlined call the error was found in
+    struct call_frame {
+        size_t line{};
+        size_t start_index{};
+        std::string text;
+    };
+
     compiler_exception(const token& src_loc_tk, std::string message)
         : msg{std::move(message)}, line{src_loc_tk.at_line()},
           start_index{src_loc_tk.start_index()},
@@ -24,11 +33,26 @@ class compiler_exception final : public std::exception {
     size_t start_index{};
     size_t end_index{};
 
+    // innermost call first, each call inlined the one before it
+    std::vector<call_frame> call_frames;
+
     //
     // overridden methods
     //
 
     [[nodiscard]] auto what() const noexcept -> const char* override {
         return msg.c_str();
+    }
+
+    //
+    // class methods
+    //
+
+    auto add_call_frame(const token& call_tk, std::string text) -> void {
+        call_frames.push_back({
+            .line{call_tk.at_line()},
+            .start_index{call_tk.start_index()},
+            .text{std::move(text)},
+        });
     }
 };

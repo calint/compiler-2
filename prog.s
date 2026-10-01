@@ -55,9 +55,9 @@ lea rbp, [dat]
 ;[33:5] greeted: i8[15] (15 B @ [rbp + 352])
 ;[34:1] dat names = 0
 ;[34:7] names: i64 (8 B @ [rbp + 368])
-;[123:7] const yes = 1
-;[124:7] const no = 0
-;[125:7] const maybe = -1
+;[123:5] const yes = 1
+;[124:5] const no = 0
+;[125:5] const maybe = -1
 ;
 main:
 ;   [185:5] var answer = 0
@@ -124,7 +124,7 @@ main:
         if.38.24.190.5.end:
 ;       [190:5] free scratch register r15
     func.assert.190.5.end:
-;       [195:15] const maybe = 33
+;       [195:13] const maybe = 33
 ;       [196:9] assert(maybe == 33)
 ;       [38:6] assert(ok bool)
         func.assert.196.9:
@@ -1255,7 +1255,7 @@ main:
 ;       [269:5] free scratch register r15
     func.assert.269.5.end:
 ;   [271:5] faz(arr)
-;   [77:6] faz(arg i32[])
+;   [77:6] faz(mut arg i32[])
     func.faz.271.5:
 ;       [271:5] alias arg -> arr
 ;       [78:5] arg[1] = 0xfe
@@ -1559,7 +1559,7 @@ main:
 ;   [303:13] 0
     mov qword [rbp + 552], 0
 ;   [304:5] bar(i)
-;   [58:6] bar(arg)
+;   [58:6] bar(mut arg)
     func.bar.304.5:
 ;       [304:5] alias arg -> i
         if.59.8.304.5:
@@ -1607,7 +1607,7 @@ main:
 ;   [307:9] 1
     mov qword [rbp + 552], 1
 ;   [308:5] bar(i)
-;   [58:6] bar(arg)
+;   [58:6] bar(mut arg)
     func.bar.308.5:
 ;       [308:5] alias arg -> i
         if.59.8.308.5:
@@ -3289,7 +3289,7 @@ main:
 ;[132:15] noinline print_num(num)
 func.print_num:
 ;   [132:25] num: i64 (8 B @ [rbx])
-;   [134:11] const buf_count = 20
+;   [134:9] const buf_count = 20
 ;   [136:5] var buf = i8[buf_count]{}
 ;   [136:9] buf: i8[20] (20 B @ [rbx + 8])
 ;   [136:9] buf = i8[buf_count]{}

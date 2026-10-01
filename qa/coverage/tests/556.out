@@ -1,2 +1,3 @@
 
 556.baz:5:18: too many elements specified for array of size 2
+556.baz:10:5: called from 'fill(values)'

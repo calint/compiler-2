@@ -1,0 +1,20 @@
+# an error inside inlined bodies reports the calls it was found in
+
+type tk { start, end }
+
+func tk.reset() {
+    self.start = 0
+}
+
+func clear(t tk) {
+    t.reset()
+}
+
+func run(t tk) {
+    clear(t)
+}
+
+func main() {
+    var a = tk{1, 2}
+    run(a)
+}

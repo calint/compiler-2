@@ -1,2 +1,3 @@
 
 635.baz:4:5: cannot assign to read-only 'ix'
+635.baz:10:9: called from 'skip(i)'

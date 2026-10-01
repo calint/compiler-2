@@ -34,8 +34,9 @@ compiler writes the binary image itself.
 * limited support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
-* keywords: `func`, `noinline`, `type`, `dat`, `var`, `const`, `foo`, `loop`,
-  `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`, `not`
+* keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
+  `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
+  `not`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
   `write`, `exit`, `i`, `i8`, `i16`, `i32`, `i64`
 
@@ -116,10 +117,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5725           2213          18065
-C++                              1             99             21            380
+C/C++ Header                    54           5736           2224          18103
+C++                              1            104             22            394
 -------------------------------------------------------------------------------
-SUM:                            55           5824           2234          18445
+SUM:                            55           5840           2246          18497
 -------------------------------------------------------------------------------
 ```
 
@@ -183,12 +184,12 @@ func point.sum() res {
 }
 # methods can have a "return"
 
-func bar(arg) {
+func bar(mut arg) {
     if arg == 0 return
     arg = 0xff
 }
 # default function argument type is `i64` on x86_64 and `i32` on rv32i
-# function arguments and "return" are equivalent to mutable references
+# function arguments are read-only references, `mut` allows writing them
 
 func baz(arg) res {
     res = arg * 2
@@ -202,12 +203,12 @@ func inv(i i32) res i32 {
 # type of "return" and arguments can be defined, use `i` for default integer type
 # of target platform
 
-func faz(arg i32[]) {
+func faz(mut arg i32[]) {
     arg[1] = 0xfe
 }
 # array arguments are declared with the element type followed by `[]`
 
-func foz(arg[]) {
+func foz(mut arg[]) {
     arg[1] = 0xfe
 }
 # array without type specified defaults to target default integer type
@@ -248,9 +249,9 @@ func object.at(x, y, color i32) self {
     self.color = color
 }
 
-const yes = 1
-const no = 0
-const maybe = -1
+let yes = 1
+let no = 0
+let maybe = -1
 # constants can be declared in any scope and shadow outer declarations
 
 # limited support for non-inlined functions
@@ -259,7 +260,7 @@ const maybe = -1
 
 func noinline print_num(num) {
     # 19 digits of an i64 plus the sign
-    const buf_count = 20
+    let buf_count = 20
 
     var buf = i8[buf_count]{}
     var n = num
@@ -320,7 +321,7 @@ func main() {
     {
         # a code block opens a new scope
         # constants and variables shadow outer scope
-        const maybe = 33
+        let maybe = 33
         assert(maybe == 33)
     }
 
@@ -2337,9 +2338,9 @@ lea rbp, [dat]
 ;[33:5] greeted: i8[15] (15 B @ [rbp + 352])
 ;[34:1] dat names = 0
 ;[34:7] names: i64 (8 B @ [rbp + 368])
-;[123:7] const yes = 1
-;[124:7] const no = 0
-;[125:7] const maybe = -1
+;[123:5] const yes = 1
+;[124:5] const no = 0
+;[125:5] const maybe = -1
 ;
 main:
 ;   [185:5] var answer = 0
@@ -2406,7 +2407,7 @@ main:
         if.38.24.190.5.end:
 ;       [190:5] free scratch register r15
     func.assert.190.5.end:
-;       [195:15] const maybe = 33
+;       [195:13] const maybe = 33
 ;       [196:9] assert(maybe == 33)
 ;       [38:6] assert(ok bool)
         func.assert.196.9:
@@ -3537,7 +3538,7 @@ main:
 ;       [269:5] free scratch register r15
     func.assert.269.5.end:
 ;   [271:5] faz(arr)
-;   [77:6] faz(arg i32[])
+;   [77:6] faz(mut arg i32[])
     func.faz.271.5:
 ;       [271:5] alias arg -> arr
 ;       [78:5] arg[1] = 0xfe
@@ -3841,7 +3842,7 @@ main:
 ;   [303:13] 0
     mov qword [rbp + 552], 0
 ;   [304:5] bar(i)
-;   [58:6] bar(arg)
+;   [58:6] bar(mut arg)
     func.bar.304.5:
 ;       [304:5] alias arg -> i
         if.59.8.304.5:
@@ -3889,7 +3890,7 @@ main:
 ;   [307:9] 1
     mov qword [rbp + 552], 1
 ;   [308:5] bar(i)
-;   [58:6] bar(arg)
+;   [58:6] bar(mut arg)
     func.bar.308.5:
 ;       [308:5] alias arg -> i
         if.59.8.308.5:
@@ -5571,7 +5572,7 @@ main:
 ;[132:15] noinline print_num(num)
 func.print_num:
 ;   [132:25] num: i64 (8 B @ [rbx])
-;   [134:11] const buf_count = 20
+;   [134:9] const buf_count = 20
 ;   [136:5] var buf = i8[buf_count]{}
 ;   [136:9] buf: i8[20] (20 B @ [rbx + 8])
 ;   [136:9] buf = i8[buf_count]{}

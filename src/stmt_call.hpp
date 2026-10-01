@@ -178,12 +178,13 @@ class stmt_call : public expression {
             return;
         }
 
-        if (not dst_info.operand.is_memory()) {
-            compile_inline(tc, indent, dst_info, func);
-            return;
+        // an error found in the inlined body reports where it was called from
+        try {
+            compile_inline_call(tc, indent, dst_info, func);
+        } catch (compiler_exception& e) {
+            add_call_frame(e);
+            throw;
         }
-
-        compile_inline_to_memory(tc, indent, dst_info, func);
     }
 
     // reported at the call because an inlined result aliases the destination
@@ -516,6 +517,16 @@ class stmt_call : public expression {
     }
 
   private:
+    // the error was found inside the inlined body, unless it is in the call
+    // itself where the call is already the error location
+    auto add_call_frame(compiler_exception& e) const -> void {
+        if (is_inside_call(e)) {
+            return;
+        }
+
+        e.add_call_frame(call_begin_token(), statement::trimmed_source(*this));
+    }
+
     // an argument reaches its parameter by reference, so a value that has no
     // storage or an array of the wrong shape cannot be passed
     auto assert_argument_usable(const toc& tc, const size_t index,
@@ -592,6 +603,11 @@ class stmt_call : public expression {
         if (not func.returns() and not dst_info.is_empty()) {
             throw compiler_exception{tok(), "function does not return a value"};
         }
+    }
+
+    // the receiver of a method is written before the name
+    [[nodiscard]] auto call_begin_token() const -> const token& {
+        return is_method() ? args_[0].tok() : tok();
     }
 
     // the result address comes first, then one address per argument
@@ -722,6 +738,18 @@ class stmt_call : public expression {
                             address_registers);
     }
 
+    auto compile_inline_call(toc& tc, const size_t indent,
+                             const ident_info& dst_info,
+                             const stmt_def_func& func) const -> void {
+
+        if (not dst_info.operand.is_memory()) {
+            compile_inline(tc, indent, dst_info, func);
+            return;
+        }
+
+        compile_inline_to_memory(tc, indent, dst_info, func);
+    }
+
     // the result is written to memory by the body of the function
     auto compile_inline_to_memory(toc& tc, const size_t indent,
                                   const ident_info& dst_info,
@@ -849,6 +877,13 @@ class stmt_call : public expression {
 
     [[nodiscard]] auto is_constructor() const -> bool {
         return not constructor_dot_tk_.is_empty();
+    }
+
+    [[nodiscard]] auto is_inside_call(const compiler_exception& e) const
+        -> bool {
+
+        return e.start_index >= call_begin_token().start_index() and
+               e.start_index <= close_paren_tk_.end_index();
     }
 
     [[nodiscard]] auto is_method() const -> bool {

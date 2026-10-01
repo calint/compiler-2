@@ -1,0 +1,5 @@
+
+663.baz:6:5: cannot assign to read-only 'self.start'
+663.baz:10:5: called from 't.reset()'
+663.baz:14:5: called from 'clear(t)'
+663.baz:19:5: called from 'run(a)'

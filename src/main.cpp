@@ -94,6 +94,10 @@ default_binary_file_name(const std::string_view src_file_name,
 
 auto print_usage_error(const std::string_view message) -> void;
 
+auto print_call_frames(std::string_view src_file_name, std::string_view src,
+                       std::span<const compiler_exception::call_frame> frames)
+    -> void;
+
 auto print_source_error(const std::string_view src_file_name,
                         const std::string_view src, const size_t line,
                         const size_t start_index,
@@ -336,6 +340,8 @@ examples:
         print_source_error(opts.src_file_name, src, e.line, e.start_index,
                            e.msg);
 
+        print_call_frames(opts.src_file_name, src, e.call_frames);
+
         return 1;
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
@@ -483,6 +489,20 @@ default_binary_file_name(const std::string_view src_file_name,
 auto print_usage_error(const std::string_view message) -> void {
     std::println(stderr, "{}", message);
     std::println(stderr, "Use --help for usage information");
+}
+
+// the inlined calls the error was found in, innermost first
+auto print_call_frames(
+    const std::string_view src_file_name, const std::string_view src,
+    const std::span<const compiler_exception::call_frame> frames) -> void {
+
+    for (const compiler_exception::call_frame& frame : frames) {
+        const auto [line_num, col]{line_and_col_num_for_char_index(
+            frame.line, frame.start_index, src)};
+
+        std::println(stderr, "{}:{}:{}: called from '{}'", src_file_name,
+                     line_num, col, frame.text);
+    }
 }
 
 // 'line' and 'start_index' locate the error, the column is derived from them

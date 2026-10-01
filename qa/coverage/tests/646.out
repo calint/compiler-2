@@ -1,2 +1,4 @@
 
 646.baz:4:5: cannot assign to read-only 'a'
+646.baz:8:5: called from 'set(a)'
+646.baz:13:5: called from 'f(x)'
