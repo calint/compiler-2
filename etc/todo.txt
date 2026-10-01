@@ -207,21 +207,18 @@ easy
        'inline' on its 22 definitions or keep the block
 
 --------------------------------------------------------------------------------
-medium
---------------------------------------------------------------------------------
-generated assembly, easiest first
---------------------------------------------------------------------------------
-[x] register allocation: a non-inline call saves and restores all 30 registers
-    with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
-    'print_num(a)' (etc/codegen-inefficiencies.baz)
-    => the registers a non-inline function can use could be listed so the
-       call saves only those
-    => done with the push/pop item above
---------------------------------------------------------------------------------
 other, easiest first
 --------------------------------------------------------------------------------
 [ ] stmt_call: check arguments vs parameters in constructor instead of at
     compile
+    => tried: 'assert_alias_type' and the non-inline argument checks at parse
+       gave a wrong message for 'var x = i32(foozi(x))' (test 121): the trial
+       parse of a 'var' initializer gives 'x' the placeholder default type,
+       so the type check at parse reports 'required i64, got i32' instead of
+       'use of uninitialized variable'. needs the trial parse placeholder to
+       be recognizable first (e.g. skip type checks on the variable being
+       defined). the checks that need the destination ('assert_result_type',
+       'assert_no_shared_storage') cannot move
 [ ] implement "size_of" for fields
 [ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
     tests
@@ -430,6 +427,12 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] register allocation: a non-inline call saves and restores all 30 registers
+    with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
+    'print_num(a)' (etc/codegen-inefficiencies.baz)
+    => the registers a non-inline function can use could be listed so the
+       call saves only those
+    => done with the push/pop item above
 [x] simple LSP supporting rename
 [x] read-only state was a bool plus a cause in 'var_info' and 'ident_info'
     => 'read_only_cause' alone: NONE is writable, 'is_read_only()' is derived
