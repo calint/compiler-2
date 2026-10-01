@@ -26,7 +26,8 @@ class stmt_builtin_io final : public stmt_call {
 
             // also in functions that are never called, which are not compiled
             if (info.is_var()) {
-                assert_not_read_only(buffer, info);
+                assert_not_read_only(buffer.tok(), "read into",
+                                     buffer.identifier(), info);
             }
         }
     }
@@ -91,7 +92,8 @@ class stmt_builtin_io final : public stmt_call {
             if (info.is_var() and info.is_array) {
                 // 'read' fills the buffer, 'write' only reads it
                 if (tok().is_text("read")) {
-                    assert_not_read_only(buffer, info);
+                    assert_not_read_only(buffer.tok(), "read into",
+                                         buffer.identifier(), info);
                 }
 
                 return;
@@ -229,22 +231,5 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
-    }
-
-    //
-    // statics
-    //
-
-    static auto assert_not_read_only(const statement& buffer,
-                                     const ident_info& info) -> void {
-
-        if (not info.is_read_only) {
-            return;
-        }
-
-        throw compiler_exception{
-            buffer.tok(), std::format("cannot read into read-only '{}'{}",
-                                      buffer.identifier(),
-                                      read_only_hint(info, info.root_id()))};
     }
 };

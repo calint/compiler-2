@@ -527,6 +527,32 @@ class stmt_call : public expression {
         e.add_call_frame(call_begin_token(), statement::trimmed_source(*this));
     }
 
+    // the callee writes through the parameter, so the caller's variable it
+    // names must be writable
+    auto assert_argument_not_read_only(const size_t index,
+                                       const ident_info& info) const -> void {
+
+        if (not info.is_read_only()) {
+            return;
+        }
+
+        const expr_any& arg{args_[index]};
+
+        if (is_method() and index == 0) {
+            throw compiler_exception{
+                arg.tok(),
+                std::format("read-only '{}' cannot be the receiver of 'mut' "
+                            "method '{}'{}",
+                            arg.identifier(), func_name_,
+                            read_only_hint(info))};
+        }
+
+        throw compiler_exception{
+            arg.tok(), std::format("read-only '{}' cannot be passed to a "
+                                   "'mut' parameter{}",
+                                   arg.identifier(), read_only_hint(info))};
+    }
+
     // an argument reaches its parameter by reference, so a value that has no
     // storage or an array of the wrong shape cannot be passed
     auto assert_argument_usable(const toc& tc, const size_t index,
@@ -577,31 +603,60 @@ class stmt_call : public expression {
             return;
         }
 
-        if (not func.writes_param(index)) {
+        if (func.param(index).is_read_only()) {
             return;
         }
 
         const ident_info info{tc.make_ident_info(arg)};
 
         // constants pass their value
-        if (not info.is_var() or not info.is_read_only) {
+        if (not info.is_var()) {
             return;
         }
 
-        if (is_method() and index == 0) {
-            throw compiler_exception{
-                arg.tok(),
-                std::format("read-only '{}' cannot be the receiver of 'mut' "
-                            "method '{}'{}",
-                            arg.identifier(), func_name_,
-                            read_only_hint(info, info.root_id()))};
+        assert_argument_not_read_only(index, info);
+    }
+
+    auto assert_noninline_argument(const toc& tc, const size_t index,
+                                   const stmt_def_func_param& param) const
+        -> void {
+
+        const expr_any& arg{args_[index]};
+
+        if (arg.is_expression()) {
+            throw compiler_exception{arg.tok(),
+                                     "expression arguments are unsupported"};
         }
 
-        throw compiler_exception{
-            arg.tok(), std::format("read-only '{}' cannot be passed to a "
-                                   "'mut' parameter{}",
-                                   arg.identifier(),
-                                   read_only_hint(info, info.root_id()))};
+        if (not arg.get_unary_ops().is_empty()) {
+            throw compiler_exception{
+                arg.tok(), "unary operators on arguments are unsupported"};
+        }
+
+        const ident_info info{tc.make_ident_info(arg)};
+        if (not info.is_var()) {
+            throw compiler_exception{arg.tok(), "argument must be a variable"};
+        }
+
+        if (info.is_array) {
+            throw compiler_exception{arg.tok(),
+                                     "whole-array arguments are unsupported"};
+        }
+
+        if (param.is_array()) {
+            throw compiler_exception{arg.tok(),
+                                     "array parameters are unsupported"};
+        }
+
+        if (&info.type_ref() != &param.get_type()) {
+            throw_parameter_type_mismatch(arg, param, info);
+        }
+
+        // the callee reaches the data through a pointer that does not carry
+        // the read-only mark
+        if (not param.is_read_only()) {
+            assert_argument_not_read_only(index, info);
+        }
     }
 
     // the callee reaches the result and arguments through their addresses
@@ -629,8 +684,8 @@ class stmt_call : public expression {
             assert_result_type(dst_info, func);
         }
 
-        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
-            assert_noninline_argument(tc, arg, param);
+        for (size_t i{}; i < args_.size(); ++i) {
+            assert_noninline_argument(tc, i, func.param(i));
         }
     }
 
@@ -1074,50 +1129,6 @@ class stmt_call : public expression {
     //
     // statics
     //
-
-    static auto assert_noninline_argument(const toc& tc, const expr_any& arg,
-                                          const stmt_def_func_param& param)
-        -> void {
-
-        if (arg.is_expression()) {
-            throw compiler_exception{arg.tok(),
-                                     "expression arguments are unsupported"};
-        }
-
-        if (not arg.get_unary_ops().is_empty()) {
-            throw compiler_exception{
-                arg.tok(), "unary operators on arguments are unsupported"};
-        }
-
-        const ident_info info{tc.make_ident_info(arg)};
-        if (not info.is_var()) {
-            throw compiler_exception{arg.tok(), "argument must be a variable"};
-        }
-
-        if (info.is_array) {
-            throw compiler_exception{arg.tok(),
-                                     "whole-array arguments are unsupported"};
-        }
-
-        if (param.is_array()) {
-            throw compiler_exception{arg.tok(),
-                                     "array parameters are unsupported"};
-        }
-
-        if (&info.type_ref() != &param.get_type()) {
-            throw_parameter_type_mismatch(arg, param, info);
-        }
-
-        // the callee reaches the data through a pointer that does not carry
-        // the read-only mark
-        if (info.is_read_only and not param.is_read_only()) {
-            throw compiler_exception{
-                arg.tok(), std::format("read-only '{}' cannot be passed to a "
-                                       "'mut' parameter{}",
-                                       arg.identifier(),
-                                       read_only_hint(info, info.root_id()))};
-        }
-    }
 
     static auto free_in_reverse(machine& x, const token& src_loc_tk,
                                 const size_t indent,

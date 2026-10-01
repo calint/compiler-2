@@ -256,13 +256,16 @@ class operand {
     }
 };
 
-// why a name cannot be written, for the diagnostic
+// why a name cannot be written, for the diagnostic; NONE is writable and
+// ALIAS is data declared elsewhere that a callee reaches through a parameter
+// not declared 'mut'
 enum class read_only_cause : uint8_t {
     NONE,
     LET,
     PARAM,
     FOO_ELEMENT,
-    FOO_COUNTER
+    FOO_COUNTER,
+    ALIAS
 };
 
 struct var_info {
@@ -272,7 +275,6 @@ struct var_info {
     int64_t offset{}; // location offset from base register
     bool is_array{};
     bool is_pointer{};
-    bool is_read_only{};
     read_only_cause read_only_why{};
     size_t array_len{};
     operand pointer_register; // variable location is in register
@@ -295,9 +297,6 @@ struct ident_info {
     size_t array_len{};
     bool is_array{};
     bool is_pointer{};
-    bool is_read_only{};
-
-    // the cause under the name it is declared with, not through an alias
     read_only_cause read_only_why{};
     bool use_operand{}; // operand overrides any location calculation
     kind kind{};
@@ -323,6 +322,10 @@ struct ident_info {
     [[nodiscard]] auto is_const() const -> bool { return kind == kind::CONST; }
 
     [[nodiscard]] auto is_empty() const -> bool { return kind == kind::EMPTY; }
+
+    [[nodiscard]] auto is_read_only() const -> bool {
+        return read_only_why != read_only_cause::NONE;
+    }
 
     [[nodiscard]] auto is_register() const -> bool {
         return kind == kind::REGISTER;

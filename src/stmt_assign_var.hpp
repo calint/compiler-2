@@ -29,7 +29,8 @@ class stmt_assign_var final : public statement {
         const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
         // also in functions that are never called, which are not compiled
-        assert_not_read_only(dst_info);
+        assert_not_read_only(tok(), "assign to", stmt_ident_.identifier(),
+                             dst_info);
 
         set_type(dst_info.type_ref());
 
@@ -79,7 +80,8 @@ class stmt_assign_var final : public statement {
 
         // e.g. the counter 'i' of 'foo', also when reached through an alias,
         // which only exists once a call is expanded
-        assert_not_read_only(var_dst_info);
+        assert_not_read_only(tok(), "assign to", stmt_ident_.identifier(),
+                             var_dst_info);
 
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
@@ -124,18 +126,4 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
-
-  private:
-    // e.g. the counter 'i' of 'foo', a parameter not declared 'mut' or a 'let'
-    // variable
-    auto assert_not_read_only(const ident_info& dst_info) const -> void {
-        if (not dst_info.is_read_only) {
-            return;
-        }
-
-        throw compiler_exception{
-            tok(), std::format("cannot assign to read-only '{}'{}",
-                               stmt_ident_.identifier(),
-                               read_only_hint(dst_info, dst_info.root_id()))};
-    }
 };

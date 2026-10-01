@@ -227,11 +227,6 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // the receiver of a method is writable only when the method is 'mut'
-    [[nodiscard]] auto writes_param(const size_t ix) const -> bool {
-        return not params_[ix].is_read_only();
-    }
-
   private:
     // located at the method name for diagnostics
     auto add_self_param(const toc& tc) -> void {
@@ -276,7 +271,6 @@ class stmt_def_func final : public statement {
                            .src_loc_tk{param.tok()},
                            .is_array{param.is_array()},
                            .is_pointer{is_pointer},
-                           .is_read_only{param.is_read_only()},
                            .read_only_why{param.is_read_only()
                                               ? read_only_cause::PARAM
                                               : read_only_cause::NONE},

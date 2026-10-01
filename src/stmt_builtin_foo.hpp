@@ -226,8 +226,7 @@ class stmt_builtin_foo final : public statement {
                        .name{"e"},
                        .type_ptr{&array_info.type_ref()},
                        .src_loc_tk{decl_tk},
-                       .is_read_only{array_info.is_read_only},
-                       .read_only_why{array_info.is_read_only
+                       .read_only_why{array_info.is_read_only()
                                           ? read_only_cause::FOO_ELEMENT
                                           : read_only_cause::NONE},
                        .pointer_register{iterator},
@@ -241,7 +240,6 @@ class stmt_builtin_foo final : public statement {
                        .name{"i"},
                        .type_ptr{&tc.get_type_default()},
                        .src_loc_tk{decl_tk},
-                       .is_read_only{true},
                        .read_only_why{read_only_cause::FOO_COUNTER},
                        .pointer_register{},
                        .base_register{},

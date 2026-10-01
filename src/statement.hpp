@@ -257,6 +257,21 @@ class statement {
     // statics
     //
 
+    // 'action' completes "cannot ...", e.g. 'assign to' or 'copy into'
+    static auto assert_not_read_only(const token& tk,
+                                     const std::string_view action,
+                                     const std::string_view name,
+                                     const ident_info& info) -> void {
+
+        if (not info.is_read_only()) {
+            return;
+        }
+
+        throw compiler_exception{tk, std::format("cannot {} read-only '{}'{}",
+                                                 action, name,
+                                                 read_only_hint(info))};
+    }
+
     [[nodiscard]] static auto fits_size_bytes(const int64_t value,
                                               const size_t size_bytes) -> bool {
 
@@ -294,9 +309,10 @@ class statement {
 
     // why the name cannot be written, e.g. ", 'x' is declared with 'let'",
     // empty when it is read-only through an alias
-    [[nodiscard]] static auto read_only_hint(const ident_info& info,
-                                             const std::string_view root)
+    [[nodiscard]] static auto read_only_hint(const ident_info& info)
         -> std::string {
+
+        const std::string_view root{info.root_id()};
 
         if (info.read_only_why == read_only_cause::LET) {
             return std::format(", '{}' is declared with 'let'", root);

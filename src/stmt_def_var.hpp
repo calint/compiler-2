@@ -25,12 +25,11 @@ class stmt_def_var final : public statement {
     token equals_tk_;
     stmt_assign_var assign_var_;
     bool is_array_{};
-    bool is_const_{};
+    bool is_let_{};
 
   public:
     stmt_def_var(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()},
-          is_const_{tk.is_text("let")} {
+        : statement{tk}, name_tk_{tz.next_token()}, is_let_{tk.is_text("let")} {
 
         toc::assert_name_not_reserved(name_tk_);
 
@@ -59,10 +58,10 @@ class stmt_def_var final : public statement {
             field_coverage{multiply_storage_size(
                 get_type().size_bytes(), is_array_ ? array_count_ : 1)});
 
-        if (is_const_) {
+        if (is_let_) {
             // statements parsed from here on cannot assign it, also in a
             // function that is never called and so never compiled
-            tc.make_var_read_only(name_tk_.text());
+            tc.make_var_read_only(name_tk_.text(), read_only_cause::LET);
         }
     }
 
@@ -95,13 +94,13 @@ class stmt_def_var final : public statement {
 
         assign_var_.compile(tc, indent, var_dst_info);
 
-        if (not is_const_) {
+        if (not is_let_) {
             return;
         }
 
         // marked after the initializer, which writes the variable, e.g. as
         // the result of an inline call
-        tc.make_var_read_only(name_tk_.text());
+        tc.make_var_read_only(name_tk_.text(), read_only_cause::LET);
     }
 
     auto visit_reads(const std::string_view var,
@@ -200,8 +199,6 @@ class stmt_def_var final : public statement {
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
             .is_array{is_array_},
-            .read_only_why{is_const_ ? read_only_cause::LET
-                                     : read_only_cause::NONE},
             .array_len{array_count_},
             .pointer_register{},
             .base_register{},

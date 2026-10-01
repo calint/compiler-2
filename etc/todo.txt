@@ -414,7 +414,6 @@ too hard right now
        displacement, more branch offset
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
-[ ] simple LSP supporting rename
 [ ] support for float and double?
 [ ] support avx512 operations
 [ ] limited integration with some C functions from stdlib
@@ -423,6 +422,13 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] simple LSP supporting rename
+[x] read-only state was a bool plus a cause in 'var_info' and 'ident_info'
+    => 'read_only_cause' alone: NONE is writable, 'ALIAS' is data reached
+       through a name it was not declared with; 'is_read_only()' is derived,
+       'as_declared_if'/'as_read_only_if' became
+       'as_read_only_through_aliases'; 'alias_info' keeps its bool since it
+       holds no cause
 [x] func f(p : point const) const is default. same as "func f(p : point)"
     => arguments are read-only by default, 'mut' after the name allows
        writing it: 'func f(p mut point)'; the 'self' of a method is writable

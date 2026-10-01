@@ -219,8 +219,10 @@ class frame final {
         return name_ == name;
     }
 
-    auto make_var_read_only(const std::string_view name) -> void {
-        vars_.get_ref(name).is_read_only = true;
+    auto make_var_read_only(const std::string_view name,
+                            const read_only_cause cause) -> void {
+
+        vars_.get_ref(name).read_only_why = cause;
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
@@ -870,8 +872,10 @@ class toc final {
 
     // the variable declared last in this scope, e.g. a 'let' variable once
     // its initializer has written it
-    auto make_var_read_only(const std::string_view name) -> void {
-        frames_.back().make_var_read_only(name);
+    auto make_var_read_only(const std::string_view name,
+                            const read_only_cause cause) -> void {
+
+        frames_.back().make_var_read_only(name, cause);
     }
 
     // a callee frame starts aligned for any variable it holds
@@ -1273,7 +1277,7 @@ class toc final {
             ident_info reg_info{
                 ident_info::make_register(ident, var.value_register)};
 
-            reg_info.is_read_only = var.is_read_only;
+            reg_info.read_only_why = var.read_only_why;
 
             return reg_info;
         }
@@ -1282,7 +1286,6 @@ class toc final {
             var.type_ptr->accessor(src_loc_tk, ident, id.path(), var,
                                    machine_.get().variables_base_register())};
 
-        ii.is_read_only = var.is_read_only;
         ii.read_only_why = var.read_only_why;
 
         lea_path.resize(id.path().size());
@@ -1341,7 +1344,7 @@ class toc final {
         // one parameter not 'mut' in the alias chain makes the data read-only
         bool is_read_only{};
 
-        // the name is then not the one declared with 'let'
+        // the name is then not the one the variable is declared with
         bool is_alias_followed{};
 
         for (const frame& cur_frame : frames_ | std::views::reverse) {
@@ -1382,8 +1385,8 @@ class toc final {
             if (alias.register_operand.is_register() and
                 id.path().size() == 1) {
 
-                return as_read_only_if(
-                    is_read_only,
+                return as_read_only_through_aliases(
+                    is_alias_followed, is_read_only,
                     ident_info::make_register(ident, alias.register_operand));
             }
 
@@ -1442,17 +1445,6 @@ class toc final {
     // statics
     //
 
-    // an alias names the data of a 'let' variable without being declared
-    // with it
-    [[nodiscard]] static auto as_declared_if(const bool is_declared,
-                                             ident_info info) -> ident_info {
-
-        if (not is_declared) {
-            info.read_only_why = read_only_cause::NONE;
-        }
-        return info;
-    }
-
     [[nodiscard]] static auto as_element_if(const bool is_element,
                                             ident_info info) -> ident_info {
 
@@ -1466,10 +1458,21 @@ class toc final {
         return info;
     }
 
-    [[nodiscard]] static auto as_read_only_if(const bool is_read_only,
-                                              ident_info info) -> ident_info {
+    // under the name of an alias the data was not declared with its cause,
+    // e.g. a 'let' variable reached through a parameter
+    [[nodiscard]] static auto
+    as_read_only_through_aliases(const bool is_alias_followed,
+                                 const bool is_alias_read_only, ident_info info)
+        -> ident_info {
 
-        info.is_read_only = info.is_read_only or is_read_only;
+        if (not is_alias_followed) {
+            return info;
+        }
+
+        if (info.is_read_only() or is_alias_read_only) {
+            info.read_only_why = read_only_cause::ALIAS;
+        }
+
         return info;
     }
 
@@ -1479,10 +1482,10 @@ class toc final {
                             const bool is_element, const bool is_alias_followed)
         -> ident_info {
 
-        info = as_declared_if(not is_alias_followed, std::move(info));
         info = as_element_if(is_element, std::move(info));
 
-        return as_read_only_if(is_read_only, std::move(info));
+        return as_read_only_through_aliases(is_alias_followed, is_read_only,
+                                            std::move(info));
     }
 
     // makes room in 'lea_path' for the elements 'target_count' adds

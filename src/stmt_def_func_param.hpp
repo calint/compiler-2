@@ -108,7 +108,6 @@ class stmt_def_func_param final : public statement {
         const token tk{tz.next_token()};
         if (not tk.is_text("mut")) {
             tz.put_back_token(tk);
-
             return;
         }
 
