@@ -1,6 +1,6 @@
 # constant index past the end of an array argument is rejected at compile
 
-func legacy_write(mut values i8[]) {
+func legacy_write(values mut i8[]) {
     values[8] = 1
 }
 

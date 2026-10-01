@@ -2,7 +2,7 @@
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-func noinline magnitude(mut value) result {
+func noinline magnitude(value mut) result {
     result = value
     if value < 0 {
         result = -value
@@ -11,7 +11,7 @@ func noinline magnitude(mut value) result {
     value = value + 1
 }
 
-func noinline forward(mut value) result {
+func noinline forward(value mut) result {
     var sentinel = 9876
     result = magnitude(value)
     if sentinel != 9876 result = -1

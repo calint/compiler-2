@@ -1,6 +1,6 @@
-# 'mut' needs a parameter name
+# 'mut' goes after the parameter name
 
-func f(mut) {
+func f(mut x) {
 }
 
 func main() {

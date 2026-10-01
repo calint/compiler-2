@@ -2,7 +2,7 @@
 
 func assert(expr bool) { if not expr exit(1) }
 
-func legacy_write(mut values i8[]) {
+func legacy_write(values mut i8[]) {
     values[7] = 1
 }
 

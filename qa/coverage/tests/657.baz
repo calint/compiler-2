@@ -1,6 +1,6 @@
 # a 'let' variable cannot be passed to a 'mut' non-inline parameter
 
-func noinline set(mut a) {
+func noinline set(a mut) {
     a = 1
 }
 

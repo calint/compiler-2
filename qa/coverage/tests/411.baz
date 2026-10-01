@@ -15,7 +15,7 @@ type world {
     nodes node[3]
 }
 
-func bump(mut a node) {
+func bump(a mut node) {
     a.p.y = a.p.y + 2
 }
 

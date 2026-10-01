@@ -1,2 +1,2 @@
 
-650.baz:3:11: expected parameter name after 'mut'
+650.baz:3:12: type 'x' not found

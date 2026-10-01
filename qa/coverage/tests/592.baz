@@ -8,7 +8,7 @@ type rgb { r i8, g i8, b i8 }
 
 type pixel { fg rgb, bg rgb, alpha i8, depth i8 }
 
-func check_zero(err, mut z i8[]) {
+func check_zero(err, z mut i8[]) {
     var i = 0
     loop {
         if i == array_length(z) break
@@ -18,7 +18,7 @@ func check_zero(err, mut z i8[]) {
     }
 }
 
-func fill(mut a i8[]) {
+func fill(a mut i8[]) {
     var i = 0
     loop {
         if i == array_length(a) break
@@ -43,7 +43,7 @@ func check_copy(err, a i8[], b i8[], n) {
 
 # every count from 0 to the array size, including counts that end within
 # the head
-func check_counts(err, a i8[], mut b i8[]) {
+func check_counts(err, a i8[], b mut i8[]) {
     var n = 0
     loop {
         if n > array_length(b) break

@@ -28,7 +28,7 @@ type world {
     metadata i8[32]
 }
 
-func init_vertex(mut v vertex, idx i32) {
+func init_vertex(v mut vertex, idx i32) {
     v.pos.x = idx * 11
     v.pos.y = idx * 22
     v.pos.z = idx * 33
@@ -52,7 +52,7 @@ func verify_vertex(v vertex, idx i32) {
     assert(v.uv_y == idx * 2)
 }
 
-func init_mesh(mut m mesh, id_val i32) {
+func init_mesh(m mut mesh, id_val i32) {
     m.id = id_val
     
     var i = i32(0)
@@ -88,7 +88,7 @@ func verify_mesh(m mesh, id_val i32) {
     }
 }
 
-func scale_vertices(mut s scene, scale_factor i32) {
+func scale_vertices(s mut scene, scale_factor i32) {
     var i = 0
     loop {
         var j = 0
@@ -104,7 +104,7 @@ func scale_vertices(mut s scene, scale_factor i32) {
     }
 }
 
-func shift_colors(mut s scene, shift_val i32) {
+func shift_colors(s mut scene, shift_val i32) {
     var i = 0
     loop {
         var j = 0

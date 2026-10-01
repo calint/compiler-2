@@ -117,10 +117,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5768           2244          18208
+C/C++ Header                    54           5766           2241          18205
 C++                              1            104             22            394
 -------------------------------------------------------------------------------
-SUM:                            55           5872           2266          18602
+SUM:                            55           5870           2263          18599
 -------------------------------------------------------------------------------
 ```
 
@@ -185,7 +185,7 @@ func point.sum() res {
 }
 # methods can have a "return"
 
-func bar(mut arg) {
+func bar(arg mut) {
     if arg == 0 return
     arg = 0xff
 }
@@ -204,12 +204,12 @@ func inv(i i32) res i32 {
 # type of "return" and arguments can be defined, use `i` for default integer type
 # of target platform
 
-func faz(mut arg i32[]) {
+func faz(arg mut i32[]) {
     arg[1] = 0xfe
 }
 # array arguments are declared with the element type followed by `[]`
 
-func foz(mut arg[]) {
+func foz(arg mut []) {
     arg[1] = 0xfe
 }
 # array without type specified defaults to target default integer type
@@ -3539,7 +3539,7 @@ main:
 ;       [270:5] free scratch register r15
     func.assert.270.5.end:
 ;   [272:5] faz(arr)
-;   [78:6] faz(mut arg i32[])
+;   [78:6] faz(arg mut i32[])
     func.faz.272.5:
 ;       [272:5] alias arg -> arr
 ;       [79:5] arg[1] = 0xfe
@@ -3843,7 +3843,7 @@ main:
 ;   [304:13] 0
     mov qword [rbp + 552], 0
 ;   [305:5] bar(i)
-;   [59:6] bar(mut arg)
+;   [59:6] bar(arg mut)
     func.bar.305.5:
 ;       [305:5] alias arg -> i
         if.60.8.305.5:
@@ -3891,7 +3891,7 @@ main:
 ;   [308:9] 1
     mov qword [rbp + 552], 1
 ;   [309:5] bar(i)
-;   [59:6] bar(mut arg)
+;   [59:6] bar(arg mut)
     func.bar.309.5:
 ;       [309:5] alias arg -> i
         if.60.8.309.5:

@@ -7,7 +7,7 @@ func add_one(a) res {
     res = res + a
 }
 
-func bump(mut value) {
+func bump(value mut) {
     value = add_one(total)
 }
 

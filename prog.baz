@@ -56,7 +56,7 @@ func point.sum() res {
 }
 # methods can have a "return"
 
-func bar(mut arg) {
+func bar(arg mut) {
     if arg == 0 return
     arg = 0xff
 }
@@ -75,12 +75,12 @@ func inv(i i32) res i32 {
 # type of "return" and arguments can be defined, use `i` for default integer type
 # of target platform
 
-func faz(mut arg i32[]) {
+func faz(arg mut i32[]) {
     arg[1] = 0xfe
 }
 # array arguments are declared with the element type followed by `[]`
 
-func foz(mut arg[]) {
+func foz(arg mut []) {
     arg[1] = 0xfe
 }
 # array without type specified defaults to target default integer type

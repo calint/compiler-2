@@ -20,18 +20,18 @@ type world {
     locations location[7]
 }
 
-func foozi(mut lnk link){
+func foozi(lnk mut link){
     lnk.loc = 2
     lnk.name_len = 1
     lnk.name[0] = 0x61 # 'a'
 }
 
-func bar(mut locs location[]) {
+func bar(locs mut location[]) {
     foozi(locs[2].links[1])
     foozi(locs[3].links[5])
 }
 
-func baz(mut wld world[]) {
+func baz(wld mut world[]) {
     bar(wld[1].locations)
 }
 

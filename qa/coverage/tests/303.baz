@@ -5,7 +5,7 @@ func assert(expr bool) { if not expr exit(1) }
 type point { x, y }
 type holder { points point[2] }
 
-func set_x(mut p point) {
+func set_x(p mut point) {
     p.x = 9
 }
 

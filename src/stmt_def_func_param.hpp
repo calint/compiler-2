@@ -22,7 +22,17 @@ class stmt_def_func_param final : public statement {
 
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
-        : stmt_def_func_param{tc, tz, tz.next_token()} {}
+        : statement{tz.next_token()} {
+
+        assert(not tok().text().empty());
+
+        toc::assert_name_not_reserved(tok());
+
+        read_mut(tz);
+        is_read_only_ = mut_tk_.is_empty();
+
+        parse_type(tc, tz);
+    }
 
     stmt_def_func_param(const token tk, const type& tp, const bool is_read_only)
         : statement{tk}, is_read_only_{is_read_only}, is_implicit_{true} {
@@ -41,8 +51,8 @@ class stmt_def_func_param final : public statement {
             return;
         }
 
-        mut_tk_.source_to(os);
         statement::source_to(os);
+        mut_tk_.source_to(os);
         if (not type_tk_.is_empty()) {
             type_tk_.source_to(os);
         }
@@ -63,32 +73,11 @@ class stmt_def_func_param final : public statement {
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 
   private:
-    // 'first_tk' is the name or the 'mut' before it
-    stmt_def_func_param(const toc& tc, tokenizer& tz, const token first_tk)
-        : statement{first_tk.is_text("mut") ? read_name_after_mut(tz)
-                                            : first_tk},
-          mut_tk_{first_tk.is_text("mut") ? first_tk : token{}},
-          is_read_only_{not first_tk.is_text("mut")} {
-
-        assert(not tok().text().empty());
-
-        toc::assert_name_not_reserved(tok());
-
-        token delimiter_tk{tz.is_next_char_token(',')};
-        if (delimiter_tk.is_empty()) {
-            delimiter_tk = tz.is_next_char_token(')');
-        }
-        if (not delimiter_tk.is_empty()) {
-            tz.put_back_token(delimiter_tk);
-
-            // no type defined, set default
-            set_type(tc.get_type_default());
-
-            return;
-        }
-
-        // e.g. 'arr[]' has the default type
-        if (tz.peek_char_after_whitespace() != '[') {
+    // e.g. 'v', 'v i32', 'arr[]' and 'arr i32[]' have the default type or an
+    // explicit one, brackets follow the type
+    auto parse_type(const toc& tc, tokenizer& tz) -> void {
+        const char next{tz.peek_char_after_whitespace()};
+        if (next != ',' and next != ')' and next != '[') {
             type_tk_ = tz.next_token();
         }
 
@@ -109,17 +98,20 @@ class stmt_def_func_param final : public statement {
         is_array_ = true;
     }
 
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto read_name_after_mut(tokenizer& tz) -> token {
+    // 'mut' after the name allows the body to write the parameter
+    auto read_mut(tokenizer& tz) -> void {
         const char next{tz.peek_char_after_whitespace()};
-
-        if (next == ',' or next == ')') {
-            throw compiler_exception{tz, "expected parameter name after 'mut'"};
+        if (next == ',' or next == ')' or next == '[') {
+            return;
         }
 
-        return tz.next_token();
+        const token tk{tz.next_token()};
+        if (not tk.is_text("mut")) {
+            tz.put_back_token(tk);
+
+            return;
+        }
+
+        mut_tk_ = tk;
     }
 };

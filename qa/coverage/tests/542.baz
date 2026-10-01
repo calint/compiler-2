@@ -3,11 +3,11 @@
 func assert(err, ok bool) { if not ok exit(err) }
 
 # the constant exceeds 'addi' so rv32i needs 5 instructions per step
-func step(mut x) {
+func step(x mut) {
     x = x + 5000
 }
 
-func step16(mut x) {
+func step16(x mut) {
     step(x)
     step(x)
     step(x)
@@ -26,7 +26,7 @@ func step16(mut x) {
     step(x)
 }
 
-func step256(mut x) {
+func step256(x mut) {
     step16(x)
     step16(x)
     step16(x)
@@ -45,7 +45,7 @@ func step256(mut x) {
     step16(x)
 }
 
-func step4096(mut x) {
+func step4096(x mut) {
     step256(x)
     step256(x)
     step256(x)
@@ -65,7 +65,7 @@ func step4096(mut x) {
 }
 
 # about 1.3 MiB of code on rv32i
-func step65536(mut x) {
+func step65536(x mut) {
     step4096(x)
     step4096(x)
     step4096(x)

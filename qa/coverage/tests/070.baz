@@ -12,13 +12,13 @@ type point {x, y}
 type object {pos point, color i32}
 
 # function arguments are equivalent to mutable references
-func foozi(mut pt point) {
+func foozi(pt mut point) {
     pt.x = 0b10    # binary value 2
     pt.y = 0xb     # hex value 11
 }
 
 # default argument type is target-dependent
-func bar(mut arg) {
+func bar(arg mut) {
     if arg == 0 return
     arg = 0xff
 }

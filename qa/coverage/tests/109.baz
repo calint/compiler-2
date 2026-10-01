@@ -19,7 +19,7 @@ type world {
     scenes scene[3]
 }
 
-func init_mesh(mut m mesh, id_val i32) {
+func init_mesh(m mut mesh, id_val i32) {
     m.id = id_val
 
     var i = 0
@@ -51,7 +51,7 @@ func verify_mesh(m mesh, id_val i32) {
     }
 }
 
-func transform_vertices(mut s scene, offset vec3) {
+func transform_vertices(s mut scene, offset vec3) {
     var i = 0
     loop {
         var j = 0

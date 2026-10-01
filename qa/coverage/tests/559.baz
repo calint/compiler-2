@@ -10,7 +10,7 @@ type holder {
     values i16[5]
 }
 
-func fill(mut dst i16[]) {
+func fill(dst mut i16[]) {
     dst = {-1, 2}
 }
 

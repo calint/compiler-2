@@ -12,7 +12,7 @@ type box {
     tag
 }
 
-func set_fields(mut dst box, v, mut i) {
+func set_fields(dst mut box, v, i mut) {
     i = i + 1
     dst.p.x = v + i
     dst.p.y = dst.p.x + 1

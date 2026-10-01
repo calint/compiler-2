@@ -23,7 +23,7 @@ type world {
     locations location[7]
 }
 
-func fuz(mut wld1 world, mut wld2 world) {
+func fuz(wld1 mut world, wld2 mut world) {
     wld1.locations[2].links[1].loc = 0xba
     wld1.locations[2].links[1].pos.y = 0xab
     array_copy(

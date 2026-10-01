@@ -94,7 +94,7 @@ dat h1 =
 
 func assert(x bool) { if not x exit(1) }
 
-func update(mut h holder) {
+func update(h mut holder) {
     foo h.cols[2].points  {
         e.y = e.y + 10
     }

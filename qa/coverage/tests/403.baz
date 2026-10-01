@@ -2,7 +2,7 @@
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-func mix(mut dst, mut src, mut ix) {
+func mix(dst mut, src mut, ix mut) {
     ix = ix + 1
     dst = src + ix
     src = src + 10

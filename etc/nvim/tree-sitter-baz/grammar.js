@@ -107,11 +107,11 @@ module.exports = grammar({
 
     parameter_list: $ => sep1($.parameter, ','),
 
-    // [mut] identifier type_name (type is optional), a parameter without
+    // identifier [mut] type_name (type is optional), a parameter without
     // 'mut' is read-only
     parameter: $ => seq(
-      optional(field('modifier', $.mut_keyword)),
       field('name', $.identifier),
+      optional(field('modifier', $.mut_keyword)),
       optional(field('type', $._parameter_type)),
     ),
 

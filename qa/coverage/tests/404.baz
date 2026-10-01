@@ -7,7 +7,7 @@ type pair {
     y
 }
 
-func bump(mut dst pair, mut src pair, mut i) {
+func bump(dst mut pair, src mut pair, i mut) {
     i = i + 1
     dst = {src.x + i, src.y + i}
     src = {src.x + 100, src.y + 200}

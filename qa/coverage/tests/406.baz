@@ -11,7 +11,7 @@ func mk_from(src pair, delta) out pair {
     out = {src.x + delta, src.y + delta}
 }
 
-func put(mut dst pair, src pair, mut j) {
+func put(dst mut pair, src pair, j mut) {
     j = j + 1
     dst = mk_from(src, j)
 }

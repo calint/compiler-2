@@ -1,6 +1,6 @@
 # the foo counter 'i' is read-only also through a parameter
 
-func skip(mut ix) {
+func skip(ix mut) {
     ix = ix + 1
 }
 

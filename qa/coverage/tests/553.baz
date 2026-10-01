@@ -1,6 +1,6 @@
 # an unsized parameter has the size of the argument, which is too small
 
-func fill(mut dst i8[]) {
+func fill(dst mut i8[]) {
     dst = "abc"
 }
 

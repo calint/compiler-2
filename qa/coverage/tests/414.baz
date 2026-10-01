@@ -4,11 +4,11 @@ func assert(err, expr bool) { if not expr exit(err) }
 
 var calls = 0
 
-func bump(mut value i16) {
+func bump(value mut i16) {
     value = value + 1
 }
 
-func noinline update(mut value i16, mut other i16) {
+func noinline update(value mut i16, other mut i16) {
     var local = value
     bump(value)
     other = other + local

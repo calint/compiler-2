@@ -19,7 +19,7 @@ func swap(p point) res point {
     res.y = p.x
 }
 
-func add_into(mut dst, src) {
+func add_into(dst mut, src) {
     dst = dst + src
 }
 

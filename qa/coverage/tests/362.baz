@@ -3,7 +3,7 @@
 type result { equal bool }
 
 func assert(expr bool) { if not expr exit(1) }
-func probe(mut hits i32) value bool {
+func probe(hits mut i32) value bool {
     hits = hits + 1
     value = true
 }

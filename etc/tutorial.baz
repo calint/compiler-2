@@ -304,10 +304,10 @@ func twice(v) res {
 # the result 'res' is named and assigned like a variable
 # argument and result types are the default type when omitted
 
-func increment(mut v) {
+func increment(v mut) {
     v = v + 1
 }
-# arguments are read-only, 'mut' before an argument name allows writing it
+# arguments are read-only, 'mut' after an argument name allows writing it
 # and 'v = v + 1' changes the variable of the caller
 
 func sign(v) res {

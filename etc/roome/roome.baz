@@ -495,7 +495,7 @@ dat str_no_such_exit = "cannot go there\n"
 dat str_home = "home"
 dat str_arrived_from = "arrived from "
 
-func action_go(cur_entity, mut tz tokenizer) {
+func action_go(cur_entity, tz mut tokenizer) {
     tz.next()
     if tz.is_empty() {
         out.print_all(str_go_where)
@@ -584,7 +584,7 @@ dat str_what_exit_name_to = "what is exit name to new room\n"
 dat str_what_exit_name_back = "what is exit name back to this room\n"
 dat str_new_room_created = "new room created\n"
 
-func action_new_room(cur_entity, mut tz tokenizer) {
+func action_new_room(cur_entity, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -629,7 +629,7 @@ func action_new_room(cur_entity, mut tz tokenizer) {
 
 dat str_new_room_description = "new room description\n"
 
-func action_set_room_description(cur_entity, mut tz tokenizer) {
+func action_set_room_description(cur_entity, tz mut tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
     rooms.array[entities.array[cur_entity].room_id].description = tz.to_str()
@@ -637,7 +637,7 @@ func action_set_room_description(cur_entity, mut tz tokenizer) {
     out.print_all(str_new_room_description)
 }
 
-func action_set_room_note(cur_entity, mut tz tokenizer) {
+func action_set_room_note(cur_entity, tz mut tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
     rooms.array[entities.array[cur_entity].room_id].note = tz.to_str()
@@ -647,7 +647,7 @@ dat str_what_name = "what name\n"
 dat str_name_too_long = "name too long\n"
 dat str_new_room_name = "new room name\n"
 
-func action_set_room_name(cur_entity, mut tz tokenizer) {
+func action_set_room_name(cur_entity, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -667,7 +667,7 @@ func action_set_room_name(cur_entity, mut tz tokenizer) {
 
 dat str_new_entity_created = "new entity created\n"
 
-func action_new_entity(cur_entity, mut tz tokenizer) {
+func action_new_entity(cur_entity, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -688,7 +688,7 @@ func action_new_entity(cur_entity, mut tz tokenizer) {
 
 dat str_new_object_created = "new object created\n"
 
-func action_new_object(cur_entity, mut tz tokenizer) {
+func action_new_object(cur_entity, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -736,7 +736,7 @@ dat str_drop_what = "drop what\n"
 dat str_not_carrying = "u do not have that\n"
 dat str_dropped = "dropped "
 
-func action_drop(cur_entity, mut tz tokenizer) {
+func action_drop(cur_entity, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -776,7 +776,7 @@ dat str_is_not_here = " is not here\n"
 dat str_gave = "gave "
 dat str_to = " to "
 
-func action_give(cur_entity, mut tz tokenizer) {
+func action_give(cur_entity, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -851,7 +851,7 @@ dat str_tell_what = "tell what\n"
 dat str_does_not_exist = " does not exist\n"
 dat str_has_too_many_messages = " has too many messages\n"
 
-func action_tell(cur_entity, mut tz tokenizer) {
+func action_tell(cur_entity, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -896,7 +896,7 @@ func action_tell(cur_entity, mut tz tokenizer) {
 
 dat str_say_what = "say what\n"
 
-func action_say(cur_entity, mut tz tokenizer) {
+func action_say(cur_entity, tz mut tokenizer) {
     # the text is the rest of the line
     tz.skip_whitespace()
     tz.to_end()
@@ -945,7 +945,7 @@ dat str_action_set_room_description = "rd"
 dat str_action_set_room_note = "rnt"
 dat str_action_new_entity = "en"
 
-func parse_input(mut cur_entity, mut tz tokenizer) {
+func parse_input(cur_entity mut, tz mut tokenizer) {
     tz.first()
 
     if tz.is_str(str_action_go) {
@@ -1002,7 +1002,7 @@ go roome\n\
 en me\n"
 
 # runs the lines of the script as the bare entity, a line ends with '\n'
-func run_creation_script(mut tz tokenizer) {
+func run_creation_script(tz mut tokenizer) {
     var line_start = 0
     var i = 0
     loop {

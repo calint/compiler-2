@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 # item occupies 13 bytes: one i8 tag plus three i32 values, without field padding.
 COMMON = """func assert(err, condition bool) { if not condition exit(err) }
 type item { tag i8, values i32[3] }
-func bump(mut value item) { value.values[2] = value.values[2] + 1 }
+func bump(value mut item) { value.values[2] = value.values[2] + 1 }
 """
 # Runtime checks: the first local is zeroed; sibling blocks re-zero storage;
 # nested indexing and mutation through a function argument work without
@@ -262,7 +262,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     # byte fields keep the unaligned boundary offsets such as 2047
     for offset in (2047, 2048, 8196, 2147483647, 2147483648, 2147483656):
         source = f"""type large {{ padding i8[{offset}], value i8, next i8 }}
-func noinline update(mut value i8) {{ value = value + 1 }}
+func noinline update(value mut i8) {{ value = value + 1 }}
 func main() {{
     var data = large{{}}
     data.value = 7
@@ -283,8 +283,8 @@ func main() {{
 
     for offset in (2147483647, 2147483648, 2147483656):
         source = COMMON + f"""type large {{ padding i8[{offset}], value i32, next i32, equal bool, values i32[3] }}
-func noinline update(mut value i32) {{ value = value + 1 }}
-func noinline probe(mut data large) {{
+func noinline update(value mut i32) {{ value = value + 1 }}
+func noinline probe(data mut large) {{
     data.value = 7
     data.next = data.value
     data.equal = data.value == data.next
@@ -350,7 +350,7 @@ panic_entry:
                 assert run.stderr == b"panic: bounds at line 123\n", run.stderr
         print(f"arena large offset runtime {offset}: ok", flush=True)
 
-    source = COMMON + """func noinline update(mut value i32) { value = value + 1 }
+    source = COMMON + """func noinline update(value mut i32) { value = value + 1 }
 func main() {
     var value = i32(41)
     update(value)

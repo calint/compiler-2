@@ -1255,7 +1255,7 @@ main:
 ;       [270:5] free scratch register r15
     func.assert.270.5.end:
 ;   [272:5] faz(arr)
-;   [78:6] faz(mut arg i32[])
+;   [78:6] faz(arg mut i32[])
     func.faz.272.5:
 ;       [272:5] alias arg -> arr
 ;       [79:5] arg[1] = 0xfe
@@ -1559,7 +1559,7 @@ main:
 ;   [304:13] 0
     mov qword [rbp + 552], 0
 ;   [305:5] bar(i)
-;   [59:6] bar(mut arg)
+;   [59:6] bar(arg mut)
     func.bar.305.5:
 ;       [305:5] alias arg -> i
         if.60.8.305.5:
@@ -1607,7 +1607,7 @@ main:
 ;   [308:9] 1
     mov qword [rbp + 552], 1
 ;   [309:5] bar(i)
-;   [59:6] bar(mut arg)
+;   [59:6] bar(arg mut)
     func.bar.309.5:
 ;       [309:5] alias arg -> i
         if.60.8.309.5:

@@ -20,7 +20,7 @@ func sum_pair(src pair) out {
     out = src.x + src.y
 }
 
-func copy_pair(src pair, mut dst pair) {
+func copy_pair(src pair, dst mut pair) {
     dst = {src.x, src.y}
 }
 

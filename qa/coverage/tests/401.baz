@@ -2,12 +2,12 @@
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-func ret_after_inc(mut i) out {
+func ret_after_inc(i mut) out {
     i = i + 1
     out = 77
 }
 
-func store_after_inc(v, mut slot, mut i) {
+func store_after_inc(v, slot mut, i mut) {
     i = i + 1
     slot = v
 }

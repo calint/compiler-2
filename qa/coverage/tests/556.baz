@@ -1,7 +1,7 @@
 # a '{...}' initializer of an unsized parameter cannot have more elements than
 # the argument
 
-func fill(mut dst i32[]) {
+func fill(dst mut i32[]) {
     dst = {1, 2, 3}
 }
 

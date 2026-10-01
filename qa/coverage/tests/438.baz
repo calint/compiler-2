@@ -15,7 +15,7 @@ func noinline factorial(value i32) result i32 {
     result = i32(saved * partial)
 }
 
-func noinline shift(mut value point) result point {
+func noinline shift(value mut point) result point {
     var buffer = i8[4096]{}
     buffer[4095] = 17
     result = value
@@ -23,7 +23,7 @@ func noinline shift(mut value point) result point {
     result.y = result.y + buffer[4095]
 }
 
-func noinline forward(mut value point) result point {
+func noinline forward(value mut point) result point {
     var saved = value.y
     result = shift(value)
     assert(saved == value.y)

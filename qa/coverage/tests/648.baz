@@ -1,6 +1,6 @@
 # --checks=alias: a 'mut' parameter still conflicts with a read-only one
 
-func f(a, mut b) {
+func f(a, b mut) {
     b = a + 1
 }
 

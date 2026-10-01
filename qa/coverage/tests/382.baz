@@ -2,7 +2,7 @@
 
 dat values = []{1, 2, 3}
 
-func increment(mut value) {
+func increment(value mut) {
     value = value + 10
 }
 

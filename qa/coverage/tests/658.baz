@@ -1,6 +1,6 @@
 # a 'let' variable cannot be written through an inline callee
 
-func set(mut a) {
+func set(a mut) {
     a = 1
 }
 

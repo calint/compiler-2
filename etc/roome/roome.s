@@ -276,7 +276,7 @@ main:
         # [54:21] free scratch register t0
     func.printer.set_silenced.1022.9.end:
     # [1023:5] run_creation_script(tz)
-    # [1005:6] run_creation_script(mut tz tokenizer)
+    # [1005:6] run_creation_script(tz mut tokenizer)
     func.run_creation_script.1023.5:
         # [1023:5] alias tz -> tz
         # [1006:5] var line_start = 0
@@ -479,7 +479,7 @@ main:
                     # [1011:16] free scratch register t0
                 func.tokenizer.set_line.1011.16.1023.5.end:
                 # [1012:13] parse_input(0, tz)
-                # [948:6] parse_input(mut cur_entity, mut tz tokenizer)
+                # [948:6] parse_input(cur_entity mut, tz mut tokenizer)
                 func.parse_input.1012.13.1023.5:
                     # [1012:13] alias cur_entity -> 0
                     # [1012:13] alias tz -> tz
@@ -838,7 +838,7 @@ main:
                     # [951:8] free scratch register t0
                     if.951.8.1012.13.1023.5.code:
                         # [952:9] action_go(cur_entity, tz)
-                        # [498:6] action_go(cur_entity, mut tz tokenizer)
+                        # [498:6] action_go(cur_entity, tz mut tokenizer)
                         func.action_go.952.9.1012.13.1023.5:
                             # [952:9] alias cur_entity -> 0
                             # [952:9] alias tz -> tz
@@ -3986,7 +3986,7 @@ main:
                     # [954:15] free scratch register t0
                     if.954.15.1012.13.1023.5.code:
                         # [955:9] action_new_room(cur_entity, tz)
-                        # [587:6] action_new_room(cur_entity, mut tz tokenizer)
+                        # [587:6] action_new_room(cur_entity, tz mut tokenizer)
                         func.action_new_room.955.9.1012.13.1023.5:
                             # [955:9] alias cur_entity -> 0
                             # [955:9] alias tz -> tz
@@ -5978,7 +5978,7 @@ main:
                     # [957:15] free scratch register t0
                     if.957.15.1012.13.1023.5.code:
                         # [958:9] action_set_room_description(cur_entity, tz)
-                        # [632:6] action_set_room_description(cur_entity, mut tz tokenizer)
+                        # [632:6] action_set_room_description(cur_entity, tz mut tokenizer)
                         func.action_set_room_description.958.9.1012.13.1023.5:
                             # [958:9] alias cur_entity -> 0
                             # [958:9] alias tz -> tz
@@ -6509,7 +6509,7 @@ main:
                     # [960:15] free scratch register t0
                     if.960.15.1012.13.1023.5.code:
                         # [961:9] action_set_room_note(cur_entity, tz)
-                        # [640:6] action_set_room_note(cur_entity, mut tz tokenizer)
+                        # [640:6] action_set_room_note(cur_entity, tz mut tokenizer)
                         func.action_set_room_note.961.9.1012.13.1023.5:
                             # [961:9] alias cur_entity -> 0
                             # [961:9] alias tz -> tz
@@ -6962,7 +6962,7 @@ main:
                     # [963:15] free scratch register t0
                     if.963.15.1012.13.1023.5.code:
                         # [964:9] action_set_room_name(cur_entity, tz)
-                        # [650:6] action_set_room_name(cur_entity, mut tz tokenizer)
+                        # [650:6] action_set_room_name(cur_entity, tz mut tokenizer)
                         func.action_set_room_name.964.9.1012.13.1023.5:
                             # [964:9] alias cur_entity -> 0
                             # [964:9] alias tz -> tz
@@ -7784,7 +7784,7 @@ main:
                     # [966:15] free scratch register t0
                     if.966.15.1012.13.1023.5.code:
                         # [967:9] action_new_entity(cur_entity, tz)
-                        # [670:6] action_new_entity(cur_entity, mut tz tokenizer)
+                        # [670:6] action_new_entity(cur_entity, tz mut tokenizer)
                         func.action_new_entity.967.9.1012.13.1023.5:
                             # [967:9] alias cur_entity -> 0
                             # [967:9] alias tz -> tz
@@ -8689,7 +8689,7 @@ main:
                     # [969:15] free scratch register t0
                     if.969.15.1012.13.1023.5.code:
                         # [970:9] action_new_object(cur_entity, tz)
-                        # [691:6] action_new_object(cur_entity, mut tz tokenizer)
+                        # [691:6] action_new_object(cur_entity, tz mut tokenizer)
                         func.action_new_object.970.9.1012.13.1023.5:
                             # [970:9] alias cur_entity -> 0
                             # [970:9] alias tz -> tz
@@ -10179,7 +10179,7 @@ main:
                     # [975:15] free scratch register t0
                     if.975.15.1012.13.1023.5.code:
                         # [976:9] action_drop(cur_entity, tz)
-                        # [739:6] action_drop(cur_entity, mut tz tokenizer)
+                        # [739:6] action_drop(cur_entity, tz mut tokenizer)
                         func.action_drop.976.9.1012.13.1023.5:
                             # [976:9] alias cur_entity -> 0
                             # [976:9] alias tz -> tz
@@ -11521,7 +11521,7 @@ main:
                     # [978:15] free scratch register t0
                     if.978.15.1012.13.1023.5.code:
                         # [979:9] action_give(cur_entity, tz)
-                        # [779:6] action_give(cur_entity, mut tz tokenizer)
+                        # [779:6] action_give(cur_entity, tz mut tokenizer)
                         func.action_give.979.9.1012.13.1023.5:
                             # [979:9] alias cur_entity -> 0
                             # [979:9] alias tz -> tz
@@ -14664,7 +14664,7 @@ main:
                     # [981:15] free scratch register t0
                     if.981.15.1012.13.1023.5.code:
                         # [982:9] action_tell(cur_entity, tz)
-                        # [854:6] action_tell(cur_entity, mut tz tokenizer)
+                        # [854:6] action_tell(cur_entity, tz mut tokenizer)
                         func.action_tell.982.9.1012.13.1023.5:
                             # [982:9] alias cur_entity -> 0
                             # [982:9] alias tz -> tz
@@ -16248,7 +16248,7 @@ main:
                     # [984:15] free scratch register t0
                     if.984.15.1012.13.1023.5.code:
                         # [985:9] action_say(cur_entity, tz)
-                        # [899:6] action_say(cur_entity, mut tz tokenizer)
+                        # [899:6] action_say(cur_entity, tz mut tokenizer)
                         func.action_say.985.9.1012.13.1023.5:
                             # [985:9] alias cur_entity -> 0
                             # [985:9] alias tz -> tz
@@ -20634,7 +20634,7 @@ main:
             func.printer.print_all.72.10.1045.13.end:
         func.printer.println.1045.13.end:
         # [1046:9] parse_input(cur_entity, tz)
-        # [948:6] parse_input(mut cur_entity, mut tz tokenizer)
+        # [948:6] parse_input(cur_entity mut, tz mut tokenizer)
         func.parse_input.1046.9:
             # [1046:9] alias cur_entity -> cur_entity
             # [1046:9] alias tz -> tz
@@ -20993,7 +20993,7 @@ main:
             # [951:8] free scratch register t0
             if.951.8.1046.9.code:
                 # [952:9] action_go(cur_entity, tz)
-                # [498:6] action_go(cur_entity, mut tz tokenizer)
+                # [498:6] action_go(cur_entity, tz mut tokenizer)
                 func.action_go.952.9.1046.9:
                     # [952:9] alias cur_entity -> cur_entity
                     # [952:9] alias tz -> tz
@@ -24235,7 +24235,7 @@ main:
             # [954:15] free scratch register t0
             if.954.15.1046.9.code:
                 # [955:9] action_new_room(cur_entity, tz)
-                # [587:6] action_new_room(cur_entity, mut tz tokenizer)
+                # [587:6] action_new_room(cur_entity, tz mut tokenizer)
                 func.action_new_room.955.9.1046.9:
                     # [955:9] alias cur_entity -> cur_entity
                     # [955:9] alias tz -> tz
@@ -26258,7 +26258,7 @@ main:
             # [957:15] free scratch register t0
             if.957.15.1046.9.code:
                 # [958:9] action_set_room_description(cur_entity, tz)
-                # [632:6] action_set_room_description(cur_entity, mut tz tokenizer)
+                # [632:6] action_set_room_description(cur_entity, tz mut tokenizer)
                 func.action_set_room_description.958.9.1046.9:
                     # [958:9] alias cur_entity -> cur_entity
                     # [958:9] alias tz -> tz
@@ -26820,7 +26820,7 @@ main:
             # [960:15] free scratch register t0
             if.960.15.1046.9.code:
                 # [961:9] action_set_room_note(cur_entity, tz)
-                # [640:6] action_set_room_note(cur_entity, mut tz tokenizer)
+                # [640:6] action_set_room_note(cur_entity, tz mut tokenizer)
                 func.action_set_room_note.961.9.1046.9:
                     # [961:9] alias cur_entity -> cur_entity
                     # [961:9] alias tz -> tz
@@ -27304,7 +27304,7 @@ main:
             # [963:15] free scratch register t0
             if.963.15.1046.9.code:
                 # [964:9] action_set_room_name(cur_entity, tz)
-                # [650:6] action_set_room_name(cur_entity, mut tz tokenizer)
+                # [650:6] action_set_room_name(cur_entity, tz mut tokenizer)
                 func.action_set_room_name.964.9.1046.9:
                     # [964:9] alias cur_entity -> cur_entity
                     # [964:9] alias tz -> tz
@@ -28157,7 +28157,7 @@ main:
             # [966:15] free scratch register t0
             if.966.15.1046.9.code:
                 # [967:9] action_new_entity(cur_entity, tz)
-                # [670:6] action_new_entity(cur_entity, mut tz tokenizer)
+                # [670:6] action_new_entity(cur_entity, tz mut tokenizer)
                 func.action_new_entity.967.9.1046.9:
                     # [967:9] alias cur_entity -> cur_entity
                     # [967:9] alias tz -> tz
@@ -29093,7 +29093,7 @@ main:
             # [969:15] free scratch register t0
             if.969.15.1046.9.code:
                 # [970:9] action_new_object(cur_entity, tz)
-                # [691:6] action_new_object(cur_entity, mut tz tokenizer)
+                # [691:6] action_new_object(cur_entity, tz mut tokenizer)
                 func.action_new_object.970.9.1046.9:
                     # [970:9] alias cur_entity -> cur_entity
                     # [970:9] alias tz -> tz
@@ -30679,7 +30679,7 @@ main:
             # [975:15] free scratch register t0
             if.975.15.1046.9.code:
                 # [976:9] action_drop(cur_entity, tz)
-                # [739:6] action_drop(cur_entity, mut tz tokenizer)
+                # [739:6] action_drop(cur_entity, tz mut tokenizer)
                 func.action_drop.976.9.1046.9:
                     # [976:9] alias cur_entity -> cur_entity
                     # [976:9] alias tz -> tz
@@ -32179,7 +32179,7 @@ main:
             # [978:15] free scratch register t0
             if.978.15.1046.9.code:
                 # [979:9] action_give(cur_entity, tz)
-                # [779:6] action_give(cur_entity, mut tz tokenizer)
+                # [779:6] action_give(cur_entity, tz mut tokenizer)
                 func.action_give.979.9.1046.9:
                     # [979:9] alias cur_entity -> cur_entity
                     # [979:9] alias tz -> tz
@@ -35495,7 +35495,7 @@ main:
             # [981:15] free scratch register t0
             if.981.15.1046.9.code:
                 # [982:9] action_tell(cur_entity, tz)
-                # [854:6] action_tell(cur_entity, mut tz tokenizer)
+                # [854:6] action_tell(cur_entity, tz mut tokenizer)
                 func.action_tell.982.9.1046.9:
                     # [982:9] alias cur_entity -> cur_entity
                     # [982:9] alias tz -> tz
@@ -37084,7 +37084,7 @@ main:
             # [984:15] free scratch register t0
             if.984.15.1046.9.code:
                 # [985:9] action_say(cur_entity, tz)
-                # [899:6] action_say(cur_entity, mut tz tokenizer)
+                # [899:6] action_say(cur_entity, tz mut tokenizer)
                 func.action_say.985.9.1046.9:
                     # [985:9] alias cur_entity -> cur_entity
                     # [985:9] alias tz -> tz

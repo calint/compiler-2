@@ -8,15 +8,15 @@ type room { name string, description string, note string }
 
 type world { rooms room[128] }
 
-func bar(mut i i8) {
+func bar(i mut i8) {
     i = 1
 }
 
-func foozi(mut str i8[]) {
+func foozi(str mut i8[]) {
     bar(str[5])
 }
 
-func fuz(mut rm room) {
+func fuz(rm mut room) {
     rm.name.len = 2
     foozi(rm.name.data)
 }

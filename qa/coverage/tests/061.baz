@@ -1,10 +1,10 @@
 # function parameters mutate caller variables
 
-func foozi(mut x){
+func foozi(x mut){
    x=x+1
 }
 
-func bar(mut x){
+func bar(x mut){
    x=x+1
    if not x==2 exit(2)
 }

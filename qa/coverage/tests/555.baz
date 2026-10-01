@@ -3,11 +3,11 @@
 
 func assert(err, ok bool) { if not ok exit(err) }
 
-func fill(mut dst i32[]) {
+func fill(dst mut i32[]) {
     dst = {7, 8}
 }
 
-func clear(mut dst i16[]) {
+func clear(dst mut i16[]) {
     dst = {}
 }
 
