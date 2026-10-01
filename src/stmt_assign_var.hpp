@@ -117,7 +117,5 @@ class stmt_assign_var final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
-
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 };

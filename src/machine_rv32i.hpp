@@ -57,7 +57,6 @@ class machine_rv32i : public machine {
 
     struct allocation {
         size_t register_index;
-        const type* type_ptr;
         token source_location;
         size_t indent;
         bool named;
@@ -1177,7 +1176,7 @@ class machine_rv32i : public machine {
         }
         operand result{make_register_operand(register_name, type_ref)};
         result.set_allocation_register(register_names_.at(index));
-        record_allocation(src_loc_tk, indent, index, type_ref, true);
+        record_allocation(src_loc_tk, indent, index, true);
 
         comment(src_loc_tk, indent, "allocate named register {}",
                 register_names_.at(index));
@@ -1196,7 +1195,7 @@ class machine_rv32i : public machine {
                 continue;
             }
 
-            record_allocation(src_loc_tk, indent, index, type_ref, false);
+            record_allocation(src_loc_tk, indent, index, false);
 
             usage_max_scratch_regs_ =
                 std::max(scratch_count(), usage_max_scratch_regs_);
@@ -1930,17 +1929,6 @@ class machine_rv32i : public machine {
         allocations_.pop_back();
     }
 
-    auto invoke_syscall(const size_t indent) -> void override {
-        assembler_.ecall(indent);
-    }
-
-    [[nodiscard]] auto is_variables_base(const operand& reg) const
-        -> bool override {
-
-        return not reg.is_indexed() and
-               register_index(reg.base_register()) == s0_register_index;
-    }
-
     auto label(const size_t indent, const std::string_view label)
         -> void override {
 
@@ -2340,23 +2328,6 @@ class machine_rv32i : public machine {
 
         bulk_zero{*this, src_loc_tk, indent}.walk_known_size(
             operand{}, destination, size_bytes, std::span{&start, 1});
-    }
-
-    //
-    // class methods
-    //
-
-    [[nodiscard]] auto
-    allocated_register_type(const std::string_view name) const -> const type* {
-
-        const size_t index{register_index(name)};
-        for (const allocation& entry : allocations_) {
-            if (entry.register_index == index) {
-                return entry.type_ptr;
-            }
-        }
-
-        return nullptr;
     }
 
   private:
@@ -3462,13 +3433,11 @@ class machine_rv32i : public machine {
 
     // named and scratch allocations share one lifo stack
     auto record_allocation(const token& src_loc_tk, const size_t indent,
-                           const size_t index, const type& type_ref,
-                           const bool named) -> void {
+                           const size_t index, const bool named) -> void {
 
         unavailable_registers_ |= uint32_t{1} << index;
         allocations_.push_back({
             .register_index{index},
-            .type_ptr{&type_ref},
             .source_location{src_loc_tk},
             .indent{indent},
             .named{named},

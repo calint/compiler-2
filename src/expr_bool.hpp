@@ -561,10 +561,8 @@ class expr_bool_op final : public statement {
                                     {}, expr_info.lea_path, {});
         }
 
-        // the comparison needs its left operand in a register
-        if (expr_info.is_const() and is_lhs) {
-            return compile_to_scratch(tc, indent, expr, allocated_registers);
-        }
+        // a constant left side was mirrored onto the right
+        assert(not expr_info.is_const() or not is_lhs);
 
         if (expr_info.is_const()) {
             return expr.make_constant_operand(expr_info);

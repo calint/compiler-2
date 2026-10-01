@@ -6,23 +6,23 @@
 "}" @comment
 
 (func_keyword) @keyword.function
-(noinline_keyword) @keyword.modifier
-(type_keyword) @keyword.type
-(dat_keyword) @keyword.storage
-(let_keyword) @keyword.storage
-(mut_keyword) @keyword.modifier
-(var_keyword) @keyword.storage
-(if_keyword) @keyword.conditional
-(loop_keyword) @keyword.repeat
-(foo_keyword) @keyword.repeat
-(else_keyword) @keyword.conditional
-(else_if_keyword) @keyword.conditional
-(break_keyword) @keyword.control
-(continue_keyword) @keyword.control
-(return_keyword) @keyword.return
-(not_keyword) @keyword.operator
-(and_keyword) @keyword.operator
-(or_keyword) @keyword.operator
+(noinline_keyword) @keyword.function
+(type_keyword) @keyword.function
+(dat_keyword) @keyword.function
+(let_keyword) @keyword.function
+(mut_keyword) @keyword.function
+(var_keyword) @keyword.function
+(if_keyword) @keyword.function
+(loop_keyword) @keyword.function
+(foo_keyword) @keyword.function
+(else_keyword) @keyword.function
+(else_if_keyword) @keyword.function
+(break_keyword) @keyword.function
+(continue_keyword) @keyword.function
+(return_keyword) @keyword.function
+(not_keyword) @keyword.function
+(and_keyword) @keyword.function
+(or_keyword) @keyword.function
 
 (let_definition
   destination: (identifier) @constant

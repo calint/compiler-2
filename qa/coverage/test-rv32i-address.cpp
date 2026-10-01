@@ -550,7 +550,8 @@ auto main(const int argc, const char* argv[]) -> int {
         branch_if_different("cmp_14_26");
         backend.branch(0, "if_14_8_code");
         backend.label(0, "cmp_14_26");
-        backend.invoke_syscall(0);
+        backend.copy_value(token{}, 0, operand::reg("a2", integer),
+                           operand::reg("a3", integer));
         backend.label(0, "if_14_8_code");
         backend.finish();
         backend.write_assembly(output);
@@ -558,7 +559,8 @@ auto main(const int argc, const char* argv[]) -> int {
         assert(output.str().contains("la s0, dat\n\ncmp_13_26:\n"
                                      "bool_end_15_9:\n"
                                      "beq a0, a1, if_14_8_code\n"
-                                     "cmp_14_26:\necall\nif_14_8_code:\n"));
+                                     "cmp_14_26:\naddi a2, a3, 0\n"
+                                     "if_14_8_code:\n"));
     }
     {
         assembly_output copies;
@@ -1419,9 +1421,6 @@ func main() {
         backend.finish();
         shift_output.str({});
     }
-    backend.invoke_syscall(1);
-    assert(shift_output.str() == "    ecall\n");
-    shift_output.str({});
     backend.emit_string_data({});
     assert(shift_output.str() == ".ascii \"\"\n");
     shift_output.str({});
@@ -2062,8 +2061,6 @@ func main() {
         }
         if (reserved_count >= 1) {
             backend.reserve_variables_base();
-            assert(backend.is_variables_base(operand::reg("fp", integer)));
-            assert(backend.is_variables_base(operand::reg("x8", integer)));
         }
         if (reserved_count == 2) {
             backend.reserve_frame_base();
@@ -2079,8 +2076,6 @@ func main() {
             assert(reserved_count != 2 or reg.base_register() != "s1");
             assert(reg.base_register().starts_with("a") ==
                    (count >= 22 - reserved_count));
-            assert(backend.allocated_register_type(reg.base_register()) ==
-                   &integer);
             if (reg.base_register() == "ra") {
                 register_mask |= 1;
             }

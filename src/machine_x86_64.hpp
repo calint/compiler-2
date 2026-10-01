@@ -975,27 +975,6 @@ class machine_x86_64 final : public machine {
         pop_allocation(reg.allocation_register());
     }
 
-    auto invoke_syscall(const size_t indent) -> void override {
-        std::vector<operand> saved;
-        for (const std::string_view name : {"rcx", "r11"}) {
-            if (allocated_register_type(name) != nullptr) {
-                saved.push_back(qword_register(name));
-                push(indent, saved.back());
-            }
-        }
-        syscall(indent);
-        for (const operand& reg : saved | std::views::reverse) {
-            pop(indent, reg);
-        }
-    }
-
-    [[nodiscard]] auto is_variables_base(const operand& reg) const
-        -> bool override {
-
-        return not reg.is_indexed() and
-               reg.base_register() == variables_base_register_;
-    }
-
     auto label(const size_t indent, const std::string_view label)
         -> void override {
 
@@ -1362,6 +1341,20 @@ class machine_x86_64 final : public machine {
         }
 
         return nullptr;
+    }
+
+    auto invoke_syscall(const size_t indent) -> void {
+        std::vector<operand> saved;
+        for (const std::string_view name : {"rcx", "r11"}) {
+            if (allocated_register_type(name) != nullptr) {
+                saved.push_back(qword_register(name));
+                push(indent, saved.back());
+            }
+        }
+        syscall(indent);
+        for (const operand& reg : saved | std::views::reverse) {
+            pop(indent, reg);
+        }
     }
 
     //
@@ -2424,42 +2417,8 @@ class machine_x86_64 final : public machine {
             }
         }
 
-        // numbered registers are accepted as rN/rNd/rNw/rNb
-        if (name.size() < 2 or name[0] != 'r') {
-            std::unreachable();
-        }
-
-        const size_t digits_start{1};
-        size_t digits_end{digits_start};
-        while (digits_end < name.size() and name[digits_end] >= '0' and
-               name[digits_end] <= '9') {
-
-            ++digits_end;
-        }
-
-        if (digits_end == digits_start) {
-            std::unreachable();
-        }
-
-        const std::string_view register_number{
-            name.substr(digits_start, digits_end - digits_start)};
-
-        switch (size_bytes) {
-        case size_qword:
-            return std::format("r{}", register_number);
-
-        case size_dword:
-            return std::format("r{}d", register_number);
-
-        case size_word:
-            return std::format("r{}w", register_number);
-
-        case size_byte:
-            return std::format("r{}b", register_number);
-
-        default:
-            std::unreachable();
-        }
+        // every register name is in 'register_names_'
+        std::unreachable();
     }
 
     [[nodiscard]] static auto string_compare(const size_t size_bytes) -> op {

@@ -263,11 +263,6 @@ class machine {
                                        const size_t indent, const operand& reg)
         -> void = 0;
 
-    virtual auto invoke_syscall(const size_t indent) -> void = 0;
-
-    [[nodiscard]] virtual auto is_variables_base(const operand& reg) const
-        -> bool = 0;
-
     virtual auto label(const size_t indent, const std::string_view label)
         -> void = 0;
 

@@ -836,10 +836,6 @@ class toc final {
 
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
-    [[nodiscard]] auto machine() const -> const ::machine& {
-        return machine_.get();
-    }
-
     [[nodiscard]] auto make_ident_info(const statement& st) const
         -> ident_info {
 
@@ -920,8 +916,6 @@ class toc final {
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
 
     auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
-
-    [[nodiscard]] auto source() const -> std::string_view { return source_; }
 
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const
