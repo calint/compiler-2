@@ -1,0 +1,2 @@
+
+667.baz:9:18: argument 2 'dst' is read-only but 'copy_to' writes it, parameter 'dst' is not declared 'mut'

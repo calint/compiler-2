@@ -4,6 +4,7 @@
 #include <optional>
 #include <ostream>
 #include <ranges>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -26,6 +27,9 @@ class stmt_def_func final : public statement {
     token close_paren_tk_;
     std::optional<func_return_info> returns_;
     stmt_block code_;
+
+    // parameters and result the inlined body writes, known after parsing it
+    std::set<std::string, std::less<>> written_names_;
 
   public:
     stmt_def_func(toc& tc, const token tk, tokenizer& tz)
@@ -81,6 +85,8 @@ class stmt_def_func final : public statement {
         add_signature_vars(tc, 0, false);
 
         code_ = {tc, tz, true};
+
+        written_names_ = tc.written_names();
 
         tc.exit_func(name());
     }
@@ -216,6 +222,15 @@ class stmt_def_func final : public statement {
         }
     }
 
+    // a non-inline body gets a pointer to every parameter declared 'mut'
+    [[nodiscard]] auto writes_param(const size_t ix) const -> bool {
+        if (not is_inlined()) {
+            return not params_[ix].is_read_only();
+        }
+
+        return written_names_.contains(params_[ix].name());
+    }
+
   private:
     // located at the method name for diagnostics
     auto add_self_param(const toc& tc) -> void {
@@ -260,6 +275,9 @@ class stmt_def_func final : public statement {
                            .is_array{param.is_array()},
                            .is_pointer{is_pointer},
                            .is_read_only{param.is_read_only()},
+                           .read_only_why{param.is_read_only()
+                                              ? read_only_cause::PARAM
+                                              : read_only_cause::NONE},
                            .pointer_register{},
                            .base_register{},
                            .value_register{},

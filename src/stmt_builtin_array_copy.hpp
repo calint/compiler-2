@@ -44,6 +44,11 @@ class stmt_builtin_array_copy final : public statement {
 
         dst_ = {tc, {}, tz.next_token(), tz};
 
+        // also in functions that are never called, which are not compiled
+        assert_not_read_only(tc.make_ident_info(dst_));
+
+        tc.note_write(dst_.first_token().text());
+
         dst_delim_tk_ = tz.is_next_char_token(',');
         if (dst_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' followed by 'count'"};
@@ -85,11 +90,9 @@ class stmt_builtin_array_copy final : public statement {
         const ident_info array_src_info{tc.make_ident_info(src_)};
         const ident_info array_dst_info{tc.make_ident_info(dst_)};
 
-        if (array_dst_info.is_read_only) {
-            throw compiler_exception{
-                dst_.tok(), std::format("cannot copy into read-only '{}'",
-                                        dst_.identifier())};
-        }
+        // also when reached through an alias, which only exists once a call
+        // is expanded
+        assert_not_read_only(array_dst_info);
 
         if (array_src_info.type_ref().name() !=
             array_dst_info.type_ref().name()) {
@@ -146,6 +149,17 @@ class stmt_builtin_array_copy final : public statement {
     }
 
   private:
+    auto assert_not_read_only(const ident_info& dst_info) const -> void {
+        if (not dst_info.is_read_only) {
+            return;
+        }
+
+        throw compiler_exception{
+            dst_.tok(),
+            std::format("cannot copy into read-only '{}'{}", dst_.identifier(),
+                        read_only_hint(dst_info, dst_info.root_id()))};
+    }
+
     // the size is known so the copy is unrolled when small and the width
     // follows the alignment of both addresses
     auto compile_constant_count(toc& tc, const size_t indent,

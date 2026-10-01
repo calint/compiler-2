@@ -1,0 +1,9 @@
+# 'read' cannot fill a read-only array parameter, also in a function that is
+# never called
+
+func f(buf i8[]) {
+    read(0, buf)
+}
+
+func main() {
+}

@@ -1,0 +1,15 @@
+# the element 'e' of 'foo' writes the array, so passing a read-only array on to
+# the function that walks it is rejected at the call
+
+func fill(mut d i8[]) {
+    foo d {
+        e = 1
+    }
+}
+
+func pass(d i8[]) {
+    fill(d)
+}
+
+func main() {
+}

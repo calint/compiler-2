@@ -1,0 +1,9 @@
+# 'array_copy' cannot copy into a read-only array parameter, also in a function
+# that is never called
+
+func f(src i8[], dst i8[]) {
+    array_copy(src, dst, 2)
+}
+
+func main() {
+}

@@ -1,3 +1,2 @@
 
-658.baz:4:5: cannot assign to read-only 'a'
-658.baz:9:5: called from 'set(x)'
+658.baz:9:9: argument 1 'x' is read-only but 'set' writes it, 'x' is declared with 'let'

@@ -200,7 +200,8 @@ class stmt_def_var final : public statement {
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
             .is_array{is_array_},
-            .is_const_var{is_const_},
+            .read_only_why{is_const_ ? read_only_cause::LET
+                                     : read_only_cause::NONE},
             .array_len{array_count_},
             .pointer_register{},
             .base_register{},

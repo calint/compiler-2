@@ -41,6 +41,8 @@ dat str_not_understood = "not understood\n"
 
 dat flag = "\n\nFLAG\n\n"
 
+func assert(code, ok bool) { if not ok exit(code) }
+
 # all output goes through the printer, it is silenced while the creation script runs
 type printer {
     silenced bool,
@@ -357,7 +359,7 @@ func room.remove_entity(id) {
     }
 
     # check program error
-    if found_ix == self.entities.len exit(1)
+    assert(1, found_ix != self.entities.len)
 
     self.entities.delete_index(found_ix)
 }
@@ -384,6 +386,11 @@ type tokenizer {
     str str,
     start,
     end,
+}
+
+func tokenizer.reset() {
+    self.start = 0
+    self.end = 0
 }
 
 func tokenizer.input() {
@@ -542,7 +549,7 @@ func action_go(cur_entity, mut tz tokenizer) {
     }
 
     # missing link back is program error
-    if to_found_ix == to_links_len exit(2)
+    assert(2, to_found_ix != to_links_len)
 
     var arrived_text = str{}
     arrived_text.add(str_arrived_from)

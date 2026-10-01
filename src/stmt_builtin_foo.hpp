@@ -43,6 +43,7 @@ class stmt_builtin_foo final : public statement {
 
         const ident_info ii{tc.make_ident_info(ident_)};
         tc.enter_foo("");
+        tc.set_walked_array(ident_.first_token().text());
         add_loop_names(tc, 0, token{}, token{}, ii, operand{}, operand{});
 
         code_ = {tc, tz};
@@ -227,6 +228,9 @@ class stmt_builtin_foo final : public statement {
                        .type_ptr{&array_info.type_ref()},
                        .src_loc_tk{decl_tk},
                        .is_read_only{array_info.is_read_only},
+                       .read_only_why{array_info.is_read_only
+                                          ? read_only_cause::FOO_ELEMENT
+                                          : read_only_cause::NONE},
                        .pointer_register{iterator},
                        .base_register{},
                        .value_register{},
@@ -239,6 +243,7 @@ class stmt_builtin_foo final : public statement {
                        .type_ptr{&tc.get_type_default()},
                        .src_loc_tk{decl_tk},
                        .is_read_only{true},
+                       .read_only_why{read_only_cause::FOO_COUNTER},
                        .pointer_register{},
                        .base_register{},
                        .value_register{counter},

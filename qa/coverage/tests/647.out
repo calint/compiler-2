@@ -1,3 +1,2 @@
 
-647.baz:8:9: read-only 'a' cannot be passed to a 'mut' parameter
-647.baz:13:5: called from 'f(x)'
+647.baz:8:9: read-only 'a' cannot be passed to a 'mut' parameter, parameter 'a' is not declared 'mut'

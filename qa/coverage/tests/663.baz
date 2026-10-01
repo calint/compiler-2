@@ -1,4 +1,5 @@
-# an error inside inlined bodies reports the calls it was found in
+# a method that writes its receiver cannot be called on a read-only argument,
+# also in a function inlined into another
 
 type tk { start, end }
 

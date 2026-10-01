@@ -1,0 +1,2 @@
+
+664.baz:11:5: receiver 't' is read-only but 'tk.reset' writes it, parameter 't' is not declared 'mut'

@@ -1,0 +1,2 @@
+
+666.baz:9:10: argument 1 'buf' is read-only but 'fill' writes it, parameter 'buf' is not declared 'mut'

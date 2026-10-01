@@ -1,0 +1,15 @@
+# a read-only argument passed to a function that writes it is rejected at the
+# call, also inside a function that is never called
+
+type tk { start, end }
+
+func tk.reset() {
+    self.start = 0
+}
+
+func clear(t tk) {
+    t.reset()
+}
+
+func main() {
+}

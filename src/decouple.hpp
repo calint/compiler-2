@@ -256,6 +256,15 @@ class operand {
     }
 };
 
+// why a name cannot be written, for the diagnostic
+enum class read_only_cause : uint8_t {
+    NONE,
+    LET,
+    PARAM,
+    FOO_ELEMENT,
+    FOO_COUNTER
+};
+
 struct var_info {
     std::string name;
     const type* type_ptr{};
@@ -264,7 +273,7 @@ struct var_info {
     bool is_array{};
     bool is_pointer{};
     bool is_read_only{};
-    bool is_const_var{}; // declared with 'let'
+    read_only_cause read_only_why{};
     size_t array_len{};
     operand pointer_register; // variable location is in register
     std::string_view base_register;
@@ -287,8 +296,10 @@ struct ident_info {
     bool is_array{};
     bool is_pointer{};
     bool is_read_only{};
-    bool is_const_var{}; // the data is declared with 'let' under this name
-    bool use_operand{};  // operand overrides any location calculation
+
+    // the cause under the name it is declared with, not through an alias
+    read_only_cause read_only_why{};
+    bool use_operand{}; // operand overrides any location calculation
     kind kind{};
 
     [[nodiscard]] auto has_lea() const -> bool {

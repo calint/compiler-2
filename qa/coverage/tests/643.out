@@ -1,3 +1,2 @@
 
-643.baz:4:19: cannot copy into read-only 'd'
-643.baz:10:5: called from 'f(a, b)'
+643.baz:4:19: cannot copy into read-only 'd', parameter 'd' is not declared 'mut'

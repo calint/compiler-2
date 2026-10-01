@@ -18,6 +18,19 @@ class stmt_builtin_io final : public stmt_call {
         if (argument_count() < 2 or argument_count() > 4) {
             throw compiler_exception{tok(), "expected 2 to 4 arguments"};
         }
+
+        // 'read' fills the buffer, the second argument
+        const statement& buffer{argument(1)};
+        if (tok().is_text("read") and buffer.is_identifier()) {
+            const ident_info info{tc.make_ident_info(buffer)};
+
+            // also in functions that are never called, which are not compiled
+            if (info.is_var()) {
+                assert_not_read_only(buffer, info);
+            }
+
+            tc.note_write(info.root_id());
+        }
     }
 
     //
@@ -79,11 +92,8 @@ class stmt_builtin_io final : public stmt_call {
             const ident_info info{tc.make_ident_info(buffer)};
             if (info.is_var() and info.is_array) {
                 // 'read' fills the buffer, 'write' only reads it
-                if (tok().is_text("read") and info.is_read_only) {
-                    throw compiler_exception{
-                        buffer.tok(),
-                        std::format("cannot read into read-only '{}'",
-                                    buffer.identifier())};
+                if (tok().is_text("read")) {
+                    assert_not_read_only(buffer, info);
                 }
 
                 return;
@@ -221,5 +231,22 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
+    }
+
+    //
+    // statics
+    //
+
+    static auto assert_not_read_only(const statement& buffer,
+                                     const ident_info& info) -> void {
+
+        if (not info.is_read_only) {
+            return;
+        }
+
+        throw compiler_exception{
+            buffer.tok(), std::format("cannot read into read-only '{}'{}",
+                                      buffer.identifier(),
+                                      read_only_hint(info, info.root_id()))};
     }
 };

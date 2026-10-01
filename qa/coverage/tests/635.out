@@ -1,3 +1,2 @@
 
-635.baz:4:5: cannot assign to read-only 'ix'
-635.baz:10:9: called from 'skip(i)'
+635.baz:10:14: argument 1 'i' is read-only but 'skip' writes it, 'i' is the counter of 'foo'

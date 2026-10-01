@@ -31,6 +31,8 @@ class stmt_assign_var final : public statement {
         // also in functions that are never called, which are not compiled
         assert_not_read_only(dst_info);
 
+        tc.note_write(stmt_ident_.first_token().text());
+
         set_type(dst_info.type_ref());
 
         expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_count};
@@ -133,16 +135,9 @@ class stmt_assign_var final : public statement {
             return;
         }
 
-        if (dst_info.is_const_var) {
-            throw compiler_exception{
-                tok(), std::format("cannot assign to read-only '{}', '{}' is "
-                                   "declared with 'let'",
-                                   stmt_ident_.identifier(),
-                                   stmt_ident_.first_token().text())};
-        }
-
-        throw compiler_exception{tok(),
-                                 std::format("cannot assign to read-only '{}'",
-                                             stmt_ident_.identifier())};
+        throw compiler_exception{
+            tok(), std::format("cannot assign to read-only '{}'{}",
+                               stmt_ident_.identifier(),
+                               read_only_hint(dst_info, dst_info.root_id()))};
     }
 };

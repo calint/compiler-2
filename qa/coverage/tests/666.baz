@@ -1,0 +1,13 @@
+# 'read' writes its buffer, so passing a read-only array on to the function
+# that reads into it is rejected at the call
+
+func fill(mut buf i8[]) {
+    read(0, buf)
+}
+
+func pass(buf i8[]) {
+    fill(buf)
+}
+
+func main() {
+}
