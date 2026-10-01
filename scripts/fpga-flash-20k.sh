@@ -10,7 +10,7 @@ fi
 cd $(dirname "$0")
 
 # override configuration
-. ./fpga-config-9k.sh
+. ./fpga-config-20k.sh
 
 cd ..
 
