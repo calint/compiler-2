@@ -464,9 +464,7 @@ func action_go(cur_entity, tz tokenizer) {
         return
     }
 
-    if tz.is_str(str_home) {
-        exit(0)
-    }
+    if tz.is_str(str_home) exit(0)
 
     # find link
     var cur_room_id = entities.array[cur_entity].room_id
