@@ -324,8 +324,7 @@ func room.print(cur_entity) {
         if e == cur_entity continue
         if not first_elem_printed {
             print(str_uc)
-        }
-        if first_elem_printed {
+        } else {
             print(str_comma)
         }
         entities.array[e].print()
@@ -334,8 +333,7 @@ func room.print(cur_entity) {
     foo self.objects.array, self.objects.len {
         if not first_elem_printed {
             print(str_uc)
-        }
-        if first_elem_printed {
+        } else {
             print(str_comma)
         }
         objects.array[e].name.print()
