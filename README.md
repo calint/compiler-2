@@ -12,7 +12,7 @@ compiler writes the binary image itself.
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
 * support for non-inlined functions
-* opt-in checks that make the language ub-free
+* opt-in checks that makes the language ub-free
 
 ## Supports
 
@@ -45,10 +45,18 @@ compiler writes the binary image itself.
 * `./make.sh` compiles the compiler then compiles and runs `prog.baz`,
   `./make.sh build` only compiles the compiler
 * `./run.sh [options] [NAME.baz]` compiles, assembles and runs `NAME.baz`
-  (default: `prog.baz`) passing options to `baz`, writes `NAME.s` and
-  `NAME-without-comments.s`, x86_64 and rv32i also `NAME.o` and the binary
-  `NAME`, rv32i-qemu and rv32i-fpga the image `NAME-TARGET.bin`, rv32i targets
-  run in qemu user mode, the qemu virt machine or the fpga soft core emulator
+  (default: `prog.baz`), the options are passed to `baz`
+  * compiles to `NAME.s` and writes `NAME-without-comments.s`
+  * builds the program depending on `--target`
+     * `x86_64` (default): assembles `NAME.o` and links the binary `NAME`
+     * `rv32i`: assembles `NAME.o` and links the binary `NAME`
+     * `rv32i-qemu` and `rv32i-fpga`: `NAME.s` is not assembled or linked,
+       `baz` already wrote the image `NAME-TARGET.bin` in step 1
+  * runs the program
+     * `x86_64`: natively
+     * `rv32i`: in qemu user mode
+     * `rv32i-qemu`: on the qemu `virt` machine
+     * `rv32i-fpga`: on the fpga soft core emulator
   * `./run.sh myprogram.baz --checks=upper,line`
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
 * `tutorial.baz` is a tour of the language from the easiest to the most
