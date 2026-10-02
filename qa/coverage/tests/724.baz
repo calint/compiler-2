@@ -1,0 +1,4 @@
+# main is compiled where the program starts
+
+func noinline main() {
+}

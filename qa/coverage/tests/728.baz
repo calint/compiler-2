@@ -1,0 +1,5 @@
+# a hex escape in a character literal has two digits
+
+func main() {
+    var c = '\x4'
+}

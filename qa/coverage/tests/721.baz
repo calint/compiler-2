@@ -1,0 +1,7 @@
+# foo is a builtin iterator and cannot name a function
+
+func foo() {
+}
+
+func main() {
+}

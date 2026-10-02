@@ -1,0 +1,5 @@
+# a hex escape in a string has two hex digits
+
+func main() {
+    var s = "a\xzzb"
+}

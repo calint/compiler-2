@@ -1,0 +1,5 @@
+# a character literal escape has one character
+
+func main() {
+    var c = '\ab'
+}

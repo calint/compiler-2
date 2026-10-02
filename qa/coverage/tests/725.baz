@@ -1,0 +1,9 @@
+# a backslash before a crlf line end continues the string
+
+dat s = "ab\
+cd"
+
+func main() {
+    if array_length(s) != 4 exit(1)
+    if s[2] != 99 exit(2)
+}

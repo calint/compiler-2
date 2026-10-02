@@ -1,0 +1,6 @@
+# a variable must fit in the vars section
+
+func main() {
+    var a = [32]{}
+    exit(a[0])
+}

@@ -1,0 +1,8 @@
+# a record value starts with '{'
+
+type point { x, y }
+
+func main() {
+    var q = point{3, 4}
+    q = (1)
+}

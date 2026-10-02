@@ -1,0 +1,5 @@
+# dat is only allowed in the global scope
+
+func main() {
+    dat x = 1
+}

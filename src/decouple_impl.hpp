@@ -733,25 +733,17 @@ auto expr_type::compile_lea(toc& tc, const size_t indent,
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::identifier() const -> std::string_view {
-    if (stmt_ident_) {
-        return stmt_ident_->identifier();
-    }
+    // note: only a copy is asked for its variable, a '{...}' value is not
+    assert(stmt_ident_);
 
-    // e.g. 'point' in 'point{1, 2}' is a type, not a value
-    if (not open_brace_tk_.is_empty()) {
-        return {};
-    }
-
-    return statement::identifier();
+    return stmt_ident_->identifier();
 }
 
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::accessed_range() const -> std::optional<field_coverage::range> {
-
-    if (not stmt_ident_) {
-        return std::nullopt;
-    }
+    // note: only a copy has an accessed range
+    assert(stmt_ident_);
 
     return stmt_ident_->accessed_range();
 }

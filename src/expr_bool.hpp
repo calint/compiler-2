@@ -294,8 +294,10 @@ class expr_bool_op final : public statement {
                                const machine::comparison_action& action) const
         -> void {
 
-        if (lhs.produces_boolean() and not action.destination.is_empty() and
-            lhs.get_type().name() == action.destination.type_ref().name()) {
+        if (lhs.produces_boolean() and not action.destination.is_empty()) {
+            // note: only a 'bool' is assigned a boolean expression
+            assert(lhs.get_type().name() ==
+                   action.destination.type_ref().name());
 
             lhs.compile_boolean(tc, indent + 1, action.destination,
                                 action.inverted);
@@ -475,10 +477,14 @@ class expr_bool_op final : public statement {
 
         const std::string_view bool_name{tc.get_type_bool().name()};
 
+        // note: a shorthand without a branch target stores into a 'bool'
+        assert(not action.target.empty() or
+               (not action.destination.is_empty() and
+                action.destination.type_ref().name() == bool_name));
+
         return not lhs.is_expression() and lhs.get_unary_ops().is_empty() and
                lhs.get_type().name() == bool_name and not action.inverted and
-               action.target.empty() and not action.destination.is_empty() and
-               action.destination.type_ref().name() == bool_name;
+               action.target.empty();
     }
 
     // the operation that gives the same result with the operands swapped

@@ -1,0 +1,13 @@
+# a constant shift by a negative count is not folded
+
+let n = -1
+
+func main() {
+    var zero = 0
+    if zero != 0 {
+        var a = 1 << n
+        var b = 8 >> n
+        exit(a + b)
+    }
+    exit(0)
+}

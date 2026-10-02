@@ -1,0 +1,10 @@
+# bell and backspace escapes in strings and character literals
+
+dat s = "\a\b"
+
+func main() {
+    if s[0] != '\a' exit(1)
+    if s[1] != '\b' exit(2)
+    if '\a' != 7 exit(3)
+    if '\b' != 8 exit(4)
+}

@@ -1183,7 +1183,8 @@ class machine_x86_64 final : public machine {
         const op code{operation == '<' ? op::sal : op::sar};
 
         if (count.is_immediate()) {
-            emit_op(src_loc_tk, indent, code, dst, count);
+            emit_op(src_loc_tk, indent, code, dst,
+                    shift_count_immediate(count));
             return;
         }
 
@@ -2436,6 +2437,32 @@ class machine_x86_64 final : public machine {
                lhs.displacement() == rhs.displacement() and
                (lhs_index.empty() or std::max(lhs.scale(), uint64_t{1}) ==
                                          std::max(rhs.scale(), uint64_t{1}));
+    }
+
+    // the hardware keeps only the low bits of a shift count and nasm warns
+    // about a negative one as a signed byte, so it is written as an unsigned
+    // byte
+    [[nodiscard]] static auto shift_count_immediate(const operand& count)
+        -> operand {
+
+        const std::string& text{count.immediate()};
+
+        // note: at most 20 characters, '-' and the 19 digits of an int64_t
+        const bool is_negative_number{
+            text.size() > 1 and text.size() <= 20 and text.front() == '-' and
+                std::ranges::all_of(
+                    text | std::views::drop(1),
+                    [](const char c) -> bool { return c >= '0' and c <= '9'; }),
+        };
+
+        if (not is_negative_number) {
+            return count;
+        }
+
+        const int64_t value{std::stoll(text)};
+        const uint8_t low_byte{static_cast<uint8_t>(value)};
+
+        return operand::imm(std::format("{}", low_byte), count.type_ref());
     }
 
     [[nodiscard]] static auto sized_register_name(const std::string_view name,

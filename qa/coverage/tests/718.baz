@@ -1,0 +1,9 @@
+# a record value reads the whole destination after writing a field
+type point {x, y}
+func sum(p point) res {
+    res = p.x + p.y
+}
+func main() {
+    var p = point{1, 2}
+    p = {2, sum(p)}
+}

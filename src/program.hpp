@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cassert>
 #include <cstdint>
 #include <memory>
 #include <ostream>
@@ -78,9 +79,10 @@ class program final {
         while (true) {
             const token tk{tz.next_token()};
             if (tk.is_empty()) {
-                if (not tz.is_eos()) {
-                    throw compiler_exception{tk, "unexpected character"};
-                }
+                // note: every character makes a token, only the end of the
+                //       source gives an empty one
+                assert(tz.is_eos());
+
                 break;
             }
 

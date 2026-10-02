@@ -3,6 +3,7 @@
 //           2026-09-09
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <format>
 #include <ranges>
@@ -247,9 +248,8 @@ class type final {
                              const size_t offset, const size_t size_bytes)
         -> void {
 
-        if (size_bytes == 0) {
-            return;
-        }
+        // note: a field or an array is never empty
+        assert(size_bytes != 0);
 
         if (not ranges.empty() and
             ranges.back().offset + ranges.back().size_bytes == offset) {

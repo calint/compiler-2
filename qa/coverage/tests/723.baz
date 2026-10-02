@@ -1,0 +1,3 @@
+# a statement is not allowed at the top level
+
+exit(0)
