@@ -19,9 +19,16 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr int end_of_transmission_{0x04};
     // late in the allocation order so the call rarely has to save them
     static constexpr std::array<std::string_view, 4> read_clobbered_{
-        "a3", "a4", "a5", "a6"};
+        "a3",
+        "a4",
+        "a5",
+        "a6",
+    };
     static constexpr std::array<std::string_view, 3> write_clobbered_{
-        "a3", "a4", "a5"};
+        "a3",
+        "a4",
+        "a5",
+    };
 
     size_t stack_size_bytes_{};
     bool read_used_{};

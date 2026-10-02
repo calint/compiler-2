@@ -43,22 +43,27 @@ class stmt_builtin_io final : public stmt_call {
         x.comment(tok(), indent, statement::trimmed_source(*this));
         const machine::builtin_function function{
             tok().is_text("read") ? machine::builtin_function::read
-                                  : machine::builtin_function::write};
+                                  : machine::builtin_function::write,
+        };
 
         const machine::builtin_function_registers registers{
-            x.registers_for_builtin_function(function)};
+            x.registers_for_builtin_function(function),
+        };
         const std::vector<operand> args{
-            compile_array_arguments(tc, indent, registers.arguments)};
+            compile_array_arguments(tc, indent, registers.arguments),
+        };
 
         const bool result_is_argument{
-            std::ranges::contains(registers.arguments, registers.result)};
+            std::ranges::contains(registers.arguments, registers.result),
+        };
 
         const operand result{
             result_is_argument
                 ? x.make_register_operand(registers.result,
                                           tc.get_type_default())
                 : x.alloc_named_register(tok(), indent, registers.result,
-                                         tc.get_type_default())};
+                                         tc.get_type_default()),
+        };
 
         emit_call(x, indent, result, args);
 
@@ -140,7 +145,8 @@ class stmt_builtin_io final : public stmt_call {
 
         const operand element_size_bytes{
             operand::imm(std::format("{}", buffer_info.type_ref().size_bytes()),
-                         type_default)};
+                         type_default),
+        };
 
         if (has_start) {
             x.multiply(tok(), indent, start, element_size_bytes);
@@ -166,9 +172,10 @@ class stmt_builtin_io final : public stmt_call {
 
         std::vector<operand> lea_registers;
 
-        const operand buffer_lea{buffer.compile_lea(tc, indent, buffer.tok(),
-                                                    lea_registers, range,
-                                                    buffer_info.lea_path, {})};
+        const operand buffer_lea{
+            buffer.compile_lea(tc, indent, buffer.tok(), lea_registers, range,
+                               buffer_info.lea_path, {}),
+        };
 
         x.address_of(tok(), indent, buffer_reg, buffer_lea);
 
@@ -203,8 +210,10 @@ class stmt_builtin_io final : public stmt_call {
 
         const statement& start_arg{argument(3)};
 
-        const operand start{x.alloc_scratch_register(start_arg.tok(), indent,
-                                                     tc.get_type_default())};
+        const operand start{
+            x.alloc_scratch_register(start_arg.tok(), indent,
+                                     tc.get_type_default()),
+        };
 
         start_arg.compile(tc, indent,
                           toc::make_ident_info_from_register(start));

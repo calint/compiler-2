@@ -1,6 +1,4 @@
 #!/bin/sh
-# tools:
-#   cppcheck: 2.22.0
 
 cd $(dirname "$0")
 

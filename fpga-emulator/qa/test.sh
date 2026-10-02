@@ -1,10 +1,4 @@
 #!/bin/sh
-# tools used:
-#                   g++: 16.2.1
-#       riscv64-elf-g++: 15.2.0
-#   riscv64-elf-objcopy: 2.45.1
-#   riscv64-elf-objdump: 2.45.1
-#
 set -e
 cd $(dirname "$0")
 

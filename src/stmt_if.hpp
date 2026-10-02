@@ -72,8 +72,10 @@ class stmt_if final : public statement {
         const std::string if_label{tc.create_unique_label(tok(), "if")};
         const std::string label_after_if{std::format("{}.end", if_label)};
 
-        const std::string label_else_branch{stmt_if::create_label_else_branch(
-            else_code_, if_label, label_after_if)};
+        const std::string label_else_branch{
+            stmt_if::create_label_else_branch(else_code_, if_label,
+                                              label_after_if),
+        };
 
         const size_t branch_count{branches_.size()};
 
@@ -86,17 +88,21 @@ class stmt_if final : public statement {
             // a false condition continues at the next branch or the 'else'
             const std::string jmp_if_false{
                 is_last_branch ? label_else_branch
-                               : branches_[branch_index + 1].if_bgn_label(tc)};
+                               : branches_[branch_index + 1].if_bgn_label(tc),
+            };
 
             // the last branch without an 'else' continues after the 'if'
             // without a jump
             const std::string jmp_if_done{
-                is_last_branch and else_code_.is_empty() ? "" : label_after_if};
+                is_last_branch and else_code_.is_empty() ? "" : label_after_if,
+            };
 
             // compile the condition which might return that the condition was a
             // constant evaluation
-            if (const std::optional<bool> const_eval{if_branch.compile_branch(
-                    tc, indent, jmp_if_false, jmp_if_done)};
+            if (const std::optional<bool> const_eval{
+                    if_branch.compile_branch(tc, indent, jmp_if_false,
+                                             jmp_if_done),
+                };
                 const_eval.value_or(false)) {
 
                 branch_evaluated_to_true = true;

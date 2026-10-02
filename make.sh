@@ -1,9 +1,4 @@
 #!/bin/sh
-# tools:
-#   clang++: 22.1.8
-#       g++: 16.2.1
-#      nasm: 3.02
-#        ld: 2.47
 
 set -e
 cd "$(dirname "$0")"
@@ -16,7 +11,9 @@ CW="-Weverything \
     -Wno-pre-c++20-compat-pedantic \
     -Wno-weak-vtables -Wno-padded \
     -Wno-braced-scalar-init \
-    -Wno-experimental-lifetime-safety-intra-tu-suggestions"
+    -Wno-lifetime-safety-intra-tu-suggestions \
+    -Wno-lifetime-safety-invalidation \
+"
 
 #CC="g++ -std=c++23"
 #CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"

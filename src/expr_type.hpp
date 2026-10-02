@@ -128,7 +128,8 @@ class expr_type final : public statement {
         machine& x{tc.machine()};
 
         const size_t size_bytes{
-            multiply_storage_size(element_type.size_bytes(), remaining_count)};
+            multiply_storage_size(element_type.size_bytes(), remaining_count),
+        };
 
         x.comment(src_loc_tk, indent,
                   "zero remaining elements: {} * {} B = {} B", remaining_count,
@@ -237,8 +238,8 @@ class expr_type final : public statement {
         const field_coverage::range written{
             dst.is_exact
                 ? field_coverage::range{.offset{dst.range.offset},
-                                        .size_bytes{written_size_bytes}}
-                : dst.range};
+                                        .size_bytes{written_size_bytes},}
+                : dst.range,};
 
         item.visit_reads(
             dst.root,

@@ -64,7 +64,8 @@ class field_coverage final {
             for (const range& b : other.ranges_) {
                 const size_t begin{std::max(a.offset, b.offset)};
                 const size_t end{
-                    std::min(a.offset + a.size_bytes, b.offset + b.size_bytes)};
+                    std::min(a.offset + a.size_bytes, b.offset + b.size_bytes),
+                };
                 if (begin < end) {
                     common.push_back(
                         {.offset{begin}, .size_bytes{end - begin}});

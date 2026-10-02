@@ -276,7 +276,7 @@ class ident_path final {
   private:
     auto refresh_path() -> void {
         path_.clear();
-        for (auto part : id_ | std::views::split('.')) {
+        for (auto const part : id_ | std::views::split('.')) {
             path_.emplace_back(part.begin(), part.end());
         }
     }
@@ -453,11 +453,13 @@ class toc final {
             var.is_pointer
                 ? machine_.get().address_size_bytes()
                 : multiply_storage_size(var.type_ptr->size_bytes(),
-                                        var.is_array ? var.array_len : 1)};
+                                        var.is_array ? var.array_len : 1),
+        };
 
-        const size_t var_alignment{var.is_pointer
-                                       ? machine_.get().address_size_bytes()
-                                       : var.type_ptr->alignment()};
+        const size_t var_alignment{
+            var.is_pointer ? machine_.get().address_size_bytes()
+                           : var.type_ptr->alignment(),
+        };
 
         if (not is_dat and not vars_entry_gap_applied_) {
             frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
@@ -474,10 +476,12 @@ class toc final {
         const size_t base_offset{location.base_offset};
 
         const size_t padding_bytes{
-            align_storage_size(base_offset, var_alignment) - base_offset};
+            align_storage_size(base_offset, var_alignment) - base_offset,
+        };
 
         const size_t allocated_size_bytes{
-            add_storage_size(padding_bytes, var_size_bytes)};
+            add_storage_size(padding_bytes, var_size_bytes),
+        };
 
         if (not is_dat) {
             assert_vars_capacity(src_loc_tk, var.name, allocated_size_bytes);
@@ -523,7 +527,8 @@ class toc final {
         const std::string lbl{
             std::format("{}.{}{}", prefix, src_loc,
                         (call_path.empty() ? std::string{}
-                                           : std::format(".{}", call_path)))};
+                                           : std::format(".{}", call_path))),
+        };
 
         return lbl;
     }
@@ -880,8 +885,10 @@ class toc final {
             }
         }
 
-        const size_t root_size_bytes{add_storage_size(
-            vars_size_bytes_, vars_entry_gap_applied_ ? 0 : vars_entry_gap_)};
+        const size_t root_size_bytes{
+            add_storage_size(vars_size_bytes_,
+                             vars_entry_gap_applied_ ? 0 : vars_entry_gap_),
+        };
 
         return operand::mem(machine_.get().variables_base_register(), {}, 1,
                             address_offset(align_storage_size(root_size_bytes,
@@ -915,8 +922,10 @@ class toc final {
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+        const auto [line, col]{
+            line_and_col_num_for_char_index(src_loc_tk.at_line(),
+                                            src_loc_tk.start_index(), source_),
+        };
 
         return std::format("{}.{}", line, col);
     }
@@ -925,8 +934,10 @@ class toc final {
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+        const auto [line, col]{
+            line_and_col_num_for_char_index(src_loc_tk.at_line(),
+                                            src_loc_tk.start_index(), source_),
+        };
 
         return std::format("{}:{}", line, col);
     }
@@ -1029,7 +1040,8 @@ class toc final {
         const char* const end{std::to_address(digits.end())};
 
         const std::from_chars_result result{
-            std::from_chars(begin, end, value, base)};
+            std::from_chars(begin, end, value, base),
+        };
 
         if (result.ec == std::errc::result_out_of_range) {
             throw compiler_exception{
@@ -1056,8 +1068,10 @@ class toc final {
         }
 
         string_constants_.push_back({
-            .label{std::format("{}.{}", kind,
-                               source_location_for_use_in_label(src_loc_tk))},
+            .label{
+                std::format("{}.{}", kind,
+                            source_location_for_use_in_label(src_loc_tk)),
+            },
             .text{std::move(text)},
         });
 
@@ -1105,7 +1119,8 @@ class toc final {
         ::machine& x{machine()};
 
         std::string text{
-            std::format("{}: {}", var.name, name_info.type_ref().name())};
+            std::format("{}: {}", var.name, name_info.type_ref().name()),
+        };
 
         if (var.array_len) {
             text += std::format("[{}]", var.array_len);
@@ -1113,8 +1128,10 @@ class toc final {
 
         // the iterator 'e' is memory at its register, the counter 'i' is the
         // register
-        const operand& reg{var.value_register.is_empty() ? var.pointer_register
-                                                         : var.value_register};
+        const operand& reg{
+            var.value_register.is_empty() ? var.pointer_register
+                                          : var.value_register,
+        };
 
         if (not reg.is_empty()) {
             x.comment(src_loc_tk, indent, "{} ({})", text, reg.base_register());
@@ -1203,7 +1220,8 @@ class toc final {
 
         // is 'id' an integer?
         if (const std::optional<int64_t> value{
-                parse_constant(src_loc_tk, id.str())};
+                parse_constant(src_loc_tk, id.str()),
+            };
             value) {
 
             return ident_info::make_const(ident, id.str(), get_type_default(),
@@ -1263,7 +1281,8 @@ class toc final {
 
         ident_info ii{
             var.type_ptr->accessor(src_loc_tk, ident, id.path(), var,
-                                   machine_.get().variables_base_register())};
+                                   machine_.get().variables_base_register()),
+        };
 
         ii.read_only_why = var.read_only_why;
 
@@ -1275,7 +1294,7 @@ class toc final {
         //       upwards in the frame stack but 'elem_path' and 'type_path'
         //       are ordered from the top down
 
-        ii.lea_path = lea_path;
+        ii.lea_path = std::move(lea_path);
 
         if (not ii.type_ref().is_builtin()) {
             return ii;
@@ -1324,8 +1343,10 @@ class toc final {
 
             // does this frame contain the variable?
             if (cur_frame.has_var(id.base())) {
-                ident_info info{make_ident_info_from_frame(
-                    cur_frame, src_loc_tk, ident, id, std::move(lea_path))};
+                ident_info info{
+                    make_ident_info_from_frame(cur_frame, src_loc_tk, ident, id,
+                                               std::move(lea_path)),
+                };
 
                 return as_element_if(is_element, std::move(info));
             }
@@ -1339,8 +1360,10 @@ class toc final {
             if (not cur_frame.has_alias(id.base())) {
                 lea_path.emplace_back();
 
-                ident_info info{make_ident_info_from_frame(
-                    cur_frame, src_loc_tk, ident, id, std::move(lea_path))};
+                ident_info info{
+                    make_ident_info_from_frame(cur_frame, src_loc_tk, ident, id,
+                                               std::move(lea_path)),
+                };
 
                 return as_element_if(is_element, std::move(info));
             }
@@ -1484,11 +1507,14 @@ class toc final {
 
         // start from the lea address and calculate offset to referred field
         const std::span<std::string> elem_path_from_lea{
-            std::span{ii.elem_path}.subspan(lea_index)};
+            std::span{ii.elem_path}.subspan(lea_index),
+        };
 
         // navigate to referred element and get offset
-        const size_t offset{ii.type_path[lea_index]->field_offset(
-            src_loc_tk, elem_path_from_lea)};
+        const size_t offset{
+            ii.type_path[lea_index]->field_offset(src_loc_tk,
+                                                  elem_path_from_lea),
+        };
 
         ii.operand = operand::mem(lea, ii.type_ref());
         if (offset != 0) {

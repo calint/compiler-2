@@ -134,7 +134,8 @@ class assembler_rv32i final : public assembler {
 
             if (not std::in_range<int64_t>(value)) {
                 throw panic_exception{
-                    std::format("immediate {} exceeds 64 bits", value)};
+                    std::format("immediate {} exceeds 64 bits", value),
+                };
             }
 
             return static_cast<int64_t>(value);
@@ -587,7 +588,8 @@ class assembler_rv32i final : public assembler {
 
         std::vector<line>& kept{
             total_size_bytes(first) <= total_size_bytes(second) ? first
-                                                                : second};
+                                                                : second,
+        };
 
         append(std::move(kept));
     }
@@ -829,7 +831,8 @@ class assembler_rv32i final : public assembler {
         assert(not is_capturing());
 
         const std::unordered_map<std::string_view, size_t> labels{
-            label_lines()};
+            label_lines(),
+        };
 
         // sizes only grow, so this ends once every jump reaches its target
         bool grown{true};
@@ -849,10 +852,12 @@ class assembler_rv32i final : public assembler {
         const std::string_view mnemonic{info(code).mnemonic};
         const std::string operands{std::format("{}, {}", rs1, rs2)};
 
-        const std::optional<size_t> index{store_record(jump_registers{
-            .rs1{number_of(rs1)},
-            .rs2{number_of(rs2)},
-        })};
+        const std::optional<size_t> index{
+            store_record(jump_registers{
+                .rs1{number_of(rs1)},
+                .rs2{number_of(rs2)},
+            }),
+        };
 
         add_jump(std::format("{}{} {}, {}", indentation(indent), mnemonic,
                              operands, target),
@@ -1037,16 +1042,18 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto inverse(const std::string_view mnemonic)
         -> std::optional<std::string_view> {
 
-        constexpr std::array<mnemonic_pair, 8> pairs{{
-            {"beq", "bne"},
-            {"blt", "bge"},
-            {"bltu", "bgeu"},
-            {"bgt", "ble"},
-            {"bgtu", "bleu"},
-            {"beqz", "bnez"},
-            {"bltz", "bgez"},
-            {"bgtz", "blez"},
-        }};
+        constexpr std::array<mnemonic_pair, 8> pairs{
+            {
+                {"beq", "bne"},
+                {"blt", "bge"},
+                {"bltu", "bgeu"},
+                {"bgt", "ble"},
+                {"bgtu", "bleu"},
+                {"beqz", "bnez"},
+                {"bltz", "bgez"},
+                {"bgtz", "blez"},
+            },
+        };
 
         return paired_mnemonic(pairs, mnemonic);
     }
@@ -1087,9 +1094,10 @@ class assembler_rv32i final : public assembler {
 
         const size_t split{code.find_first_of(" \t")};
 
-        const std::string_view arguments{split == std::string_view::npos
-                                             ? std::string_view{}
-                                             : code.substr(split)};
+        const std::string_view arguments{
+            split == std::string_view::npos ? std::string_view{}
+                                            : code.substr(split),
+        };
 
         return instruction_size_bytes(code.substr(0, split), arguments);
     }
@@ -1120,7 +1128,8 @@ class assembler_rv32i final : public assembler {
         uint8_t number{};
 
         const std::from_chars_result parsed{
-            std::from_chars(std::to_address(digits.begin()), end, number)};
+            std::from_chars(std::to_address(digits.begin()), end, number),
+        };
 
         if (parsed.ec != std::errc{} or parsed.ptr != end or
             number >= register_names.size()) {
@@ -1210,13 +1219,15 @@ class assembler_rv32i final : public assembler {
 
             const line& l{lines()[index]};
             const data_values* const data{
-                std::get_if<data_values>(record_of(l))};
+                std::get_if<data_values>(record_of(l)),
+            };
 
             const bool is_zero_fill{
                 data != nullptr and
-                std::ranges::all_of(data->values, [](const int64_t v) -> bool {
-                    return v == 0;
-                })};
+                    std::ranges::all_of(
+                        data->values,
+                        [](const int64_t v) -> bool { return v == 0; }),
+            };
 
             if (l.code_size != 0 or (data != nullptr and not is_zero_fill)) {
                 throw panic_exception{
@@ -1248,9 +1259,11 @@ class assembler_rv32i final : public assembler {
 
             const line_position& position{image.positions[index]};
 
-            const int64_t address{static_cast<int64_t>(
-                image.bases.at(section_index(position.which)) +
-                position.offset)};
+            const int64_t address{
+                static_cast<int64_t>(
+                    image.bases.at(section_index(position.which)) +
+                    position.offset),
+            };
 
             if (is_local_label(l.label)) {
                 symbols.local_labels[l.label].emplace_back(index, address);
@@ -1277,15 +1290,18 @@ class assembler_rv32i final : public assembler {
         }
 
         const jump_registers* const compared{
-            std::get_if<jump_registers>(record_of(l))};
+            std::get_if<jump_registers>(record_of(l)),
+        };
         if (compared == nullptr) {
             throw panic_exception{
                 std::format("no registers for '{}'", trim(l.text))};
         }
 
         if (reach_form == jump_reach::branch) {
-            return {branch_word(find_op(jump.mnemonic), compared->rs1,
-                                compared->rs2, target - address)};
+            return {
+                branch_word(find_op(jump.mnemonic), compared->rs1,
+                            compared->rs2, target - address),
+            };
         }
 
         const std::optional<std::string_view> inverted{inverse(jump.mnemonic)};
@@ -1297,10 +1313,12 @@ class assembler_rv32i final : public assembler {
         // the inverted branch skips the jump that follows it
         std::vector<uint32_t> words{
             branch_word(find_op(*inverted), compared->rs1, compared->rs2,
-                        static_cast<int64_t>(l.code_size))};
+                        static_cast<int64_t>(l.code_size)),
+        };
 
-        const int64_t jump_address{address +
-                                   static_cast<int64_t>(one_instruction_bytes)};
+        const int64_t jump_address{
+            address + static_cast<int64_t>(one_instruction_bytes),
+        };
 
         std::ranges::copy(long_jump(reach_form, jump, target - jump_address),
                           std::back_inserter(words));
@@ -1329,7 +1347,8 @@ class assembler_rv32i final : public assembler {
     auto grow(line& l) const -> void {
         const jump_info& jump{*l.jump};
         const jump_reach grown{
-            reach(l) == jump_reach::branch ? jump_reach::jal : jump_reach::far};
+            reach(l) == jump_reach::branch ? jump_reach::jal : jump_reach::far,
+        };
 
         if (grown == jump_reach::far and jump.scratch.empty()) {
             throw panic_exception{std::format(
@@ -1337,12 +1356,14 @@ class assembler_rv32i final : public assembler {
                 jump.target)};
         }
 
-        const size_t skip_bytes{is_conditional(jump) ? one_instruction_bytes
-                                                     : 0};
+        const size_t skip_bytes{
+            is_conditional(jump) ? one_instruction_bytes : 0,
+        };
 
-        const size_t jump_bytes{grown == jump_reach::far
-                                    ? two_instructions_bytes
-                                    : one_instruction_bytes};
+        const size_t jump_bytes{
+            grown == jump_reach::far ? two_instructions_bytes
+                                     : one_instruction_bytes,
+        };
 
         l.code_size = skip_bytes + jump_bytes;
     }
@@ -1397,7 +1418,8 @@ class assembler_rv32i final : public assembler {
             const record* const structured{record_of(l)};
 
             const section_start* const start{
-                std::get_if<section_start>(structured)};
+                std::get_if<section_start>(structured),
+            };
             if (start != nullptr) {
                 current = start->which;
             }
@@ -1475,7 +1497,8 @@ class assembler_rv32i final : public assembler {
         // distances count from the jumping instruction, which follows the skip
         const int64_t distance{
             static_cast<int64_t>(target_offset) -
-            static_cast<int64_t>(source_offset + skip_size_bytes(l))};
+                static_cast<int64_t>(source_offset + skip_size_bytes(l)),
+        };
 
         const jump_reach form{reach(l)};
         if (form == jump_reach::branch) {
@@ -1529,7 +1552,8 @@ class assembler_rv32i final : public assembler {
         }
 
         const std::vector<uint32_t> words{
-            encode_line(l, line_index, address, symbols)};
+            encode_line(l, line_index, address, symbols),
+        };
 
         assert(words.size() * one_instruction_bytes == l.code_size);
 
@@ -1578,7 +1602,8 @@ class assembler_rv32i final : public assembler {
 
         // a named label keeps numeric 'Nf' and 'Nb' references unchanged
         const std::string skip_label{
-            std::format(".Lbaz_jump.{}", skip_count++)};
+            std::format(".Lbaz_jump.{}", skip_count++),
+        };
 
         std::println(os, "{}{} {}, {}", indent,
                      inverse(l.jump->mnemonic).value_or(std::string_view{}),
@@ -1620,7 +1645,8 @@ class assembler_rv32i final : public assembler {
 
             const line& l{lines()[index]};
             const data_values* const data{
-                std::get_if<data_values>(record_of(l))};
+                std::get_if<data_values>(record_of(l)),
+            };
             if (data != nullptr) {
                 write_data(os, *data);
                 written = address + data_size_bytes(*data);
@@ -1765,8 +1791,9 @@ class assembler_rv32i final : public assembler {
     encode_immediate(const uint32_t encoding, const uint8_t rd,
                      const uint8_t rs1, const int64_t value) -> uint32_t {
 
-        const uint32_t imm_11_0{(static_cast<uint32_t>(value) & low_mask)
-                                << 20U};
+        const uint32_t imm_11_0{
+            (static_cast<uint32_t>(value) & low_mask) << 20U,
+        };
 
         return encoding | imm_11_0 | register_fields(rd, rs1, zero_register);
     }
@@ -1781,8 +1808,9 @@ class assembler_rv32i final : public assembler {
         const int64_t value{immediate_value(symbols, ins.value, line_index)};
 
         if (operands == form::registers) {
-            return {details.encoding |
-                    register_fields(ins.rd, ins.rs1, ins.rs2)};
+            return {
+                details.encoding | register_fields(ins.rd, ins.rs1, ins.rs2),
+            };
         }
 
         if (operands == form::immediate or operands == form::shift or
@@ -1792,8 +1820,10 @@ class assembler_rv32i final : public assembler {
         }
 
         if (operands == form::upper) {
-            return {encode_upper(details.encoding, ins.rd,
-                                 static_cast<uint32_t>(value))};
+            return {
+                encode_upper(details.encoding, ins.rd,
+                             static_cast<uint32_t>(value)),
+            };
         }
 
         if (operands == form::store) {
@@ -1818,12 +1848,14 @@ class assembler_rv32i final : public assembler {
 
         if (operands == form::jump_register) {
             return {
-                encode_immediate(details.encoding, zero_register, ins.rs1, 0)};
+                encode_immediate(details.encoding, zero_register, ins.rs1, 0),
+            };
         }
 
         // the remaining forms go to a label
-        const int64_t distance{symbol_value(symbols, ins.target, line_index) -
-                               address};
+        const int64_t distance{
+            symbol_value(symbols, ins.target, line_index) - address,
+        };
 
         if (operands == form::jump) {
             return {encode_jal(zero_register, distance)};
@@ -2034,89 +2066,189 @@ class assembler_rv32i final : public assembler {
     // initializers are usable only once the class is complete
     [[nodiscard]] static auto info(const op code) -> const op_info& {
         // indexed by 'op'
-        static constexpr std::array<op_info, op_count> infos{{
-            {.mnemonic{"add"}, .operands{form::registers}, .encoding{0x33}},
-            {.mnemonic{"sub"},
-             .operands{form::registers},
-             .encoding{0x40000033}},
-            {.mnemonic{"sll"}, .operands{form::registers}, .encoding{0x1033}},
-            {.mnemonic{"slt"}, .operands{form::registers}, .encoding{0x2033}},
-            {.mnemonic{"sltu"}, .operands{form::registers}, .encoding{0x3033}},
-            {.mnemonic{"xor"}, .operands{form::registers}, .encoding{0x4033}},
-            {.mnemonic{"srl"}, .operands{form::registers}, .encoding{0x5033}},
-            {.mnemonic{"sra"},
-             .operands{form::registers},
-             .encoding{0x40005033}},
-            {.mnemonic{"or"}, .operands{form::registers}, .encoding{0x6033}},
-            {.mnemonic{"and"}, .operands{form::registers}, .encoding{0x7033}},
-            {.mnemonic{"addi"}, .operands{form::immediate}, .encoding{0x13}},
-            {.mnemonic{"slti"}, .operands{form::immediate}, .encoding{0x2013}},
-            {.mnemonic{"sltiu"}, .operands{form::immediate}, .encoding{0x3013}},
-            {.mnemonic{"xori"}, .operands{form::immediate}, .encoding{0x4013}},
-            {.mnemonic{"ori"}, .operands{form::immediate}, .encoding{0x6013}},
-            {.mnemonic{"andi"}, .operands{form::immediate}, .encoding{0x7013}},
-            {.mnemonic{"slli"}, .operands{form::shift}, .encoding{0x1013}},
-            {.mnemonic{"srli"}, .operands{form::shift}, .encoding{0x5013}},
-            {.mnemonic{"srai"}, .operands{form::shift}, .encoding{0x40005013}},
-            {.mnemonic{"lui"}, .operands{form::upper}, .encoding{0x37}},
-            {.mnemonic{"lb"}, .operands{form::load}, .encoding{0x03}},
-            {.mnemonic{"lh"}, .operands{form::load}, .encoding{0x1003}},
-            {.mnemonic{"lw"}, .operands{form::load}, .encoding{0x2003}},
-            {.mnemonic{"lbu"}, .operands{form::load}, .encoding{0x4003}},
-            {.mnemonic{"lhu"}, .operands{form::load}, .encoding{0x5003}},
-            {.mnemonic{"sb"}, .operands{form::store}, .encoding{0x23}},
-            {.mnemonic{"sh"}, .operands{form::store}, .encoding{0x1023}},
-            {.mnemonic{"sw"}, .operands{form::store}, .encoding{0x2023}},
-            {.mnemonic{"beq"}, .operands{form::branch}, .encoding{0x63}},
-            {.mnemonic{"bne"}, .operands{form::branch}, .encoding{0x1063}},
-            {.mnemonic{"blt"}, .operands{form::branch}, .encoding{0x4063}},
-            {.mnemonic{"bge"}, .operands{form::branch}, .encoding{0x5063}},
-            {.mnemonic{"bltu"}, .operands{form::branch}, .encoding{0x6063}},
-            {.mnemonic{"bgeu"}, .operands{form::branch}, .encoding{0x7063}},
-            {.mnemonic{"bgt"},
-             .operands{form::branch},
-             .encoding{0x4063},
-             .swapped{true}},
-            {.mnemonic{"ble"},
-             .operands{form::branch},
-             .encoding{0x5063},
-             .swapped{true}},
-            {.mnemonic{"bgtu"},
-             .operands{form::branch},
-             .encoding{0x6063},
-             .swapped{true}},
-            {.mnemonic{"bleu"},
-             .operands{form::branch},
-             .encoding{0x7063},
-             .swapped{true}},
-            {.mnemonic{"beqz"}, .operands{form::branch_zero}, .encoding{0x63}},
-            {.mnemonic{"bnez"},
-             .operands{form::branch_zero},
-             .encoding{0x1063}},
-            {.mnemonic{"bltz"},
-             .operands{form::branch_zero},
-             .encoding{0x4063}},
-            {.mnemonic{"bgez"},
-             .operands{form::branch_zero},
-             .encoding{0x5063}},
-            {.mnemonic{"bgtz"},
-             .operands{form::branch_zero},
-             .encoding{0x4063},
-             .swapped{true}},
-            {.mnemonic{"blez"},
-             .operands{form::branch_zero},
-             .encoding{0x5063},
-             .swapped{true}},
-            {.mnemonic{"ecall"}, .operands{form::system}, .encoding{0x73}},
-            {.mnemonic{"ebreak"}, .operands{form::system}, .encoding{0x100073}},
-            {.mnemonic{"li"}, .operands{form::load_immediate}, .encoding{0x13}},
-            {.mnemonic{"la"}, .operands{form::load_address}, .encoding{0x17}},
-            {.mnemonic{"mv"}, .operands{form::move}, .encoding{0x13}},
-            {.mnemonic{"j"}, .operands{form::jump}, .encoding{0x6f}},
-            {.mnemonic{"jr"}, .operands{form::jump_register}, .encoding{0x67}},
-            {.mnemonic{"call"}, .operands{form::call}, .encoding{0x17}},
-            {.mnemonic{"ret"}, .operands{form::ret}, .encoding{0x8067}},
-        }};
+        static constexpr std::array<op_info, op_count> infos{
+            {
+                {.mnemonic{"add"}, .operands{form::registers}, .encoding{0x33}},
+                {
+                    .mnemonic{"sub"},
+                    .operands{form::registers},
+                    .encoding{0x40000033},
+                },
+                {
+                    .mnemonic{"sll"},
+                    .operands{form::registers},
+                    .encoding{0x1033},
+                },
+                {
+                    .mnemonic{"slt"},
+                    .operands{form::registers},
+                    .encoding{0x2033},
+                },
+                {
+                    .mnemonic{"sltu"},
+                    .operands{form::registers},
+                    .encoding{0x3033},
+                },
+                {
+                    .mnemonic{"xor"},
+                    .operands{form::registers},
+                    .encoding{0x4033},
+                },
+                {
+                    .mnemonic{"srl"},
+                    .operands{form::registers},
+                    .encoding{0x5033},
+                },
+                {
+                    .mnemonic{"sra"},
+                    .operands{form::registers},
+                    .encoding{0x40005033},
+                },
+                {
+                    .mnemonic{"or"},
+                    .operands{form::registers},
+                    .encoding{0x6033},
+                },
+                {
+                    .mnemonic{"and"},
+                    .operands{form::registers},
+                    .encoding{0x7033},
+                },
+                {
+                    .mnemonic{"addi"},
+                    .operands{form::immediate},
+                    .encoding{0x13},
+                },
+                {
+                    .mnemonic{"slti"},
+                    .operands{form::immediate},
+                    .encoding{0x2013},
+                },
+                {
+                    .mnemonic{"sltiu"},
+                    .operands{form::immediate},
+                    .encoding{0x3013},
+                },
+                {
+                    .mnemonic{"xori"},
+                    .operands{form::immediate},
+                    .encoding{0x4013},
+                },
+                {
+                    .mnemonic{"ori"},
+                    .operands{form::immediate},
+                    .encoding{0x6013},
+                },
+                {
+                    .mnemonic{"andi"},
+                    .operands{form::immediate},
+                    .encoding{0x7013},
+                },
+                {.mnemonic{"slli"}, .operands{form::shift}, .encoding{0x1013}},
+                {.mnemonic{"srli"}, .operands{form::shift}, .encoding{0x5013}},
+                {
+                    .mnemonic{"srai"},
+                    .operands{form::shift},
+                    .encoding{0x40005013},
+                },
+                {.mnemonic{"lui"}, .operands{form::upper}, .encoding{0x37}},
+                {.mnemonic{"lb"}, .operands{form::load}, .encoding{0x03}},
+                {.mnemonic{"lh"}, .operands{form::load}, .encoding{0x1003}},
+                {.mnemonic{"lw"}, .operands{form::load}, .encoding{0x2003}},
+                {.mnemonic{"lbu"}, .operands{form::load}, .encoding{0x4003}},
+                {.mnemonic{"lhu"}, .operands{form::load}, .encoding{0x5003}},
+                {.mnemonic{"sb"}, .operands{form::store}, .encoding{0x23}},
+                {.mnemonic{"sh"}, .operands{form::store}, .encoding{0x1023}},
+                {.mnemonic{"sw"}, .operands{form::store}, .encoding{0x2023}},
+                {.mnemonic{"beq"}, .operands{form::branch}, .encoding{0x63}},
+                {.mnemonic{"bne"}, .operands{form::branch}, .encoding{0x1063}},
+                {.mnemonic{"blt"}, .operands{form::branch}, .encoding{0x4063}},
+                {.mnemonic{"bge"}, .operands{form::branch}, .encoding{0x5063}},
+                {.mnemonic{"bltu"}, .operands{form::branch}, .encoding{0x6063}},
+                {.mnemonic{"bgeu"}, .operands{form::branch}, .encoding{0x7063}},
+                {
+                    .mnemonic{"bgt"},
+                    .operands{form::branch},
+                    .encoding{0x4063},
+                    .swapped{true},
+                },
+                {
+                    .mnemonic{"ble"},
+                    .operands{form::branch},
+                    .encoding{0x5063},
+                    .swapped{true},
+                },
+                {
+                    .mnemonic{"bgtu"},
+                    .operands{form::branch},
+                    .encoding{0x6063},
+                    .swapped{true},
+                },
+                {
+                    .mnemonic{"bleu"},
+                    .operands{form::branch},
+                    .encoding{0x7063},
+                    .swapped{true},
+                },
+                {
+                    .mnemonic{"beqz"},
+                    .operands{form::branch_zero},
+                    .encoding{0x63},
+                },
+                {
+                    .mnemonic{"bnez"},
+                    .operands{form::branch_zero},
+                    .encoding{0x1063},
+                },
+                {
+                    .mnemonic{"bltz"},
+                    .operands{form::branch_zero},
+                    .encoding{0x4063},
+                },
+                {
+                    .mnemonic{"bgez"},
+                    .operands{form::branch_zero},
+                    .encoding{0x5063},
+                },
+                {
+                    .mnemonic{"bgtz"},
+                    .operands{form::branch_zero},
+                    .encoding{0x4063},
+                    .swapped{true},
+                },
+                {
+                    .mnemonic{"blez"},
+                    .operands{form::branch_zero},
+                    .encoding{0x5063},
+                    .swapped{true},
+                },
+                {.mnemonic{"ecall"}, .operands{form::system}, .encoding{0x73}},
+                {
+                    .mnemonic{"ebreak"},
+                    .operands{form::system},
+                    .encoding{0x100073},
+                },
+                {
+                    .mnemonic{"li"},
+                    .operands{form::load_immediate},
+                    .encoding{0x13},
+                },
+                {
+                    .mnemonic{"la"},
+                    .operands{form::load_address},
+                    .encoding{0x17},
+                },
+                {.mnemonic{"mv"}, .operands{form::move}, .encoding{0x13}},
+                {.mnemonic{"j"}, .operands{form::jump}, .encoding{0x6f}},
+                {
+                    .mnemonic{"jr"},
+                    .operands{form::jump_register},
+                    .encoding{0x67},
+                },
+                {.mnemonic{"call"}, .operands{form::call}, .encoding{0x17}},
+                {.mnemonic{"ret"}, .operands{form::ret}, .encoding{0x8067}},
+            },
+        };
 
         return infos.at(std::to_underlying(code));
     }
@@ -2250,7 +2382,8 @@ class assembler_rv32i final : public assembler {
         const char* const end{std::to_address(literal.end())};
 
         const std::from_chars_result conversion{
-            std::from_chars(std::to_address(literal.begin()), end, parsed)};
+            std::from_chars(std::to_address(literal.begin()), end, parsed),
+        };
 
         // unresolved expressions retain the conservative size
         if (conversion.ec != std::errc{} or conversion.ptr != end or
@@ -2270,7 +2403,8 @@ class assembler_rv32i final : public assembler {
         -> std::vector<uint32_t> {
 
         const int32_t number{
-            std::bit_cast<int32_t>(static_cast<uint32_t>(value))};
+            std::bit_cast<int32_t>(static_cast<uint32_t>(value)),
+        };
 
         if (not symbolic and fits(number, immediate_min, immediate_max)) {
             return {encode_immediate(addi_encoding, rd, zero_register, number)};
@@ -2302,7 +2436,8 @@ class assembler_rv32i final : public assembler {
         constexpr int32_t low_range{4096};
 
         const int32_t low{
-            static_cast<int32_t>(static_cast<uint32_t>(value) & low_mask)};
+            static_cast<int32_t>(static_cast<uint32_t>(value) & low_mask),
+        };
 
         if (low > immediate_max) {
             return low - low_range;
@@ -2381,20 +2516,23 @@ class assembler_rv32i final : public assembler {
         }
 
         const auto locals{
-            symbols.local_labels.find(name.substr(0, name.size() - 1))};
+            symbols.local_labels.find(name.substr(0, name.size() - 1)),
+        };
 
         if (name.size() < 2 or locals == symbols.local_labels.end()) {
             throw panic_exception{std::format("undefined symbol '{}'", name)};
         }
 
         const std::vector<std::pair<size_t, int64_t>>& definitions{
-            locals->second};
+            locals->second,
+        };
 
         const auto line_of = &std::pair<size_t, int64_t>::first;
 
         if (name.back() == 'f') {
             const auto next{
-                std::ranges::upper_bound(definitions, line_index, {}, line_of)};
+                std::ranges::upper_bound(definitions, line_index, {}, line_of),
+            };
             if (next != definitions.end()) {
                 return next->second;
             }
@@ -2402,7 +2540,8 @@ class assembler_rv32i final : public assembler {
 
         if (name.back() == 'b') {
             const auto next{
-                std::ranges::lower_bound(definitions, line_index, {}, line_of)};
+                std::ranges::lower_bound(definitions, line_index, {}, line_of),
+            };
             if (next != definitions.begin()) {
                 return std::prev(next)->second;
             }

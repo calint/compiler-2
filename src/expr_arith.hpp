@@ -185,7 +185,8 @@ class expr_arith final : public expression {
         // a single constant is compiled as an identifier with its comments
         if (is_expression()) {
             const std::optional<int64_t> value{
-                folded_constant(tc, dst_info.type_ref())};
+                folded_constant(tc, dst_info.type_ref()),
+            };
 
             if (value) {
                 compile_constant(tc, indent, dst_info, *value,
@@ -263,7 +264,8 @@ class expr_arith final : public expression {
         -> std::optional<int64_t> override {
 
         std::optional<int64_t> value{
-            element_constant(tc, *exprs_.front(), width_type)};
+            element_constant(tc, *exprs_.front(), width_type),
+        };
 
         for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
@@ -273,7 +275,8 @@ class expr_arith final : public expression {
             }
 
             const std::optional<int64_t> rhs{
-                element_constant(tc, *e, width_type)};
+                element_constant(tc, *e, width_type),
+            };
 
             if (not rhs) {
                 return std::nullopt;
@@ -403,7 +406,8 @@ class expr_arith final : public expression {
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, register_type)};
+            x.alloc_scratch_register(src.tok(), indent, register_type),
+        };
 
         x.copy_value(src.tok(), indent, reg, src_operand);
         src.get_unary_ops().compile(tc, indent, reg);
@@ -594,7 +598,8 @@ class expr_arith final : public expression {
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(tok(), indent, scratch_type)};
+            x.alloc_scratch_register(tok(), indent, scratch_type),
+        };
 
         do_compile(tc, indent, toc::make_ident_info_from_register(reg));
 
@@ -691,7 +696,8 @@ class expr_arith final : public expression {
                 .element{&e},
                 .value{element_constant(tc, e, width_type)},
                 .folded_source{
-                    std::format("{} {}", op, statement::trimmed_source(e))},
+                    std::format("{} {}", op, statement::trimmed_source(e)),
+                },
             });
         }
 
@@ -745,9 +751,10 @@ class expr_arith final : public expression {
         }
 
         for (const std::unique_ptr<statement>& expr : exprs_) {
-            const type& expr_type{expr->is_identifier()
-                                      ? tc.make_ident_info(*expr).type_ref()
-                                      : expr->get_type()};
+            const type& expr_type{
+                expr->is_identifier() ? tc.make_ident_info(*expr).type_ref()
+                                      : expr->get_type(),
+            };
 
             if (expr_type.name() == tc.get_type_bool().name()) {
                 throw compiler_exception{
@@ -862,7 +869,8 @@ class expr_arith final : public expression {
             const ident_info src_info{tc.make_scalar_ident_info(src)};
             std::vector<operand> lea_registers;
             const operand src_operand{
-                tc.get_lea_operand(indent, src, src_info, lea_registers)};
+                tc.get_lea_operand(indent, src, src_info, lea_registers),
+            };
 
             x.add_subtract(src.tok(), indent, op == '+' ? '-' : '+',
                            dst_info.operand, src_operand);
@@ -1013,7 +1021,8 @@ class expr_arith final : public expression {
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, register_type)};
+            x.alloc_scratch_register(src.tok(), indent, register_type),
+        };
 
         src.compile(tc, indent, toc::make_ident_info_from_register(reg));
 
@@ -1058,7 +1067,8 @@ class expr_arith final : public expression {
         if (src.is_expression()) {
             // e.g. 'a / (1 + 1)'
             const std::optional<int64_t> value{
-                src.folded_constant(tc, expression_type)};
+                src.folded_constant(tc, expression_type),
+            };
 
             if (value) {
                 x.comment(src.tok(), indent, "src: folded constant '{}'",
@@ -1072,7 +1082,8 @@ class expr_arith final : public expression {
             x.comment(src.tok(), indent, "src: expression");
 
             const operand reg{
-                compile_to_scratch(tc, indent, src, expression_type)};
+                compile_to_scratch(tc, indent, src, expression_type),
+            };
 
             emit(reg, true);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -1090,7 +1101,8 @@ class expr_arith final : public expression {
 
         std::vector<operand> lea_registers;
         const operand src_operand{
-            tc.get_lea_operand(indent, src, src_info, lea_registers)};
+            tc.get_lea_operand(indent, src, src_info, lea_registers),
+        };
 
         if (src.get_unary_ops().is_empty()) {
             x.comment(src.tok(), indent, "src: operand");
@@ -1103,7 +1115,8 @@ class expr_arith final : public expression {
         x.comment(src.tok(), indent, "src: operand with unary ops");
 
         const operand reg{
-            compile_unary_to_scratch(tc, indent, src, src_operand, unary_type)};
+            compile_unary_to_scratch(tc, indent, src, src_operand, unary_type),
+        };
 
         emit(reg, true);
         x.free_scratch_register(src.tok(), indent, reg);
@@ -1168,8 +1181,10 @@ class expr_arith final : public expression {
             return;
         }
 
-        const bool is_negated{first.op == '+' and first.element != nullptr and
-                              is_negated_operand(tc, *first.element)};
+        const bool is_negated{
+            first.op == '+' and first.element != nullptr and
+                is_negated_operand(tc, *first.element),
+        };
 
         if (first.op != '-' and not is_negated) {
             return;
@@ -1194,10 +1209,12 @@ class expr_arith final : public expression {
                                 const type& width_type) -> std::vector<step> {
 
         // a dividend or a divisor is a run of its own
-        const auto same_run{[](const step& a, const step& b) -> bool {
-            return is_commutative(a.op) and is_commutative(b.op) and
-                   precedence_for_op(a.op) == precedence_for_op(b.op);
-        }};
+        const auto same_run{
+            [](const step& a, const step& b) -> bool {
+                return is_commutative(a.op) and is_commutative(b.op) and
+                       precedence_for_op(a.op) == precedence_for_op(b.op);
+            },
+        };
 
         std::vector<step> merged;
 
@@ -1222,7 +1239,8 @@ class expr_arith final : public expression {
         for (const step& s : steps) {
             const std::optional<int64_t> product{
                 merged.empty() ? std::nullopt
-                               : merged_divisor(merged.back(), s, width_type)};
+                               : merged_divisor(merged.back(), s, width_type),
+            };
 
             if (not product) {
                 merged.push_back(s);
@@ -1427,8 +1445,9 @@ class expr_arith final : public expression {
         }
 
         const uint64_t sign_bit{uint64_t{1} << (bits - 1)};
-        const uint64_t low{static_cast<uint64_t>(value) &
-                           ((sign_bit << 1U) - 1U)};
+        const uint64_t low{
+            static_cast<uint64_t>(value) & ((sign_bit << 1U) - 1U),
+        };
 
         // flipping and subtracting the sign bit extends it
         return static_cast<int64_t>((low ^ sign_bit) - sign_bit);

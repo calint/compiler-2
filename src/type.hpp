@@ -81,7 +81,8 @@ class type final {
         const int64_t idx{
             var.pointer_register.is_empty()
                 ? add_address_offset(var.offset, address_offset(offset))
-                : address_offset(offset)};
+                : address_offset(offset),
+        };
 
         const std::string_view storage_base{
             var.base_register.empty() ? base_register : var.base_register};
@@ -95,7 +96,8 @@ class type final {
             operand::mem(var.pointer_register.is_empty()
                              ? storage_base
                              : var.pointer_register.base_register(),
-                         "", 1, idx, *tp)};
+                         "", 1, idx, *tp),
+        };
 
         return ident_info::make_var(std::string{ident}, path,
                                     std::move(type_path), op, idx, array_count,
@@ -108,10 +110,12 @@ class type final {
                    const bool is_array, const size_t array_count) -> void {
 
         const size_t total_size_bytes{
-            multiply_storage_size(tp.size_bytes_, is_array ? array_count : 1)};
+            multiply_storage_size(tp.size_bytes_, is_array ? array_count : 1),
+        };
 
         const size_t offset{
-            align_storage_size(fields_end_bytes_, tp.alignment_)};
+            align_storage_size(fields_end_bytes_, tp.alignment_),
+        };
 
         fields_.emplace_back(std::string{name}, &tp, offset, total_size_bytes,
                              array_count, is_array);
@@ -135,13 +139,15 @@ class type final {
 
         for (const type_field& f : fields_) {
             const std::vector<byte_range> element_ranges{
-                f.type().data_ranges()};
+                f.type().data_ranges(),
+            };
 
             const size_t element_count{f.is_array ? f.array_count : 1};
 
             for (size_t i{}; i < element_count; ++i) {
-                const size_t element_offset{f.offset +
-                                            (i * f.type().size_bytes_)};
+                const size_t element_offset{
+                    f.offset + (i * f.type().size_bytes_),
+                };
 
                 for (const byte_range& r : element_ranges) {
                     append_range(ranges, element_offset + r.offset,
@@ -167,8 +173,9 @@ class type final {
 
         const size_t i{field_index(src_loc_tk, field_name)};
 
-        const size_t next_offset{i + 1 < fields_.size() ? fields_[i + 1].offset
-                                                        : size_bytes_};
+        const size_t next_offset{
+            i + 1 < fields_.size() ? fields_[i + 1].offset : size_bytes_,
+        };
 
         return next_offset - fields_[i].offset;
     }

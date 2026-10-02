@@ -1,10 +1,6 @@
 #!/bin/bash
 # runs a flat rv32i image in qemu user mode by wrapping it unchanged in an elf
 # usage: run-rv32i-bin-as-elf.sh [prog-rv32i.bin] [vars size, the compiler's --vars]
-# tools:
-#   llvm-objcopy: 22.1.8
-#         ld.lld: 22.1.8
-#   qemu-riscv32: 11.1.1
 set -eu
 cd "$(dirname "$0")"
 

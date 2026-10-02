@@ -170,15 +170,19 @@ class stmt_builtin_array_copy final : public statement {
 
         x.comment(src_.tok(), indent, statement::trimmed_source(src_));
 
-        const operand src_operand{src_.compile_lea(
-            tc, indent, src_.first_token(), allocated_scratch_registers,
-            count_register, array_src_info.lea_path, {})};
+        const operand src_operand{
+            src_.compile_lea(tc, indent, src_.first_token(),
+                             allocated_scratch_registers, count_register,
+                             array_src_info.lea_path, {}),
+        };
 
         x.comment(dst_.tok(), indent, statement::trimmed_source(dst_));
 
-        const operand dst_operand{dst_.compile_lea(
-            tc, indent, dst_.first_token(), allocated_scratch_registers,
-            count_register, array_dst_info.lea_path, {})};
+        const operand dst_operand{
+            dst_.compile_lea(tc, indent, dst_.first_token(),
+                             allocated_scratch_registers, count_register,
+                             array_dst_info.lea_path, {}),
+        };
 
         x.copy(tok(), indent, src_operand, dst_operand,
                multiply_storage_size(array_src_info.type_ref().size_bytes(),

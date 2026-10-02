@@ -49,7 +49,8 @@ class expr_bool_op final : public statement {
         ws_pre_op_ = tz.next_whitespace_token();
 
         const std::optional<std::string_view> comparison{
-            parse_comparison_operator(tz)};
+            parse_comparison_operator(tz),
+        };
 
         // e.g. if a ...
         if (not comparison) {
@@ -273,10 +274,12 @@ class expr_bool_op final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand dst{
-            resolve_expr(tc, indent, lhs, true, allocated_registers)};
+            resolve_expr(tc, indent, lhs, true, allocated_registers),
+        };
 
         const operand src{
-            resolve_expr(tc, indent, rhs, false, allocated_registers)};
+            resolve_expr(tc, indent, rhs, false, allocated_registers),
+        };
 
         assert_rhs_fits_lhs(tc, lhs, rhs, action.operation, dst, src);
 
@@ -325,7 +328,8 @@ class expr_bool_op final : public statement {
             machine& x{tc.machine()};
 
             const operand src{
-                resolve_expr(tc, indent, lhs, true, allocated_registers)};
+                resolve_expr(tc, indent, lhs, true, allocated_registers),
+            };
 
             x.copy_value(tok(), indent, action.destination, src);
             x.free_scratch_registers(tok(), indent, allocated_registers);
@@ -334,7 +338,8 @@ class expr_bool_op final : public statement {
         }
 
         const operand dst{
-            truth_test_operand(tc, indent, lhs, action, allocated_registers)};
+            truth_test_operand(tc, indent, lhs, action, allocated_registers),
+        };
 
         machine& x{tc.machine()};
 
@@ -429,7 +434,8 @@ class expr_bool_op final : public statement {
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
+            x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
+        };
 
         allocated_registers.emplace_back(reg);
         expr.compile(tc, indent + 1, toc::make_ident_info_from_register(reg));
@@ -572,8 +578,10 @@ class expr_bool_op final : public statement {
             return expr_info.operand;
         }
 
-        const operand reg{expr_arith::compile_unary_to_scratch(
-            tc, indent, expr, expr_info.operand, expr_info.type_ref())};
+        const operand reg{
+            expr_arith::compile_unary_to_scratch(
+                tc, indent, expr, expr_info.operand, expr_info.type_ref()),
+        };
 
         allocated_registers.emplace_back(reg);
 
@@ -797,7 +805,8 @@ class expr_bool final : public statement {
             const std::optional<bool> value{
                 e.visit([&tc](const auto& item) -> std::optional<bool> {
                     return item.constant_value(tc);
-                })};
+                }),
+            };
 
             if (not value) {
                 return std::nullopt;
@@ -825,16 +834,20 @@ class expr_bool final : public statement {
 
         if (std::holds_alternative<expr_bool>(bools_[expr_index])) {
             const expr_bool& nested_expr{
-                std::get<expr_bool>(bools_[expr_index])};
+                std::get<expr_bool>(bools_[expr_index]),
+            };
 
             const std::string next_label{
-                create_cmp_label_from(tc, bools_[expr_index + 1])};
+                create_cmp_label_from(tc, bools_[expr_index + 1]),
+            };
 
             // an 'or' continues when false and an 'and' continues when true
             const std::string_view jmp_false{
-                is_or ? std::string_view{next_label} : jmp_to_if_false};
+                is_or ? std::string_view{next_label} : jmp_to_if_false,
+            };
             const std::string_view jmp_true{
-                is_or ? jmp_to_if_true : std::string_view{next_label}};
+                is_or ? jmp_to_if_true : std::string_view{next_label},
+            };
 
             return nested_expr.compile_with_label(tc, indent, jmp_false,
                                                   jmp_true, invert, dst);
@@ -858,8 +871,10 @@ class expr_bool final : public statement {
         if (std::holds_alternative<expr_bool>(bools_.back())) {
             const expr_bool& nested_expr{std::get<expr_bool>(bools_.back())};
 
-            const std::optional<bool> const_eval{nested_expr.compile_with_label(
-                tc, indent, jmp_to_if_false, jmp_to_if_true, invert, dst)};
+            const std::optional<bool> const_eval{
+                nested_expr.compile_with_label(tc, indent, jmp_to_if_false,
+                                               jmp_to_if_true, invert, dst),
+            };
 
             // the nested list already emitted its final branch
             if (not const_eval) {
@@ -875,7 +890,8 @@ class expr_bool final : public statement {
 
         const std::optional<bool> const_eval{
             expr.compile_and(tc, indent, jmp_to_if_false, invert, dst,
-                             jmp_to_if_false != jmp_to_if_true)};
+                             jmp_to_if_false != jmp_to_if_true),
+        };
 
         if (const_eval) {
             return resolve_last_constant(tc, indent, *const_eval,
@@ -905,8 +921,9 @@ class expr_bool final : public statement {
                                             inverted ? " inverted: " : " "));
 
         // invert, according to De Morgan's laws
-        const bool invert{inverted ? not not_tk_.is_text("not")
-                                   : not_tk_.is_text("not")};
+        const bool invert{
+            inverted ? not not_tk_.is_text("not") : not_tk_.is_text("not"),
+        };
 
         bool has_runtime_element{};
 
@@ -914,7 +931,8 @@ class expr_bool final : public statement {
         for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
             const std::optional<bool> const_eval{
                 compile_inner_element(tc, indent, expr_index, jmp_to_if_false,
-                                      jmp_to_if_true, invert, dst)};
+                                      jmp_to_if_true, invert, dst),
+            };
 
             if (not const_eval) {
                 has_runtime_element = true;

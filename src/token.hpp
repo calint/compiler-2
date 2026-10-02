@@ -187,11 +187,13 @@ class token final {
             }
 
             // a hex escape spans the 'x' and two digits
-            const size_t escape_size{text.substr(i + 1).starts_with('x') ? 3UZ
-                                                                         : 1UZ};
+            const size_t escape_size{
+                text.substr(i + 1).starts_with('x') ? 3UZ : 1UZ,
+            };
 
             const std::optional<char> decoded{
-                decode_escape(text.substr(i + 1, escape_size))};
+                decode_escape(text.substr(i + 1, escape_size)),
+            };
 
             if (not decoded) {
                 return std::nullopt;
@@ -243,7 +245,8 @@ class token final {
         unsigned int decoded{};
         const char* const end{std::to_address(digits.end())};
         const std::from_chars_result parsed{
-            std::from_chars(std::to_address(digits.begin()), end, decoded, 16)};
+            std::from_chars(std::to_address(digits.begin()), end, decoded, 16),
+        };
 
         if (parsed.ec != std::errc{} or parsed.ptr != end) {
             return std::nullopt;

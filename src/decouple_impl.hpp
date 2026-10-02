@@ -397,7 +397,8 @@ auto expr_type::assert_items_not_reading(const record_destination& dst,
 
         // array items are written element by element
         const size_t written_size_bytes{
-            field.is_array ? field_offset + field.size_bytes : field_offset};
+            field.is_array ? field_offset + field.size_bytes : field_offset,
+        };
 
         assert_item_not_reading(*expr, dst, written_size_bytes);
     }
@@ -417,7 +418,8 @@ auto expr_type::assert_record_field_not_reading(const expr_any& src,
     for (size_t i{}; i < src.element_count(); ++i) {
         const expr_type& element{src.as_expr_type(i)};
         const size_t element_offset{
-            field_offset + multiply_storage_size(element_size_bytes, i)};
+            field_offset + multiply_storage_size(element_size_bytes, i),
+        };
 
         if (element.is_identifier()) {
             assert_item_not_reading(element, dst, element_offset);
@@ -556,10 +558,13 @@ auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     std::vector<operand> allocated_registers;
     const operand src_op{
-        tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
+        tc.get_lea_operand(indent, *this, src_info, allocated_registers),
+    };
 
-    const size_t size_bytes{multiply_storage_size(
-        dst_type.size_bytes(), src_info.is_array ? src_info.array_len : 1)};
+    const size_t size_bytes{
+        multiply_storage_size(dst_type.size_bytes(),
+                              src_info.is_array ? src_info.array_len : 1),
+    };
 
     machine& x{tc.machine()};
 
@@ -640,14 +645,17 @@ auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
         return;
     }
 
-    const auto compile_in_field{[&] -> void {
-        x.copy_value(src.tok(), indent, dst, src_op);
-        uops.compile(tc, indent, dst);
-    }};
+    const auto compile_in_field{
+        [&] -> void {
+            x.copy_value(src.tok(), indent, dst, src_op);
+            uops.compile(tc, indent, dst);
+        },
+    };
 
     x.emit_most_efficient(src.tok(), indent, compile_in_field, [&] -> void {
         const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, dst.type_ref())};
+            x.alloc_scratch_register(src.tok(), indent, dst.type_ref()),
+        };
 
         x.copy_value(src.tok(), indent, reg, src_op);
         uops.compile(tc, indent, reg);
@@ -684,7 +692,8 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
 
     const size_t zeroed_size_bytes{
         zero_remaining_elements(tc, indent, src.tok(), dst_op, field.type(),
-                                field.array_count - src.element_count())};
+                                field.array_count - src.element_count()),
+    };
 
     dst_op.increment_offset(address_offset(zeroed_size_bytes));
 }

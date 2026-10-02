@@ -1,8 +1,4 @@
 #!/bin/sh
-#
-# tools used:
-#        g++: 16.2.1
-#
 set -e
 cd $(dirname "$0")
 

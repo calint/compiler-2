@@ -89,8 +89,10 @@ class stmt_builtin_foo final : public statement {
 
         const ident_info ii{tc.make_ident_info(ident_)};
 
-        const operand reg_iter{x.alloc_scratch_register(ident_.tok(), indent,
-                                                        tc.get_type_default())};
+        const operand reg_iter{
+            x.alloc_scratch_register(ident_.tok(), indent,
+                                     tc.get_type_default()),
+        };
 
         x.comment(ident_.tok(), indent, "initiate iterator e");
 
@@ -99,12 +101,14 @@ class stmt_builtin_foo final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand limit{
-            compile_limit(tc, indent, ii.array_len, allocated_registers)};
+            compile_limit(tc, indent, ii.array_len, allocated_registers),
+        };
 
         tc.enter_foo(loop_label);
 
         const operand reg_counter{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
+            x.alloc_scratch_register(tok(), indent, tc.get_type_default()),
+        };
 
         allocated_registers.push_back(reg_counter);
 
@@ -167,8 +171,10 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        const operand reg_count{x.alloc_scratch_register(
-            count_.tok(), indent, tc.get_type_default())};
+        const operand reg_count{
+            x.alloc_scratch_register(count_.tok(), indent,
+                                     tc.get_type_default()),
+        };
 
         allocated_registers.push_back(reg_count);
 
@@ -201,8 +207,10 @@ class stmt_builtin_foo final : public statement {
 
         std::vector<operand> allocated_registers;
 
-        const operand op{ident_.compile_lea(
-            tc, indent, tok(), allocated_registers, {}, ii.lea_path, {})};
+        const operand op{
+            ident_.compile_lea(tc, indent, tok(), allocated_registers, {},
+                               ii.lea_path, {}),
+        };
 
         x.address_of(tok(), indent, reg_iter, op);
 
@@ -221,19 +229,21 @@ class stmt_builtin_foo final : public statement {
                                const operand& iterator, const operand& counter)
         -> void {
 
-        tc.add_var(src_loc_tk, indent,
-                   {
-                       .name{"e"},
-                       .type_ptr{&array_info.type_ref()},
-                       .src_loc_tk{decl_tk},
-                       .read_only_why{array_info.is_read_only()
-                                          ? read_only_cause::FOO_ELEMENT
-                                          : read_only_cause::NONE},
-                       .pointer_register{iterator},
-                       .base_register{},
-                       .value_register{},
-                   },
-                   false);
+        tc.add_var(
+            src_loc_tk, indent,
+            {
+                .name{"e"},
+                .type_ptr{&array_info.type_ref()},
+                .src_loc_tk{decl_tk},
+                .read_only_why{
+                    array_info.is_read_only() ? read_only_cause::FOO_ELEMENT
+                                              : read_only_cause::NONE,
+                },
+                .pointer_register{iterator},
+                .base_register{},
+                .value_register{},
+            },
+            false);
 
         tc.add_var(src_loc_tk, indent,
                    {

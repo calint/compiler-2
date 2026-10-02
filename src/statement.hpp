@@ -158,8 +158,9 @@ class statement {
                 const token& use_tk,
                 [[maybe_unused]] const std::string_view read_text,
                 const std::optional<field_coverage::range>& accessed) -> void {
-                const bool is_assigned{accessed ? assigned.covers(*accessed)
-                                                : assigned.is_full()};
+                const bool is_assigned{
+                    accessed ? assigned.covers(*accessed) : assigned.is_full(),
+                };
 
                 if (is_assigned) {
                     return;

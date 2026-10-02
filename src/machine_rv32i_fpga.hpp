@@ -25,8 +25,9 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr int memory_end_upper_{0x800};
     // 'lui' places the immediate in the upper 20 bits
     static constexpr uint32_t lui_shift_{12};
-    static constexpr uint32_t memory_size_bytes_{uint32_t{memory_end_upper_}
-                                                 << lui_shift_};
+    static constexpr uint32_t memory_size_bytes_{
+        uint32_t{memory_end_upper_} << lui_shift_,
+    };
     // the comment prints the address as two 16 bit halves
     static constexpr uint32_t half_bits_{16};
     static constexpr uint32_t half_mask_{0xffff};

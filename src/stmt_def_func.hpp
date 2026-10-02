@@ -271,9 +271,10 @@ class stmt_def_func final : public statement {
                            .src_loc_tk{param.tok()},
                            .is_array{param.is_array()},
                            .is_pointer{is_pointer},
-                           .read_only_why{param.is_read_only()
-                                              ? read_only_cause::PARAM
-                                              : read_only_cause::NONE},
+                           .read_only_why{
+                               param.is_read_only() ? read_only_cause::PARAM
+                                                    : read_only_cause::NONE,
+                           },
                            .pointer_register{},
                            .base_register{},
                            .value_register{},
@@ -301,7 +302,8 @@ class stmt_def_func final : public statement {
     // parameter 'self' of that type and a constructor builds a 'self' of it
     auto parse_method_name(const toc& tc, tokenizer& tz) -> void {
         const type& receiver_type{
-            tc.get_type_or_throw(name_tk_, name_tk_.text())};
+            tc.get_type_or_throw(name_tk_, name_tk_.text()),
+        };
 
         if (receiver_type.is_builtin()) {
             throw compiler_exception{
@@ -368,9 +370,10 @@ class stmt_def_func final : public statement {
             return;
         }
 
-        const type& tp{type_tk.is_empty()
-                           ? tc.get_type_default()
-                           : tc.get_type_or_throw(type_tk, type_tk.text())};
+        const type& tp{
+            type_tk.is_empty() ? tc.get_type_default()
+                               : tc.get_type_or_throw(type_tk, type_tk.text()),
+        };
 
         returns_.emplace(type_tk, ident_tk, &tp);
         set_type(tp);

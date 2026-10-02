@@ -210,7 +210,8 @@ class program final {
         for (const statement* s : tc.get_data()) {
             const size_t padding_bytes{
                 align_storage_size(dat_offset, s->get_type().alignment()) -
-                dat_offset};
+                    dat_offset,
+            };
 
             if (padding_bytes != 0) {
                 x.comment({}, 0, "padding {} B", padding_bytes);

@@ -290,13 +290,14 @@ class stmt_def_dat final : public statement {
         // initializer
         const auto values{
             elroot.elems |
-            std::views::transform(
-                [](const elem& element) -> machine::data_initializer {
-                    return {
-                        .value{element.value},
-                        .uops{element.uops.to_string()},
-                    };
-                })};
+                std::views::transform(
+                    [](const elem& element) -> machine::data_initializer {
+                        return {
+                            .value{element.value},
+                            .uops{element.uops.to_string()},
+                        };
+                    }),
+        };
 
         x.emit_data_array(tp.size_bytes(), values);
 

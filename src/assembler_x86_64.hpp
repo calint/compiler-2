@@ -218,7 +218,8 @@ class assembler_x86_64 final : public assembler {
               const std::span<const data_value> values) -> void {
 
         std::string text{
-            std::format("{} ", data_directive(element_size_bytes))};
+            std::format("{} ", data_directive(element_size_bytes)),
+        };
         std::string_view separator;
         for (const data_value& value : values) {
             text += std::format("{}{}{}", separator, value.unary_operations,
@@ -339,7 +340,7 @@ class assembler_x86_64 final : public assembler {
 
             line += std::string_view{part};
         }
-        line += "`";
+        line += '`';
 
         add_text(std::move(line));
     }
@@ -394,7 +395,8 @@ class assembler_x86_64 final : public assembler {
         const uint64_t magnitude{
             address.displacement < 0
                 ? uint64_t{} - static_cast<uint64_t>(address.displacement)
-                : static_cast<uint64_t>(address.displacement)};
+                : static_cast<uint64_t>(address.displacement),
+        };
 
         s += std::format("{}", magnitude);
 
@@ -435,11 +437,13 @@ class assembler_x86_64 final : public assembler {
     inverse_branch_mnemonic(const std::string_view mnemonic) const
         -> std::optional<std::string_view> override {
 
-        constexpr std::array<mnemonic_pair, 3> pairs{{
-            {"je", "jne"},
-            {"jg", "jle"},
-            {"jge", "jl"},
-        }};
+        constexpr std::array<mnemonic_pair, 3> pairs{
+            {
+                {"je", "jne"},
+                {"jg", "jle"},
+                {"jge", "jl"},
+            },
+        };
 
         return paired_mnemonic(pairs, mnemonic);
     }
@@ -470,7 +474,8 @@ class assembler_x86_64 final : public assembler {
         -> std::string {
 
         if (const std::string_view* const name{
-                std::get_if<std::string_view>(&value)}) {
+                std::get_if<std::string_view>(&value),
+            }) {
             return std::string{*name};
         }
 
@@ -511,7 +516,8 @@ class assembler_x86_64 final : public assembler {
 
         // indexed by 'condition'
         constexpr std::array<std::string_view, 10> suffixes{
-            "e", "ne", "l", "le", "g", "ge", "a", "b", "s", "nz"};
+            "e", "ne", "l", "le", "g", "ge", "a", "b", "s", "nz",
+        };
 
         return suffixes.at(std::to_underlying(cc));
     }
@@ -548,41 +554,43 @@ class assembler_x86_64 final : public assembler {
     // initializers are usable only once the class is complete
     [[nodiscard]] static auto info(const op code) -> const op_info& {
         // indexed by 'op'
-        static constexpr std::array<op_info, op_count> infos{{
-            {.mnemonic{"mov"}, .operand_count{2}},
-            {.mnemonic{"movsx"}, .operand_count{2}},
-            {.mnemonic{"lea"}, .operand_count{2}},
-            {.mnemonic{"add"}, .operand_count{2}},
-            {.mnemonic{"sub"}, .operand_count{2}},
-            {.mnemonic{"and"}, .operand_count{2}},
-            {.mnemonic{"or"}, .operand_count{2}},
-            {.mnemonic{"xor"}, .operand_count{2}},
-            {.mnemonic{"cmp"}, .operand_count{2}},
-            {.mnemonic{"test"}, .operand_count{2}},
-            {.mnemonic{"imul"}, .operand_count{2}},
-            {.mnemonic{"sal"}, .operand_count{2}},
-            {.mnemonic{"sar"}, .operand_count{2}},
-            {.mnemonic{"shl"}, .operand_count{2}},
-            {.mnemonic{"inc"}, .operand_count{1}},
-            {.mnemonic{"dec"}, .operand_count{1}},
-            {.mnemonic{"neg"}, .operand_count{1}},
-            {.mnemonic{"not"}, .operand_count{1}},
-            {.mnemonic{"idiv"}, .operand_count{1}},
-            {.mnemonic{"div"}, .operand_count{1}},
-            {.mnemonic{"push"}, .operand_count{1}},
-            {.mnemonic{"pop"}, .operand_count{1}},
-            {.mnemonic{"cqo"}, .operand_count{}},
-            {.mnemonic{"syscall"}, .operand_count{}},
-            {.mnemonic{"ret"}, .operand_count{}},
-            {.mnemonic{"rep movsb"}, .operand_count{}},
-            {.mnemonic{"rep stosb"}, .operand_count{}},
-            {.mnemonic{"repe cmpsb"}, .operand_count{}},
-            {.mnemonic{"repe cmpsq"}, .operand_count{}},
-            {.mnemonic{"cmpsb"}, .operand_count{}},
-            {.mnemonic{"cmpsw"}, .operand_count{}},
-            {.mnemonic{"cmpsd"}, .operand_count{}},
-            {.mnemonic{"cmpsq"}, .operand_count{}},
-        }};
+        static constexpr std::array<op_info, op_count> infos{
+            {
+                {.mnemonic{"mov"}, .operand_count{2}},
+                {.mnemonic{"movsx"}, .operand_count{2}},
+                {.mnemonic{"lea"}, .operand_count{2}},
+                {.mnemonic{"add"}, .operand_count{2}},
+                {.mnemonic{"sub"}, .operand_count{2}},
+                {.mnemonic{"and"}, .operand_count{2}},
+                {.mnemonic{"or"}, .operand_count{2}},
+                {.mnemonic{"xor"}, .operand_count{2}},
+                {.mnemonic{"cmp"}, .operand_count{2}},
+                {.mnemonic{"test"}, .operand_count{2}},
+                {.mnemonic{"imul"}, .operand_count{2}},
+                {.mnemonic{"sal"}, .operand_count{2}},
+                {.mnemonic{"sar"}, .operand_count{2}},
+                {.mnemonic{"shl"}, .operand_count{2}},
+                {.mnemonic{"inc"}, .operand_count{1}},
+                {.mnemonic{"dec"}, .operand_count{1}},
+                {.mnemonic{"neg"}, .operand_count{1}},
+                {.mnemonic{"not"}, .operand_count{1}},
+                {.mnemonic{"idiv"}, .operand_count{1}},
+                {.mnemonic{"div"}, .operand_count{1}},
+                {.mnemonic{"push"}, .operand_count{1}},
+                {.mnemonic{"pop"}, .operand_count{1}},
+                {.mnemonic{"cqo"}, .operand_count{}},
+                {.mnemonic{"syscall"}, .operand_count{}},
+                {.mnemonic{"ret"}, .operand_count{}},
+                {.mnemonic{"rep movsb"}, .operand_count{}},
+                {.mnemonic{"rep stosb"}, .operand_count{}},
+                {.mnemonic{"repe cmpsb"}, .operand_count{}},
+                {.mnemonic{"repe cmpsq"}, .operand_count{}},
+                {.mnemonic{"cmpsb"}, .operand_count{}},
+                {.mnemonic{"cmpsw"}, .operand_count{}},
+                {.mnemonic{"cmpsd"}, .operand_count{}},
+                {.mnemonic{"cmpsq"}, .operand_count{}},
+            },
+        };
 
         return infos.at(std::to_underlying(code));
     }

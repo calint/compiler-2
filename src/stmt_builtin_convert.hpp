@@ -43,7 +43,8 @@ class stmt_builtin_convert final : public expression {
         }
 
         const std::optional<int64_t> value{
-            toc::parse_constant(tk, arg_.identifier())};
+            toc::parse_constant(tk, arg_.identifier()),
+        };
 
         if (value) {
             folded_ = std::format("{}", narrow(*value));
@@ -183,7 +184,8 @@ class stmt_builtin_convert final : public expression {
         machine& x{tc.machine()};
 
         const operand wide{
-            x.alloc_scratch_register(tok(), indent, arg_.get_type())};
+            x.alloc_scratch_register(tok(), indent, arg_.get_type()),
+        };
 
         arg_.compile(tc, indent + 1, toc::make_ident_info_from_register(wide));
 
@@ -212,8 +214,10 @@ class stmt_builtin_convert final : public expression {
 
     // applies the unary ops at the argument's width before narrowing
     [[nodiscard]] auto narrow(const int64_t value) const -> int64_t {
-        const int64_t result{expression::get_unary_ops().evaluate_constant(
-            arg_.get_unary_ops().evaluate_constant(value))};
+        const int64_t result{
+            expression::get_unary_ops().evaluate_constant(
+                arg_.get_unary_ops().evaluate_constant(value)),
+        };
 
         switch (get_type().size_bytes()) {
         case sizeof(int8_t):

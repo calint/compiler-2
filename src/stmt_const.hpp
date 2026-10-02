@@ -54,7 +54,8 @@ class stmt_const final : public statement {
         num_str += literal_tk_.text();
 
         const std::optional<int64_t> num{
-            toc::parse_constant(literal_tk_, num_str)};
+            toc::parse_constant(literal_tk_, num_str),
+        };
 
         if (not num.has_value()) {
             throw compiler_exception{

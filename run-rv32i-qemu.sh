@@ -3,8 +3,6 @@
 # image is loaded at 0x80000000 and the uart is the terminal
 # usage: run-rv32i-qemu.sh [prog-rv32i-qemu.bin]
 # qemu exits with the program's exit code, ctrl-d ends the input
-# tools:
-#   qemu-system-riscv32: 11.1.1
 set -eu
 cd "$(dirname "$0")"
 

@@ -197,10 +197,12 @@ class assembler {
         assert(captures_.empty());
 
         const std::unordered_map<std::string_view, size_t> labels{
-            label_lines()};
+            label_lines(),
+        };
 
         const std::unordered_set<std::string_view> named{
-            labels_named_outside_jumps(labels)};
+            labels_named_outside_jumps(labels),
+        };
 
         bool changed{true};
         while (changed) {
@@ -208,7 +210,8 @@ class assembler {
 
             // removed jumps no longer reference their targets
             const std::unordered_set<std::string_view> referenced{
-                referenced_labels(labels, named)};
+                referenced_labels(labels, named),
+            };
 
             for (size_t index{}; index < lines_.size(); ++index) {
                 changed = optimize_jump(index, labels, referenced) or changed;
@@ -249,12 +252,14 @@ class assembler {
         current_lines().push_back({
             .text{std::move(text)},
             .label{},
-            .jump{std::make_unique<jump_info>(jump_info{
-                .mnemonic{std::string{mnemonic}},
-                .operands{std::string{operands}},
-                .target{std::string{target}},
-                .scratch{std::string{scratch}},
-            })},
+            .jump{
+                std::make_unique<jump_info>(jump_info{
+                    .mnemonic{std::string{mnemonic}},
+                    .operands{std::string{operands}},
+                    .target{std::string{target}},
+                    .scratch{std::string{scratch}},
+                }),
+            },
             .code_size{code_size},
             .entry{},
             .removed{},
@@ -487,7 +492,8 @@ class assembler {
     [[nodiscard]] auto invert(line& l, std::string target) const -> bool {
         jump_info& jump{*l.jump};
         const std::optional<std::string_view> inverted{
-            inverse_branch_mnemonic(jump.mnemonic)};
+            inverse_branch_mnemonic(jump.mnemonic),
+        };
 
         if (not inverted) {
             return false;
@@ -562,7 +568,8 @@ class assembler {
         }
 
         const std::optional<size_t> jump_index{
-            following_unconditional_jump(index, referenced)};
+            following_unconditional_jump(index, referenced),
+        };
 
         if (not jump_index) {
             return false;
@@ -579,7 +586,8 @@ class assembler {
         }
 
         const std::optional<size_t> jump_target{
-            destination(labels, *jump.jump)};
+            destination(labels, *jump.jump),
+        };
 
         if (not jump_target) {
             return false;

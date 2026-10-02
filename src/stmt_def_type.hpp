@@ -60,7 +60,8 @@ class stmt_def_type final : public statement {
             const type& tp{
                 fld.type_str().empty()
                     ? tc.get_type_default()
-                    : tc.get_type_or_throw(fld.type_token(), fld.type_str())};
+                    : tc.get_type_or_throw(fld.type_token(), fld.type_str()),
+            };
 
             type_.add_field(fld.name(), tp, fld.is_array(), fld.array_count());
         }

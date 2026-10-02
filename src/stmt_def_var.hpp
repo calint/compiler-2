@@ -90,7 +90,8 @@ class stmt_def_var final : public statement {
         tc.add_var(name_tk_, indent, make_var_info(), false);
 
         const ident_info& var_dst_info{
-            tc.make_ident_info(name_tk_, name_tk_.text())};
+            tc.make_ident_info(name_tk_, name_tk_.text()),
+        };
 
         assign_var_.compile(tc, indent, var_dst_info);
     }

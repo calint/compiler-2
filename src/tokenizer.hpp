@@ -223,7 +223,8 @@ class tokenizer final {
     // string token text excludes the quotes
     [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {
         const std::string_view src{
-            src_.substr(t.start_index(), t.end_index() - t.start_index())};
+            src_.substr(t.start_index(), t.end_index() - t.start_index()),
+        };
 
         if (not t.is_string()) {
             return src == t.text();

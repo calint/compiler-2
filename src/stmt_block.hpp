@@ -137,12 +137,14 @@ class stmt_block final : public statement {
 
         const field_coverage entry{flow.assigned};
         std::optional<field_coverage> outer_breaks{
-            std::exchange(flow.at_breaks, std::nullopt)};
+            std::exchange(flow.at_breaks, std::nullopt),
+        };
 
         trace_assignment(flow);
 
         std::optional<field_coverage> breaks{
-            std::exchange(flow.at_breaks, std::move(outer_breaks))};
+            std::exchange(flow.at_breaks, std::move(outer_breaks)),
+        };
 
         flow.assigned = entry;
         flow.is_reachable = true;

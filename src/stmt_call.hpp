@@ -54,8 +54,10 @@ class stmt_call : public expression {
     stmt_call(toc& tc, unary_ops uops, stmt_identifier receiver, tokenizer& tz)
         : expression{receiver.method_name_token(), std::move(uops)},
           method_dot_tk_{receiver.method_dot_token()},
-          func_name_{std::format("{}.{}", receiver.get_type().name(),
-                                 receiver.method_name_token().text())},
+          func_name_{
+              std::format("{}.{}", receiver.get_type().name(),
+                          receiver.method_name_token().text()),
+          },
           open_paren_tk_{tz.is_next_char_token('(')} {
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
@@ -101,8 +103,9 @@ class stmt_call : public expression {
         : expression{type_tk, std::move(uops)},
           constructor_dot_tk_{tz.is_next_char_token('.')},
           constructor_name_tk_{tz.next_token()},
-          func_name_{std::format("{}.{}", type_tk.text(),
-                                 constructor_name_tk_.text())} {
+          func_name_{
+              std::format("{}.{}", type_tk.text(), constructor_name_tk_.text()),
+          } {
 
         assert(not constructor_dot_tk_.is_empty());
 
@@ -118,7 +121,8 @@ class stmt_call : public expression {
         }
 
         const stmt_def_func& func{
-            tc.get_func_or_throw(constructor_name_tk_, func_name_)};
+            tc.get_func_or_throw(constructor_name_tk_, func_name_),
+        };
 
         if (not func.is_constructor()) {
             throw compiler_exception{
@@ -290,7 +294,8 @@ class stmt_call : public expression {
         const std::string message{
             std::format("result type mismatch: function returns '{}', "
                         "destination is '{}'",
-                        func.get_type().name(), dst_info.type_ref().name())};
+                        func.get_type().name(), dst_info.type_ref().name()),
+        };
 
         // a non-inline result needs a memory destination, not the register
         // the conversion computes into
@@ -359,9 +364,11 @@ class stmt_call : public expression {
                                                          allocated_registers));
         }
 
-        const bool has_indexed_argument{std::ranges::any_of(
-            aliases_to_add | std::views::drop(first_argument_alias),
-            is_indexed_reference)};
+        const bool has_indexed_argument{
+            std::ranges::any_of(aliases_to_add |
+                                    std::views::drop(first_argument_alias),
+                                is_indexed_reference),
+        };
 
         if (not has_indexed_argument) {
             compile_inline_body(tc, indent, func, aliases_to_add,
@@ -419,8 +426,9 @@ class stmt_call : public expression {
         // the registers stay allocated until the callee frame is populated
         std::vector<operand> address_registers;
 
-        const std::vector<operand> addresses{frame_slot_addresses(
-            tc, indent, dst_info, func, address_registers)};
+        const std::vector<operand> addresses{
+            frame_slot_addresses(tc, indent, dst_info, func, address_registers),
+        };
 
         // start the callee frame after the caller's storage, not on rsp
         // example: caller uses 24 bytes; callee returns a value and takes one
@@ -698,10 +706,12 @@ class stmt_call : public expression {
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string new_call_path{
             call_path.empty() ? src_loc
-                              : std::format("{}.{}", src_loc, call_path)};
+                              : std::format("{}.{}", src_loc, call_path),
+        };
 
         const std::string call_label{
-            std::format("{}.{}", func.body_label(), new_call_path)};
+            std::format("{}.{}", func.body_label(), new_call_path),
+        };
 
         const std::string ret_jmp_label{std::format("{}.end", call_label)};
 
@@ -736,7 +746,8 @@ class stmt_call : public expression {
 
             const func_return_info& return_info{*func.returns()};
             const ident_info& ret_info{
-                tc.make_ident_info(tok(), return_info.ident_tk.text())};
+                tc.make_ident_info(tok(), return_info.ident_tk.text()),
+            };
 
             get_unary_ops().compile(tc, indent, ret_info.operand);
         }
@@ -764,7 +775,8 @@ class stmt_call : public expression {
             }
 
             const operand address{
-                x.alloc_scratch_register(tok(), indent, tc.get_type_address())};
+                x.alloc_scratch_register(tok(), indent, tc.get_type_address()),
+            };
 
             address_registers.push_back(address);
 
@@ -798,7 +810,8 @@ class stmt_call : public expression {
 
         const bool has_unary_ops{not get_unary_ops().is_empty()};
         const bool has_indexed_result{
-            not dst_info.operand.index_register().empty()};
+            not dst_info.operand.index_register().empty(),
+        };
 
         // without base + index addressing each result access adds base and
         // index again, computing the address once can be shorter
@@ -828,8 +841,10 @@ class stmt_call : public expression {
             tok(), indent,
             [&] -> void { compile_inline(tc, indent, dst_info, func); },
             [&] -> void {
-                const operand reg{x.alloc_scratch_register(
-                    tok(), indent, dst_info.type_ref())};
+                const operand reg{
+                    x.alloc_scratch_register(tok(), indent,
+                                             dst_info.type_ref()),
+                };
 
                 compile_inline(tc, indent,
                                toc::make_ident_info_from_register(reg), func);
@@ -849,7 +864,8 @@ class stmt_call : public expression {
         machine& x{tc.machine()};
 
         const operand address{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_address())};
+            x.alloc_scratch_register(tok(), indent, tc.get_type_address()),
+        };
 
         comment_result_address(tc, indent, dst_info);
 
@@ -1028,7 +1044,8 @@ class stmt_call : public expression {
         machine& x{tc.machine()};
 
         const operand pointer{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_address())};
+            x.alloc_scratch_register(tok(), indent, tc.get_type_address()),
+        };
 
         address_registers.push_back(pointer);
 
@@ -1133,8 +1150,9 @@ class stmt_call : public expression {
                         std::vector<operand>& allocated_registers)
         -> alias_info {
 
-        const bool is_reference{not arg.is_expression() and
-                                (arg.is_indexed() or tc.has_lea(arg))};
+        const bool is_reference{
+            not arg.is_expression() and (arg.is_indexed() or tc.has_lea(arg)),
+        };
 
         if (is_reference and not arg.get_unary_ops().is_empty()) {
             throw compiler_exception{
@@ -1179,7 +1197,8 @@ class stmt_call : public expression {
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
+            x.alloc_scratch_register(arg.tok(), indent, param.get_type()),
+        };
 
         allocated_registers.push_back(reg);
         x.copy_value(param.tok(), indent, reg, arg_info.operand);
@@ -1204,7 +1223,8 @@ class stmt_call : public expression {
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
+            x.alloc_scratch_register(arg.tok(), indent, param.get_type()),
+        };
 
         allocated_registers.push_back(reg);
         arg.compile(tc, indent, toc::make_ident_info_from_register(reg));
@@ -1225,8 +1245,10 @@ class stmt_call : public expression {
 
         std::vector<operand> regs_lea;
 
-        const operand lea{arg.compile_lea(tc, indent, arg.tok(), regs_lea, {},
-                                          arg_info.lea_path, {})};
+        const operand lea{
+            arg.compile_lea(tc, indent, arg.tok(), regs_lea, {},
+                            arg_info.lea_path, {}),
+        };
 
         // the address registers stay allocated until the inlined body is
         // compiled
@@ -1247,9 +1269,10 @@ class stmt_call : public expression {
                                                 const func_return_info& ret)
         -> alias_info {
 
-        operand dst_lea{dst_info.use_operand or dst_info.has_lea()
-                            ? dst_info.operand
-                            : operand{}};
+        operand dst_lea{
+            dst_info.use_operand or dst_info.has_lea() ? dst_info.operand
+                                                       : operand{},
+        };
 
         // a destination such as 'arr[1]' is not an array
         return {
@@ -1257,8 +1280,9 @@ class stmt_call : public expression {
             .to{dst_info.id},
             .lea{std::move(dst_lea)},
             .type_ptr{ret.type_ptr},
-            .register_operand{dst_info.is_register() ? dst_info.operand
-                                                     : operand{}},
+            .register_operand{
+                dst_info.is_register() ? dst_info.operand : operand{},
+            },
             .is_element{not dst_info.is_array},
         };
     }

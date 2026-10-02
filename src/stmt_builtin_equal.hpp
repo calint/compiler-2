@@ -157,13 +157,15 @@ class stmt_builtin_equal final : public expression {
 
         const operand lhs_address{
             lhs_.compile_lea(tc, indent, lhs_.first_token(),
-                             allocated_registers, {}, lhs_info.lea_path, {})};
+                             allocated_registers, {}, lhs_info.lea_path, {}),
+        };
 
         x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
 
         const operand rhs_address{
             rhs_.compile_lea(tc, indent, rhs_.first_token(),
-                             allocated_registers, {}, rhs_info.lea_path, {})};
+                             allocated_registers, {}, rhs_info.lea_path, {}),
+        };
 
         x.compare_memory(tok(), indent, lhs_address, rhs_address, size_bytes,
                          lhs_info.type_ref().alignment(), dst, inverted);

@@ -112,7 +112,8 @@ class stmt_identifier : public statement {
         std::vector<operand> allocated_registers;
 
         const operand op{
-            tc.get_lea_operand(indent, *this, src_info, allocated_registers)};
+            tc.get_lea_operand(indent, *this, src_info, allocated_registers),
+        };
 
         x.copy_value(tok(), indent, dst_info.operand, op);
 
@@ -168,7 +169,8 @@ class stmt_identifier : public statement {
 
         // view the last n elements of lea_path
         const std::span<const operand> known_addresses{
-            lea_path.last(elems_.size())};
+            lea_path.last(elems_.size()),
+        };
 
         // start at the deepest known address, or the root if none exists
         const size_t start_index{find_start_element(known_addresses)};
@@ -179,10 +181,11 @@ class stmt_identifier : public statement {
         // overwritten, earlier entries are the caller's
         const size_t owned_from{allocated_registers.size()};
 
-        operand address{start_address(tc, indent, src_loc_tk,
-                                      allocated_registers,
-                                      known_addresses[start_index],
-                                      tc.make_ident_info(src_loc_tk, path))};
+        operand address{
+            start_address(tc, indent, src_loc_tk, allocated_registers,
+                          known_addresses[start_index],
+                          tc.make_ident_info(src_loc_tk, path)),
+        };
 
         operand index_register;
 
@@ -200,8 +203,10 @@ class stmt_identifier : public statement {
                 path.push_back('.');
                 path += cur_elem.name_tk.text();
 
-                const size_t offset{parent_type->field_offset(
-                    cur_elem.name_tk, cur_elem.name_tk.text())};
+                const size_t offset{
+                    parent_type->field_offset(cur_elem.name_tk,
+                                              cur_elem.name_tk.text()),
+                };
 
                 address.increment_offset(static_cast<int64_t>(offset));
             }
@@ -284,9 +289,10 @@ class stmt_identifier : public statement {
 
         std::vector<operand> allocated_registers;
 
-        const operand address{compile_lea(tc, indent, first_token(),
-                                          allocated_registers, reg_count,
-                                          lea_path, address_register)};
+        const operand address{
+            compile_lea(tc, indent, first_token(), allocated_registers,
+                        reg_count, lea_path, address_register),
+        };
 
         use(address);
 
@@ -363,7 +369,8 @@ class stmt_identifier : public statement {
                               const type& dst_type) const -> void {
 
         const int64_t value{
-            get_unary_ops().evaluate_constant(info.const_value)};
+            get_unary_ops().evaluate_constant(info.const_value),
+        };
 
         if (fits_size_bytes(value, dst_type.size_bytes())) {
             return;
@@ -400,7 +407,8 @@ class stmt_identifier : public statement {
         }
 
         const ident_info cur_ident_info{
-            tc.make_ident_info(tk, path_as_string_)};
+            tc.make_ident_info(tk, path_as_string_),
+        };
 
         if (tz.peek_char_after_whitespace() == '[' and
             not cur_ident_info.is_array) {
@@ -473,9 +481,12 @@ class stmt_identifier : public statement {
         return {
             .offset{
                 access_range_.offset +
-                parent_type.field_offset(elem.name_tk, elem.name_tk.text())},
-            .size_bytes{parent_type.field_extent_bytes(elem.name_tk,
-                                                       elem.name_tk.text())},
+                    parent_type.field_offset(elem.name_tk, elem.name_tk.text()),
+            },
+            .size_bytes{
+                parent_type.field_extent_bytes(elem.name_tk,
+                                               elem.name_tk.text()),
+            },
         };
     }
 
@@ -512,7 +523,8 @@ class stmt_identifier : public statement {
                            const ident_info& array_info) -> void {
 
         const std::optional<size_t> index{
-            in_range_constant_index(tc, index_expr, array_info)};
+            in_range_constant_index(tc, index_expr, array_info),
+        };
 
         if (not index) {
             is_exact_access_ = false;
@@ -528,9 +540,10 @@ class stmt_identifier : public statement {
 
         access_range_ = {
             .offset{access_range_.offset + element_offset},
-            .size_bytes{is_last_element
-                            ? access_range_.size_bytes - element_offset
-                            : element_size_bytes},
+            .size_bytes{
+                is_last_element ? access_range_.size_bytes - element_offset
+                                : element_size_bytes,
+            },
         };
     }
 
@@ -640,9 +653,11 @@ class stmt_identifier : public statement {
             allocated_registers.push_back(index_register);
         }
 
-        const operand checked_index{compile_checked_index(
-            tc, indent, *cur_elem.array_index_expr, index_register,
-            cur_info.array_len, reg_count)};
+        const operand checked_index{
+            compile_checked_index(tc, indent, *cur_elem.array_index_expr,
+                                  index_register, cur_info.array_len,
+                                  reg_count),
+        };
 
         const size_t type_size{cur_info.type_ref().size_bytes()};
 
@@ -668,7 +683,8 @@ class stmt_identifier : public statement {
 
         const bool is_past_end{
             allow_end ? std::cmp_greater(index, array_info.array_len)
-                      : std::cmp_greater_equal(index, array_info.array_len)};
+                      : std::cmp_greater_equal(index, array_info.array_len),
+        };
 
         if (index >= 0 and not is_past_end) {
             return;
@@ -737,7 +753,8 @@ class stmt_identifier : public statement {
         const operand& address_register, operand& index_register) -> operand {
 
         const std::optional<int64_t> constant_index{
-            cur_elem.array_index_expr->constant_value(tc)};
+            cur_elem.array_index_expr->constant_value(tc),
+        };
 
         if (constant_index) {
             assert_index_in_bounds(cur_elem, cur_info, *constant_index,
@@ -796,7 +813,8 @@ class stmt_identifier : public statement {
 
         operand target{
             fold_register(std::span{allocated_registers}.subspan(owned_from),
-                          address, address_register, index_register)};
+                          address, address_register, index_register),
+        };
 
         if (target.is_empty()) {
             target = x.alloc_scratch_register(src_loc_tk, indent,
@@ -872,8 +890,9 @@ class stmt_identifier : public statement {
 
         machine& x{tc.machine()};
 
-        const operand pointer_register{x.alloc_scratch_register(
-            src_loc_tk, indent, tc.get_type_address())};
+        const operand pointer_register{
+            x.alloc_scratch_register(src_loc_tk, indent, tc.get_type_address()),
+        };
 
         allocated_registers.push_back(pointer_register);
 

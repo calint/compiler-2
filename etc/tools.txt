@@ -1,0 +1,19 @@
+            clang++: 23.1.1
+         clang-tidy: 23.1.1
+           cppcheck: 2.22.0
+                g++: 16.2.1
+            genhtml: 2.5
+                 ld: 2.47
+             ld.lld: 23.1.1
+           llvm-cov: 23.1.1
+            llvm-mc: 23.1.1
+       llvm-objcopy: 23.1.1
+      llvm-profdata: 23.1.1
+    llvm-symbolizer: 23.1.1
+               nasm: 3.02
+            python3: 3.14.7
+       qemu-riscv32: 11.1.1
+qemu-system-riscv32: 11.1.1
+    riscv64-elf-g++: 16.2.0
+riscv64-elf-objcopy: 2.47
+riscv64-elf-objdump: 2.47

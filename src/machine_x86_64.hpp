@@ -61,104 +61,106 @@ class machine_x86_64 final : public machine {
         std::string_view byte;
     };
 
-    static constexpr std::array<register_names, 16> register_names_{{
+    static constexpr std::array<register_names, 16> register_names_{
         {
-            .qword{"rax"},
-            .dword{"eax"},
-            .word{"ax"},
-            .byte{"al"},
+            {
+                .qword{"rax"},
+                .dword{"eax"},
+                .word{"ax"},
+                .byte{"al"},
+            },
+            {
+                .qword{"rbx"},
+                .dword{"ebx"},
+                .word{"bx"},
+                .byte{"bl"},
+            },
+            {
+                .qword{"rcx"},
+                .dword{"ecx"},
+                .word{"cx"},
+                .byte{"cl"},
+            },
+            {
+                .qword{"rdx"},
+                .dword{"edx"},
+                .word{"dx"},
+                .byte{"dl"},
+            },
+            {
+                .qword{"rbp"},
+                .dword{"ebp"},
+                .word{"bp"},
+                .byte{"bpl"},
+            },
+            {
+                .qword{"rsi"},
+                .dword{"esi"},
+                .word{"si"},
+                .byte{"sil"},
+            },
+            {
+                .qword{"rdi"},
+                .dword{"edi"},
+                .word{"di"},
+                .byte{"dil"},
+            },
+            {
+                .qword{"rsp"},
+                .dword{"esp"},
+                .word{"sp"},
+                .byte{"spl"},
+            },
+            {
+                .qword{"r8"},
+                .dword{"r8d"},
+                .word{"r8w"},
+                .byte{"r8b"},
+            },
+            {
+                .qword{"r9"},
+                .dword{"r9d"},
+                .word{"r9w"},
+                .byte{"r9b"},
+            },
+            {
+                .qword{"r10"},
+                .dword{"r10d"},
+                .word{"r10w"},
+                .byte{"r10b"},
+            },
+            {
+                .qword{"r11"},
+                .dword{"r11d"},
+                .word{"r11w"},
+                .byte{"r11b"},
+            },
+            {
+                .qword{"r12"},
+                .dword{"r12d"},
+                .word{"r12w"},
+                .byte{"r12b"},
+            },
+            {
+                .qword{"r13"},
+                .dword{"r13d"},
+                .word{"r13w"},
+                .byte{"r13b"},
+            },
+            {
+                .qword{"r14"},
+                .dword{"r14d"},
+                .word{"r14w"},
+                .byte{"r14b"},
+            },
+            {
+                .qword{"r15"},
+                .dword{"r15d"},
+                .word{"r15w"},
+                .byte{"r15b"},
+            },
         },
-        {
-            .qword{"rbx"},
-            .dword{"ebx"},
-            .word{"bx"},
-            .byte{"bl"},
-        },
-        {
-            .qword{"rcx"},
-            .dword{"ecx"},
-            .word{"cx"},
-            .byte{"cl"},
-        },
-        {
-            .qword{"rdx"},
-            .dword{"edx"},
-            .word{"dx"},
-            .byte{"dl"},
-        },
-        {
-            .qword{"rbp"},
-            .dword{"ebp"},
-            .word{"bp"},
-            .byte{"bpl"},
-        },
-        {
-            .qword{"rsi"},
-            .dword{"esi"},
-            .word{"si"},
-            .byte{"sil"},
-        },
-        {
-            .qword{"rdi"},
-            .dword{"edi"},
-            .word{"di"},
-            .byte{"dil"},
-        },
-        {
-            .qword{"rsp"},
-            .dword{"esp"},
-            .word{"sp"},
-            .byte{"spl"},
-        },
-        {
-            .qword{"r8"},
-            .dword{"r8d"},
-            .word{"r8w"},
-            .byte{"r8b"},
-        },
-        {
-            .qword{"r9"},
-            .dword{"r9d"},
-            .word{"r9w"},
-            .byte{"r9b"},
-        },
-        {
-            .qword{"r10"},
-            .dword{"r10d"},
-            .word{"r10w"},
-            .byte{"r10b"},
-        },
-        {
-            .qword{"r11"},
-            .dword{"r11d"},
-            .word{"r11w"},
-            .byte{"r11b"},
-        },
-        {
-            .qword{"r12"},
-            .dword{"r12d"},
-            .word{"r12w"},
-            .byte{"r12b"},
-        },
-        {
-            .qword{"r13"},
-            .dword{"r13d"},
-            .word{"r13w"},
-            .byte{"r13b"},
-        },
-        {
-            .qword{"r14"},
-            .dword{"r14d"},
-            .word{"r14w"},
-            .byte{"r14b"},
-        },
-        {
-            .qword{"r15"},
-            .dword{"r15d"},
-            .word{"r15w"},
-            .byte{"r15b"},
-        },
-    }};
+    };
 
     // named and scratch allocations share one stack so frees can be checked
     // to happen in reverse order of allocation
@@ -171,7 +173,8 @@ class machine_x86_64 final : public machine {
 
     static constexpr std::array<std::string_view, 14> scratch_registers_{
         "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
-        "r11", "rbx", "rsi", "rdi", "rcx", "rdx", "rax"};
+        "r11", "rbx", "rsi", "rdi", "rcx", "rdx", "rax",
+    };
     // note: in order of likelihood they are not used by name
     //       'r11' and 'rcx' are saved around syscalls if they are allocated
     //       because 'syscall' clobbers them
@@ -445,10 +448,12 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "frame capacity check begin");
 
         const operand start{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
 
         const operand remaining{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
 
         lea(indent, start, frame_address, true);
         assembler_.instruction(indent, op::lea, to_argument(remaining),
@@ -578,7 +583,8 @@ class machine_x86_64 final : public machine {
             bytes.size(), size_qword,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 const int64_t value{
-                    little_endian_value(bytes.substr(offset, part_size_bytes))};
+                    little_endian_value(bytes.substr(offset, part_size_bytes)),
+                };
 
                 // a qword store takes only a sign-extended 32-bit immediate
                 if (part_size_bytes == size_qword and
@@ -706,12 +712,14 @@ class machine_x86_64 final : public machine {
     auto emit_data(const size_t element_size_bytes,
                    const data_initializer& value) -> void override {
 
-        const std::array<assembler_x86_64::data_value, 1> values{{
+        const std::array<assembler_x86_64::data_value, 1> values{
             {
-                .value{value.value},
-                .unary_operations{value.uops},
+                {
+                    .value{value.value},
+                    .unary_operations{value.uops},
+                },
             },
-        }};
+        };
 
         assembler_.data(element_size_bytes, values);
     }
@@ -756,16 +764,20 @@ class machine_x86_64 final : public machine {
         // is otherwise written as emitted
         assembler_.emit_buffered([&] -> void {
             std::vector<assembler::line> without_scratch{
-                assembler_.capture(emit_without_scratch)};
+                assembler_.capture(emit_without_scratch),
+            };
 
             std::vector<assembler::line> with_scratch{
-                assembler_.capture(emit_with_scratch)};
+                assembler_.capture(emit_with_scratch),
+            };
 
             const size_t without_count{
-                assembler_x86_64::count_instructions(without_scratch)};
+                assembler_x86_64::count_instructions(without_scratch),
+            };
 
             const size_t with_count{
-                assembler_x86_64::count_instructions(with_scratch)};
+                assembler_x86_64::count_instructions(with_scratch),
+            };
 
             comment(src_loc_tk, indent,
                     "instructions without scratch register {}, with {}",
@@ -957,10 +969,12 @@ class machine_x86_64 final : public machine {
 
         if (product.type_ref().size_bytes() == size_byte) {
             const operand left{
-                alloc_scratch_register(src_loc_tk, indent, default_type())};
+                alloc_scratch_register(src_loc_tk, indent, default_type()),
+            };
 
             const operand right{
-                alloc_scratch_register(src_loc_tk, indent, default_type())};
+                alloc_scratch_register(src_loc_tk, indent, default_type()),
+            };
 
             mov(src_loc_tk, indent, left, product);
             mov(src_loc_tk, indent, right, factor);
@@ -984,9 +998,11 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        const operand reg{alloc_scratch_register(
-            src_loc_tk, indent,
-            builtin_type_for_size_bytes(product.type_ref().size_bytes()))};
+        const operand reg{
+            alloc_scratch_register(
+                src_loc_tk, indent,
+                builtin_type_for_size_bytes(product.type_ref().size_bytes())),
+        };
 
         mov(src_loc_tk, indent, reg, product);
         imul(src_loc_tk, indent, reg, factor);
@@ -1005,8 +1021,11 @@ class machine_x86_64 final : public machine {
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers override {
 
-        static constexpr std::array<std::string_view, 3> io_args{"rdi", "rsi",
-                                                                 "rdx"};
+        static constexpr std::array<std::string_view, 3> io_args{
+            "rdi",
+            "rsi",
+            "rdx",
+        };
 
         static constexpr std::array<std::string_view, 1> exit_args{"rdi"};
 
@@ -1349,7 +1368,8 @@ class machine_x86_64 final : public machine {
         }
 
         const operand scaled{
-            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64())};
+            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
+        };
 
         registers.push_back(scaled);
         const std::string_view multiple{scaled.base_register()};
@@ -1464,7 +1484,8 @@ class machine_x86_64 final : public machine {
         }
 
         const operand reg_top_idx{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
 
         mov(src_loc_tk, indent, reg_top_idx, reg_count);
         add(indent, reg_top_idx, reg_to_check);
@@ -1521,7 +1542,8 @@ class machine_x86_64 final : public machine {
         }
 
         const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64())};
+            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
+        };
 
         emit(indent, op::mov, reg, src_op);
         emit(indent, code, dst_op, reg);
@@ -1537,8 +1559,10 @@ class machine_x86_64 final : public machine {
         const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
         const size_t src_size_bytes{src_op.type_ref().size_bytes()};
 
-        const operand reg{alloc_scratch_register(
-            src_loc_tk, indent, builtin_type_for_size_bytes(dst_size_bytes))};
+        const operand reg{
+            alloc_scratch_register(src_loc_tk, indent,
+                                   builtin_type_for_size_bytes(dst_size_bytes)),
+        };
 
         if (dst_size_bytes > src_size_bytes) {
             emit(indent, op::movsx, reg, src_op);
@@ -1652,7 +1676,8 @@ class machine_x86_64 final : public machine {
         }
 
         const operand scratch_reg{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
 
         mov(src_loc_tk, indent, scratch_reg, divisor);
         idiv(indent, scratch_reg);
@@ -1701,8 +1726,10 @@ class machine_x86_64 final : public machine {
 
         // the scratch register must match 'dst' so the op has equal-size
         // operands
-        const operand reg_sx{alloc_scratch_register(
-            src_loc_tk, indent, builtin_type_for_size_bytes(dst_size_bytes))};
+        const operand reg_sx{
+            alloc_scratch_register(src_loc_tk, indent,
+                                   builtin_type_for_size_bytes(dst_size_bytes)),
+        };
 
         emit(indent, op::movsx, reg_sx, src_op);
 
@@ -1773,7 +1800,8 @@ class machine_x86_64 final : public machine {
         }
 
         const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, default_type())};
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
 
         lea(indent, reg, address);
         mov(src_loc_tk, indent, dst, reg);
@@ -1791,7 +1819,8 @@ class machine_x86_64 final : public machine {
         }
 
         const operand address{
-            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64())};
+            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
+        };
         registers.push_back(address);
         const std::string_view sum{address.base_register()};
         assembler_.instruction(indent, op::mov, sum, value.displacement());
@@ -1840,9 +1869,10 @@ class machine_x86_64 final : public machine {
         }
 
         const size_t width_bits{product.type_ref().size_bytes() * 8};
-        const uint64_t mask{width_bits >= 64
-                                ? std::numeric_limits<uint64_t>::max()
-                                : (uint64_t{1} << width_bits) - 1};
+        const uint64_t mask{
+            width_bits >= 64 ? std::numeric_limits<uint64_t>::max()
+                             : (uint64_t{1} << width_bits) - 1,
+        };
         const uint64_t multiplier{*bits & mask};
 
         // 'xor' is the shorter idiom but cannot target memory
@@ -1922,9 +1952,10 @@ class machine_x86_64 final : public machine {
         allocations_.push_back({
             .name{register_names_.at(index).qword},
             .type_ptr{&type_ref},
-            .source_location{src_loc_tk.at_line() == 0
-                                 ? std::string{}
-                                 : source_location_hr(src_loc_tk)},
+            .source_location{
+                src_loc_tk.at_line() == 0 ? std::string{}
+                                          : source_location_hr(src_loc_tk),
+            },
             .named{named},
         });
 
@@ -2053,8 +2084,10 @@ class machine_x86_64 final : public machine {
             return "0:0";
         }
 
-        const auto [line, col]{line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source())};
+        const auto [line, col]{
+            line_and_col_num_for_char_index(src_loc_tk.at_line(),
+                                            src_loc_tk.start_index(), source()),
+        };
 
         return std::format("{}:{}", line, col);
     }
@@ -2107,9 +2140,11 @@ class machine_x86_64 final : public machine {
                                             const std::string_view reg) const
         -> void {
 
-        const auto holder{std::ranges::find(
-            allocations_, sized_register_name(reg, size_qword),
-            &allocation::name)};
+        const auto holder{
+            std::ranges::find(allocations_,
+                              sized_register_name(reg, size_qword),
+                              &allocation::name),
+        };
 
         // an operation protecting its operands blocks it without an allocation
         if (holder == allocations_.end()) {
@@ -2161,9 +2196,11 @@ class machine_x86_64 final : public machine {
 
         std::vector<operand> registers;
         const operand lowered_dst{
-            lower_address(src_loc_tk, indent, dst, registers)};
+            lower_address(src_loc_tk, indent, dst, registers),
+        };
         const operand lowered_src{
-            lower_address(src_loc_tk, indent, src, registers)};
+            lower_address(src_loc_tk, indent, src, registers),
+        };
         emit(lowered_dst, lowered_src);
         free_scratch_registers(src_loc_tk, indent, registers);
         unavailable_registers_ = saved_unavailable;
@@ -2301,23 +2338,29 @@ class machine_x86_64 final : public machine {
             return lhs.is_empty() and rhs.is_empty();
         }
 
-        const bool lhs_index_as_base{lhs.base_register().empty() and
-                                     lhs.scale() <= 1};
+        const bool lhs_index_as_base{
+            lhs.base_register().empty() and lhs.scale() <= 1,
+        };
 
-        const bool rhs_index_as_base{rhs.base_register().empty() and
-                                     rhs.scale() <= 1};
+        const bool rhs_index_as_base{
+            rhs.base_register().empty() and rhs.scale() <= 1,
+        };
 
         const std::string_view lhs_base{
-            lhs_index_as_base ? lhs.index_register() : lhs.base_register()};
+            lhs_index_as_base ? lhs.index_register() : lhs.base_register(),
+        };
 
         const std::string_view rhs_base{
-            rhs_index_as_base ? rhs.index_register() : rhs.base_register()};
+            rhs_index_as_base ? rhs.index_register() : rhs.base_register(),
+        };
 
         const std::string_view lhs_index{
-            lhs_index_as_base ? std::string_view{} : lhs.index_register()};
+            lhs_index_as_base ? std::string_view{} : lhs.index_register(),
+        };
 
         const std::string_view rhs_index{
-            rhs_index_as_base ? std::string_view{} : rhs.index_register()};
+            rhs_index_as_base ? std::string_view{} : rhs.index_register(),
+        };
 
         return lhs.type_ref().size_bytes() == rhs.type_ref().size_bytes() and
                lhs_base == rhs_base and lhs_index == rhs_index and

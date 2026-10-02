@@ -93,7 +93,8 @@ class expr_any;
     }
 
     const unsigned trailing_zeros{
-        static_cast<unsigned>(std::countr_zero(offset))};
+        static_cast<unsigned>(std::countr_zero(offset)),
+    };
 
     return std::min(alignment, size_t{1} << trailing_zeros);
 }
@@ -262,7 +263,7 @@ enum class read_only_cause : uint8_t {
     LET,
     PARAM,
     FOO_ELEMENT,
-    FOO_COUNTER
+    FOO_COUNTER,
 };
 
 struct var_info {

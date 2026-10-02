@@ -172,7 +172,8 @@ template <typename T>
     const std::string_view arg{argument};
 
     if (const std::optional<std::string_view> value{
-            option_value(arg, "--vars=")}) {
+            option_value(arg, "--vars="),
+        }) {
 
         return store_parsed(
             parse_size_bytes(*value, "variable storage size", vars_alignment),
@@ -180,7 +181,8 @@ template <typename T>
     }
 
     if (const std::optional<std::string_view> value{
-            option_value(arg, "--stack=")}) {
+            option_value(arg, "--stack="),
+        }) {
 
         return store_parsed(
             parse_size_bytes(*value, "stack size", stack_alignment),
@@ -188,7 +190,8 @@ template <typename T>
     }
 
     if (const std::optional<std::string_view> value{
-            option_value(arg, "--target=")}) {
+            option_value(arg, "--target="),
+        }) {
 
         opts.target = *value;
         if (opts.target != "x86_64" and opts.target != "rv32i" and
@@ -206,13 +209,15 @@ template <typename T>
     }
 
     if (const std::optional<std::string_view> value{
-            option_value(arg, "--checks=")}) {
+            option_value(arg, "--checks="),
+        }) {
 
         return store_parsed(parse_checks(*value), opts.checks);
     }
 
     if (const std::optional<std::string_view> value{
-            option_value(arg, "--bin=")}) {
+            option_value(arg, "--bin="),
+        }) {
 
         opts.binary_file_name = *value;
         if (opts.binary_file_name.empty()) {
@@ -297,9 +302,10 @@ examples:
     try {
         src = read_file_to_string(opts.src_file_name);
 
-        const assembler::jump_mode jumps{opts.optimize_jumps
-                                             ? assembler::jump_mode::optimized
-                                             : assembler::jump_mode::resolved};
+        const assembler::jump_mode jumps{
+            opts.optimize_jumps ? assembler::jump_mode::optimized
+                                : assembler::jump_mode::resolved,
+        };
 
         // the output from the parse stage is discarded, compile receives the
         // output stream 'build' writes the complete assembly
@@ -308,11 +314,13 @@ examples:
         const std::string binary{
             opts.binary_file_name.empty()
                 ? default_binary_file_name(opts.src_file_name, opts.target)
-                : std::string{opts.binary_file_name}};
+                : std::string{opts.binary_file_name},
+        };
 
         const std::unique_ptr<machine> backend{
             make_backend(opts.target, parser_output, src, jumps,
-                         opts.stack_size_bytes, binary)};
+                         opts.stack_size_bytes, binary),
+        };
 
         program prg{*backend,
                     src,
@@ -497,8 +505,9 @@ auto print_call_frames(
     const std::span<const compiler_exception::call_frame> frames) -> void {
 
     for (const compiler_exception::call_frame& frame : frames) {
-        const auto [line_num, col]{line_and_col_num_for_char_index(
-            frame.line, frame.start_index, src)};
+        const auto [line_num, col]{
+            line_and_col_num_for_char_index(frame.line, frame.start_index, src),
+        };
 
         std::println(stderr, "{}:{}:{}: called from '{}'", src_file_name,
                      line_num, col, frame.text);

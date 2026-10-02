@@ -414,8 +414,10 @@ class machine {
             return;
         }
 
-        const auto [line, column]{line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+        const auto [line, column]{
+            line_and_col_num_for_char_index(src_loc_tk.at_line(),
+                                            src_loc_tk.start_index(), source_),
+        };
 
         target_assembler().comment(indent, line, column, text);
     }
@@ -426,7 +428,8 @@ class machine {
         -> void {
 
         const std::string text{
-            std::format(format, std::forward<args_t>(args)...)};
+            std::format(format, std::forward<args_t>(args)...),
+        };
         comment(src_loc_tk, indent, std::string_view{text});
     }
 
@@ -437,15 +440,17 @@ class machine {
         auto&& range{std::forward<values_t>(values)};
         auto current{std::ranges::begin(range)};
         const auto end{std::ranges::end(range)};
-        auto next{[&](data_initializer& value) -> bool {
-            if (current == end) {
-                return false;
-            }
-            value = *current;
-            ++current;
+        auto next{
+            [&](data_initializer& value) -> bool {
+                if (current == end) {
+                    return false;
+                }
+                value = *current;
+                ++current;
 
-            return true;
-        }};
+                return true;
+            },
+        };
 
         emit_data_array(element_size_bytes,
                         std::function_ref<bool(data_initializer&)>{next});
@@ -598,7 +603,8 @@ class machine {
         const char* const end{std::to_address(number.end())};
         uint64_t bits{};
         const std::from_chars_result parsed{
-            std::from_chars(std::to_address(number.begin()), end, bits)};
+            std::from_chars(std::to_address(number.begin()), end, bits),
+        };
 
         if (parsed.ec != std::errc{} or parsed.ptr != end) {
             return std::nullopt;

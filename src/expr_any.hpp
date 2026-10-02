@@ -380,11 +380,12 @@ class expr_any final : public statement {
         machine& x{tc.machine()};
 
         const std::optional<std::string> bytes{
-            constant_bytes(tc, dst_info.type_ref())};
+            constant_bytes(tc, dst_info.type_ref()),
+        };
 
         if (bytes) {
             x.copy_bytes(open_brace_tk_, indent, *bytes, dst_info.operand,
-                         dst_info.type_ref().alignment(), [&]() -> std::string {
+                         dst_info.type_ref().alignment(), [&] -> std::string {
                              return tc.add_bytes_constant(open_brace_tk_,
                                                           *bytes);
                          });
@@ -410,7 +411,8 @@ class expr_any final : public statement {
         machine& x{tc.machine()};
 
         const std::optional<std::string> bytes{
-            token::decode_string(string_tk_.string_text())};
+            token::decode_string(string_tk_.string_text()),
+        };
 
         if (not bytes) {
             throw compiler_exception{
@@ -434,7 +436,7 @@ class expr_any final : public statement {
         // an empty string has nothing to store
         if (size_bytes != 0) {
             x.copy_bytes(string_tk_, indent, *bytes, dst,
-                         dst_info.type_ref().alignment(), [&]() -> std::string {
+                         dst_info.type_ref().alignment(), [&] -> std::string {
                              return tc.add_string_constant(string_tk_);
                          });
 
@@ -547,8 +549,10 @@ class expr_any final : public statement {
 
         open_bracket_tk_ = tz.is_next_char_token('[');
 
-        const type& literal_type{is_typed ? tc.get_type_or_throw(tk, tk.text())
-                                          : tc.get_type_default()};
+        const type& literal_type{
+            is_typed ? tc.get_type_or_throw(tk, tk.text())
+                     : tc.get_type_default(),
+        };
 
         if (literal_type.name() != tp.name()) {
             throw compiler_exception{is_typed ? tk : open_bracket_tk_,
@@ -622,7 +626,8 @@ class expr_any final : public statement {
         }
 
         const operand reg{
-            x.alloc_scratch_register(src_loc_tk, indent, dst_info.type_ref())};
+            x.alloc_scratch_register(src_loc_tk, indent, dst_info.type_ref()),
+        };
 
         compile_bool_list(tc, indent, src_loc_tk, e, reg);
         x.copy_value(src_loc_tk, indent, dst_info.operand, reg);
@@ -635,11 +640,13 @@ class expr_any final : public statement {
 
         // labels to jump to depending on the evaluation
         const std::string jmp_to_end{
-            std::format("{}.end", tc.create_unique_label(src_loc_tk, "bool"))};
+            std::format("{}.end", tc.create_unique_label(src_loc_tk, "bool")),
+        };
 
         // compile and possibly evaluate constant expression
         const std::optional<bool> const_eval{
-            e.compile(tc, indent, jmp_to_end, jmp_to_end, dst)};
+            e.compile(tc, indent, jmp_to_end, jmp_to_end, dst),
+        };
 
         machine& x{tc.machine()};
 
@@ -657,19 +664,20 @@ class expr_any final : public statement {
                                 const token src_loc_tk, const expr_variant& exp)
         -> void {
 
-        exp.visit(overloaded{[&](const expr_arith& e) -> void {
-                                 // the value boundary is where a wider source
-                                 // loses bits
-                                 e.assert_not_narrowed(tc, dst_info.type_ref());
-                                 e.compile(tc, indent, dst_info);
-                             },
-                             [&](const expr_type& e) -> void {
-                                 e.compile(tc, indent, dst_info);
-                             },
-                             [&](const expr_bool& e) -> void {
-                                 compile_bool(tc, indent, dst_info, src_loc_tk,
-                                              e);
-                             }});
+        exp.visit(overloaded{
+            [&](const expr_arith& e) -> void {
+                // the value boundary is where a wider source
+                // loses bits
+                e.assert_not_narrowed(tc, dst_info.type_ref());
+                e.compile(tc, indent, dst_info);
+            },
+            [&](const expr_type& e) -> void {
+                e.compile(tc, indent, dst_info);
+            },
+            [&](const expr_bool& e) -> void {
+                compile_bool(tc, indent, dst_info, src_loc_tk, e);
+            },
+        });
     }
 
     // 'bool' and record elements are not packed

@@ -30,10 +30,12 @@ class stmt_builtin_exit final : public stmt_call {
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         const machine::builtin_function_registers registers{
-            x.registers_for_builtin_function(machine::builtin_function::exit)};
+            x.registers_for_builtin_function(machine::builtin_function::exit),
+        };
 
         const std::vector<operand> args{
-            compile_builtin_arguments(tc, indent, registers.arguments)};
+            compile_builtin_arguments(tc, indent, registers.arguments),
+        };
 
         x.exit(tok(), indent, args.at(0));
 

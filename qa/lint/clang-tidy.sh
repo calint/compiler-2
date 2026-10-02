@@ -2,8 +2,6 @@
 set -e
 set -o pipefail
 
-# tools:
-#   clang-tidy: 22.1.8
 cd $(dirname "$0")
 
 SRC=../../src/main.cpp
