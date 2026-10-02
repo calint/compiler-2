@@ -37,7 +37,6 @@ project's own file (for compiler-2: `etc/ai/project.md`).
   the suite plainly so the full output is visible.
 - Shell scripts use no absolute paths: `cd` to the script's directory first and
   use paths relative to it.
-- Never use a duplicate or alternate path for the workspace root.
 
 ## code readability (priority over fewer lines)
 
@@ -60,23 +59,14 @@ project's own file (for compiler-2: `etc/ai/project.md`).
   functions with callbacks.
 - Preserve behavior and cleanup when restructuring; do not trade clarity for
   fewer lines.
-- Optimization work: local inefficiencies within one operation first; anything
-  needing context across operations or statements is a separate, later item.
-  Match straightforward hand-written code (no redundant copies, loads or
-  scratch allocations). Leave specialized instruction tricks for later and
-  record them in the todo file. An optimization that saves no instructions and
-  only an extra scratch register briefly is low priority.
 
 ## naming
 
 - One-letter variables in small, tight loops with at most three loop-local
   variables; increasingly descriptive names as scope and complexity grow. Keep
-  established interface vocabulary (such as `src_loc_tk`, `indent`, `src`/`dst`,
-  `tc`) consistent.
-- Use `cur_` rather than `curr_` or `current_`; use `size_bytes` (with role
-  prefixes) for byte sizes and `count` for element counts.
+  the established vocabulary of an interface consistent.
 - Match parameter names across declarations, definitions and overrides; keep
-  paired operations' `src`/`dst` and `lhs`/`rhs` vocabulary consistent.
+  paired operations' vocabulary (`src`/`dst`, `lhs`/`rhs`) consistent.
 
 ## comments
 
@@ -86,11 +76,6 @@ project's own file (for compiler-2: `etc/ai/project.md`).
 - Always give new or modified non-obvious code a brief plain-language rationale
   comment: why it exists (constraints, ordering, preservation), not what it
   does.
-- Surround references to code elements with single quotes, for example
-  `// 'compile_boolean' already stored the result and applied inversion`.
-- Use the lowercase marker `todo:`, not `TODO:`.
-- For larger `note:` comments keep one blank line above and below the block and
-  align wrapped text consistently.
 
 ## editing and tool practices
 
@@ -100,9 +85,10 @@ project's own file (for compiler-2: `etc/ai/project.md`).
   (formatters, mass renames).
 - Parallel replace calls on the same file can land at stale offsets and garble
   it; use one multi-replace call instead.
-- Running `clang-format -i` in the terminal right after editor edits can make
-  the next editor edit land at stale offsets; after formatting, re-read the
-  file before editing and verify the disk content with grep.
+- Running a formatter in place (for example `clang-format -i`) in the terminal
+  right after editor edits can make the next editor edit land at stale offsets;
+  after formatting, re-read the file before editing and verify the disk content
+  with grep.
 - A file just written or edited through the editor may not be visible to the
   terminal right away ("cannot open file", or a script runs its old version);
   rerun the command, and rerun validations started right after an edit when
@@ -113,8 +99,6 @@ project's own file (for compiler-2: `etc/ai/project.md`).
 - In Perl bulk substitutions disambiguate captures next to `{` as `${2}`;
   `$2{ ... }` can be read as a hash lookup and silently drop replacement text.
   Check one transformed example before scaling up.
-- A mechanical sweep that inserts local variables must distinguish switch
-  bodies and braced initializers from ordinary scopes.
 - Run symbol renames before moving or renaming the files they live in.
 - A tool call with a stray character in its JSON (for example a leading `>` in
   a string) fails validation; re-issue it with clean strings.

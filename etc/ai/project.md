@@ -105,8 +105,17 @@ where needed) included from `main.cpp`.
 - Consecutive `assert` statements form a group with a blank line before and
   after (not before at the top of a block, not after before `}`); this wins
   over the tight-return rule.
-- Comments are lowercase with no punctuation at the end, matching the source;
-  code elements in single quotes; `todo:` lowercase.
+- Comments are lowercase with no punctuation at the end, matching the source.
+  Surround references to code elements with single quotes, for example
+  `// 'compile_boolean' already stored the result and applied inversion`. Use
+  the lowercase marker `todo:`, not `TODO:`. For larger `note:` comments keep
+  one blank line above and below the block and align wrapped text consistently.
+- Naming: `cur_` rather than `curr_` or `current_`; `size_bytes` (with role
+  prefixes) for byte sizes and `count` for element counts. Keep the established
+  vocabulary such as `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs` and `tc`.
+- A mechanical sweep that inserts local variables must distinguish switch
+  bodies and braced initializers from ordinary scopes: never initialize before
+  case labels inside a switch; keep visitor-only references inside the lambda.
 - No enum switches (`-Wswitch-default` conflicts with `-Wcovered-switch-
   default`); `std::in_range` rejects `char`, pass ints; a param named like a
   (inherited) member trips `-Wshadow-field`, use an `_in` suffix; a local named
@@ -123,9 +132,12 @@ where needed) included from `main.cpp`.
   `etc/roome-inefficiencies-x86_64.txt` list local inefficiencies found in the
   generated code of `etc/roome/roome.baz` and which were fixed.
 - Backend priorities: local assembly and register use that matches
-  straightforward hand-written code; local fixes within one machine operation
-  first; context across operations goes under the todo items about register
-  allocation spanning operations or constants known at compile time.
+  straightforward hand-written code (no redundant copies, loads or scratch
+  allocations); local fixes within one machine operation first; context across
+  operations goes under the todo items about register allocation spanning
+  operations or constants known at compile time. An optimization that saves no
+  instructions and only an extra scratch register briefly within one operation
+  is low priority.
 - RV32I scratch allocation order: `t0-t6`, `s0-s11`, `tp/gp/ra`, `a1-a7`, then
   `a0` last because syscalls overwrite the result register; skip reserved and
   live registers; keep argument registers late to reduce builtin conflicts.
