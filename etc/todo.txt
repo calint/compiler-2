@@ -111,10 +111,9 @@ medium, easiest first
 [ ] roome.baz (2026-09-29): rv32i: the same high part is built twice within one
     operation: 'self.start = self.end' is 'lui t0, 37; add t0, t0, s0;
     lh t0, -1402(t0); lui t1, 37; add t1, t1, s0; sh t0, -1404(t1)'
-    instead of one base register for both; also comparisons
-    ('cur_entity == entities_len', 'self.start >= inp.len',
-    'i == links_len'), 'token.len' 'sub', 'read'/'write' index plus
-    'a1' address
+    instead of one base register for both (done for copies and for
+    comparisons of two memory operands); left: 'token.len' 'sub', 'read'/
+    'write' index plus 'a1' address
 [ ] roome.baz (2026-09-29): rv32i: the index register is freed after the load,
     so the 'lui' of a large displacement takes a third temporary:
     'add t1, s0, t0; lui t2, 37; add t1, t1, t2; lb t1, -1536(t1)' where t0

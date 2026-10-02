@@ -506,13 +506,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.424.10.955.8.1018.13.1029.5:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.424.10.955.8.1018.13.1029.5.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -616,13 +615,12 @@ main:
                             # [427:12] ? self.end >= self.str.len
                             cmp.427.12.955.8.1018.13.1029.5:
                             # [427:12] allocate scratch register -> t0
+                            # [427:12] allocate scratch register -> t1
+                            # [427:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [427:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.426.5.955.8.1018.13.1029.5.end
                             # [427:12] free scratch register t1
                             # [427:12] free scratch register t0
@@ -855,13 +853,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.500.8.958.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.500.8.958.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -965,13 +962,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.500.8.958.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.500.8.958.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -1050,15 +1046,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.501.11.958.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.501.11.958.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.501.11.958.9.1018.13.1029.5.end:
@@ -1613,13 +1610,12 @@ main:
                             # [520:8] ? found_ix == links_len
                             cmp.520.8.958.9.1018.13.1029.5:
                             # [520:8] allocate scratch register -> t0
+                            # [520:8] allocate scratch register -> t1
+                            # [520:8] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1976(t0)
                             lw t0, 1980(t0)
-                            # [520:8] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1976(t1)
                             bne t0, t1, if.520.5.958.9.1018.13.1029.5.end
                             # [520:8] free scratch register t1
                             # [520:8] free scratch register t0
@@ -3142,15 +3138,16 @@ main:
                             # [557:15] ? to_found_ix != to_links_len
                             # [557:15] ? to_found_ix != to_links_len
                             cmp.557.15.958.9.1018.13.1029.5:
-                            lui t0, 49
-                            add t0, t0, s0
-                            lw t0, -1968(t0)
                             # [557:15] allocate scratch register -> t1
+                            # [557:15] allocate scratch register -> t2
+                            # [557:15] operands share base t1
                             lui t1, 49
                             add t1, t1, s0
-                            lw t1, -1972(t1)
-                            xor t0, t0, t1
+                            lw t2, -1972(t1)
+                            lw t1, -1968(t1)
+                            xor t0, t1, t2
                             sltu t0, zero, t0
+                            # [557:15] free scratch register t2
                             # [557:15] free scratch register t1
                             bool.557.15.958.9.1018.13.1029.5.end:
                             # [44:6] assert(code, ok bool)
@@ -3959,13 +3956,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.593.8.961.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.593.8.961.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -4069,13 +4065,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.593.8.961.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.593.8.961.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -4154,15 +4149,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.595.11.961.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.595.11.961.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.595.11.961.9.1018.13.1029.5.end:
@@ -4739,13 +4735,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.606.8.961.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.606.8.961.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -4849,13 +4844,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.606.8.961.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.606.8.961.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -4934,15 +4928,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.608.11.961.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.608.11.961.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.608.11.961.9.1018.13.1029.5.end:
@@ -5915,13 +5910,12 @@ main:
                                     # [413:12] ? self.start >= self.str.len
                                     cmp.413.12.638.8.964.9.1018.13.1029.5:
                                     # [413:12] allocate scratch register -> t0
+                                    # [413:12] allocate scratch register -> t1
+                                    # [413:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1956(t0)
-                                    # [413:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     blt t0, t1, if.413.9.638.8.964.9.1018.13.1029.5.end
                                     # [413:12] free scratch register t1
                                     # [413:12] free scratch register t0
@@ -6437,13 +6431,12 @@ main:
                                     # [413:12] ? self.start >= self.str.len
                                     cmp.413.12.646.8.967.9.1018.13.1029.5:
                                     # [413:12] allocate scratch register -> t0
+                                    # [413:12] allocate scratch register -> t1
+                                    # [413:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1956(t0)
-                                    # [413:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     blt t0, t1, if.413.9.646.8.967.9.1018.13.1029.5.end
                                     # [413:12] free scratch register t1
                                     # [413:12] free scratch register t0
@@ -6891,13 +6884,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.656.8.970.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.656.8.970.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -7001,13 +6993,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.656.8.970.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.656.8.970.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -7086,15 +7077,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.658.11.970.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.658.11.970.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.658.11.970.9.1018.13.1029.5.end:
@@ -7685,13 +7677,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.676.8.973.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.676.8.973.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -7795,13 +7786,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.676.8.973.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.676.8.973.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -7880,15 +7870,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.678.11.973.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.678.11.973.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.678.11.973.9.1018.13.1029.5.end:
@@ -8568,13 +8559,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.697.8.976.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.697.8.976.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -8678,13 +8668,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.697.8.976.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.697.8.976.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -8763,15 +8752,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.699.11.976.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.699.11.976.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.699.11.976.9.1018.13.1029.5.end:
@@ -10005,13 +9995,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.745.8.982.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.745.8.982.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -10115,13 +10104,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.745.8.982.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.745.8.982.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -10200,15 +10188,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.747.11.982.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.747.11.982.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.747.11.982.9.1018.13.1029.5.end:
@@ -10537,13 +10526,12 @@ main:
                             # [762:8] ? found_ix == len
                             cmp.762.8.982.9.1018.13.1029.5:
                             # [762:8] allocate scratch register -> t0
+                            # [762:8] allocate scratch register -> t1
+                            # [762:8] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1972(t0)
                             lw t0, 1976(t0)
-                            # [762:8] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1972(t1)
                             bne t0, t1, if.762.5.982.9.1018.13.1029.5.end
                             # [762:8] free scratch register t1
                             # [762:8] free scratch register t0
@@ -11310,13 +11298,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.785.8.985.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.785.8.985.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -11420,13 +11407,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.785.8.985.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.785.8.985.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -11505,15 +11491,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.787.11.985.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.787.11.985.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.787.11.985.9.1018.13.1029.5.end:
@@ -11842,13 +11829,12 @@ main:
                             # [802:8] ? found_ix == len
                             cmp.802.8.985.9.1018.13.1029.5:
                             # [802:8] allocate scratch register -> t0
+                            # [802:8] allocate scratch register -> t1
+                            # [802:8] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1972(t0)
                             lw t0, 1976(t0)
-                            # [802:8] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1972(t1)
                             bne t0, t1, if.802.5.985.9.1018.13.1029.5.end
                             # [802:8] free scratch register t1
                             # [802:8] free scratch register t0
@@ -12044,13 +12030,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.810.8.985.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.810.8.985.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -12154,13 +12139,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.810.8.985.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.810.8.985.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -12239,15 +12223,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.812.11.985.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.812.11.985.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.812.11.985.9.1018.13.1029.5.end:
@@ -12671,13 +12656,12 @@ main:
                             # [829:8] ? to_entity == room_entities_len
                             cmp.829.8.985.9.1018.13.1029.5:
                             # [829:8] allocate scratch register -> t0
+                            # [829:8] allocate scratch register -> t1
+                            # [829:8] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 2008(t0)
                             lw t0, 2012(t0)
-                            # [829:8] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 2008(t1)
                             bne t0, t1, if.829.5.985.9.1018.13.1029.5.end
                             # [829:8] free scratch register t1
                             # [829:8] free scratch register t0
@@ -14362,13 +14346,12 @@ main:
                                         # [413:12] ? self.start >= self.str.len
                                         cmp.413.12.434.10.860.8.988.9.1018.13.1029.5:
                                         # [413:12] allocate scratch register -> t0
+                                        # [413:12] allocate scratch register -> t1
+                                        # [413:12] operands share base t0
                                         lui t0, 48
                                         add t0, t0, s0
+                                        lw t1, 1952(t0)
                                         lw t0, 1956(t0)
-                                        # [413:12] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        lw t1, 1952(t1)
                                         blt t0, t1, if.413.9.434.10.860.8.988.9.1018.13.1029.5.end
                                         # [413:12] free scratch register t1
                                         # [413:12] free scratch register t0
@@ -14472,13 +14455,12 @@ main:
                                     # [437:12] ? self.end >= self.str.len
                                     cmp.437.12.860.8.988.9.1018.13.1029.5:
                                     # [437:12] allocate scratch register -> t0
+                                    # [437:12] allocate scratch register -> t1
+                                    # [437:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1960(t0)
-                                    # [437:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     bge t0, t1, loop.436.5.860.8.988.9.1018.13.1029.5.end
                                     # [437:12] free scratch register t1
                                     # [437:12] free scratch register t0
@@ -14557,15 +14539,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.862.11.988.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.862.11.988.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.862.11.988.9.1018.13.1029.5.end:
@@ -15259,13 +15242,12 @@ main:
                                     # [413:12] ? self.start >= self.str.len
                                     cmp.413.12.889.8.988.9.1018.13.1029.5:
                                     # [413:12] allocate scratch register -> t0
+                                    # [413:12] allocate scratch register -> t1
+                                    # [413:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1956(t0)
-                                    # [413:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     blt t0, t1, if.413.9.889.8.988.9.1018.13.1029.5.end
                                     # [413:12] free scratch register t1
                                     # [413:12] free scratch register t0
@@ -15394,15 +15376,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.892.11.988.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.892.11.988.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.892.11.988.9.1018.13.1029.5.end:
@@ -15907,13 +15890,12 @@ main:
                                     # [413:12] ? self.start >= self.str.len
                                     cmp.413.12.906.8.991.9.1018.13.1029.5:
                                     # [413:12] allocate scratch register -> t0
+                                    # [413:12] allocate scratch register -> t1
+                                    # [413:12] operands share base t0
                                     lui t0, 48
                                     add t0, t0, s0
+                                    lw t1, 1952(t0)
                                     lw t0, 1956(t0)
-                                    # [413:12] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    lw t1, 1952(t1)
                                     blt t0, t1, if.413.9.906.8.991.9.1018.13.1029.5.end
                                     # [413:12] free scratch register t1
                                     # [413:12] free scratch register t0
@@ -16042,15 +16024,16 @@ main:
                                     # [462:11] ? self.start == self.end
                                     # [462:11] ? self.start == self.end
                                     cmp.462.11.909.11.991.9.1018.13.1029.5:
-                                    lui t0, 48
-                                    add t0, t0, s0
-                                    lw t0, 1956(t0)
                                     # [462:11] allocate scratch register -> t1
+                                    # [462:11] allocate scratch register -> t2
+                                    # [462:11] operands share base t1
                                     lui t1, 48
                                     add t1, t1, s0
-                                    lw t1, 1960(t1)
-                                    xor t0, t0, t1
+                                    lw t2, 1960(t1)
+                                    lw t1, 1956(t1)
+                                    xor t0, t1, t2
                                     sltiu t0, t0, 1
+                                    # [462:11] free scratch register t2
                                     # [462:11] free scratch register t1
                                     bool.462.11.909.11.991.9.1018.13.1029.5.end:
                                 func.tokenizer.is_empty.909.11.991.9.1018.13.1029.5.end:
@@ -20137,13 +20120,12 @@ main:
                         # [413:12] ? self.start >= self.str.len
                         cmp.413.12.424.10.955.8.1052.9:
                         # [413:12] allocate scratch register -> t0
+                        # [413:12] allocate scratch register -> t1
+                        # [413:12] operands share base t0
                         lui t0, 48
                         add t0, t0, s0
+                        lw t1, 1952(t0)
                         lw t0, 1956(t0)
-                        # [413:12] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        lw t1, 1952(t1)
                         blt t0, t1, if.413.9.424.10.955.8.1052.9.end
                         # [413:12] free scratch register t1
                         # [413:12] free scratch register t0
@@ -20247,13 +20229,12 @@ main:
                     # [427:12] ? self.end >= self.str.len
                     cmp.427.12.955.8.1052.9:
                     # [427:12] allocate scratch register -> t0
+                    # [427:12] allocate scratch register -> t1
+                    # [427:12] operands share base t0
                     lui t0, 48
                     add t0, t0, s0
+                    lw t1, 1952(t0)
                     lw t0, 1960(t0)
-                    # [427:12] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    lw t1, 1952(t1)
                     bge t0, t1, loop.426.5.955.8.1052.9.end
                     # [427:12] free scratch register t1
                     # [427:12] free scratch register t0
@@ -20486,13 +20467,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.500.8.958.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.500.8.958.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -20596,13 +20576,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.500.8.958.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.500.8.958.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -20681,15 +20660,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.501.11.958.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.501.11.958.9.1052.9.end:
                         func.tokenizer.is_empty.501.11.958.9.1052.9.end:
@@ -21275,13 +21255,12 @@ main:
                     # [520:8] ? found_ix == links_len
                     cmp.520.8.958.9.1052.9:
                     # [520:8] allocate scratch register -> t0
+                    # [520:8] allocate scratch register -> t1
+                    # [520:8] operands share base t0
                     lui t0, 48
                     add t0, t0, s0
+                    lw t1, 1972(t0)
                     lw t0, 1976(t0)
-                    # [520:8] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    lw t1, 1972(t1)
                     bne t0, t1, if.520.5.958.9.1052.9.end
                     # [520:8] free scratch register t1
                     # [520:8] free scratch register t0
@@ -22857,15 +22836,16 @@ main:
                     # [557:15] ? to_found_ix != to_links_len
                     # [557:15] ? to_found_ix != to_links_len
                     cmp.557.15.958.9.1052.9:
-                    lui t0, 49
-                    add t0, t0, s0
-                    lw t0, -1972(t0)
                     # [557:15] allocate scratch register -> t1
+                    # [557:15] allocate scratch register -> t2
+                    # [557:15] operands share base t1
                     lui t1, 49
                     add t1, t1, s0
-                    lw t1, -1976(t1)
-                    xor t0, t0, t1
+                    lw t2, -1976(t1)
+                    lw t1, -1972(t1)
+                    xor t0, t1, t2
                     sltu t0, zero, t0
+                    # [557:15] free scratch register t2
                     # [557:15] free scratch register t1
                     bool.557.15.958.9.1052.9.end:
                     # [44:6] assert(code, ok bool)
@@ -23684,13 +23664,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.593.8.961.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.593.8.961.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -23794,13 +23773,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.593.8.961.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.593.8.961.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -23879,15 +23857,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.595.11.961.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.595.11.961.9.1052.9.end:
                         func.tokenizer.is_empty.595.11.961.9.1052.9.end:
@@ -24495,13 +24474,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.606.8.961.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.606.8.961.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -24605,13 +24583,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.606.8.961.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.606.8.961.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -24690,15 +24667,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.608.11.961.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.608.11.961.9.1052.9.end:
                         func.tokenizer.is_empty.608.11.961.9.1052.9.end:
@@ -25671,13 +25649,12 @@ main:
                             # [413:12] ? self.start >= self.str.len
                             cmp.413.12.638.8.964.9.1052.9:
                             # [413:12] allocate scratch register -> t0
+                            # [413:12] allocate scratch register -> t1
+                            # [413:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1956(t0)
-                            # [413:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             blt t0, t1, if.413.9.638.8.964.9.1052.9.end
                             # [413:12] free scratch register t1
                             # [413:12] free scratch register t0
@@ -26224,13 +26201,12 @@ main:
                             # [413:12] ? self.start >= self.str.len
                             cmp.413.12.646.8.967.9.1052.9:
                             # [413:12] allocate scratch register -> t0
+                            # [413:12] allocate scratch register -> t1
+                            # [413:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1956(t0)
-                            # [413:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             blt t0, t1, if.413.9.646.8.967.9.1052.9.end
                             # [413:12] free scratch register t1
                             # [413:12] free scratch register t0
@@ -26709,13 +26685,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.656.8.970.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.656.8.970.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -26819,13 +26794,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.656.8.970.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.656.8.970.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -26904,15 +26878,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.658.11.970.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.658.11.970.9.1052.9.end:
                         func.tokenizer.is_empty.658.11.970.9.1052.9.end:
@@ -27534,13 +27509,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.676.8.973.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.676.8.973.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -27644,13 +27618,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.676.8.973.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.676.8.973.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -27729,15 +27702,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.678.11.973.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.678.11.973.9.1052.9.end:
                         func.tokenizer.is_empty.678.11.973.9.1052.9.end:
@@ -28448,13 +28422,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.697.8.976.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.697.8.976.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -28558,13 +28531,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.697.8.976.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.697.8.976.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -28643,15 +28615,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.699.11.976.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.699.11.976.9.1052.9.end:
                         func.tokenizer.is_empty.699.11.976.9.1052.9.end:
@@ -29981,13 +29954,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.745.8.982.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.745.8.982.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -30091,13 +30063,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.745.8.982.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.745.8.982.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -30176,15 +30147,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.747.11.982.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.747.11.982.9.1052.9.end:
                         func.tokenizer.is_empty.747.11.982.9.1052.9.end:
@@ -30575,13 +30547,12 @@ main:
                     # [762:8] ? found_ix == len
                     cmp.762.8.982.9.1052.9:
                     # [762:8] allocate scratch register -> t0
+                    # [762:8] allocate scratch register -> t1
+                    # [762:8] operands share base t0
                     lui t0, 48
                     add t0, t0, s0
+                    lw t1, 1968(t0)
                     lw t0, 1972(t0)
-                    # [762:8] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    lw t1, 1968(t1)
                     bne t0, t1, if.762.5.982.9.1052.9.end
                     # [762:8] free scratch register t1
                     # [762:8] free scratch register t0
@@ -31446,13 +31417,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.785.8.985.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.785.8.985.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -31556,13 +31526,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.785.8.985.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.785.8.985.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -31641,15 +31610,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.787.11.985.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.787.11.985.9.1052.9.end:
                         func.tokenizer.is_empty.787.11.985.9.1052.9.end:
@@ -32040,13 +32010,12 @@ main:
                     # [802:8] ? found_ix == len
                     cmp.802.8.985.9.1052.9:
                     # [802:8] allocate scratch register -> t0
+                    # [802:8] allocate scratch register -> t1
+                    # [802:8] operands share base t0
                     lui t0, 48
                     add t0, t0, s0
+                    lw t1, 1968(t0)
                     lw t0, 1972(t0)
-                    # [802:8] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    lw t1, 1968(t1)
                     bne t0, t1, if.802.5.985.9.1052.9.end
                     # [802:8] free scratch register t1
                     # [802:8] free scratch register t0
@@ -32274,13 +32243,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.810.8.985.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.810.8.985.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -32384,13 +32352,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.810.8.985.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.810.8.985.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -32469,15 +32436,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.812.11.985.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.812.11.985.9.1052.9.end:
                         func.tokenizer.is_empty.812.11.985.9.1052.9.end:
@@ -32937,13 +32905,12 @@ main:
                     # [829:8] ? to_entity == room_entities_len
                     cmp.829.8.985.9.1052.9:
                     # [829:8] allocate scratch register -> t0
+                    # [829:8] allocate scratch register -> t1
+                    # [829:8] operands share base t0
                     lui t0, 48
                     add t0, t0, s0
+                    lw t1, 2004(t0)
                     lw t0, 2008(t0)
-                    # [829:8] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    lw t1, 2004(t1)
                     bne t0, t1, if.829.5.985.9.1052.9.end
                     # [829:8] free scratch register t1
                     # [829:8] free scratch register t0
@@ -34671,13 +34638,12 @@ main:
                                 # [413:12] ? self.start >= self.str.len
                                 cmp.413.12.434.10.860.8.988.9.1052.9:
                                 # [413:12] allocate scratch register -> t0
+                                # [413:12] allocate scratch register -> t1
+                                # [413:12] operands share base t0
                                 lui t0, 48
                                 add t0, t0, s0
+                                lw t1, 1952(t0)
                                 lw t0, 1956(t0)
-                                # [413:12] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                lw t1, 1952(t1)
                                 blt t0, t1, if.413.9.434.10.860.8.988.9.1052.9.end
                                 # [413:12] free scratch register t1
                                 # [413:12] free scratch register t0
@@ -34781,13 +34747,12 @@ main:
                             # [437:12] ? self.end >= self.str.len
                             cmp.437.12.860.8.988.9.1052.9:
                             # [437:12] allocate scratch register -> t0
+                            # [437:12] allocate scratch register -> t1
+                            # [437:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1960(t0)
-                            # [437:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             bge t0, t1, loop.436.5.860.8.988.9.1052.9.end
                             # [437:12] free scratch register t1
                             # [437:12] free scratch register t0
@@ -34866,15 +34831,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.862.11.988.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.862.11.988.9.1052.9.end:
                         func.tokenizer.is_empty.862.11.988.9.1052.9.end:
@@ -35568,13 +35534,12 @@ main:
                             # [413:12] ? self.start >= self.str.len
                             cmp.413.12.889.8.988.9.1052.9:
                             # [413:12] allocate scratch register -> t0
+                            # [413:12] allocate scratch register -> t1
+                            # [413:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1956(t0)
-                            # [413:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             blt t0, t1, if.413.9.889.8.988.9.1052.9.end
                             # [413:12] free scratch register t1
                             # [413:12] free scratch register t0
@@ -35703,15 +35668,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.892.11.988.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.892.11.988.9.1052.9.end:
                         func.tokenizer.is_empty.892.11.988.9.1052.9.end:
@@ -36221,13 +36187,12 @@ main:
                             # [413:12] ? self.start >= self.str.len
                             cmp.413.12.906.8.991.9.1052.9:
                             # [413:12] allocate scratch register -> t0
+                            # [413:12] allocate scratch register -> t1
+                            # [413:12] operands share base t0
                             lui t0, 48
                             add t0, t0, s0
+                            lw t1, 1952(t0)
                             lw t0, 1956(t0)
-                            # [413:12] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            lw t1, 1952(t1)
                             blt t0, t1, if.413.9.906.8.991.9.1052.9.end
                             # [413:12] free scratch register t1
                             # [413:12] free scratch register t0
@@ -36356,15 +36321,16 @@ main:
                             # [462:11] ? self.start == self.end
                             # [462:11] ? self.start == self.end
                             cmp.462.11.909.11.991.9.1052.9:
-                            lui t0, 48
-                            add t0, t0, s0
-                            lw t0, 1956(t0)
                             # [462:11] allocate scratch register -> t1
+                            # [462:11] allocate scratch register -> t2
+                            # [462:11] operands share base t1
                             lui t1, 48
                             add t1, t1, s0
-                            lw t1, 1960(t1)
-                            xor t0, t0, t1
+                            lw t2, 1960(t1)
+                            lw t1, 1956(t1)
+                            xor t0, t1, t2
                             sltiu t0, t0, 1
+                            # [462:11] free scratch register t2
                             # [462:11] free scratch register t1
                             bool.462.11.909.11.991.9.1052.9.end:
                         func.tokenizer.is_empty.909.11.991.9.1052.9.end:
@@ -37673,4 +37639,4 @@ vars.end:
 #                     dat size: 198427 B
 #              dat var padding: 5 B
 #                max vars size: 2552 B
-#                 instructions: 12308
+#                 instructions: 12136

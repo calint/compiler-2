@@ -2,13 +2,11 @@
 # (2026-09-26) and in a survey of all coverage tests on both targets
 # (2026-09-28), see etc/todo.txt
 #
-# comments show rv32i code unless marked 'x86:'; 'fixed:' examples stay as a
-# reference; 'sites' counts the occurrences in the coverage tests
+# comments show rv32i code unless marked 'x86:'; 'sites' counts the
+# occurrences in the coverage tests; fixed items are removed
 #
 # within one machine operation:
-#   x86 constant stores in 4-byte halves, constant part of a run-time index,
-#   rv32i known-size 'equal' loop, constant 'array_copy' count, constant
-#   compared with constant
+#   constant part of a run-time index
 # between machine operations of one statement:
 #   helper/'idiv'/syscall operands and results copied through a scratch
 #   register, runtime bool argument materialized
@@ -64,101 +62,64 @@ func noinline print_num(num) {
 func main() {
     var x = 1
     var arr = i32[4]{}
-    # x86: each 8-byte element is two 4-byte stores 'mov dword [rbp + 24], 3;
-    # mov dword [rbp + 28], 0' instead of 'mov qword [rbp + 24], 3' although
-    # the value fits a sign-extended 32-bit immediate (40 sites)
     var arr3 = []{ 3, 5 }
     var o3 = object[2]{}
     var worlds = world[8]{}
 
-    # fixed: constant folding, 'xori t0, t1, 5' (was 'li t2, 3; addi t2, t2,
-    # 2; xor')
     assert(arr3[0] + 2 == 3 + 0 + 2)
-
-    # fixed: constant compared with constant, no code for
-    # 'array_length(arr3) == 2' (was 'li t1, 2; xori t0, t1, 2; sltiu', x86:
-    # 'mov r14, 2; cmp r14, 2; sete')
     assert(array_length(arr3) == 2)
 
-    # fixed: constant index, 'sw t0, 8(s0)' (was 'li; slli; add; sw')
     arr[1] = 2
     assert(arr[1] == 2)
 
-    # fixed: constant index with element size 12, 'sw t0, 44(s0)' (was 7
-    # instructions)
     o3[1].pos.y = 74
     assert(o3[1].pos.y == 74)
 
-    # fixed: constant indexes and field offset, 'sw t0, 88(s0)' (was 9
-    # instructions)
     worlds[1].locations[1] = 0xffee
 
     # constant part of a run-time index is not folded into the displacement:
     # 'addi t0, t0, 1' before 'sw t2, 4(t3)' instead of 'sw t2, 8(t3)', x86:
     # 'add r15, 1' before '[rbp + r15 * 4 + 8]' instead of '+ 12' (26 rv32i,
-    # 27 x86 sites); fixed: the base offset is folded, 'sw t2, 56(t1)'
+    # 27 x86 sites)
     var ix = 1
     arr[ix + 1] = arr[ix]
     worlds[ix].locations[1] = 0xffee
 
-    # fixed: unary on a memory destination, 'lw; sub; sw' (was 'lw; sw; lw;
-    # sub; sw')
     var a = -x
     a = ~x
 
-    # fixed: narrowing on a memory destination, 'lw; addi; sb' (was 'lw; sb;
-    # lb; addi; sb')
     var b = i8(0)
     b = i8(x - 1)
 
-    # fixed: unary in a record literal field, 'lw; sub; sw' (was copy then
-    # negate in memory)
     var p1 = point{-x, -a}
 
-    # constant part of the index: 'addi t2, t2, -1' instead of 'lw t1, 0(t1)';
     # low priority: '~' in 'inv' and on the result give two 'xori t1, t1, -1'
-    # (x86: two 'not dword'); fixed: the destination address is computed once
+    # (x86: two 'not dword')
     arr[ix] = ~inv(arr[ix - 1])
 
     # runtime bool argument: 'lw; xori; sltiu; bne' instead of 'lw; li; bne',
     # x86: 'sete r15b; cmp r15b, 0; jne' (97 rv32i sites)
     assert(x == 1)
 
-    # fixed: bool shorthand argument copied with 'lbu', no 'sltu t0, zero, t0'
     var eq = x == 1
     assert(eq)
 
-    # fixed: 'slli t1, t0, 2; add t0, t1, t0; slli t0, t0, 1' (was a copy
-    # 'addi t1, t0, 0' before the shift and add sequence)
     a = x * 10
 
     # low priority: the address goes into a new register 'slli t1, t0, 2'
     # instead of reusing the index register
     a = arr[ix]
 
-    # fixed: 'add t1, s0, t0' once for all fields of the result (was repeated
-    # for each field)
     o3[ix] = object.at(2, 74, 0xffffff)
 
-    # fixed: zeroing 20 bytes at the odd offset 's0 + 329' peels to the word
-    # boundary: 'sb', 'sh', 4 'sw' and 'sb'; above 16 stores the loop still
-    # uses the start's width
     var buf = i8[20]{}
 
-    # 'equal' with a known 8 byte size loops 'li t3, 2' through the address
-    # registers 't1'/'t2' instead of two unrolled 'lw; lw; bne' from 's0'
-    # (89 sites); fixed on x86: 'cmpsq; jne; cmpsq'
     var q = p1
     assert(equal(p1, q))
 
-    # fixed: the 'array_length' count is known, the known-size copy is used
-    # (was 'li t2, 8; slli t2, t2, 2', chunk split and tail tests, x86: 'mov
-    # rcx, 8' then 'shl rcx, 3')
     array_copy(worlds[1].locations, worlds[0].locations,
                array_length(worlds[0].locations))
 
-    # fixed: the call saves nothing, only 's0' is live and the callee does not
-    # write it (was all 30 registers)
     print_num(a)
 
     assert(buf[0] == 0)

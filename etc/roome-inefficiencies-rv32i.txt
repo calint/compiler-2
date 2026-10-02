@@ -22,7 +22,9 @@ site counts are occurrences in the generated code.
        [x] part a: memory to memory copy_value shares one base
            (copy_through_shared_base, shares_address_base), 12712 -> 12434
            instructions
-       [ ] part b: two memory operands in a compare. reassessed after part a
+       [x] part b: two memory operands in a compare, done in
+           comparison_operands_through_shared_base (roome 12308 -> 12136
+           instructions). reassessed after part a
            with the remaining same-upper pairs one access apart (229):
            - 90 pairs are one machine operation, emit_comparison
              (blt 30, xor 26, bge 22, bne 8, bltz 4), about 180 instructions.

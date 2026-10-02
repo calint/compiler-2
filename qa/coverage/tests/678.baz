@@ -1,0 +1,42 @@
+# comparing two variables far from the start of the frame: on rv32i both
+# addresses share one 'lui' and 'add', for 8, 16 and 32-bit variables
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+func main() {
+    var pad = i8[5000]{}
+    var a = 5
+    var b = 7
+    var h = i16(300)
+    var g = i16(-300)
+    var s = i8(100)
+    var t = i8(100)
+    var n = -3
+    var m = 2
+
+    assert(1, a < b)
+    assert(2, a <= b)
+    assert(3, b > a)
+    assert(4, b >= a)
+    assert(5, a != b)
+    assert(6, n < m)
+    assert(7, s == t)
+    assert(8, s <= t)
+    assert(9, s >= t)
+    assert(10, g < h)
+
+    if a == b exit(11)
+    if b < a exit(12)
+    if a > b exit(13)
+    if s != t exit(14)
+    if m < n exit(15)
+
+    var lt = a < b
+    var ge = a >= b
+    var wide = s <= t
+    assert(16, lt)
+    assert(17, wide)
+    if ge exit(18)
+
+    assert(19, pad[0] == 0)
+}

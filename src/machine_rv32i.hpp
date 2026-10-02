@@ -2274,6 +2274,76 @@ class machine_rv32i : public machine {
         return value;
     }
 
+    // both sides in registers of the comparison width, the right one is a zero
+    // register when 'use_immediate' compares against an immediate
+    [[nodiscard]] auto
+    comparison_operands(const token& src_loc_tk, const size_t indent,
+                        const operand& lhs, const operand& rhs,
+                        const bool use_immediate, const operand& destination)
+        -> std::array<operand, 2> {
+
+        if (shares_address_base(lhs, rhs) and
+            not register_needs_extension(lhs.type_ref(), rhs)) {
+
+            return comparison_operands_through_shared_base(src_loc_tk, indent,
+                                                           lhs, rhs);
+        }
+
+        const operand left{
+            comparison_operand(src_loc_tk, indent, lhs, rhs, lhs.type_ref(),
+                               destination),
+        };
+
+        // the immediate is encoded in the instruction, so the register is
+        // never read
+        const operand right{
+            use_immediate ? operand::reg("zero", lhs.type_ref())
+                          : comparison_operand(src_loc_tk, indent, rhs, left,
+                                               lhs.type_ref(), destination),
+        };
+
+        return {left, right};
+    }
+
+    // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
+    // both loads and the base register ends up holding the left value
+    [[nodiscard]] auto comparison_operands_through_shared_base(
+        const token& src_loc_tk, const size_t indent, const operand& lhs,
+        const operand& rhs) -> std::array<operand, 2> {
+
+        const address_offset_parts lhs_parts{
+            split_address_offset(lhs.displacement()),
+        };
+
+        const address_offset_parts rhs_parts{
+            split_address_offset(rhs.displacement()),
+        };
+
+        const operand left{
+            alloc_scratch_register(src_loc_tk, indent, lhs.type_ref()),
+        };
+
+        const operand right{
+            alloc_scratch_register(src_loc_tk, indent, lhs.type_ref()),
+        };
+
+        comment(src_loc_tk, indent, "operands share base {}",
+                left.base_register());
+
+        assembler_.lui(indent, left.base_register(), lhs_parts.upper);
+
+        assembler_.add(indent, left.base_register(), left.base_register(),
+                       lhs.base_register());
+
+        assembler_.load(indent, load_op(rhs.type_ref()), right.base_register(),
+                        rhs_parts.low, left.base_register());
+
+        assembler_.load(indent, load_op(lhs.type_ref()), left.base_register(),
+                        lhs_parts.low, left.base_register());
+
+        return {left, right};
+    }
+
     // prefer the output register or a temporary the comparison owns
     auto comparison_result_register(const token& src_loc_tk,
                                     const size_t indent,
@@ -2850,17 +2920,13 @@ class machine_rv32i : public machine {
             use_immediate ? std::optional<int64_t>{threshold} : std::nullopt,
         };
 
-        const operand left{
-            comparison_operand(src_loc_tk, indent, lhs, rhs, lhs.type_ref(),
-                               action.destination),
+        const std::array<operand, 2> sides{
+            comparison_operands(src_loc_tk, indent, lhs, rhs, use_immediate,
+                                action.destination),
         };
 
-        const operand right{
-            use_immediate
-                ? operand::reg("zero", lhs.type_ref())
-                : comparison_operand(src_loc_tk, indent, rhs, left,
-                                     lhs.type_ref(), action.destination),
-        };
+        const operand& left{sides.at(0)};
+        const operand& right{sides.at(1)};
 
         // branch-only comparisons do not need a materialized boolean
         if (action.destination.is_empty()) {
