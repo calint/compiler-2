@@ -1343,17 +1343,22 @@ func main() {
             held.push_back(backend.alloc_scratch_register(token{}, 0, boolean));
         }
         const operand result{held.front()};
-        const operand count{backend.begin_memory_equal(token{}, 0)};
-        backend.copy_value(token{}, 0, count, operand::imm("7", integer));
-        std::println(shift_output, "la {}, buffer",
-                     held.back().base_register());
-        backend.set_memory_equal_left(0, operand::mem(held.back(), byte));
-        backend.set_memory_equal_right(0, operand::mem(held.back(), byte));
-        shift_output.str({});
         if (counted) {
+            const operand count{backend.begin_memory_equal(token{}, 0)};
+            backend.copy_value(token{}, 0, count, operand::imm("7", integer));
+            std::println(shift_output, "la {}, buffer",
+                         held.back().base_register());
+            backend.set_memory_equal_left(0, operand::mem(held.back(), byte));
+            backend.set_memory_equal_right(0, operand::mem(held.back(), byte));
+            shift_output.str({});
             backend.end_arrays_equal(token{}, 0, 1, 4, result);
         } else {
-            backend.end_memory_equal(token{}, 0, 7, 4, result);
+            std::println(shift_output, "la {}, buffer",
+                         held.back().base_register());
+            shift_output.str({});
+            backend.compare_memory(token{}, 0, operand::mem(held.back(), byte),
+                                   operand::mem(held.back(), byte), 7, 4,
+                                   result);
         }
         const std::string assembly{shift_output.str()};
         // a known size takes its tail at offsets, a run-time count advances

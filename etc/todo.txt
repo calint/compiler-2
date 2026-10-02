@@ -10,14 +10,13 @@ queued, easiest first
         32-bit immediate is stored as two 4-byte halves:
         'mov dword [rbp + 24], 3; mov dword [rbp + 28], 0' instead of
         'mov qword [rbp + 24], 3' ('var arr3[] = { 3, 5 }', 40 sites)
-    [ ] the constant part of a run-time index is added before addressing
-        instead of going into the displacement: 'arr[ix + 1]' is
-        'addi t0, t0, 1' before 'sw t2, 4(t3)' instead of 'sw t2, 8(t3)',
-        x86 'add r15, 1' before '[rbp + r15 * 4 + 8]' instead of '+ 12'
-        (26 rv32i, 27 x86 sites)
-    [ ] rv32i: 'equal' with a known small size loops through address
+    [x] rv32i: 'equal' with a known small size loops through address
         registers ('li t3, 2', 't1'/'t2') instead of unrolled 'lw; lw; bne'
         pairs from 's0'; x86 already unrolls 'cmpsq' (89 sites)
+        => 'equal' up to 16 bytes: machine::compares_directly/compare_memory
+           take the address operands (no pointer registers), bulk_compare
+           unrolls; larger sizes keep the pointer loops (tests 590/592
+           width goldens lost the unrolled lines)
     [ ] an 'array_length(...)' count is known but 'array_copy' takes the
         run-time count path: 'li t2, 8; slli t2, t2, 2', chunk split and
         tail tests instead of the known-size copy, x86 'mov rcx, 8' then
@@ -34,6 +33,11 @@ queued, easiest first
         => the operand side is 'register allocation: an operand is loaded
            into a scratch register then copied' below (107 rv32i sites,
            x86 'mov rax, r13' before 'cqo' 113 sites)
+    [ ] the constant part of a run-time index is added before addressing
+        instead of going into the displacement: 'arr[ix + 1]' is
+        'addi t0, t0, 1' before 'sw t2, 4(t3)' instead of 'sw t2, 8(t3)',
+        x86 'add r15, 1' before '[rbp + r15 * 4 + 8]' instead of '+ 12'
+        (26 rv32i, 27 x86 sites)
     => also illustrated there and tracked below: runtime bool argument
        materialized (97 rv32i sites), value reloaded right after it was
        stored (574 rv32i sites), scaled index in a new register,
@@ -223,16 +227,6 @@ other, easiest first
 [ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
     tests
 [ ] change all array access using [ ] to checked using .at
-[x] 'equal' on records compares the padding bytes; a record set by a call
-    result keeps whatever padding bytes its storage held
-    => the padding is zeroed before a call writes a record ('expr_type::
-       zero_padding'), 'equal' keeps comparing all bytes; test 675
-[x] an array literal with call elements writes every result to element 0:
-    'padded[2]{padded.at(1, 2, 3), padded.at(4, 5, 6)}' ('self' aliases the
-    array start, found while writing test 675, also at HEAD)
-    => 'expr_any::compile' gives the elements an element destination
-       (operand used, not an array); non-inline calls now work there, the
-       result-array guard in 'stmt_call' became an assert, tests 422 and 676
 [ ] rv32i: check loop iteration regarding large span
 [ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
     => there is a longer jump way +/- 2 GB that can be implemented later
@@ -427,6 +421,16 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] 'equal' on records compares the padding bytes; a record set by a call
+    result keeps whatever padding bytes its storage held
+    => the padding is zeroed before a call writes a record ('expr_type::
+       zero_padding'), 'equal' keeps comparing all bytes; test 675
+[x] an array literal with call elements writes every result to element 0:
+    'padded[2]{padded.at(1, 2, 3), padded.at(4, 5, 6)}' ('self' aliases the
+    array start, found while writing test 675, also at HEAD)
+    => 'expr_any::compile' gives the elements an element destination
+       (operand used, not an array); non-inline calls now work there, the
+       result-array guard in 'stmt_call' became an assert, tests 422 and 676
 [x] register allocation: a non-inline call saves and restores all 30 registers
     with 'PUSH_REGS'/'POP_REGS' although only 's0' is live, e.g.
     'print_num(a)' (etc/codegen-inefficiencies.baz)
@@ -626,6 +630,11 @@ resolved
        instructions, none larger); test-bulk-widths.sh checks the width
        decision comment ('N-byte accesses[ after a H B head]'), which also
        covers zero loops and 'equal' without a loop
+    => replaced by plain functions (same output): 'zero_known_size',
+       'copy_known_size', 'compare_known_size', 'copy_runtime_count' and
+       'compare_runtime_count' are written out one after the other for human
+       readability, the repeated code is on purpose; only the plain decisions
+       are shared ('aligned_parts', 'plan_loop_start', 'plan_known_loop')
 [x] rv32i: a byte aligned zero, copy or compare at a known offset from s0/s1
     uses byte accesses throughout; peel 'sb'/'sh' up to the word boundary,
     then 'sw' and the tail, e.g. 20 bytes at 's0 + 329' is 8 stores instead

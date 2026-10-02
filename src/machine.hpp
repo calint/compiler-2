@@ -187,6 +187,28 @@ class machine {
         const operand& rhs, const comparison_action& action,
         const std::span<const operand> scratch_registers_to_free) -> void = 0;
 
+    // compares 'size_bytes' at two addresses held in operands, only when
+    // 'compares_directly'; 'alignment' is the alignment known for both
+    // addresses
+    virtual auto compare_memory([[maybe_unused]] const token& src_loc_tk,
+                                [[maybe_unused]] const size_t indent,
+                                [[maybe_unused]] const operand& left,
+                                [[maybe_unused]] const operand& right,
+                                [[maybe_unused]] const size_t size_bytes,
+                                [[maybe_unused]] const size_t alignment,
+                                [[maybe_unused]] const operand& dst,
+                                [[maybe_unused]] const bool inverted = false)
+        -> void {
+
+        std::unreachable();
+    }
+
+    // whether 'equal' uses 'compare_memory' instead of 'begin_memory_equal',
+    // 'set_memory_equal_left', 'set_memory_equal_right' and 'end_memory_equal'
+    [[nodiscard]] virtual auto compares_directly() const -> bool {
+        return false;
+    }
+
     // 'alignment' is the alignment known for both addresses
     virtual auto copy(const token& src_loc_tk, const size_t indent,
                       const operand& src, const operand& dst,
@@ -260,10 +282,17 @@ class machine {
 
     virtual auto end_main() -> void = 0;
 
-    virtual auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                                  const size_t size_bytes,
-                                  const size_t alignment, const operand& dst,
-                                  const bool inverted = false) -> void = 0;
+    // only for a backend whose 'compares_directly' is false
+    virtual auto end_memory_equal([[maybe_unused]] const token& src_loc_tk,
+                                  [[maybe_unused]] const size_t indent,
+                                  [[maybe_unused]] const size_t size_bytes,
+                                  [[maybe_unused]] const size_t alignment,
+                                  [[maybe_unused]] const operand& dst,
+                                  [[maybe_unused]] const bool inverted = false)
+        -> void {
+
+        std::unreachable();
+    }
 
     virtual auto exit(const token& src_loc_tk, const size_t indent,
                       const operand& exit_code) -> void = 0;

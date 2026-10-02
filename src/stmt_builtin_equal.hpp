@@ -3,6 +3,7 @@
 #include <format>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -105,6 +106,13 @@ class stmt_builtin_equal final : public expression {
             size_bytes = multiply_storage_size(size_bytes, lhs_info.array_len);
         }
 
+        if (x.compares_directly()) {
+            compile_direct(tc, indent, lhs_info, rhs_info, size_bytes, dst,
+                           inverted);
+
+            return;
+        }
+
         x.begin_memory_equal(tok(), indent);
 
         lhs_.compile_address(tc, indent, tok(), lhs_info.lea_path, {}, {},
@@ -133,6 +141,36 @@ class stmt_builtin_equal final : public expression {
     }
 
   private:
+    // the machine reads both addresses where they are, without pointer
+    // registers set up first, so both address paths stay allocated until it
+    // has compared
+    auto compile_direct(toc& tc, const size_t indent,
+                        const ident_info& lhs_info, const ident_info& rhs_info,
+                        const size_t size_bytes, const operand& dst,
+                        const bool inverted) const -> void {
+
+        machine& x{tc.machine()};
+
+        std::vector<operand> allocated_registers;
+
+        x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
+
+        const operand lhs_address{
+            lhs_.compile_lea(tc, indent, lhs_.first_token(),
+                             allocated_registers, {}, lhs_info.lea_path, {})};
+
+        x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
+
+        const operand rhs_address{
+            rhs_.compile_lea(tc, indent, rhs_.first_token(),
+                             allocated_registers, {}, rhs_info.lea_path, {})};
+
+        x.compare_memory(tok(), indent, lhs_address, rhs_address, size_bytes,
+                         lhs_info.type_ref().alignment(), dst, inverted);
+
+        x.free_scratch_registers(tok(), indent, allocated_registers);
+    }
+
     //
     // statics
     //

@@ -1,5 +1,3 @@
-34: assert(1, equal(p, q)): 4-byte accesses
-37: assert(2, not equal(p, q)): 4-byte accesses
 45: array_copy(a, b, n): 4-byte accesses
 46: assert(3, arrays_equal(a, b, n)): 4-byte accesses
 49: assert(4, not arrays_equal(a, b, n)): 4-byte accesses
@@ -12,8 +10,6 @@
 65: assert(10, arrays_equal(d, e, n)): 4-byte accesses after a 2 B head
 68: assert(11, not arrays_equal(d, e, n)): 4-byte accesses after a 2 B head
 69: assert(12, arrays_equal(d, e, n - 1)): 4-byte accesses after a 2 B head
-13: assert(20, equal(p, q)): 4-byte accesses
-16: assert(21, not equal(p, q)): 4-byte accesses
 21: array_copy(a, b, n): 4-byte accesses
 22: assert(22, arrays_equal(a, b, n)): 4-byte accesses
 25: assert(23, not arrays_equal(a, b, n)): 4-byte accesses
