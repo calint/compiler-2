@@ -41,8 +41,8 @@ project's own file (for compiler-2: `etc/ai/project.md`).
 ## code readability (priority over fewer lines)
 
 - Cognitive simplicity beats newer syntax and beats brevity. The user calls
-  himself "bio-ai" and dislikes complexity; a simple algorithm is worth some
-  performance cost.
+  himself "bio-ai" (tongue in cheek) and dislikes complexity; a simple
+  algorithm is worth some performance cost.
 - Prefer multi-pass designs, each pass one simple rule with its own comment and
   a before/after example, over a single-pass state machine.
 - Use early returns and keep decision paths flat and explicit. A plain
