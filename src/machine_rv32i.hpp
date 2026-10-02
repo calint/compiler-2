@@ -811,6 +811,11 @@ class machine_rv32i : public machine {
             return;
         }
 
+        if (shares_address_base(dst, src)) {
+            copy_through_shared_base(src_loc_tk, indent, dst, src);
+            return;
+        }
+
         operand value{dst};
         if (not dst.is_register()) {
             value = src.is_register() ? src
@@ -2003,13 +2008,15 @@ class machine_rv32i : public machine {
                          offset_by(right, loop.head_size_bytes)),
         };
 
-        const operand chunks{
+        const operand end{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
         comment(src_loc_tk, indent, "{}", describe_loop("compare", loop.width));
 
-        assembler_.li(indent, chunks.base_register(), loop.chunk_count);
+        set_loop_end(src_loc_tk, indent, end, left_pointer,
+                     loop.chunk_count * loop.width);
+
         assembler_.label(indent, chunk_loop.name);
 
         compare_access(indent, registers, loop.width, memory_at(left_pointer),
@@ -2017,9 +2024,8 @@ class machine_rv32i : public machine {
 
         advance(indent, left_pointer, loop.width);
         advance(indent, right_pointer, loop.width);
-        assembler_.addi(indent, chunks.base_register(), chunks.base_register(),
-                        -1);
-        assembler_.bnez(indent, chunks.base_register(), chunk_loop.reference);
+        assembler_.bne(indent, left_pointer.base_register(),
+                       end.base_register(), chunk_loop.reference);
 
         if (loop.tail_size_bytes == 0) {
             return;
@@ -2107,25 +2113,31 @@ class machine_rv32i : public machine {
                     describe_loop("compare", 1));
 
             assembler_.beqz(indent, count.base_register(), walk_end.reference);
+
+            // 'count' becomes the end of the walk, which saves a decrement in
+            // every iteration
+            assembler_.add(indent, count.base_register(), count.base_register(),
+                           left.base_register());
+
             assembler_.label(indent, chunk_loop.name);
             compare_access(indent, registers, 1, left_at, right_at);
             advance(indent, left, 1);
             advance(indent, right, 1);
-            assembler_.addi(indent, count.base_register(),
-                            count.base_register(), -1);
-            assembler_.bnez(indent, count.base_register(),
-                            chunk_loop.reference);
+            assembler_.bne(indent, left.base_register(), count.base_register(),
+                           chunk_loop.reference);
+
             assembler_.label(indent, walk_end.name);
 
             return;
         }
 
-        // also the scratch of the head check and the halfword tail test
+        // the end of the chunks, also the scratch of the head check and the
+        // halfword tail test
         const operand chunks{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        comment(src_loc_tk, indent, "{}: {}, {}: tail bytes",
+        comment(src_loc_tk, indent, "{}: end of {}, {}: tail bytes",
                 chunks.base_register(),
                 start.width == 4 ? "words" : "halfwords",
                 count.base_register());
@@ -2165,18 +2177,21 @@ class machine_rv32i : public machine {
             assembler_.label(indent, after_head.name);
         }
 
-        // the loop takes 'count' divided into chunks, 'count' keeps the tail
-        // bytes
+        // the loop takes 'count' rounded down to whole chunks and ends when
+        // 'left' reaches their end, 'count' keeps the tail bytes
         comment(src_loc_tk, indent,
                 "split bytes into chunks and tail; skip loop if none");
 
-        assembler_.srli(indent, chunks.base_register(), count.base_register(),
-                        std::countr_zero(start.width));
+        assembler_.andi(indent, chunks.base_register(), count.base_register(),
+                        -static_cast<int64_t>(start.width));
 
         assembler_.andi(indent, count.base_register(), count.base_register(),
                         start.width - 1);
 
         assembler_.beqz(indent, chunks.base_register(), after_chunks.reference);
+
+        assembler_.add(indent, chunks.base_register(), chunks.base_register(),
+                       left.base_register());
 
         comment(src_loc_tk, indent, "{}",
                 describe_loop("compare", start.width));
@@ -2185,9 +2200,9 @@ class machine_rv32i : public machine {
         compare_access(indent, registers, start.width, left_at, right_at);
         advance(indent, left, start.width);
         advance(indent, right, start.width);
-        assembler_.addi(indent, chunks.base_register(), chunks.base_register(),
-                        -1);
-        assembler_.bnez(indent, chunks.base_register(), chunk_loop.reference);
+        assembler_.bne(indent, left.base_register(), chunks.base_register(),
+                       chunk_loop.reference);
+
         assembler_.label(indent, after_chunks.name);
 
         // after words at most 3 bytes remain, bit 1 selects a halfword and bit
@@ -2357,13 +2372,15 @@ class machine_rv32i : public machine {
                          offset_by(dst, loop.head_size_bytes)),
         };
 
-        const operand chunks{
+        const operand end{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
         comment(src_loc_tk, indent, "{}", describe_loop("copy", loop.width));
 
-        assembler_.li(indent, chunks.base_register(), loop.chunk_count);
+        set_loop_end(src_loc_tk, indent, end, src_pointer,
+                     loop.chunk_count * loop.width);
+
         assembler_.label(indent, chunk_loop.name);
 
         copy_access(indent, value, loop.width, memory_at(src_pointer),
@@ -2371,9 +2388,8 @@ class machine_rv32i : public machine {
 
         advance(indent, src_pointer, loop.width);
         advance(indent, dst_pointer, loop.width);
-        assembler_.addi(indent, chunks.base_register(), chunks.base_register(),
-                        -1);
-        assembler_.bnez(indent, chunks.base_register(), chunk_loop.reference);
+        assembler_.bne(indent, src_pointer.base_register(), end.base_register(),
+                       chunk_loop.reference);
 
         if (loop.tail_size_bytes == 0) {
             return;
@@ -2438,25 +2454,31 @@ class machine_rv32i : public machine {
                     describe_loop("copy", 1));
 
             assembler_.beqz(indent, count.base_register(), walk_end.reference);
+
+            // 'count' becomes the end of the walk, which saves a decrement in
+            // every iteration
+            assembler_.add(indent, count.base_register(), count.base_register(),
+                           src.base_register());
+
             assembler_.label(indent, chunk_loop.name);
             copy_access(indent, value, 1, from, to);
             advance(indent, src, 1);
             advance(indent, dst, 1);
-            assembler_.addi(indent, count.base_register(),
-                            count.base_register(), -1);
-            assembler_.bnez(indent, count.base_register(),
-                            chunk_loop.reference);
+            assembler_.bne(indent, src.base_register(), count.base_register(),
+                           chunk_loop.reference);
+
             assembler_.label(indent, walk_end.name);
 
             return;
         }
 
-        // also the scratch of the head check and the halfword tail test
+        // the end of the chunks, also the scratch of the head check and the
+        // halfword tail test
         const operand chunks{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        comment(src_loc_tk, indent, "{}: {}, {}: tail bytes",
+        comment(src_loc_tk, indent, "{}: end of {}, {}: tail bytes",
                 chunks.base_register(),
                 start.width == 4 ? "words" : "halfwords",
                 count.base_register());
@@ -2496,18 +2518,21 @@ class machine_rv32i : public machine {
             assembler_.label(indent, after_head.name);
         }
 
-        // the loop takes 'count' divided into chunks, 'count' keeps the tail
-        // bytes
+        // the loop takes 'count' rounded down to whole chunks and ends when
+        // 'src' reaches their end, 'count' keeps the tail bytes
         comment(src_loc_tk, indent,
                 "split bytes into chunks and tail; skip loop if none");
 
-        assembler_.srli(indent, chunks.base_register(), count.base_register(),
-                        std::countr_zero(start.width));
+        assembler_.andi(indent, chunks.base_register(), count.base_register(),
+                        -static_cast<int64_t>(start.width));
 
         assembler_.andi(indent, count.base_register(), count.base_register(),
                         start.width - 1);
 
         assembler_.beqz(indent, chunks.base_register(), after_chunks.reference);
+
+        assembler_.add(indent, chunks.base_register(), chunks.base_register(),
+                       src.base_register());
 
         comment(src_loc_tk, indent, "{}", describe_loop("copy", start.width));
 
@@ -2515,9 +2540,9 @@ class machine_rv32i : public machine {
         copy_access(indent, value, start.width, from, to);
         advance(indent, src, start.width);
         advance(indent, dst, start.width);
-        assembler_.addi(indent, chunks.base_register(), chunks.base_register(),
-                        -1);
-        assembler_.bnez(indent, chunks.base_register(), chunk_loop.reference);
+        assembler_.bne(indent, src.base_register(), chunks.base_register(),
+                       chunk_loop.reference);
+
         assembler_.label(indent, after_chunks.name);
 
         // after words at most 3 bytes remain, bit 1 selects a halfword and bit
@@ -2544,6 +2569,44 @@ class machine_rv32i : public machine {
         assembler_.beqz(indent, count.base_register(), walk_end.reference);
         copy_access(indent, value, 1, from, to);
         assembler_.label(indent, walk_end.name);
+    }
+
+    // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
+    // the load and the store
+    auto copy_through_shared_base(const token& src_loc_tk, const size_t indent,
+                                  const operand& dst, const operand& src)
+        -> void {
+
+        const address_offset_parts src_parts{
+            split_address_offset(src.displacement()),
+        };
+
+        const address_offset_parts dst_parts{
+            split_address_offset(dst.displacement()),
+        };
+
+        const operand base{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        const operand value{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        comment(src_loc_tk, indent, "source and destination share base {}",
+                base.base_register());
+
+        assembler_.lui(indent, base.base_register(), src_parts.upper);
+
+        assembler_.add(indent, base.base_register(), base.base_register(),
+                       src.base_register());
+
+        assembler_.load(indent, load_op(src.type_ref()), value.base_register(),
+                        src_parts.low, base.base_register());
+
+        assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
+                         value.base_register(), dst_parts.low,
+                         base.base_register());
     }
 
     auto emit_arithmetic_helpers() const -> void {
@@ -3490,6 +3553,19 @@ class machine_rv32i : public machine {
             std::ranges::count(allocations_, false, &allocation::named));
     }
 
+    // the loop ends when its pointer reaches 'end', replacing a counter that
+    // costs a decrement in every iteration, 'address_of' avoids 'li' whose
+    // expansion for some values differs from the assembler's
+    auto set_loop_end(const token& src_loc_tk, const size_t indent,
+                      const operand& end, const operand& pointer,
+                      const size_t size_bytes) -> void {
+
+        address_of(src_loc_tk, indent, end,
+                   operand::mem(pointer.base_register(), {}, 1,
+                                static_cast<int64_t>(size_bytes),
+                                default_type()));
+    }
+
     // a narrow register shifts to the top and back, extending in one pair
     auto shift_by_constant(const size_t indent, const char operation,
                            const operand& dst, const loaded_destination& loaded,
@@ -3844,21 +3920,21 @@ class machine_rv32i : public machine {
                          offset_by(dst, loop.head_size_bytes)),
         };
 
-        const operand chunks{
+        const operand end{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
         comment(src_loc_tk, indent, "{}", describe_loop("zero", loop.width));
 
-        assembler_.li(indent, chunks.base_register(), loop.chunk_count);
+        set_loop_end(src_loc_tk, indent, end, pointer,
+                     loop.chunk_count * loop.width);
+
         assembler_.label(indent, chunk_loop.name);
         zero_access(indent, loop.width, memory_at(pointer));
         advance(indent, pointer, loop.width);
 
-        assembler_.addi(indent, chunks.base_register(), chunks.base_register(),
-                        -1);
-
-        assembler_.bnez(indent, chunks.base_register(), chunk_loop.reference);
+        assembler_.bne(indent, pointer.base_register(), end.base_register(),
+                       chunk_loop.reference);
 
         if (loop.tail_size_bytes == 0) {
             return;
@@ -4459,6 +4535,36 @@ class machine_rv32i : public machine {
                same_register(left.index_register(), right.index_register()) and
                left.scale() == right.scale() and
                left.displacement() == right.displacement();
+    }
+
+    // a memory copy between two addresses of one base register without index
+    // whose offsets differ only in the low 12 bits
+    [[nodiscard]] static auto shares_address_base(const operand& dst,
+                                                  const operand& src) -> bool {
+
+        if (not dst.is_memory() or not src.is_memory()) {
+            return false;
+        }
+
+        if (not dst.index_register().empty() or
+            not src.index_register().empty()) {
+
+            return false;
+        }
+
+        if (register_index(dst.base_register()) !=
+            register_index(src.base_register())) {
+
+            return false;
+        }
+
+        const uint32_t src_upper{
+            split_address_offset(src.displacement()).upper,
+        };
+
+        // without an upper part the access needs no base register of its own
+        return src_upper != 0 and
+               src_upper == split_address_offset(dst.displacement()).upper;
     }
 
     [[nodiscard]] static auto split_address_offset(const int64_t offset)

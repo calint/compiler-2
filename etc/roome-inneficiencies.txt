@@ -5,7 +5,7 @@ compiled with: ./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line \
 13111 instructions. global optimizations and instruction tricks excluded.
 site counts are occurrences in the generated code.
 
-[ ] 1. base address computed twice in one operation (about 300 sites, 2
+[o] 1. base address computed twice in one operation (about 300 sites, 2
        instructions each)
        operations with two global operands lower each address separately:
        copy_value, two-operand compares and binary ops. 'self.start >=
@@ -19,6 +19,33 @@ site counts are occurrences in the generated code.
        'x = x + 1' already shares its base this way.
        where: copy_value (load_into and lower_address calls),
        lower_address_without_index
+       [x] part a: memory to memory copy_value shares one base
+           (copy_through_shared_base, shares_address_base), 12712 -> 12434
+           instructions
+       [ ] part b: two memory operands in a compare. reassessed after part a
+           with the remaining same-upper pairs one access apart (229):
+           - 90 pairs are one machine operation, emit_comparison
+             (blt 30, xor 26, bge 22, bne 8, bltz 4), about 180 instructions.
+             'comparison_operand' copies each side with its own 'copy_value',
+             so the fix is to load both through one base in emit_comparison
+             when 'shares_address_base' holds: base b, 'lw right,lo(b)', then
+             'lw b,lo(b)' for the left, which keeps 2 registers and makes
+             'left' an allocated register the result may overwrite
+             ('comparison_result_register'). only when neither side needs
+             extension to the comparison width ('register_needs_extension'),
+             and 'reuse_destination' (destination register as left) must be
+             kept in mind. about 50 lines, one function plus a shared load
+             helper that part a can use too.
+           - 73 pairs ('lw lw sub') are not local: 'res = self.end -
+             self.start' is a 'copy_value' of the first operand followed by a
+             separate 'binary_operation' with the second as memory source.
+             sharing needs the base of the previous operation, or a combined
+             machine operation for 'dst = a op b'. not part b.
+           - a binary operation with a memory destination and a memory source
+             in one 'binary_operation' call has no remaining sites in roome,
+             'load_destination' keeps the destination address for the
+             write-back, the source could use it (pass 'loaded.address' to
+             'source_register') if it shows up elsewhere.
 
 [x] 2. redundant 'bltz' in emit_bounds_check (about 334 sites, 1 instruction
        each)
@@ -32,12 +59,19 @@ site counts are occurrences in the generated code.
        for the destination, the second call repeats 'bltz count' on the same
        register. spans two calls, needs per-operation state.
 
-[ ] 4. bulk loop bookkeeping
+[x] 4. bulk loop bookkeeping
        loops use a counter plus two pointer increments: a word copy costs 6
        instructions per word, a byte compare 7 per byte. comparing a pointer
        against an end pointer removes the counter decrement, 1 less per
        iteration. known sizes: 'addi s3,s1,132' replaces 'li s3,33' at no
        cost, a run-time count needs one extra add.
+       done for known-size copy, compare and zero loops (set_loop_end,
+       12434 -> 12405 instructions) and for the run-time count byte and chunk
+       loops of copy and compare ('count' or the chunk register becomes the
+       end pointer, same instruction count, 1 less per iteration).
+       the end is built with 'address_of', not 'li': the compiler's own
+       image writer expands 'li t1, 2560' as lui/addi where llvm-mc uses
+       addi/slli, so such a constant fails the image check (test 092).
 
 [x] 5. '.Lbaz_write' loop shape
        tests 'beq a5,a0' at the top and ends with 'j 1b'. moving the test to

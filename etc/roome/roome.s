@@ -251,12 +251,11 @@ main:
     addi t0, t0, 1824
     # [1026:14] allocate scratch register -> t1
     # [1026:14] zero 4-byte words
-    li t1, 35
+    addi t1, t0, 140
     1:
     sw zero, 0(t0)
     addi t0, t0, 4
-    addi t1, t1, -1
-    bnez t1, 1b
+    bne t0, t1, 1b
     # [1026:14] free scratch register t1
     # [1026:14] free scratch register t0
     # [1028:9] out.set_silenced(true)
@@ -457,13 +456,13 @@ main:
                     # [406:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                     # [406:5] copy bytes; skip if none
                     beqz t3, 4f
+                    add t3, t3, t1
                     1:
                     lbu t4, 0(t1)
                     sb t4, 0(t2)
                     addi t1, t1, 1
                     addi t2, t2, 1
-                    addi t3, t3, -1
-                    bnez t3, 1b
+                    bne t1, t3, 1b
                     4:
                     # [406:5] free scratch register t4
                     # [406:5] free scratch register t3
@@ -494,13 +493,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -524,13 +522,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -594,26 +591,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.424.10.955.8.1018.13.1029.5.end:
                         # [425:5] self.end = self.start
                         # [425:16] self.start
                         # [425:16] allocate scratch register -> t0
+                        # [425:16] allocate scratch register -> t1
+                        # [425:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [425:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [425:16] free scratch register t1
                         # [425:16] free scratch register t0
                         # [426:5] label
@@ -810,14 +805,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -853,13 +848,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -883,13 +877,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -953,26 +946,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.500.8.958.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -1281,14 +1272,14 @@ main:
                                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                         # [453:11] compare bytes; skip if none
                                         beqz t3, 4f
+                                        add t3, t3, t1
                                         1:
                                         lbu t0, 0(t1)
                                         lbu t4, 0(t2)
                                         bne t0, t4, 5f
                                         addi t1, t1, 1
                                         addi t2, t2, 1
-                                        addi t3, t3, -1
-                                        bnez t3, 1b
+                                        bne t1, t3, 1b
                                         4:
                                         # [453:11] all matched or empty: true
                                         li t0, 1
@@ -1377,13 +1368,12 @@ main:
                             # [512:9] found_ix = links_len
                             # [512:20] links_len
                             # [512:20] allocate scratch register -> t0
+                            # [512:20] allocate scratch register -> t1
+                            # [512:20] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1976(t0)
-                            # [512:20] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1980(t1)
+                            lw t1, 1976(t0)
+                            sw t1, 1980(t0)
                             # [512:20] free scratch register t1
                             # [512:20] free scratch register t0
                             # [513:5] foo rooms.array[cur_room_id].links, links_len
@@ -1593,14 +1583,14 @@ main:
                                             # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                             # [458:11] compare bytes; skip if none
                                             beqz s2, 4f
+                                            add s2, s2, t6
                                             1:
                                             lbu t3, 0(t6)
                                             lbu s3, 0(s1)
                                             bne t3, s3, 5f
                                             addi t6, t6, 1
                                             addi s1, s1, 1
-                                            addi s2, s2, -1
-                                            bnez s2, 1b
+                                            bne t6, s2, 1b
                                             4:
                                             # [458:11] all matched or empty: true
                                             li t3, 1
@@ -2125,19 +2115,19 @@ main:
                                     # [133:5] allocate scratch register -> t5
                                     # [133:5] 4-byte accesses: type 4-byte aligned, addresses not proven more aligned
                                     # [133:5] allocate scratch register -> t6
-                                    # [133:5] t6: words, t4: tail bytes
+                                    # [133:5] t6: end of words, t4: tail bytes
                                     # [133:5] split bytes into chunks and tail; skip loop if none
-                                    srli t6, t4, 2
+                                    andi t6, t4, -4
                                     andi t4, t4, 3
                                     beqz t6, 2f
+                                    add t6, t6, t2
                                     # [133:5] copy 4-byte words
                                     1:
                                     lw t5, 0(t2)
                                     sw t5, 0(t3)
                                     addi t2, t2, 4
                                     addi t3, t3, 4
-                                    addi t6, t6, -1
-                                    bnez t6, 1b
+                                    bne t2, t6, 1b
                                     2:
                                     # [133:5] copy optional 2-byte tail
                                     andi t6, t4, 2
@@ -2430,12 +2420,11 @@ main:
                             addi t0, t0, 1992
                             # [537:21] allocate scratch register -> t1
                             # [537:21] zero 4-byte words
-                            li t1, 33
+                            addi t1, t0, 132
                             1:
                             sw zero, 0(t0)
                             addi t0, t0, 4
-                            addi t1, t1, -1
-                            bnez t1, 1b
+                            bne t0, t1, 1b
                             # [537:21] free scratch register t1
                             # [537:21] free scratch register t0
                             # [538:15] went_text.add(str_went_to)
@@ -2508,13 +2497,13 @@ main:
                                 # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [91:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [91:5] free scratch register t3
                                 # [91:5] free scratch register t2
@@ -2694,13 +2683,13 @@ main:
                                 # [182:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [182:5] copy bytes; skip if none
                                 beqz t4, 4f
+                                add t4, t4, t2
                                 1:
                                 lbu t5, 0(t2)
                                 sb t5, 0(t3)
                                 addi t2, t2, 1
                                 addi t3, t3, 1
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t2, t4, 1b
                                 4:
                                 # [182:5] free scratch register t5
                                 # [182:5] free scratch register t4
@@ -2994,14 +2983,13 @@ main:
                                         addi s2, s2, 1092
                                         # [206:42] allocate scratch register -> s3
                                         # [206:42] copy 4-byte words
-                                        li s3, 33
+                                        addi s3, s1, 132
                                         1:
                                         lw t6, 0(s1)
                                         sw t6, 0(s2)
                                         addi s1, s1, 4
                                         addi s2, s2, 4
-                                        addi s3, s3, -1
-                                        bnez s3, 1b
+                                        bne s1, s3, 1b
                                         # [206:42] free scratch register s3
                                         # [206:42] free scratch register s2
                                         # [206:42] free scratch register s1
@@ -3084,13 +3072,12 @@ main:
                             # [548:9] to_found_ix = to_links_len
                             # [548:23] to_links_len
                             # [548:23] allocate scratch register -> t0
+                            # [548:23] allocate scratch register -> t1
+                            # [548:23] source and destination share base t0
                             lui t0, 49
                             add t0, t0, s0
-                            lw t0, -1972(t0)
-                            # [548:23] allocate scratch register -> t1
-                            lui t1, 49
-                            add t1, t1, s0
-                            sw t0, -1968(t1)
+                            lw t1, -1972(t0)
+                            sw t1, -1968(t0)
                             # [548:23] free scratch register t1
                             # [548:23] free scratch register t0
                             # [549:5] foo rooms.array[to_room_id].links, to_links_len
@@ -3238,12 +3225,11 @@ main:
                             addi t0, t0, -1964
                             # [559:24] allocate scratch register -> t1
                             # [559:24] zero 4-byte words
-                            li t1, 33
+                            addi t1, t0, 132
                             1:
                             sw zero, 0(t0)
                             addi t0, t0, 4
-                            addi t1, t1, -1
-                            bnez t1, 1b
+                            bne t0, t1, 1b
                             # [559:24] free scratch register t1
                             # [559:24] free scratch register t0
                             # [560:18] arrived_text.add(str_arrived_from)
@@ -3316,13 +3302,13 @@ main:
                                 # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [91:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [91:5] free scratch register t3
                                 # [91:5] free scratch register t2
@@ -3502,13 +3488,13 @@ main:
                                 # [182:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [182:5] copy bytes; skip if none
                                 beqz t4, 4f
+                                add t4, t4, t2
                                 1:
                                 lbu t5, 0(t2)
                                 sb t5, 0(t3)
                                 addi t2, t2, 1
                                 addi t3, t3, 1
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t2, t4, 1b
                                 4:
                                 # [182:5] free scratch register t5
                                 # [182:5] free scratch register t4
@@ -3802,14 +3788,13 @@ main:
                                         addi s2, s2, 1092
                                         # [206:42] allocate scratch register -> s3
                                         # [206:42] copy 4-byte words
-                                        li s3, 33
+                                        addi s3, s1, 132
                                         1:
                                         lw t6, 0(s1)
                                         sw t6, 0(s2)
                                         addi s1, s1, 4
                                         addi s2, s2, 4
-                                        addi s3, s3, -1
-                                        bnez s3, 1b
+                                        bne s1, s3, 1b
                                         # [206:42] free scratch register s3
                                         # [206:42] free scratch register s2
                                         # [206:42] free scratch register s1
@@ -3960,14 +3945,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -4001,13 +3986,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -4031,13 +4015,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -4101,26 +4084,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.593.8.961.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -4535,14 +4516,14 @@ main:
                                                 # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                                 # [458:11] compare bytes; skip if none
                                                 beqz t6, 4f
+                                                add t6, t6, t4
                                                 1:
                                                 lbu t3, 0(t4)
                                                 lbu s1, 0(t5)
                                                 bne t3, s1, 5f
                                                 addi t4, t4, 1
                                                 addi t5, t5, 1
-                                                addi t6, t6, -1
-                                                bnez t6, 1b
+                                                bne t4, t6, 1b
                                                 4:
                                                 # [458:11] all matched or empty: true
                                                 li t3, 1
@@ -4739,13 +4720,13 @@ main:
                                     # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                     # [468:5] copy bytes; skip if none
                                     beqz t4, 4f
+                                    add t4, t4, t2
                                     1:
                                     lbu t5, 0(t2)
                                     sb t5, 0(t3)
                                     addi t2, t2, 1
                                     addi t3, t3, 1
-                                    addi t4, t4, -1
-                                    bnez t4, 1b
+                                    bne t2, t4, 1b
                                     4:
                                     # [468:5] free scratch register t5
                                     # [468:5] free scratch register t4
@@ -4791,13 +4772,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -4821,13 +4801,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -4891,26 +4870,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.606.8.961.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -5266,14 +5243,14 @@ main:
                                                 # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                                 # [458:11] compare bytes; skip if none
                                                 beqz t6, 4f
+                                                add t6, t6, t4
                                                 1:
                                                 lbu t3, 0(t4)
                                                 lbu s1, 0(t5)
                                                 bne t3, s1, 5f
                                                 addi t4, t4, 1
                                                 addi t5, t5, 1
-                                                addi t6, t6, -1
-                                                bnez t6, 1b
+                                                bne t4, t6, 1b
                                                 4:
                                                 # [458:11] all matched or empty: true
                                                 li t3, 1
@@ -5470,13 +5447,13 @@ main:
                                     # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                     # [468:5] copy bytes; skip if none
                                     beqz t4, 4f
+                                    add t4, t4, t2
                                     1:
                                     lbu t5, 0(t2)
                                     sb t5, 0(t3)
                                     addi t2, t2, 1
                                     addi t3, t3, 1
-                                    addi t4, t4, -1
-                                    bnez t4, 1b
+                                    bne t2, t4, 1b
                                     4:
                                     # [468:5] free scratch register t5
                                     # [468:5] free scratch register t4
@@ -5952,14 +5929,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -5989,13 +5966,12 @@ main:
                                 # [411:5] self.start = self.end
                                 # [411:18] self.end
                                 # [411:18] allocate scratch register -> t0
+                                # [411:18] allocate scratch register -> t1
+                                # [411:18] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1960(t0)
-                                # [411:18] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1956(t1)
+                                lw t1, 1960(t0)
+                                sw t1, 1956(t0)
                                 # [411:18] free scratch register t1
                                 # [411:18] free scratch register t0
                                 # [412:5] label
@@ -6019,13 +5995,12 @@ main:
                                         # [414:13] self.end = self.start
                                         # [414:24] self.start
                                         # [414:24] allocate scratch register -> t0
+                                        # [414:24] allocate scratch register -> t1
+                                        # [414:24] source and destination share base t0
                                         lui t0, 48
                                         add t0, t0, s0
-                                        lw t0, 1956(t0)
-                                        # [414:24] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        sw t0, 1960(t1)
+                                        lw t1, 1956(t0)
+                                        sw t1, 1960(t0)
                                         # [414:24] free scratch register t1
                                         # [414:24] free scratch register t0
                                         # [415:13] return
@@ -6089,13 +6064,12 @@ main:
                                 # [420:5] self.end = self.start
                                 # [420:16] self.start
                                 # [420:16] allocate scratch register -> t0
+                                # [420:16] allocate scratch register -> t1
+                                # [420:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [420:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [420:16] free scratch register t1
                                 # [420:16] free scratch register t0
                             func.tokenizer.skip_whitespace.638.8.964.9.1018.13.1029.5.end:
@@ -6106,25 +6080,23 @@ main:
                                 # [478:5] self.start = self.end
                                 # [478:18] self.end
                                 # [478:18] allocate scratch register -> t0
+                                # [478:18] allocate scratch register -> t1
+                                # [478:18] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1960(t0)
-                                # [478:18] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1956(t1)
+                                lw t1, 1960(t0)
+                                sw t1, 1956(t0)
                                 # [478:18] free scratch register t1
                                 # [478:18] free scratch register t0
                                 # [479:5] self.end = self.str.len
                                 # [479:16] self.str.len
                                 # [479:16] allocate scratch register -> t0
+                                # [479:16] allocate scratch register -> t1
+                                # [479:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1952(t0)
-                                # [479:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1952(t0)
+                                sw t1, 1960(t0)
                                 # [479:16] free scratch register t1
                                 # [479:16] free scratch register t0
                             func.tokenizer.to_end.639.8.964.9.1018.13.1029.5.end:
@@ -6210,12 +6182,11 @@ main:
                                 addi t2, t1, 0
                                 # [473:17] allocate scratch register -> t3
                                 # [473:17] zero bytes
-                                li t3, 127
+                                addi t3, t2, 127
                                 1:
                                 sb zero, 0(t2)
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t2, t3, 1b
                                 # [473:17] free scratch register t3
                                 # [473:17] free scratch register t2
                                 # [474:5] array_copy(self.str.array[self.start], res.array, res.len)
@@ -6279,13 +6250,13 @@ main:
                                 # [474:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [474:5] copy bytes; skip if none
                                 beqz t4, 4f
+                                add t4, t4, t2
                                 1:
                                 lbu t5, 0(t2)
                                 sb t5, 0(t3)
                                 addi t2, t2, 1
                                 addi t3, t3, 1
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t2, t4, 1b
                                 4:
                                 # [474:5] free scratch register t5
                                 # [474:5] free scratch register t4
@@ -6492,14 +6463,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -6529,13 +6500,12 @@ main:
                                 # [411:5] self.start = self.end
                                 # [411:18] self.end
                                 # [411:18] allocate scratch register -> t0
+                                # [411:18] allocate scratch register -> t1
+                                # [411:18] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1960(t0)
-                                # [411:18] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1956(t1)
+                                lw t1, 1960(t0)
+                                sw t1, 1956(t0)
                                 # [411:18] free scratch register t1
                                 # [411:18] free scratch register t0
                                 # [412:5] label
@@ -6559,13 +6529,12 @@ main:
                                         # [414:13] self.end = self.start
                                         # [414:24] self.start
                                         # [414:24] allocate scratch register -> t0
+                                        # [414:24] allocate scratch register -> t1
+                                        # [414:24] source and destination share base t0
                                         lui t0, 48
                                         add t0, t0, s0
-                                        lw t0, 1956(t0)
-                                        # [414:24] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        sw t0, 1960(t1)
+                                        lw t1, 1956(t0)
+                                        sw t1, 1960(t0)
                                         # [414:24] free scratch register t1
                                         # [414:24] free scratch register t0
                                         # [415:13] return
@@ -6629,13 +6598,12 @@ main:
                                 # [420:5] self.end = self.start
                                 # [420:16] self.start
                                 # [420:16] allocate scratch register -> t0
+                                # [420:16] allocate scratch register -> t1
+                                # [420:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [420:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [420:16] free scratch register t1
                                 # [420:16] free scratch register t0
                             func.tokenizer.skip_whitespace.646.8.967.9.1018.13.1029.5.end:
@@ -6646,25 +6614,23 @@ main:
                                 # [478:5] self.start = self.end
                                 # [478:18] self.end
                                 # [478:18] allocate scratch register -> t0
+                                # [478:18] allocate scratch register -> t1
+                                # [478:18] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1960(t0)
-                                # [478:18] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1956(t1)
+                                lw t1, 1960(t0)
+                                sw t1, 1956(t0)
                                 # [478:18] free scratch register t1
                                 # [478:18] free scratch register t0
                                 # [479:5] self.end = self.str.len
                                 # [479:16] self.str.len
                                 # [479:16] allocate scratch register -> t0
+                                # [479:16] allocate scratch register -> t1
+                                # [479:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1952(t0)
-                                # [479:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1952(t0)
+                                sw t1, 1960(t0)
                                 # [479:16] free scratch register t1
                                 # [479:16] free scratch register t0
                             func.tokenizer.to_end.647.8.967.9.1018.13.1029.5.end:
@@ -6750,12 +6716,11 @@ main:
                                 addi t2, t1, 0
                                 # [473:17] allocate scratch register -> t3
                                 # [473:17] zero bytes
-                                li t3, 127
+                                addi t3, t2, 127
                                 1:
                                 sb zero, 0(t2)
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t2, t3, 1b
                                 # [473:17] free scratch register t3
                                 # [473:17] free scratch register t2
                                 # [474:5] array_copy(self.str.array[self.start], res.array, res.len)
@@ -6819,13 +6784,13 @@ main:
                                 # [474:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [474:5] copy bytes; skip if none
                                 beqz t4, 4f
+                                add t4, t4, t2
                                 1:
                                 lbu t5, 0(t2)
                                 sb t5, 0(t3)
                                 addi t2, t2, 1
                                 addi t3, t3, 1
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t2, t4, 1b
                                 4:
                                 # [474:5] free scratch register t5
                                 # [474:5] free scratch register t4
@@ -6954,14 +6919,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -6995,13 +6960,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -7025,13 +6989,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -7095,26 +7058,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.656.8.970.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -7563,13 +7524,13 @@ main:
                                 # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [468:5] copy bytes; skip if none
                                 beqz t4, 4f
+                                add t4, t4, t2
                                 1:
                                 lbu t5, 0(t2)
                                 sb t5, 0(t3)
                                 addi t2, t2, 1
                                 addi t3, t3, 1
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t2, t4, 1b
                                 4:
                                 # [468:5] free scratch register t5
                                 # [468:5] free scratch register t4
@@ -7776,14 +7737,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -7817,13 +7778,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -7847,13 +7807,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -7917,26 +7876,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.676.8.973.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -8239,13 +8196,13 @@ main:
                                 # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [468:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [468:5] free scratch register t3
                                 # [468:5] free scratch register t2
@@ -8318,14 +8275,13 @@ main:
                                 addi t3, t3, 928
                                 # [258:30] allocate scratch register -> t4
                                 # [258:30] copy 4-byte words
-                                li t4, 5
+                                addi t4, t2, 20
                                 1:
                                 lw t1, 0(t2)
                                 sw t1, 0(t3)
                                 addi t2, t2, 4
                                 addi t3, t3, 4
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t2, t4, 1b
                                 # [258:30] free scratch register t4
                                 # [258:30] free scratch register t3
                                 # [258:30] free scratch register t2
@@ -8347,12 +8303,13 @@ main:
                                 addi t1, t1, 952
                                 # [258:28] allocate scratch register -> t2
                                 # [258:28] zero 4-byte words
-                                li t2, 594
+                                lui t2, 1
+                                add t2, t2, t1
+                                addi t2, t2, -1720
                                 1:
                                 sw zero, 0(t1)
                                 addi t1, t1, 4
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t1, t2, 1b
                                 # [258:28] free scratch register t2
                                 # [258:28] free scratch register t1
                                 # [258:5] free scratch register t0
@@ -8681,14 +8638,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -8722,13 +8679,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -8752,13 +8708,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -8822,26 +8777,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.697.8.976.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -9144,13 +9097,13 @@ main:
                                 # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [468:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [468:5] free scratch register t3
                                 # [468:5] free scratch register t2
@@ -9210,14 +9163,13 @@ main:
                                 addi t3, t3, -88
                                 # [285:30] allocate scratch register -> t4
                                 # [285:30] copy 4-byte words
-                                li t4, 5
+                                addi t4, t2, 20
                                 1:
                                 lw t1, 0(t2)
                                 sw t1, 0(t3)
                                 addi t2, t2, 4
                                 addi t3, t3, 4
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t2, t4, 1b
                                 # [285:30] free scratch register t4
                                 # [285:30] free scratch register t3
                                 # [285:30] free scratch register t2
@@ -9509,14 +9461,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -10171,14 +10123,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -10212,13 +10164,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -10242,13 +10193,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -10312,26 +10262,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.745.8.982.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -10539,13 +10487,12 @@ main:
                             # [754:9] found_ix = len
                             # [754:20] len
                             # [754:20] allocate scratch register -> t0
+                            # [754:20] allocate scratch register -> t1
+                            # [754:20] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1972(t0)
-                            # [754:20] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1976(t1)
+                            lw t1, 1972(t0)
+                            sw t1, 1976(t0)
                             # [754:20] free scratch register t1
                             # [754:20] free scratch register t0
                             # [755:5] foo entities.array[cur_entity_id].objects.array, len
@@ -10720,14 +10667,14 @@ main:
                                             # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                             # [458:11] compare bytes; skip if none
                                             beqz s2, 4f
+                                            add s2, s2, t6
                                             1:
                                             lbu t3, 0(t6)
                                             lbu s3, 0(s1)
                                             bne t3, s3, 5f
                                             addi t6, t6, 1
                                             addi s1, s1, 1
-                                            addi s2, s2, -1
-                                            bnez s2, 1b
+                                            bne t6, s2, 1b
                                             4:
                                             # [458:11] all matched or empty: true
                                             li t3, 1
@@ -11100,19 +11047,19 @@ main:
                                 # [133:5] allocate scratch register -> t3
                                 # [133:5] 4-byte accesses: type 4-byte aligned, addresses not proven more aligned
                                 # [133:5] allocate scratch register -> t4
-                                # [133:5] t4: words, t2: tail bytes
+                                # [133:5] t4: end of words, t2: tail bytes
                                 # [133:5] split bytes into chunks and tail; skip loop if none
-                                srli t4, t2, 2
+                                andi t4, t2, -4
                                 andi t2, t2, 3
                                 beqz t4, 2f
+                                add t4, t4, t0
                                 # [133:5] copy 4-byte words
                                 1:
                                 lw t3, 0(t0)
                                 sw t3, 0(t1)
                                 addi t0, t0, 4
                                 addi t1, t1, 4
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t0, t4, 1b
                                 2:
                                 # [133:5] copy optional 2-byte tail
                                 andi t4, t2, 2
@@ -11511,14 +11458,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -11552,13 +11499,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -11582,13 +11528,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -11652,26 +11597,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.785.8.985.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -11879,13 +11822,12 @@ main:
                             # [794:9] found_ix = len
                             # [794:20] len
                             # [794:20] allocate scratch register -> t0
+                            # [794:20] allocate scratch register -> t1
+                            # [794:20] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1972(t0)
-                            # [794:20] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1976(t1)
+                            lw t1, 1972(t0)
+                            sw t1, 1976(t0)
                             # [794:20] free scratch register t1
                             # [794:20] free scratch register t0
                             # [795:5] foo entities.array[cur_entity_id].objects.array, len
@@ -12060,14 +12002,14 @@ main:
                                             # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                             # [458:11] compare bytes; skip if none
                                             beqz s2, 4f
+                                            add s2, s2, t6
                                             1:
                                             lbu t3, 0(t6)
                                             lbu s3, 0(s1)
                                             bne t3, s3, 5f
                                             addi t6, t6, 1
                                             addi s1, s1, 1
-                                            addi s2, s2, -1
-                                            bnez s2, 1b
+                                            bne t6, s2, 1b
                                             4:
                                             # [458:11] all matched or empty: true
                                             li t3, 1
@@ -12280,14 +12222,13 @@ main:
                             addi t3, t3, 1984
                             # [808:23] allocate scratch register -> t4
                             # [808:23] copy 4-byte words
-                            li t4, 5
+                            addi t4, t2, 20
                             1:
                             lw t1, 0(t2)
                             sw t1, 0(t3)
                             addi t2, t2, 4
                             addi t3, t3, 4
-                            addi t4, t4, -1
-                            bnez t4, 1b
+                            bne t2, t4, 1b
                             # [808:23] free scratch register t4
                             # [808:23] free scratch register t3
                             # [808:23] free scratch register t2
@@ -12304,13 +12245,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -12334,13 +12274,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -12404,26 +12343,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.810.8.985.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -12678,13 +12615,12 @@ main:
                             # [820:9] to_entity = room_entities_len
                             # [820:21] room_entities_len
                             # [820:21] allocate scratch register -> t0
+                            # [820:21] allocate scratch register -> t1
+                            # [820:21] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 2008(t0)
-                            # [820:21] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 2012(t1)
+                            lw t1, 2008(t0)
+                            sw t1, 2012(t0)
                             # [820:21] free scratch register t1
                             # [820:21] free scratch register t0
                             # [821:5] foo rooms.array[room_id].entities.array, room_entities_len
@@ -12904,14 +12840,14 @@ main:
                                             # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                             # [458:11] compare bytes; skip if none
                                             beqz s2, 4f
+                                            add s2, s2, t6
                                             1:
                                             lbu t3, 0(t6)
                                             lbu s3, 0(s1)
                                             bne t3, s3, 5f
                                             addi t6, t6, 1
                                             addi s1, s1, 1
-                                            addi s2, s2, -1
-                                            bnez s2, 1b
+                                            bne t6, s2, 1b
                                             4:
                                             # [458:11] all matched or empty: true
                                             li t3, 1
@@ -13324,19 +13260,19 @@ main:
                                 # [133:5] allocate scratch register -> t3
                                 # [133:5] 4-byte accesses: type 4-byte aligned, addresses not proven more aligned
                                 # [133:5] allocate scratch register -> t4
-                                # [133:5] t4: words, t2: tail bytes
+                                # [133:5] t4: end of words, t2: tail bytes
                                 # [133:5] split bytes into chunks and tail; skip loop if none
-                                srli t4, t2, 2
+                                andi t4, t2, -4
                                 andi t2, t2, 3
                                 beqz t4, 2f
+                                add t4, t4, t0
                                 # [133:5] copy 4-byte words
                                 1:
                                 lw t3, 0(t0)
                                 sw t3, 0(t1)
                                 addi t0, t0, 4
                                 addi t1, t1, 4
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t0, t4, 1b
                                 2:
                                 # [133:5] copy optional 2-byte tail
                                 andi t4, t2, 2
@@ -13791,12 +13727,11 @@ main:
                             addi t0, t0, 2020
                             # [845:21] allocate scratch register -> t1
                             # [845:21] zero 4-byte words
-                            li t1, 33
+                            addi t1, t0, 132
                             1:
                             sw zero, 0(t0)
                             addi t0, t0, 4
-                            addi t1, t1, -1
-                            bnez t1, 1b
+                            bne t0, t1, 1b
                             # [845:21] free scratch register t1
                             # [845:21] free scratch register t0
                             # [846:15] gave_text.add(str_gave)
@@ -13869,13 +13804,13 @@ main:
                                 # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [91:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [91:5] free scratch register t3
                                 # [91:5] free scratch register t2
@@ -13997,13 +13932,13 @@ main:
                                 # [182:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [182:5] copy bytes; skip if none
                                 beqz t4, 4f
+                                add t4, t4, t2
                                 1:
                                 lbu t5, 0(t2)
                                 sb t5, 0(t3)
                                 addi t2, t2, 1
                                 addi t3, t3, 1
-                                addi t4, t4, -1
-                                bnez t4, 1b
+                                bne t2, t4, 1b
                                 4:
                                 # [182:5] free scratch register t5
                                 # [182:5] free scratch register t4
@@ -14096,13 +14031,13 @@ main:
                                 # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [91:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [91:5] free scratch register t3
                                 # [91:5] free scratch register t2
@@ -14196,13 +14131,13 @@ main:
                                 # [182:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [182:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [182:5] free scratch register t3
                                 # [182:5] free scratch register t2
@@ -14496,14 +14431,13 @@ main:
                                         addi s2, s2, 1092
                                         # [206:42] allocate scratch register -> s3
                                         # [206:42] copy 4-byte words
-                                        li s3, 33
+                                        addi s3, s1, 132
                                         1:
                                         lw t6, 0(s1)
                                         sw t6, 0(s2)
                                         addi s1, s1, 4
                                         addi s2, s2, 4
-                                        addi s3, s3, -1
-                                        bnez s3, 1b
+                                        bne s1, s3, 1b
                                         # [206:42] free scratch register s3
                                         # [206:42] free scratch register s2
                                         # [206:42] free scratch register s1
@@ -14654,14 +14588,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -14695,13 +14629,12 @@ main:
                                     # [411:5] self.start = self.end
                                     # [411:18] self.end
                                     # [411:18] allocate scratch register -> t0
+                                    # [411:18] allocate scratch register -> t1
+                                    # [411:18] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1960(t0)
-                                    # [411:18] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1956(t1)
+                                    lw t1, 1960(t0)
+                                    sw t1, 1956(t0)
                                     # [411:18] free scratch register t1
                                     # [411:18] free scratch register t0
                                     # [412:5] label
@@ -14725,13 +14658,12 @@ main:
                                             # [414:13] self.end = self.start
                                             # [414:24] self.start
                                             # [414:24] allocate scratch register -> t0
+                                            # [414:24] allocate scratch register -> t1
+                                            # [414:24] source and destination share base t0
                                             lui t0, 48
                                             add t0, t0, s0
-                                            lw t0, 1956(t0)
-                                            # [414:24] allocate scratch register -> t1
-                                            lui t1, 48
-                                            add t1, t1, s0
-                                            sw t0, 1960(t1)
+                                            lw t1, 1956(t0)
+                                            sw t1, 1960(t0)
                                             # [414:24] free scratch register t1
                                             # [414:24] free scratch register t0
                                             # [415:13] return
@@ -14795,26 +14727,24 @@ main:
                                     # [420:5] self.end = self.start
                                     # [420:16] self.start
                                     # [420:16] allocate scratch register -> t0
+                                    # [420:16] allocate scratch register -> t1
+                                    # [420:16] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [420:16] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [420:16] free scratch register t1
                                     # [420:16] free scratch register t0
                                 func.tokenizer.skip_whitespace.434.10.860.8.988.9.1018.13.1029.5.end:
                                 # [435:5] self.end = self.start
                                 # [435:16] self.start
                                 # [435:16] allocate scratch register -> t0
+                                # [435:16] allocate scratch register -> t1
+                                # [435:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [435:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [435:16] free scratch register t1
                                 # [435:16] free scratch register t0
                                 # [436:5] label
@@ -15160,14 +15090,14 @@ main:
                                             # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                             # [458:11] compare bytes; skip if none
                                             beqz t6, 4f
+                                            add t6, t6, t4
                                             1:
                                             lbu t3, 0(t4)
                                             lbu s1, 0(t5)
                                             bne t3, s1, 5f
                                             addi t4, t4, 1
                                             addi t5, t5, 1
-                                            addi t6, t6, -1
-                                            bnez t6, 1b
+                                            bne t4, t6, 1b
                                             4:
                                             # [458:11] all matched or empty: true
                                             li t3, 1
@@ -15614,13 +15544,12 @@ main:
                                 # [411:5] self.start = self.end
                                 # [411:18] self.end
                                 # [411:18] allocate scratch register -> t0
+                                # [411:18] allocate scratch register -> t1
+                                # [411:18] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1960(t0)
-                                # [411:18] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1956(t1)
+                                lw t1, 1960(t0)
+                                sw t1, 1956(t0)
                                 # [411:18] free scratch register t1
                                 # [411:18] free scratch register t0
                                 # [412:5] label
@@ -15644,13 +15573,12 @@ main:
                                         # [414:13] self.end = self.start
                                         # [414:24] self.start
                                         # [414:24] allocate scratch register -> t0
+                                        # [414:24] allocate scratch register -> t1
+                                        # [414:24] source and destination share base t0
                                         lui t0, 48
                                         add t0, t0, s0
-                                        lw t0, 1956(t0)
-                                        # [414:24] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        sw t0, 1960(t1)
+                                        lw t1, 1956(t0)
+                                        sw t1, 1960(t0)
                                         # [414:24] free scratch register t1
                                         # [414:24] free scratch register t0
                                         # [415:13] return
@@ -15714,13 +15642,12 @@ main:
                                 # [420:5] self.end = self.start
                                 # [420:16] self.start
                                 # [420:16] allocate scratch register -> t0
+                                # [420:16] allocate scratch register -> t1
+                                # [420:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [420:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [420:16] free scratch register t1
                                 # [420:16] free scratch register t0
                             func.tokenizer.skip_whitespace.889.8.988.9.1018.13.1029.5.end:
@@ -15731,25 +15658,23 @@ main:
                                 # [478:5] self.start = self.end
                                 # [478:18] self.end
                                 # [478:18] allocate scratch register -> t0
+                                # [478:18] allocate scratch register -> t1
+                                # [478:18] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1960(t0)
-                                # [478:18] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1956(t1)
+                                lw t1, 1960(t0)
+                                sw t1, 1956(t0)
                                 # [478:18] free scratch register t1
                                 # [478:18] free scratch register t0
                                 # [479:5] self.end = self.str.len
                                 # [479:16] self.str.len
                                 # [479:16] allocate scratch register -> t0
+                                # [479:16] allocate scratch register -> t1
+                                # [479:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1952(t0)
-                                # [479:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1952(t0)
+                                sw t1, 1960(t0)
                                 # [479:16] free scratch register t1
                                 # [479:16] free scratch register t0
                             func.tokenizer.to_end.890.8.988.9.1018.13.1029.5.end:
@@ -15917,12 +15842,11 @@ main:
                                 addi t0, t0, 1976
                                 # [473:17] allocate scratch register -> t1
                                 # [473:17] zero 4-byte words
-                                li t1, 31
+                                addi t1, t0, 124
                                 1:
                                 sw zero, 0(t0)
                                 addi t0, t0, 4
-                                addi t1, t1, -1
-                                bnez t1, 1b
+                                bne t0, t1, 1b
                                 # [473:17] zero 3 B tail
                                 sh zero, 0(t0)
                                 sb zero, 2(t0)
@@ -15993,13 +15917,13 @@ main:
                                 # [474:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [474:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [474:5] free scratch register t3
                                 # [474:5] free scratch register t2
@@ -16095,14 +16019,13 @@ main:
                                 addi t5, t5, 1092
                                 # [206:42] allocate scratch register -> t6
                                 # [206:42] copy 4-byte words
-                                li t6, 33
+                                addi t6, t4, 132
                                 1:
                                 lw t3, 0(t4)
                                 sw t3, 0(t5)
                                 addi t4, t4, 4
                                 addi t5, t5, 4
-                                addi t6, t6, -1
-                                bnez t6, 1b
+                                bne t4, t6, 1b
                                 # [206:42] free scratch register t6
                                 # [206:42] free scratch register t5
                                 # [206:42] free scratch register t4
@@ -16244,14 +16167,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -16281,13 +16204,12 @@ main:
                                 # [411:5] self.start = self.end
                                 # [411:18] self.end
                                 # [411:18] allocate scratch register -> t0
+                                # [411:18] allocate scratch register -> t1
+                                # [411:18] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1960(t0)
-                                # [411:18] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1956(t1)
+                                lw t1, 1960(t0)
+                                sw t1, 1956(t0)
                                 # [411:18] free scratch register t1
                                 # [411:18] free scratch register t0
                                 # [412:5] label
@@ -16311,13 +16233,12 @@ main:
                                         # [414:13] self.end = self.start
                                         # [414:24] self.start
                                         # [414:24] allocate scratch register -> t0
+                                        # [414:24] allocate scratch register -> t1
+                                        # [414:24] source and destination share base t0
                                         lui t0, 48
                                         add t0, t0, s0
-                                        lw t0, 1956(t0)
-                                        # [414:24] allocate scratch register -> t1
-                                        lui t1, 48
-                                        add t1, t1, s0
-                                        sw t0, 1960(t1)
+                                        lw t1, 1956(t0)
+                                        sw t1, 1960(t0)
                                         # [414:24] free scratch register t1
                                         # [414:24] free scratch register t0
                                         # [415:13] return
@@ -16381,13 +16302,12 @@ main:
                                 # [420:5] self.end = self.start
                                 # [420:16] self.start
                                 # [420:16] allocate scratch register -> t0
+                                # [420:16] allocate scratch register -> t1
+                                # [420:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [420:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [420:16] free scratch register t1
                                 # [420:16] free scratch register t0
                             func.tokenizer.skip_whitespace.906.8.991.9.1018.13.1029.5.end:
@@ -16398,25 +16318,23 @@ main:
                                 # [478:5] self.start = self.end
                                 # [478:18] self.end
                                 # [478:18] allocate scratch register -> t0
+                                # [478:18] allocate scratch register -> t1
+                                # [478:18] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1960(t0)
-                                # [478:18] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1956(t1)
+                                lw t1, 1960(t0)
+                                sw t1, 1956(t0)
                                 # [478:18] free scratch register t1
                                 # [478:18] free scratch register t0
                                 # [479:5] self.end = self.str.len
                                 # [479:16] self.str.len
                                 # [479:16] allocate scratch register -> t0
+                                # [479:16] allocate scratch register -> t1
+                                # [479:16] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1952(t0)
-                                # [479:16] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1952(t0)
+                                sw t1, 1960(t0)
                                 # [479:16] free scratch register t1
                                 # [479:16] free scratch register t0
                             func.tokenizer.to_end.907.8.991.9.1018.13.1029.5.end:
@@ -16584,12 +16502,11 @@ main:
                                 addi t0, t0, 1972
                                 # [473:17] allocate scratch register -> t1
                                 # [473:17] zero 4-byte words
-                                li t1, 31
+                                addi t1, t0, 124
                                 1:
                                 sw zero, 0(t0)
                                 addi t0, t0, 4
-                                addi t1, t1, -1
-                                bnez t1, 1b
+                                bne t0, t1, 1b
                                 # [473:17] zero 3 B tail
                                 sh zero, 0(t0)
                                 sb zero, 2(t0)
@@ -16660,13 +16577,13 @@ main:
                                 # [474:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [474:5] copy bytes; skip if none
                                 beqz t2, 4f
+                                add t2, t2, t0
                                 1:
                                 lbu t3, 0(t0)
                                 sb t3, 0(t1)
                                 addi t0, t0, 1
                                 addi t1, t1, 1
-                                addi t2, t2, -1
-                                bnez t2, 1b
+                                bne t0, t2, 1b
                                 4:
                                 # [474:5] free scratch register t3
                                 # [474:5] free scratch register t2
@@ -16938,14 +16855,13 @@ main:
                                         addi s2, s2, 1092
                                         # [206:42] allocate scratch register -> s3
                                         # [206:42] copy 4-byte words
-                                        li s3, 33
+                                        addi s3, s1, 132
                                         1:
                                         lw t6, 0(s1)
                                         sw t6, 0(s2)
                                         addi s1, s1, 4
                                         addi s2, s2, 4
-                                        addi s3, s3, -1
-                                        bnez s3, 1b
+                                        bne s1, s3, 1b
                                         # [206:42] free scratch register s3
                                         # [206:42] free scratch register s2
                                         # [206:42] free scratch register s1
@@ -17096,14 +17012,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -20569,13 +20485,12 @@ main:
                 # [112:5] self.len = nbytes
                 # [112:16] nbytes
                 # [112:16] allocate scratch register -> t0
+                # [112:16] allocate scratch register -> t1
+                # [112:16] source and destination share base t0
                 lui t0, 48
                 add t0, t0, s0
-                lw t0, 1968(t0)
-                # [112:16] allocate scratch register -> t1
-                lui t1, 48
-                add t1, t1, s0
-                sw t0, 1952(t1)
+                lw t1, 1968(t0)
+                sw t1, 1952(t0)
                 # [112:16] free scratch register t1
                 # [112:16] free scratch register t0
             func.str.input.400.14.1050.12.end:
@@ -20677,13 +20592,12 @@ main:
                     # [411:5] self.start = self.end
                     # [411:18] self.end
                     # [411:18] allocate scratch register -> t0
+                    # [411:18] allocate scratch register -> t1
+                    # [411:18] source and destination share base t0
                     lui t0, 48
                     add t0, t0, s0
-                    lw t0, 1960(t0)
-                    # [411:18] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    sw t0, 1956(t1)
+                    lw t1, 1960(t0)
+                    sw t1, 1956(t0)
                     # [411:18] free scratch register t1
                     # [411:18] free scratch register t0
                     # [412:5] label
@@ -20707,13 +20621,12 @@ main:
                             # [414:13] self.end = self.start
                             # [414:24] self.start
                             # [414:24] allocate scratch register -> t0
+                            # [414:24] allocate scratch register -> t1
+                            # [414:24] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [414:24] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [414:24] free scratch register t1
                             # [414:24] free scratch register t0
                             # [415:13] return
@@ -20777,26 +20690,24 @@ main:
                     # [420:5] self.end = self.start
                     # [420:16] self.start
                     # [420:16] allocate scratch register -> t0
+                    # [420:16] allocate scratch register -> t1
+                    # [420:16] source and destination share base t0
                     lui t0, 48
                     add t0, t0, s0
-                    lw t0, 1956(t0)
-                    # [420:16] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    sw t0, 1960(t1)
+                    lw t1, 1956(t0)
+                    sw t1, 1960(t0)
                     # [420:16] free scratch register t1
                     # [420:16] free scratch register t0
                 func.tokenizer.skip_whitespace.424.10.955.8.1052.9.end:
                 # [425:5] self.end = self.start
                 # [425:16] self.start
                 # [425:16] allocate scratch register -> t0
+                # [425:16] allocate scratch register -> t1
+                # [425:16] source and destination share base t0
                 lui t0, 48
                 add t0, t0, s0
-                lw t0, 1956(t0)
-                # [425:16] allocate scratch register -> t1
-                lui t1, 48
-                add t1, t1, s0
-                sw t0, 1960(t1)
+                lw t1, 1956(t0)
+                sw t1, 1960(t0)
                 # [425:16] free scratch register t1
                 # [425:16] free scratch register t0
                 # [426:5] label
@@ -20993,14 +20904,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -21036,13 +20947,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -21066,13 +20976,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -21136,26 +21045,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.500.8.958.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -21464,14 +21371,14 @@ main:
                                 # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                 # [453:11] compare bytes; skip if none
                                 beqz t3, 4f
+                                add t3, t3, t1
                                 1:
                                 lbu t0, 0(t1)
                                 lbu t4, 0(t2)
                                 bne t0, t4, 5f
                                 addi t1, t1, 1
                                 addi t2, t2, 1
-                                addi t3, t3, -1
-                                bnez t3, 1b
+                                bne t1, t3, 1b
                                 4:
                                 # [453:11] all matched or empty: true
                                 li t0, 1
@@ -21591,13 +21498,12 @@ main:
                     # [512:9] found_ix = links_len
                     # [512:20] links_len
                     # [512:20] allocate scratch register -> t0
+                    # [512:20] allocate scratch register -> t1
+                    # [512:20] source and destination share base t0
                     lui t0, 48
                     add t0, t0, s0
-                    lw t0, 1972(t0)
-                    # [512:20] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    sw t0, 1976(t1)
+                    lw t1, 1972(t0)
+                    sw t1, 1976(t0)
                     # [512:20] free scratch register t1
                     # [512:20] free scratch register t0
                     # [513:5] foo rooms.array[cur_room_id].links, links_len
@@ -21807,14 +21713,14 @@ main:
                                     # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                     # [458:11] compare bytes; skip if none
                                     beqz s2, 4f
+                                    add s2, s2, t6
                                     1:
                                     lbu t3, 0(t6)
                                     lbu s3, 0(s1)
                                     bne t3, s3, 5f
                                     addi t6, t6, 1
                                     addi s1, s1, 1
-                                    addi s2, s2, -1
-                                    bnez s2, 1b
+                                    bne t6, s2, 1b
                                     4:
                                     # [458:11] all matched or empty: true
                                     li t3, 1
@@ -22382,19 +22288,19 @@ main:
                             # [133:5] allocate scratch register -> t5
                             # [133:5] 4-byte accesses: type 4-byte aligned, addresses not proven more aligned
                             # [133:5] allocate scratch register -> t6
-                            # [133:5] t6: words, t4: tail bytes
+                            # [133:5] t6: end of words, t4: tail bytes
                             # [133:5] split bytes into chunks and tail; skip loop if none
-                            srli t6, t4, 2
+                            andi t6, t4, -4
                             andi t4, t4, 3
                             beqz t6, 2f
+                            add t6, t6, t2
                             # [133:5] copy 4-byte words
                             1:
                             lw t5, 0(t2)
                             sw t5, 0(t3)
                             addi t2, t2, 4
                             addi t3, t3, 4
-                            addi t6, t6, -1
-                            bnez t6, 1b
+                            bne t2, t6, 1b
                             2:
                             # [133:5] copy optional 2-byte tail
                             andi t6, t4, 2
@@ -22687,12 +22593,11 @@ main:
                     addi t0, t0, 1988
                     # [537:21] allocate scratch register -> t1
                     # [537:21] zero 4-byte words
-                    li t1, 33
+                    addi t1, t0, 132
                     1:
                     sw zero, 0(t0)
                     addi t0, t0, 4
-                    addi t1, t1, -1
-                    bnez t1, 1b
+                    bne t0, t1, 1b
                     # [537:21] free scratch register t1
                     # [537:21] free scratch register t0
                     # [538:15] went_text.add(str_went_to)
@@ -22765,13 +22670,13 @@ main:
                         # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [91:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [91:5] free scratch register t3
                         # [91:5] free scratch register t2
@@ -22951,13 +22856,13 @@ main:
                         # [182:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [182:5] copy bytes; skip if none
                         beqz t4, 4f
+                        add t4, t4, t2
                         1:
                         lbu t5, 0(t2)
                         sb t5, 0(t3)
                         addi t2, t2, 1
                         addi t3, t3, 1
-                        addi t4, t4, -1
-                        bnez t4, 1b
+                        bne t2, t4, 1b
                         4:
                         # [182:5] free scratch register t5
                         # [182:5] free scratch register t4
@@ -23261,14 +23166,13 @@ main:
                                 addi s2, s2, 1092
                                 # [206:42] allocate scratch register -> s3
                                 # [206:42] copy 4-byte words
-                                li s3, 33
+                                addi s3, s1, 132
                                 1:
                                 lw t6, 0(s1)
                                 sw t6, 0(s2)
                                 addi s1, s1, 4
                                 addi s2, s2, 4
-                                addi s3, s3, -1
-                                bnez s3, 1b
+                                bne s1, s3, 1b
                                 # [206:42] free scratch register s3
                                 # [206:42] free scratch register s2
                                 # [206:42] free scratch register s1
@@ -23351,13 +23255,12 @@ main:
                     # [548:9] to_found_ix = to_links_len
                     # [548:23] to_links_len
                     # [548:23] allocate scratch register -> t0
+                    # [548:23] allocate scratch register -> t1
+                    # [548:23] source and destination share base t0
                     lui t0, 49
                     add t0, t0, s0
-                    lw t0, -1976(t0)
-                    # [548:23] allocate scratch register -> t1
-                    lui t1, 49
-                    add t1, t1, s0
-                    sw t0, -1972(t1)
+                    lw t1, -1976(t0)
+                    sw t1, -1972(t0)
                     # [548:23] free scratch register t1
                     # [548:23] free scratch register t0
                     # [549:5] foo rooms.array[to_room_id].links, to_links_len
@@ -23505,12 +23408,11 @@ main:
                     addi t0, t0, -1968
                     # [559:24] allocate scratch register -> t1
                     # [559:24] zero 4-byte words
-                    li t1, 33
+                    addi t1, t0, 132
                     1:
                     sw zero, 0(t0)
                     addi t0, t0, 4
-                    addi t1, t1, -1
-                    bnez t1, 1b
+                    bne t0, t1, 1b
                     # [559:24] free scratch register t1
                     # [559:24] free scratch register t0
                     # [560:18] arrived_text.add(str_arrived_from)
@@ -23583,13 +23485,13 @@ main:
                         # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [91:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [91:5] free scratch register t3
                         # [91:5] free scratch register t2
@@ -23769,13 +23671,13 @@ main:
                         # [182:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [182:5] copy bytes; skip if none
                         beqz t4, 4f
+                        add t4, t4, t2
                         1:
                         lbu t5, 0(t2)
                         sb t5, 0(t3)
                         addi t2, t2, 1
                         addi t3, t3, 1
-                        addi t4, t4, -1
-                        bnez t4, 1b
+                        bne t2, t4, 1b
                         4:
                         # [182:5] free scratch register t5
                         # [182:5] free scratch register t4
@@ -24079,14 +23981,13 @@ main:
                                 addi s2, s2, 1092
                                 # [206:42] allocate scratch register -> s3
                                 # [206:42] copy 4-byte words
-                                li s3, 33
+                                addi s3, s1, 132
                                 1:
                                 lw t6, 0(s1)
                                 sw t6, 0(s2)
                                 addi s1, s1, 4
                                 addi s2, s2, 4
-                                addi s3, s3, -1
-                                bnez s3, 1b
+                                bne s1, s3, 1b
                                 # [206:42] free scratch register s3
                                 # [206:42] free scratch register s2
                                 # [206:42] free scratch register s1
@@ -24237,14 +24138,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -24278,13 +24179,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -24308,13 +24208,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -24378,26 +24277,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.593.8.961.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -24843,14 +24740,14 @@ main:
                                         # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                         # [458:11] compare bytes; skip if none
                                         beqz t6, 4f
+                                        add t6, t6, t4
                                         1:
                                         lbu t3, 0(t4)
                                         lbu s1, 0(t5)
                                         bne t3, s1, 5f
                                         addi t4, t4, 1
                                         addi t5, t5, 1
-                                        addi t6, t6, -1
-                                        bnez t6, 1b
+                                        bne t4, t6, 1b
                                         4:
                                         # [458:11] all matched or empty: true
                                         li t3, 1
@@ -25047,13 +24944,13 @@ main:
                             # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                             # [468:5] copy bytes; skip if none
                             beqz t4, 4f
+                            add t4, t4, t2
                             1:
                             lbu t5, 0(t2)
                             sb t5, 0(t3)
                             addi t2, t2, 1
                             addi t3, t3, 1
-                            addi t4, t4, -1
-                            bnez t4, 1b
+                            bne t2, t4, 1b
                             4:
                             # [468:5] free scratch register t5
                             # [468:5] free scratch register t4
@@ -25099,13 +24996,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -25129,13 +25025,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -25199,26 +25094,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.606.8.961.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -25574,14 +25467,14 @@ main:
                                         # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                         # [458:11] compare bytes; skip if none
                                         beqz t6, 4f
+                                        add t6, t6, t4
                                         1:
                                         lbu t3, 0(t4)
                                         lbu s1, 0(t5)
                                         bne t3, s1, 5f
                                         addi t4, t4, 1
                                         addi t5, t5, 1
-                                        addi t6, t6, -1
-                                        bnez t6, 1b
+                                        bne t4, t6, 1b
                                         4:
                                         # [458:11] all matched or empty: true
                                         li t3, 1
@@ -25778,13 +25671,13 @@ main:
                             # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                             # [468:5] copy bytes; skip if none
                             beqz t4, 4f
+                            add t4, t4, t2
                             1:
                             lbu t5, 0(t2)
                             sb t5, 0(t3)
                             addi t2, t2, 1
                             addi t3, t3, 1
-                            addi t4, t4, -1
-                            bnez t4, 1b
+                            bne t2, t4, 1b
                             4:
                             # [468:5] free scratch register t5
                             # [468:5] free scratch register t4
@@ -26260,14 +26153,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -26297,13 +26190,12 @@ main:
                         # [411:5] self.start = self.end
                         # [411:18] self.end
                         # [411:18] allocate scratch register -> t0
+                        # [411:18] allocate scratch register -> t1
+                        # [411:18] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1960(t0)
-                        # [411:18] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1956(t1)
+                        lw t1, 1960(t0)
+                        sw t1, 1956(t0)
                         # [411:18] free scratch register t1
                         # [411:18] free scratch register t0
                         # [412:5] label
@@ -26327,13 +26219,12 @@ main:
                                 # [414:13] self.end = self.start
                                 # [414:24] self.start
                                 # [414:24] allocate scratch register -> t0
+                                # [414:24] allocate scratch register -> t1
+                                # [414:24] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [414:24] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [414:24] free scratch register t1
                                 # [414:24] free scratch register t0
                                 # [415:13] return
@@ -26397,13 +26288,12 @@ main:
                         # [420:5] self.end = self.start
                         # [420:16] self.start
                         # [420:16] allocate scratch register -> t0
+                        # [420:16] allocate scratch register -> t1
+                        # [420:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [420:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [420:16] free scratch register t1
                         # [420:16] free scratch register t0
                     func.tokenizer.skip_whitespace.638.8.964.9.1052.9.end:
@@ -26414,25 +26304,23 @@ main:
                         # [478:5] self.start = self.end
                         # [478:18] self.end
                         # [478:18] allocate scratch register -> t0
+                        # [478:18] allocate scratch register -> t1
+                        # [478:18] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1960(t0)
-                        # [478:18] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1956(t1)
+                        lw t1, 1960(t0)
+                        sw t1, 1956(t0)
                         # [478:18] free scratch register t1
                         # [478:18] free scratch register t0
                         # [479:5] self.end = self.str.len
                         # [479:16] self.str.len
                         # [479:16] allocate scratch register -> t0
+                        # [479:16] allocate scratch register -> t1
+                        # [479:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1952(t0)
-                        # [479:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1952(t0)
+                        sw t1, 1960(t0)
                         # [479:16] free scratch register t1
                         # [479:16] free scratch register t0
                     func.tokenizer.to_end.639.8.964.9.1052.9.end:
@@ -26549,12 +26437,11 @@ main:
                         addi t2, t1, 0
                         # [473:17] allocate scratch register -> t3
                         # [473:17] zero bytes
-                        li t3, 127
+                        addi t3, t2, 127
                         1:
                         sb zero, 0(t2)
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t2, t3, 1b
                         # [473:17] free scratch register t3
                         # [473:17] free scratch register t2
                         # [474:5] array_copy(self.str.array[self.start], res.array, res.len)
@@ -26618,13 +26505,13 @@ main:
                         # [474:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [474:5] copy bytes; skip if none
                         beqz t4, 4f
+                        add t4, t4, t2
                         1:
                         lbu t5, 0(t2)
                         sb t5, 0(t3)
                         addi t2, t2, 1
                         addi t3, t3, 1
-                        addi t4, t4, -1
-                        bnez t4, 1b
+                        bne t2, t4, 1b
                         4:
                         # [474:5] free scratch register t5
                         # [474:5] free scratch register t4
@@ -26831,14 +26718,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -26868,13 +26755,12 @@ main:
                         # [411:5] self.start = self.end
                         # [411:18] self.end
                         # [411:18] allocate scratch register -> t0
+                        # [411:18] allocate scratch register -> t1
+                        # [411:18] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1960(t0)
-                        # [411:18] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1956(t1)
+                        lw t1, 1960(t0)
+                        sw t1, 1956(t0)
                         # [411:18] free scratch register t1
                         # [411:18] free scratch register t0
                         # [412:5] label
@@ -26898,13 +26784,12 @@ main:
                                 # [414:13] self.end = self.start
                                 # [414:24] self.start
                                 # [414:24] allocate scratch register -> t0
+                                # [414:24] allocate scratch register -> t1
+                                # [414:24] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [414:24] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [414:24] free scratch register t1
                                 # [414:24] free scratch register t0
                                 # [415:13] return
@@ -26968,13 +26853,12 @@ main:
                         # [420:5] self.end = self.start
                         # [420:16] self.start
                         # [420:16] allocate scratch register -> t0
+                        # [420:16] allocate scratch register -> t1
+                        # [420:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [420:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [420:16] free scratch register t1
                         # [420:16] free scratch register t0
                     func.tokenizer.skip_whitespace.646.8.967.9.1052.9.end:
@@ -26985,25 +26869,23 @@ main:
                         # [478:5] self.start = self.end
                         # [478:18] self.end
                         # [478:18] allocate scratch register -> t0
+                        # [478:18] allocate scratch register -> t1
+                        # [478:18] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1960(t0)
-                        # [478:18] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1956(t1)
+                        lw t1, 1960(t0)
+                        sw t1, 1956(t0)
                         # [478:18] free scratch register t1
                         # [478:18] free scratch register t0
                         # [479:5] self.end = self.str.len
                         # [479:16] self.str.len
                         # [479:16] allocate scratch register -> t0
+                        # [479:16] allocate scratch register -> t1
+                        # [479:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1952(t0)
-                        # [479:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1952(t0)
+                        sw t1, 1960(t0)
                         # [479:16] free scratch register t1
                         # [479:16] free scratch register t0
                     func.tokenizer.to_end.647.8.967.9.1052.9.end:
@@ -27120,12 +27002,11 @@ main:
                         addi t2, t1, 0
                         # [473:17] allocate scratch register -> t3
                         # [473:17] zero bytes
-                        li t3, 127
+                        addi t3, t2, 127
                         1:
                         sb zero, 0(t2)
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t2, t3, 1b
                         # [473:17] free scratch register t3
                         # [473:17] free scratch register t2
                         # [474:5] array_copy(self.str.array[self.start], res.array, res.len)
@@ -27189,13 +27070,13 @@ main:
                         # [474:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [474:5] copy bytes; skip if none
                         beqz t4, 4f
+                        add t4, t4, t2
                         1:
                         lbu t5, 0(t2)
                         sb t5, 0(t3)
                         addi t2, t2, 1
                         addi t3, t3, 1
-                        addi t4, t4, -1
-                        bnez t4, 1b
+                        bne t2, t4, 1b
                         4:
                         # [474:5] free scratch register t5
                         # [474:5] free scratch register t4
@@ -27324,14 +27205,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -27365,13 +27246,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -27395,13 +27275,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -27465,26 +27344,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.656.8.970.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -27964,13 +27841,13 @@ main:
                         # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [468:5] copy bytes; skip if none
                         beqz t4, 4f
+                        add t4, t4, t2
                         1:
                         lbu t5, 0(t2)
                         sb t5, 0(t3)
                         addi t2, t2, 1
                         addi t3, t3, 1
-                        addi t4, t4, -1
-                        bnez t4, 1b
+                        bne t2, t4, 1b
                         4:
                         # [468:5] free scratch register t5
                         # [468:5] free scratch register t4
@@ -28177,14 +28054,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -28218,13 +28095,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -28248,13 +28124,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -28318,26 +28193,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.676.8.973.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -28640,13 +28513,13 @@ main:
                         # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [468:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [468:5] free scratch register t3
                         # [468:5] free scratch register t2
@@ -28750,14 +28623,13 @@ main:
                         addi t3, t3, 928
                         # [258:30] allocate scratch register -> t4
                         # [258:30] copy 4-byte words
-                        li t4, 5
+                        addi t4, t2, 20
                         1:
                         lw t1, 0(t2)
                         sw t1, 0(t3)
                         addi t2, t2, 4
                         addi t3, t3, 4
-                        addi t4, t4, -1
-                        bnez t4, 1b
+                        bne t2, t4, 1b
                         # [258:30] free scratch register t4
                         # [258:30] free scratch register t3
                         # [258:30] free scratch register t2
@@ -28779,12 +28651,13 @@ main:
                         addi t1, t1, 952
                         # [258:28] allocate scratch register -> t2
                         # [258:28] zero 4-byte words
-                        li t2, 594
+                        lui t2, 1
+                        add t2, t2, t1
+                        addi t2, t2, -1720
                         1:
                         sw zero, 0(t1)
                         addi t1, t1, 4
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t1, t2, 1b
                         # [258:28] free scratch register t2
                         # [258:28] free scratch register t1
                         # [258:5] free scratch register t0
@@ -29113,14 +28986,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -29154,13 +29027,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -29184,13 +29056,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -29254,26 +29125,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.697.8.976.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -29576,13 +29445,13 @@ main:
                         # [468:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [468:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [468:5] free scratch register t3
                         # [468:5] free scratch register t2
@@ -29642,14 +29511,13 @@ main:
                         addi t3, t3, -88
                         # [285:30] allocate scratch register -> t4
                         # [285:30] copy 4-byte words
-                        li t4, 5
+                        addi t4, t2, 20
                         1:
                         lw t1, 0(t2)
                         sw t1, 0(t3)
                         addi t2, t2, 4
                         addi t3, t3, 4
-                        addi t4, t4, -1
-                        bnez t4, 1b
+                        bne t2, t4, 1b
                         # [285:30] free scratch register t4
                         # [285:30] free scratch register t3
                         # [285:30] free scratch register t2
@@ -29975,14 +29843,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -30699,14 +30567,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -30740,13 +30608,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -30770,13 +30637,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -30840,26 +30706,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.745.8.982.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -31098,13 +30962,12 @@ main:
                     # [754:9] found_ix = len
                     # [754:20] len
                     # [754:20] allocate scratch register -> t0
+                    # [754:20] allocate scratch register -> t1
+                    # [754:20] source and destination share base t0
                     lui t0, 48
                     add t0, t0, s0
-                    lw t0, 1968(t0)
-                    # [754:20] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    sw t0, 1972(t1)
+                    lw t1, 1968(t0)
+                    sw t1, 1972(t0)
                     # [754:20] free scratch register t1
                     # [754:20] free scratch register t0
                     # [755:5] foo entities.array[cur_entity_id].objects.array, len
@@ -31310,14 +31173,14 @@ main:
                                     # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                     # [458:11] compare bytes; skip if none
                                     beqz s2, 4f
+                                    add s2, s2, t6
                                     1:
                                     lbu t3, 0(t6)
                                     lbu s3, 0(s1)
                                     bne t3, s3, 5f
                                     addi t6, t6, 1
                                     addi s1, s1, 1
-                                    addi s2, s2, -1
-                                    bnez s2, 1b
+                                    bne t6, s2, 1b
                                     4:
                                     # [458:11] all matched or empty: true
                                     li t3, 1
@@ -31784,19 +31647,19 @@ main:
                         # [133:5] allocate scratch register -> t5
                         # [133:5] 4-byte accesses: type 4-byte aligned, addresses not proven more aligned
                         # [133:5] allocate scratch register -> t6
-                        # [133:5] t6: words, t4: tail bytes
+                        # [133:5] t6: end of words, t4: tail bytes
                         # [133:5] split bytes into chunks and tail; skip loop if none
-                        srli t6, t4, 2
+                        andi t6, t4, -4
                         andi t4, t4, 3
                         beqz t6, 2f
+                        add t6, t6, t2
                         # [133:5] copy 4-byte words
                         1:
                         lw t5, 0(t2)
                         sw t5, 0(t3)
                         addi t2, t2, 4
                         addi t3, t3, 4
-                        addi t6, t6, -1
-                        bnez t6, 1b
+                        bne t2, t6, 1b
                         2:
                         # [133:5] copy optional 2-byte tail
                         andi t6, t4, 2
@@ -32197,14 +32060,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -32240,13 +32103,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -32270,13 +32132,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -32340,26 +32201,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.785.8.985.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -32598,13 +32457,12 @@ main:
                     # [794:9] found_ix = len
                     # [794:20] len
                     # [794:20] allocate scratch register -> t0
+                    # [794:20] allocate scratch register -> t1
+                    # [794:20] source and destination share base t0
                     lui t0, 48
                     add t0, t0, s0
-                    lw t0, 1968(t0)
-                    # [794:20] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    sw t0, 1972(t1)
+                    lw t1, 1968(t0)
+                    sw t1, 1972(t0)
                     # [794:20] free scratch register t1
                     # [794:20] free scratch register t0
                     # [795:5] foo entities.array[cur_entity_id].objects.array, len
@@ -32810,14 +32668,14 @@ main:
                                     # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                     # [458:11] compare bytes; skip if none
                                     beqz s2, 4f
+                                    add s2, s2, t6
                                     1:
                                     lbu t3, 0(t6)
                                     lbu s3, 0(s1)
                                     bne t3, s3, 5f
                                     addi t6, t6, 1
                                     addi s1, s1, 1
-                                    addi s2, s2, -1
-                                    bnez s2, 1b
+                                    bne t6, s2, 1b
                                     4:
                                     # [458:11] all matched or empty: true
                                     li t3, 1
@@ -33062,14 +32920,13 @@ main:
                     addi t3, t3, 1980
                     # [808:23] allocate scratch register -> t4
                     # [808:23] copy 4-byte words
-                    li t4, 5
+                    addi t4, t2, 20
                     1:
                     lw t1, 0(t2)
                     sw t1, 0(t3)
                     addi t2, t2, 4
                     addi t3, t3, 4
-                    addi t4, t4, -1
-                    bnez t4, 1b
+                    bne t2, t4, 1b
                     # [808:23] free scratch register t4
                     # [808:23] free scratch register t3
                     # [808:23] free scratch register t2
@@ -33086,13 +32943,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -33116,13 +32972,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -33186,26 +33041,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.810.8.985.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -33491,13 +33344,12 @@ main:
                     # [820:9] to_entity = room_entities_len
                     # [820:21] room_entities_len
                     # [820:21] allocate scratch register -> t0
+                    # [820:21] allocate scratch register -> t1
+                    # [820:21] source and destination share base t0
                     lui t0, 48
                     add t0, t0, s0
-                    lw t0, 2004(t0)
-                    # [820:21] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    sw t0, 2008(t1)
+                    lw t1, 2004(t0)
+                    sw t1, 2008(t0)
                     # [820:21] free scratch register t1
                     # [820:21] free scratch register t0
                     # [821:5] foo rooms.array[room_id].entities.array, room_entities_len
@@ -33722,14 +33574,14 @@ main:
                                     # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                     # [458:11] compare bytes; skip if none
                                     beqz s2, 4f
+                                    add s2, s2, t6
                                     1:
                                     lbu t3, 0(t6)
                                     lbu s3, 0(s1)
                                     bne t3, s3, 5f
                                     addi t6, t6, 1
                                     addi s1, s1, 1
-                                    addi s2, s2, -1
-                                    bnez s2, 1b
+                                    bne t6, s2, 1b
                                     4:
                                     # [458:11] all matched or empty: true
                                     li t3, 1
@@ -34173,19 +34025,19 @@ main:
                         # [133:5] allocate scratch register -> t5
                         # [133:5] 4-byte accesses: type 4-byte aligned, addresses not proven more aligned
                         # [133:5] allocate scratch register -> t6
-                        # [133:5] t6: words, t4: tail bytes
+                        # [133:5] t6: end of words, t4: tail bytes
                         # [133:5] split bytes into chunks and tail; skip loop if none
-                        srli t6, t4, 2
+                        andi t6, t4, -4
                         andi t4, t4, 3
                         beqz t6, 2f
+                        add t6, t6, t2
                         # [133:5] copy 4-byte words
                         1:
                         lw t5, 0(t2)
                         sw t5, 0(t3)
                         addi t2, t2, 4
                         addi t3, t3, 4
-                        addi t6, t6, -1
-                        bnez t6, 1b
+                        bne t2, t6, 1b
                         2:
                         # [133:5] copy optional 2-byte tail
                         andi t6, t4, 2
@@ -34642,12 +34494,11 @@ main:
                     addi t0, t0, 2016
                     # [845:21] allocate scratch register -> t1
                     # [845:21] zero 4-byte words
-                    li t1, 33
+                    addi t1, t0, 132
                     1:
                     sw zero, 0(t0)
                     addi t0, t0, 4
-                    addi t1, t1, -1
-                    bnez t1, 1b
+                    bne t0, t1, 1b
                     # [845:21] free scratch register t1
                     # [845:21] free scratch register t0
                     # [846:15] gave_text.add(str_gave)
@@ -34720,13 +34571,13 @@ main:
                         # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [91:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [91:5] free scratch register t3
                         # [91:5] free scratch register t2
@@ -34848,13 +34699,13 @@ main:
                         # [182:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [182:5] copy bytes; skip if none
                         beqz t4, 4f
+                        add t4, t4, t2
                         1:
                         lbu t5, 0(t2)
                         sb t5, 0(t3)
                         addi t2, t2, 1
                         addi t3, t3, 1
-                        addi t4, t4, -1
-                        bnez t4, 1b
+                        bne t2, t4, 1b
                         4:
                         # [182:5] free scratch register t5
                         # [182:5] free scratch register t4
@@ -34947,13 +34798,13 @@ main:
                         # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [91:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [91:5] free scratch register t3
                         # [91:5] free scratch register t2
@@ -35047,13 +34898,13 @@ main:
                         # [182:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [182:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [182:5] free scratch register t3
                         # [182:5] free scratch register t2
@@ -35357,14 +35208,13 @@ main:
                                 addi s2, s2, 1092
                                 # [206:42] allocate scratch register -> s3
                                 # [206:42] copy 4-byte words
-                                li s3, 33
+                                addi s3, s1, 132
                                 1:
                                 lw t6, 0(s1)
                                 sw t6, 0(s2)
                                 addi s1, s1, 4
                                 addi s2, s2, 4
-                                addi s3, s3, -1
-                                bnez s3, 1b
+                                bne s1, s3, 1b
                                 # [206:42] free scratch register s3
                                 # [206:42] free scratch register s2
                                 # [206:42] free scratch register s1
@@ -35515,14 +35365,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -35556,13 +35406,12 @@ main:
                             # [411:5] self.start = self.end
                             # [411:18] self.end
                             # [411:18] allocate scratch register -> t0
+                            # [411:18] allocate scratch register -> t1
+                            # [411:18] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1960(t0)
-                            # [411:18] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1956(t1)
+                            lw t1, 1960(t0)
+                            sw t1, 1956(t0)
                             # [411:18] free scratch register t1
                             # [411:18] free scratch register t0
                             # [412:5] label
@@ -35586,13 +35435,12 @@ main:
                                     # [414:13] self.end = self.start
                                     # [414:24] self.start
                                     # [414:24] allocate scratch register -> t0
+                                    # [414:24] allocate scratch register -> t1
+                                    # [414:24] source and destination share base t0
                                     lui t0, 48
                                     add t0, t0, s0
-                                    lw t0, 1956(t0)
-                                    # [414:24] allocate scratch register -> t1
-                                    lui t1, 48
-                                    add t1, t1, s0
-                                    sw t0, 1960(t1)
+                                    lw t1, 1956(t0)
+                                    sw t1, 1960(t0)
                                     # [414:24] free scratch register t1
                                     # [414:24] free scratch register t0
                                     # [415:13] return
@@ -35656,26 +35504,24 @@ main:
                             # [420:5] self.end = self.start
                             # [420:16] self.start
                             # [420:16] allocate scratch register -> t0
+                            # [420:16] allocate scratch register -> t1
+                            # [420:16] source and destination share base t0
                             lui t0, 48
                             add t0, t0, s0
-                            lw t0, 1956(t0)
-                            # [420:16] allocate scratch register -> t1
-                            lui t1, 48
-                            add t1, t1, s0
-                            sw t0, 1960(t1)
+                            lw t1, 1956(t0)
+                            sw t1, 1960(t0)
                             # [420:16] free scratch register t1
                             # [420:16] free scratch register t0
                         func.tokenizer.skip_whitespace.434.10.860.8.988.9.1052.9.end:
                         # [435:5] self.end = self.start
                         # [435:16] self.start
                         # [435:16] allocate scratch register -> t0
+                        # [435:16] allocate scratch register -> t1
+                        # [435:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [435:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [435:16] free scratch register t1
                         # [435:16] free scratch register t0
                         # [436:5] label
@@ -36021,14 +35867,14 @@ main:
                                     # [458:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                                     # [458:11] compare bytes; skip if none
                                     beqz t6, 4f
+                                    add t6, t6, t4
                                     1:
                                     lbu t3, 0(t4)
                                     lbu s1, 0(t5)
                                     bne t3, s1, 5f
                                     addi t4, t4, 1
                                     addi t5, t5, 1
-                                    addi t6, t6, -1
-                                    bnez t6, 1b
+                                    bne t4, t6, 1b
                                     4:
                                     # [458:11] all matched or empty: true
                                     li t3, 1
@@ -36475,13 +36321,12 @@ main:
                         # [411:5] self.start = self.end
                         # [411:18] self.end
                         # [411:18] allocate scratch register -> t0
+                        # [411:18] allocate scratch register -> t1
+                        # [411:18] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1960(t0)
-                        # [411:18] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1956(t1)
+                        lw t1, 1960(t0)
+                        sw t1, 1956(t0)
                         # [411:18] free scratch register t1
                         # [411:18] free scratch register t0
                         # [412:5] label
@@ -36505,13 +36350,12 @@ main:
                                 # [414:13] self.end = self.start
                                 # [414:24] self.start
                                 # [414:24] allocate scratch register -> t0
+                                # [414:24] allocate scratch register -> t1
+                                # [414:24] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [414:24] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [414:24] free scratch register t1
                                 # [414:24] free scratch register t0
                                 # [415:13] return
@@ -36575,13 +36419,12 @@ main:
                         # [420:5] self.end = self.start
                         # [420:16] self.start
                         # [420:16] allocate scratch register -> t0
+                        # [420:16] allocate scratch register -> t1
+                        # [420:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [420:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [420:16] free scratch register t1
                         # [420:16] free scratch register t0
                     func.tokenizer.skip_whitespace.889.8.988.9.1052.9.end:
@@ -36592,25 +36435,23 @@ main:
                         # [478:5] self.start = self.end
                         # [478:18] self.end
                         # [478:18] allocate scratch register -> t0
+                        # [478:18] allocate scratch register -> t1
+                        # [478:18] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1960(t0)
-                        # [478:18] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1956(t1)
+                        lw t1, 1960(t0)
+                        sw t1, 1956(t0)
                         # [478:18] free scratch register t1
                         # [478:18] free scratch register t0
                         # [479:5] self.end = self.str.len
                         # [479:16] self.str.len
                         # [479:16] allocate scratch register -> t0
+                        # [479:16] allocate scratch register -> t1
+                        # [479:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1952(t0)
-                        # [479:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1952(t0)
+                        sw t1, 1960(t0)
                         # [479:16] free scratch register t1
                         # [479:16] free scratch register t0
                     func.tokenizer.to_end.890.8.988.9.1052.9.end:
@@ -36778,12 +36619,11 @@ main:
                         addi t0, t0, 1972
                         # [473:17] allocate scratch register -> t1
                         # [473:17] zero 4-byte words
-                        li t1, 31
+                        addi t1, t0, 124
                         1:
                         sw zero, 0(t0)
                         addi t0, t0, 4
-                        addi t1, t1, -1
-                        bnez t1, 1b
+                        bne t0, t1, 1b
                         # [473:17] zero 3 B tail
                         sh zero, 0(t0)
                         sb zero, 2(t0)
@@ -36854,13 +36694,13 @@ main:
                         # [474:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [474:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [474:5] free scratch register t3
                         # [474:5] free scratch register t2
@@ -36961,14 +36801,13 @@ main:
                         addi t5, t5, 1092
                         # [206:42] allocate scratch register -> t6
                         # [206:42] copy 4-byte words
-                        li t6, 33
+                        addi t6, t4, 132
                         1:
                         lw t3, 0(t4)
                         sw t3, 0(t5)
                         addi t4, t4, 4
                         addi t5, t5, 4
-                        addi t6, t6, -1
-                        bnez t6, 1b
+                        bne t4, t6, 1b
                         # [206:42] free scratch register t6
                         # [206:42] free scratch register t5
                         # [206:42] free scratch register t4
@@ -37110,14 +36949,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -37147,13 +36986,12 @@ main:
                         # [411:5] self.start = self.end
                         # [411:18] self.end
                         # [411:18] allocate scratch register -> t0
+                        # [411:18] allocate scratch register -> t1
+                        # [411:18] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1960(t0)
-                        # [411:18] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1956(t1)
+                        lw t1, 1960(t0)
+                        sw t1, 1956(t0)
                         # [411:18] free scratch register t1
                         # [411:18] free scratch register t0
                         # [412:5] label
@@ -37177,13 +37015,12 @@ main:
                                 # [414:13] self.end = self.start
                                 # [414:24] self.start
                                 # [414:24] allocate scratch register -> t0
+                                # [414:24] allocate scratch register -> t1
+                                # [414:24] source and destination share base t0
                                 lui t0, 48
                                 add t0, t0, s0
-                                lw t0, 1956(t0)
-                                # [414:24] allocate scratch register -> t1
-                                lui t1, 48
-                                add t1, t1, s0
-                                sw t0, 1960(t1)
+                                lw t1, 1956(t0)
+                                sw t1, 1960(t0)
                                 # [414:24] free scratch register t1
                                 # [414:24] free scratch register t0
                                 # [415:13] return
@@ -37247,13 +37084,12 @@ main:
                         # [420:5] self.end = self.start
                         # [420:16] self.start
                         # [420:16] allocate scratch register -> t0
+                        # [420:16] allocate scratch register -> t1
+                        # [420:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1956(t0)
-                        # [420:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1956(t0)
+                        sw t1, 1960(t0)
                         # [420:16] free scratch register t1
                         # [420:16] free scratch register t0
                     func.tokenizer.skip_whitespace.906.8.991.9.1052.9.end:
@@ -37264,25 +37100,23 @@ main:
                         # [478:5] self.start = self.end
                         # [478:18] self.end
                         # [478:18] allocate scratch register -> t0
+                        # [478:18] allocate scratch register -> t1
+                        # [478:18] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1960(t0)
-                        # [478:18] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1956(t1)
+                        lw t1, 1960(t0)
+                        sw t1, 1956(t0)
                         # [478:18] free scratch register t1
                         # [478:18] free scratch register t0
                         # [479:5] self.end = self.str.len
                         # [479:16] self.str.len
                         # [479:16] allocate scratch register -> t0
+                        # [479:16] allocate scratch register -> t1
+                        # [479:16] source and destination share base t0
                         lui t0, 48
                         add t0, t0, s0
-                        lw t0, 1952(t0)
-                        # [479:16] allocate scratch register -> t1
-                        lui t1, 48
-                        add t1, t1, s0
-                        sw t0, 1960(t1)
+                        lw t1, 1952(t0)
+                        sw t1, 1960(t0)
                         # [479:16] free scratch register t1
                         # [479:16] free scratch register t0
                     func.tokenizer.to_end.907.8.991.9.1052.9.end:
@@ -37450,12 +37284,11 @@ main:
                         addi t0, t0, 1968
                         # [473:17] allocate scratch register -> t1
                         # [473:17] zero 4-byte words
-                        li t1, 31
+                        addi t1, t0, 124
                         1:
                         sw zero, 0(t0)
                         addi t0, t0, 4
-                        addi t1, t1, -1
-                        bnez t1, 1b
+                        bne t0, t1, 1b
                         # [473:17] zero 3 B tail
                         sh zero, 0(t0)
                         sb zero, 2(t0)
@@ -37526,13 +37359,13 @@ main:
                         # [474:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [474:5] copy bytes; skip if none
                         beqz t2, 4f
+                        add t2, t2, t0
                         1:
                         lbu t3, 0(t0)
                         sb t3, 0(t1)
                         addi t0, t0, 1
                         addi t1, t1, 1
-                        addi t2, t2, -1
-                        bnez t2, 1b
+                        bne t0, t2, 1b
                         4:
                         # [474:5] free scratch register t3
                         # [474:5] free scratch register t2
@@ -37846,14 +37679,13 @@ main:
                                 addi s4, s4, 1092
                                 # [206:42] allocate scratch register -> s5
                                 # [206:42] copy 4-byte words
-                                li s5, 33
+                                addi s5, s3, 132
                                 1:
                                 lw s2, 0(s3)
                                 sw s2, 0(s4)
                                 addi s3, s3, 4
                                 addi s4, s4, 4
-                                addi s5, s5, -1
-                                bnez s5, 1b
+                                bne s3, s5, 1b
                                 # [206:42] free scratch register s5
                                 # [206:42] free scratch register s4
                                 # [206:42] free scratch register s3
@@ -38006,14 +37838,14 @@ main:
                         # [453:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
                         # [453:11] compare bytes; skip if none
                         beqz t3, 4f
+                        add t3, t3, t1
                         1:
                         lbu t0, 0(t1)
                         lbu t4, 0(t2)
                         bne t0, t4, 5f
                         addi t1, t1, 1
                         addi t2, t2, 1
-                        addi t3, t3, -1
-                        bnez t3, 1b
+                        bne t1, t3, 1b
                         4:
                         # [453:11] all matched or empty: true
                         li t0, 1
@@ -38651,4 +38483,4 @@ vars.end:
 #                     dat size: 198427 B
 #              dat var padding: 5 B
 #                max vars size: 2552 B
-#                 instructions: 12712
+#                 instructions: 12405
