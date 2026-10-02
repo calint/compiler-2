@@ -110,6 +110,8 @@ where needed) included from `main.cpp`.
   `// 'compile_boolean' already stored the result and applied inversion`. Use
   the lowercase marker `todo:`, not `TODO:`. For larger `note:` comments keep
   one blank line above and below the block and align wrapped text consistently.
+  Explain a magic number such as `+ 1` or `subspan(1, n - 2)` with a `note:`
+  comment saying what it stands for, placed below the line that uses it.
 - Naming: `cur_` rather than `curr_` or `current_`; `size_bytes` (with role
   prefixes) for byte sizes and `count` for element counts. Keep the established
   vocabulary such as `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs` and `tc`.

@@ -1,0 +1,51 @@
+# a constant added to or subtracted from a run-time index goes into the
+# displacement when bounds checks are off, with checks on the sum is computed
+# in the index register
+
+type point {x i32, y i32}
+
+type rgb {r i8, g i8, b i8}
+
+type world {locations[8]}
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func main() {
+    var arr = i32[4]{10, 20, 30, 40}
+    var ix = 1
+
+    assert(1, arr[ix + 1] == 30)
+    assert(2, arr[ix - 1] == 10)
+    assert(3, arr[1 + ix] == 30)
+    assert(4, arr[ix + 1 + 1] == 40)
+    assert(5, arr[ix * 2 + 1] == 40)
+
+    arr[ix + 1] = 31
+    assert(6, arr[2] == 31)
+
+    arr[ix + 1] = arr[ix - 1]
+    assert(7, arr[2] == 10)
+
+    # a leading constant is not a trailing one
+    var j = 3
+    assert(8, arr[2 - ix] == 20)
+    assert(9, arr[j - ix - 1] == 20)
+
+    var small = i8[4]{1, 2, 3, 4}
+    assert(10, small[ix + 2] == 4)
+
+    var pts = point[3]{}
+    pts[ix + 1].y = 7
+    assert(11, pts[2].y == 7)
+
+    # a 3 byte element has a scale the addressing mode cannot encode
+    var cols = rgb[3]{}
+    cols[ix + 1].g = 9
+    assert(12, cols[2].g == 9)
+    assert(13, cols[ix - 1].g == 0)
+
+    var worlds = world[2]{}
+    worlds[ix].locations[ix + 2] = 5
+    assert(14, worlds[1].locations[3] == 5)
+    assert(15, worlds[0].locations[3] == 0)
+}

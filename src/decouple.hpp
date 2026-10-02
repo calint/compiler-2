@@ -107,6 +107,22 @@ class expr_any;
     return static_cast<int64_t>(size_bytes);
 }
 
+// the byte offset of 'count' elements of 'size_bytes', count may be negative
+[[nodiscard]] inline auto scaled_address_offset(const int64_t count,
+                                                const size_t size_bytes)
+    -> int64_t {
+
+    const int64_t size{address_offset(size_bytes)};
+
+    if (size != 0 and (count > std::numeric_limits<int64_t>::max() / size or
+                       count < std::numeric_limits<int64_t>::min() / size)) {
+
+        throw std::overflow_error{"address offset exceeds signed 64-bit range"};
+    }
+
+    return count * size;
+}
+
 [[nodiscard]] inline auto add_address_offset(const int64_t base,
                                              const int64_t offset) -> int64_t {
 

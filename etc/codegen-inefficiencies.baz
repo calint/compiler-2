@@ -77,10 +77,10 @@ func main() {
 
     worlds[1].locations[1] = 0xffee
 
-    # constant part of a run-time index is not folded into the displacement:
-    # 'addi t0, t0, 1' before 'sw t2, 4(t3)' instead of 'sw t2, 8(t3)', x86:
-    # 'add r15, 1' before '[rbp + r15 * 4 + 8]' instead of '+ 12' (26 rv32i,
-    # 27 x86 sites)
+    # with bounds checks on the constant part of a run-time index is not
+    # folded into the displacement: 'addi t0, t0, 1' before 'sw t2, 4(t3)'
+    # instead of 'sw t2, 8(t3)', x86: 'add r15, 1' before
+    # '[rbp + r15 * 4 + 8]' instead of '+ 12'; without checks it is folded
     var ix = 1
     arr[ix + 1] = arr[ix]
     worlds[ix].locations[1] = 0xffee

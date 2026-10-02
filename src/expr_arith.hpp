@@ -376,6 +376,50 @@ class expr_arith final : public expression {
     // class methods
     //
 
+    // compiles the list without its trailing added constant and returns that
+    // constant, empty when the list is compiled whole by 'compile'
+    //   'ix + 1'  =>  compiles 'ix', returns 1
+    //   'ix - 2'  =>  compiles 'ix', returns -2
+    [[nodiscard]] auto
+    compile_without_trailing_addend(toc& tc, const size_t indent,
+                                    const ident_info& dst_info) const
+        -> std::optional<int64_t> {
+
+        if (not uops_.is_empty()) {
+            return std::nullopt;
+        }
+
+        const type& width_type{dst_info.type_ref()};
+
+        std::vector<step> steps{make_steps(tc, width_type)};
+        steps = merge_commutative_constants(steps, width_type);
+        steps = merge_divisors(steps, width_type);
+        lead_with_constant(tc, steps);
+
+        const step& last{steps.back()};
+
+        if (steps.size() < 2 or last.element != nullptr or last.op != '+') {
+            return std::nullopt;
+        }
+
+        // note: 2 steps are the least with something to add the constant to
+
+        compile_first_step(tc, indent, dst_info, steps.front());
+
+        const std::span<const step> middle_steps{
+            std::span{steps}.subspan(1, steps.size() - 2),
+        };
+
+        // note: the 1 skips the first step compiled above and the 2 also
+        //       leaves out the trailing constant
+
+        for (const step& s : middle_steps) {
+            compile_step(tc, indent, dst_info, s);
+        }
+
+        return last.value;
+    }
+
     // e.g. 'flag', 'p', 'f(x)' or '-i32(x)', a parenthesized list is
     // arithmetic of its own
     [[nodiscard]] auto is_single_operand() const -> bool {

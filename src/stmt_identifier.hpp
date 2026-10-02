@@ -653,7 +653,7 @@ class stmt_identifier : public statement {
             allocated_registers.push_back(index_register);
         }
 
-        const operand checked_index{
+        const int64_t addend_elements{
             compile_checked_index(tc, indent, *cur_elem.array_index_expr,
                                   index_register, cur_info.array_len,
                                   reg_count),
@@ -665,13 +665,16 @@ class stmt_identifier : public statement {
         // register instead, leaving scale 1 in the operand
         const bool is_encodable_scale{x.can_lower_index_scale(type_size)};
         if (not is_encodable_scale) {
-            x.scale_index(src_loc_tk, indent, checked_index, type_size);
+            x.scale_index(src_loc_tk, indent, index_register, type_size);
         }
 
         return operand::mem(address.base_register(),
-                            checked_index.base_register(),
+                            index_register.base_register(),
                             is_encodable_scale ? type_size : 1,
-                            address.displacement(), cur_info.type_ref());
+                            add_address_offset(address.displacement(),
+                                               scaled_address_offset(
+                                                   addend_elements, type_size)),
+                            cur_info.type_ref());
     }
 
     // the array size is known at compile, also for an inlined array argument,
@@ -723,24 +726,49 @@ class stmt_identifier : public statement {
                            cur_info.array_len, true);
     }
 
-    [[nodiscard]] static auto
-    compile_checked_index(toc& tc, const size_t indent,
-                          const expr_any& index_expr, operand index_register,
-                          const size_t array_length, const operand& range_count)
-        -> operand {
+    // the index goes into 'index_register', returns the constant a trailing
+    // '+ c' or '- c' leaves out for the displacement, e.g. 'ix + 1' compiles
+    // 'ix' and returns 1
+    //
+    // note: only without bounds checks, they check the sum in the register
+    //
+    [[nodiscard]] static auto compile_checked_index(
+        toc& tc, const size_t indent, const expr_any& index_expr,
+        const operand& index_register, const size_t array_length,
+        const operand& range_count) -> int64_t {
 
         machine& x{tc.machine()};
 
         x.comment(index_expr.tok(), indent, "set array index");
 
-        index_expr.compile(tc, indent,
-                           toc::make_ident_info_from_register(index_register));
+        const ident_info index_info{
+            toc::make_ident_info_from_register(index_register),
+        };
+
+        const machine::bounds_check_options checks{tc.bounds_check_options()};
+
+        if (not checks.upper and not checks.lower) {
+            const std::optional<int64_t> addend{
+                index_expr.compile_without_trailing_addend(tc, indent,
+                                                           index_info),
+            };
+
+            if (addend) {
+                x.comment(index_expr.tok(), indent,
+                          "index constant {} goes into the displacement",
+                          *addend);
+
+                return *addend;
+            }
+        }
+
+        index_expr.compile(tc, indent, index_info);
 
         check_array_bounds(tc, indent, index_expr.tok(), index_register,
                            array_length, not range_count.is_empty(),
                            range_count);
 
-        return index_register;
+        return 0;
     }
 
     // the address after the element index, a constant index goes into the

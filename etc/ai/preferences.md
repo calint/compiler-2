@@ -73,6 +73,9 @@ project's own file (for compiler-2: `etc/ai/project.md`).
 - Write a comment only to say what the code cannot show on its own, in one
   short line. Do not restate the next line or explain the change to the
   reviewer.
+- Explain magic numbers such as `+ 1`, `- 2` or `subspan(1, n - 2)` in new or
+  or touched code with a `note:` comment saying what the number stands for,
+  placed below the line that uses it.
 - Always give new or modified non-obvious code a brief plain-language rationale
   comment: why it exists (constraints, ordering, preservation), not what it
   does.

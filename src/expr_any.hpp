@@ -318,6 +318,28 @@ class expr_any final : public statement {
         as_expr_type().assert_not_reading(dst);
     }
 
+    // compiles all but the trailing added constant of an arithmetic
+    // expression and returns the constant, e.g. 'ix + 1' compiles 'ix' and
+    // returns 1, empty when nothing was compiled
+    [[nodiscard]] auto
+    compile_without_trailing_addend(toc& tc, const size_t indent,
+                                    const ident_info& dst_info) const
+        -> std::optional<int64_t> {
+
+        if (is_array_) {
+            return std::nullopt;
+        }
+
+        const expr_arith* const arith{std::get_if<expr_arith>(&vars_.front())};
+        if (arith == nullptr) {
+            return std::nullopt;
+        }
+
+        arith->assert_not_narrowed(tc, dst_info.type_ref());
+
+        return arith->compile_without_trailing_addend(tc, indent, dst_info);
+    }
+
     // e.g. '-2' or a named constant, empty when computed at run time
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<int64_t> {
