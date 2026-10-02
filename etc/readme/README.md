@@ -70,6 +70,7 @@ compiler writes the binary image itself.
     * go to definition
     * rename
     * references
+* example application `etc/roome/roome.baz`
 * todo list of planned fixes and features in `etc/todo.txt`
 
 ## Usage
