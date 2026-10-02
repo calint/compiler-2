@@ -77,55 +77,6 @@ where needed) included from `main.cpp`.
   workspace root, `apply` to write): run all three before a checkpoint, then
   clang-format, then dry-run again.
 
-## c++ style
-
-- Always brace initialization, including designated members (`.member{value}`,
-  not `.member = value`). Empty braces for defaults (`bool enabled{};`,
-  `size_t count{};`), explicit braces for non-default values. A trailing comma
-  after the last member of a multiline designated or brace initializer.
-- Return an empty optional with `return std::nullopt;`, not `return {};`.
-- Explicit type specifiers; `auto` only for cumbersome types such as iterators.
-  Backend access is `machine& x{tc.machine()};` (not `auto&`), followed by a
-  blank line. Pointers too: `const macro_use* const p{std::get_if<...>(r)};`.
-- `and`, `or`, `not` instead of `&&`, `||`, `!`.
-- `std::format("{}", value)` instead of `std::to_string(value)`.
-- Early returns, no `else` after a return; a plain `if`/`else` is fine when
-  both bodies are simple; flat `else if` dispatch chains are fine.
-- Spacing: a blank line before and after multiline statements and declarations
-  (multiline calls, initializers, ifs, loops, lambdas) and right after the
-  opening `{` of a multiline function signature. Accept whitespace the
-  formatter removes (for example blank lines before `}`).
-- A return is separated from preceding statements by a blank line, including in
-  nested branches and switch cases; return-only bodies need none. Exception: a
-  block with one single-line statement before a single-line return stays
-  tight (`println(...); return 1;`). Multiline statements or returns keep the
-  blank line.
-- Switch branches are separated by a blank line (also before `default`);
-  consecutive labels sharing one body stay grouped.
-- Consecutive `assert` statements form a group with a blank line before and
-  after (not before at the top of a block, not after before `}`); this wins
-  over the tight-return rule.
-- Comments are lowercase with no punctuation at the end, matching the source.
-  Surround references to code elements with single quotes, for example
-  `// 'compile_boolean' already stored the result and applied inversion`. Use
-  the lowercase marker `todo:`, not `TODO:`. For larger `note:` comments keep
-  one blank line above and below the block and align wrapped text consistently.
-  Explain a magic number such as `+ 1` or `subspan(1, n - 2)` with a `note:`
-  comment saying what it stands for, placed below the line that uses it.
-- Naming: `cur_` rather than `curr_` or `current_`; `size_bytes` (with role
-  prefixes) for byte sizes and `count` for element counts. Keep the established
-  vocabulary such as `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs` and `tc`.
-- A mechanical sweep that inserts local variables must distinguish switch
-  bodies and braced initializers from ordinary scopes: never initialize before
-  case labels inside a switch; keep visitor-only references inside the lambda.
-- No enum switches (`-Wswitch-default` conflicts with `-Wcovered-switch-
-  default`); `std::in_range` rejects `char`, pass ints; a param named like a
-  (inherited) member trips `-Wshadow-field`, use an `_in` suffix; a local named
-  like an enclosing class field trips `-Wshadow`.
-- clang-tidy: `readability-redundant-member-init` rejects `{}` on
-  default-constructed class members such as `std::bitset` and `std::vector`
-  (omit it, scalar members keep `{}`); overrides keep the base's visibility.
-
 ## working rules specific to this repo
 
 - Plans for big changes go to `etc/todo.txt`; wait for the go-ahead. Specialized
