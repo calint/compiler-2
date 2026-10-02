@@ -1,133 +1,96 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
+each open item starts with its difficulty: easy, medium or hard
 --------------------------------------------------------------------------------
-easy, easiest first
+better assembler code, medium, largest gain first
 --------------------------------------------------------------------------------
-[ ] rename compiler_exception
-[ ] remove panic_exception
-[o] examine NOLINTNEXTLINE annotations and try to fix
-    => 'main' and 'unary_ops' suppressions removed; left: the
-       'misc-definitions-in-headers' block in 'decouple_impl.hpp', either
-       'inline' on its 22 definitions or keep the block
-[ ] rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now ends
-    the emulator with the dividend in a0 as exit code
-[ ] variable argument count in read/write might be confusing. consider requiring
-    all arguments
-[x] change all array access using [ ] to checked using .at
-[ ] make an extensive comment file explaining lea, indexing array etc
-[ ] should if str == "abc" be supported?
-    => an argument is that it is a magic string and should be dat
-[ ] consider result being an array
-    func make_points() : point[] res {...}
-    => confusing. better is func init_points(pts : point[]) {...}
-[ ] C++ brace initializers offer no performance advantage and the narrowing
-    issues do not exist in this project. they are ugly. ponder switching to =
-
---------------------------------------------------------------------------------
-medium, easiest first
---------------------------------------------------------------------------------
-[ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
-    tests
-[ ] implement "size_of" for fields
-[ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
-    class: machine_x86_64
-    method: shift
-    source: src/machine_x86_64.hpp:789
-[ ] instrumentation to find out max heap and stack usage by the compiler
-[ ] low priority: code after an unconditional 'exit' elsewhere than the end of
-    'main' is generated, e.g. after a constant false 'assert'
-[ ] consider dropping the visitor pattern in expr_any because lcov does not
-    handle it
-[ ] break: exit current block instead of just loop?
-[ ] consider not allowing single statement blocks
-[ ] rv32i: check loop iteration regarding large span
-[ ] lea_path may not be necessary since only most recent lea relevant
-    => also index of where in elems path lea was found
-[ ] reorder locals by alignment, largest first, to reduce padding
-[ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
-[ ] rv32i: a constant above 16 bytes stored at an address inside a word
-    ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
-    offset) loops bytes: the constant is word aligned and the destination is
-    not, so no head reaches a common boundary
-    => the constant could be laid out starting at the destination's position
-       within a word; needs the frontend 'add_constant' callback to pad it
-[ ] x86 register utilization: 109.baz, 082.baz, 104.baz
-[ ] roome.baz (2026-09-29): a memory to memory copy loads into a new register
-    while the source address registers are dead: x86 'mov r13w, word
+[ ] medium: roome.baz (2026-09-29): an inline bool call used as a condition is
+    materialized then tested: x86 'sete r15b' ... 'cmp r15b, 0; je', rv32i
+    'xor t0, t0, t1; sltiu t0, t0, 1; beq t0, zero' instead of
+    'bne t0, t1', and 'arrays_equal' 'li t0, 1' / 'li t0, 0' then
+    'beq t0, zero' ('tk.is' twice, 'tk.is_empty', 'tk.is_name')
+[ ] medium: roome.baz (2026-09-29): rv32i: the same high part is built twice
+    within one operation: 'self.start = self.end' is 'lui t0, 37; add t0, t0,
+    s0; lh t0, -1402(t0); lui t1, 37; add t1, t1, s0; sh t0, -1404(t1)' instead
+    of one base register for both (done for copies and for comparisons of two
+    memory operands); left: 'token.len' 'sub', 'read'/'write' index plus 'a1'
+    address
+    => analysis (2026-10-02): within one machine operation it is detected
+       ('shares_address_base': same base, no index, same upper part; used
+       by 'copy_value' and 'comparison_operands', and 'binary_operation'
+       with a memory destination reuses one address for load and store).
+       the rest spans several operations: 't.len = t.end - t.start' is
+       'copy_value' of 't.end', 'binary_operation' 'sub' with 't.start',
+       'copy_value' to 't.len', each lowering its own 'lui'/'add' and
+       freeing its scratch registers at the end of its 'address_scope'
+       (6 instructions instead of 2 with a local past the 12 bit reach)
+    => option 1, backend cache: remember 'register R holds s0 + upper U'
+       after a 'lui'/'add' and reuse it in later operations; invalidate
+       when R is allocated again, on any label or branch, and on writes
+       to R (a freed scratch register still holds the value); no frontend
+       change, but needs write tracking in the allocator
+    => option 2, frontend statement base: 'expr_arith::compile' detects
+       memory operands of one statement sharing base and upper part and
+       asks the machine for one base register, then all operations use it
+       plus the low 12 bits, like the x86 'lea' path; needs a new machine
+       hook and a register held for the whole statement (several files and
+       interfaces, plan and go-ahead first)
+    => option 1 would also cover the 'read'/'write' index plus 'a1' case
+[ ] medium: roome.baz (2026-09-29): rv32i: the index register is freed after the
+    load, so the 'lui' of a large displacement takes a third temporary: 'add t1,
+    s0, t0; lui t2, 37; add t1, t1, t2; lb t1, -1536(t1)' where t0 is dead after
+    the first 'add' (32, 40, 160, 168, 259:15, 214, 215, 'arrays_equal' t5 and
+    s1)
+[ ] medium: roome.baz (2026-09-29): a memory to memory copy loads into a new
+    register while the source address registers are dead: x86 'mov r13w, word
     [r15 + r14]' (218) and 'mov r12w, word [r14 + r13 + 4]' (229) could load
     into r14; rv32i 229 uses t0-t5 where 3 suffice ('add t3, t1, t2;
     lh t3, 4(t3)' into t1, 'add t4, s0, t0' into t0), also 214, 215, 218
     => found in etc/roome/roome.baz (x86 539 and rv32i 648 instructions);
        'array_length' as a run-time value and the syscall result copy are
        already tracked elsewhere
-[ ] roome.baz (2026-09-29): an inline 'self' or parameter address goes into a
-    new register while the index register stays allocated until the body ends:
-    x86 'imul r15, 518; lea r14, [rbp + r15 + 17484]' for
-    'rooms[...].print()' instead of 'lea r15, [rbp + r15 + 17484]';
-    rv32i room.print t0/t1, entity.print and name.print t2/t3,
-    'is_name' 'nm' t1/t2 which pushes 'arrays_equal' past t0-t6 into s1
+[ ] medium: roome.baz (2026-09-29): an inline 'self' or parameter address goes
+    into a new register while the index register stays allocated until the body
+    ends: x86 'imul r15, 518; lea r14, [rbp + r15 + 17484]' for
+    'rooms[...].print()' instead of 'lea r15, [rbp + r15 + 17484]'; rv32i
+    room.print t0/t1, entity.print and name.print t2/t3, 'is_name' 'nm' t1/t2
+    which pushes 'arrays_equal' past t0-t6 into s1
     => 'compile_inline_with_address_register' and
        'compile_inline_body_with_address_registers' allocate a new
        register because the index may belong to an enclosing alias; here
        the call's own argument lea allocated it
-[ ] roome.baz (2026-09-29): an inline bool call used as a condition is
-    materialized then tested: x86 'sete r15b' ... 'cmp r15b, 0; je', rv32i
-    'xor t0, t0, t1; sltiu t0, t0, 1; beq t0, zero' instead of
-    'bne t0, t1', and 'arrays_equal' 'li t0, 1' / 'li t0, 0' then
-    'beq t0, zero' ('tk.is' twice, 'tk.is_empty', 'tk.is_name')
-[ ] roome.baz (2026-09-29): x86: a 'read'/'write' address with a run-time
-    offset uses a scratch register: 'mov r14, qword [rbp + 150168];
-    lea rsi, [rbp + 150032]; add rsi, r14' instead of
-    'add rsi, qword [rbp + 150168]', or for i16 'movsx rsi, word [...];
-    lea rsi, [rbp + rsi + 150032]' (31:34, 39:32, 178:36); same for the
-    'arrays_equal' destination 'movsx r14, ...; lea rdi, [rbp + r14 + ...]'
-    (183:38, 188:42)
-[ ] roome.baz (2026-09-29): rv32i: the same high part is built twice within one
-    operation: 'self.start = self.end' is 'lui t0, 37; add t0, t0, s0;
-    lh t0, -1402(t0); lui t1, 37; add t1, t1, s0; sh t0, -1404(t1)'
-    instead of one base register for both (done for copies and for
-    comparisons of two memory operands); left: 'token.len' 'sub', 'read'/
-    'write' index plus 'a1' address
-[ ] roome.baz (2026-09-29): rv32i: the index register is freed after the load,
-    so the 'lui' of a large displacement takes a third temporary:
-    'add t1, s0, t0; lui t2, 37; add t1, t1, t2; lb t1, -1536(t1)' where t0
-    is dead after the first 'add' (32, 40, 160, 168, 259:15, 214, 215,
-    'arrays_equal' t5 and s1)
-[ ] --checks=noub: division by zero traps and MIN / -1 wraps or traps by
-    width. check and panic with the line
-[ ] --checks=noub: shift count < 0 or >= width is masked by hardware
-    differently per width ('i8 1 << 9' is 0, 'i32 1 << 33' is 2). check or
-    define
-[ ] --checks=noub: overlapping 'array_copy': check ranges at run-time or
-    define as memmove, warn when it can be detected at compile time
-[ ] --checks=noub: system stack overflow in deep non-inline recursion
-    segfaults before the frame check. check 'rsp'/'sp' or depth at each call
-[ ] --checks=noub: signed overflow wraps. define wrapping as the semantics or
-    add --checks=overflow (x86 'jo', rv32i several instructions)
-[x] --checks=alias: accept disjoint constant paths by comparing byte ranges
-    (137.baz-140.baz, 294.baz, 418.baz)
-    => done (2026-10-02, 'stmt_call::reach_disjoint_bytes', test 681): applies
-       to arguments naming the same variable, run-time indexes count as the
-       whole array (test 682)
-[x] --checks=alias: accept shared arguments when the callee assigns neither
-    parameter (128.baz-133.baz, 414.baz)
-    => done: only a pair with a 'mut' parameter is rejected, and now always,
-       not only with --checks=alias; '--checks=alias' keeps the comparison of
-       the result destination with the arguments
-[ ] --checks=alias: route inline builtin results through a scratch register
-    instead of rejecting (077.baz, 135.baz, 394.baz, 397.baz, 485.baz)
-    => then re-enable 485.baz
-[ ] low priority: register allocation: the scaled index goes into a new
+[ ] medium: roome.baz (2026-09-29): x86: a 'read'/'write' address with a
+    run-time offset uses a scratch register: 'mov r14, qword [rbp + 150168]; lea
+    rsi, [rbp + 150032]; add rsi, r14' instead of 'add rsi, qword [rbp +
+    150168]', or for i16 'movsx rsi, word [...]; lea rsi, [rbp + rsi + 150032]'
+    (31:34, 39:32, 178:36); same for the 'arrays_equal' destination 'movsx r14,
+    ...; lea rdi, [rbp + r14 + ...]' (183:38, 188:42)
+[ ] medium: x86 register utilization: 109.baz, 082.baz, 104.baz
+[ ] medium: rv32i: a constant above 16 bytes stored at an address inside a word
+    ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
+    offset) loops bytes: the constant is word aligned and the destination is
+    not, so no head reaches a common boundary
+    => the constant could be laid out starting at the destination's position
+       within a word; needs the frontend 'add_constant' callback to pad it
+[ ] medium: evaluate BMI2 alternatives for variable-count shifts
+    (shlx/shrx/sarx)
+    class: machine_x86_64
+    method: shift
+    source: src/machine_x86_64.hpp:789
+[ ] medium: reorder locals by alignment, largest first, to reduce padding
+[ ] medium: low priority: code after an unconditional 'exit' elsewhere than the
+    end of 'main' is generated, e.g. after a constant false 'assert'
+[ ] medium: low priority: register allocation: the scaled index goes into a new
     register instead of reusing the index register when it is no longer
     needed ('slli t1, t0, 2' instead of 'slli t0, t0, 2')
     (etc/codegen-inefficiencies.baz)
     => saves no instructions, only one scratch register briefly within one
        machine operation; the backend cannot know the index is dead, so the
        frontend would have to mark operands whose index register it owns
-[ ] low priority: self-cancelling unary ops are all emitted: '--a', '~~a',
-    '-(-a)' give two 'neg'/'not' (x86 on memory: 'neg qword [rbp + 8]'
-    twice), rv32i '-(-(a + 1))' adds 'sw'/'lw' between the two
-    'sub t0, zero, t0'
+[ ] medium: low priority: self-cancelling unary ops are all emitted: '--a',
+    '~~a', '-(-a)' give two 'neg'/'not' (x86 on memory: 'neg qword [rbp + 8]'
+    twice), rv32i '-(-(a + 1))' adds 'sw'/'lw' between the two 'sub t0, zero,
+    t0'
     => rare in real code; an assembler peephole could drop adjacent
        identical 'neg'/'not' pairs on the same operand (x86) and
        'sub r, zero, r' or 'xori r, r, -1' pairs (rv32i), including across a
@@ -136,164 +99,26 @@ medium, easiest first
        assessed but touches 4 files and a new virtual hook
     => the old example 'var b=-(-a*-a)' no longer emits 'neg; neg', its
        remaining cost is algebraic ('-a * -a' is 'a * a', 'a' loaded twice)
-[ ] low priority: size overflow errors have no source location: a huge array
-    size ('var a = [4611686018427387904]{}', a record field 'a[...]', two
-    huge 'dat' arrays, 'array_copy' with a huge constant count) makes the
-    helpers in 'decouple.hpp' ('add_storage_size', 'multiply_storage_size')
-    throw 'std::overflow_error', which 'main.cpp' prints as a bare message
-    without file and line
-    => throw sites: 'toc::add_var' (via 'stmt_def_var'), 'type::add_field'
-       (via 'stmt_def_type'), 'frame::add_var' (via 'stmt_def_dat'),
-       'stmt_builtin_array_copy::compile_constant_count'
-    => options: catch at each caller and throw 'compiler_exception' with its
-       token, or pass 'src_loc_tk' to the helpers (about 35 call sites);
-       translating in the 'stmt_block'/'program' statement loops was tried
-       and rejected
-    => 'address_offset', 'scaled_address_offset' and 'add_address_offset'
-       were not reached from user input
-    => then add tests for the located errors
-
 --------------------------------------------------------------------------------
-hard, easiest first
+better assembler code, hard
 --------------------------------------------------------------------------------
-[ ] UB detection: conservative rejections: a write through a runtime index
-    covers nothing, 'array_copy' into a result is not an assignment, 'foo'
-    bodies do not count as assigning
-[ ] a ways to split code in multiple files while keeping the unity build
-[ ] self referential types
-[ ] func f(p : point copy) copies point to callee stack
-[ ] consider allowing function definitions in functions
-[ ] consider a var type that can be viewed from enclosing functions
-[ ] a way to specify a range in the array: foo arr(bgn_index, len, i_start)
-[ ] foo arr1, arr2, ... {
-      # injected variable 'e1', 'e2', 'e...': current array elements
-      e1 = e2
-    }
-[ ] stmt_call: check arguments vs parameters in constructor instead of at
-    compile
-    => tried: 'assert_alias_type' and the non-inline argument checks at parse
-       gave a wrong message for 'var x = i32(foozi(x))' (test 121): the trial
-       parse of a 'var' initializer gives 'x' the placeholder default type,
-       so the type check at parse reports 'required i64, got i32' instead of
-       'use of uninitialized variable'. needs the trial parse placeholder to
-       be recognizable first (e.g. skip type checks on the variable being
-       defined). the checks that need the destination ('assert_result_type',
-       'assert_no_shared_storage') cannot move
-[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
-[ ] --checks=alias: runtime address check or a frame temporary for the
-    remaining record and non-inline results with runtime indexes
-[ ] UB detection: result aliases a by-reference argument: 'x = f(x)',
-    'p = swap(p)' (485.baz, inline and noinline). reject when the callee
-    reads that parameter after writing its result: per-function summary of
-    such parameters plus a call-site overlap check using identifier byte
-    ranges (runtime indexes may overlap). valid today: 135.baz,
-    137.baz-140.baz, 394.baz read before writing
-[ ] UB detection: two by-reference parameters bound to the same variable,
-    e.g. 'g(q, q)' where 'g' writes one and reads the other. inside inline
-    functions the destination-read checks compare names, so 'res' and 'p'
-    referring to the same caller variable are not detected
-    => arguments of one call: done (2026-10-02), a pair sharing storage with
-       a 'mut' parameter is rejected without --checks=alias; left: different
-       alias names of one caller variable inside an inline body
-[ ] UB detection: consider accepting partial results when the caller's
-    destination is already initialized (call-site coverage summary)
-    => prog.baz 'object_init' sets only 'res.pos.y' and is rejected
-[ ] --checks=noub: a partial 'read'/'write' can end inside a record and the
-    start argument cannot resume there. for elements larger than 1 byte,
-    repeat the syscall until the current record is complete, not the whole
-    count, so line input still returns
-    => result stays in bytes, always a multiple of the element size
-    => end of file or an error inside a record returns the error
-    => remainder is an 'and' for power of 2 sizes, other sizes need a
-       division that conflicts with the syscall registers on x86 and uses
-       the helper on rv32i
-    => test with 'DIFFINP2' input split inside a record
-[ ] allow record literals and record call results as arguments, e.g.
-    'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
-    caller's frame. rejected today with "argument 1 cannot be a temporary"
-    (501.baz, 502.baz)
-    => see 'non-inline calls take expression arguments' below for the plan
-[ ] consider making widening explicit too, today only narrowing needs
-    'i8(...)' etc. e.g. 'var y i32 = 1 + low(x)' with 'low' returning i8 is
-    rejected as a result type mismatch, 'i32(low(x))' is required
-    => prototype: requiring equal widths in the 3 width checks rejects 40+
-       tests (first error per file)
-    => exempt array indexes (most rejections), fitting constants and 'void'
-       calls ('void' counts as a 0 byte builtin)
-    => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
-       compile on rv32i. a target-neutral conversion such as 'int(...)' is
-       needed to widen to the default type portably
-[ ] string type
-      var str = "hello world"
-      var len = str.len
-[ ] strings as sources of 'arrays_equal' and 'array_copy'
-    => plan (big: new machine interface method, several files)
-       [ ] parse a string token or an identifier for the 'array_copy' source
-           and either 'arrays_equal' argument; 'source_to', 'visit_reads'
-           and the type check treat the string as 'i8'
-       [ ] the string length is the array count: a constant count above it
-           is a compile error, a runtime count is checked with
-           'check_bounds' when '--checks=upper' is on
-       [ ] 'array_copy' with a constant count: 'machine::copy_bytes' with the
-           first 'count' decoded bytes, no backend change (possible first
-           step)
-       [ ] runtime count and 'arrays_equal': new machine method that loads
-           the address of a '.rodata' label into a register (x86
-           'lea reg, [rel label]', rv32i 'la') for
-           'array_copy_source_register' and 'memory_equal_left/right_register'
-           since operands have no symbol memory form
-       [ ] register the constant with 'toc::add_string_constant' only when
-           emitted
-       [ ] tree-sitter grammar
-       [ ] tests on both targets: runtime copy and compare, errors for a
-           non-'i8' destination, a count above the string length and the
-           empty string
-[ ] non-inline calls take expression arguments, e.g. roome.baz
-    'print_num(i64(counter))' fails with "expression arguments are
-    unsupported" because every argument is passed by address (424.baz)
-    => plan: the caller evaluates the argument into a temporary in its own
-       storage and passes the temporary's address
-       - 'stmt_call::assert_noninline_argument': accept an expression,
-         constant, conversion or record literal when its type fits the
-         parameter like an assignment ('assert_not_narrowed' against the
-         parameter type); a plain variable keeps the exact-type check
-       - 'stmt_call::compile_noninline': 'tc.enter_block()' around the call;
-         per such argument 'tc.add_var' a hidden local of the parameter type
-         (e.g. 'arg.L.C.N') so 'next_frame_address' starts after it and the
-         peak frame size counts it, compile the argument into it with
-         'expr_any::compile', pass its address in 'frame_slot_addresses',
-         'tc.exit_block()' after 'call_function' frees it
-       - writes to such a parameter change only the temporary, like inline
-         expression aliases
-       - arguments are evaluated left to right before any slot address is
-         taken so their scratch registers are free again
-       - tests: 424.baz becomes a run test (constant, arithmetic, conversion,
-         record literal arguments, nested non-inline calls, '--checks=frame'
-         on both targets), new COMPERR for a narrowing argument
-    => roome.baz: 'i64(counter)' does not compile on rv32i (no 'i64');
-       'i(counter)' converts to the default type on both targets
-[ ] survey (2026-09-28): a helper, 'idiv' or syscall result is copied out of
-    its fixed register before the next operation: 'addi t2, a1, 0;
-    sub t1, t1, t2' instead of 'sub t1, t1, a1' (257 rv32i sites), x86
-    'mov r13, rdx' after 'idiv' (113 sites)
-    => the operand side is 'register allocation: an operand is loaded
-       into a scratch register then copied' below (107 rv32i sites,
-       x86 'mov rax, r13' before 'cqo' 113 sites)
-[ ] register allocation: a value is loaded again right after it was stored:
-    'i = i - 1' ends with 'sw t0, 28(s1)' and 'buf[i]' starts with
-    'lw t0, 28(s1)' (etc/codegen-inefficiencies.baz)
-    => needs to know which register still holds a variable between
-       statements
-[ ] register allocation: an operand is loaded into a scratch register then
+[ ] hard: register allocation: an operand is loaded into a scratch register then
     copied to where the next operation needs it: 'lw t2; addi a0, t2, 0'
     before the divide call instead of 'lw a0', the syscall count
     'addi a2, t0, 0' (etc/codegen-inefficiencies.baz)
-[ ] register allocation: multiply/divide helper chains ('r = a * b * c * d')
-    pass the value through memory ('sw a0, r; lw a0, r') or a scratch register
-    ('addi a0, t0, 0' and back) between the calls
-    (etc/codegen-inefficiencies.baz)
-    => needs register targeting for helper operands
-[ ] a runtime bool argument to an inline function is materialized:
+[ ] hard: survey (2026-09-28): a helper, 'idiv' or syscall result is copied out
+    of its fixed register before the next operation: 'addi t2, a1, 0; sub t1,
+    t1, t2' instead of 'sub t1, t1, a1' (257 rv32i sites), x86 'mov r13, rdx'
+    after 'idiv' (113 sites)
+    => the operand side is 'register allocation: an operand is loaded
+       into a scratch register then copied' below (107 rv32i sites,
+       x86 'mov rax, r13' before 'cqo' 113 sites)
+[ ] hard: register allocation: a value is loaded again right after it was
+    stored: 'i = i - 1' ends with 'sw t0, 28(s1)' and 'buf[i]' starts with 'lw
+    t0, 28(s1)' (etc/codegen-inefficiencies.baz)
+    => needs to know which register still holds a variable between
+       statements
+[ ] hard: a runtime bool argument to an inline function is materialized:
     'assert(x == 1)' is 'lw; xori; sltiu; bne' instead of 'lw; li; bne'
     (or 'bnez' against 0) (etc/codegen-inefficiencies.baz)
     => plan (big: several files and interfaces, awaiting go-ahead)
@@ -318,15 +143,208 @@ hard, easiest first
        [ ] tests on both targets: condition-only use, value use and
            assignment fall back, a callee name shadowing a caller name,
            an operand changed in the body before the 'if'
-[ ] make the operand the base way of addressing memory with 64 bit offset and
-    machine dependent index register scalings then lower the writing and
+[ ] hard: register allocation: multiply/divide helper chains ('r = a * b * c *
+    d') pass the value through memory ('sw a0, r; lw a0, r') or a scratch
+    register ('addi a0, t0, 0' and back) between the calls
+    (etc/codegen-inefficiencies.baz)
+    => needs register targeting for helper operands
+[ ] hard: make the operand the base way of addressing memory with 64 bit offset
+    and machine dependent index register scalings then lower the writing and
     reading to machine specific capabilities
-
+--------------------------------------------------------------------------------
+other, easy, easiest first
+--------------------------------------------------------------------------------
+[ ] easy: rename compiler_exception
+[ ] easy: remove panic_exception
+[o] easy: examine NOLINTNEXTLINE annotations and try to fix
+    => 'main' and 'unary_ops' suppressions removed; left: the
+       'misc-definitions-in-headers' block in 'decouple_impl.hpp', either
+       'inline' on its 22 definitions or keep the block
+[ ] easy: rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' now
+    ends the emulator with the dividend in a0 as exit code
+[ ] easy: variable argument count in read/write might be confusing. consider
+    requiring all arguments
+[ ] easy: make an extensive comment file explaining lea, indexing array etc
+[ ] easy: should if str == "abc" be supported?
+    => an argument is that it is a magic string and should be dat
+[ ] easy: consider result being an array
+    func make_points() : point[] res {...}
+    => confusing. better is func init_points(pts : point[]) {...}
+[ ] easy: C++ brace initializers offer no performance advantage and the
+    narrowing issues do not exist in this project. they are ugly. ponder
+    switching to =
+--------------------------------------------------------------------------------
+other, medium, easiest first
+--------------------------------------------------------------------------------
+[ ] medium: implement "size_of" for fields
+[ ] medium: lift the possible ai generated tests in test-rv32i.sh to end-to-end
+    .baz tests
+[ ] medium: instrumentation to find out max heap and stack usage by the compiler
+[ ] medium: lea_path may not be necessary since only most recent lea relevant
+    => also index of where in elems path lea was found
+[ ] medium: consider dropping the visitor pattern in expr_any because lcov does
+    not handle it
+[ ] medium: break: exit current block instead of just loop?
+[ ] medium: consider not allowing single statement blocks
+[ ] medium: rv32i: check loop iteration regarding large span
+[ ] medium: a way to tell the compiler to align variables on 4, 8, 16 etc
+    boundaries
+[ ] medium: --checks=noub: division by zero traps and MIN / -1 wraps or traps by
+    width. check and panic with the line
+[ ] medium: --checks=noub: shift count < 0 or >= width is masked by hardware
+    differently per width ('i8 1 << 9' is 0, 'i32 1 << 33' is 2). check or
+    define
+[ ] medium: --checks=noub: overlapping 'array_copy': check ranges at run-time or
+    define as memmove, warn when it can be detected at compile time
+[ ] medium: --checks=noub: signed overflow wraps. define wrapping as the
+    semantics or add --checks=overflow (x86 'jo', rv32i several instructions)
+[ ] medium: --checks=noub: system stack overflow in deep non-inline recursion
+    segfaults before the frame check. check 'rsp'/'sp' or depth at each call
+[ ] medium: --checks=alias: route inline builtin results through a scratch
+    register instead of rejecting (077.baz, 135.baz, 394.baz, 397.baz, 485.baz)
+    => then re-enable 485.baz
+[ ] medium: low priority: size overflow errors have no source location: a huge
+    array size ('var a = [4611686018427387904]{}', a record field 'a[...]', two
+    huge 'dat' arrays, 'array_copy' with a huge constant count) makes the
+    helpers in 'decouple.hpp' ('add_storage_size', 'multiply_storage_size')
+    throw 'std::overflow_error', which 'main.cpp' prints as a bare message
+    without file and line
+    => throw sites: 'toc::add_var' (via 'stmt_def_var'), 'type::add_field'
+       (via 'stmt_def_type'), 'frame::add_var' (via 'stmt_def_dat'),
+       'stmt_builtin_array_copy::compile_constant_count'
+    => options: catch at each caller and throw 'compiler_exception' with its
+       token, or pass 'src_loc_tk' to the helpers (about 35 call sites);
+       translating in the 'stmt_block'/'program' statement loops was tried
+       and rejected
+    => 'address_offset', 'scaled_address_offset' and 'add_address_offset'
+       were not reached from user input
+    => then add tests for the located errors
+--------------------------------------------------------------------------------
+other, hard, easiest first
+--------------------------------------------------------------------------------
+[ ] hard: UB detection: conservative rejections: a write through a runtime index
+    covers nothing, 'array_copy' into a result is not an assignment, 'foo'
+    bodies do not count as assigning
+[ ] hard: a ways to split code in multiple files while keeping the unity build
+[ ] hard: self referential types
+[ ] hard: func f(p : point copy) copies point to callee stack
+[ ] hard: consider allowing function definitions in functions
+[ ] hard: consider a var type that can be viewed from enclosing functions
+[ ] hard: a way to specify a range in the array: foo arr(bgn_index, len,
+    i_start)
+[ ] hard: foo arr1, arr2, ... {
+      # injected variable 'e1', 'e2', 'e...': current array elements
+      e1 = e2
+    }
+[ ] hard: stmt_call: check arguments vs parameters in constructor instead of at
+    compile
+    => tried: 'assert_alias_type' and the non-inline argument checks at parse
+       gave a wrong message for 'var x = i32(foozi(x))' (test 121): the trial
+       parse of a 'var' initializer gives 'x' the placeholder default type,
+       so the type check at parse reports 'required i64, got i32' instead of
+       'use of uninitialized variable'. needs the trial parse placeholder to
+       be recognizable first (e.g. skip type checks on the variable being
+       defined). the checks that need the destination ('assert_result_type',
+       'assert_no_shared_storage') cannot move
+[ ] hard: func object(self : object inout, pos, vel, color) called when 'var o :
+    object = {...}'
+[ ] hard: --checks=alias: runtime address check or a frame temporary for the
+    remaining record and non-inline results with runtime indexes
+[ ] hard: UB detection: result aliases a by-reference argument: 'x = f(x)',
+    'p = swap(p)' (485.baz, inline and noinline). reject when the callee
+    reads that parameter after writing its result: per-function summary of
+    such parameters plus a call-site overlap check using identifier byte
+    ranges (runtime indexes may overlap). valid today: 135.baz,
+    137.baz-140.baz, 394.baz read before writing
+[ ] hard: UB detection: two by-reference parameters bound to the same variable,
+    e.g. 'g(q, q)' where 'g' writes one and reads the other. inside inline
+    functions the destination-read checks compare names, so 'res' and 'p'
+    referring to the same caller variable are not detected
+    => arguments of one call: done (2026-10-02), a pair sharing storage with
+       a 'mut' parameter is rejected without --checks=alias; left: different
+       alias names of one caller variable inside an inline body
+[ ] hard: UB detection: consider accepting partial results when the caller's
+    destination is already initialized (call-site coverage summary)
+    => prog.baz 'object_init' sets only 'res.pos.y' and is rejected
+[ ] hard: --checks=noub: a partial 'read'/'write' can end inside a record and
+    the start argument cannot resume there. for elements larger than 1 byte,
+    repeat the syscall until the current record is complete, not the whole
+    count, so line input still returns
+    => result stays in bytes, always a multiple of the element size
+    => end of file or an error inside a record returns the error
+    => remainder is an 'and' for power of 2 sizes, other sizes need a
+       division that conflicts with the syscall registers on x86 and uses
+       the helper on rv32i
+    => test with 'DIFFINP2' input split inside a record
+[ ] hard: allow record literals and record call results as arguments, e.g.
+    'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
+    caller's frame. rejected today with "argument 1 cannot be a temporary"
+    (501.baz, 502.baz)
+    => see 'non-inline calls take expression arguments' below for the plan
+[ ] hard: consider making widening explicit too, today only narrowing needs
+    'i8(...)' etc. e.g. 'var y i32 = 1 + low(x)' with 'low' returning i8 is
+    rejected as a result type mismatch, 'i32(low(x))' is required
+    => prototype: requiring equal widths in the 3 width checks rejects 40+
+       tests (first error per file)
+    => exempt array indexes (most rejections), fitting constants and 'void'
+       calls ('void' counts as a 0 byte builtin)
+    => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
+       compile on rv32i. a target-neutral conversion such as 'int(...)' is
+       needed to widen to the default type portably
+[ ] hard: string type
+      var str = "hello world"
+      var len = str.len
+[ ] hard: strings as sources of 'arrays_equal' and 'array_copy'
+    => plan (big: new machine interface method, several files)
+       [ ] parse a string token or an identifier for the 'array_copy' source
+           and either 'arrays_equal' argument; 'source_to', 'visit_reads'
+           and the type check treat the string as 'i8'
+       [ ] the string length is the array count: a constant count above it
+           is a compile error, a runtime count is checked with
+           'check_bounds' when '--checks=upper' is on
+       [ ] 'array_copy' with a constant count: 'machine::copy_bytes' with the
+           first 'count' decoded bytes, no backend change (possible first
+           step)
+       [ ] runtime count and 'arrays_equal': new machine method that loads
+           the address of a '.rodata' label into a register (x86
+           'lea reg, [rel label]', rv32i 'la') for
+           'array_copy_source_register' and 'memory_equal_left/right_register'
+           since operands have no symbol memory form
+       [ ] register the constant with 'toc::add_string_constant' only when
+           emitted
+       [ ] tree-sitter grammar
+       [ ] tests on both targets: runtime copy and compare, errors for a
+           non-'i8' destination, a count above the string length and the
+           empty string
+[ ] hard: non-inline calls take expression arguments, e.g. roome.baz
+    'print_num(i64(counter))' fails with "expression arguments are
+    unsupported" because every argument is passed by address (424.baz)
+    => plan: the caller evaluates the argument into a temporary in its own
+       storage and passes the temporary's address
+       - 'stmt_call::assert_noninline_argument': accept an expression,
+         constant, conversion or record literal when its type fits the
+         parameter like an assignment ('assert_not_narrowed' against the
+         parameter type); a plain variable keeps the exact-type check
+       - 'stmt_call::compile_noninline': 'tc.enter_block()' around the call;
+         per such argument 'tc.add_var' a hidden local of the parameter type
+         (e.g. 'arg.L.C.N') so 'next_frame_address' starts after it and the
+         peak frame size counts it, compile the argument into it with
+         'expr_any::compile', pass its address in 'frame_slot_addresses',
+         'tc.exit_block()' after 'call_function' frees it
+       - writes to such a parameter change only the temporary, like inline
+         expression aliases
+       - arguments are evaluated left to right before any slot address is
+         taken so their scratch registers are free again
+       - tests: 424.baz becomes a run test (constant, arithmetic, conversion,
+         record literal arguments, nested non-inline calls, '--checks=frame'
+         on both targets), new COMPERR for a narrowing argument
+    => roome.baz: 'i64(counter)' does not compile on rv32i (no 'i64');
+       'i(counter)' converts to the default type on both targets
 --------------------------------------------------------------------------------
 too hard right now
 --------------------------------------------------------------------------------
-[ ] x86_64: create the binary from 'assembler_x86_64' like 'assembler_rv32i'
-    does, so the --bin option also applies to x86_64
+[ ] hard: x86_64: create the binary from 'assembler_x86_64' like
+    'assembler_rv32i' does, so the --bin option also applies to x86_64
     => on hold (2026-09-27): not worth it for now
     => until then nasm stays in the scripts and x86_64 ignores --bin
     => running nasm and ld from the compiler is possible with 'posix_spawnp'
@@ -370,14 +388,13 @@ too hard right now
           becomes bytes, 'count_instructions' keeps choosing versions by
           lines so the generated assembly stays unchanged
        => also decides the --bin default name for x86_64 (elf, not '.bin')
-[ ] consider making a verilog cpu that implements just the subset of x86 used
-    instead of a rv32i backend
+[ ] hard: consider making a verilog cpu that implements just the subset of x86
+    used instead of a rv32i backend
     => more registers, more scalings of operand index register, more
        displacement, more branch offset
-[ ] consider refactoring to 1 pass compiler making compiling in constructor
-    constructor(os data,os code,indent)
-[ ] support for float and double?
-[ ] support avx512 operations
-[ ] limited integration with some C functions from stdlib
-[ ] declare external C functions
-
+[ ] hard: consider refactoring to 1 pass compiler making compiling in
+    constructor constructor(os data,os code,indent)
+[ ] hard: support for float and double?
+[ ] hard: support avx512 operations
+[ ] hard: limited integration with some C functions from stdlib
+[ ] hard: declare external C functions

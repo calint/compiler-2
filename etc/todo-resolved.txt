@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] change all array access using [ ] to checked using .at
+[x] --checks=alias: accept disjoint constant paths by comparing byte ranges
+    (137.baz-140.baz, 294.baz, 418.baz)
+    => done (2026-10-02, 'stmt_call::reach_disjoint_bytes', test 681): applies
+       to arguments naming the same variable, run-time indexes count as the
+       whole array (test 682)
+[x] --checks=alias: accept shared arguments when the callee assigns neither
+    parameter (128.baz-133.baz, 414.baz)
+    => done: only a pair with a 'mut' parameter is rejected, and now always,
+       not only with --checks=alias; '--checks=alias' keeps the comparison of
+       the result destination with the arguments
 [x] review machine_rv32i code copy/zero/compare and the design that merges their
     functionality; still a bit messy
     => tried and reverted to some code duplication but much less complexity
