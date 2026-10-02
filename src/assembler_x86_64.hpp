@@ -63,7 +63,7 @@ class assembler_x86_64 final : public assembler {
         cmpsq,
     };
 
-    // suffixes of 'jcc', 'setcc' and 'cmovcc', 'nz' is spelled apart from
+    // suffixes of 'jcc' and 'setcc', 'nz' is spelled apart from
     // 'ne' to keep the handler text
     enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, nz, ae };
 
@@ -203,14 +203,6 @@ class assembler_x86_64 final : public assembler {
 
     auto call(const size_t indent, const std::string_view target) -> void {
         add_text(std::format("{}call {}", indentation(indent), target));
-    }
-
-    auto cmovcc(const size_t indent, const condition cc, const argument& dst,
-                const argument& src) -> void {
-
-        add_text(std::format("{}cmov{} {}, {}", indentation(indent),
-                             condition_suffix(cc), argument_text(dst),
-                             argument_text(src)));
     }
 
     auto data(const size_t element_size_bytes,

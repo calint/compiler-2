@@ -13,6 +13,7 @@
 #include <optional>
 #include <ostream>
 #include <ranges>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -190,6 +191,8 @@ class machine_x86_64 final : public machine {
     std::vector<allocation> allocations_;
     // numbers the labels after the parts of a memory compare
     size_t equal_label_count_{};
+    // source lines of the bounds checks, each gets a stub that reports it
+    std::set<size_t> bounds_panic_lines_;
 
     // buffering output is no more logical state than writing to the stream
     mutable assembler_x86_64 assembler_;
@@ -416,15 +419,10 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "bounds check begin");
 
-        operand reg_line_num;
-        if (options.with_line) {
-            reg_line_num =
-                alloc_scratch_register(src_loc_tk, indent, default_type());
-
-            comment(src_loc_tk, indent, "source line");
-            mov(src_loc_tk, indent, reg_line_num,
-                immediate(src_loc_tk.at_line()));
-        }
+        const std::optional<size_t> reported_line{
+            options.with_line ? std::optional<size_t>{src_loc_tk.at_line()}
+                              : std::nullopt,
+        };
 
         if (options.lower) {
             comment(src_loc_tk, indent, "lower bound");
@@ -452,7 +450,7 @@ class machine_x86_64 final : public machine {
                 }
 
                 test(indent, *value, *value);
-                branch_to_bounds_panic(indent, condition::s, reg_line_num);
+                branch_to_bounds_panic(indent, condition::s, reported_line);
             }
         }
 
@@ -470,11 +468,7 @@ class machine_x86_64 final : public machine {
             compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
                                 reg_count);
 
-            branch_to_bounds_panic(indent, out_of_bounds, reg_line_num);
-        }
-
-        if (options.with_line) {
-            free_scratch_register(src_loc_tk, indent, reg_line_num);
+            branch_to_bounds_panic(indent, out_of_bounds, reported_line);
         }
 
         comment(src_loc_tk, indent, "bounds check end");
@@ -700,6 +694,13 @@ class machine_x86_64 final : public machine {
             emit_panic_exit();
 
             return;
+        }
+
+        // one stub per line sets rbp and enters the handler
+        for (const size_t line : bounds_panic_lines_) {
+            assembler_.label(0, bounds_panic_label(line));
+            assembler_.instruction(1, op::mov, "rbp", line);
+            assembler_.jmp(1, "baz_bounds_panic");
         }
 
         assembler_.label(0, "baz_bounds_panic");
@@ -1465,16 +1466,18 @@ class machine_x86_64 final : public machine {
                        label);
     }
 
-    // the handler reads the line number from rbp, empty 'reg_line_num' when
-    // the line is not reported
+    // a reported line goes through the stub of its line, which sets rbp for
+    // the handler, so a passing check keeps rbp and loads nothing
     auto branch_to_bounds_panic(const size_t indent, const condition failed,
-                                const operand& reg_line_num) -> void {
+                                const std::optional<size_t> line) -> void {
 
-        if (not reg_line_num.is_empty()) {
-            cmovcc(indent, failed, qword_register("rbp"), reg_line_num);
+        if (not line.has_value()) {
+            assembler_.jcc(indent, failed, "baz_bounds_panic");
+            return;
         }
 
-        assembler_.jcc(indent, failed, "baz_bounds_panic");
+        bounds_panic_lines_.insert(*line);
+        assembler_.jcc(indent, failed, bounds_panic_label(*line));
     }
 
     // returns the cached built-in type (i64/i32/i16/i8) matching 'size'
@@ -1497,15 +1500,6 @@ class machine_x86_64 final : public machine {
         default:
             std::unreachable();
         }
-    }
-
-    // only registers are used, which need no lowering
-    auto cmovcc(const size_t indent, const condition cc, const operand& dst,
-                const operand& src) -> void {
-
-        assert(dst.is_register() and src.is_register());
-
-        assembler_.cmovcc(indent, cc, to_argument(dst), to_argument(src));
     }
 
     auto cmp(const token& src_loc_tk, const size_t indent,
@@ -2278,6 +2272,12 @@ class machine_x86_64 final : public machine {
     //
     // statics
     //
+
+    [[nodiscard]] static auto bounds_panic_label(const size_t line)
+        -> std::string {
+
+        return std::format("baz_bounds_line_{}", line);
+    }
 
     [[nodiscard]] static auto
     condition_for_comparison(const std::string_view comparison,

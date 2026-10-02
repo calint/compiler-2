@@ -31,24 +31,24 @@ points that exist on both targets keep their rv32i number in brackets.
        8134 -> 7921 instructions.
        where: compare_upper_bound
 
-[ ] 4. bounds failure plumbing: 547 checks cost 547 'mov reg,line' and 909
-       'cmovcc rbp,reg', 1456 instructions (18% of the program)
-       each check loads the line number into a scratch register and every
-       condition does 'cmovcc rbp,line; jcc panic' so rbp, the variables
-       base, survives when the check passes. two effects:
-       - a sum check has three conditions and three cmovs, 12 instructions
-         (11 with the lea of point 3).
-       - rbp is written by the cmov, so every memory access after a check
-         waits on the compare, a dependency a predicted branch would not
+[x] 4. bounds failure plumbing: 547 checks cost 547 'mov reg,line' and 909
+       'cmovcc rbp,reg', 1456 instructions (about 19% of the 7790 counted
+       instructions of the program)
+       each check loaded the line number into a scratch register and every
+       condition did 'cmovcc rbp,line; jcc panic' so rbp, the variables
+       base, survived when the check passed. two effects:
+       - a sum check had three conditions and three cmovs, 12 instructions.
+       - rbp was written by the cmov, so every memory access after a check
+         waited on the compare, a dependency a predicted branch does not
          create.
-       an inline failure path needs no scratch register, no cmov and one
-       'mov rbp,line' per check:
-           cmp r15,81; jb .ok; mov rbp,1016; jmp baz_bounds_panic; .ok:
-       same instruction count for one condition (4), 10 instead of 12 for the
-       sum form, but a taken branch on every passing check, like rv32i's
-       '1:'/'2:' block. performance not measured. shared out-of-line stubs
-       per line would be smaller still but are not local to one operation.
-       where: check_bounds, branch_to_bounds_panic
+       now every condition is 'jcc baz_bounds_line_N' and each distinct
+       line has one out-of-line stub in the handler section, 'mov rbp,N;
+       jmp baz_bounds_panic', so a passing check runs only its compare and
+       branch: 'cmp r15,81; jae baz_bounds_line_1016'.
+       roome 7790 -> 6515 instructions counted, 91 stubs.
+       rv32i keeps its '1:'/'2:' block: conditional branches reach only
+       4 KiB, so stubs far away need far jump resolution.
+       where: check_bounds, branch_to_bounds_panic, emit_bounds_failure_handler
 
 [ ] 5. run-time count compare uses only 'repe cmpsb' (42 sites)
        'repe cmps*' is microcoded and costs about the same per element at
