@@ -1,9 +1,5 @@
 # compiler-2 (baz)
 
-Read [etc/ai/preferences.md](etc/ai/preferences.md) and
-[etc/ai/project.md](etc/ai/project.md) before changing code; this file
-summarizes them.
-
 ## permissions
 
 - Shell (build, test, lint, format, scratch compiles): no asking. Ask for
