@@ -27,7 +27,7 @@ site counts are occurrences in the generated code.
        preceding 'bltz' was dead. 'index + count' needs both 'bltz'.
        where: emit_bounds_check
 
-[ ] 3. count lower-checked once per array (213 sites, 1 instruction each)
+[x] 3. count lower-checked once per array (213 sites, 1 instruction each)
        array_copy and arrays_equal call check_bounds for the source and again
        for the destination, the second call repeats 'bltz count' on the same
        register. spans two calls, needs per-operation state.
@@ -54,6 +54,10 @@ site counts are occurrences in the generated code.
           that a later element is a run-time element writing the destination
           (also through nested lists and inversion, 'or' elements have the
           mirrored case). gain is 1 instruction at 66 sites, not done.
+
+x86_64 shares points 2 and 3 and has both fixed: the unsigned 'jae'/'ja'
+upper compare replaces 'test; cmovs; js', and 'lower_checked_registers_'
+skips a repeated count test (roome 9328 -> 8134 instructions).
 
 not counted, they need a known constant:
 - 'li t1,0; bltz t1' bounds checks on constants (148 sites)

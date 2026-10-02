@@ -332,7 +332,7 @@ main:
             lw t0, 1968(t0)
             # [1016:32] bounds check begin
             # [1016:32] lower bound
-            bltz t0, 1f
+            # [1016:32] t0 lower bound covered by the unsigned upper bound
             # [1016:32] upper bound
             # [1016:32] allocate scratch register -> t1
             li t1, 81
@@ -437,7 +437,7 @@ main:
                     # [406:36] self.str.array
                     # [406:36] bounds check begin
                     # [406:36] lower bound
-                    bltz t3, 1f
+                    # [406:36] t3 lower bound covered by the unsigned upper bound
                     # [406:36] upper bound
                     # [406:36] allocate scratch register -> t4
                     li t4, 127
@@ -548,7 +548,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -648,7 +648,7 @@ main:
                             lw t0, 1960(t0)
                             # [428:27] bounds check begin
                             # [428:27] lower bound
-                            bltz t0, 1f
+                            # [428:27] t0 lower bound covered by the unsigned upper bound
                             # [428:27] upper bound
                             # [428:27] allocate scratch register -> t1
                             li t1, 127
@@ -756,7 +756,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 2
@@ -780,8 +780,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -907,7 +907,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -1007,7 +1007,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -1227,7 +1227,7 @@ main:
                                         # [453:24] str
                                         # [453:24] bounds check begin
                                         # [453:24] lower bound
-                                        bltz t3, 1f
+                                        # [453:24] t3 lower bound covered by the unsigned upper bound
                                         # [453:24] upper bound
                                         # [453:24] allocate scratch register -> t4
                                         li t4, 4
@@ -1251,8 +1251,8 @@ main:
                                         lw t4, 1956(t4)
                                         # [453:44] bounds check begin
                                         # [453:44] lower bound
+                                        # [453:44] count t3 lower bound already checked
                                         bltz t4, 1f
-                                        bltz t3, 1f
                                         # [453:44] upper bound
                                         # [453:44] allocate scratch register -> t5
                                         # [453:44] allocate scratch register -> t6
@@ -1337,7 +1337,7 @@ main:
                             lw t0, 1972(t0)
                             # [511:33] bounds check begin
                             # [511:33] lower bound
-                            bltz t0, 1f
+                            # [511:33] t0 lower bound covered by the unsigned upper bound
                             # [511:33] upper bound
                             # [511:33] allocate scratch register -> t1
                             li t1, 128
@@ -1397,7 +1397,7 @@ main:
                             lw t1, 1972(t1)
                             # [513:21] bounds check begin
                             # [513:21] lower bound
-                            bltz t1, 1f
+                            # [513:21] t1 lower bound covered by the unsigned upper bound
                             # [513:21] upper bound
                             # [513:21] allocate scratch register -> t2
                             li t2, 128
@@ -1433,7 +1433,7 @@ main:
                             lw t1, 1976(t1)
                             # [513:41] bounds check begin
                             # [513:41] lower bound
-                            bltz t1, 1f
+                            # [513:41] t1 lower bound covered by the unsigned upper bound
                             # [513:41] upper bound
                             # [513:41] allocate scratch register -> t2
                             li t2, 8
@@ -1467,7 +1467,7 @@ main:
                                     lw t4, 0(t0)
                                     # [514:40] bounds check begin
                                     # [514:40] lower bound
-                                    bltz t4, 1f
+                                    # [514:40] t4 lower bound covered by the unsigned upper bound
                                     # [514:40] upper bound
                                     # [514:40] allocate scratch register -> t5
                                     li t5, 1024
@@ -1541,7 +1541,7 @@ main:
                                             # [458:24] nm.array
                                             # [458:24] bounds check begin
                                             # [458:24] lower bound
-                                            bltz s2, 1f
+                                            # [458:24] s2 lower bound covered by the unsigned upper bound
                                             # [458:24] upper bound
                                             # [458:24] allocate scratch register -> s3
                                             li s3, 16
@@ -1563,8 +1563,8 @@ main:
                                             lw s3, 1956(s3)
                                             # [458:49] bounds check begin
                                             # [458:49] lower bound
+                                            # [458:49] count s2 lower bound already checked
                                             bltz s3, 1f
-                                            bltz s2, 1f
                                             # [458:49] upper bound
                                             # [458:49] allocate scratch register -> s4
                                             # [458:49] allocate scratch register -> s5
@@ -1747,7 +1747,7 @@ main:
                             lw t0, 1972(t0)
                             # [526:34] bounds check begin
                             # [526:34] lower bound
-                            bltz t0, 1f
+                            # [526:34] t0 lower bound covered by the unsigned upper bound
                             # [526:34] upper bound
                             # [526:34] allocate scratch register -> t1
                             li t1, 128
@@ -1782,7 +1782,7 @@ main:
                             lw t1, 1980(t1)
                             # [526:53] bounds check begin
                             # [526:53] lower bound
-                            bltz t1, 1f
+                            # [526:53] t1 lower bound covered by the unsigned upper bound
                             # [526:53] upper bound
                             # [526:53] allocate scratch register -> t2
                             li t2, 8
@@ -1828,7 +1828,7 @@ main:
                             lw t0, 1984(t0)
                             # [529:33] bounds check begin
                             # [529:33] lower bound
-                            bltz t0, 1f
+                            # [529:33] t0 lower bound covered by the unsigned upper bound
                             # [529:33] upper bound
                             # [529:33] allocate scratch register -> t1
                             li t1, 128
@@ -1869,7 +1869,7 @@ main:
                                 lw t2, 128(t1)
                                 # [158:16] bounds check begin
                                 # [158:16] lower bound
-                                bltz t2, 1f
+                                # [158:16] t2 lower bound covered by the unsigned upper bound
                                 # [158:16] upper bound
                                 # [158:16] allocate scratch register -> t3
                                 li t3, 32
@@ -1919,7 +1919,7 @@ main:
                             lw t0, 1972(t0)
                             # [530:17] bounds check begin
                             # [530:17] lower bound
-                            bltz t0, 1f
+                            # [530:17] t0 lower bound covered by the unsigned upper bound
                             # [530:17] upper bound
                             # [530:17] allocate scratch register -> t1
                             li t1, 128
@@ -1974,7 +1974,7 @@ main:
                                 lw t3, 128(t1)
                                 # [145:21] bounds check begin
                                 # [145:21] lower bound
-                                bltz t3, 1f
+                                # [145:21] t3 lower bound covered by the unsigned upper bound
                                 # [145:21] upper bound
                                 # [145:21] allocate scratch register -> t4
                                 li t4, 32
@@ -2101,8 +2101,8 @@ main:
                                     lw t5, 1992(t5)
                                     # [135:20] bounds check begin
                                     # [135:20] lower bound
+                                    # [135:20] count t4 lower bound already checked
                                     bltz t5, 1f
-                                    bltz t4, 1f
                                     # [135:20] upper bound
                                     # [135:20] allocate scratch register -> t6
                                     # [135:20] allocate scratch register -> s1
@@ -2456,7 +2456,7 @@ main:
                                 # [91:16] s
                                 # [91:16] bounds check begin
                                 # [91:16] lower bound
-                                bltz t2, 1f
+                                # [91:16] t2 lower bound covered by the unsigned upper bound
                                 # [91:16] upper bound
                                 # [91:16] allocate scratch register -> t3
                                 li t3, 8
@@ -2480,8 +2480,8 @@ main:
                                 lw t3, -1976(t3)
                                 # [91:30] bounds check begin
                                 # [91:30] lower bound
+                                # [91:30] count t2 lower bound already checked
                                 bltz t3, 1f
-                                bltz t2, 1f
                                 # [91:30] upper bound
                                 # [91:30] allocate scratch register -> t4
                                 # [91:30] allocate scratch register -> t5
@@ -2550,7 +2550,7 @@ main:
                             lw t1, 1972(t1)
                             # [541:25] bounds check begin
                             # [541:25] lower bound
-                            bltz t1, 1f
+                            # [541:25] t1 lower bound covered by the unsigned upper bound
                             # [541:25] upper bound
                             # [541:25] allocate scratch register -> t2
                             li t2, 128
@@ -2585,7 +2585,7 @@ main:
                             lw t2, 1980(t2)
                             # [541:44] bounds check begin
                             # [541:44] lower bound
-                            bltz t2, 1f
+                            # [541:44] t2 lower bound covered by the unsigned upper bound
                             # [541:44] upper bound
                             # [541:44] allocate scratch register -> t3
                             li t3, 8
@@ -2604,7 +2604,7 @@ main:
                             # [541:13] free scratch register t1
                             # [541:13] bounds check begin
                             # [541:13] lower bound
-                            bltz t0, 1f
+                            # [541:13] t0 lower bound covered by the unsigned upper bound
                             # [541:13] upper bound
                             # [541:13] allocate scratch register -> t1
                             li t1, 1024
@@ -2644,7 +2644,7 @@ main:
                                 # [182:16] nm.array
                                 # [182:16] bounds check begin
                                 # [182:16] lower bound
-                                bltz t4, 1f
+                                # [182:16] t4 lower bound covered by the unsigned upper bound
                                 # [182:16] upper bound
                                 # [182:16] allocate scratch register -> t5
                                 li t5, 16
@@ -2666,8 +2666,8 @@ main:
                                 lw t5, -1976(t5)
                                 # [182:37] bounds check begin
                                 # [182:37] lower bound
+                                # [182:37] count t4 lower bound already checked
                                 bltz t5, 1f
-                                bltz t4, 1f
                                 # [182:37] upper bound
                                 # [182:37] allocate scratch register -> t6
                                 # [182:37] allocate scratch register -> s1
@@ -2744,7 +2744,7 @@ main:
                                 lw t0, 1972(t0)
                                 # [483:41] bounds check begin
                                 # [483:41] lower bound
-                                bltz t0, 1f
+                                # [483:41] t0 lower bound covered by the unsigned upper bound
                                 # [483:41] upper bound
                                 # [483:41] allocate scratch register -> t1
                                 li t1, 128
@@ -2790,7 +2790,7 @@ main:
                                 lw t1, 1972(t1)
                                 # [484:21] bounds check begin
                                 # [484:21] lower bound
-                                bltz t1, 1f
+                                # [484:21] t1 lower bound covered by the unsigned upper bound
                                 # [484:21] upper bound
                                 # [484:21] allocate scratch register -> t2
                                 li t2, 128
@@ -2826,7 +2826,7 @@ main:
                                 lw t1, -1972(t1)
                                 # [484:46] bounds check begin
                                 # [484:46] lower bound
-                                bltz t1, 1f
+                                # [484:46] t1 lower bound covered by the unsigned upper bound
                                 # [484:46] upper bound
                                 # [484:46] allocate scratch register -> t2
                                 li t2, 32
@@ -2867,7 +2867,7 @@ main:
                                     lw t3, 0(t0)
                                     # [487:27] bounds check begin
                                     # [487:27] lower bound
-                                    bltz t3, 1f
+                                    # [487:27] t3 lower bound covered by the unsigned upper bound
                                     # [487:27] upper bound
                                     # [487:27] allocate scratch register -> t4
                                     li t4, 32
@@ -2911,7 +2911,7 @@ main:
                                     lw t3, 0(t0)
                                     # [489:24] bounds check begin
                                     # [489:24] lower bound
-                                    bltz t3, 1f
+                                    # [489:24] t3 lower bound covered by the unsigned upper bound
                                     # [489:24] upper bound
                                     # [489:24] allocate scratch register -> t4
                                     li t4, 32
@@ -2950,7 +2950,7 @@ main:
                                         lw t5, -772(t5)
                                         # [206:16] bounds check begin
                                         # [206:16] lower bound
-                                        bltz t5, 1f
+                                        # [206:16] t5 lower bound covered by the unsigned upper bound
                                         # [206:16] upper bound
                                         # [206:16] allocate scratch register -> t6
                                         li t6, 16
@@ -3044,7 +3044,7 @@ main:
                             lw t0, 1984(t0)
                             # [547:36] bounds check begin
                             # [547:36] lower bound
-                            bltz t0, 1f
+                            # [547:36] t0 lower bound covered by the unsigned upper bound
                             # [547:36] upper bound
                             # [547:36] allocate scratch register -> t1
                             li t1, 128
@@ -3104,7 +3104,7 @@ main:
                             lw t1, 1984(t1)
                             # [549:21] bounds check begin
                             # [549:21] lower bound
-                            bltz t1, 1f
+                            # [549:21] t1 lower bound covered by the unsigned upper bound
                             # [549:21] upper bound
                             # [549:21] allocate scratch register -> t2
                             li t2, 128
@@ -3140,7 +3140,7 @@ main:
                             lw t1, -1972(t1)
                             # [549:40] bounds check begin
                             # [549:40] lower bound
-                            bltz t1, 1f
+                            # [549:40] t1 lower bound covered by the unsigned upper bound
                             # [549:40] upper bound
                             # [549:40] allocate scratch register -> t2
                             li t2, 8
@@ -3264,7 +3264,7 @@ main:
                                 # [91:16] s
                                 # [91:16] bounds check begin
                                 # [91:16] lower bound
-                                bltz t2, 1f
+                                # [91:16] t2 lower bound covered by the unsigned upper bound
                                 # [91:16] upper bound
                                 # [91:16] allocate scratch register -> t3
                                 li t3, 13
@@ -3288,8 +3288,8 @@ main:
                                 lw t3, -1836(t3)
                                 # [91:30] bounds check begin
                                 # [91:30] lower bound
+                                # [91:30] count t2 lower bound already checked
                                 bltz t3, 1f
-                                bltz t2, 1f
                                 # [91:30] upper bound
                                 # [91:30] allocate scratch register -> t4
                                 # [91:30] allocate scratch register -> t5
@@ -3358,7 +3358,7 @@ main:
                             lw t1, 1984(t1)
                             # [563:25] bounds check begin
                             # [563:25] lower bound
-                            bltz t1, 1f
+                            # [563:25] t1 lower bound covered by the unsigned upper bound
                             # [563:25] upper bound
                             # [563:25] allocate scratch register -> t2
                             li t2, 128
@@ -3393,7 +3393,7 @@ main:
                             lw t2, -1968(t2)
                             # [563:43] bounds check begin
                             # [563:43] lower bound
-                            bltz t2, 1f
+                            # [563:43] t2 lower bound covered by the unsigned upper bound
                             # [563:43] upper bound
                             # [563:43] allocate scratch register -> t3
                             li t3, 8
@@ -3412,7 +3412,7 @@ main:
                             # [563:13] free scratch register t1
                             # [563:13] bounds check begin
                             # [563:13] lower bound
-                            bltz t0, 1f
+                            # [563:13] t0 lower bound covered by the unsigned upper bound
                             # [563:13] upper bound
                             # [563:13] allocate scratch register -> t1
                             li t1, 1024
@@ -3452,7 +3452,7 @@ main:
                                 # [182:16] nm.array
                                 # [182:16] bounds check begin
                                 # [182:16] lower bound
-                                bltz t4, 1f
+                                # [182:16] t4 lower bound covered by the unsigned upper bound
                                 # [182:16] upper bound
                                 # [182:16] allocate scratch register -> t5
                                 li t5, 16
@@ -3474,8 +3474,8 @@ main:
                                 lw t5, -1836(t5)
                                 # [182:37] bounds check begin
                                 # [182:37] lower bound
+                                # [182:37] count t4 lower bound already checked
                                 bltz t5, 1f
-                                bltz t4, 1f
                                 # [182:37] upper bound
                                 # [182:37] allocate scratch register -> t6
                                 # [182:37] allocate scratch register -> s1
@@ -3552,7 +3552,7 @@ main:
                                 lw t0, 1984(t0)
                                 # [483:41] bounds check begin
                                 # [483:41] lower bound
-                                bltz t0, 1f
+                                # [483:41] t0 lower bound covered by the unsigned upper bound
                                 # [483:41] upper bound
                                 # [483:41] allocate scratch register -> t1
                                 li t1, 128
@@ -3598,7 +3598,7 @@ main:
                                 lw t1, 1984(t1)
                                 # [484:21] bounds check begin
                                 # [484:21] lower bound
-                                bltz t1, 1f
+                                # [484:21] t1 lower bound covered by the unsigned upper bound
                                 # [484:21] upper bound
                                 # [484:21] allocate scratch register -> t2
                                 li t2, 128
@@ -3634,7 +3634,7 @@ main:
                                 lw t1, -1832(t1)
                                 # [484:46] bounds check begin
                                 # [484:46] lower bound
-                                bltz t1, 1f
+                                # [484:46] t1 lower bound covered by the unsigned upper bound
                                 # [484:46] upper bound
                                 # [484:46] allocate scratch register -> t2
                                 li t2, 32
@@ -3675,7 +3675,7 @@ main:
                                     lw t3, 0(t0)
                                     # [487:27] bounds check begin
                                     # [487:27] lower bound
-                                    bltz t3, 1f
+                                    # [487:27] t3 lower bound covered by the unsigned upper bound
                                     # [487:27] upper bound
                                     # [487:27] allocate scratch register -> t4
                                     li t4, 32
@@ -3719,7 +3719,7 @@ main:
                                     lw t3, 0(t0)
                                     # [489:24] bounds check begin
                                     # [489:24] lower bound
-                                    bltz t3, 1f
+                                    # [489:24] t3 lower bound covered by the unsigned upper bound
                                     # [489:24] upper bound
                                     # [489:24] allocate scratch register -> t4
                                     li t4, 32
@@ -3758,7 +3758,7 @@ main:
                                         lw t5, -772(t5)
                                         # [206:16] bounds check begin
                                         # [206:16] lower bound
-                                        bltz t5, 1f
+                                        # [206:16] t5 lower bound covered by the unsigned upper bound
                                         # [206:16] upper bound
                                         # [206:16] allocate scratch register -> t6
                                         li t6, 16
@@ -3906,7 +3906,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 2
@@ -3930,8 +3930,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -4055,7 +4055,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -4155,7 +4155,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -4335,7 +4335,7 @@ main:
                             lw t0, 1972(t0)
                             # [602:45] bounds check begin
                             # [602:45] lower bound
-                            bltz t0, 1f
+                            # [602:45] t0 lower bound covered by the unsigned upper bound
                             # [602:45] upper bound
                             # [602:45] allocate scratch register -> t1
                             li t1, 128
@@ -4406,7 +4406,7 @@ main:
                                 lw t1, -92(t1)
                                 # [572:27] bounds check begin
                                 # [572:27] lower bound
-                                bltz t1, 1f
+                                # [572:27] t1 lower bound covered by the unsigned upper bound
                                 # [572:27] upper bound
                                 # [572:27] allocate scratch register -> t2
                                 li t2, 1024
@@ -4483,7 +4483,7 @@ main:
                                                 # [458:24] nm.array
                                                 # [458:24] bounds check begin
                                                 # [458:24] lower bound
-                                                bltz t6, 1f
+                                                # [458:24] t6 lower bound covered by the unsigned upper bound
                                                 # [458:24] upper bound
                                                 # [458:24] allocate scratch register -> s1
                                                 li s1, 16
@@ -4505,8 +4505,8 @@ main:
                                                 lw s1, 1956(s1)
                                                 # [458:49] bounds check begin
                                                 # [458:49] lower bound
+                                                # [458:49] count t6 lower bound already checked
                                                 bltz s1, 1f
-                                                bltz t6, 1f
                                                 # [458:49] upper bound
                                                 # [458:49] allocate scratch register -> s2
                                                 # [458:49] allocate scratch register -> s3
@@ -4605,7 +4605,7 @@ main:
                                 lw t0, -92(t0)
                                 # [581:22] bounds check begin
                                 # [581:22] lower bound
-                                bltz t0, 1f
+                                # [581:22] t0 lower bound covered by the unsigned upper bound
                                 # [581:22] upper bound
                                 # [581:22] allocate scratch register -> t1
                                 li t1, 1024
@@ -4721,7 +4721,7 @@ main:
                                     # [468:44] dst.array
                                     # [468:44] bounds check begin
                                     # [468:44] lower bound
-                                    bltz t4, 1f
+                                    # [468:44] t4 lower bound covered by the unsigned upper bound
                                     # [468:44] upper bound
                                     # [468:44] allocate scratch register -> t5
                                     li t5, 16
@@ -4845,7 +4845,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -4945,7 +4945,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -5137,7 +5137,7 @@ main:
                                 lw t1, -92(t1)
                                 # [572:27] bounds check begin
                                 # [572:27] lower bound
-                                bltz t1, 1f
+                                # [572:27] t1 lower bound covered by the unsigned upper bound
                                 # [572:27] upper bound
                                 # [572:27] allocate scratch register -> t2
                                 li t2, 1024
@@ -5214,7 +5214,7 @@ main:
                                                 # [458:24] nm.array
                                                 # [458:24] bounds check begin
                                                 # [458:24] lower bound
-                                                bltz t6, 1f
+                                                # [458:24] t6 lower bound covered by the unsigned upper bound
                                                 # [458:24] upper bound
                                                 # [458:24] allocate scratch register -> s1
                                                 li s1, 16
@@ -5236,8 +5236,8 @@ main:
                                                 lw s1, 1956(s1)
                                                 # [458:49] bounds check begin
                                                 # [458:49] lower bound
+                                                # [458:49] count t6 lower bound already checked
                                                 bltz s1, 1f
-                                                bltz t6, 1f
                                                 # [458:49] upper bound
                                                 # [458:49] allocate scratch register -> s2
                                                 # [458:49] allocate scratch register -> s3
@@ -5336,7 +5336,7 @@ main:
                                 lw t0, -92(t0)
                                 # [581:22] bounds check begin
                                 # [581:22] lower bound
-                                bltz t0, 1f
+                                # [581:22] t0 lower bound covered by the unsigned upper bound
                                 # [581:22] upper bound
                                 # [581:22] allocate scratch register -> t1
                                 li t1, 1024
@@ -5452,7 +5452,7 @@ main:
                                     # [468:44] dst.array
                                     # [468:44] bounds check begin
                                     # [468:44] lower bound
-                                    bltz t4, 1f
+                                    # [468:44] t4 lower bound covered by the unsigned upper bound
                                     # [468:44] upper bound
                                     # [468:44] allocate scratch register -> t5
                                     li t5, 16
@@ -5520,7 +5520,7 @@ main:
                             lw t0, 1972(t0)
                             # [616:17] bounds check begin
                             # [616:17] lower bound
-                            bltz t0, 1f
+                            # [616:17] t0 lower bound covered by the unsigned upper bound
                             # [616:17] upper bound
                             # [616:17] allocate scratch register -> t1
                             li t1, 128
@@ -5555,7 +5555,7 @@ main:
                             lw t1, 1976(t1)
                             # [616:36] bounds check begin
                             # [616:36] lower bound
-                            bltz t1, 1f
+                            # [616:36] t1 lower bound covered by the unsigned upper bound
                             # [616:36] upper bound
                             # [616:36] allocate scratch register -> t2
                             li t2, 8
@@ -5600,7 +5600,7 @@ main:
                             lw t0, 1972(t0)
                             # [620:17] bounds check begin
                             # [620:17] lower bound
-                            bltz t0, 1f
+                            # [620:17] t0 lower bound covered by the unsigned upper bound
                             # [620:17] upper bound
                             # [620:17] allocate scratch register -> t1
                             li t1, 128
@@ -5648,7 +5648,7 @@ main:
                             lw t0, 948(t0)
                             # [623:17] bounds check begin
                             # [623:17] lower bound
-                            bltz t0, 1f
+                            # [623:17] t0 lower bound covered by the unsigned upper bound
                             # [623:17] upper bound
                             # [623:17] allocate scratch register -> t1
                             li t1, 128
@@ -5707,7 +5707,7 @@ main:
                             lw t0, 948(t0)
                             # [627:17] bounds check begin
                             # [627:17] lower bound
-                            bltz t0, 1f
+                            # [627:17] t0 lower bound covered by the unsigned upper bound
                             # [627:17] upper bound
                             # [627:17] allocate scratch register -> t1
                             li t1, 128
@@ -5898,7 +5898,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 2
@@ -5922,8 +5922,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -6043,7 +6043,7 @@ main:
                                     lw t0, 1956(t0)
                                     # [417:27] bounds check begin
                                     # [417:27] lower bound
-                                    bltz t0, 1f
+                                    # [417:27] t0 lower bound covered by the unsigned upper bound
                                     # [417:27] upper bound
                                     # [417:27] allocate scratch register -> t1
                                     li t1, 127
@@ -6135,7 +6135,7 @@ main:
                             lw t0, 948(s0)
                             # [640:17] bounds check begin
                             # [640:17] lower bound
-                            bltz t0, 1f
+                            # [640:17] t0 lower bound covered by the unsigned upper bound
                             # [640:17] upper bound
                             # [640:17] allocate scratch register -> t1
                             li t1, 128
@@ -6261,7 +6261,7 @@ main:
                                 # [474:44] res.array
                                 # [474:44] bounds check begin
                                 # [474:44] lower bound
-                                bltz t4, 1f
+                                # [474:44] t4 lower bound covered by the unsigned upper bound
                                 # [474:44] upper bound
                                 # [474:44] allocate scratch register -> t5
                                 li t5, 127
@@ -6438,7 +6438,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 3
@@ -6462,8 +6462,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -6583,7 +6583,7 @@ main:
                                     lw t0, 1956(t0)
                                     # [417:27] bounds check begin
                                     # [417:27] lower bound
-                                    bltz t0, 1f
+                                    # [417:27] t0 lower bound covered by the unsigned upper bound
                                     # [417:27] upper bound
                                     # [417:27] allocate scratch register -> t1
                                     li t1, 127
@@ -6675,7 +6675,7 @@ main:
                             lw t0, 948(s0)
                             # [648:17] bounds check begin
                             # [648:17] lower bound
-                            bltz t0, 1f
+                            # [648:17] t0 lower bound covered by the unsigned upper bound
                             # [648:17] upper bound
                             # [648:17] allocate scratch register -> t1
                             li t1, 128
@@ -6801,7 +6801,7 @@ main:
                                 # [474:44] res.array
                                 # [474:44] bounds check begin
                                 # [474:44] lower bound
-                                bltz t4, 1f
+                                # [474:44] t4 lower bound covered by the unsigned upper bound
                                 # [474:44] upper bound
                                 # [474:44] allocate scratch register -> t5
                                 li t5, 127
@@ -6900,7 +6900,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 3
@@ -6924,8 +6924,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -7049,7 +7049,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -7149,7 +7149,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -7425,7 +7425,7 @@ main:
                             lw t0, 948(s0)
                             # [668:17] bounds check begin
                             # [668:17] lower bound
-                            bltz t0, 1f
+                            # [668:17] t0 lower bound covered by the unsigned upper bound
                             # [668:17] upper bound
                             # [668:17] allocate scratch register -> t1
                             li t1, 128
@@ -7545,7 +7545,7 @@ main:
                                 # [468:44] dst.array
                                 # [468:44] bounds check begin
                                 # [468:44] lower bound
-                                bltz t4, 1f
+                                # [468:44] t4 lower bound covered by the unsigned upper bound
                                 # [468:44] upper bound
                                 # [468:44] allocate scratch register -> t5
                                 li t5, 16
@@ -7722,7 +7722,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 2
@@ -7746,8 +7746,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -7871,7 +7871,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -7971,7 +7971,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -8219,7 +8219,7 @@ main:
                                 # [468:44] dst.array
                                 # [468:44] bounds check begin
                                 # [468:44] lower bound
-                                bltz t2, 1f
+                                # [468:44] t2 lower bound covered by the unsigned upper bound
                                 # [468:44] upper bound
                                 # [468:44] allocate scratch register -> t3
                                 li t3, 16
@@ -8285,7 +8285,7 @@ main:
                                 lw t0, -96(t0)
                                 # [258:16] bounds check begin
                                 # [258:16] lower bound
-                                bltz t0, 1f
+                                # [258:16] t0 lower bound covered by the unsigned upper bound
                                 # [258:16] upper bound
                                 # [258:16] allocate scratch register -> t1
                                 li t1, 32
@@ -8396,7 +8396,7 @@ main:
                             lw t0, 1992(t0)
                             # [689:33] bounds check begin
                             # [689:33] lower bound
-                            bltz t0, 1f
+                            # [689:33] t0 lower bound covered by the unsigned upper bound
                             # [689:33] upper bound
                             # [689:33] allocate scratch register -> t1
                             li t1, 128
@@ -8437,7 +8437,7 @@ main:
                                 lw t2, 128(t1)
                                 # [158:16] bounds check begin
                                 # [158:16] lower bound
-                                bltz t2, 1f
+                                # [158:16] t2 lower bound covered by the unsigned upper bound
                                 # [158:16] upper bound
                                 # [158:16] allocate scratch register -> t3
                                 li t3, 32
@@ -8627,7 +8627,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 2
@@ -8651,8 +8651,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -8776,7 +8776,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -8876,7 +8876,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -9124,7 +9124,7 @@ main:
                                 # [468:44] dst.array
                                 # [468:44] bounds check begin
                                 # [468:44] lower bound
-                                bltz t2, 1f
+                                # [468:44] t2 lower bound covered by the unsigned upper bound
                                 # [468:44] upper bound
                                 # [468:44] allocate scratch register -> t3
                                 li t3, 16
@@ -9177,7 +9177,7 @@ main:
                                 lw t0, -88(t0)
                                 # [285:16] bounds check begin
                                 # [285:16] lower bound
-                                bltz t0, 1f
+                                # [285:16] t0 lower bound covered by the unsigned upper bound
                                 # [285:16] upper bound
                                 # [285:16] allocate scratch register -> t1
                                 li t1, 1024
@@ -9267,7 +9267,7 @@ main:
                                 lw t0, 1080(s0)
                                 # [158:16] bounds check begin
                                 # [158:16] lower bound
-                                bltz t0, 1f
+                                # [158:16] t0 lower bound covered by the unsigned upper bound
                                 # [158:16] upper bound
                                 # [158:16] allocate scratch register -> t1
                                 li t1, 32
@@ -9455,7 +9455,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 1
@@ -9479,8 +9479,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -9663,7 +9663,7 @@ main:
                             lw t1, 1972(t1)
                             # [725:54] bounds check begin
                             # [725:54] lower bound
-                            bltz t1, 1f
+                            # [725:54] t1 lower bound covered by the unsigned upper bound
                             # [725:54] upper bound
                             # [725:54] allocate scratch register -> t2
                             li t2, 32
@@ -9867,7 +9867,7 @@ main:
                                 lw t3, 0(t0)
                                 # [734:23] bounds check begin
                                 # [734:23] lower bound
-                                bltz t3, 1f
+                                # [734:23] t3 lower bound covered by the unsigned upper bound
                                 # [734:23] upper bound
                                 # [734:23] allocate scratch register -> t4
                                 li t4, 1024
@@ -10117,7 +10117,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 1
@@ -10141,8 +10141,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -10266,7 +10266,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -10366,7 +10366,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -10560,7 +10560,7 @@ main:
                             lw t1, 1972(t1)
                             # [755:54] bounds check begin
                             # [755:54] lower bound
-                            bltz t1, 1f
+                            # [755:54] t1 lower bound covered by the unsigned upper bound
                             # [755:54] upper bound
                             # [755:54] allocate scratch register -> t2
                             li t2, 32
@@ -10594,7 +10594,7 @@ main:
                                     lw t4, 0(t0)
                                     # [756:37] bounds check begin
                                     # [756:37] lower bound
-                                    bltz t4, 1f
+                                    # [756:37] t4 lower bound covered by the unsigned upper bound
                                     # [756:37] upper bound
                                     # [756:37] allocate scratch register -> t5
                                     li t5, 1024
@@ -10668,7 +10668,7 @@ main:
                                             # [458:24] nm.array
                                             # [458:24] bounds check begin
                                             # [458:24] lower bound
-                                            bltz s2, 1f
+                                            # [458:24] s2 lower bound covered by the unsigned upper bound
                                             # [458:24] upper bound
                                             # [458:24] allocate scratch register -> s3
                                             li s3, 16
@@ -10690,8 +10690,8 @@ main:
                                             lw s3, 1956(s3)
                                             # [458:49] bounds check begin
                                             # [458:49] lower bound
+                                            # [458:49] count s2 lower bound already checked
                                             bltz s3, 1f
-                                            bltz s2, 1f
                                             # [458:49] upper bound
                                             # [458:49] allocate scratch register -> s4
                                             # [458:49] allocate scratch register -> s5
@@ -10874,7 +10874,7 @@ main:
                             lw t0, 1976(t0)
                             # [768:65] bounds check begin
                             # [768:65] lower bound
-                            bltz t0, 1f
+                            # [768:65] t0 lower bound covered by the unsigned upper bound
                             # [768:65] upper bound
                             # [768:65] allocate scratch register -> t1
                             li t1, 32
@@ -10923,7 +10923,7 @@ main:
                             lw t0, 1984(t0)
                             # [770:33] bounds check begin
                             # [770:33] lower bound
-                            bltz t0, 1f
+                            # [770:33] t0 lower bound covered by the unsigned upper bound
                             # [770:33] upper bound
                             # [770:33] allocate scratch register -> t1
                             li t1, 128
@@ -10964,7 +10964,7 @@ main:
                                 lw t2, 128(t1)
                                 # [158:16] bounds check begin
                                 # [158:16] lower bound
-                                bltz t2, 1f
+                                # [158:16] t2 lower bound covered by the unsigned upper bound
                                 # [158:16] upper bound
                                 # [158:16] allocate scratch register -> t3
                                 li t3, 32
@@ -11075,8 +11075,8 @@ main:
                                 lw t3, 1976(t3)
                                 # [135:20] bounds check begin
                                 # [135:20] lower bound
+                                # [135:20] count t2 lower bound already checked
                                 bltz t3, 1f
-                                bltz t2, 1f
                                 # [135:20] upper bound
                                 # [135:20] allocate scratch register -> t4
                                 # [135:20] allocate scratch register -> t5
@@ -11457,7 +11457,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 1
@@ -11481,8 +11481,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -11533,9 +11533,7 @@ main:
                                 # [453:11] free scratch register t1
                             bool.452.11.984.18.1018.13.1029.5.end:
                         func.tokenizer.is_str.984.18.1018.13.1029.5.end:
-                    bne t0, zero, .Lbaz_jump.3
-                    j if.987.15.1018.13.1029.5
-.Lbaz_jump.3:
+                    beq t0, zero, if.987.15.1018.13.1029.5
                     # [984:15] free scratch register t0
                     if.984.15.1018.13.1029.5.code:
                         # [985:9] action_give(cur_entity_id, tz)
@@ -11608,7 +11606,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -11708,7 +11706,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -11902,7 +11900,7 @@ main:
                             lw t1, 1972(t1)
                             # [795:54] bounds check begin
                             # [795:54] lower bound
-                            bltz t1, 1f
+                            # [795:54] t1 lower bound covered by the unsigned upper bound
                             # [795:54] upper bound
                             # [795:54] allocate scratch register -> t2
                             li t2, 32
@@ -11936,7 +11934,7 @@ main:
                                     lw t4, 0(t0)
                                     # [796:37] bounds check begin
                                     # [796:37] lower bound
-                                    bltz t4, 1f
+                                    # [796:37] t4 lower bound covered by the unsigned upper bound
                                     # [796:37] upper bound
                                     # [796:37] allocate scratch register -> t5
                                     li t5, 1024
@@ -12010,7 +12008,7 @@ main:
                                             # [458:24] nm.array
                                             # [458:24] bounds check begin
                                             # [458:24] lower bound
-                                            bltz s2, 1f
+                                            # [458:24] s2 lower bound covered by the unsigned upper bound
                                             # [458:24] upper bound
                                             # [458:24] allocate scratch register -> s3
                                             li s3, 16
@@ -12032,8 +12030,8 @@ main:
                                             lw s3, 1956(s3)
                                             # [458:49] bounds check begin
                                             # [458:49] lower bound
+                                            # [458:49] count s2 lower bound already checked
                                             bltz s3, 1f
-                                            bltz s2, 1f
                                             # [458:49] upper bound
                                             # [458:49] allocate scratch register -> s4
                                             # [458:49] allocate scratch register -> s5
@@ -12216,7 +12214,7 @@ main:
                             lw t0, 1976(t0)
                             # [807:65] bounds check begin
                             # [807:65] lower bound
-                            bltz t0, 1f
+                            # [807:65] t0 lower bound covered by the unsigned upper bound
                             # [807:65] upper bound
                             # [807:65] allocate scratch register -> t1
                             li t1, 32
@@ -12250,7 +12248,7 @@ main:
                             lw t0, 1980(t0)
                             # [808:37] bounds check begin
                             # [808:37] lower bound
-                            bltz t0, 1f
+                            # [808:37] t0 lower bound covered by the unsigned upper bound
                             # [808:37] upper bound
                             # [808:37] allocate scratch register -> t1
                             li t1, 1024
@@ -12360,7 +12358,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -12460,7 +12458,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -12640,7 +12638,7 @@ main:
                             lw t0, 2004(t0)
                             # [819:41] bounds check begin
                             # [819:41] lower bound
-                            bltz t0, 1f
+                            # [819:41] t0 lower bound covered by the unsigned upper bound
                             # [819:41] upper bound
                             # [819:41] allocate scratch register -> t1
                             li t1, 128
@@ -12700,7 +12698,7 @@ main:
                             lw t1, 2004(t1)
                             # [821:21] bounds check begin
                             # [821:21] lower bound
-                            bltz t1, 1f
+                            # [821:21] t1 lower bound covered by the unsigned upper bound
                             # [821:21] upper bound
                             # [821:21] allocate scratch register -> t2
                             li t2, 128
@@ -12736,7 +12734,7 @@ main:
                             lw t1, 2008(t1)
                             # [821:46] bounds check begin
                             # [821:46] lower bound
-                            bltz t1, 1f
+                            # [821:46] t1 lower bound covered by the unsigned upper bound
                             # [821:46] upper bound
                             # [821:46] allocate scratch register -> t2
                             li t2, 32
@@ -12781,7 +12779,7 @@ main:
                                     lw t4, 0(t0)
                                     # [823:38] bounds check begin
                                     # [823:38] lower bound
-                                    bltz t4, 1f
+                                    # [823:38] t4 lower bound covered by the unsigned upper bound
                                     # [823:38] upper bound
                                     # [823:38] allocate scratch register -> t5
                                     li t5, 32
@@ -12854,7 +12852,7 @@ main:
                                             # [458:24] nm.array
                                             # [458:24] bounds check begin
                                             # [458:24] lower bound
-                                            bltz s2, 1f
+                                            # [458:24] s2 lower bound covered by the unsigned upper bound
                                             # [458:24] upper bound
                                             # [458:24] allocate scratch register -> s3
                                             li s3, 16
@@ -12876,8 +12874,8 @@ main:
                                             lw s3, 1956(s3)
                                             # [458:49] bounds check begin
                                             # [458:49] lower bound
+                                            # [458:49] count s2 lower bound already checked
                                             bltz s3, 1f
-                                            bltz s2, 1f
                                             # [458:49] upper bound
                                             # [458:49] allocate scratch register -> s4
                                             # [458:49] allocate scratch register -> s5
@@ -13154,7 +13152,7 @@ main:
                             lw t0, 2012(t0)
                             # [836:36] bounds check begin
                             # [836:36] lower bound
-                            bltz t0, 1f
+                            # [836:36] t0 lower bound covered by the unsigned upper bound
                             # [836:36] upper bound
                             # [836:36] allocate scratch register -> t1
                             li t1, 32
@@ -13190,7 +13188,7 @@ main:
                                 lw t2, 1080(t1)
                                 # [158:16] bounds check begin
                                 # [158:16] lower bound
-                                bltz t2, 1f
+                                # [158:16] t2 lower bound covered by the unsigned upper bound
                                 # [158:16] upper bound
                                 # [158:16] allocate scratch register -> t3
                                 li t3, 32
@@ -13301,8 +13299,8 @@ main:
                                 lw t3, 1976(t3)
                                 # [135:20] bounds check begin
                                 # [135:20] lower bound
+                                # [135:20] count t2 lower bound already checked
                                 bltz t3, 1f
-                                bltz t2, 1f
                                 # [135:20] upper bound
                                 # [135:20] allocate scratch register -> t4
                                 # [135:20] allocate scratch register -> t5
@@ -13607,7 +13605,7 @@ main:
                             lw t0, 2012(t0)
                             # [842:20] bounds check begin
                             # [842:20] lower bound
-                            bltz t0, 1f
+                            # [842:20] t0 lower bound covered by the unsigned upper bound
                             # [842:20] upper bound
                             # [842:20] allocate scratch register -> t1
                             li t1, 32
@@ -13819,7 +13817,7 @@ main:
                                 # [91:16] s
                                 # [91:16] bounds check begin
                                 # [91:16] lower bound
-                                bltz t2, 1f
+                                # [91:16] t2 lower bound covered by the unsigned upper bound
                                 # [91:16] upper bound
                                 # [91:16] allocate scratch register -> t3
                                 li t3, 5
@@ -13843,8 +13841,8 @@ main:
                                 lw t3, -1948(t3)
                                 # [91:30] bounds check begin
                                 # [91:30] lower bound
+                                # [91:30] count t2 lower bound already checked
                                 bltz t3, 1f
-                                bltz t2, 1f
                                 # [91:30] upper bound
                                 # [91:30] allocate scratch register -> t4
                                 # [91:30] allocate scratch register -> t5
@@ -13910,7 +13908,7 @@ main:
                             lw t0, 2012(t0)
                             # [847:39] bounds check begin
                             # [847:39] lower bound
-                            bltz t0, 1f
+                            # [847:39] t0 lower bound covered by the unsigned upper bound
                             # [847:39] upper bound
                             # [847:39] allocate scratch register -> t1
                             li t1, 32
@@ -13949,7 +13947,7 @@ main:
                                 # [182:16] nm.array
                                 # [182:16] bounds check begin
                                 # [182:16] lower bound
-                                bltz t4, 1f
+                                # [182:16] t4 lower bound covered by the unsigned upper bound
                                 # [182:16] upper bound
                                 # [182:16] allocate scratch register -> t5
                                 li t5, 16
@@ -13971,8 +13969,8 @@ main:
                                 lw t5, -1948(t5)
                                 # [182:37] bounds check begin
                                 # [182:37] lower bound
+                                # [182:37] count t4 lower bound already checked
                                 bltz t5, 1f
-                                bltz t4, 1f
                                 # [182:37] upper bound
                                 # [182:37] allocate scratch register -> t6
                                 # [182:37] allocate scratch register -> s1
@@ -14048,7 +14046,7 @@ main:
                                 # [91:16] s
                                 # [91:16] bounds check begin
                                 # [91:16] lower bound
-                                bltz t2, 1f
+                                # [91:16] t2 lower bound covered by the unsigned upper bound
                                 # [91:16] upper bound
                                 # [91:16] allocate scratch register -> t3
                                 li t3, 1
@@ -14070,8 +14068,8 @@ main:
                                 lw t3, -1948(t3)
                                 # [91:30] bounds check begin
                                 # [91:30] lower bound
+                                # [91:30] count t2 lower bound already checked
                                 bltz t3, 1f
-                                bltz t2, 1f
                                 # [91:30] upper bound
                                 # [91:30] allocate scratch register -> t4
                                 # [91:30] allocate scratch register -> t5
@@ -14146,7 +14144,7 @@ main:
                                 # [182:16] nm.array
                                 # [182:16] bounds check begin
                                 # [182:16] lower bound
-                                bltz t2, 1f
+                                # [182:16] t2 lower bound covered by the unsigned upper bound
                                 # [182:16] upper bound
                                 # [182:16] allocate scratch register -> t3
                                 li t3, 16
@@ -14170,8 +14168,8 @@ main:
                                 lw t3, -1948(t3)
                                 # [182:37] bounds check begin
                                 # [182:37] lower bound
+                                # [182:37] count t2 lower bound already checked
                                 bltz t3, 1f
-                                bltz t2, 1f
                                 # [182:37] upper bound
                                 # [182:37] allocate scratch register -> t4
                                 # [182:37] allocate scratch register -> t5
@@ -14248,7 +14246,7 @@ main:
                                 lw t0, 2004(t0)
                                 # [483:41] bounds check begin
                                 # [483:41] lower bound
-                                bltz t0, 1f
+                                # [483:41] t0 lower bound covered by the unsigned upper bound
                                 # [483:41] upper bound
                                 # [483:41] allocate scratch register -> t1
                                 li t1, 128
@@ -14294,7 +14292,7 @@ main:
                                 lw t1, 2004(t1)
                                 # [484:21] bounds check begin
                                 # [484:21] lower bound
-                                bltz t1, 1f
+                                # [484:21] t1 lower bound covered by the unsigned upper bound
                                 # [484:21] upper bound
                                 # [484:21] allocate scratch register -> t2
                                 li t2, 128
@@ -14330,7 +14328,7 @@ main:
                                 lw t1, -1944(t1)
                                 # [484:46] bounds check begin
                                 # [484:46] lower bound
-                                bltz t1, 1f
+                                # [484:46] t1 lower bound covered by the unsigned upper bound
                                 # [484:46] upper bound
                                 # [484:46] allocate scratch register -> t2
                                 li t2, 32
@@ -14371,7 +14369,7 @@ main:
                                     lw t3, 0(t0)
                                     # [487:27] bounds check begin
                                     # [487:27] lower bound
-                                    bltz t3, 1f
+                                    # [487:27] t3 lower bound covered by the unsigned upper bound
                                     # [487:27] upper bound
                                     # [487:27] allocate scratch register -> t4
                                     li t4, 32
@@ -14415,7 +14413,7 @@ main:
                                     lw t3, 0(t0)
                                     # [489:24] bounds check begin
                                     # [489:24] lower bound
-                                    bltz t3, 1f
+                                    # [489:24] t3 lower bound covered by the unsigned upper bound
                                     # [489:24] upper bound
                                     # [489:24] allocate scratch register -> t4
                                     li t4, 32
@@ -14454,7 +14452,7 @@ main:
                                         lw t5, -772(t5)
                                         # [206:16] bounds check begin
                                         # [206:16] lower bound
-                                        bltz t5, 1f
+                                        # [206:16] t5 lower bound covered by the unsigned upper bound
                                         # [206:16] upper bound
                                         # [206:16] allocate scratch register -> t6
                                         li t6, 16
@@ -14602,7 +14600,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 1
@@ -14626,8 +14624,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -14751,7 +14749,7 @@ main:
                                         lw t0, 1956(t0)
                                         # [417:27] bounds check begin
                                         # [417:27] lower bound
-                                        bltz t0, 1f
+                                        # [417:27] t0 lower bound covered by the unsigned upper bound
                                         # [417:27] upper bound
                                         # [417:27] allocate scratch register -> t1
                                         li t1, 127
@@ -14851,7 +14849,7 @@ main:
                                     lw t0, 1960(t0)
                                     # [438:27] bounds check begin
                                     # [438:27] lower bound
-                                    bltz t0, 1f
+                                    # [438:27] t0 lower bound covered by the unsigned upper bound
                                     # [438:27] upper bound
                                     # [438:27] allocate scratch register -> t1
                                     li t1, 127
@@ -15033,7 +15031,7 @@ main:
                             lw t1, -96(t1)
                             # [869:25] bounds check begin
                             # [869:25] lower bound
-                            bltz t1, 1f
+                            # [869:25] t1 lower bound covered by the unsigned upper bound
                             # [869:25] upper bound
                             # [869:25] allocate scratch register -> t2
                             li t2, 32
@@ -15110,7 +15108,7 @@ main:
                                             # [458:24] nm.array
                                             # [458:24] bounds check begin
                                             # [458:24] lower bound
-                                            bltz t6, 1f
+                                            # [458:24] t6 lower bound covered by the unsigned upper bound
                                             # [458:24] upper bound
                                             # [458:24] allocate scratch register -> s1
                                             li s1, 16
@@ -15132,8 +15130,8 @@ main:
                                             lw s1, 1956(s1)
                                             # [458:49] bounds check begin
                                             # [458:49] lower bound
+                                            # [458:49] count t6 lower bound already checked
                                             bltz s1, 1f
-                                            bltz t6, 1f
                                             # [458:49] upper bound
                                             # [458:49] allocate scratch register -> s2
                                             # [458:49] allocate scratch register -> s3
@@ -15404,7 +15402,7 @@ main:
                             lw t0, 1972(t0)
                             # [882:23] bounds check begin
                             # [882:23] lower bound
-                            bltz t0, 1f
+                            # [882:23] t0 lower bound covered by the unsigned upper bound
                             # [882:23] upper bound
                             # [882:23] allocate scratch register -> t1
                             li t1, 32
@@ -15670,7 +15668,7 @@ main:
                                     lw t0, 1956(t0)
                                     # [417:27] bounds check begin
                                     # [417:27] lower bound
-                                    bltz t0, 1f
+                                    # [417:27] t0 lower bound covered by the unsigned upper bound
                                     # [417:27] upper bound
                                     # [417:27] allocate scratch register -> t1
                                     li t1, 127
@@ -15975,7 +15973,7 @@ main:
                                 # [474:44] res.array
                                 # [474:44] bounds check begin
                                 # [474:44] lower bound
-                                bltz t2, 1f
+                                # [474:44] t2 lower bound covered by the unsigned upper bound
                                 # [474:44] upper bound
                                 # [474:44] allocate scratch register -> t3
                                 li t3, 127
@@ -16017,7 +16015,7 @@ main:
                             lw t0, 1972(t0)
                             # [899:20] bounds check begin
                             # [899:20] lower bound
-                            bltz t0, 1f
+                            # [899:20] t0 lower bound covered by the unsigned upper bound
                             # [899:20] upper bound
                             # [899:20] allocate scratch register -> t1
                             li t1, 32
@@ -16056,7 +16054,7 @@ main:
                                 lw t2, -772(t2)
                                 # [206:16] bounds check begin
                                 # [206:16] lower bound
-                                bltz t2, 1f
+                                # [206:16] t2 lower bound covered by the unsigned upper bound
                                 # [206:16] upper bound
                                 # [206:16] allocate scratch register -> t3
                                 li t3, 16
@@ -16192,7 +16190,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 1
@@ -16216,8 +16214,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -16337,7 +16335,7 @@ main:
                                     lw t0, 1956(t0)
                                     # [417:27] bounds check begin
                                     # [417:27] lower bound
-                                    bltz t0, 1f
+                                    # [417:27] t0 lower bound covered by the unsigned upper bound
                                     # [417:27] upper bound
                                     # [417:27] allocate scratch register -> t1
                                     li t1, 127
@@ -16642,7 +16640,7 @@ main:
                                 # [474:44] res.array
                                 # [474:44] bounds check begin
                                 # [474:44] lower bound
-                                bltz t2, 1f
+                                # [474:44] t2 lower bound covered by the unsigned upper bound
                                 # [474:44] upper bound
                                 # [474:44] allocate scratch register -> t3
                                 li t3, 127
@@ -16692,7 +16690,7 @@ main:
                                 lw t0, 948(s0)
                                 # [483:41] bounds check begin
                                 # [483:41] lower bound
-                                bltz t0, 1f
+                                # [483:41] t0 lower bound covered by the unsigned upper bound
                                 # [483:41] upper bound
                                 # [483:41] allocate scratch register -> t1
                                 li t1, 128
@@ -16736,7 +16734,7 @@ main:
                                 lw t1, 948(s0)
                                 # [484:21] bounds check begin
                                 # [484:21] lower bound
-                                bltz t1, 1f
+                                # [484:21] t1 lower bound covered by the unsigned upper bound
                                 # [484:21] upper bound
                                 # [484:21] allocate scratch register -> t2
                                 li t2, 128
@@ -16772,7 +16770,7 @@ main:
                                 lw t1, -1992(t1)
                                 # [484:46] bounds check begin
                                 # [484:46] lower bound
-                                bltz t1, 1f
+                                # [484:46] t1 lower bound covered by the unsigned upper bound
                                 # [484:46] upper bound
                                 # [484:46] allocate scratch register -> t2
                                 li t2, 32
@@ -16813,7 +16811,7 @@ main:
                                     lw t3, 0(t0)
                                     # [487:27] bounds check begin
                                     # [487:27] lower bound
-                                    bltz t3, 1f
+                                    # [487:27] t3 lower bound covered by the unsigned upper bound
                                     # [487:27] upper bound
                                     # [487:27] allocate scratch register -> t4
                                     li t4, 32
@@ -16857,7 +16855,7 @@ main:
                                     lw t3, 0(t0)
                                     # [489:24] bounds check begin
                                     # [489:24] lower bound
-                                    bltz t3, 1f
+                                    # [489:24] t3 lower bound covered by the unsigned upper bound
                                     # [489:24] upper bound
                                     # [489:24] allocate scratch register -> t4
                                     li t4, 32
@@ -16896,7 +16894,7 @@ main:
                                         lw t5, -772(t5)
                                         # [206:16] bounds check begin
                                         # [206:16] lower bound
-                                        bltz t5, 1f
+                                        # [206:16] t5 lower bound covered by the unsigned upper bound
                                         # [206:16] upper bound
                                         # [206:16] allocate scratch register -> t6
                                         li t6, 16
@@ -17044,7 +17042,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 4
@@ -17068,8 +17066,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -17344,7 +17342,7 @@ main:
     lw t1, -96(t1)
     # [1033:25] bounds check begin
     # [1033:25] lower bound
-    bltz t1, 1f
+    # [1033:25] t1 lower bound covered by the unsigned upper bound
     # [1033:25] upper bound
     # [1033:25] allocate scratch register -> t2
     li t2, 32
@@ -17576,7 +17574,7 @@ main:
         lw t0, 1964(t0)
         # [1045:24] bounds check begin
         # [1045:24] lower bound
-        bltz t0, 1f
+        # [1045:24] t0 lower bound covered by the unsigned upper bound
         # [1045:24] upper bound
         # [1045:24] allocate scratch register -> t1
         li t1, 32
@@ -17615,7 +17613,7 @@ main:
             lw t3, -772(t3)
             # [249:30] bounds check begin
             # [249:30] lower bound
-            bltz t3, 1f
+            # [249:30] t3 lower bound covered by the unsigned upper bound
             # [249:30] upper bound
             # [249:30] allocate scratch register -> t4
             li t4, 16
@@ -17646,7 +17644,7 @@ main:
                     lw t5, 0(t2)
                     # [235:20] bounds check begin
                     # [235:20] lower bound
-                    bltz t5, 1f
+                    # [235:20] t5 lower bound covered by the unsigned upper bound
                     # [235:20] upper bound
                     # [235:20] allocate scratch register -> t6
                     li t6, 32
@@ -18266,7 +18264,7 @@ main:
         lw t1, 1964(t1)
         # [1047:36] bounds check begin
         # [1047:36] lower bound
-        bltz t1, 1f
+        # [1047:36] t1 lower bound covered by the unsigned upper bound
         # [1047:36] upper bound
         # [1047:36] allocate scratch register -> t2
         li t2, 32
@@ -18292,7 +18290,7 @@ main:
         # [1047:21] free scratch register t1
         # [1047:21] bounds check begin
         # [1047:21] lower bound
-        bltz t0, 1f
+        # [1047:21] t0 lower bound covered by the unsigned upper bound
         # [1047:21] upper bound
         # [1047:21] allocate scratch register -> t1
         li t1, 128
@@ -18741,7 +18739,7 @@ main:
             lw t3, 412(t1)
             # [315:30] bounds check begin
             # [315:30] lower bound
-            bltz t3, 1f
+            # [315:30] t3 lower bound covered by the unsigned upper bound
             # [315:30] upper bound
             # [315:30] allocate scratch register -> t4
             li t4, 32
@@ -18950,7 +18948,7 @@ main:
                 lw t5, 0(t2)
                 # [322:24] bounds check begin
                 # [322:24] lower bound
-                bltz t5, 1f
+                # [322:24] t5 lower bound covered by the unsigned upper bound
                 # [322:24] upper bound
                 # [322:24] allocate scratch register -> t6
                 li t6, 32
@@ -19071,7 +19069,7 @@ main:
             lw t3, 612(t1)
             # [325:29] bounds check begin
             # [325:29] lower bound
-            bltz t3, 1f
+            # [325:29] t3 lower bound covered by the unsigned upper bound
             # [325:29] upper bound
             # [325:29] allocate scratch register -> t4
             li t4, 32
@@ -19264,7 +19262,7 @@ main:
                 lw t5, 0(t2)
                 # [331:23] bounds check begin
                 # [331:23] lower bound
-                bltz t5, 1f
+                # [331:23] t5 lower bound covered by the unsigned upper bound
                 # [331:23] upper bound
                 # [331:23] allocate scratch register -> t6
                 li t6, 1024
@@ -19566,7 +19564,7 @@ main:
                 lw t3, 480(t1)
                 # [339:25] bounds check begin
                 # [339:25] lower bound
-                bltz t3, 1f
+                # [339:25] t3 lower bound covered by the unsigned upper bound
                 # [339:25] upper bound
                 # [339:25] allocate scratch register -> t4
                 li t4, 8
@@ -19676,7 +19674,7 @@ main:
                     lw t5, 0(t2)
                     # [341:30] bounds check begin
                     # [341:30] lower bound
-                    bltz t5, 1f
+                    # [341:30] t5 lower bound covered by the unsigned upper bound
                     # [341:30] upper bound
                     # [341:30] allocate scratch register -> t6
                     li t6, 1024
@@ -20033,7 +20031,7 @@ main:
         lw t0, 1964(t0)
         # [1048:24] bounds check begin
         # [1048:24] lower bound
-        bltz t0, 1f
+        # [1048:24] t0 lower bound covered by the unsigned upper bound
         # [1048:24] upper bound
         # [1048:24] allocate scratch register -> t1
         li t1, 32
@@ -20322,7 +20320,7 @@ main:
                     lw t0, 1968(t0)
                     # [101:23] bounds check begin
                     # [101:23] lower bound
-                    bltz t0, 1f
+                    # [101:23] t0 lower bound covered by the unsigned upper bound
                     # [101:23] upper bound
                     # [101:23] allocate scratch register -> t1
                     li t1, 127
@@ -20525,7 +20523,7 @@ main:
                     lw t0, 1968(t0)
                     # [109:23] bounds check begin
                     # [109:23] lower bound
-                    bltz t0, 1f
+                    # [109:23] t0 lower bound covered by the unsigned upper bound
                     # [109:23] upper bound
                     # [109:23] allocate scratch register -> t1
                     li t1, 127
@@ -20733,7 +20731,7 @@ main:
                         lw t0, 1956(t0)
                         # [417:27] bounds check begin
                         # [417:27] lower bound
-                        bltz t0, 1f
+                        # [417:27] t0 lower bound covered by the unsigned upper bound
                         # [417:27] upper bound
                         # [417:27] allocate scratch register -> t1
                         li t1, 127
@@ -20833,7 +20831,7 @@ main:
                     lw t0, 1960(t0)
                     # [428:27] bounds check begin
                     # [428:27] lower bound
-                    bltz t0, 1f
+                    # [428:27] t0 lower bound covered by the unsigned upper bound
                     # [428:27] upper bound
                     # [428:27] allocate scratch register -> t1
                     li t1, 127
@@ -20941,7 +20939,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 2
@@ -20965,8 +20963,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -21017,9 +21015,9 @@ main:
                         # [453:11] free scratch register t1
                     bool.452.11.957.11.1052.9.end:
                 func.tokenizer.is_str.957.11.1052.9.end:
-            bne t0, zero, .Lbaz_jump.4
+            bne t0, zero, .Lbaz_jump.3
             j if.960.15.1052.9
-.Lbaz_jump.4:
+.Lbaz_jump.3:
             # [957:8] free scratch register t0
             if.957.8.1052.9.code:
                 # [958:9] action_go(cur_entity_id, tz)
@@ -21092,7 +21090,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -21192,7 +21190,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -21412,7 +21410,7 @@ main:
                                 # [453:24] str
                                 # [453:24] bounds check begin
                                 # [453:24] lower bound
-                                bltz t3, 1f
+                                # [453:24] t3 lower bound covered by the unsigned upper bound
                                 # [453:24] upper bound
                                 # [453:24] allocate scratch register -> t4
                                 li t4, 4
@@ -21436,8 +21434,8 @@ main:
                                 lw t4, 1956(t4)
                                 # [453:44] bounds check begin
                                 # [453:44] lower bound
+                                # [453:44] count t3 lower bound already checked
                                 bltz t4, 1f
-                                bltz t3, 1f
                                 # [453:44] upper bound
                                 # [453:44] allocate scratch register -> t5
                                 # [453:44] allocate scratch register -> t6
@@ -21510,7 +21508,7 @@ main:
                     lw t0, 1964(t0)
                     # [509:38] bounds check begin
                     # [509:38] lower bound
-                    bltz t0, 1f
+                    # [509:38] t0 lower bound covered by the unsigned upper bound
                     # [509:38] upper bound
                     # [509:38] allocate scratch register -> t1
                     li t1, 32
@@ -21553,7 +21551,7 @@ main:
                     lw t0, 1968(t0)
                     # [511:33] bounds check begin
                     # [511:33] lower bound
-                    bltz t0, 1f
+                    # [511:33] t0 lower bound covered by the unsigned upper bound
                     # [511:33] upper bound
                     # [511:33] allocate scratch register -> t1
                     li t1, 128
@@ -21613,7 +21611,7 @@ main:
                     lw t1, 1968(t1)
                     # [513:21] bounds check begin
                     # [513:21] lower bound
-                    bltz t1, 1f
+                    # [513:21] t1 lower bound covered by the unsigned upper bound
                     # [513:21] upper bound
                     # [513:21] allocate scratch register -> t2
                     li t2, 128
@@ -21649,7 +21647,7 @@ main:
                     lw t1, 1972(t1)
                     # [513:41] bounds check begin
                     # [513:41] lower bound
-                    bltz t1, 1f
+                    # [513:41] t1 lower bound covered by the unsigned upper bound
                     # [513:41] upper bound
                     # [513:41] allocate scratch register -> t2
                     li t2, 8
@@ -21683,7 +21681,7 @@ main:
                             lw t4, 0(t0)
                             # [514:40] bounds check begin
                             # [514:40] lower bound
-                            bltz t4, 1f
+                            # [514:40] t4 lower bound covered by the unsigned upper bound
                             # [514:40] upper bound
                             # [514:40] allocate scratch register -> t5
                             li t5, 1024
@@ -21757,7 +21755,7 @@ main:
                                     # [458:24] nm.array
                                     # [458:24] bounds check begin
                                     # [458:24] lower bound
-                                    bltz s2, 1f
+                                    # [458:24] s2 lower bound covered by the unsigned upper bound
                                     # [458:24] upper bound
                                     # [458:24] allocate scratch register -> s3
                                     li s3, 16
@@ -21779,8 +21777,8 @@ main:
                                     lw s3, 1956(s3)
                                     # [458:49] bounds check begin
                                     # [458:49] lower bound
+                                    # [458:49] count s2 lower bound already checked
                                     bltz s3, 1f
-                                    bltz s2, 1f
                                     # [458:49] upper bound
                                     # [458:49] allocate scratch register -> s4
                                     # [458:49] allocate scratch register -> s5
@@ -21963,7 +21961,7 @@ main:
                     lw t0, 1968(t0)
                     # [526:34] bounds check begin
                     # [526:34] lower bound
-                    bltz t0, 1f
+                    # [526:34] t0 lower bound covered by the unsigned upper bound
                     # [526:34] upper bound
                     # [526:34] allocate scratch register -> t1
                     li t1, 128
@@ -21998,7 +21996,7 @@ main:
                     lw t1, 1976(t1)
                     # [526:53] bounds check begin
                     # [526:53] lower bound
-                    bltz t1, 1f
+                    # [526:53] t1 lower bound covered by the unsigned upper bound
                     # [526:53] upper bound
                     # [526:53] allocate scratch register -> t2
                     li t2, 8
@@ -22031,7 +22029,7 @@ main:
                     lw t0, 1964(t0)
                     # [527:20] bounds check begin
                     # [527:20] lower bound
-                    bltz t0, 1f
+                    # [527:20] t0 lower bound covered by the unsigned upper bound
                     # [527:20] upper bound
                     # [527:20] allocate scratch register -> t1
                     li t1, 32
@@ -22077,7 +22075,7 @@ main:
                     lw t0, 1980(t0)
                     # [529:33] bounds check begin
                     # [529:33] lower bound
-                    bltz t0, 1f
+                    # [529:33] t0 lower bound covered by the unsigned upper bound
                     # [529:33] upper bound
                     # [529:33] allocate scratch register -> t1
                     li t1, 128
@@ -22118,7 +22116,7 @@ main:
                         lw t2, 128(t1)
                         # [158:16] bounds check begin
                         # [158:16] lower bound
-                        bltz t2, 1f
+                        # [158:16] t2 lower bound covered by the unsigned upper bound
                         # [158:16] upper bound
                         # [158:16] allocate scratch register -> t3
                         li t3, 32
@@ -22173,7 +22171,7 @@ main:
                     lw t0, 1968(t0)
                     # [530:17] bounds check begin
                     # [530:17] lower bound
-                    bltz t0, 1f
+                    # [530:17] t0 lower bound covered by the unsigned upper bound
                     # [530:17] upper bound
                     # [530:17] allocate scratch register -> t1
                     li t1, 128
@@ -22228,7 +22226,7 @@ main:
                         lw t3, 128(t1)
                         # [145:21] bounds check begin
                         # [145:21] lower bound
-                        bltz t3, 1f
+                        # [145:21] t3 lower bound covered by the unsigned upper bound
                         # [145:21] upper bound
                         # [145:21] allocate scratch register -> t4
                         li t4, 32
@@ -22360,8 +22358,8 @@ main:
                             lw t5, 1988(t5)
                             # [135:20] bounds check begin
                             # [135:20] lower bound
+                            # [135:20] count t4 lower bound already checked
                             bltz t5, 1f
-                            bltz t4, 1f
                             # [135:20] upper bound
                             # [135:20] allocate scratch register -> t6
                             # [135:20] allocate scratch register -> s1
@@ -22715,7 +22713,7 @@ main:
                         # [91:16] s
                         # [91:16] bounds check begin
                         # [91:16] lower bound
-                        bltz t2, 1f
+                        # [91:16] t2 lower bound covered by the unsigned upper bound
                         # [91:16] upper bound
                         # [91:16] allocate scratch register -> t3
                         li t3, 8
@@ -22739,8 +22737,8 @@ main:
                         lw t3, -1980(t3)
                         # [91:30] bounds check begin
                         # [91:30] lower bound
+                        # [91:30] count t2 lower bound already checked
                         bltz t3, 1f
-                        bltz t2, 1f
                         # [91:30] upper bound
                         # [91:30] allocate scratch register -> t4
                         # [91:30] allocate scratch register -> t5
@@ -22809,7 +22807,7 @@ main:
                     lw t1, 1968(t1)
                     # [541:25] bounds check begin
                     # [541:25] lower bound
-                    bltz t1, 1f
+                    # [541:25] t1 lower bound covered by the unsigned upper bound
                     # [541:25] upper bound
                     # [541:25] allocate scratch register -> t2
                     li t2, 128
@@ -22844,7 +22842,7 @@ main:
                     lw t2, 1976(t2)
                     # [541:44] bounds check begin
                     # [541:44] lower bound
-                    bltz t2, 1f
+                    # [541:44] t2 lower bound covered by the unsigned upper bound
                     # [541:44] upper bound
                     # [541:44] allocate scratch register -> t3
                     li t3, 8
@@ -22863,7 +22861,7 @@ main:
                     # [541:13] free scratch register t1
                     # [541:13] bounds check begin
                     # [541:13] lower bound
-                    bltz t0, 1f
+                    # [541:13] t0 lower bound covered by the unsigned upper bound
                     # [541:13] upper bound
                     # [541:13] allocate scratch register -> t1
                     li t1, 1024
@@ -22903,7 +22901,7 @@ main:
                         # [182:16] nm.array
                         # [182:16] bounds check begin
                         # [182:16] lower bound
-                        bltz t4, 1f
+                        # [182:16] t4 lower bound covered by the unsigned upper bound
                         # [182:16] upper bound
                         # [182:16] allocate scratch register -> t5
                         li t5, 16
@@ -22925,8 +22923,8 @@ main:
                         lw t5, -1980(t5)
                         # [182:37] bounds check begin
                         # [182:37] lower bound
+                        # [182:37] count t4 lower bound already checked
                         bltz t5, 1f
-                        bltz t4, 1f
                         # [182:37] upper bound
                         # [182:37] allocate scratch register -> t6
                         # [182:37] allocate scratch register -> s1
@@ -23003,7 +23001,7 @@ main:
                         lw t0, 1968(t0)
                         # [483:41] bounds check begin
                         # [483:41] lower bound
-                        bltz t0, 1f
+                        # [483:41] t0 lower bound covered by the unsigned upper bound
                         # [483:41] upper bound
                         # [483:41] allocate scratch register -> t1
                         li t1, 128
@@ -23049,7 +23047,7 @@ main:
                         lw t1, 1968(t1)
                         # [484:21] bounds check begin
                         # [484:21] lower bound
-                        bltz t1, 1f
+                        # [484:21] t1 lower bound covered by the unsigned upper bound
                         # [484:21] upper bound
                         # [484:21] allocate scratch register -> t2
                         li t2, 128
@@ -23085,7 +23083,7 @@ main:
                         lw t1, -1976(t1)
                         # [484:46] bounds check begin
                         # [484:46] lower bound
-                        bltz t1, 1f
+                        # [484:46] t1 lower bound covered by the unsigned upper bound
                         # [484:46] upper bound
                         # [484:46] allocate scratch register -> t2
                         li t2, 32
@@ -23131,7 +23129,7 @@ main:
                             lw t3, 0(t0)
                             # [487:27] bounds check begin
                             # [487:27] lower bound
-                            bltz t3, 1f
+                            # [487:27] t3 lower bound covered by the unsigned upper bound
                             # [487:27] upper bound
                             # [487:27] allocate scratch register -> t4
                             li t4, 32
@@ -23175,7 +23173,7 @@ main:
                             lw t3, 0(t0)
                             # [489:24] bounds check begin
                             # [489:24] lower bound
-                            bltz t3, 1f
+                            # [489:24] t3 lower bound covered by the unsigned upper bound
                             # [489:24] upper bound
                             # [489:24] allocate scratch register -> t4
                             li t4, 32
@@ -23214,7 +23212,7 @@ main:
                                 lw t5, -772(t5)
                                 # [206:16] bounds check begin
                                 # [206:16] lower bound
-                                bltz t5, 1f
+                                # [206:16] t5 lower bound covered by the unsigned upper bound
                                 # [206:16] upper bound
                                 # [206:16] allocate scratch register -> t6
                                 li t6, 16
@@ -23313,7 +23311,7 @@ main:
                     lw t0, 1980(t0)
                     # [547:36] bounds check begin
                     # [547:36] lower bound
-                    bltz t0, 1f
+                    # [547:36] t0 lower bound covered by the unsigned upper bound
                     # [547:36] upper bound
                     # [547:36] allocate scratch register -> t1
                     li t1, 128
@@ -23373,7 +23371,7 @@ main:
                     lw t1, 1980(t1)
                     # [549:21] bounds check begin
                     # [549:21] lower bound
-                    bltz t1, 1f
+                    # [549:21] t1 lower bound covered by the unsigned upper bound
                     # [549:21] upper bound
                     # [549:21] allocate scratch register -> t2
                     li t2, 128
@@ -23409,7 +23407,7 @@ main:
                     lw t1, -1976(t1)
                     # [549:40] bounds check begin
                     # [549:40] lower bound
-                    bltz t1, 1f
+                    # [549:40] t1 lower bound covered by the unsigned upper bound
                     # [549:40] upper bound
                     # [549:40] allocate scratch register -> t2
                     li t2, 8
@@ -23533,7 +23531,7 @@ main:
                         # [91:16] s
                         # [91:16] bounds check begin
                         # [91:16] lower bound
-                        bltz t2, 1f
+                        # [91:16] t2 lower bound covered by the unsigned upper bound
                         # [91:16] upper bound
                         # [91:16] allocate scratch register -> t3
                         li t3, 13
@@ -23557,8 +23555,8 @@ main:
                         lw t3, -1840(t3)
                         # [91:30] bounds check begin
                         # [91:30] lower bound
+                        # [91:30] count t2 lower bound already checked
                         bltz t3, 1f
-                        bltz t2, 1f
                         # [91:30] upper bound
                         # [91:30] allocate scratch register -> t4
                         # [91:30] allocate scratch register -> t5
@@ -23627,7 +23625,7 @@ main:
                     lw t1, 1980(t1)
                     # [563:25] bounds check begin
                     # [563:25] lower bound
-                    bltz t1, 1f
+                    # [563:25] t1 lower bound covered by the unsigned upper bound
                     # [563:25] upper bound
                     # [563:25] allocate scratch register -> t2
                     li t2, 128
@@ -23662,7 +23660,7 @@ main:
                     lw t2, -1972(t2)
                     # [563:43] bounds check begin
                     # [563:43] lower bound
-                    bltz t2, 1f
+                    # [563:43] t2 lower bound covered by the unsigned upper bound
                     # [563:43] upper bound
                     # [563:43] allocate scratch register -> t3
                     li t3, 8
@@ -23681,7 +23679,7 @@ main:
                     # [563:13] free scratch register t1
                     # [563:13] bounds check begin
                     # [563:13] lower bound
-                    bltz t0, 1f
+                    # [563:13] t0 lower bound covered by the unsigned upper bound
                     # [563:13] upper bound
                     # [563:13] allocate scratch register -> t1
                     li t1, 1024
@@ -23721,7 +23719,7 @@ main:
                         # [182:16] nm.array
                         # [182:16] bounds check begin
                         # [182:16] lower bound
-                        bltz t4, 1f
+                        # [182:16] t4 lower bound covered by the unsigned upper bound
                         # [182:16] upper bound
                         # [182:16] allocate scratch register -> t5
                         li t5, 16
@@ -23743,8 +23741,8 @@ main:
                         lw t5, -1840(t5)
                         # [182:37] bounds check begin
                         # [182:37] lower bound
+                        # [182:37] count t4 lower bound already checked
                         bltz t5, 1f
-                        bltz t4, 1f
                         # [182:37] upper bound
                         # [182:37] allocate scratch register -> t6
                         # [182:37] allocate scratch register -> s1
@@ -23821,7 +23819,7 @@ main:
                         lw t0, 1980(t0)
                         # [483:41] bounds check begin
                         # [483:41] lower bound
-                        bltz t0, 1f
+                        # [483:41] t0 lower bound covered by the unsigned upper bound
                         # [483:41] upper bound
                         # [483:41] allocate scratch register -> t1
                         li t1, 128
@@ -23867,7 +23865,7 @@ main:
                         lw t1, 1980(t1)
                         # [484:21] bounds check begin
                         # [484:21] lower bound
-                        bltz t1, 1f
+                        # [484:21] t1 lower bound covered by the unsigned upper bound
                         # [484:21] upper bound
                         # [484:21] allocate scratch register -> t2
                         li t2, 128
@@ -23903,7 +23901,7 @@ main:
                         lw t1, -1836(t1)
                         # [484:46] bounds check begin
                         # [484:46] lower bound
-                        bltz t1, 1f
+                        # [484:46] t1 lower bound covered by the unsigned upper bound
                         # [484:46] upper bound
                         # [484:46] allocate scratch register -> t2
                         li t2, 32
@@ -23949,7 +23947,7 @@ main:
                             lw t3, 0(t0)
                             # [487:27] bounds check begin
                             # [487:27] lower bound
-                            bltz t3, 1f
+                            # [487:27] t3 lower bound covered by the unsigned upper bound
                             # [487:27] upper bound
                             # [487:27] allocate scratch register -> t4
                             li t4, 32
@@ -23993,7 +23991,7 @@ main:
                             lw t3, 0(t0)
                             # [489:24] bounds check begin
                             # [489:24] lower bound
-                            bltz t3, 1f
+                            # [489:24] t3 lower bound covered by the unsigned upper bound
                             # [489:24] upper bound
                             # [489:24] allocate scratch register -> t4
                             li t4, 32
@@ -24032,7 +24030,7 @@ main:
                                 lw t5, -772(t5)
                                 # [206:16] bounds check begin
                                 # [206:16] lower bound
-                                bltz t5, 1f
+                                # [206:16] t5 lower bound covered by the unsigned upper bound
                                 # [206:16] upper bound
                                 # [206:16] allocate scratch register -> t6
                                 li t6, 16
@@ -24185,7 +24183,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 2
@@ -24209,8 +24207,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -24334,7 +24332,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -24434,7 +24432,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -24602,7 +24600,7 @@ main:
                     lw t0, 1964(t0)
                     # [600:38] bounds check begin
                     # [600:38] lower bound
-                    bltz t0, 1f
+                    # [600:38] t0 lower bound covered by the unsigned upper bound
                     # [600:38] upper bound
                     # [600:38] allocate scratch register -> t1
                     li t1, 32
@@ -24645,7 +24643,7 @@ main:
                     lw t0, 1968(t0)
                     # [602:45] bounds check begin
                     # [602:45] lower bound
-                    bltz t0, 1f
+                    # [602:45] t0 lower bound covered by the unsigned upper bound
                     # [602:45] upper bound
                     # [602:45] allocate scratch register -> t1
                     li t1, 128
@@ -24716,7 +24714,7 @@ main:
                         lw t1, -92(t1)
                         # [572:27] bounds check begin
                         # [572:27] lower bound
-                        bltz t1, 1f
+                        # [572:27] t1 lower bound covered by the unsigned upper bound
                         # [572:27] upper bound
                         # [572:27] allocate scratch register -> t2
                         li t2, 1024
@@ -24793,7 +24791,7 @@ main:
                                         # [458:24] nm.array
                                         # [458:24] bounds check begin
                                         # [458:24] lower bound
-                                        bltz t6, 1f
+                                        # [458:24] t6 lower bound covered by the unsigned upper bound
                                         # [458:24] upper bound
                                         # [458:24] allocate scratch register -> s1
                                         li s1, 16
@@ -24815,8 +24813,8 @@ main:
                                         lw s1, 1956(s1)
                                         # [458:49] bounds check begin
                                         # [458:49] lower bound
+                                        # [458:49] count t6 lower bound already checked
                                         bltz s1, 1f
-                                        bltz t6, 1f
                                         # [458:49] upper bound
                                         # [458:49] allocate scratch register -> s2
                                         # [458:49] allocate scratch register -> s3
@@ -24915,7 +24913,7 @@ main:
                         lw t0, -92(t0)
                         # [581:22] bounds check begin
                         # [581:22] lower bound
-                        bltz t0, 1f
+                        # [581:22] t0 lower bound covered by the unsigned upper bound
                         # [581:22] upper bound
                         # [581:22] allocate scratch register -> t1
                         li t1, 1024
@@ -25031,7 +25029,7 @@ main:
                             # [468:44] dst.array
                             # [468:44] bounds check begin
                             # [468:44] lower bound
-                            bltz t4, 1f
+                            # [468:44] t4 lower bound covered by the unsigned upper bound
                             # [468:44] upper bound
                             # [468:44] allocate scratch register -> t5
                             li t5, 16
@@ -25155,7 +25153,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -25255,7 +25253,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -25447,7 +25445,7 @@ main:
                         lw t1, -92(t1)
                         # [572:27] bounds check begin
                         # [572:27] lower bound
-                        bltz t1, 1f
+                        # [572:27] t1 lower bound covered by the unsigned upper bound
                         # [572:27] upper bound
                         # [572:27] allocate scratch register -> t2
                         li t2, 1024
@@ -25524,7 +25522,7 @@ main:
                                         # [458:24] nm.array
                                         # [458:24] bounds check begin
                                         # [458:24] lower bound
-                                        bltz t6, 1f
+                                        # [458:24] t6 lower bound covered by the unsigned upper bound
                                         # [458:24] upper bound
                                         # [458:24] allocate scratch register -> s1
                                         li s1, 16
@@ -25546,8 +25544,8 @@ main:
                                         lw s1, 1956(s1)
                                         # [458:49] bounds check begin
                                         # [458:49] lower bound
+                                        # [458:49] count t6 lower bound already checked
                                         bltz s1, 1f
-                                        bltz t6, 1f
                                         # [458:49] upper bound
                                         # [458:49] allocate scratch register -> s2
                                         # [458:49] allocate scratch register -> s3
@@ -25646,7 +25644,7 @@ main:
                         lw t0, -92(t0)
                         # [581:22] bounds check begin
                         # [581:22] lower bound
-                        bltz t0, 1f
+                        # [581:22] t0 lower bound covered by the unsigned upper bound
                         # [581:22] upper bound
                         # [581:22] allocate scratch register -> t1
                         li t1, 1024
@@ -25762,7 +25760,7 @@ main:
                             # [468:44] dst.array
                             # [468:44] bounds check begin
                             # [468:44] lower bound
-                            bltz t4, 1f
+                            # [468:44] t4 lower bound covered by the unsigned upper bound
                             # [468:44] upper bound
                             # [468:44] allocate scratch register -> t5
                             li t5, 16
@@ -25830,7 +25828,7 @@ main:
                     lw t0, 1968(t0)
                     # [616:17] bounds check begin
                     # [616:17] lower bound
-                    bltz t0, 1f
+                    # [616:17] t0 lower bound covered by the unsigned upper bound
                     # [616:17] upper bound
                     # [616:17] allocate scratch register -> t1
                     li t1, 128
@@ -25865,7 +25863,7 @@ main:
                     lw t1, 1972(t1)
                     # [616:36] bounds check begin
                     # [616:36] lower bound
-                    bltz t1, 1f
+                    # [616:36] t1 lower bound covered by the unsigned upper bound
                     # [616:36] upper bound
                     # [616:36] allocate scratch register -> t2
                     li t2, 8
@@ -25910,7 +25908,7 @@ main:
                     lw t0, 1968(t0)
                     # [620:17] bounds check begin
                     # [620:17] lower bound
-                    bltz t0, 1f
+                    # [620:17] t0 lower bound covered by the unsigned upper bound
                     # [620:17] upper bound
                     # [620:17] allocate scratch register -> t1
                     li t1, 128
@@ -25958,7 +25956,7 @@ main:
                     lw t0, 948(t0)
                     # [623:17] bounds check begin
                     # [623:17] lower bound
-                    bltz t0, 1f
+                    # [623:17] t0 lower bound covered by the unsigned upper bound
                     # [623:17] upper bound
                     # [623:17] allocate scratch register -> t1
                     li t1, 128
@@ -26017,7 +26015,7 @@ main:
                     lw t0, 948(t0)
                     # [627:17] bounds check begin
                     # [627:17] lower bound
-                    bltz t0, 1f
+                    # [627:17] t0 lower bound covered by the unsigned upper bound
                     # [627:17] upper bound
                     # [627:17] allocate scratch register -> t1
                     li t1, 128
@@ -26208,7 +26206,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 2
@@ -26232,8 +26230,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -26353,7 +26351,7 @@ main:
                             lw t0, 1956(t0)
                             # [417:27] bounds check begin
                             # [417:27] lower bound
-                            bltz t0, 1f
+                            # [417:27] t0 lower bound covered by the unsigned upper bound
                             # [417:27] upper bound
                             # [417:27] allocate scratch register -> t1
                             li t1, 127
@@ -26450,7 +26448,7 @@ main:
                     lw t1, 1964(t1)
                     # [640:32] bounds check begin
                     # [640:32] lower bound
-                    bltz t1, 1f
+                    # [640:32] t1 lower bound covered by the unsigned upper bound
                     # [640:32] upper bound
                     # [640:32] allocate scratch register -> t2
                     li t2, 32
@@ -26476,7 +26474,7 @@ main:
                     # [640:17] free scratch register t1
                     # [640:17] bounds check begin
                     # [640:17] lower bound
-                    bltz t0, 1f
+                    # [640:17] t0 lower bound covered by the unsigned upper bound
                     # [640:17] upper bound
                     # [640:17] allocate scratch register -> t1
                     li t1, 128
@@ -26602,7 +26600,7 @@ main:
                         # [474:44] res.array
                         # [474:44] bounds check begin
                         # [474:44] lower bound
-                        bltz t4, 1f
+                        # [474:44] t4 lower bound covered by the unsigned upper bound
                         # [474:44] upper bound
                         # [474:44] allocate scratch register -> t5
                         li t5, 127
@@ -26779,7 +26777,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 3
@@ -26803,8 +26801,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -26924,7 +26922,7 @@ main:
                             lw t0, 1956(t0)
                             # [417:27] bounds check begin
                             # [417:27] lower bound
-                            bltz t0, 1f
+                            # [417:27] t0 lower bound covered by the unsigned upper bound
                             # [417:27] upper bound
                             # [417:27] allocate scratch register -> t1
                             li t1, 127
@@ -27021,7 +27019,7 @@ main:
                     lw t1, 1964(t1)
                     # [648:32] bounds check begin
                     # [648:32] lower bound
-                    bltz t1, 1f
+                    # [648:32] t1 lower bound covered by the unsigned upper bound
                     # [648:32] upper bound
                     # [648:32] allocate scratch register -> t2
                     li t2, 32
@@ -27047,7 +27045,7 @@ main:
                     # [648:17] free scratch register t1
                     # [648:17] bounds check begin
                     # [648:17] lower bound
-                    bltz t0, 1f
+                    # [648:17] t0 lower bound covered by the unsigned upper bound
                     # [648:17] upper bound
                     # [648:17] allocate scratch register -> t1
                     li t1, 128
@@ -27173,7 +27171,7 @@ main:
                         # [474:44] res.array
                         # [474:44] bounds check begin
                         # [474:44] lower bound
-                        bltz t4, 1f
+                        # [474:44] t4 lower bound covered by the unsigned upper bound
                         # [474:44] upper bound
                         # [474:44] allocate scratch register -> t5
                         li t5, 127
@@ -27272,7 +27270,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 3
@@ -27296,8 +27294,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -27421,7 +27419,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -27521,7 +27519,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -27802,7 +27800,7 @@ main:
                     lw t1, 1964(t1)
                     # [668:32] bounds check begin
                     # [668:32] lower bound
-                    bltz t1, 1f
+                    # [668:32] t1 lower bound covered by the unsigned upper bound
                     # [668:32] upper bound
                     # [668:32] allocate scratch register -> t2
                     li t2, 32
@@ -27828,7 +27826,7 @@ main:
                     # [668:17] free scratch register t1
                     # [668:17] bounds check begin
                     # [668:17] lower bound
-                    bltz t0, 1f
+                    # [668:17] t0 lower bound covered by the unsigned upper bound
                     # [668:17] upper bound
                     # [668:17] allocate scratch register -> t1
                     li t1, 128
@@ -27948,7 +27946,7 @@ main:
                         # [468:44] dst.array
                         # [468:44] bounds check begin
                         # [468:44] lower bound
-                        bltz t4, 1f
+                        # [468:44] t4 lower bound covered by the unsigned upper bound
                         # [468:44] upper bound
                         # [468:44] allocate scratch register -> t5
                         li t5, 16
@@ -28125,7 +28123,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 2
@@ -28149,8 +28147,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -28274,7 +28272,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -28374,7 +28372,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -28622,7 +28620,7 @@ main:
                         # [468:44] dst.array
                         # [468:44] bounds check begin
                         # [468:44] lower bound
-                        bltz t2, 1f
+                        # [468:44] t2 lower bound covered by the unsigned upper bound
                         # [468:44] upper bound
                         # [468:44] allocate scratch register -> t3
                         li t3, 16
@@ -28667,7 +28665,7 @@ main:
                     lw t0, 1964(t0)
                     # [685:34] bounds check begin
                     # [685:34] lower bound
-                    bltz t0, 1f
+                    # [685:34] t0 lower bound covered by the unsigned upper bound
                     # [685:34] upper bound
                     # [685:34] allocate scratch register -> t1
                     li t1, 32
@@ -28719,7 +28717,7 @@ main:
                         lw t0, -96(t0)
                         # [258:16] bounds check begin
                         # [258:16] lower bound
-                        bltz t0, 1f
+                        # [258:16] t0 lower bound covered by the unsigned upper bound
                         # [258:16] upper bound
                         # [258:16] allocate scratch register -> t1
                         li t1, 32
@@ -28830,7 +28828,7 @@ main:
                     lw t0, 1988(t0)
                     # [689:33] bounds check begin
                     # [689:33] lower bound
-                    bltz t0, 1f
+                    # [689:33] t0 lower bound covered by the unsigned upper bound
                     # [689:33] upper bound
                     # [689:33] allocate scratch register -> t1
                     li t1, 128
@@ -28871,7 +28869,7 @@ main:
                         lw t2, 128(t1)
                         # [158:16] bounds check begin
                         # [158:16] lower bound
-                        bltz t2, 1f
+                        # [158:16] t2 lower bound covered by the unsigned upper bound
                         # [158:16] upper bound
                         # [158:16] allocate scratch register -> t3
                         li t3, 32
@@ -29061,7 +29059,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 2
@@ -29085,8 +29083,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -29210,7 +29208,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -29310,7 +29308,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -29558,7 +29556,7 @@ main:
                         # [468:44] dst.array
                         # [468:44] bounds check begin
                         # [468:44] lower bound
-                        bltz t2, 1f
+                        # [468:44] t2 lower bound covered by the unsigned upper bound
                         # [468:44] upper bound
                         # [468:44] allocate scratch register -> t3
                         li t3, 16
@@ -29611,7 +29609,7 @@ main:
                         lw t0, -88(t0)
                         # [285:16] bounds check begin
                         # [285:16] lower bound
-                        bltz t0, 1f
+                        # [285:16] t0 lower bound covered by the unsigned upper bound
                         # [285:16] upper bound
                         # [285:16] allocate scratch register -> t1
                         li t1, 1024
@@ -29697,7 +29695,7 @@ main:
                     lw t0, 1964(t0)
                     # [708:36] bounds check begin
                     # [708:36] lower bound
-                    bltz t0, 1f
+                    # [708:36] t0 lower bound covered by the unsigned upper bound
                     # [708:36] upper bound
                     # [708:36] allocate scratch register -> t1
                     li t1, 32
@@ -29733,7 +29731,7 @@ main:
                         lw t2, 1080(t1)
                         # [158:16] bounds check begin
                         # [158:16] lower bound
-                        bltz t2, 1f
+                        # [158:16] t2 lower bound covered by the unsigned upper bound
                         # [158:16] upper bound
                         # [158:16] allocate scratch register -> t3
                         li t3, 32
@@ -29923,7 +29921,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 1
@@ -29947,8 +29945,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -30019,7 +30017,7 @@ main:
                     lw t0, 1964(t0)
                     # [717:30] bounds check begin
                     # [717:30] lower bound
-                    bltz t0, 1f
+                    # [717:30] t0 lower bound covered by the unsigned upper bound
                     # [717:30] upper bound
                     # [717:30] allocate scratch register -> t1
                     li t1, 32
@@ -30161,7 +30159,7 @@ main:
                     lw t1, 1964(t1)
                     # [725:24] bounds check begin
                     # [725:24] lower bound
-                    bltz t1, 1f
+                    # [725:24] t1 lower bound covered by the unsigned upper bound
                     # [725:24] upper bound
                     # [725:24] allocate scratch register -> t2
                     li t2, 32
@@ -30193,7 +30191,7 @@ main:
                     lw t1, 1968(t1)
                     # [725:54] bounds check begin
                     # [725:54] lower bound
-                    bltz t1, 1f
+                    # [725:54] t1 lower bound covered by the unsigned upper bound
                     # [725:54] upper bound
                     # [725:54] allocate scratch register -> t2
                     li t2, 32
@@ -30397,7 +30395,7 @@ main:
                         lw t3, 0(t0)
                         # [734:23] bounds check begin
                         # [734:23] lower bound
-                        bltz t3, 1f
+                        # [734:23] t3 lower bound covered by the unsigned upper bound
                         # [734:23] upper bound
                         # [734:23] allocate scratch register -> t4
                         li t4, 1024
@@ -30647,7 +30645,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 1
@@ -30671,8 +30669,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -30796,7 +30794,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -30896,7 +30894,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -31064,7 +31062,7 @@ main:
                     lw t0, 1964(t0)
                     # [753:30] bounds check begin
                     # [753:30] lower bound
-                    bltz t0, 1f
+                    # [753:30] t0 lower bound covered by the unsigned upper bound
                     # [753:30] upper bound
                     # [753:30] allocate scratch register -> t1
                     li t1, 32
@@ -31120,7 +31118,7 @@ main:
                     lw t1, 1964(t1)
                     # [755:24] bounds check begin
                     # [755:24] lower bound
-                    bltz t1, 1f
+                    # [755:24] t1 lower bound covered by the unsigned upper bound
                     # [755:24] upper bound
                     # [755:24] allocate scratch register -> t2
                     li t2, 32
@@ -31152,7 +31150,7 @@ main:
                     lw t1, 1968(t1)
                     # [755:54] bounds check begin
                     # [755:54] lower bound
-                    bltz t1, 1f
+                    # [755:54] t1 lower bound covered by the unsigned upper bound
                     # [755:54] upper bound
                     # [755:54] allocate scratch register -> t2
                     li t2, 32
@@ -31186,7 +31184,7 @@ main:
                             lw t4, 0(t0)
                             # [756:37] bounds check begin
                             # [756:37] lower bound
-                            bltz t4, 1f
+                            # [756:37] t4 lower bound covered by the unsigned upper bound
                             # [756:37] upper bound
                             # [756:37] allocate scratch register -> t5
                             li t5, 1024
@@ -31260,7 +31258,7 @@ main:
                                     # [458:24] nm.array
                                     # [458:24] bounds check begin
                                     # [458:24] lower bound
-                                    bltz s2, 1f
+                                    # [458:24] s2 lower bound covered by the unsigned upper bound
                                     # [458:24] upper bound
                                     # [458:24] allocate scratch register -> s3
                                     li s3, 16
@@ -31282,8 +31280,8 @@ main:
                                     lw s3, 1956(s3)
                                     # [458:49] bounds check begin
                                     # [458:49] lower bound
+                                    # [458:49] count s2 lower bound already checked
                                     bltz s3, 1f
-                                    bltz s2, 1f
                                     # [458:49] upper bound
                                     # [458:49] allocate scratch register -> s4
                                     # [458:49] allocate scratch register -> s5
@@ -31466,7 +31464,7 @@ main:
                     lw t0, 1964(t0)
                     # [768:36] bounds check begin
                     # [768:36] lower bound
-                    bltz t0, 1f
+                    # [768:36] t0 lower bound covered by the unsigned upper bound
                     # [768:36] upper bound
                     # [768:36] allocate scratch register -> t1
                     li t1, 32
@@ -31497,7 +31495,7 @@ main:
                     lw t1, 1972(t1)
                     # [768:65] bounds check begin
                     # [768:65] lower bound
-                    bltz t1, 1f
+                    # [768:65] t1 lower bound covered by the unsigned upper bound
                     # [768:65] upper bound
                     # [768:65] allocate scratch register -> t2
                     li t2, 32
@@ -31533,7 +31531,7 @@ main:
                     lw t0, 1964(t0)
                     # [769:34] bounds check begin
                     # [769:34] lower bound
-                    bltz t0, 1f
+                    # [769:34] t0 lower bound covered by the unsigned upper bound
                     # [769:34] upper bound
                     # [769:34] allocate scratch register -> t1
                     li t1, 32
@@ -31578,7 +31576,7 @@ main:
                     lw t0, 1980(t0)
                     # [770:33] bounds check begin
                     # [770:33] lower bound
-                    bltz t0, 1f
+                    # [770:33] t0 lower bound covered by the unsigned upper bound
                     # [770:33] upper bound
                     # [770:33] allocate scratch register -> t1
                     li t1, 128
@@ -31619,7 +31617,7 @@ main:
                         lw t2, 128(t1)
                         # [158:16] bounds check begin
                         # [158:16] lower bound
-                        bltz t2, 1f
+                        # [158:16] t2 lower bound covered by the unsigned upper bound
                         # [158:16] upper bound
                         # [158:16] allocate scratch register -> t3
                         li t3, 32
@@ -31674,7 +31672,7 @@ main:
                     lw t0, 1964(t0)
                     # [771:20] bounds check begin
                     # [771:20] lower bound
-                    bltz t0, 1f
+                    # [771:20] t0 lower bound covered by the unsigned upper bound
                     # [771:20] upper bound
                     # [771:20] allocate scratch register -> t1
                     li t1, 32
@@ -31762,8 +31760,8 @@ main:
                         lw t5, 1972(t5)
                         # [135:20] bounds check begin
                         # [135:20] lower bound
+                        # [135:20] count t4 lower bound already checked
                         bltz t5, 1f
-                        bltz t4, 1f
                         # [135:20] upper bound
                         # [135:20] allocate scratch register -> t6
                         # [135:20] allocate scratch register -> s1
@@ -32145,7 +32143,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 1
@@ -32169,8 +32167,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -32221,9 +32219,9 @@ main:
                         # [453:11] free scratch register t1
                     bool.452.11.984.18.1052.9.end:
                 func.tokenizer.is_str.984.18.1052.9.end:
-            bne t0, zero, .Lbaz_jump.5
+            bne t0, zero, .Lbaz_jump.4
             j if.987.15.1052.9
-.Lbaz_jump.5:
+.Lbaz_jump.4:
             # [984:15] free scratch register t0
             if.984.15.1052.9.code:
                 # [985:9] action_give(cur_entity_id, tz)
@@ -32296,7 +32294,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -32396,7 +32394,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -32564,7 +32562,7 @@ main:
                     lw t0, 1964(t0)
                     # [793:30] bounds check begin
                     # [793:30] lower bound
-                    bltz t0, 1f
+                    # [793:30] t0 lower bound covered by the unsigned upper bound
                     # [793:30] upper bound
                     # [793:30] allocate scratch register -> t1
                     li t1, 32
@@ -32620,7 +32618,7 @@ main:
                     lw t1, 1964(t1)
                     # [795:24] bounds check begin
                     # [795:24] lower bound
-                    bltz t1, 1f
+                    # [795:24] t1 lower bound covered by the unsigned upper bound
                     # [795:24] upper bound
                     # [795:24] allocate scratch register -> t2
                     li t2, 32
@@ -32652,7 +32650,7 @@ main:
                     lw t1, 1968(t1)
                     # [795:54] bounds check begin
                     # [795:54] lower bound
-                    bltz t1, 1f
+                    # [795:54] t1 lower bound covered by the unsigned upper bound
                     # [795:54] upper bound
                     # [795:54] allocate scratch register -> t2
                     li t2, 32
@@ -32686,7 +32684,7 @@ main:
                             lw t4, 0(t0)
                             # [796:37] bounds check begin
                             # [796:37] lower bound
-                            bltz t4, 1f
+                            # [796:37] t4 lower bound covered by the unsigned upper bound
                             # [796:37] upper bound
                             # [796:37] allocate scratch register -> t5
                             li t5, 1024
@@ -32760,7 +32758,7 @@ main:
                                     # [458:24] nm.array
                                     # [458:24] bounds check begin
                                     # [458:24] lower bound
-                                    bltz s2, 1f
+                                    # [458:24] s2 lower bound covered by the unsigned upper bound
                                     # [458:24] upper bound
                                     # [458:24] allocate scratch register -> s3
                                     li s3, 16
@@ -32782,8 +32780,8 @@ main:
                                     lw s3, 1956(s3)
                                     # [458:49] bounds check begin
                                     # [458:49] lower bound
+                                    # [458:49] count s2 lower bound already checked
                                     bltz s3, 1f
-                                    bltz s2, 1f
                                     # [458:49] upper bound
                                     # [458:49] allocate scratch register -> s4
                                     # [458:49] allocate scratch register -> s5
@@ -32966,7 +32964,7 @@ main:
                     lw t0, 1964(t0)
                     # [807:36] bounds check begin
                     # [807:36] lower bound
-                    bltz t0, 1f
+                    # [807:36] t0 lower bound covered by the unsigned upper bound
                     # [807:36] upper bound
                     # [807:36] allocate scratch register -> t1
                     li t1, 32
@@ -32997,7 +32995,7 @@ main:
                     lw t1, 1972(t1)
                     # [807:65] bounds check begin
                     # [807:65] lower bound
-                    bltz t1, 1f
+                    # [807:65] t1 lower bound covered by the unsigned upper bound
                     # [807:65] upper bound
                     # [807:65] allocate scratch register -> t2
                     li t2, 32
@@ -33032,7 +33030,7 @@ main:
                     lw t0, 1976(t0)
                     # [808:37] bounds check begin
                     # [808:37] lower bound
-                    bltz t0, 1f
+                    # [808:37] t0 lower bound covered by the unsigned upper bound
                     # [808:37] upper bound
                     # [808:37] allocate scratch register -> t1
                     li t1, 1024
@@ -33142,7 +33140,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -33242,7 +33240,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -33410,7 +33408,7 @@ main:
                     lw t0, 1964(t0)
                     # [818:34] bounds check begin
                     # [818:34] lower bound
-                    bltz t0, 1f
+                    # [818:34] t0 lower bound covered by the unsigned upper bound
                     # [818:34] upper bound
                     # [818:34] allocate scratch register -> t1
                     li t1, 32
@@ -33453,7 +33451,7 @@ main:
                     lw t0, 2000(t0)
                     # [819:41] bounds check begin
                     # [819:41] lower bound
-                    bltz t0, 1f
+                    # [819:41] t0 lower bound covered by the unsigned upper bound
                     # [819:41] upper bound
                     # [819:41] allocate scratch register -> t1
                     li t1, 128
@@ -33513,7 +33511,7 @@ main:
                     lw t1, 2000(t1)
                     # [821:21] bounds check begin
                     # [821:21] lower bound
-                    bltz t1, 1f
+                    # [821:21] t1 lower bound covered by the unsigned upper bound
                     # [821:21] upper bound
                     # [821:21] allocate scratch register -> t2
                     li t2, 128
@@ -33549,7 +33547,7 @@ main:
                     lw t1, 2004(t1)
                     # [821:46] bounds check begin
                     # [821:46] lower bound
-                    bltz t1, 1f
+                    # [821:46] t1 lower bound covered by the unsigned upper bound
                     # [821:46] upper bound
                     # [821:46] allocate scratch register -> t2
                     li t2, 32
@@ -33599,7 +33597,7 @@ main:
                             lw t4, 0(t0)
                             # [823:38] bounds check begin
                             # [823:38] lower bound
-                            bltz t4, 1f
+                            # [823:38] t4 lower bound covered by the unsigned upper bound
                             # [823:38] upper bound
                             # [823:38] allocate scratch register -> t5
                             li t5, 32
@@ -33672,7 +33670,7 @@ main:
                                     # [458:24] nm.array
                                     # [458:24] bounds check begin
                                     # [458:24] lower bound
-                                    bltz s2, 1f
+                                    # [458:24] s2 lower bound covered by the unsigned upper bound
                                     # [458:24] upper bound
                                     # [458:24] allocate scratch register -> s3
                                     li s3, 16
@@ -33694,8 +33692,8 @@ main:
                                     lw s3, 1956(s3)
                                     # [458:49] bounds check begin
                                     # [458:49] lower bound
+                                    # [458:49] count s2 lower bound already checked
                                     bltz s3, 1f
-                                    bltz s2, 1f
                                     # [458:49] upper bound
                                     # [458:49] allocate scratch register -> s4
                                     # [458:49] allocate scratch register -> s5
@@ -33972,7 +33970,7 @@ main:
                     lw t0, 2008(t0)
                     # [836:36] bounds check begin
                     # [836:36] lower bound
-                    bltz t0, 1f
+                    # [836:36] t0 lower bound covered by the unsigned upper bound
                     # [836:36] upper bound
                     # [836:36] allocate scratch register -> t1
                     li t1, 32
@@ -34008,7 +34006,7 @@ main:
                         lw t2, 1080(t1)
                         # [158:16] bounds check begin
                         # [158:16] lower bound
-                        bltz t2, 1f
+                        # [158:16] t2 lower bound covered by the unsigned upper bound
                         # [158:16] upper bound
                         # [158:16] allocate scratch register -> t3
                         li t3, 32
@@ -34063,7 +34061,7 @@ main:
                     lw t0, 1964(t0)
                     # [837:20] bounds check begin
                     # [837:20] lower bound
-                    bltz t0, 1f
+                    # [837:20] t0 lower bound covered by the unsigned upper bound
                     # [837:20] upper bound
                     # [837:20] allocate scratch register -> t1
                     li t1, 32
@@ -34151,8 +34149,8 @@ main:
                         lw t5, 1972(t5)
                         # [135:20] bounds check begin
                         # [135:20] lower bound
+                        # [135:20] count t4 lower bound already checked
                         bltz t5, 1f
-                        bltz t4, 1f
                         # [135:20] upper bound
                         # [135:20] allocate scratch register -> t6
                         # [135:20] allocate scratch register -> s1
@@ -34458,7 +34456,7 @@ main:
                     lw t0, 2008(t0)
                     # [842:20] bounds check begin
                     # [842:20] lower bound
-                    bltz t0, 1f
+                    # [842:20] t0 lower bound covered by the unsigned upper bound
                     # [842:20] upper bound
                     # [842:20] allocate scratch register -> t1
                     li t1, 32
@@ -34670,7 +34668,7 @@ main:
                         # [91:16] s
                         # [91:16] bounds check begin
                         # [91:16] lower bound
-                        bltz t2, 1f
+                        # [91:16] t2 lower bound covered by the unsigned upper bound
                         # [91:16] upper bound
                         # [91:16] allocate scratch register -> t3
                         li t3, 5
@@ -34694,8 +34692,8 @@ main:
                         lw t3, -1952(t3)
                         # [91:30] bounds check begin
                         # [91:30] lower bound
+                        # [91:30] count t2 lower bound already checked
                         bltz t3, 1f
-                        bltz t2, 1f
                         # [91:30] upper bound
                         # [91:30] allocate scratch register -> t4
                         # [91:30] allocate scratch register -> t5
@@ -34761,7 +34759,7 @@ main:
                     lw t0, 2008(t0)
                     # [847:39] bounds check begin
                     # [847:39] lower bound
-                    bltz t0, 1f
+                    # [847:39] t0 lower bound covered by the unsigned upper bound
                     # [847:39] upper bound
                     # [847:39] allocate scratch register -> t1
                     li t1, 32
@@ -34800,7 +34798,7 @@ main:
                         # [182:16] nm.array
                         # [182:16] bounds check begin
                         # [182:16] lower bound
-                        bltz t4, 1f
+                        # [182:16] t4 lower bound covered by the unsigned upper bound
                         # [182:16] upper bound
                         # [182:16] allocate scratch register -> t5
                         li t5, 16
@@ -34822,8 +34820,8 @@ main:
                         lw t5, -1952(t5)
                         # [182:37] bounds check begin
                         # [182:37] lower bound
+                        # [182:37] count t4 lower bound already checked
                         bltz t5, 1f
-                        bltz t4, 1f
                         # [182:37] upper bound
                         # [182:37] allocate scratch register -> t6
                         # [182:37] allocate scratch register -> s1
@@ -34899,7 +34897,7 @@ main:
                         # [91:16] s
                         # [91:16] bounds check begin
                         # [91:16] lower bound
-                        bltz t2, 1f
+                        # [91:16] t2 lower bound covered by the unsigned upper bound
                         # [91:16] upper bound
                         # [91:16] allocate scratch register -> t3
                         li t3, 1
@@ -34921,8 +34919,8 @@ main:
                         lw t3, -1952(t3)
                         # [91:30] bounds check begin
                         # [91:30] lower bound
+                        # [91:30] count t2 lower bound already checked
                         bltz t3, 1f
-                        bltz t2, 1f
                         # [91:30] upper bound
                         # [91:30] allocate scratch register -> t4
                         # [91:30] allocate scratch register -> t5
@@ -34997,7 +34995,7 @@ main:
                         # [182:16] nm.array
                         # [182:16] bounds check begin
                         # [182:16] lower bound
-                        bltz t2, 1f
+                        # [182:16] t2 lower bound covered by the unsigned upper bound
                         # [182:16] upper bound
                         # [182:16] allocate scratch register -> t3
                         li t3, 16
@@ -35021,8 +35019,8 @@ main:
                         lw t3, -1952(t3)
                         # [182:37] bounds check begin
                         # [182:37] lower bound
+                        # [182:37] count t2 lower bound already checked
                         bltz t3, 1f
-                        bltz t2, 1f
                         # [182:37] upper bound
                         # [182:37] allocate scratch register -> t4
                         # [182:37] allocate scratch register -> t5
@@ -35099,7 +35097,7 @@ main:
                         lw t0, 2000(t0)
                         # [483:41] bounds check begin
                         # [483:41] lower bound
-                        bltz t0, 1f
+                        # [483:41] t0 lower bound covered by the unsigned upper bound
                         # [483:41] upper bound
                         # [483:41] allocate scratch register -> t1
                         li t1, 128
@@ -35145,7 +35143,7 @@ main:
                         lw t1, 2000(t1)
                         # [484:21] bounds check begin
                         # [484:21] lower bound
-                        bltz t1, 1f
+                        # [484:21] t1 lower bound covered by the unsigned upper bound
                         # [484:21] upper bound
                         # [484:21] allocate scratch register -> t2
                         li t2, 128
@@ -35181,7 +35179,7 @@ main:
                         lw t1, -1948(t1)
                         # [484:46] bounds check begin
                         # [484:46] lower bound
-                        bltz t1, 1f
+                        # [484:46] t1 lower bound covered by the unsigned upper bound
                         # [484:46] upper bound
                         # [484:46] allocate scratch register -> t2
                         li t2, 32
@@ -35227,7 +35225,7 @@ main:
                             lw t3, 0(t0)
                             # [487:27] bounds check begin
                             # [487:27] lower bound
-                            bltz t3, 1f
+                            # [487:27] t3 lower bound covered by the unsigned upper bound
                             # [487:27] upper bound
                             # [487:27] allocate scratch register -> t4
                             li t4, 32
@@ -35271,7 +35269,7 @@ main:
                             lw t3, 0(t0)
                             # [489:24] bounds check begin
                             # [489:24] lower bound
-                            bltz t3, 1f
+                            # [489:24] t3 lower bound covered by the unsigned upper bound
                             # [489:24] upper bound
                             # [489:24] allocate scratch register -> t4
                             li t4, 32
@@ -35310,7 +35308,7 @@ main:
                                 lw t5, -772(t5)
                                 # [206:16] bounds check begin
                                 # [206:16] lower bound
-                                bltz t5, 1f
+                                # [206:16] t5 lower bound covered by the unsigned upper bound
                                 # [206:16] upper bound
                                 # [206:16] allocate scratch register -> t6
                                 li t6, 16
@@ -35463,7 +35461,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 1
@@ -35487,8 +35485,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -35612,7 +35610,7 @@ main:
                                 lw t0, 1956(t0)
                                 # [417:27] bounds check begin
                                 # [417:27] lower bound
-                                bltz t0, 1f
+                                # [417:27] t0 lower bound covered by the unsigned upper bound
                                 # [417:27] upper bound
                                 # [417:27] allocate scratch register -> t1
                                 li t1, 127
@@ -35712,7 +35710,7 @@ main:
                             lw t0, 1960(t0)
                             # [438:27] bounds check begin
                             # [438:27] lower bound
-                            bltz t0, 1f
+                            # [438:27] t0 lower bound covered by the unsigned upper bound
                             # [438:27] upper bound
                             # [438:27] allocate scratch register -> t1
                             li t1, 127
@@ -35894,7 +35892,7 @@ main:
                     lw t1, -96(t1)
                     # [869:25] bounds check begin
                     # [869:25] lower bound
-                    bltz t1, 1f
+                    # [869:25] t1 lower bound covered by the unsigned upper bound
                     # [869:25] upper bound
                     # [869:25] allocate scratch register -> t2
                     li t2, 32
@@ -35971,7 +35969,7 @@ main:
                                     # [458:24] nm.array
                                     # [458:24] bounds check begin
                                     # [458:24] lower bound
-                                    bltz t6, 1f
+                                    # [458:24] t6 lower bound covered by the unsigned upper bound
                                     # [458:24] upper bound
                                     # [458:24] allocate scratch register -> s1
                                     li s1, 16
@@ -35993,8 +35991,8 @@ main:
                                     lw s1, 1956(s1)
                                     # [458:49] bounds check begin
                                     # [458:49] lower bound
+                                    # [458:49] count t6 lower bound already checked
                                     bltz s1, 1f
-                                    bltz t6, 1f
                                     # [458:49] upper bound
                                     # [458:49] allocate scratch register -> s2
                                     # [458:49] allocate scratch register -> s3
@@ -36265,7 +36263,7 @@ main:
                     lw t0, 1968(t0)
                     # [882:23] bounds check begin
                     # [882:23] lower bound
-                    bltz t0, 1f
+                    # [882:23] t0 lower bound covered by the unsigned upper bound
                     # [882:23] upper bound
                     # [882:23] allocate scratch register -> t1
                     li t1, 32
@@ -36531,7 +36529,7 @@ main:
                             lw t0, 1956(t0)
                             # [417:27] bounds check begin
                             # [417:27] lower bound
-                            bltz t0, 1f
+                            # [417:27] t0 lower bound covered by the unsigned upper bound
                             # [417:27] upper bound
                             # [417:27] allocate scratch register -> t1
                             li t1, 127
@@ -36836,7 +36834,7 @@ main:
                         # [474:44] res.array
                         # [474:44] bounds check begin
                         # [474:44] lower bound
-                        bltz t2, 1f
+                        # [474:44] t2 lower bound covered by the unsigned upper bound
                         # [474:44] upper bound
                         # [474:44] allocate scratch register -> t3
                         li t3, 127
@@ -36878,7 +36876,7 @@ main:
                     lw t0, 1968(t0)
                     # [899:20] bounds check begin
                     # [899:20] lower bound
-                    bltz t0, 1f
+                    # [899:20] t0 lower bound covered by the unsigned upper bound
                     # [899:20] upper bound
                     # [899:20] allocate scratch register -> t1
                     li t1, 32
@@ -36917,7 +36915,7 @@ main:
                         lw t2, -772(t2)
                         # [206:16] bounds check begin
                         # [206:16] lower bound
-                        bltz t2, 1f
+                        # [206:16] t2 lower bound covered by the unsigned upper bound
                         # [206:16] upper bound
                         # [206:16] allocate scratch register -> t3
                         li t3, 16
@@ -37058,7 +37056,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 1
@@ -37082,8 +37080,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -37203,7 +37201,7 @@ main:
                             lw t0, 1956(t0)
                             # [417:27] bounds check begin
                             # [417:27] lower bound
-                            bltz t0, 1f
+                            # [417:27] t0 lower bound covered by the unsigned upper bound
                             # [417:27] upper bound
                             # [417:27] allocate scratch register -> t1
                             li t1, 127
@@ -37508,7 +37506,7 @@ main:
                         # [474:44] res.array
                         # [474:44] bounds check begin
                         # [474:44] lower bound
-                        bltz t2, 1f
+                        # [474:44] t2 lower bound covered by the unsigned upper bound
                         # [474:44] upper bound
                         # [474:44] allocate scratch register -> t3
                         li t3, 127
@@ -37550,7 +37548,7 @@ main:
                     lw t0, 1964(t0)
                     # [916:32] bounds check begin
                     # [916:32] lower bound
-                    bltz t0, 1f
+                    # [916:32] t0 lower bound covered by the unsigned upper bound
                     # [916:32] upper bound
                     # [916:32] allocate scratch register -> t1
                     li t1, 32
@@ -37590,7 +37588,7 @@ main:
                         lw t2, 948(t1)
                         # [483:41] bounds check begin
                         # [483:41] lower bound
-                        bltz t2, 1f
+                        # [483:41] t2 lower bound covered by the unsigned upper bound
                         # [483:41] upper bound
                         # [483:41] allocate scratch register -> t3
                         li t3, 128
@@ -37634,7 +37632,7 @@ main:
                         lw t3, 948(t1)
                         # [484:21] bounds check begin
                         # [484:21] lower bound
-                        bltz t3, 1f
+                        # [484:21] t3 lower bound covered by the unsigned upper bound
                         # [484:21] upper bound
                         # [484:21] allocate scratch register -> t4
                         li t4, 128
@@ -37670,7 +37668,7 @@ main:
                         lw t3, -1996(t3)
                         # [484:46] bounds check begin
                         # [484:46] lower bound
-                        bltz t3, 1f
+                        # [484:46] t3 lower bound covered by the unsigned upper bound
                         # [484:46] upper bound
                         # [484:46] allocate scratch register -> t4
                         li t4, 32
@@ -37716,7 +37714,7 @@ main:
                             lw t5, 0(t2)
                             # [487:27] bounds check begin
                             # [487:27] lower bound
-                            bltz t5, 1f
+                            # [487:27] t5 lower bound covered by the unsigned upper bound
                             # [487:27] upper bound
                             # [487:27] allocate scratch register -> t6
                             li t6, 32
@@ -37760,7 +37758,7 @@ main:
                             lw t5, 0(t2)
                             # [489:24] bounds check begin
                             # [489:24] lower bound
-                            bltz t5, 1f
+                            # [489:24] t5 lower bound covered by the unsigned upper bound
                             # [489:24] upper bound
                             # [489:24] allocate scratch register -> t6
                             li t6, 32
@@ -37799,7 +37797,7 @@ main:
                                 lw s1, -772(s1)
                                 # [206:16] bounds check begin
                                 # [206:16] lower bound
-                                bltz s1, 1f
+                                # [206:16] s1 lower bound covered by the unsigned upper bound
                                 # [206:16] upper bound
                                 # [206:16] allocate scratch register -> s2
                                 li s2, 16
@@ -37954,7 +37952,7 @@ main:
                         # [453:24] str
                         # [453:24] bounds check begin
                         # [453:24] lower bound
-                        bltz t3, 1f
+                        # [453:24] t3 lower bound covered by the unsigned upper bound
                         # [453:24] upper bound
                         # [453:24] allocate scratch register -> t4
                         li t4, 4
@@ -37978,8 +37976,8 @@ main:
                         lw t4, 1956(t4)
                         # [453:44] bounds check begin
                         # [453:44] lower bound
+                        # [453:44] count t3 lower bound already checked
                         bltz t4, 1f
-                        bltz t3, 1f
                         # [453:44] upper bound
                         # [453:44] allocate scratch register -> t5
                         # [453:44] allocate scratch register -> t6
@@ -38378,15 +38376,15 @@ baz_bounds_panic:
     li a3, -1
     mv a5, a1
     add a0, a1, a2
-1:
     beq a5, a0, 3f
+1:
 2:
     lw a4, -8(zero)
     bne a4, a3, 2b
     lbu a4, 0(a5)
     sw a4, -8(zero)
     addi a5, a5, 1
-    j 1b
+    bne a5, a0, 1b
 3:
     mv a0, a2
     jr a7
@@ -38653,4 +38651,4 @@ vars.end:
 #                     dat size: 198427 B
 #              dat var padding: 5 B
 #                max vars size: 2552 B
-#                 instructions: 13111
+#                 instructions: 12712

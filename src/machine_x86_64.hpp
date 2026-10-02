@@ -182,6 +182,9 @@ class machine_x86_64 final : public machine {
     // bit per 'register_names_' entry, set while allocated or while an
     // operation protects the registers of its operands
     uint16_t unavailable_registers_{};
+    // registers a lower bounds check found non-negative, allocating a register
+    // forgets it since the new owner writes its own value
+    uint16_t lower_checked_registers_{};
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
     std::vector<allocation> allocations_;
@@ -389,7 +392,28 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        const condition out_of_bounds{allow_end ? condition::g : condition::ge};
+        const size_t limit_bits{reg_to_check.type_ref().size_bytes() * 8};
+
+        // the unsigned upper comparison already fails a negative index or
+        // count as long as the limit is below 2^(width - 1), only a sum
+        // 'index + count' needs both signs checked
+        const bool upper_covers_lower{
+            options.lower and options.upper and reg_count.is_empty() and
+                array_count <= (uint64_t{1} << (limit_bits - 1)) - 1,
+        };
+
+        // the second array of a copy or compare checks the same count again
+        const bool count_known{
+            not reg_count.is_empty() and
+                (lower_checked_registers_ &
+                 register_bit(reg_count.base_register())) != 0,
+        };
+
+        condition out_of_bounds{allow_end ? condition::g : condition::ge};
+        if (upper_covers_lower) {
+            out_of_bounds = allow_end ? condition::a : condition::ae;
+        }
+
         comment(src_loc_tk, indent, "bounds check begin");
 
         operand reg_line_num;
@@ -404,17 +428,41 @@ class machine_x86_64 final : public machine {
 
         if (options.lower) {
             comment(src_loc_tk, indent, "lower bound");
+        }
+
+        if (options.lower and upper_covers_lower) {
+            comment(src_loc_tk, indent,
+                    "{} lower bound covered by the unsigned upper bound",
+                    reg_to_check.base_register());
+        }
+
+        if (options.lower and not upper_covers_lower) {
+            if (count_known) {
+                comment(src_loc_tk, indent,
+                        "count {} lower bound already checked",
+                        reg_count.base_register());
+            }
 
             // a negative count passes 'start + count' but spans the address
             // space
             for (const operand* value : {&reg_to_check, &reg_count}) {
-                if (value->is_empty()) {
+                if (value->is_empty() or
+                    (count_known and value == &reg_count)) {
                     continue;
                 }
 
                 test(indent, *value, *value);
                 branch_to_bounds_panic(indent, condition::s, reg_line_num);
             }
+        }
+
+        if (options.lower) {
+            // a count alone is checked as the index of its own range
+            const operand& checked{
+                reg_count.is_empty() ? reg_to_check : reg_count,
+            };
+
+            lower_checked_registers_ |= register_bit(checked.base_register());
         }
 
         if (options.upper) {
@@ -1960,6 +2008,7 @@ class machine_x86_64 final : public machine {
         });
 
         unavailable_registers_ |= bit;
+        lower_checked_registers_ &= static_cast<uint16_t>(~bit);
     }
 
     // e.g. the fixed registers of 'rep movsb' and syscalls

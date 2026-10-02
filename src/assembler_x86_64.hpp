@@ -66,7 +66,7 @@ class assembler_x86_64 final : public assembler {
 
     // suffixes of 'jcc', 'setcc' and 'cmovcc', 'nz' is spelled apart from
     // 'ne' to keep the handler text
-    enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, nz };
+    enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, nz, ae };
 
     // 'variables' is the uninitialized section after the data
     enum class section : uint8_t { text, rodata, data, bss, variables };
@@ -515,8 +515,8 @@ class assembler_x86_64 final : public assembler {
         -> std::string_view {
 
         // indexed by 'condition'
-        constexpr std::array<std::string_view, 10> suffixes{
-            "e", "ne", "l", "le", "g", "ge", "a", "b", "s", "nz",
+        constexpr std::array<std::string_view, 11> suffixes{
+            "e", "ne", "l", "le", "g", "ge", "a", "b", "s", "nz", "ae",
         };
 
         return suffixes.at(std::to_underlying(cc));

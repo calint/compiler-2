@@ -1135,6 +1135,11 @@ func main() {
                                             "    li a0, {}\n    li a1, {}\n    "
                                             "la s3, bounds_result_{}",
                                             index, count, case_index);
+                                        // a count found non-negative is
+                                        // remembered until allocated again
+                                        const operand count_register{
+                                            bounds_backend.alloc_named_register(
+                                                token{}, 0, "a1", integer)};
                                         bounds_backend.check_bounds(
                                             token{}, 1,
                                             operand::reg("a0", integer), size,
@@ -1144,6 +1149,8 @@ func main() {
                                             {.upper{upper},
                                              .lower{lower},
                                              .with_line{}});
+                                        bounds_backend.free_named_register(
+                                            token{}, 0, count_register);
                                         std::println(
                                             "    li a3, 0\nbounds_result_{}:\n "
                                             "   li a4, {}\n    beq a3, a4, "

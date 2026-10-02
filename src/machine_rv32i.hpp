@@ -64,6 +64,9 @@ class machine_rv32i : public machine {
     // buffering output is no more logical state than writing to the stream
     mutable assembler_rv32i assembler_;
     uint32_t unavailable_registers_{};
+    // registers a lower bounds check found non-negative, allocating a register
+    // forgets it since the new owner writes its own value
+    uint32_t lower_checked_registers_{};
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
     bool multiply_helper_used_{};
@@ -2696,9 +2699,42 @@ class machine_rv32i : public machine {
                 array_count <= std::numeric_limits<int32_t>::max(),
         };
 
-        if (options.lower and not upper_covers_lower) {
+        // the second array of a copy or compare checks the same count again
+        const bool count_known{
+            not reg_count.is_empty() and
+                (lower_checked_registers_ &
+                 register_mask(reg_count.base_register())) != 0,
+        };
+
+        if (options.lower) {
             comment(src_loc_tk, indent, "lower bound");
-            check_lower_bounds(indent, index, reg_count, not options.upper);
+        }
+
+        if (options.lower and upper_covers_lower) {
+            comment(src_loc_tk, indent,
+                    "{} lower bound covered by the unsigned upper bound",
+                    index);
+        }
+
+        if (options.lower and not upper_covers_lower) {
+            if (count_known) {
+                comment(src_loc_tk, indent,
+                        "count {} lower bound already checked",
+                        reg_count.base_register());
+            }
+
+            check_lower_bounds(indent, index,
+                               count_known ? operand{} : reg_count,
+                               not options.upper);
+        }
+
+        if (options.lower) {
+            // a count alone is checked as the index of its own range
+            const operand& checked{
+                reg_count.is_empty() ? reg_to_check : reg_count,
+            };
+
+            lower_checked_registers_ |= register_mask(checked.base_register());
         }
 
         if (options.upper) {
@@ -3363,6 +3399,7 @@ class machine_rv32i : public machine {
                            const size_t index, const bool named) -> void {
 
         unavailable_registers_ |= uint32_t{1} << index;
+        lower_checked_registers_ &= ~(uint32_t{1} << index);
         allocations_.push_back({
             .register_index{index},
             .source_location{src_loc_tk},
