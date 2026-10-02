@@ -346,8 +346,7 @@ main:
     test r15, r15
     cmovs rbp, r13
     js baz_bounds_panic
-    mov r12, r15
-    add r12, r14
+    lea r12, [r15 + r14]
     cmp r12, 4
     cmovg rbp, r13
     jg baz_bounds_panic
@@ -399,8 +398,7 @@ main:
         test rcx, rcx
         cmovs rbp, r14
         js baz_bounds_panic
-        mov r13, rcx
-        add r13, r15
+        lea r13, [rcx + r15]
         cmp r13, 4
         cmovg rbp, r14
         jg baz_bounds_panic
@@ -410,8 +408,7 @@ main:
         test r15, r15
         cmovs rbp, r14
         js baz_bounds_panic
-        mov r13, rcx
-        add r13, r15
+        lea r13, [rcx + r15]
         cmp r13, 8
         cmovg rbp, r14
         jg baz_bounds_panic
@@ -1417,8 +1414,7 @@ main:
     test rdx, rdx
     cmovs rbp, r14
     js baz_bounds_panic
-    mov r13, rdx
-    add r13, r15
+    lea r13, [rdx + r15]
     cmp r13, 13
     cmovg rbp, r14
     jg baz_bounds_panic

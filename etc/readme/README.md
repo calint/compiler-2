@@ -130,10 +130,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5889           2298          18868
+C/C++ Header                    54           5891           2299          18878
 C++                              1            104             22            403
 -------------------------------------------------------------------------------
-SUM:                            55           5993           2320          19271
+SUM:                            55           5995           2321          19281
 -------------------------------------------------------------------------------
 ```
 
@@ -922,8 +922,7 @@ main:
     test r15, r15
     cmovs rbp, r13
     js baz_bounds_panic
-    mov r12, r15
-    add r12, r14
+    lea r12, [r15 + r14]
     cmp r12, 4
     cmovg rbp, r13
     jg baz_bounds_panic
@@ -975,8 +974,7 @@ main:
         test rcx, rcx
         cmovs rbp, r14
         js baz_bounds_panic
-        mov r13, rcx
-        add r13, r15
+        lea r13, [rcx + r15]
         cmp r13, 4
         cmovg rbp, r14
         jg baz_bounds_panic
@@ -986,8 +984,7 @@ main:
         test r15, r15
         cmovs rbp, r14
         js baz_bounds_panic
-        mov r13, rcx
-        add r13, r15
+        lea r13, [rcx + r15]
         cmp r13, 8
         cmovg rbp, r14
         jg baz_bounds_panic
@@ -1993,8 +1990,7 @@ main:
     test rdx, rdx
     cmovs rbp, r14
     js baz_bounds_panic
-    mov r13, rdx
-    add r13, r15
+    lea r13, [rdx + r15]
     cmp r13, 13
     cmovg rbp, r14
     jg baz_bounds_panic
@@ -3016,8 +3012,7 @@ main:
     js baz_bounds_panic
 ;   [245:20] upper bound
 ;   [245:20] allocate scratch register -> r12
-    mov r12, r15
-    add r12, r14
+    lea r12, [r15 + r14]
     cmp r12, 4
 ;   [245:20] free scratch register r12
     cmovg rbp, r13
@@ -3151,8 +3146,7 @@ main:
         js baz_bounds_panic
 ;       [251:31] upper bound
 ;       [251:31] allocate scratch register -> r13
-        mov r13, rcx
-        add r13, r15
+        lea r13, [rcx + r15]
         cmp r13, 4
 ;       [251:31] free scratch register r13
         cmovg rbp, r14
@@ -3177,8 +3171,7 @@ main:
         js baz_bounds_panic
 ;       [251:40] upper bound
 ;       [251:40] allocate scratch register -> r13
-        mov r13, rcx
-        add r13, r15
+        lea r13, [rcx + r15]
         cmp r13, 8
 ;       [251:40] free scratch register r13
         cmovg rbp, r14
@@ -5459,8 +5452,7 @@ main:
     js baz_bounds_panic
 ;   [425:22] upper bound
 ;   [425:22] allocate scratch register -> r13
-    mov r13, rdx
-    add r13, r15
+    lea r13, [rdx + r15]
     cmp r13, 13
 ;   [425:22] free scratch register r13
     cmovg rbp, r14
@@ -5977,5 +5969,5 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 1008
+;                 instructions: 1004
 ```

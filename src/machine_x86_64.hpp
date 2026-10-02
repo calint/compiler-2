@@ -1535,8 +1535,22 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        mov(src_loc_tk, indent, reg_top_idx, reg_count);
-        add(indent, reg_top_idx, reg_to_check);
+        // narrower registers need the widening copy of 'mov'
+        const bool is_qword_pair{
+            reg_count.type_ref().size_bytes() == size_qword and
+                reg_to_check.type_ref().size_bytes() == size_qword,
+        };
+
+        if (is_qword_pair) {
+            lea(indent, reg_top_idx,
+                operand::mem(reg_count.base_register(),
+                             reg_to_check.base_register(), 1, 0,
+                             builtin_type_i64()));
+        } else {
+            mov(src_loc_tk, indent, reg_top_idx, reg_count);
+            add(indent, reg_top_idx, reg_to_check);
+        }
+
         cmp(indent, reg_top_idx, immediate(array_count));
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
     }

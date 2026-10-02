@@ -1,0 +1,82 @@
+roome.baz on x86_64: local inefficiencies within one machine operation
+--------------------------------------------------------------------------------
+compiled with: ./baz --target=x86_64 --vars=0x20000 --checks=noub,line \
+                     etc/roome/roome.baz
+8134 instructions (9328 before the bounds-check fixes below). global
+optimizations and instruction tricks excluded. site counts are occurrences in
+the generated code. the rv32i report is etc/roome-inefficiencies-rv32i.txt,
+points that exist on both targets keep their rv32i number in brackets.
+
+[x] 1. redundant sign test in check_bounds [rv32i 2] (224 index sites, 110
+       count-only sites, 3 instructions each with line numbers on)
+       'test r,r; cmovs; js' before a signed 'cmp r,N; cmovge; jge'.
+       with both checks on and no count register the upper compare is now
+       unsigned ('cmovae/jae', 'cmova/ja' when the end is allowed), which
+       fails a negative value too, as long as the limit is below
+       2^(width - 1). the omission is commented in the assembly.
+       where: check_bounds
+
+[x] 2. count tested again for the second array [rv32i 3]
+       the sum form 'index + count' tested the count in every call, the
+       second array of array_copy or arrays_equal repeated it. a bitmask,
+       'lower_checked_registers_', remembers registers a lower check found
+       non-negative and is cleared when the register is allocated again.
+       where: check_bounds, push_allocation
+       roome 9328 -> 8134 instructions with point 1
+
+[x] 3. 'mov r12,rcx; add r12,r14; cmp r12,127' for the range end (213 sites,
+       1 instruction each)
+       'lea r12,[rcx + r14]' computes the sum in one instruction, when both
+       registers are qwords (narrower ones keep the widening 'mov'). roome
+       8134 -> 7921 instructions.
+       where: compare_upper_bound
+
+[ ] 4. bounds failure plumbing: 547 checks cost 547 'mov reg,line' and 909
+       'cmovcc rbp,reg', 1456 instructions (18% of the program)
+       each check loads the line number into a scratch register and every
+       condition does 'cmovcc rbp,line; jcc panic' so rbp, the variables
+       base, survives when the check passes. two effects:
+       - a sum check has three conditions and three cmovs, 12 instructions
+         (11 with the lea of point 3).
+       - rbp is written by the cmov, so every memory access after a check
+         waits on the compare, a dependency a predicted branch would not
+         create.
+       an inline failure path needs no scratch register, no cmov and one
+       'mov rbp,line' per check:
+           cmp r15,81; jb .ok; mov rbp,1016; jmp baz_bounds_panic; .ok:
+       same instruction count for one condition (4), 10 instead of 12 for the
+       sum form, but a taken branch on every passing check, like rv32i's
+       '1:'/'2:' block. performance not measured. shared out-of-line stubs
+       per line would be smaller still but are not local to one operation.
+       where: check_bounds, branch_to_bounds_panic
+
+[ ] 5. run-time count compare uses only 'repe cmpsb' (42 sites)
+       'repe cmps*' is microcoded and costs about the same per element at
+       every width, so a qword split pays for long arrays only. it needs
+       about 7 more instructions and a scratch register, and loses for the
+       short names roome compares. not done, a length-gated qword loop is
+       the version to write if long run-time arrays show up.
+       where: end_arrays_equal
+
+not applicable on x86_64, the rv32i point does not exist here:
+- rv32i 1 base address computed twice: one memory operand is addressed
+  [rbp + disp32], there is no 'lui/add' pair
+- rv32i 4 bulk loop bookkeeping and 5 '.Lbaz_write': copy, zero and compare
+  use 'rep movsb/stosb/cmps*', writes are syscalls
+- rv32i 6 equality in a bool 'and': 'cmp; sete; jne' is already minimal
+
+not counted, they need a known constant:
+- 'mov r,imm; cmp x,r' for a constant right side that is an expression
+  result such as 'array_length(...)' (30 sites)
+- 'mov rcx,imm; test rcx,rcx; repe cmpsb' where the count is known to be
+  nonzero (42 sites)
+
+instruction tricks, excluded:
+- 'xor edi,edi' for 'mov rdi,0', 'mov r,0' (145 sites) as 'xor'
+- 'test r,r' for 'cmp r,0' ('cmp r15b,0' 68 sites)
+- 'imul r,960' by a constant as 'lea/shl' chains
+- both sign tests of a sum check as 'mov t,index; or t,count; js' (2
+  instructions less per sum check)
+
+not inefficiencies:
+- 'mov r,[mem]; mov [mem2],r' (234 sites) there is no memory to memory move
