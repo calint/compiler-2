@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
-resolved
+[ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] roome.baz (2026-09-29): rv32i: every local variable access needs
+    'lui'/'add': s0 pointed at 'dat' and the variables start about 150 KB
+    after it, behind 'rooms' and 'entities' (102 'lui X, 37', with their
+    'add' about 31% of the instructions, plus a scratch register per
+    access); small 'dat' items after the big arrays ('str_went_to',
+    'str_home') likewise
+    => 2026-10-02: 's0' is 'vars' + 2032 ('machine::
+       variables_base_past_vars_bytes', 'toc::variables_base_shift_bytes',
+       test 680) so the first 4080 bytes of variables are in reach and the
+       'dat' items are negative and cost 'lui'/'add': roome 12136 -> 10479
+       instructions (-13.7%), the coverage tests +431 of 703751 and prog.baz
+       +27 of 1002 (the extra 'addi' and 'dat' accesses); x86 keeps 'rbp' at
+       'dat'. 2032 is the largest multiple of 16 an 'addi' holds, so 's0'
+       stays aligned for the access width decisions
+    => 'vars' + 0 gave 10206 for roome (small 'dat' items before 'vars' in
+       reach); chosen because real programs have more variables and a 'dat'
+       that ends in arrays, an alternative is a bias from the sizes of the
+       last 'dat' items
+    => variables beyond 4 KB and 'dat' keep 'lui'/'add'
 [x] constant known at compile: other users of constants use
     'statement::folded_constant'; survey (2026-09-28): an 'array_length(...)'
     count took the run-time 'array_copy' path (41 rv32i sites) and a constant

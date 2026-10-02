@@ -24,6 +24,11 @@ class machine_rv32i : public machine {
 
     static constexpr size_t s0_register_index{8};
     static constexpr std::string_view variables_base_register_{"s0"};
+    static constexpr size_t variables_base_past_vars_bytes_{2032};
+
+    // note: the largest multiple of 16 an 'addi' immediate holds, 'vars'
+    //       starts 2032 below 's0' so 4080 bytes of variables are in reach
+    //       of a load or store, and 's0' stays aligned
     static constexpr size_t data_alignment_{16};
     static constexpr size_t copy_unroll_threshold_bytes_{16};
     // stores run faster than the loop's 4 instructions per word, the cap only
@@ -1404,7 +1409,9 @@ class machine_rv32i : public machine {
         label(0, "_start");
         assembler_.add_separator_newline();
         reserve_variables_base();
-        assembler_.la(0, variables_base_register_, "dat");
+        assembler_.la(0, variables_base_register_, "vars");
+        assembler_.addi(0, variables_base_register_, variables_base_register_,
+                        static_cast<int64_t>(variables_base_past_vars_bytes_));
         assembler_.add_separator_newline();
     }
 
@@ -1466,6 +1473,12 @@ class machine_rv32i : public machine {
                                 const operand& count) const -> void override {
 
         validate_scalar(src_loc_tk, count.type_ref());
+    }
+
+    [[nodiscard]] auto variables_base_past_vars_bytes() const
+        -> std::optional<size_t> override {
+
+        return variables_base_past_vars_bytes_;
     }
 
     [[nodiscard]] auto variables_base_register() const

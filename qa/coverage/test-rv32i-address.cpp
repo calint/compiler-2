@@ -556,7 +556,8 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.finish();
         backend.write_assembly(output);
 
-        assert(output.str().contains("la s0, dat\n\ncmp_13_26:\n"
+        assert(output.str().contains("la s0, vars\naddi s0, s0, 2032\n\n"
+                                     "cmp_13_26:\n"
                                      "bool_end_15_9:\n"
                                      "beq a0, a1, if_14_8_code\n"
                                      "cmp_14_26:\naddi a2, a3, 0\n"
@@ -675,7 +676,7 @@ auto main(const int argc, const char* argv[]) -> int {
             }
             std::println("    lw t0, {}(sp)", (index - 1) * 4);
             if (index == 8) {
-                std::println("    la t1, dat");
+                std::println("    la t1, dat\n    addi t1, t1, 2032");
             } else {
                 std::println("    li t1, {}", 100 + index);
             }
@@ -690,18 +691,18 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.exit(token{}, 1, operand::imm("1", integer));
         backend.label(0, "outer");
         backend.reserve_frame_base();
-        std::println("    la t0, dat\n    li t1, 4096\n    add t0, t0, t1\n"
+        std::println("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
                      "    beq s1, t0, 1f\n    j call_failure\n1:");
         backend.call_function(token{}, 1, "inner",
                               operand::mem("s1", {}, 1, 8192, integer));
         // the frame base is live here, so the call restores it
-        std::println("    la t0, dat\n    li t1, 4096\n    add t0, t0, t1\n"
+        std::println("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
                      "    beq s1, t0, 1f\n    j call_failure\n1:");
         backend.return_function(1);
         backend.release_frame_base();
         backend.label(0, "inner");
         backend.reserve_frame_base();
-        std::println("    la t0, dat\n    li t1, 12288\n    add t0, t0, t1\n"
+        std::println("    la t0, dat\n    li t1, 14320\n    add t0, t0, t1\n"
                      "    beq s1, t0, 1f\n    j call_failure\n1:");
         // callees never write the variables base s0
         for (size_t index{1}; index < 32; ++index) {
@@ -712,7 +713,7 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.return_function(1);
         backend.release_frame_base();
         backend.finish();
-        std::println(".data\ndat:\n    .zero 16384");
+        std::println(".data\ndat:\nvars:\n    .zero 16384");
 
         return 0;
     }
@@ -799,7 +800,7 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.label(0, "long_loop_failure");
         backend.exit(token{}, 1, operand::imm("1", integer));
         backend.finish();
-        std::println(".data\ndat:\n    .word 0");
+        std::println(".data\ndat:\nvars:\n    .word 0");
 
         return 0;
     }
@@ -883,7 +884,7 @@ auto main(const int argc, const char* argv[]) -> int {
         backend.exit(token{}, 1, operand::imm("1", integer));
         backend.finish();
         backend.write_assembly(std::cout);
-        std::println(".data\ndat:\n    .word 0");
+        std::println(".data\ndat:\nvars:\n    .word 0");
 
         return 0;
     }
@@ -1029,7 +1030,7 @@ func main() {
         program rv32i_program{rv32i_compiler, source, 4096,
                               false,          false,  false};
         rv32i_program.build(rv32i_output);
-        assert(rv32i_output.str().contains("sb t3, 4(s0)\n"));
+        assert(rv32i_output.str().contains("sb t3, -2028(s0)\n"));
         assert(not rv32i_output.str().contains("sltu "));
         assert(not rv32i_output.str().contains("sltiu "));
         assert(not rv32i_output.str().contains("xori "));

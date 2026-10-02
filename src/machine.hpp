@@ -386,6 +386,11 @@ class machine {
     virtual auto validate_shift_operand(const token& src_loc_tk,
                                         const operand& count) const -> void = 0;
 
+    // 'dat' is where the variables base register points, unless it points past
+    // the 'vars' label, then this is the distance
+    [[nodiscard]] virtual auto variables_base_past_vars_bytes() const
+        -> std::optional<size_t> = 0;
+
     [[nodiscard]] virtual auto variables_base_register() const
         -> std::string_view = 0;
 

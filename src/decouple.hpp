@@ -326,8 +326,6 @@ struct ident_info {
 
         offset = add_address_offset(offset, n);
 
-        assert(offset >= 0);
-
         operand.increment_offset(n);
 
         assert(validate_invariants());

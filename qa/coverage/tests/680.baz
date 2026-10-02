@@ -1,0 +1,59 @@
+# dat items and variables are addressed from one base: on rv32i the base is the
+# start of the variables so dat items have negative offsets
+
+dat small = i32(7)
+
+dat numbers = i32[4]{1, 2, 3, 4}
+
+dat text = "abc"
+
+type point {x i32, y i32}
+
+dat origin = point{5, 6}
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func noinline plus_one(v i32) res i32 { res = v + 1 }
+
+func noinline get_x(p point) res i32 { res = p.x }
+
+func main() {
+    var v = i32(10)
+    var local = i32[3]{20, 30, 40}
+    var p = point{1, 2}
+
+    assert(1, small == 7)
+    assert(2, numbers[2] == 3)
+    assert(3, text[1] == 'b')
+    assert(4, origin.y == 6)
+
+    v = small + numbers[3]
+    assert(5, v == 11)
+
+    var ix = 1
+    local[ix] = numbers[ix] + small
+    assert(6, local[1] == 9)
+
+    # dat items and variables passed by reference to a non-inline function
+    var total = i32(0)
+    total = plus_one(small)
+    assert(7, total == 8)
+
+    total = plus_one(numbers[ix])
+    assert(8, total == 3)
+
+    total = plus_one(local[2])
+    assert(9, total == 41)
+
+    total = get_x(origin)
+    assert(10, total == 5)
+
+    total = get_x(p)
+    assert(11, total == 1)
+
+    var copy = numbers
+    assert(12, copy[3] == 4)
+
+    array_copy(local, numbers, 3)
+    assert(13, numbers[0] == 20 and numbers[2] == 40)
+}

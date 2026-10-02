@@ -493,6 +493,9 @@ class toc final {
             var.base_register = storage_frame->storage_base_register();
             storage_frame->record_storage_size_bytes(
                 add_storage_size(base_offset, allocated_size_bytes));
+        } else {
+            var.offset =
+                add_address_offset(var.offset, -variables_base_shift_bytes());
         }
 
         frames_.back().add_var(var, allocated_size_bytes, is_dat);
@@ -890,10 +893,18 @@ class toc final {
                              vars_entry_gap_applied_ ? 0 : vars_entry_gap_),
         };
 
+        const size_t aligned_size_bytes{
+            align_storage_size(root_size_bytes, frame_alignment),
+        };
+
+        const int64_t offset_from_dat{address_offset(aligned_size_bytes)};
+
+        const int64_t offset_from_base{
+            add_address_offset(offset_from_dat, -variables_base_shift_bytes()),
+        };
+
         return operand::mem(machine_.get().variables_base_register(), {}, 1,
-                            address_offset(align_storage_size(root_size_bytes,
-                                                              frame_alignment)),
-                            get_type_address());
+                            offset_from_base, get_type_address());
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
@@ -1428,6 +1439,24 @@ class toc final {
     // bytes of variables, without the dats and the gap after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
         return vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_;
+    }
+
+    // offsets count from 'dat', a base register past 'vars' makes the dats
+    // negative and the variables start below the base
+    [[nodiscard]] auto variables_base_shift_bytes() const -> int64_t {
+        const std::optional<size_t> past_vars_bytes{
+            machine_.get().variables_base_past_vars_bytes(),
+        };
+
+        if (not past_vars_bytes) {
+            return 0;
+        }
+
+        const size_t dats_bytes{
+            add_storage_size(total_dat_size_bytes_, vars_entry_gap_),
+        };
+
+        return address_offset(add_storage_size(dats_bytes, *past_vars_bytes));
     }
 
     //

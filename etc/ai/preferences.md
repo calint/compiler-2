@@ -50,6 +50,8 @@ project's own file (for compiler-2: `etc/ai/project.md`).
   are simple. Avoid nested "if/else, and inside the else another case" logic.
   A flat `else if` dispatch chain is fine.
 - Extract duplicated code into descriptively named helper functions.
+- Split nested calls such as `f(g(h(x)), -k())` into named intermediate
+  variables, one step per line, instead of one long argument expression.
 - Keep a straightforward lookup loop when a ranges find/projection plus
   iterator checks would be harder to read. Modern idioms are welcome when they
   genuinely simplify the expression.

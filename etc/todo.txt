@@ -278,14 +278,6 @@ hard, easiest first
          on both targets), new COMPERR for a narrowing argument
     => roome.baz: 'i64(counter)' does not compile on rv32i (no 'i64');
        'i(counter)' converts to the default type on both targets
-[ ] roome.baz (2026-09-29): rv32i: every local variable access needs
-    'lui'/'add': s0 points at 'dat' and the variables start about 150 KB
-    after it, behind 'rooms' and 'entities' (102 'lui X, 37', with their
-    'add' about 31% of the instructions, plus a scratch register per
-    access); small 'dat' items after the big arrays ('str_went_to',
-    'str_home') likewise
-    => a separate base register for variables, or variables and small
-       'dat' items placed before the large arrays
 [ ] survey (2026-09-28): a helper, 'idiv' or syscall result is copied out of
     its fixed register before the next operation: 'addi t2, a1, 0;
     sub t1, t1, t2' instead of 'sub t1, t1, a1' (257 rv32i sites), x86

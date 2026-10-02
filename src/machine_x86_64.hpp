@@ -1258,6 +1258,12 @@ class machine_x86_64 final : public machine {
         }
     }
 
+    [[nodiscard]] auto variables_base_past_vars_bytes() const
+        -> std::optional<size_t> override {
+
+        return std::nullopt;
+    }
+
     [[nodiscard]] auto variables_base_register() const
         -> std::string_view override {
 
