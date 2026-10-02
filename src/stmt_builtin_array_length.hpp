@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <format>
 #include <optional>
 #include <ostream>
+#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -57,9 +59,8 @@ class stmt_builtin_array_length final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        if (dst_info.is_const()) {
-            throw compiler_exception{tok(), "destination cannot be a constant"};
-        }
+        // note: assigning to a constant is rejected before the value is built
+        assert(not dst_info.is_const());
 
         if (dst_info.type_ref().name() != tc.get_type_default().name()) {
             throw compiler_exception{tok(),
@@ -79,12 +80,8 @@ class stmt_builtin_array_length final : public expression {
                                      "argument must refer to an array"};
         }
 
-        // variable, register or field
-        x.copy_value(
-            tok(), indent, dst_info.operand,
-            operand::imm(std::format("{}", src_info.array_len), get_type()));
-
-        get_unary_ops().compile(tc, indent, dst_info.operand);
+        // a valid argument and destination are folded by 'folded_constant'
+        std::unreachable();
     }
 
     // a narrower width stays unfolded so 'compile' rejects the destination

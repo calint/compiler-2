@@ -1,0 +1,15 @@
+# a constructor call requires parentheses
+
+type point {
+    x,
+    y
+}
+
+func point.at(x, y) self {
+    self.x = x
+    self.y = y
+}
+
+func main() {
+    var p = point.at
+}

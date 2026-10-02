@@ -1,0 +1,6 @@
+# a string is not a constant operand of let
+
+func main() {
+    let s = "abc"
+    exit(3)
+}

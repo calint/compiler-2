@@ -1,0 +1,17 @@
+# a read-only argument cannot be passed to a mut parameter of a method
+
+type tk { start, end }
+
+func tk.copy_to(dst mut tk) {
+    dst.start = self.start
+}
+
+func fill(t tk) {
+    var a = tk{1, 2}
+    a.copy_to(t)
+}
+
+func main() {
+    var b = tk{3, 4}
+    fill(b)
+}

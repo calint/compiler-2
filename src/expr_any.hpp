@@ -184,9 +184,9 @@ class expr_any final : public statement {
     [[nodiscard]] auto accessed_range() const
         -> std::optional<field_coverage::range> override {
 
-        if (is_array_ or vars_.size() != 1) {
-            return std::nullopt;
-        }
+        // note: only identifier arguments ask, and those are never arrays
+        assert(not is_array_);
+        assert(vars_.size() == 1);
 
         return vars_[0].visit(
             [](const auto& expression) -> std::optional<field_coverage::range> {
@@ -222,9 +222,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        if (is_array_) {
-            return statement::get_unary_ops();
-        }
+        assert(not is_array_);
 
         return vars_[0].visit([](const auto& expression) -> const unary_ops& {
             return expression.get_unary_ops();
@@ -265,19 +263,13 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
-        if (is_identifier_) {
-            return true;
-        }
-
         return vars_[0].visit([](const auto& expression) -> bool {
             return expression.is_identifier();
         });
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
-        if (is_array_) {
-            return false;
-        }
+        assert(not is_array_);
 
         return vars_[0].visit([](const auto& expression) -> bool {
             return expression.is_indexed();
@@ -339,27 +331,22 @@ class expr_any final : public statement {
                                     const ident_info& dst_info) const
         -> std::optional<int64_t> {
 
-        if (is_array_) {
-            return std::nullopt;
-        }
+        // note: only an index expression asks, it is never an array and has
+        //       the default type
+        assert(not is_array_);
 
-        const expr_arith* const arith{std::get_if<expr_arith>(&vars_.front())};
-        if (arith == nullptr) {
-            return std::nullopt;
-        }
+        const expr_arith& arith{std::get<expr_arith>(vars_.front())};
 
-        arith->assert_not_narrowed(tc, dst_info.type_ref());
+        arith.assert_not_narrowed(tc, dst_info.type_ref());
 
-        return arith->compile_without_trailing_addend(tc, indent, dst_info);
+        return arith.compile_without_trailing_addend(tc, indent, dst_info);
     }
 
     // e.g. '-2' or a named constant, empty when computed at run time
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<int64_t> {
 
-        if (is_array_) {
-            return std::nullopt;
-        }
+        assert(not is_array_);
 
         const expr_variant& e{vars_.front()};
 

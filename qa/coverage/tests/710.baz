@@ -1,0 +1,11 @@
+# a constant passed to a mut parameter cannot be written
+
+let c = 1
+
+func bump(x mut) {
+    x = x + 1
+}
+
+func main() {
+    bump(c)
+}

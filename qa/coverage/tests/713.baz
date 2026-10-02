@@ -1,0 +1,6 @@
+# a type name alone is not a data value
+
+dat x = i8
+
+func main() {
+}

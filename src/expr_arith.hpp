@@ -221,9 +221,7 @@ class expr_arith final : public expression {
     [[nodiscard]] auto accessed_range() const
         -> std::optional<field_coverage::range> override {
 
-        if (exprs_.size() != 1) {
-            return std::nullopt;
-        }
+        assert(exprs_.size() == 1);
 
         return exprs_[0]->accessed_range();
     }

@@ -7,6 +7,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -83,10 +84,8 @@ class stmt_def_func final : public statement {
         // register variables without emitting output so that the function body
         // can be parsed
 
-        if (returns_ and returns_->ident_tk.text().empty()) {
-            throw compiler_exception{returns_->ident_tk,
-                                     "expected return reference name"};
-        }
+        // note: 'parse_returns' only creates a return with a name
+        assert(not returns_ or not returns_->ident_tk.text().empty());
 
         add_signature_vars(tc, 0, false);
 

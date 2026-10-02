@@ -1,0 +1,20 @@
+# a constant element decides a boolean list passed to an inline function
+
+func pick(flag bool) res {
+    res = 0
+    if flag {
+        res = 1
+    }
+}
+
+func main() {
+    var x = 0
+    let k = 3
+    var a = pick(1 == 1 or x == 5)
+    var b = pick(1 == 2 and x == 5)
+    var c = pick(1 == 2 or x == 5)
+    var d = pick(1 == 1 and x == 5)
+    var e = pick(k == 3 or x == 5)
+    var f = pick(not (1 == 1 or x == 5))
+    exit(a + b + c + d + e + f)
+}

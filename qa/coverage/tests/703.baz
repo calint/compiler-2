@@ -1,0 +1,8 @@
+# a field array size is required
+
+type t {
+    a[]
+}
+
+func main() {
+}

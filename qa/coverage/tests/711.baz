@@ -1,0 +1,17 @@
+# an error in a method body names the method call
+
+type point {
+    x,
+    y
+}
+
+let k = 1
+
+func point.bad() {
+    k = 3
+}
+
+func main() {
+    var p = point{1, 2}
+    p.bad()
+}

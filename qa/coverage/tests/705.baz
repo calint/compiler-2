@@ -1,0 +1,5 @@
+# a let initializer starting with a symbol is not a constant
+
+func main() {
+    let t = $
+}

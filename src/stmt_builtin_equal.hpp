@@ -95,7 +95,8 @@ class stmt_builtin_equal final : public expression {
         }
 
         // check comparing 2 arrays of the same size without indexing
-        if (lhs_info.is_array and rhs_info.is_array) {
+        // note: a whole array on one side only was rejected above
+        if (lhs_info.is_array) {
 
             if (lhs_info.array_len != rhs_info.array_len) {
                 throw compiler_exception{lhs_.tok(),

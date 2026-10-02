@@ -537,9 +537,7 @@ class stmt_call : public expression {
             rhs.accessed_range(),
         };
 
-        if (not lhs_range or not rhs_range) {
-            return false;
-        }
+        assert(lhs_range and rhs_range);
 
         if (named_variable(lhs) != named_variable(rhs)) {
             return false;
@@ -1141,6 +1139,7 @@ class stmt_call : public expression {
         }
 
         const ident_info info{tc.make_ident_info(arg)};
+
         if (not info.is_var()) {
             throw compiler_exception{arg.tok(), "argument must be a variable"};
         }
@@ -1150,10 +1149,9 @@ class stmt_call : public expression {
                                      "whole-array arguments are unsupported"};
         }
 
-        if (param.is_array()) {
-            throw compiler_exception{arg.tok(),
-                                     "array parameters are unsupported"};
-        }
+        // note: a non-array argument for an array parameter is rejected when
+        //       the call is parsed and an array argument just above
+        assert(not param.is_array());
 
         if (&info.type_ref() != &param.get_type()) {
             throw_parameter_type_mismatch(arg, param, info);

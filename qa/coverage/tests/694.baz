@@ -1,0 +1,5 @@
+# a call requires parentheses
+
+func main() {
+    exit
+}

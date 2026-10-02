@@ -1,0 +1,7 @@
+# a negative constant count is rejected at run time by the lower check
+
+func main() {
+    var a = [4]{1, 2, 3, 4}
+    var b = [4]{}
+    array_copy(a, b, -1)
+}

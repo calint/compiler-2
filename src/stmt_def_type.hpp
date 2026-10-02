@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cassert>
 #include <format>
 #include <vector>
 
@@ -79,19 +80,22 @@ class stmt_def_type final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         open_brace_tk_.source_to(os);
-        if (not fields_.empty()) {
-            fields_.front().source_to(os);
-            for (const auto [d, e] : std::views::zip(
-                     field_delims_tk_, fields_ | std::views::drop(1))) {
 
-                d.source_to(os);
-                e.source_to(os);
-            }
+        // note: a type has at least one field
+        assert(not fields_.empty());
 
-            if (field_delims_tk_.size() == fields_.size()) {
-                field_delims_tk_.back().source_to(os);
-            }
+        fields_.front().source_to(os);
+        for (const auto [d, e] :
+             std::views::zip(field_delims_tk_, fields_ | std::views::drop(1))) {
+
+            d.source_to(os);
+            e.source_to(os);
         }
+
+        if (field_delims_tk_.size() == fields_.size()) {
+            field_delims_tk_.back().source_to(os);
+        }
+
         close_brace_tk_.source_to(os);
     }
 

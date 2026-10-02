@@ -1,0 +1,6 @@
+# a built-in element of a data definition must be a constant
+
+func main() {
+    var y = 1
+    dat x = []{y}
+}

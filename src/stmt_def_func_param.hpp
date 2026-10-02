@@ -17,9 +17,6 @@ class stmt_def_func_param final : public statement {
     // storage are not a hazard
     bool is_read_only_{};
 
-    // the 'self' of a method is not written in the source
-    bool is_implicit_{};
-
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
         : statement{tz.next_token()} {
@@ -35,7 +32,7 @@ class stmt_def_func_param final : public statement {
     }
 
     stmt_def_func_param(const token tk, const type& tp, const bool is_read_only)
-        : statement{tk}, is_read_only_{is_read_only}, is_implicit_{true} {
+        : statement{tk}, is_read_only_{is_read_only} {
 
         set_type(tp);
     }
@@ -47,10 +44,6 @@ class stmt_def_func_param final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        if (is_implicit_) {
-            return;
-        }
-
         statement::source_to(os);
         mut_tk_.source_to(os);
         if (not type_tk_.is_empty()) {

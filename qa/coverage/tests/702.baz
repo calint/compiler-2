@@ -1,0 +1,9 @@
+# 'noinline' is a function name when parentheses follow
+
+func noinline() {
+}
+
+func main() {
+    noinline()
+    exit(3)
+}

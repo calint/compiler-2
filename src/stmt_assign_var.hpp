@@ -80,7 +80,7 @@ class stmt_assign_var final : public statement {
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
 
-                src_info.is_array and var_dst_info.is_array and
+                src_info.is_array and
                 src_info.array_len != var_dst_info.array_len) {
 
                 throw compiler_exception{

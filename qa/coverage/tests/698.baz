@@ -1,0 +1,9 @@
+# a function name has no fields
+
+func noop() res {
+    res = 1
+}
+
+func main() {
+    var y = noop.x
+}

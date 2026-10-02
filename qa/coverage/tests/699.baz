@@ -1,0 +1,6 @@
+# read and write take 2 to 4 arguments
+
+func main() {
+    var buf = i8[4]{}
+    read(0, buf, 1, 0, 9)
+}

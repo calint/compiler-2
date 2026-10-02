@@ -1,0 +1,7 @@
+# read cannot fill a constant
+
+let c = 5
+
+func main() {
+    read(0, c, 1)
+}
