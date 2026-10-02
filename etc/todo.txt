@@ -167,6 +167,22 @@ medium, easiest first
        assessed but touches 4 files and a new virtual hook
     => the old example 'var b=-(-a*-a)' no longer emits 'neg; neg', its
        remaining cost is algebraic ('-a * -a' is 'a * a', 'a' loaded twice)
+[ ] low priority: size overflow errors have no source location: a huge array
+    size ('var a = [4611686018427387904]{}', a record field 'a[...]', two
+    huge 'dat' arrays, 'array_copy' with a huge constant count) makes the
+    helpers in 'decouple.hpp' ('add_storage_size', 'multiply_storage_size')
+    throw 'std::overflow_error', which 'main.cpp' prints as a bare message
+    without file and line
+    => throw sites: 'toc::add_var' (via 'stmt_def_var'), 'type::add_field'
+       (via 'stmt_def_type'), 'frame::add_var' (via 'stmt_def_dat'),
+       'stmt_builtin_array_copy::compile_constant_count'
+    => options: catch at each caller and throw 'compiler_exception' with its
+       token, or pass 'src_loc_tk' to the helpers (about 35 call sites);
+       translating in the 'stmt_block'/'program' statement loops was tried
+       and rejected
+    => 'address_offset', 'scaled_address_offset' and 'add_address_offset'
+       were not reached from user input
+    => then add tests for the located errors
 
 --------------------------------------------------------------------------------
 hard, easiest first
