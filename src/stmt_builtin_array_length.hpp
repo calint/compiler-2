@@ -5,7 +5,6 @@
 #include <format>
 #include <optional>
 #include <ostream>
-#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -75,13 +74,12 @@ class stmt_builtin_array_length final : public expression {
                                      "argument must be a variable"};
         }
 
-        if (not src_info.is_array) {
-            throw compiler_exception{stmt_ident_.first_token(),
-                                     "argument must refer to an array"};
-        }
+        // note: 'folded_constant' folds an array argument, so only a
+        //       non-array reaches here
+        assert(not src_info.is_array);
 
-        // a valid argument and destination are folded by 'folded_constant'
-        std::unreachable();
+        throw compiler_exception{stmt_ident_.first_token(),
+                                 "argument must refer to an array"};
     }
 
     // a narrower width stays unfolded so 'compile' rejects the destination

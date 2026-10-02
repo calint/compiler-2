@@ -7,7 +7,9 @@ func main() {
         var b = 5 % 0
         var c = 1 << 64
         var e = 5 / -1
-        exit(a + b + c + e)
+        var f = i8(0)
+        f = -128 / -1
+        exit(a + b + c + e + f)
     }
     exit(7)
 }

@@ -462,10 +462,9 @@ class expr_bool_op final : public statement {
         if (op == ">") {
             return lh > rh;
         }
-        if (op == ">=") {
-            return lh >= rh;
-        }
-        std::unreachable();
+        assert(op == ">=");
+
+        return lh >= rh;
     }
 
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,

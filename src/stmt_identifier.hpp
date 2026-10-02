@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -132,9 +133,7 @@ class stmt_identifier : public statement {
         -> void override {
 
         // records are copied whole and cannot narrow
-        if (not dst_type.is_builtin()) {
-            return;
-        }
+        assert(dst_type.is_builtin());
 
         const ident_info info{tc.make_ident_info(*this)};
 
@@ -328,9 +327,7 @@ class stmt_identifier : public statement {
     }
 
     auto path_source_to(std::ostream& os) const -> void {
-        if (elems_.empty()) {
-            return;
-        }
+        assert(not elems_.empty());
 
         elems_.front().source_to(os);
         for (const auto [d, e] :
@@ -724,9 +721,12 @@ class stmt_identifier : public statement {
                                       const bool is_last_elem,
                                       const operand& reg_count) -> void {
 
-        if (not cur_info.is_array or not is_last_elem or reg_count.is_empty()) {
+        if (not cur_info.is_array or reg_count.is_empty()) {
             return;
         }
+
+        // note: an array before the last element is indexed
+        assert(is_last_elem);
 
         check_array_bounds(tc, indent, src_loc_tk, reg_count,
                            cur_info.array_len, true);

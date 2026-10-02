@@ -1,0 +1,18 @@
+# nested indexed addresses are folded into the array copy address registers
+
+type cell {
+    tag,
+    vals[4]
+}
+
+func main() {
+    var cells = cell[3]{}
+    var out = [4]{}
+    var i = 1
+    var j = 0
+    var n = 2
+    cells[i].vals[j] = 7
+    array_copy(cells[i].vals[j], out, n)
+    array_copy(out, cells[i].vals[j], n)
+    exit(out[0] - 7)
+}

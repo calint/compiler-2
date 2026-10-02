@@ -1,0 +1,9 @@
+# adding the most negative value of the width stays an addition
+
+func main() {
+    var b = i8(1)
+    b = b + -128
+    var w = i16(1)
+    w = w + -32768
+    exit(b + 128 + w + 32768 - 2)
+}

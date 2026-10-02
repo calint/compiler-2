@@ -3,6 +3,7 @@
 //           2025-10-08
 //           2026-09-08
 
+#include <cassert>
 #include <format>
 #include <memory>
 #include <ranges>
@@ -949,8 +950,10 @@ class stmt_call : public expression {
         std::vector<operand> addresses;
 
         if (func.returns()) {
-            addresses.push_back(
-                result_address(tc, indent, dst_info, address_registers));
+            // note: 'stmt_assign_var' resolves a pointer slot before the call
+            assert(not dst_info.is_pointer or dst_info.use_operand);
+
+            addresses.push_back(dst_info.operand);
         }
 
         for (const expr_any& arg : args_) {
@@ -970,8 +973,11 @@ class stmt_call : public expression {
     [[nodiscard]] auto is_inside_call(const compiler_exception& e) const
         -> bool {
 
-        return e.start_index >= call_begin_token().start_index() and
-               e.start_index <= close_paren_tk_.end_index();
+        // note: a callee is defined before its call, so a body error is not
+        //       located after the call
+        assert(e.start_index <= close_paren_tk_.end_index());
+
+        return e.start_index >= call_begin_token().start_index();
     }
 
     [[nodiscard]] auto is_method() const -> bool {
@@ -1062,31 +1068,6 @@ class stmt_call : public expression {
                 arg_delims_tk_.emplace_back(delim_tk);
             }
         }
-    }
-
-    // a result that is itself a pointer slot is reached through the address
-    // loaded from it, unless the operand is already resolved
-    [[nodiscard]] auto
-    result_address(toc& tc, const size_t indent, const ident_info& dst_info,
-                   std::vector<operand>& address_registers) const -> operand {
-
-        if (not dst_info.is_pointer or dst_info.use_operand) {
-            return dst_info.operand;
-        }
-
-        machine& x{tc.machine()};
-
-        const operand pointer{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_address()),
-        };
-
-        address_registers.push_back(pointer);
-
-        x.copy_value(tok(), indent, pointer,
-                     operand::mem(dst_info.operand, tc.get_type_address()));
-
-        return operand::mem(pointer.base_register(), {}, 1, 0,
-                            dst_info.type_ref());
     }
 
     // e.g. 'foo', 'lst.add' or 'point.at'

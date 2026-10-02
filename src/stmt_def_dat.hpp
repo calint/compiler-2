@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cassert>
 #include <format>
 #include <functional>
 #include <ostream>
@@ -276,7 +277,9 @@ class stmt_def_dat final : public statement {
             x.emit_string_data(elroot.tk.string_text());
             const size_t size_bytes{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
-            if (elroot.array_count != 0 and size_bytes < elroot.array_count) {
+            assert(elroot.array_count != 0);
+
+            if (size_bytes < elroot.array_count) {
                 x.comment(elroot.tk, 0, "zero remaining array");
                 x.emit_repeated_data(tp.size_bytes(),
                                      elroot.array_count - size_bytes, {});

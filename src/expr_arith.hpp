@@ -301,15 +301,11 @@ class expr_arith final : public expression {
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        // is this list one element?
-        if (exprs_.size() == 1) {
-            // then the unary ops are on the first element
-            return exprs_[0]->get_unary_ops();
-        }
+        // note: the unary ops of a multi-element list are never asked for,
+        //       they are compiled with the list
+        assert(exprs_.size() == 1);
 
-        // in the multi-element list, unary ops for all are on the current list
-        // element
-        return uops_;
+        return exprs_[0]->get_unary_ops();
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
@@ -393,9 +389,8 @@ class expr_arith final : public expression {
                                     const ident_info& dst_info) const
         -> std::optional<int64_t> {
 
-        if (not uops_.is_empty()) {
-            return std::nullopt;
-        }
+        // note: only an index expression asks, it has no unary ops of its own
+        assert(uops_.is_empty());
 
         const type& width_type{dst_info.type_ref()};
 
@@ -538,9 +533,8 @@ class expr_arith final : public expression {
                                         const ident_info& dst_info) const
         -> bool {
 
-        if (not dst_info.operand.is_memory()) {
-            return false;
-        }
+        // note: a register destination is compiled directly by 'compile'
+        assert(dst_info.operand.is_memory());
 
         if (dst_info.type_ref().size_bytes() >=
             tc.get_type_default().size_bytes()) {
@@ -587,7 +581,9 @@ class expr_arith final : public expression {
         -> void {
 
         // e.g. '2 * 3 / b' or '3 - b'
-        if (first.element == nullptr and first.value) {
+        if (first.element == nullptr) {
+            assert(first.value);
+
             compile_constant(tc, indent, dst_info, *first.value,
                              first.folded_source);
 
@@ -711,9 +707,11 @@ class expr_arith final : public expression {
     [[nodiscard]] auto is_end_of_implied_subexpression(
         const uint8_t precedence, const uint8_t next_precedence) const -> bool {
 
-        return is_implied_subexpression_ and
-               precedence != initial_precedence and
-               next_precedence < precedence;
+        // note: a sub-expression starts at an operator, so it has a precedence
+        assert(not is_implied_subexpression_ or
+               precedence != initial_precedence);
+
+        return is_implied_subexpression_ and next_precedence < precedence;
     }
 
     // unary ops on a memory destination are a load, modify and store on a

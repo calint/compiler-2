@@ -1,0 +1,7 @@
+# an index ending in a multiplied or divided constant gets no displacement
+
+func main() {
+    var arr = [16]{0, 1, 2, 3, 4, 5, 6, 7}
+    var m = 2
+    exit(arr[m * 2] + arr[m / 2])
+}
