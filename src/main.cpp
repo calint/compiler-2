@@ -280,8 +280,8 @@ checks:
   lower  runtime lower array bounds
   line   report line number on failed bounds check
   frame  runtime non-inlined function frame capacity
-  alias  compile time rejection of calls where a result or argument may
-         share storage
+  alias  compile time rejection of calls where a result may share storage
+         with an argument
   noub   all checks against undefined behavior: upper, lower, frame and
          alias
 

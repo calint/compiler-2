@@ -181,6 +181,19 @@ class expr_any final : public statement {
             array_count - vars_.size());
     }
 
+    [[nodiscard]] auto accessed_range() const
+        -> std::optional<field_coverage::range> override {
+
+        if (is_array_ or vars_.size() != 1) {
+            return std::nullopt;
+        }
+
+        return vars_[0].visit(
+            [](const auto& expression) -> std::optional<field_coverage::range> {
+                return expression.accessed_range();
+            });
+    }
+
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 

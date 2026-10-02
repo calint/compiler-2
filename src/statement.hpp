@@ -43,6 +43,14 @@ class statement {
     // virtual methods
     //
 
+    // the bytes of its root variable that an identifier path reaches, a path
+    // with a run-time index reaches its whole array
+    [[nodiscard]] virtual auto accessed_range() const
+        -> std::optional<field_coverage::range> {
+
+        return std::nullopt;
+    }
+
     // throws if the value would silently lose bits when stored as 'dst_type'
     virtual auto
     assert_not_narrowed([[maybe_unused]] const toc& tc,

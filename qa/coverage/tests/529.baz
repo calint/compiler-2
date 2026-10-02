@@ -1,4 +1,4 @@
-# --checks=alias: two by-reference arguments may share storage
+# two by-reference arguments may share storage when one is 'mut'
 
 func add_into(dst mut, src) {
     dst = dst + src

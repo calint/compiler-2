@@ -135,10 +135,16 @@ medium, easiest first
     segfaults before the frame check. check 'rsp'/'sp' or depth at each call
 [ ] --checks=noub: signed overflow wraps. define wrapping as the semantics or
     add --checks=overflow (x86 'jo', rv32i several instructions)
-[ ] --checks=alias: accept disjoint constant paths by comparing byte ranges
+[x] --checks=alias: accept disjoint constant paths by comparing byte ranges
     (137.baz-140.baz, 294.baz, 418.baz)
-[ ] --checks=alias: accept shared arguments when the callee assigns neither
+    => done (2026-10-02, 'stmt_call::reach_disjoint_bytes', test 681): applies
+       to arguments naming the same variable, run-time indexes count as the
+       whole array (test 682)
+[x] --checks=alias: accept shared arguments when the callee assigns neither
     parameter (128.baz-133.baz, 414.baz)
+    => done: only a pair with a 'mut' parameter is rejected, and now always,
+       not only with --checks=alias; '--checks=alias' keeps the comparison of
+       the result destination with the arguments
 [ ] --checks=alias: route inline builtin results through a scratch register
     instead of rejecting (077.baz, 135.baz, 394.baz, 397.baz, 485.baz)
     => then re-enable 485.baz
@@ -201,6 +207,9 @@ hard, easiest first
     e.g. 'g(q, q)' where 'g' writes one and reads the other. inside inline
     functions the destination-read checks compare names, so 'res' and 'p'
     referring to the same caller variable are not detected
+    => arguments of one call: done (2026-10-02), a pair sharing storage with
+       a 'mut' parameter is rejected without --checks=alias; left: different
+       alias names of one caller variable inside an inline body
 [ ] UB detection: consider accepting partial results when the caller's
     destination is already initialized (call-site coverage summary)
     => prog.baz 'object_init' sets only 'res.pos.y' and is rejected

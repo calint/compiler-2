@@ -64,6 +64,10 @@ class expr_type final : public statement {
         -> void override;
 
     // out-of-line: calls 'stmt_identifier'
+    [[nodiscard]] auto accessed_range() const
+        -> std::optional<field_coverage::range> override;
+
+    // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,

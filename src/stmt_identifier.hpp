@@ -122,6 +122,12 @@ class stmt_identifier : public statement {
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
+    [[nodiscard]] auto accessed_range() const
+        -> std::optional<field_coverage::range> override {
+
+        return access_range_;
+    }
+
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 

@@ -1,0 +1,45 @@
+# arguments that reach different bytes of one variable can be passed together
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+type pair {a, b}
+
+func swap_values(x mut, y mut) {
+    var tmp = x
+    x = y
+    y = tmp
+}
+
+func noinline swap_noinline(x mut, y mut) {
+    var tmp = x
+    x = y
+    y = tmp
+}
+
+func main() {
+    var values = [3]{1, 2, 3}
+    swap_values(values[0], values[2])
+    assert(1, values[0] == 3)
+    assert(2, values[1] == 2)
+    assert(3, values[2] == 1)
+
+    var p = pair{4, 5}
+    swap_values(p.a, p.b)
+    assert(4, p.a == 5)
+    assert(5, p.b == 4)
+
+    var ps = pair[2]{}
+    ps[0] = {6, 7}
+    ps[1] = {8, 9}
+    swap_values(ps[0].b, ps[1].a)
+    assert(6, ps[0].b == 8)
+    assert(7, ps[1].a == 7)
+
+    swap_noinline(values[0], values[1])
+    assert(8, values[0] == 2)
+    assert(9, values[1] == 3)
+
+    swap_noinline(p.a, p.b)
+    assert(10, p.a == 4)
+    assert(11, p.b == 5)
+}

@@ -105,8 +105,8 @@ checks:
   lower  runtime lower array bounds
   line   report line number on failed bounds check
   frame  runtime non-inlined function frame capacity
-  alias  compile time rejection of calls where a result or argument may
-         share storage
+  alias  compile time rejection of calls where a result may share storage
+         with an argument
   noub   all checks against undefined behavior: upper, lower, frame and
          alias
 
@@ -131,10 +131,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5949           2334          19032
+C/C++ Header                    54           5972           2343          19087
 C++                              1            104             22            403
 -------------------------------------------------------------------------------
-SUM:                            55           6053           2356          19435
+SUM:                            55           6076           2365          19490
 -------------------------------------------------------------------------------
 ```
 

@@ -747,6 +747,17 @@ auto expr_type::identifier() const -> std::string_view {
 
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
+auto expr_type::accessed_range() const -> std::optional<field_coverage::range> {
+
+    if (not stmt_ident_) {
+        return std::nullopt;
+    }
+
+    return stmt_ident_->accessed_range();
+}
+
+// declared in 'expr_type.hpp'
+// solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::is_indexed() const -> bool {
     return stmt_ident_ and stmt_ident_->is_indexed();
 }

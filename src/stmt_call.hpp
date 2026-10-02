@@ -218,15 +218,14 @@ class stmt_call : public expression {
 
     [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
 
-    // the callee writes a result or by-reference parameter in place, so
-    // storage shared with another reference could be read after it changed,
-    // unless both parameters are not 'mut' and nothing is written
+    // the callee writes a 'mut' parameter in place, so storage shared with
+    // another argument could be read after it changed, unless both
+    // parameters are read-only. the result destination is only compared with
+    // '--checks=alias'
     auto assert_no_shared_storage(const toc& tc, const ident_info& dst_info,
                                   const stmt_def_func& func) const -> void {
 
-        if (not tc.is_alias_check()) {
-            return;
-        }
+        const bool is_result_checked{tc.is_alias_check()};
 
         struct reference {
             size_t index;
@@ -251,7 +250,8 @@ class stmt_call : public expression {
                 continue;
             }
 
-            if (dst_info.is_var() and may_share_storage(tc, dst_info, info)) {
+            if (is_result_checked and dst_info.is_var() and
+                may_share_storage(tc, dst_info, info)) {
                 throw compiler_exception{
                     arg.tok(),
                     std::format("{} may share storage with the result "
@@ -266,7 +266,9 @@ class stmt_call : public expression {
                     continue;
                 }
 
-                if (may_share_storage(tc, other.info, info)) {
+                if (may_share_storage(tc, other.info, info) and
+                    not reach_disjoint_bytes(args_[other.index], arg)) {
+
                     throw compiler_exception{
                         arg.tok(),
                         std::format("{} may share storage with {}, use a "
@@ -511,6 +513,39 @@ class stmt_call : public expression {
         }
 
         return rhs.is_pointer and tc.is_global_var(lhs_root);
+    }
+
+    // 'p' of 'p.x.y'
+    [[nodiscard]] static auto named_variable(const expr_any& arg)
+        -> std::string_view {
+
+        const std::string_view path{arg.identifier()};
+
+        return path.substr(0, path.find('.'));
+    }
+
+    // the ranges are offsets into the variable the argument names, so they
+    // are only comparable when both name the same one
+    [[nodiscard]] static auto reach_disjoint_bytes(const expr_any& lhs,
+                                                   const expr_any& rhs)
+        -> bool {
+
+        const std::optional<field_coverage::range> lhs_range{
+            lhs.accessed_range(),
+        };
+        const std::optional<field_coverage::range> rhs_range{
+            rhs.accessed_range(),
+        };
+
+        if (not lhs_range or not rhs_range) {
+            return false;
+        }
+
+        if (named_variable(lhs) != named_variable(rhs)) {
+            return false;
+        }
+
+        return not lhs_range->overlaps(*rhs_range);
     }
 
     [[noreturn]] static auto

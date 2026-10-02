@@ -218,6 +218,16 @@ class expr_arith final : public expression {
             [&] -> void { compile_through_scratch(tc, indent, dst_info); });
     }
 
+    [[nodiscard]] auto accessed_range() const
+        -> std::optional<field_coverage::range> override {
+
+        if (exprs_.size() != 1) {
+            return std::nullopt;
+        }
+
+        return exprs_[0]->accessed_range();
+    }
+
     // each element is computed at the width of the destination
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
