@@ -6,6 +6,11 @@
   `rm -rf`, `git push`, `git reset --hard`, `git clean`, `sudo`.
 - Scratch files only in `/tmp`. Workspace root: `/home/c/w/compiler-2`.
 
+## agents.md
+
+- Read and follow this file every session.
+- Whenever a preference is added to memory, add it here in the same turn.
+
 ## communication
 
 - Short, plain, impersonal; no emphasis words or emojis.
