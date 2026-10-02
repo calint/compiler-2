@@ -73,12 +73,12 @@ class token final {
         const std::string joined{string_text()};
         const std::string_view s{joined};
         for (size_t i{}; i < s.size(); ++i, ++len) {
-            if (s[i] != '\\' or i + 1 >= s.size()) {
+            if (s.at(i) != '\\' or i + 1 >= s.size()) {
                 continue;
             }
 
             // skip \xHH or a 2-character escape sequence
-            i += (s[i + 1] == 'x' and i + 3 < s.size()) ? 3 : 1;
+            i += (s.at(i + 1) == 'x' and i + 3 < s.size()) ? 3 : 1;
         }
 
         return len;
@@ -90,12 +90,12 @@ class token final {
         std::string joined;
         joined.reserve(text_.size());
         for (size_t i{}; i < text_.size(); ++i) {
-            if (text_[i] != '\\' or i + 1 >= text_.size()) {
-                joined += text_[i];
+            if (text_.at(i) != '\\' or i + 1 >= text_.size()) {
+                joined += text_.at(i);
                 continue;
             }
 
-            if (text_[i + 1] == '\n') {
+            if (text_.at(i + 1) == '\n') {
                 i += 1;
                 continue;
             }
@@ -108,8 +108,8 @@ class token final {
 
             // keep the pair so an escaped backslash is not taken as a
             // continuation
-            joined += text_[i];
-            joined += text_[i + 1];
+            joined += text_.at(i);
+            joined += text_.at(i + 1);
             i += 1;
         }
 
@@ -136,7 +136,7 @@ class token final {
             return std::nullopt;
         }
 
-        switch (escape[0]) {
+        switch (escape.at(0)) {
         case '0':
             return '\0';
 
@@ -168,7 +168,7 @@ class token final {
         case '\'':
         case '"':
         case '`':
-            return escape[0];
+            return escape.at(0);
 
         default:
             return std::nullopt;
@@ -181,8 +181,8 @@ class token final {
 
         std::string bytes;
         for (size_t i{}; i < text.size(); ++i) {
-            if (text[i] != '\\') {
-                bytes += text[i];
+            if (text.at(i) != '\\') {
+                bytes += text.at(i);
                 continue;
             }
 

@@ -638,7 +638,7 @@ class machine {
 
         uint64_t bits{};
         for (size_t i{}; i < bytes.size(); ++i) {
-            bits |= uint64_t{static_cast<unsigned char>(bytes[i])}
+            bits |= uint64_t{static_cast<unsigned char>(bytes.at(i))}
                     << (byte_bits * i);
         }
 

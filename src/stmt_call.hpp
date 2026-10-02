@@ -156,7 +156,7 @@ class stmt_call : public expression {
         // the receiver is written before the name
         const size_t first{first_argument_index()};
         if (args_.size() > first) {
-            args_[first].source_to(os);
+            args_.at(first).source_to(os);
             for (const auto [d, e] : std::views::zip(
                      arg_delims_tk_, args_ | std::views::drop(first + 1))) {
 
@@ -214,7 +214,7 @@ class stmt_call : public expression {
     [[nodiscard]] auto argument(const size_t arg_index) const
         -> const statement& {
 
-        return args_[arg_index];
+        return args_.at(arg_index);
     }
 
     [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
@@ -237,7 +237,7 @@ class stmt_call : public expression {
         std::vector<reference> references;
 
         for (size_t i{}; i < args_.size(); ++i) {
-            const expr_any& arg{args_[i]};
+            const expr_any& arg{args_.at(i)};
 
             // expressions and unary operators pass a copied value
             if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
@@ -268,7 +268,7 @@ class stmt_call : public expression {
                 }
 
                 if (may_share_storage(tc, other.info, info) and
-                    not reach_disjoint_bytes(args_[other.index], arg)) {
+                    not reach_disjoint_bytes(args_.at(other.index), arg)) {
 
                     throw compiler_exception{
                         arg.tok(),
@@ -326,7 +326,7 @@ class stmt_call : public expression {
         for (size_t index{}; index < registers.size(); ++index) {
 
             args.push_back(x.alloc_named_register(
-                tok(), indent, registers[index], tc.get_type_default()));
+                tok(), indent, registers.at(index), tc.get_type_default()));
 
             argument(index).compile(
                 tc, indent, toc::make_ident_info_from_register(args.back()));
@@ -610,7 +610,7 @@ class stmt_call : public expression {
     auto assert_argument_writable(const toc& tc, const size_t index,
                                   const stmt_def_func& func) const -> void {
 
-        const expr_any& arg{args_[index]};
+        const expr_any& arg{args_.at(index)};
 
         // expressions and unary operators pass a copied value
         if (not arg.is_identifier() or arg.is_expression() or
@@ -689,7 +689,7 @@ class stmt_call : public expression {
 
     // the receiver of a method is written before the name
     [[nodiscard]] auto call_begin_token() const -> const token& {
-        return is_method() ? args_[0].tok() : tok();
+        return is_method() ? args_.at(0).tok() : tok();
     }
 
     // the result address comes first, then one address per argument
@@ -705,8 +705,8 @@ class stmt_call : public expression {
         const size_t arg_idx{slot_index - (func.returns() ? 1 : 0)};
 
         x.comment(tok(), indent, "address of argument '{}' to parameter '{}'",
-                  statement::trimmed_source(args_[arg_idx]),
-                  func.params()[arg_idx].name());
+                  statement::trimmed_source(args_.at(arg_idx)),
+                  func.params().at(arg_idx).name());
     }
 
     // the id has no indexes, so an id naming an array means the result is
@@ -1020,18 +1020,18 @@ class stmt_call : public expression {
             // otherwise the missing argument is reported as a parse error of
             // the parameter's type
             if (i == first and tz.peek_char_after_whitespace() == ')') {
-                throw_missing_argument(tz, params[i], i);
+                throw_missing_argument(tz, params.at(i), i);
             }
 
             if (i != first) {
                 const token t{tz.is_next_char_token(',')};
                 if (t.is_empty()) {
-                    throw_missing_argument(tz, params[i], i);
+                    throw_missing_argument(tz, params.at(i), i);
                 }
                 arg_delims_tk_.emplace_back(t);
             }
 
-            args_.emplace_back(tc, tz, params[i].get_type(), true, false, 0);
+            args_.emplace_back(tc, tz, params.at(i).get_type(), true, false, 0);
         }
 
         close_paren_tk_ = tz.is_next_char_token(')');
@@ -1040,7 +1040,7 @@ class stmt_call : public expression {
         }
 
         for (size_t i{}; i < args_.size(); ++i) {
-            assert_argument_usable(tc, i, args_[i], params[i]);
+            assert_argument_usable(tc, i, args_.at(i), params.at(i));
             assert_argument_writable(tc, i, func);
         }
     }

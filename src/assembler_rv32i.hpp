@@ -1213,11 +1213,11 @@ class assembler_rv32i final : public assembler {
     // bss is not part of the image, so it may only reserve zero bytes
     auto assert_bss_uninitialized(const image_layout& image) const -> void {
         for (size_t index{}; index < lines().size(); ++index) {
-            if (image.positions[index].which != section::bss) {
+            if (image.positions.at(index).which != section::bss) {
                 continue;
             }
 
-            const line& l{lines()[index]};
+            const line& l{lines().at(index)};
             const data_values* const data{
                 std::get_if<data_values>(record_of(l)),
             };
@@ -1246,7 +1246,7 @@ class assembler_rv32i final : public assembler {
 
         symbol_table symbols;
         for (size_t index{}; index < lines().size(); ++index) {
-            const line& l{lines()[index]};
+            const line& l{lines().at(index)};
 
             const constant* const defined{std::get_if<constant>(record_of(l))};
             if (defined != nullptr) {
@@ -1257,7 +1257,7 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            const line_position& position{image.positions[index]};
+            const line_position& position{image.positions.at(index)};
 
             const int64_t address{
                 static_cast<int64_t>(
@@ -1374,7 +1374,7 @@ class assembler_rv32i final : public assembler {
         const std::vector<size_t> offsets{line_offsets()};
         bool grown{};
         for (size_t index{}; index < lines().size(); ++index) {
-            line& l{lines()[index]};
+            line& l{lines().at(index)};
             if (not l.jump) {
                 continue;
             }
@@ -1386,7 +1386,7 @@ class assembler_rv32i final : public assembler {
                     "jump to undefined label '{}'", l.jump->target)};
             }
 
-            if (reaches(l, offsets[index], offsets[target->second])) {
+            if (reaches(l, offsets.at(index), offsets.at(target->second))) {
                 continue;
             }
 
@@ -1634,7 +1634,7 @@ class assembler_rv32i final : public assembler {
 
         const size_t base{image.bases.at(section_index(which))};
         for (size_t index{}; index < lines().size(); ++index) {
-            const line_position& position{image.positions[index]};
+            const line_position& position{image.positions.at(index)};
             if (position.which != which) {
                 continue;
             }
@@ -1643,7 +1643,7 @@ class assembler_rv32i final : public assembler {
             const size_t address{base + position.offset};
             write_zeros(os, address - written);
 
-            const line& l{lines()[index]};
+            const line& l{lines().at(index)};
             const data_values* const data{
                 std::get_if<data_values>(record_of(l)),
             };

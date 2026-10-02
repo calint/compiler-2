@@ -47,7 +47,7 @@ class stmt_if final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         // output first branch
-        const stmt_if_branch& branch{branches_[0]};
+        const stmt_if_branch& branch{branches_.at(0)};
         branch.source_to(os);
         // output the remaining 'else if' branches
         const auto else_if_branches{branches_ | std::views::drop(1)};
@@ -82,13 +82,14 @@ class stmt_if final : public statement {
         bool branch_evaluated_to_true{};
         for (size_t branch_index{}; branch_index < branch_count;
              ++branch_index) {
-            const stmt_if_branch& if_branch{branches_[branch_index]};
+            const stmt_if_branch& if_branch{branches_.at(branch_index)};
             const bool is_last_branch{branch_index == branch_count - 1};
 
             // a false condition continues at the next branch or the 'else'
             const std::string jmp_if_false{
-                is_last_branch ? label_else_branch
-                               : branches_[branch_index + 1].if_bgn_label(tc),
+                is_last_branch
+                    ? label_else_branch
+                    : branches_.at(branch_index + 1).if_bgn_label(tc),
             };
 
             // the last branch without an 'else' continues after the 'if'

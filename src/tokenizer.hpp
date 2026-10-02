@@ -66,18 +66,18 @@ class tokenizer final {
     }
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
-        return not is_eos() and src_[char_ix_] == ch;
+        return not is_eos() and src_.at(char_ix_) == ch;
     }
 
     [[nodiscard]] auto is_peek_char2(const char ch) const -> bool {
-        return char_ix_ + 1 < src_.size() and src_[char_ix_ + 1] == ch;
+        return char_ix_ + 1 < src_.size() and src_.at(char_ix_ + 1) == ch;
     }
 
     [[nodiscard]] auto next_char() -> char {
         assert(not is_eos());
 
         // note: just for easier debugging
-        const char ch{src_[char_ix_]};
+        const char ch{src_.at(char_ix_)};
         ++char_ix_;
         if (ch == '\n') {
             ++at_line_;
@@ -113,7 +113,7 @@ class tokenizer final {
     }
 
     [[nodiscard]] auto peek_char() const -> char {
-        return is_eos() ? '\0' : src_[char_ix_];
+        return is_eos() ? '\0' : src_.at(char_ix_);
     }
 
     // trailing whitespace ends at a newline so lookahead past a token skips
@@ -127,7 +127,7 @@ class tokenizer final {
     }
 
     auto put_back_char(const char ch) -> void {
-        assert(char_ix_ > 0 and src_[char_ix_ - 1] == ch);
+        assert(char_ix_ > 0 and src_.at(char_ix_ - 1) == ch);
 
         move_back(1);
     }
@@ -239,7 +239,7 @@ class tokenizer final {
 
         while (nchars--) {
             --char_ix_;
-            if (src_[char_ix_] == '\n') {
+            if (src_.at(char_ix_) == '\n') {
                 --at_line_;
             }
         }
@@ -284,7 +284,7 @@ class tokenizer final {
         }
         const size_t bgn_ix{char_ix_};
         while (not is_eos()) {
-            const char ch{src_[char_ix_]};
+            const char ch{src_.at(char_ix_)};
             if (ch == '#') {
                 skip_to_end_of_line();
                 continue;

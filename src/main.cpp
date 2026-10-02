@@ -128,7 +128,7 @@ namespace {
         const std::string_view arg{argument};
 
         if (arg == "--help" or arg == "-h") {
-            print_help(args[0]);
+            print_help(args.at(0));
             return 0;
         }
 

@@ -90,7 +90,7 @@ class type final {
 
         // find first field so operand gets a valid built-in
         while (not tp->is_builtin()) {
-            tp = tp->fields_[0].type_ptr;
+            tp = tp->fields_.at(0).type_ptr;
         }
 
         const operand op{
@@ -164,7 +164,7 @@ class type final {
                              const std::string_view name) const
         -> const type_field& {
 
-        return fields_[field_index(src_loc_tk, name)];
+        return fields_.at(field_index(src_loc_tk, name));
     }
 
     // the field and the padding after it up to the next field or the end
@@ -175,10 +175,10 @@ class type final {
         const size_t i{field_index(src_loc_tk, field_name)};
 
         const size_t next_offset{
-            i + 1 < fields_.size() ? fields_[i + 1].offset : size_bytes_,
+            i + 1 < fields_.size() ? fields_.at(i + 1).offset : size_bytes_,
         };
 
-        return next_offset - fields_[i].offset;
+        return next_offset - fields_.at(i).offset;
     }
 
     [[nodiscard]] auto
@@ -229,7 +229,7 @@ class type final {
         -> size_t {
 
         for (size_t i{}; i < fields_.size(); ++i) {
-            if (fields_[i].name == name) {
+            if (fields_.at(i).name == name) {
                 return i;
             }
         }

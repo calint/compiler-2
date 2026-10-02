@@ -2473,8 +2473,9 @@ class machine_x86_64 final : public machine {
         for (const register_names& names : register_names_) {
             if (name != names.qword and name != names.dword and
                 name != names.word and name != names.byte and
-                (name.size() != 2 or name[1] != 'h' or names.byte.size() != 2 or
-                 names.byte[1] != 'l' or name[0] != names.byte[0])) {
+                (name.size() != 2 or name.at(1) != 'h' or
+                 names.byte.size() != 2 or names.byte.at(1) != 'l' or
+                 name.at(0) != names.byte.at(0))) {
                 continue;
             }
             switch (size_bytes) {

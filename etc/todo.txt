@@ -13,7 +13,7 @@ easy, easiest first
     the emulator with the dividend in a0 as exit code
 [ ] variable argument count in read/write might be confusing. consider requiring
     all arguments
-[ ] change all array access using [ ] to checked using .at
+[x] change all array access using [ ] to checked using .at
 [ ] make an extensive comment file explaining lea, indexing array etc
 [ ] should if str == "abc" be supported?
     => an argument is that it is a magic string and should be dat
@@ -26,54 +26,23 @@ easy, easiest first
 --------------------------------------------------------------------------------
 medium, easiest first
 --------------------------------------------------------------------------------
+[ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
+    tests
 [ ] implement "size_of" for fields
 [ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
     class: machine_x86_64
     method: shift
     source: src/machine_x86_64.hpp:789
 [ ] instrumentation to find out max heap and stack usage by the compiler
-[ ] compiler memory: peak is about 2 to 3 'assembler::line' (104 bytes) per
-    output line while 'lines_' grows (old and new buffer during the copy),
-    comments are 2 of 3 lines; e.g. 'std::deque' for 'lines_', 'record' as
-    'size_t' with a sentinel instead of 'std::optional' (16 -> 8 bytes)
-[ ] survey (2026-09-28): the constant part of a run-time index is added before
-    the bounds check instead of going into the displacement: with
-    '--checks=upper' or 'lower' 'arr[ix + 1]' is still 'addi t0, t0, 1' before
-    'sw t2, 4(t3)' instead of 'sw t2, 8(t3)', x86 'add r15, 1' before
-    '[rbp + r15 * 4 + 8]' instead of '+ 12'
-    => done without bounds checks (2026-10-02, 'compile_checked_index',
-       'expr_arith::compile_without_trailing_addend', test 679): over the
-       coverage tests 41 x86 and 35 rv32i instructions, roome.baz 6 and 2
-    => with checks on the check needs the sum: check the index against
-       'array_len - constant' and 'zero - constant' without adding it
-    => found in the survey of all coverage tests on both targets, illustrated
-       in etc/codegen-inefficiencies.baz; site counts are occurrences in the
-       tests
-    => also illustrated there and tracked elsewhere: runtime bool argument
-       materialized (97 rv32i sites), value reloaded right after it was
-       stored (574 rv32i sites), scaled index in a new register,
-       self-cancelling unary ops
 [ ] low priority: code after an unconditional 'exit' elsewhere than the end of
     'main' is generated, e.g. after a constant false 'assert'
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
     handle it
 [ ] break: exit current block instead of just loop?
 [ ] consider not allowing single statement blocks
-[ ] lift the possible ai generated tests in test-rv32i.sh to end-to-end .baz
-    tests
 [ ] rv32i: check loop iteration regarding large span
-[ ] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
-    => there is a longer jump way +/- 2 GB that can be implemented later
 [ ] lea_path may not be necessary since only most recent lea relevant
     => also index of where in elems path lea was found
-[ ] re-look at stmt_identifier::compile_lea and make a nicer implementation
-[ ] expr_type has mixed responsibilities, ok?
-    expr_arith: handles expressions that writes the result with one mov
-    expr_bool: handles boolean expressions and also results in one mov
-[ ] expr_any: deduce expression type to bool or numbers: is_const,
-    is_bool_expression, is_number_expression
-[ ] review machine_rv32i code copy/zero/compare and the design that merges their
-    functionality; still a bit messy
 [ ] reorder locals by alignment, largest first, to reduce padding
 [ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
 [ ] rv32i: a constant above 16 bytes stored at an address inside a word

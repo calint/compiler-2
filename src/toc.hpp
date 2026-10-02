@@ -264,7 +264,7 @@ class ident_path final {
     [[nodiscard]] auto base() const -> std::string_view {
         assert(not path_.empty());
 
-        return path_[0];
+        return path_.at(0);
     }
 
     [[nodiscard]] auto path() const -> const std::vector<std::string>& {
@@ -1002,8 +1002,8 @@ class toc final {
 
         const std::string_view body{str.substr(1, str.size() - 2)};
 
-        if (body.size() == 1 and body[0] != '\\') {
-            return static_cast<unsigned char>(body[0]);
+        if (body.size() == 1 and body.at(0) != '\\') {
+            return static_cast<unsigned char>(body.at(0));
         }
 
         if (not body.starts_with('\\')) {
@@ -1504,8 +1504,8 @@ class toc final {
         operand lea;
         size_t lea_index{ii.elem_path.size()};
         while (lea_index--) {
-            if (not ii.lea_path[lea_index].is_empty()) {
-                lea = ii.lea_path[lea_index];
+            if (not ii.lea_path.at(lea_index).is_empty()) {
+                lea = ii.lea_path.at(lea_index);
                 break;
             }
         }
@@ -1541,8 +1541,8 @@ class toc final {
 
         // navigate to referred element and get offset
         const size_t offset{
-            ii.type_path[lea_index]->field_offset(src_loc_tk,
-                                                  elem_path_from_lea),
+            ii.type_path.at(lea_index)->field_offset(src_loc_tk,
+                                                     elem_path_from_lea),
         };
 
         ii.operand = operand::mem(lea, ii.type_ref());

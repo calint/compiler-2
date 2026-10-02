@@ -582,7 +582,7 @@ class stmt_def_dat final : public statement {
                                     tp.name())};
             }
 
-            const type_field& tf{flds[counter]};
+            const type_field& tf{flds.at(counter)};
 
             if (counter++) {
                 const token tk{tz.is_next_char_token(',')};
@@ -613,9 +613,9 @@ class stmt_def_dat final : public statement {
         elroot.open_brace_tk_.source_to(os);
         for (size_t i{}; i < elroot.elems.size(); ++i) {
             if (i != 0) {
-                elroot.elem_delims_tk_[i - 1].source_to(os);
+                elroot.elem_delims_tk_.at(i - 1).source_to(os);
             }
-            print_item(i, elroot.elems[i]);
+            print_item(i, elroot.elems.at(i));
         }
         elroot.close_brace_tk_.source_to(os);
     }
@@ -650,7 +650,7 @@ class stmt_def_dat final : public statement {
         if (not elroot.is_array) {
             print_source_braced(
                 os, elroot, [&os, &tp](const size_t i, const elem& e) -> void {
-                    const type_field& tf{tp.fields()[i]};
+                    const type_field& tf{tp.fields().at(i)};
                     print_source_elem(os, tf.type(), e);
                 });
 

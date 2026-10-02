@@ -244,7 +244,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                 tz, std::format("too many fields specified for type '{}'",
                                 tp.name())};
         }
-        const type_field& tf{flds[counter]};
+        const type_field& tf{flds.at(counter)};
         if (counter++) {
             const token t{tz.is_next_char_token(',')};
             if (t.is_empty()) {
@@ -252,7 +252,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                     tz, std::format(
                             "expected ',' followed by a value for field '{}' "
                             "in type '{}'",
-                            flds[counter - 1].name, tp.name())};
+                            flds.at(counter - 1).name, tp.name())};
             }
             expr_delims_tk_.emplace_back(t);
         }

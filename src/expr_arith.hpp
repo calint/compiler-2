@@ -161,7 +161,7 @@ class expr_arith final : public expression {
             open_paren_tk_.source_to(os);
         }
         expression::source_to(os); // whitespace
-        exprs_[0]->source_to(os);
+        exprs_.at(0)->source_to(os);
         for (const auto [ws, o, e] : std::views::zip(
                  ws_before_ops_, ops_, exprs_ | std::views::drop(1))) {
 
@@ -223,7 +223,7 @@ class expr_arith final : public expression {
 
         assert(exprs_.size() == 1);
 
-        return exprs_[0]->accessed_range();
+        return exprs_.at(0)->accessed_range();
     }
 
     // each element is computed at the width of the destination
@@ -262,9 +262,9 @@ class expr_arith final : public expression {
 
         assert(exprs_.size() == 1);
 
-        return exprs_[0]->compile_lea(tc, indent, src_loc_tk,
-                                      allocated_registers, reg_count, lea_path,
-                                      address_register);
+        return exprs_.at(0)->compile_lea(tc, indent, src_loc_tk,
+                                         allocated_registers, reg_count,
+                                         lea_path, address_register);
     }
 
     [[nodiscard]] auto folded_constant(const toc& tc,
@@ -305,13 +305,13 @@ class expr_arith final : public expression {
         //       they are compiled with the list
         assert(exprs_.size() == 1);
 
-        return exprs_[0]->get_unary_ops();
+        return exprs_.at(0)->get_unary_ops();
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(exprs_.size() == 1);
 
-        return exprs_[0]->identifier();
+        return exprs_.at(0)->identifier();
     }
 
     [[nodiscard]] auto is_array_element() const -> bool override {
@@ -329,7 +329,7 @@ class expr_arith final : public expression {
 
         // if only 1 element, then it decides if it is an expression
         if (exprs_.size() == 1) {
-            return exprs_[0]->is_expression();
+            return exprs_.at(0)->is_expression();
         }
 
         // more than 1 element, automatically an expression
@@ -337,13 +337,13 @@ class expr_arith final : public expression {
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
-        return exprs_.size() == 1 and exprs_[0]->is_identifier();
+        return exprs_.size() == 1 and exprs_.at(0)->is_identifier();
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
         assert(exprs_.size() == 1);
 
-        return exprs_[0]->is_indexed();
+        return exprs_.at(0)->is_indexed();
     }
 
     // '/', '%' and '>>' read the high bits of their operands
@@ -738,8 +738,8 @@ class expr_arith final : public expression {
         std::vector<step> steps;
 
         for (size_t i{}; i < exprs_.size(); ++i) {
-            const char op{i == 0 ? first_op() : ops_[i - 1]};
-            const statement& e{*exprs_[i]};
+            const char op{i == 0 ? first_op() : ops_.at(i - 1)};
+            const statement& e{*exprs_.at(i)};
 
             steps.push_back({
                 .op{op},

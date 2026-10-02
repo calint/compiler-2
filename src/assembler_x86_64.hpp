@@ -590,7 +590,7 @@ class assembler_x86_64 final : public assembler {
         -> bool {
 
         const size_t first{text.find_first_not_of(" \t\n\r\f\v")};
-        return first == std::string_view::npos or text[first] == ';';
+        return first == std::string_view::npos or text.at(first) == ';';
     }
 
     // lines such as 'bits 64', 'global _start' and 'size.func.f equ 32'

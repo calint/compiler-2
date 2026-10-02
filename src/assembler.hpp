@@ -360,8 +360,8 @@ class assembler {
 
         std::unordered_map<std::string_view, size_t> labels;
         for (size_t index{}; index < lines_.size(); ++index) {
-            if (not lines_[index].label.empty()) {
-                labels.emplace(lines_[index].label, index);
+            if (not lines_.at(index).label.empty()) {
+                labels.emplace(lines_.at(index).label, index);
             }
         }
 
@@ -469,7 +469,7 @@ class assembler {
         -> std::optional<size_t> {
 
         for (size_t next{index + 1}; next < lines_.size(); ++next) {
-            const line& l{lines_[next]};
+            const line& l{lines_.at(next)};
             if (is_enterable(l, referenced)) {
                 return std::nullopt;
             }
@@ -533,7 +533,7 @@ class assembler {
 
     // labels, comments, other sections and removed lines emit no code
     [[nodiscard]] auto next_instruction(size_t index) const -> size_t {
-        while (index < lines_.size() and lines_[index].code_size == 0) {
+        while (index < lines_.size() and lines_.at(index).code_size == 0) {
             ++index;
         }
 
@@ -546,7 +546,7 @@ class assembler {
                   const std::unordered_set<std::string_view>& referenced)
         -> bool {
 
-        line& branch{lines_[index]};
+        line& branch{lines_.at(index)};
         if (not branch.jump) {
             return false;
         }
@@ -575,7 +575,7 @@ class assembler {
             return false;
         }
 
-        line& jump{lines_[*jump_index]};
+        line& jump{lines_.at(*jump_index)};
 
         // nothing reaches a jump right after an unconditional jump
         if (not is_conditional(*branch.jump)) {
@@ -662,13 +662,13 @@ class assembler {
 
         size_t begin{};
         while (begin < text.size()) {
-            if (not is_symbol_char(text[begin])) {
+            if (not is_symbol_char(text.at(begin))) {
                 ++begin;
                 continue;
             }
 
             size_t end{begin};
-            while (end < text.size() and is_symbol_char(text[end])) {
+            while (end < text.size() and is_symbol_char(text.at(end))) {
                 ++end;
             }
 

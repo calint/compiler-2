@@ -717,9 +717,10 @@ class expr_bool final : public statement {
         }
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; ++i) {
-            bools_[i].visit([&os](const auto& e) -> void { e.source_to(os); });
+            bools_.at(i).visit(
+                [&os](const auto& e) -> void { e.source_to(os); });
             if (i < n - 1) {
-                ops_[i].source_to(os);
+                ops_.at(i).source_to(os);
             }
         }
         if (enclosed_) {
@@ -748,7 +749,7 @@ class expr_bool final : public statement {
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(bools_.size() == 1);
 
-        return bools_[0].visit(
+        return bools_.at(0).visit(
             [](const auto& e) -> std::string_view { return e.identifier(); });
     }
 
@@ -769,7 +770,7 @@ class expr_bool final : public statement {
 
         // 1 expression in the list
 
-        return bools_[0].visit(
+        return bools_.at(0).visit(
             [](const auto& e) -> bool { return e.is_expression(); });
     }
 
@@ -837,13 +838,13 @@ class expr_bool final : public statement {
 
         const bool is_or{is_effective_or(expr_index, invert)};
 
-        if (std::holds_alternative<expr_bool>(bools_[expr_index])) {
+        if (std::holds_alternative<expr_bool>(bools_.at(expr_index))) {
             const expr_bool& nested_expr{
-                std::get<expr_bool>(bools_[expr_index]),
+                std::get<expr_bool>(bools_.at(expr_index)),
             };
 
             const std::string next_label{
-                create_cmp_label_from(tc, bools_[expr_index + 1]),
+                create_cmp_label_from(tc, bools_.at(expr_index + 1)),
             };
 
             // an 'or' continues when false and an 'and' continues when true
@@ -858,7 +859,7 @@ class expr_bool final : public statement {
                                                   jmp_true, invert, dst);
         }
 
-        const expr_bool_op& expr{std::get<expr_bool_op>(bools_[expr_index])};
+        const expr_bool_op& expr{std::get<expr_bool_op>(bools_.at(expr_index))};
 
         if (is_or) {
             return expr.compile_or(tc, indent, jmp_to_if_true, invert, dst);
@@ -977,7 +978,7 @@ class expr_bool final : public statement {
     [[nodiscard]] auto is_effective_or(const size_t op_index,
                                        const bool invert) const -> bool {
 
-        return ops_[op_index].is_text("or") != invert;
+        return ops_.at(op_index).is_text("or") != invert;
     }
 
     // a constant false ends an 'and' list and a constant true ends an 'or' list

@@ -172,7 +172,7 @@ class stmt_def_func final : public statement {
     [[nodiscard]] auto param(const size_t ix) const
         -> const stmt_def_func_param& {
 
-        return params_[ix];
+        return params_.at(ix);
     }
 
     [[nodiscard]] auto params() const -> std::span<const stmt_def_func_param> {
@@ -207,7 +207,7 @@ class stmt_def_func final : public statement {
         // the implicit 'self' has no source and no delimiter after it
         const size_t first_param{is_method() ? size_t{1} : size_t{0}};
         if (params_.size() > first_param) {
-            params_[first_param].source_to(os);
+            params_.at(first_param).source_to(os);
             for (const auto [d, e] :
                  std::views::zip(param_delims_tk_,
                                  params_ | std::views::drop(first_param + 1))) {

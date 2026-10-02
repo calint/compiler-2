@@ -1,6 +1,40 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] review machine_rv32i code copy/zero/compare and the design that merges their
+    functionality; still a bit messy
+    => tried and reverted to some code duplication but much less complexity
+[x] expr_any: deduce expression type to bool or numbers: is_const,
+    is_bool_expression, is_number_expression
+[x] expr_type has mixed responsibilities, ok?
+    expr_arith: handles expressions that writes the result with one mov
+    expr_bool: handles boolean expressions and also results in one mov
+    => it is ok to handle arrays assignment using expr_type, tried with
+       a specialized statement but it does not pay off
+[x] re-look at stmt_identifier::compile_lea and make a nicer implementation
+[x] rv32i: loop body limitation to instruction j limit of 1 MB (x86 +/- 2 GB)
+    => there is a longer jump way +/- 2 GB that can be implemented later
+[x] compiler memory: peak is about 2 to 3 'assembler::line' (104 bytes) per
+    output line while 'lines_' grows (old and new buffer during the copy),
+    comments are 2 of 3 lines; e.g. 'std::deque' for 'lines_', 'record' as
+    'size_t' with a sentinel instead of 'std::optional' (16 -> 8 bytes)
+[x] survey (2026-09-28): the constant part of a run-time index is added before
+    the bounds check instead of going into the displacement: with
+    '--checks=upper' or 'lower' 'arr[ix + 1]' is still 'addi t0, t0, 1' before
+    'sw t2, 4(t3)' instead of 'sw t2, 8(t3)', x86 'add r15, 1' before
+    '[rbp + r15 * 4 + 8]' instead of '+ 12'
+    => done without bounds checks (2026-10-02, 'compile_checked_index',
+       'expr_arith::compile_without_trailing_addend', test 679): over the
+       coverage tests 41 x86 and 35 rv32i instructions, roome.baz 6 and 2
+    => with checks on the check needs the sum: check the index against
+       'array_len - constant' and 'zero - constant' without adding it
+    => found in the survey of all coverage tests on both targets, illustrated
+       in etc/codegen-inefficiencies.baz; site counts are occurrences in the
+       tests
+    => also illustrated there and tracked elsewhere: runtime bool argument
+       materialized (97 rv32i sites), value reloaded right after it was
+       stored (574 rv32i sites), scaled index in a new register,
+       self-cancelling unary ops
 [x] roome.baz (2026-09-29): rv32i: every local variable access needs
     'lui'/'add': s0 pointed at 'dat' and the variables start about 150 KB
     after it, behind 'rooms' and 'entities' (102 'lui X, 37', with their

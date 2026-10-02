@@ -142,7 +142,7 @@ class expr_any final : public statement {
 
         // the base case
         if (is_identifier_ or not is_array_) {
-            compile_variant(tc, indent, dst_info, tok(), vars_[0]);
+            compile_variant(tc, indent, dst_info, tok(), vars_.at(0));
             return;
         }
 
@@ -158,8 +158,8 @@ class expr_any final : public statement {
         // the parser could not check the size of an unsized destination
         if (vars_.size() > array_count) {
             throw compiler_exception{
-                vars_[array_count].visit(
-                    [](const auto& expression) -> const token& {
+                vars_.at(array_count)
+                    .visit([](const auto& expression) -> const token& {
                         return expression.tok();
                     }),
                 std::format("too many elements specified for array of size {}",
@@ -188,7 +188,7 @@ class expr_any final : public statement {
         assert(not is_array_);
         assert(vars_.size() == 1);
 
-        return vars_[0].visit(
+        return vars_.at(0).visit(
             [](const auto& expression) -> std::optional<field_coverage::range> {
                 return expression.accessed_range();
             });
@@ -201,7 +201,7 @@ class expr_any final : public statement {
             return;
         }
 
-        vars_[0].visit([&](const auto& expression) -> void {
+        vars_.at(0).visit([&](const auto& expression) -> void {
             expression.assert_not_narrowed(tc, dst_type);
         });
     }
@@ -214,7 +214,7 @@ class expr_any final : public statement {
                                    const operand& address_register) const
         -> operand override {
 
-        return vars_[0].visit([&](const auto& expression) -> operand {
+        return vars_.at(0).visit([&](const auto& expression) -> operand {
             return expression.compile_lea(tc, indent, src_loc_tk,
                                           allocated_registers, reg_count,
                                           lea_path, address_register);
@@ -224,9 +224,10 @@ class expr_any final : public statement {
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
         assert(not is_array_);
 
-        return vars_[0].visit([](const auto& expression) -> const unary_ops& {
-            return expression.get_unary_ops();
-        });
+        return vars_.at(0).visit(
+            [](const auto& expression) -> const unary_ops& {
+                return expression.get_unary_ops();
+            });
 
         // note: 'expr_type' does not have 'unary_ops' and cannot be
         //       an argument in call
@@ -237,9 +238,10 @@ class expr_any final : public statement {
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(not vars_.empty());
 
-        return vars_[0].visit([](const auto& expression) -> std::string_view {
-            return expression.identifier();
-        });
+        return vars_.at(0).visit(
+            [](const auto& expression) -> std::string_view {
+                return expression.identifier();
+            });
     }
 
     [[nodiscard]] auto is_array_element() const -> bool override {
@@ -247,7 +249,7 @@ class expr_any final : public statement {
             return false;
         }
 
-        return vars_[0].visit([](const auto& expression) -> bool {
+        return vars_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_array_element();
         });
     }
@@ -257,13 +259,13 @@ class expr_any final : public statement {
             return true;
         }
 
-        return vars_[0].visit([](const auto& expression) -> bool {
+        return vars_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_expression();
         });
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
-        return vars_[0].visit([](const auto& expression) -> bool {
+        return vars_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_identifier();
         });
     }
@@ -271,7 +273,7 @@ class expr_any final : public statement {
     [[nodiscard]] auto is_indexed() const -> bool override {
         assert(not is_array_);
 
-        return vars_[0].visit([](const auto& expression) -> bool {
+        return vars_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_indexed();
         });
     }
@@ -285,7 +287,7 @@ class expr_any final : public statement {
             return statement::tok();
         }
 
-        return vars_[0].visit([](const auto& expression) -> const token& {
+        return vars_.at(0).visit([](const auto& expression) -> const token& {
             return expression.tok();
         });
     }
@@ -310,13 +312,13 @@ class expr_any final : public statement {
     [[nodiscard]] auto as_expr_type(const size_t index = 0) const
         -> const expr_type& {
 
-        return get<expr_type>(vars_[index]);
+        return get<expr_type>(vars_.at(index));
     }
 
     auto assert_record_value_not_reading(
         const expr_type::record_destination& dst) const -> void {
 
-        if (is_array_ or not std::holds_alternative<expr_type>(vars_[0])) {
+        if (is_array_ or not std::holds_alternative<expr_type>(vars_.at(0))) {
             return;
         }
 

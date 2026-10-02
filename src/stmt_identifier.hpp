@@ -180,7 +180,7 @@ class stmt_identifier : public statement {
         // start at the deepest known address, or the root if none exists
         const size_t start_index{find_start_element(known_addresses)};
 
-        std::string path{elems_[start_index].name_tk.text()};
+        std::string path{elems_.at(start_index).name_tk.text()};
 
         // registers appended from here on belong to this path and may be
         // overwritten, earlier entries are the caller's
@@ -188,7 +188,7 @@ class stmt_identifier : public statement {
 
         operand address{
             start_address(tc, indent, src_loc_tk, allocated_registers,
-                          known_addresses[start_index],
+                          known_addresses.at(start_index),
                           tc.make_ident_info(src_loc_tk, path)),
         };
 
@@ -199,7 +199,7 @@ class stmt_identifier : public statement {
         for (size_t elem_index{start_index}; elem_index < elems_.size();
              ++elem_index) {
 
-            const ident_elem& cur_elem{elems_[elem_index]};
+            const ident_elem& cur_elem{elems_.at(elem_index)};
 
             // field offsets stay in the operand, not in the base register
 
@@ -305,7 +305,7 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto first_token() const -> const token& {
-        return elems_[0].name_tk;
+        return elems_.at(0).name_tk;
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -827,7 +827,7 @@ class stmt_identifier : public statement {
         size_t index{known_addresses.size()};
         while (index != 0) {
             --index;
-            if (not known_addresses[index].is_empty()) {
+            if (not known_addresses.at(index).is_empty()) {
                 return index;
             }
         }
