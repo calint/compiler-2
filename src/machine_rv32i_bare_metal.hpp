@@ -173,11 +173,13 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         a.mv(1, "a5", "a1");
         // the descriptor is not needed so a0 holds the end
         a.add(1, "a0", "a1", "a2");
-        a.label(0, "1");
+        // the end test sits at the bottom, one branch per byte, the guard
+        // handles a count of zero
         a.beq(1, "a5", "a0", "3f");
+        a.label(0, "1");
         emit_transmit_byte(a);
         a.addi(1, "a5", "a5", 1);
-        a.j(1, "1b");
+        a.bne(1, "a5", "a0", "1b");
         a.label(0, "3");
         a.mv(1, "a0", "a2");
         a.jr(1, "a7");

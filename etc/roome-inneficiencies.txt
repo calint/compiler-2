@@ -1,0 +1,60 @@
+roome.baz on rv32i-fpga: local inefficiencies within one machine operation
+--------------------------------------------------------------------------------
+compiled with: ./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line \
+                     etc/roome/roome.baz
+13111 instructions. global optimizations and instruction tricks excluded.
+site counts are occurrences in the generated code.
+
+[ ] 1. base address computed twice in one operation (about 300 sites, 2
+       instructions each)
+       operations with two global operands lower each address separately:
+       copy_value, two-operand compares and binary ops. 'self.start >=
+       self.str.len' (7 instructions):
+           lui t0,48; add t0,t0,s0; lw t0,1956(t0)
+           lui t1,48; add t1,t1,s0; lw t1,1952(t1)
+           blt t0,t1,..
+       when both addresses are s0-relative with the same upper part, one base
+       is enough (4 instructions):
+           lui t0,48; add t0,t0,s0; lw t1,1956(t0); lw t0,1952(t0)
+       'x = x + 1' already shares its base this way.
+       where: copy_value (load_into and lower_address calls),
+       lower_address_without_index
+
+[x] 2. redundant 'bltz' in emit_bounds_check (about 334 sites, 1 instruction
+       each)
+       with both checks on and no count register, the unsigned 'bltu
+       index,limit' or 'bgeu limit,count' already rejects negatives, the
+       preceding 'bltz' was dead. 'index + count' needs both 'bltz'.
+       where: emit_bounds_check
+
+[ ] 3. count lower-checked once per array (213 sites, 1 instruction each)
+       array_copy and arrays_equal call check_bounds for the source and again
+       for the destination, the second call repeats 'bltz count' on the same
+       register. spans two calls, needs per-operation state.
+
+[ ] 4. bulk loop bookkeeping
+       loops use a counter plus two pointer increments: a word copy costs 6
+       instructions per word, a byte compare 7 per byte. comparing a pointer
+       against an end pointer removes the counter decrement, 1 less per
+       iteration. known sizes: 'addi s3,s1,132' replaces 'li s3,33' at no
+       cost, a run-time count needs one extra add.
+
+[x] 5. '.Lbaz_write' loop shape
+       tests 'beq a5,a0' at the top and ends with 'j 1b'. moving the test to
+       the bottom ('bne a5,a0,1b') saves 1 instruction per output byte.
+
+[ ] 6. equality inside a bool 'and' (about 66 sites, 1 instruction each)
+       'xor; sltiu; beq t3,zero,end' leaves 'res' at 0 on the false path.
+       'li res,0; bne a,b,end' does the same in 2 instructions, provided the
+       next element always overwrites 'res'.
+       => invariant checked, it does not hold: a constant 'true' last element
+          ('a == b and true', resolve_last_constant) writes nothing, so
+          'res' must already be 1 on the fall-through path. the machine only
+          sees one 'comparison_action', so the frontend would have to tell it
+          that a later element is a run-time element writing the destination
+          (also through nested lists and inversion, 'or' elements have the
+          mirrored case). gain is 1 instruction at 66 sites, not done.
+
+not counted, they need a known constant:
+- 'li t1,0; bltz t1' bounds checks on constants (148 sites)
+- constant 'start' or count folded into 'write' and 'arrays_equal' checks

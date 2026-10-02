@@ -2688,7 +2688,15 @@ class machine_rv32i : public machine {
 
         const std::string_view index{reg_to_check.base_register()};
 
-        if (options.lower) {
+        // the unsigned upper comparison already fails a negative index or
+        // count as long as the limit is below 2^31, only a sum 'index + count'
+        // needs both signs checked
+        const bool upper_covers_lower{
+            options.upper and reg_count.is_empty() and
+                array_count <= std::numeric_limits<int32_t>::max(),
+        };
+
+        if (options.lower and not upper_covers_lower) {
             comment(src_loc_tk, indent, "lower bound");
             check_lower_bounds(indent, index, reg_count, not options.upper);
         }
