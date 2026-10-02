@@ -1,0 +1,5 @@
+# convert requires a closing parenthesis
+
+func main() {
+    var a = i8(1
+}

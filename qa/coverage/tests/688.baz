@@ -1,0 +1,7 @@
+# equal arguments require the same type
+
+func main() {
+    var a = i8(1)
+    var b = i16(1)
+    var z = equal(a, b)
+}

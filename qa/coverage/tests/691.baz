@@ -1,0 +1,4 @@
+# a block requires its closing brace
+
+func main() {
+    if true

@@ -1,0 +1,5 @@
+# exit takes one argument
+
+func main() {
+    exit()
+}

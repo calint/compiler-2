@@ -1,0 +1,8 @@
+# a method name follows the dot
+
+type point {
+    x,
+    y
+}
+
+func point.

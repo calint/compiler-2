@@ -1,0 +1,4 @@
+# a constant must be a parsable number
+
+let x = 1abc
+func main() {}

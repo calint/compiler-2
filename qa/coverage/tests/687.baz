@@ -1,0 +1,8 @@
+# a narrow destination computes a converted operand at the wide width
+
+func main() {
+    var y = 300
+    var b = i8(0)
+    b = i8(y) + 1
+    exit(b)
+}

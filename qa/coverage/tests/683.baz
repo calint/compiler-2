@@ -1,0 +1,6 @@
+# a read-only variable can be initialized from an array of the default type
+
+func main() {
+    let values = []{1, 2}
+    exit(values[1] - 2)
+}

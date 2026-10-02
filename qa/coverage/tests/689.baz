@@ -1,0 +1,8 @@
+# non-inline functions do not take array parameters
+
+func noinline first(values i8[]) result {
+    result = values[0]
+}
+
+func main() {
+}
