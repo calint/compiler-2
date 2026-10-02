@@ -66,10 +66,11 @@ not applicable on x86_64, the rv32i point does not exist here:
 - rv32i 6 equality in a bool 'and': 'cmp; sete; jne' is already minimal
 
 not counted, they need a known constant:
-- 'mov r,imm; cmp x,r' for a constant right side that is an expression
-  result such as 'array_length(...)' (30 sites)
 - 'mov rcx,imm; test rcx,rcx; repe cmpsb' where the count is known to be
   nonzero (42 sites)
+
+fixed outside the numbered points: 'mov r,imm; cmp x,r' for a constant right
+side such as 'array_length(...)' (30 sites), the length is now an immediate
 
 instruction tricks, excluded:
 - 'xor edi,edi' for 'mov rdi,0', 'mov r,0' (145 sites) as 'xor'

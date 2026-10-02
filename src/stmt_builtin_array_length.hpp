@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <format>
+#include <optional>
 #include <ostream>
 
 #include "compiler_exception.hpp"
@@ -83,6 +85,27 @@ class stmt_builtin_array_length final : public expression {
             operand::imm(std::format("{}", src_info.array_len), get_type()));
 
         get_unary_ops().compile(tc, indent, dst_info.operand);
+    }
+
+    // a narrower width stays unfolded so 'compile' rejects the destination
+    // type
+    [[nodiscard]] auto folded_constant(const toc& tc,
+                                       const type& width_type) const
+        -> std::optional<int64_t> override {
+
+        if (width_type.name() != tc.get_type_default().name()) {
+            return std::nullopt;
+        }
+
+        const ident_info src_info{tc.make_ident_info(stmt_ident_)};
+
+        // 'compile' reports an argument that is not an array
+        if (not src_info.is_var() or not src_info.is_array) {
+            return std::nullopt;
+        }
+
+        return get_unary_ops().evaluate_constant(
+            static_cast<int64_t>(src_info.array_len));
     }
 
     // the length is known at compile time so the value is not read

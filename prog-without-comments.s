@@ -1146,18 +1146,18 @@ main:
             syscall
         if.38.24.378.5.end:
     func.assert.378.5.end:
-    mov rcx, 8
-    mov r15, 381
-    cmp rcx, 8
-    cmova rbp, r15
+    mov r15, 8
+    mov r14, 381
+    cmp r15, 8
+    cmova rbp, r14
+    ja baz_bounds_panic
+    mov r14, 382
+    cmp r15, 8
+    cmova rbp, r14
     ja baz_bounds_panic
     lea rsi, [rbp + 816]
-    mov r15, 382
-    cmp rcx, 8
-    cmova rbp, r15
-    ja baz_bounds_panic
     lea rdi, [rbp + 752]
-    shl rcx, 3
+    mov rcx, 64
     rep movsb
     cmp.387.12:
     cmp qword [rbp + 760], 65518
@@ -1204,20 +1204,9 @@ main:
     func.assert.388.5.end:
     mov qword [rbp + 1264], -1
     mov qword [rbp + 1272], 2
-    cmp.395.12:
-        mov r14, 2
-    cmp r14, 2
-    sete r15b
-    bool.395.12.end:
     func.assert.395.5:
         if.38.27.395.5:
         cmp.38.27.395.5:
-        cmp r15b, 0
-        jne if.38.24.395.5.end
-        if.38.27.395.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
         if.38.24.395.5.end:
     func.assert.395.5.end:
     cmp.396.12:
@@ -1405,8 +1394,7 @@ main:
     syscall
     mov rdi, 1
     mov rdx, 1
-    mov r15, 13
-    sub r15, 1
+    mov r15, 12
     mov r14, 425
     test r15, r15
     cmovs rbp, r14

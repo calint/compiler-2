@@ -1,0 +1,42 @@
+# 'array_length' is a constant at compile: comparisons, counts, indexes and
+# arguments use its value
+#
+# test-constant-folding.sh checks the instructions of lines marked '# folds'
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func count_of(s i8[]) res {
+    res = array_length(s) # folds
+}
+
+func main() {
+    var a = i32[4]{1, 2, 3, 4}
+    var b = i32[4]{}
+    var n = 0
+
+    assert(1, array_length(a) == 4)
+    if array_length(a) != 4 { # folds
+        exit(2)
+    }
+
+    # the count is known so the copy is not a run-time loop
+    array_copy(a, b, array_length(a)) # folds
+    assert(3, b[3] == 4)
+
+    # a constant index and its bounds check
+    b[array_length(a) - 1] = 9 # folds
+    assert(4, b[3] == 9)
+
+    n = array_length(a) * 2 + 1 # folds
+    assert(5, n == 9)
+    n = n + array_length(b) # folds
+    assert(6, n == 13)
+    n = -array_length(b) # folds
+    assert(7, n == -4)
+
+    # an inline parameter sized by the argument
+    var s = i8[6]{}
+    assert(8, count_of(s) == 6)
+
+    exit(0)
+}

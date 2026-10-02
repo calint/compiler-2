@@ -302,16 +302,14 @@ main:
             # [1015:12] ? i == array_length(str_creation_script)
             # [1015:12] ? i == array_length(str_creation_script)
             cmp.1015.12.1029.5:
-            # [1015:17] allocate scratch register -> t0
-                # [1015:17] t0 = array_length(str_creation_script)
-                # [1015:17] = expression
-                # [1015:17] array_length(str_creation_script)
-                li t0, 81
+            # [1015:17] src: folded constant 'array_length(str_creation_script)'
+            # [1015:12] allocate scratch register -> t0
+            lui t0, 48
+            add t0, t0, s0
+            lw t0, 1968(t0)
             # [1015:12] allocate scratch register -> t1
-            lui t1, 48
-            add t1, t1, s0
-            lw t1, 1968(t1)
-            bne t1, t0, .Lbaz_jump.0
+            li t1, 81
+            bne t0, t1, .Lbaz_jump.0
             j loop.1014.5.1029.5.end
 .Lbaz_jump.0:
             # [1015:12] free scratch register t1
@@ -726,15 +724,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.957.11.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 2
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 2
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.957.11.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.957.11.1018.13.1029.5:
@@ -744,9 +737,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 2
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 2
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -1079,31 +1071,26 @@ main:
                                     # [502:13] alias self -> out
                                     # [502:13] alias s -> str_go_where
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 9
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.502.13.958.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 9
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.502.13.958.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 9
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.502.13.958.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.502.13.958.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.502.13.958.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.502.13.958.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.502.13.958.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.502.13.958.9.1018.13.1029.5.end:
@@ -1114,33 +1101,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 9
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 9
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 9
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 960
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -1148,7 +1135,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.502.13.958.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.502.13.958.9.1018.13.1029.5.end:
                                 func.printer.print_all.502.13.958.9.1018.13.1029.5.end:
                                 # [503:9] return
@@ -1193,15 +1179,10 @@ main:
                                             sub t1, t1, t2
                                             # [444:22] free scratch register t2
                                         func.tokenizer.len.452.16.506.11.958.9.1018.13.1029.5.end:
-                                    # [452:25] allocate scratch register -> t2
-                                        # [452:25] t2 = array_length(str)
-                                        # [452:25] = expression
-                                        # [452:25] array_length(str)
-                                        li t2, 4
-                                    xor t0, t1, t2
+                                    # [452:25] src: folded constant 'array_length(str)'
+                                    xori t0, t1, 4
                                     sltiu t0, t0, 1
                                     beq t0, zero, bool.452.11.506.11.958.9.1018.13.1029.5.end
-                                    # [452:11] free scratch register t2
                                     # [452:11] free scratch register t1
                                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                                     cmp.453.11.506.11.958.9.1018.13.1029.5:
@@ -1211,9 +1192,8 @@ main:
                                         # [453:11] allocate scratch register -> t3
                                         # [453:11] t1: source, t2: destination, t3: count
                                         # [453:57] array_length(str)
-                                        # [453:57] t3 = array_length(str)
-                                        # [453:57] = expression
-                                        # [453:57] array_length(str)
+                                        # [453:57] t3 = 4
+                                        # [453:57] src: folded constant 'array_length(str)'
                                         li t3, 4
                                         # [453:24] str
                                         # [453:24] bounds check begin
@@ -1650,31 +1630,26 @@ main:
                                     # [521:13] alias self -> out
                                     # [521:13] alias s -> str_no_such_exit
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 16
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.521.13.958.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 16
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.521.13.958.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 16
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.521.13.958.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.521.13.958.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.521.13.958.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.521.13.958.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.521.13.958.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.521.13.958.9.1018.13.1029.5.end:
@@ -1685,33 +1660,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 16
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 16
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 16
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 969
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -1719,7 +1694,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.521.13.958.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.521.13.958.9.1018.13.1029.5.end:
                                 func.printer.print_all.521.13.958.9.1018.13.1029.5.end:
                                 # [522:9] return
@@ -2167,31 +2141,26 @@ main:
                                 # [532:9] alias self -> out
                                 # [532:9] alias s -> str_went_to
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 8
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.532.9.958.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 8
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.532.9.958.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 8
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.532.9.958.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.532.9.958.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.532.9.958.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.532.9.958.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.532.9.958.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.532.9.958.9.1018.13.1029.5.end:
@@ -2202,33 +2171,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 8
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 8
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 8
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 952
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -2236,7 +2205,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.532.9.958.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.532.9.958.9.1018.13.1029.5.end:
                             func.printer.print_all.532.9.958.9.1018.13.1029.5.end:
                             # [533:8] tz.print()
@@ -2338,31 +2306,26 @@ main:
                                     # [73:10] alias self -> self
                                     # [73:10] alias s -> str_nl
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 1
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.73.10.534.9.958.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 1
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.73.10.534.9.958.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 1
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.73.10.534.9.958.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.73.10.534.9.958.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.73.10.534.9.958.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.73.10.534.9.958.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.73.10.534.9.958.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.73.10.534.9.958.9.1018.13.1029.5.end:
@@ -2373,31 +2336,31 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 1
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 1
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 1
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             addi a1, s0, 879
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -2405,7 +2368,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.73.10.534.9.958.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.73.10.534.9.958.9.1018.13.1029.5.end:
                                 func.printer.print_all.73.10.534.9.958.9.1018.13.1029.5.end:
                             func.printer.println.534.9.958.9.1018.13.1029.5.end:
@@ -2434,98 +2396,94 @@ main:
                                 # [538:15] alias s -> str_went_to
                                 # [91:5] array_copy(s, self.array[self.len], array_length(s))
                                 # [91:5] allocate scratch register -> t0
-                                # [91:5] allocate scratch register -> t1
-                                # [91:5] allocate scratch register -> t2
-                                # [91:5] t0: source, t1: destination, t2: count
                                 # [91:41] array_length(s)
-                                # [91:41] t2 = array_length(s)
-                                # [91:41] = expression
-                                # [91:41] array_length(s)
-                                li t2, 8
+                                # [91:41] t0 = 8
+                                # [91:41] src: folded constant 'array_length(s)'
+                                li t0, 8
                                 # [91:16] s
                                 # [91:16] bounds check begin
                                 # [91:16] lower bound
-                                # [91:16] t2 lower bound covered by the unsigned upper bound
+                                # [91:16] t0 lower bound covered by the unsigned upper bound
                                 # [91:16] upper bound
-                                # [91:16] allocate scratch register -> t3
-                                li t3, 8
-                                bgeu t3, t2, 2f
+                                # [91:16] allocate scratch register -> t1
+                                li t1, 8
+                                bgeu t1, t0, 2f
                                 1:
                                 # [91:16] source line
                                 li a0, 91
                                 j baz_bounds_panic
                                 2:
-                                # [91:16] free scratch register t3
+                                # [91:16] free scratch register t1
                                 # [91:16] bounds check end
-                                lui t0, 48
-                                add t0, t0, s0
-                                addi t0, t0, 952
                                 # [91:19] self.array[self.len]
-                                # [91:30] allocate scratch register -> t3
+                                # [91:30] allocate scratch register -> t1
                                 # [91:30] set array index
                                 # [91:30] self.len
-                                lui t3, 49
-                                add t3, t3, s0
-                                lw t3, -1976(t3)
+                                lui t1, 49
+                                add t1, t1, s0
+                                lw t1, -1976(t1)
                                 # [91:30] bounds check begin
                                 # [91:30] lower bound
-                                # [91:30] count t2 lower bound already checked
-                                bltz t3, 1f
+                                # [91:30] count t0 lower bound already checked
+                                bltz t1, 1f
                                 # [91:30] upper bound
-                                # [91:30] allocate scratch register -> t4
-                                # [91:30] allocate scratch register -> t5
-                                add t5, t3, t2
-                                li t4, 127
-                                bgeu t4, t5, 2f
+                                # [91:30] allocate scratch register -> t2
+                                # [91:30] allocate scratch register -> t3
+                                add t3, t1, t0
+                                li t2, 127
+                                bgeu t2, t3, 2f
                                 1:
                                 # [91:30] source line
                                 li a0, 91
                                 j baz_bounds_panic
                                 2:
-                                # [91:30] free scratch register t5
-                                # [91:30] free scratch register t4
+                                # [91:30] free scratch register t3
+                                # [91:30] free scratch register t2
                                 # [91:30] bounds check end
-                                add t1, s0, t3
-                                # allocate scratch register -> t4
-                                lui t4, 48
-                                add t1, t1, t4
-                                # free scratch register t4
-                                addi t1, t1, 1992
-                                # [91:5] free scratch register t3
-                                # [91:5] t2: elements to bytes (1 bytes/element)
+                                # [91:5] allocate scratch register -> t2
                                 # [91:5] allocate scratch register -> t3
-                                # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                                # [91:5] copy bytes; skip if none
-                                beqz t2, 4f
-                                add t2, t2, t0
-                                1:
-                                lbu t3, 0(t0)
-                                sb t3, 0(t1)
-                                addi t0, t0, 1
-                                addi t1, t1, 1
-                                bne t0, t2, 1b
-                                4:
+                                lui t3, 48
+                                add t3, t3, s0
+                                # [91:5] allocate scratch register -> t4
+                                add t4, s0, t1
+                                # [91:5] allocate scratch register -> t5
+                                lui t5, 48
+                                add t4, t4, t5
+                                # [91:5] free scratch register t5
+                                lbu t2, 952(t3)
+                                sb t2, 1992(t4)
+                                lbu t2, 953(t3)
+                                sb t2, 1993(t4)
+                                lbu t2, 954(t3)
+                                sb t2, 1994(t4)
+                                lbu t2, 955(t3)
+                                sb t2, 1995(t4)
+                                lbu t2, 956(t3)
+                                sb t2, 1996(t4)
+                                lbu t2, 957(t3)
+                                sb t2, 1997(t4)
+                                lbu t2, 958(t3)
+                                sb t2, 1998(t4)
+                                lbu t2, 959(t3)
+                                sb t2, 1999(t4)
+                                # [91:5] free scratch register t4
                                 # [91:5] free scratch register t3
                                 # [91:5] free scratch register t2
                                 # [91:5] free scratch register t1
                                 # [91:5] free scratch register t0
                                 # [92:5] self.len = self.len + array_length(s)
                                 # [92:16] self.len
-                                # [92:27] self.len + array_length(s)
-                                # [92:27] src: expression
-                                # [92:27] allocate scratch register -> t0
-                                # [92:27] array_length(s)
-                                li t0, 8
-                                # [92:27] allocate scratch register -> t1
-                                lui t1, 49
-                                add t1, t1, s0
-                                # [92:27] allocate scratch register -> t2
-                                lw t2, -1976(t1)
-                                add t2, t2, t0
-                                sw t2, -1976(t1)
-                                # [92:27] free scratch register t2
-                                # [92:27] free scratch register t1
-                                # [92:27] free scratch register t0
+                                # [92:16] self.len + 8
+                                # [92:16] src: folded constant '+ array_length(s)'
+                                # [92:16] allocate scratch register -> t0
+                                lui t0, 49
+                                add t0, t0, s0
+                                # [92:16] allocate scratch register -> t1
+                                lw t1, -1976(t0)
+                                addi t1, t1, 8
+                                sw t1, -1976(t0)
+                                # [92:16] free scratch register t1
+                                # [92:16] free scratch register t0
                             func.str.add.538.15.958.9.1018.13.1029.5.end:
                             # [539:15] went_text.add_name( link_names.array[ rooms.array[cur_room_id].links[found_ix].link_name_id ] )
                             # [541:13] allocate scratch register -> t0
@@ -3239,98 +3197,104 @@ main:
                                 # [560:18] alias s -> str_arrived_from
                                 # [91:5] array_copy(s, self.array[self.len], array_length(s))
                                 # [91:5] allocate scratch register -> t0
-                                # [91:5] allocate scratch register -> t1
-                                # [91:5] allocate scratch register -> t2
-                                # [91:5] t0: source, t1: destination, t2: count
                                 # [91:41] array_length(s)
-                                # [91:41] t2 = array_length(s)
-                                # [91:41] = expression
-                                # [91:41] array_length(s)
-                                li t2, 13
+                                # [91:41] t0 = 13
+                                # [91:41] src: folded constant 'array_length(s)'
+                                li t0, 13
                                 # [91:16] s
                                 # [91:16] bounds check begin
                                 # [91:16] lower bound
-                                # [91:16] t2 lower bound covered by the unsigned upper bound
+                                # [91:16] t0 lower bound covered by the unsigned upper bound
                                 # [91:16] upper bound
-                                # [91:16] allocate scratch register -> t3
-                                li t3, 13
-                                bgeu t3, t2, 2f
+                                # [91:16] allocate scratch register -> t1
+                                li t1, 13
+                                bgeu t1, t0, 2f
                                 1:
                                 # [91:16] source line
                                 li a0, 91
                                 j baz_bounds_panic
                                 2:
-                                # [91:16] free scratch register t3
+                                # [91:16] free scratch register t1
                                 # [91:16] bounds check end
-                                lui t0, 48
-                                add t0, t0, s0
-                                addi t0, t0, 989
                                 # [91:19] self.array[self.len]
-                                # [91:30] allocate scratch register -> t3
+                                # [91:30] allocate scratch register -> t1
                                 # [91:30] set array index
                                 # [91:30] self.len
-                                lui t3, 49
-                                add t3, t3, s0
-                                lw t3, -1836(t3)
+                                lui t1, 49
+                                add t1, t1, s0
+                                lw t1, -1836(t1)
                                 # [91:30] bounds check begin
                                 # [91:30] lower bound
-                                # [91:30] count t2 lower bound already checked
-                                bltz t3, 1f
+                                # [91:30] count t0 lower bound already checked
+                                bltz t1, 1f
                                 # [91:30] upper bound
-                                # [91:30] allocate scratch register -> t4
-                                # [91:30] allocate scratch register -> t5
-                                add t5, t3, t2
-                                li t4, 127
-                                bgeu t4, t5, 2f
+                                # [91:30] allocate scratch register -> t2
+                                # [91:30] allocate scratch register -> t3
+                                add t3, t1, t0
+                                li t2, 127
+                                bgeu t2, t3, 2f
                                 1:
                                 # [91:30] source line
                                 li a0, 91
                                 j baz_bounds_panic
                                 2:
-                                # [91:30] free scratch register t5
-                                # [91:30] free scratch register t4
+                                # [91:30] free scratch register t3
+                                # [91:30] free scratch register t2
                                 # [91:30] bounds check end
-                                add t1, s0, t3
-                                # allocate scratch register -> t4
-                                lui t4, 49
-                                add t1, t1, t4
-                                # free scratch register t4
-                                addi t1, t1, -1964
-                                # [91:5] free scratch register t3
-                                # [91:5] t2: elements to bytes (1 bytes/element)
+                                # [91:5] allocate scratch register -> t2
                                 # [91:5] allocate scratch register -> t3
-                                # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                                # [91:5] copy bytes; skip if none
-                                beqz t2, 4f
-                                add t2, t2, t0
-                                1:
-                                lbu t3, 0(t0)
-                                sb t3, 0(t1)
-                                addi t0, t0, 1
-                                addi t1, t1, 1
-                                bne t0, t2, 1b
-                                4:
+                                lui t3, 48
+                                add t3, t3, s0
+                                # [91:5] allocate scratch register -> t4
+                                add t4, s0, t1
+                                # [91:5] allocate scratch register -> t5
+                                lui t5, 49
+                                add t4, t4, t5
+                                # [91:5] free scratch register t5
+                                lbu t2, 989(t3)
+                                sb t2, -1964(t4)
+                                lbu t2, 990(t3)
+                                sb t2, -1963(t4)
+                                lbu t2, 991(t3)
+                                sb t2, -1962(t4)
+                                lbu t2, 992(t3)
+                                sb t2, -1961(t4)
+                                lbu t2, 993(t3)
+                                sb t2, -1960(t4)
+                                lbu t2, 994(t3)
+                                sb t2, -1959(t4)
+                                lbu t2, 995(t3)
+                                sb t2, -1958(t4)
+                                lbu t2, 996(t3)
+                                sb t2, -1957(t4)
+                                lbu t2, 997(t3)
+                                sb t2, -1956(t4)
+                                lbu t2, 998(t3)
+                                sb t2, -1955(t4)
+                                lbu t2, 999(t3)
+                                sb t2, -1954(t4)
+                                lbu t2, 1000(t3)
+                                sb t2, -1953(t4)
+                                lbu t2, 1001(t3)
+                                sb t2, -1952(t4)
+                                # [91:5] free scratch register t4
                                 # [91:5] free scratch register t3
                                 # [91:5] free scratch register t2
                                 # [91:5] free scratch register t1
                                 # [91:5] free scratch register t0
                                 # [92:5] self.len = self.len + array_length(s)
                                 # [92:16] self.len
-                                # [92:27] self.len + array_length(s)
-                                # [92:27] src: expression
-                                # [92:27] allocate scratch register -> t0
-                                # [92:27] array_length(s)
-                                li t0, 13
-                                # [92:27] allocate scratch register -> t1
-                                lui t1, 49
-                                add t1, t1, s0
-                                # [92:27] allocate scratch register -> t2
-                                lw t2, -1836(t1)
-                                add t2, t2, t0
-                                sw t2, -1836(t1)
-                                # [92:27] free scratch register t2
-                                # [92:27] free scratch register t1
-                                # [92:27] free scratch register t0
+                                # [92:16] self.len + 13
+                                # [92:16] src: folded constant '+ array_length(s)'
+                                # [92:16] allocate scratch register -> t0
+                                lui t0, 49
+                                add t0, t0, s0
+                                # [92:16] allocate scratch register -> t1
+                                lw t1, -1836(t0)
+                                addi t1, t1, 13
+                                sw t1, -1836(t0)
+                                # [92:16] free scratch register t1
+                                # [92:16] free scratch register t0
                             func.str.add.560.18.958.9.1018.13.1029.5.end:
                             # [561:18] arrived_text.add_name( link_names.array[ rooms.array[to_room_id].links[to_found_ix].link_name_id ] )
                             # [563:13] allocate scratch register -> t0
@@ -3866,15 +3830,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.960.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 2
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 2
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.960.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.960.18.1018.13.1029.5:
@@ -3884,9 +3843,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 2
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 2
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -4217,31 +4175,26 @@ main:
                                     # [596:13] alias self -> out
                                     # [596:13] alias s -> str_what_exit_name_to
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 30
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.596.13.961.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 30
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.596.13.961.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 30
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.596.13.961.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.596.13.961.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.596.13.961.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.596.13.961.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.596.13.961.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.596.13.961.9.1018.13.1029.5.end:
@@ -4252,33 +4205,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 30
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 30
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 30
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1002
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -4286,7 +4239,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.596.13.961.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.596.13.961.9.1018.13.1029.5.end:
                                 func.printer.print_all.596.13.961.9.1018.13.1029.5.end:
                                 # [597:9] return
@@ -5003,31 +4955,26 @@ main:
                                     # [609:13] alias self -> out
                                     # [609:13] alias s -> str_what_exit_name_back
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 36
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.609.13.961.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 36
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.609.13.961.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 36
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.609.13.961.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.609.13.961.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.609.13.961.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.609.13.961.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.609.13.961.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.609.13.961.9.1018.13.1029.5.end:
@@ -5038,33 +4985,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 36
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 36
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 36
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1032
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -5072,7 +5019,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.609.13.961.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.609.13.961.9.1018.13.1029.5.end:
                                 func.printer.print_all.609.13.961.9.1018.13.1029.5.end:
                                 # [610:9] return
@@ -5737,31 +5683,26 @@ main:
                                 # [632:9] alias self -> out
                                 # [632:9] alias s -> str_new_room_created
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 17
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.632.9.961.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 17
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.632.9.961.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 17
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.632.9.961.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.632.9.961.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.632.9.961.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.632.9.961.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.632.9.961.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.632.9.961.9.1018.13.1029.5.end:
@@ -5772,33 +5713,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 17
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 17
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 17
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1068
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -5806,7 +5747,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.632.9.961.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.632.9.961.9.1018.13.1029.5.end:
                             func.printer.print_all.632.9.961.9.1018.13.1029.5.end:
                         func.action_new_room.961.9.1018.13.1029.5.end:
@@ -5850,15 +5790,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.963.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 2
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 2
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.963.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.963.18.1018.13.1029.5:
@@ -5868,9 +5803,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 2
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 2
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -6271,31 +6205,26 @@ main:
                                 # [642:9] alias self -> out
                                 # [642:9] alias s -> str_new_room_description
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 21
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.642.9.964.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 21
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.642.9.964.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 21
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.642.9.964.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.642.9.964.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.642.9.964.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.642.9.964.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.642.9.964.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.642.9.964.9.1018.13.1029.5.end:
@@ -6306,33 +6235,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 21
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 21
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 21
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1085
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -6340,7 +6269,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.642.9.964.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.642.9.964.9.1018.13.1029.5.end:
                             func.printer.print_all.642.9.964.9.1018.13.1029.5.end:
                         func.action_set_room_description.964.9.1018.13.1029.5.end:
@@ -6384,15 +6312,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.966.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 3
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 3
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.966.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.966.18.1018.13.1029.5:
@@ -6402,9 +6325,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 3
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 3
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -6840,15 +6762,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.969.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 3
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 3
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.969.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.969.18.1018.13.1029.5:
@@ -6858,9 +6775,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 3
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 3
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -7191,31 +7107,26 @@ main:
                                     # [659:13] alias self -> out
                                     # [659:13] alias s -> str_what_name
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 10
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.659.13.970.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 10
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.659.13.970.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 10
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.659.13.970.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.659.13.970.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.659.13.970.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.659.13.970.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.659.13.970.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.659.13.970.9.1018.13.1029.5.end:
@@ -7226,33 +7137,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 10
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 10
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 10
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1106
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -7260,7 +7171,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.659.13.970.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.659.13.970.9.1018.13.1029.5.end:
                                 func.printer.print_all.659.13.970.9.1018.13.1029.5.end:
                                 # [660:9] return
@@ -7304,31 +7214,26 @@ main:
                                     # [664:13] alias self -> out
                                     # [664:13] alias s -> str_name_too_long
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 14
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.664.13.970.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 14
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.664.13.970.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 14
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.664.13.970.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.664.13.970.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.664.13.970.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.664.13.970.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.664.13.970.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.664.13.970.9.1018.13.1029.5.end:
@@ -7339,33 +7244,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 14
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 14
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 14
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1116
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -7373,7 +7278,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.664.13.970.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.664.13.970.9.1018.13.1029.5.end:
                                 func.printer.print_all.664.13.970.9.1018.13.1029.5.end:
                                 # [665:9] return
@@ -7545,31 +7449,26 @@ main:
                                 # [670:9] alias self -> out
                                 # [670:9] alias s -> str_new_room_name
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 14
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.670.9.970.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 14
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.670.9.970.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 14
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.670.9.970.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.670.9.970.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.670.9.970.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.670.9.970.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.670.9.970.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.670.9.970.9.1018.13.1029.5.end:
@@ -7580,33 +7479,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 14
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 14
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 14
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1130
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -7614,7 +7513,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.670.9.970.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.670.9.970.9.1018.13.1029.5.end:
                             func.printer.print_all.670.9.970.9.1018.13.1029.5.end:
                         func.action_set_room_name.970.9.1018.13.1029.5.end:
@@ -7658,15 +7556,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.972.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 2
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 2
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.972.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.972.18.1018.13.1029.5:
@@ -7676,9 +7569,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 2
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 2
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -8009,31 +7901,26 @@ main:
                                     # [679:13] alias self -> out
                                     # [679:13] alias s -> str_what_name
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 10
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.679.13.973.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 10
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.679.13.973.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 10
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.679.13.973.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.679.13.973.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.679.13.973.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.679.13.973.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.679.13.973.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.679.13.973.9.1018.13.1029.5.end:
@@ -8044,33 +7931,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 10
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 10
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 10
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1106
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -8078,7 +7965,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.679.13.973.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.679.13.973.9.1018.13.1029.5.end:
                                 func.printer.print_all.679.13.973.9.1018.13.1029.5.end:
                                 # [680:9] return
@@ -8446,31 +8332,26 @@ main:
                                 # [691:9] alias self -> out
                                 # [691:9] alias s -> str_new_entity_created
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 19
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.691.9.973.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 19
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.691.9.973.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 19
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.691.9.973.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.691.9.973.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.691.9.973.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.691.9.973.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.691.9.973.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.691.9.973.9.1018.13.1029.5.end:
@@ -8481,33 +8362,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 19
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 19
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 19
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1144
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -8515,7 +8396,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.691.9.973.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.691.9.973.9.1018.13.1029.5.end:
                             func.printer.print_all.691.9.973.9.1018.13.1029.5.end:
                         func.action_new_entity.973.9.1018.13.1029.5.end:
@@ -8559,15 +8439,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.975.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 2
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 2
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.975.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.975.18.1018.13.1029.5:
@@ -8577,9 +8452,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 2
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 2
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -8910,31 +8784,26 @@ main:
                                     # [700:13] alias self -> out
                                     # [700:13] alias s -> str_what_name
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 10
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.700.13.976.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 10
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.700.13.976.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 10
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.700.13.976.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.700.13.976.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.700.13.976.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.700.13.976.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.700.13.976.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.700.13.976.9.1018.13.1029.5.end:
@@ -8945,33 +8814,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 10
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 10
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 10
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1106
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -8979,7 +8848,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.700.13.976.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.700.13.976.9.1018.13.1029.5.end:
                                 func.printer.print_all.700.13.976.9.1018.13.1029.5.end:
                                 # [701:9] return
@@ -9269,31 +9137,26 @@ main:
                                 # [710:9] alias self -> out
                                 # [710:9] alias s -> str_new_object_created
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 19
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.710.9.976.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 19
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.710.9.976.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 19
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.710.9.976.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.710.9.976.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.710.9.976.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.710.9.976.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.710.9.976.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.710.9.976.9.1018.13.1029.5.end:
@@ -9304,33 +9167,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 19
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 19
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 19
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1163
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -9338,7 +9201,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.710.9.976.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.710.9.976.9.1018.13.1029.5.end:
                             func.printer.print_all.710.9.976.9.1018.13.1029.5.end:
                         func.action_new_object.976.9.1018.13.1029.5.end:
@@ -9382,15 +9244,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.978.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 1
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 1
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.978.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.978.18.1018.13.1029.5:
@@ -9400,9 +9257,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 1
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 1
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -9520,31 +9376,26 @@ main:
                                     # [719:13] alias self -> out
                                     # [719:13] alias s -> str_u_have_nothing
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 15
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.719.13.979.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 15
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.719.13.979.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 15
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.719.13.979.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.719.13.979.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.719.13.979.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.719.13.979.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.719.13.979.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.719.13.979.9.1018.13.1029.5.end:
@@ -9555,33 +9406,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 15
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 15
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 15
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1190
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -9589,7 +9440,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.719.13.979.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.719.13.979.9.1018.13.1029.5.end:
                                 func.printer.print_all.719.13.979.9.1018.13.1029.5.end:
                                 # [720:9] return
@@ -9652,31 +9502,26 @@ main:
                                         # [728:17] alias self -> out
                                         # [728:17] alias s -> str_u_have
                                         # [69:10] self.print(s, array_length(s))
-                                        # [69:19] allocate scratch register -> t3
-                                        # [69:19] t3 = array_length(s)
-                                        # [69:19] = expression
-                                        # [69:19] array_length(s)
-                                        li t3, 8
                                         # [64:6] printer.print(s i8[], count)
                                         func.printer.print.69.10.728.17.979.9.1018.13.1029.5:
                                             # [69:10] alias self -> self
                                             # [69:10] alias s -> s
-                                            # [69:10] alias count -> t3
+                                            # [69:10] alias count -> 8
                                             # [65:10] self.print_at(s, count, 0)
                                             # [58:6] printer.print_at(s i8[], count, start)
                                             func.printer.print_at.65.10.69.10.728.17.979.9.1018.13.1029.5:
                                                 # [65:10] alias self -> self
                                                 # [65:10] alias s -> s
-                                                # [65:10] alias count -> count
+                                                # [65:10] alias count -> 8
                                                 # [65:10] alias start -> 0
                                                 if.59.8.65.10.69.10.728.17.979.9.1018.13.1029.5:
                                                 # [59:8] ? self.silenced
                                                 # [59:8] ? shorthand: self.silenced
                                                 cmp.59.8.65.10.69.10.728.17.979.9.1018.13.1029.5:
-                                                # [59:8] allocate scratch register -> t4
-                                                lbu t4, 911(s0)
-                                                bne t4, zero, func.printer.print_at.65.10.69.10.728.17.979.9.1018.13.1029.5.end
-                                                # [59:8] free scratch register t4
+                                                # [59:8] allocate scratch register -> t3
+                                                lbu t3, 911(s0)
+                                                bne t3, zero, func.printer.print_at.65.10.69.10.728.17.979.9.1018.13.1029.5.end
+                                                # [59:8] free scratch register t3
                                                 if.59.8.65.10.69.10.728.17.979.9.1018.13.1029.5.code:
                                                     # [59:22] return
                                                 if.59.5.65.10.69.10.728.17.979.9.1018.13.1029.5.end:
@@ -9687,33 +9532,33 @@ main:
                                                 # [61:11] 1
                                                 li a0, 1
                                                 # [61:17] count
-                                                addi a2, t3, 0
-                                                # [61:24] allocate scratch register -> t4
+                                                li a2, 8
+                                                # [61:24] allocate scratch register -> t3
                                                 # [61:24] start
-                                                li t4, 0
+                                                li t3, 0
                                                 # [61:24] bounds check begin
                                                 # [61:24] lower bound
-                                                bltz t4, 1f
+                                                bltz t3, 1f
                                                 bltz a2, 1f
                                                 # [61:24] upper bound
+                                                # [61:24] allocate scratch register -> t4
                                                 # [61:24] allocate scratch register -> t5
-                                                # [61:24] allocate scratch register -> t6
-                                                add t6, t4, a2
-                                                li t5, 8
-                                                bgeu t5, t6, 2f
+                                                add t5, t3, a2
+                                                li t4, 8
+                                                bgeu t4, t5, 2f
                                                 1:
                                                 # [61:24] source line
                                                 li a0, 61
                                                 j baz_bounds_panic
                                                 2:
-                                                # [61:24] free scratch register t6
                                                 # [61:24] free scratch register t5
+                                                # [61:24] free scratch register t4
                                                 # [61:24] bounds check end
                                                 lui a1, 48
                                                 add a1, a1, s0
                                                 addi a1, a1, 1182
-                                                add a1, a1, t4
-                                                # [61:5] free scratch register t4
+                                                add a1, a1, t3
+                                                # [61:5] free scratch register t3
                                                 # [61:5] allocate named register a7
                                                 call a7, .Lbaz_write
                                                 # [61:5] free named register a7
@@ -9721,7 +9566,6 @@ main:
                                                 # [61:5] free named register a1
                                                 # [61:5] free named register a0
                                             func.printer.print_at.65.10.69.10.728.17.979.9.1018.13.1029.5.end:
-                                            # [69:10] free scratch register t3
                                         func.printer.print.69.10.728.17.979.9.1018.13.1029.5.end:
                                     func.printer.print_all.728.17.979.9.1018.13.1029.5.end:
                                     # [729:13] first_printed = true
@@ -9741,31 +9585,26 @@ main:
                                         # [731:17] alias self -> out
                                         # [731:17] alias s -> str_comma
                                         # [69:10] self.print(s, array_length(s))
-                                        # [69:19] allocate scratch register -> t3
-                                        # [69:19] t3 = array_length(s)
-                                        # [69:19] = expression
-                                        # [69:19] array_length(s)
-                                        li t3, 2
                                         # [64:6] printer.print(s i8[], count)
                                         func.printer.print.69.10.731.17.979.9.1018.13.1029.5:
                                             # [69:10] alias self -> self
                                             # [69:10] alias s -> s
-                                            # [69:10] alias count -> t3
+                                            # [69:10] alias count -> 2
                                             # [65:10] self.print_at(s, count, 0)
                                             # [58:6] printer.print_at(s i8[], count, start)
                                             func.printer.print_at.65.10.69.10.731.17.979.9.1018.13.1029.5:
                                                 # [65:10] alias self -> self
                                                 # [65:10] alias s -> s
-                                                # [65:10] alias count -> count
+                                                # [65:10] alias count -> 2
                                                 # [65:10] alias start -> 0
                                                 if.59.8.65.10.69.10.731.17.979.9.1018.13.1029.5:
                                                 # [59:8] ? self.silenced
                                                 # [59:8] ? shorthand: self.silenced
                                                 cmp.59.8.65.10.69.10.731.17.979.9.1018.13.1029.5:
-                                                # [59:8] allocate scratch register -> t4
-                                                lbu t4, 911(s0)
-                                                bne t4, zero, func.printer.print_at.65.10.69.10.731.17.979.9.1018.13.1029.5.end
-                                                # [59:8] free scratch register t4
+                                                # [59:8] allocate scratch register -> t3
+                                                lbu t3, 911(s0)
+                                                bne t3, zero, func.printer.print_at.65.10.69.10.731.17.979.9.1018.13.1029.5.end
+                                                # [59:8] free scratch register t3
                                                 if.59.8.65.10.69.10.731.17.979.9.1018.13.1029.5.code:
                                                     # [59:22] return
                                                 if.59.5.65.10.69.10.731.17.979.9.1018.13.1029.5.end:
@@ -9776,31 +9615,31 @@ main:
                                                 # [61:11] 1
                                                 li a0, 1
                                                 # [61:17] count
-                                                addi a2, t3, 0
-                                                # [61:24] allocate scratch register -> t4
+                                                li a2, 2
+                                                # [61:24] allocate scratch register -> t3
                                                 # [61:24] start
-                                                li t4, 0
+                                                li t3, 0
                                                 # [61:24] bounds check begin
                                                 # [61:24] lower bound
-                                                bltz t4, 1f
+                                                bltz t3, 1f
                                                 bltz a2, 1f
                                                 # [61:24] upper bound
+                                                # [61:24] allocate scratch register -> t4
                                                 # [61:24] allocate scratch register -> t5
-                                                # [61:24] allocate scratch register -> t6
-                                                add t6, t4, a2
-                                                li t5, 2
-                                                bgeu t5, t6, 2f
+                                                add t5, t3, a2
+                                                li t4, 2
+                                                bgeu t4, t5, 2f
                                                 1:
                                                 # [61:24] source line
                                                 li a0, 61
                                                 j baz_bounds_panic
                                                 2:
-                                                # [61:24] free scratch register t6
                                                 # [61:24] free scratch register t5
+                                                # [61:24] free scratch register t4
                                                 # [61:24] bounds check end
                                                 addi a1, s0, 883
-                                                add a1, a1, t4
-                                                # [61:5] free scratch register t4
+                                                add a1, a1, t3
+                                                # [61:5] free scratch register t3
                                                 # [61:5] allocate named register a7
                                                 call a7, .Lbaz_write
                                                 # [61:5] free named register a7
@@ -9808,7 +9647,6 @@ main:
                                                 # [61:5] free named register a1
                                                 # [61:5] free named register a0
                                             func.printer.print_at.65.10.69.10.731.17.979.9.1018.13.1029.5.end:
-                                            # [69:10] free scratch register t3
                                         func.printer.print.69.10.731.17.979.9.1018.13.1029.5.end:
                                     func.printer.print_all.731.17.979.9.1018.13.1029.5.end:
                                 if.727.9.979.9.1018.13.1029.5.end:
@@ -9932,31 +9770,26 @@ main:
                                     # [73:10] alias self -> self
                                     # [73:10] alias s -> str_nl
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 1
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.73.10.737.9.979.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 1
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.73.10.737.9.979.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 1
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.73.10.737.9.979.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.73.10.737.9.979.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.73.10.737.9.979.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.73.10.737.9.979.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.73.10.737.9.979.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.73.10.737.9.979.9.1018.13.1029.5.end:
@@ -9967,31 +9800,31 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 1
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 1
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 1
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             addi a1, s0, 879
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -9999,7 +9832,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.73.10.737.9.979.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.73.10.737.9.979.9.1018.13.1029.5.end:
                                 func.printer.print_all.73.10.737.9.979.9.1018.13.1029.5.end:
                             func.printer.println.737.9.979.9.1018.13.1029.5.end:
@@ -10044,15 +9876,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.981.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 1
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 1
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.981.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.981.18.1018.13.1029.5:
@@ -10062,9 +9889,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 1
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 1
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -10395,31 +10221,26 @@ main:
                                     # [748:13] alias self -> out
                                     # [748:13] alias s -> str_drop_what
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 10
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.748.13.982.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 10
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.748.13.982.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 10
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.748.13.982.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.748.13.982.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.748.13.982.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.748.13.982.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.748.13.982.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.748.13.982.9.1018.13.1029.5.end:
@@ -10430,33 +10251,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 10
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 10
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 10
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1205
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -10464,7 +10285,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.748.13.982.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.748.13.982.9.1018.13.1029.5.end:
                                 func.printer.print_all.748.13.982.9.1018.13.1029.5.end:
                                 # [749:9] return
@@ -10734,31 +10554,26 @@ main:
                                     # [763:13] alias self -> out
                                     # [763:13] alias s -> str_not_carrying
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 19
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.763.13.982.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 19
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.763.13.982.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 19
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.763.13.982.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.763.13.982.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.763.13.982.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.763.13.982.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.763.13.982.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.763.13.982.9.1018.13.1029.5.end:
@@ -10769,33 +10584,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 19
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 19
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 19
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1215
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -10803,7 +10618,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.763.13.982.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.763.13.982.9.1018.13.1029.5.end:
                                 func.printer.print_all.763.13.982.9.1018.13.1029.5.end:
                                 # [764:9] return
@@ -11096,31 +10910,26 @@ main:
                                 # [773:9] alias self -> out
                                 # [773:9] alias s -> str_dropped
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 8
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.773.9.982.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 8
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.773.9.982.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 8
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.773.9.982.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.773.9.982.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.773.9.982.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.773.9.982.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.773.9.982.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.773.9.982.9.1018.13.1029.5.end:
@@ -11131,33 +10940,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 8
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 8
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 8
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1234
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -11165,7 +10974,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.773.9.982.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.773.9.982.9.1018.13.1029.5.end:
                             func.printer.print_all.773.9.982.9.1018.13.1029.5.end:
                             # [774:8] tz.print()
@@ -11267,31 +11075,26 @@ main:
                                     # [73:10] alias self -> self
                                     # [73:10] alias s -> str_nl
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 1
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.73.10.775.9.982.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 1
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.73.10.775.9.982.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 1
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.73.10.775.9.982.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.73.10.775.9.982.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.73.10.775.9.982.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.73.10.775.9.982.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.73.10.775.9.982.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.73.10.775.9.982.9.1018.13.1029.5.end:
@@ -11302,31 +11105,31 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 1
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 1
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 1
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             addi a1, s0, 879
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -11334,7 +11137,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.73.10.775.9.982.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.73.10.775.9.982.9.1018.13.1029.5.end:
                                 func.printer.print_all.73.10.775.9.982.9.1018.13.1029.5.end:
                             func.printer.println.775.9.982.9.1018.13.1029.5.end:
@@ -11379,15 +11181,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.984.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 1
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 1
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.984.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.984.18.1018.13.1029.5:
@@ -11397,9 +11194,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 1
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 1
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -11730,31 +11526,26 @@ main:
                                     # [788:13] alias self -> out
                                     # [788:13] alias s -> str_give_what
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 10
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.788.13.985.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 10
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.788.13.985.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 10
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.788.13.985.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.788.13.985.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.788.13.985.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.788.13.985.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.788.13.985.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.788.13.985.9.1018.13.1029.5.end:
@@ -11765,33 +11556,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 10
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 10
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 10
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1242
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -11799,7 +11590,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.788.13.985.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.788.13.985.9.1018.13.1029.5.end:
                                 func.printer.print_all.788.13.985.9.1018.13.1029.5.end:
                                 # [789:9] return
@@ -12069,31 +11859,26 @@ main:
                                     # [803:13] alias self -> out
                                     # [803:13] alias s -> str_not_carrying
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 19
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.803.13.985.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 19
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.803.13.985.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 19
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.803.13.985.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.803.13.985.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.803.13.985.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.803.13.985.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.803.13.985.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.803.13.985.9.1018.13.1029.5.end:
@@ -12104,33 +11889,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 19
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 19
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 19
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1215
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -12138,7 +11923,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.803.13.985.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.803.13.985.9.1018.13.1029.5.end:
                                 func.printer.print_all.803.13.985.9.1018.13.1029.5.end:
                                 # [804:9] return
@@ -12476,31 +12260,26 @@ main:
                                     # [813:13] alias self -> out
                                     # [813:13] alias s -> str_give_to_whom
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 13
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.813.13.985.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 13
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.813.13.985.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 13
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.813.13.985.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.813.13.985.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.813.13.985.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.813.13.985.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.813.13.985.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.813.13.985.9.1018.13.1029.5.end:
@@ -12511,33 +12290,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 13
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 13
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 13
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1252
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -12545,7 +12324,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.813.13.985.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.813.13.985.9.1018.13.1029.5.end:
                                 func.printer.print_all.813.13.985.9.1018.13.1029.5.end:
                                 # [814:9] return
@@ -12999,31 +12777,26 @@ main:
                                     # [831:13] alias self -> out
                                     # [831:13] alias s -> str_is_not_here
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 13
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.831.13.985.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 13
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.831.13.985.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 13
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.831.13.985.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.831.13.985.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.831.13.985.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.831.13.985.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.831.13.985.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.831.13.985.9.1018.13.1029.5.end:
@@ -13034,33 +12807,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 13
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 13
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 13
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1265
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -13068,7 +12841,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.831.13.985.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.831.13.985.9.1018.13.1029.5.end:
                                 func.printer.print_all.831.13.985.9.1018.13.1029.5.end:
                                 # [832:9] return
@@ -13309,31 +13081,26 @@ main:
                                 # [839:9] alias self -> out
                                 # [839:9] alias s -> str_gave
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 5
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.839.9.985.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 5
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.839.9.985.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 5
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.839.9.985.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.839.9.985.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.839.9.985.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.839.9.985.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.839.9.985.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.839.9.985.9.1018.13.1029.5.end:
@@ -13344,33 +13111,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 5
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 5
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 5
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1278
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -13378,7 +13145,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.839.9.985.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.839.9.985.9.1018.13.1029.5.end:
                             func.printer.print_all.839.9.985.9.1018.13.1029.5.end:
                             # [840:17] object_name.print()
@@ -13460,31 +13226,26 @@ main:
                                 # [841:9] alias self -> out
                                 # [841:9] alias s -> str_to
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 4
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.841.9.985.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 4
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.841.9.985.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 4
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.841.9.985.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.841.9.985.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.841.9.985.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.841.9.985.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.841.9.985.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.841.9.985.9.1018.13.1029.5.end:
@@ -13495,33 +13256,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 4
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 4
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 4
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1283
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -13529,7 +13290,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.841.9.985.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.841.9.985.9.1018.13.1029.5.end:
                             func.printer.print_all.841.9.985.9.1018.13.1029.5.end:
                             # [842:36] entities.array[to_entity].name.print()
@@ -13645,31 +13405,26 @@ main:
                                     # [73:10] alias self -> self
                                     # [73:10] alias s -> str_nl
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 1
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.73.10.843.9.985.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 1
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.73.10.843.9.985.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 1
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.73.10.843.9.985.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.73.10.843.9.985.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.73.10.843.9.985.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.73.10.843.9.985.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.73.10.843.9.985.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.73.10.843.9.985.9.1018.13.1029.5.end:
@@ -13680,31 +13435,31 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 1
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 1
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 1
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             addi a1, s0, 879
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -13712,7 +13467,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.73.10.843.9.985.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.73.10.843.9.985.9.1018.13.1029.5.end:
                                 func.printer.print_all.73.10.843.9.985.9.1018.13.1029.5.end:
                             func.printer.println.843.9.985.9.1018.13.1029.5.end:
@@ -13741,98 +13495,88 @@ main:
                                 # [846:15] alias s -> str_gave
                                 # [91:5] array_copy(s, self.array[self.len], array_length(s))
                                 # [91:5] allocate scratch register -> t0
-                                # [91:5] allocate scratch register -> t1
-                                # [91:5] allocate scratch register -> t2
-                                # [91:5] t0: source, t1: destination, t2: count
                                 # [91:41] array_length(s)
-                                # [91:41] t2 = array_length(s)
-                                # [91:41] = expression
-                                # [91:41] array_length(s)
-                                li t2, 5
+                                # [91:41] t0 = 5
+                                # [91:41] src: folded constant 'array_length(s)'
+                                li t0, 5
                                 # [91:16] s
                                 # [91:16] bounds check begin
                                 # [91:16] lower bound
-                                # [91:16] t2 lower bound covered by the unsigned upper bound
+                                # [91:16] t0 lower bound covered by the unsigned upper bound
                                 # [91:16] upper bound
-                                # [91:16] allocate scratch register -> t3
-                                li t3, 5
-                                bgeu t3, t2, 2f
+                                # [91:16] allocate scratch register -> t1
+                                li t1, 5
+                                bgeu t1, t0, 2f
                                 1:
                                 # [91:16] source line
                                 li a0, 91
                                 j baz_bounds_panic
                                 2:
-                                # [91:16] free scratch register t3
+                                # [91:16] free scratch register t1
                                 # [91:16] bounds check end
-                                lui t0, 48
-                                add t0, t0, s0
-                                addi t0, t0, 1278
                                 # [91:19] self.array[self.len]
-                                # [91:30] allocate scratch register -> t3
+                                # [91:30] allocate scratch register -> t1
                                 # [91:30] set array index
                                 # [91:30] self.len
-                                lui t3, 49
-                                add t3, t3, s0
-                                lw t3, -1948(t3)
+                                lui t1, 49
+                                add t1, t1, s0
+                                lw t1, -1948(t1)
                                 # [91:30] bounds check begin
                                 # [91:30] lower bound
-                                # [91:30] count t2 lower bound already checked
-                                bltz t3, 1f
+                                # [91:30] count t0 lower bound already checked
+                                bltz t1, 1f
                                 # [91:30] upper bound
-                                # [91:30] allocate scratch register -> t4
-                                # [91:30] allocate scratch register -> t5
-                                add t5, t3, t2
-                                li t4, 127
-                                bgeu t4, t5, 2f
+                                # [91:30] allocate scratch register -> t2
+                                # [91:30] allocate scratch register -> t3
+                                add t3, t1, t0
+                                li t2, 127
+                                bgeu t2, t3, 2f
                                 1:
                                 # [91:30] source line
                                 li a0, 91
                                 j baz_bounds_panic
                                 2:
-                                # [91:30] free scratch register t5
-                                # [91:30] free scratch register t4
+                                # [91:30] free scratch register t3
+                                # [91:30] free scratch register t2
                                 # [91:30] bounds check end
-                                add t1, s0, t3
-                                # allocate scratch register -> t4
-                                lui t4, 48
-                                add t1, t1, t4
-                                # free scratch register t4
-                                addi t1, t1, 2020
-                                # [91:5] free scratch register t3
-                                # [91:5] t2: elements to bytes (1 bytes/element)
+                                # [91:5] allocate scratch register -> t2
                                 # [91:5] allocate scratch register -> t3
-                                # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                                # [91:5] copy bytes; skip if none
-                                beqz t2, 4f
-                                add t2, t2, t0
-                                1:
-                                lbu t3, 0(t0)
-                                sb t3, 0(t1)
-                                addi t0, t0, 1
-                                addi t1, t1, 1
-                                bne t0, t2, 1b
-                                4:
+                                lui t3, 48
+                                add t3, t3, s0
+                                # [91:5] allocate scratch register -> t4
+                                add t4, s0, t1
+                                # [91:5] allocate scratch register -> t5
+                                lui t5, 48
+                                add t4, t4, t5
+                                # [91:5] free scratch register t5
+                                lbu t2, 1278(t3)
+                                sb t2, 2020(t4)
+                                lbu t2, 1279(t3)
+                                sb t2, 2021(t4)
+                                lbu t2, 1280(t3)
+                                sb t2, 2022(t4)
+                                lbu t2, 1281(t3)
+                                sb t2, 2023(t4)
+                                lbu t2, 1282(t3)
+                                sb t2, 2024(t4)
+                                # [91:5] free scratch register t4
                                 # [91:5] free scratch register t3
                                 # [91:5] free scratch register t2
                                 # [91:5] free scratch register t1
                                 # [91:5] free scratch register t0
                                 # [92:5] self.len = self.len + array_length(s)
                                 # [92:16] self.len
-                                # [92:27] self.len + array_length(s)
-                                # [92:27] src: expression
-                                # [92:27] allocate scratch register -> t0
-                                # [92:27] array_length(s)
-                                li t0, 5
-                                # [92:27] allocate scratch register -> t1
-                                lui t1, 49
-                                add t1, t1, s0
-                                # [92:27] allocate scratch register -> t2
-                                lw t2, -1948(t1)
-                                add t2, t2, t0
-                                sw t2, -1948(t1)
-                                # [92:27] free scratch register t2
-                                # [92:27] free scratch register t1
-                                # [92:27] free scratch register t0
+                                # [92:16] self.len + 5
+                                # [92:16] src: folded constant '+ array_length(s)'
+                                # [92:16] allocate scratch register -> t0
+                                lui t0, 49
+                                add t0, t0, s0
+                                # [92:16] allocate scratch register -> t1
+                                lw t1, -1948(t0)
+                                addi t1, t1, 5
+                                sw t1, -1948(t0)
+                                # [92:16] free scratch register t1
+                                # [92:16] free scratch register t0
                             func.str.add.846.15.985.9.1018.13.1029.5.end:
                             # [847:15] gave_text.add_name(entities.array[to_entity].name)
                             # [847:39] allocate scratch register -> t0
@@ -13970,96 +13714,76 @@ main:
                                 # [848:15] alias s -> str_space
                                 # [91:5] array_copy(s, self.array[self.len], array_length(s))
                                 # [91:5] allocate scratch register -> t0
-                                # [91:5] allocate scratch register -> t1
-                                # [91:5] allocate scratch register -> t2
-                                # [91:5] t0: source, t1: destination, t2: count
                                 # [91:41] array_length(s)
-                                # [91:41] t2 = array_length(s)
-                                # [91:41] = expression
-                                # [91:41] array_length(s)
-                                li t2, 1
+                                # [91:41] t0 = 1
+                                # [91:41] src: folded constant 'array_length(s)'
+                                li t0, 1
                                 # [91:16] s
                                 # [91:16] bounds check begin
                                 # [91:16] lower bound
-                                # [91:16] t2 lower bound covered by the unsigned upper bound
+                                # [91:16] t0 lower bound covered by the unsigned upper bound
                                 # [91:16] upper bound
-                                # [91:16] allocate scratch register -> t3
-                                li t3, 1
-                                bgeu t3, t2, 2f
+                                # [91:16] allocate scratch register -> t1
+                                li t1, 1
+                                bgeu t1, t0, 2f
                                 1:
                                 # [91:16] source line
                                 li a0, 91
                                 j baz_bounds_panic
                                 2:
-                                # [91:16] free scratch register t3
+                                # [91:16] free scratch register t1
                                 # [91:16] bounds check end
-                                addi t0, s0, 926
                                 # [91:19] self.array[self.len]
-                                # [91:30] allocate scratch register -> t3
+                                # [91:30] allocate scratch register -> t1
                                 # [91:30] set array index
                                 # [91:30] self.len
-                                lui t3, 49
-                                add t3, t3, s0
-                                lw t3, -1948(t3)
+                                lui t1, 49
+                                add t1, t1, s0
+                                lw t1, -1948(t1)
                                 # [91:30] bounds check begin
                                 # [91:30] lower bound
-                                # [91:30] count t2 lower bound already checked
-                                bltz t3, 1f
+                                # [91:30] count t0 lower bound already checked
+                                bltz t1, 1f
                                 # [91:30] upper bound
-                                # [91:30] allocate scratch register -> t4
-                                # [91:30] allocate scratch register -> t5
-                                add t5, t3, t2
-                                li t4, 127
-                                bgeu t4, t5, 2f
+                                # [91:30] allocate scratch register -> t2
+                                # [91:30] allocate scratch register -> t3
+                                add t3, t1, t0
+                                li t2, 127
+                                bgeu t2, t3, 2f
                                 1:
                                 # [91:30] source line
                                 li a0, 91
                                 j baz_bounds_panic
                                 2:
-                                # [91:30] free scratch register t5
-                                # [91:30] free scratch register t4
+                                # [91:30] free scratch register t3
+                                # [91:30] free scratch register t2
                                 # [91:30] bounds check end
-                                add t1, s0, t3
-                                # allocate scratch register -> t4
-                                lui t4, 48
-                                add t1, t1, t4
-                                # free scratch register t4
-                                addi t1, t1, 2020
-                                # [91:5] free scratch register t3
-                                # [91:5] t2: elements to bytes (1 bytes/element)
+                                # [91:5] allocate scratch register -> t2
                                 # [91:5] allocate scratch register -> t3
-                                # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                                # [91:5] copy bytes; skip if none
-                                beqz t2, 4f
-                                add t2, t2, t0
-                                1:
-                                lbu t3, 0(t0)
-                                sb t3, 0(t1)
-                                addi t0, t0, 1
-                                addi t1, t1, 1
-                                bne t0, t2, 1b
-                                4:
+                                add t3, s0, t1
+                                # [91:5] allocate scratch register -> t4
+                                lui t4, 48
+                                add t3, t3, t4
+                                # [91:5] free scratch register t4
+                                lbu t2, 926(s0)
+                                sb t2, 2020(t3)
                                 # [91:5] free scratch register t3
                                 # [91:5] free scratch register t2
                                 # [91:5] free scratch register t1
                                 # [91:5] free scratch register t0
                                 # [92:5] self.len = self.len + array_length(s)
                                 # [92:16] self.len
-                                # [92:27] self.len + array_length(s)
-                                # [92:27] src: expression
-                                # [92:27] allocate scratch register -> t0
-                                # [92:27] array_length(s)
-                                li t0, 1
-                                # [92:27] allocate scratch register -> t1
-                                lui t1, 49
-                                add t1, t1, s0
-                                # [92:27] allocate scratch register -> t2
-                                lw t2, -1948(t1)
-                                add t2, t2, t0
-                                sw t2, -1948(t1)
-                                # [92:27] free scratch register t2
-                                # [92:27] free scratch register t1
-                                # [92:27] free scratch register t0
+                                # [92:16] self.len + 1
+                                # [92:16] src: folded constant '+ array_length(s)'
+                                # [92:16] allocate scratch register -> t0
+                                lui t0, 49
+                                add t0, t0, s0
+                                # [92:16] allocate scratch register -> t1
+                                lw t1, -1948(t0)
+                                addi t1, t1, 1
+                                sw t1, -1948(t0)
+                                # [92:16] free scratch register t1
+                                # [92:16] free scratch register t0
                             func.str.add.848.15.985.9.1018.13.1029.5.end:
                             # [849:15] gave_text.add_name(object_name)
                             # [181:10] mut str.add_name(nm name)
@@ -14509,15 +14233,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.987.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 1
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 1
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.987.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.987.18.1018.13.1029.5:
@@ -14527,9 +14246,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 1
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 1
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -14860,31 +14578,26 @@ main:
                                     # [863:13] alias self -> out
                                     # [863:13] alias s -> str_tell_whom
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 10
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.863.13.988.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 10
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.863.13.988.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 10
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.863.13.988.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.863.13.988.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.863.13.988.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.863.13.988.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.863.13.988.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.863.13.988.9.1018.13.1029.5.end:
@@ -14895,33 +14608,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 10
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 10
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 10
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1287
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -14929,7 +14642,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.863.13.988.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.863.13.988.9.1018.13.1029.5.end:
                                 func.printer.print_all.863.13.988.9.1018.13.1029.5.end:
                                 # [864:9] return
@@ -15245,31 +14957,26 @@ main:
                                     # [878:13] alias self -> out
                                     # [878:13] alias s -> str_does_not_exist
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 16
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.878.13.988.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 16
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.878.13.988.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 16
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.878.13.988.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.878.13.988.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.878.13.988.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.878.13.988.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.878.13.988.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.878.13.988.9.1018.13.1029.5.end:
@@ -15280,33 +14987,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 16
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 16
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 16
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1307
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -15314,7 +15021,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.878.13.988.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.878.13.988.9.1018.13.1029.5.end:
                                 func.printer.print_all.878.13.988.9.1018.13.1029.5.end:
                                 # [879:9] return
@@ -15462,31 +15168,26 @@ main:
                                     # [884:13] alias self -> out
                                     # [884:13] alias s -> str_has_too_many_messages
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 23
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.884.13.988.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 23
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.884.13.988.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 23
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.884.13.988.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.884.13.988.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.884.13.988.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.884.13.988.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.884.13.988.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.884.13.988.9.1018.13.1029.5.end:
@@ -15497,33 +15198,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 23
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 23
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 23
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1323
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -15531,7 +15232,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.884.13.988.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.884.13.988.9.1018.13.1029.5.end:
                                 func.printer.print_all.884.13.988.9.1018.13.1029.5.end:
                                 # [885:9] return
@@ -15715,31 +15415,26 @@ main:
                                     # [893:13] alias self -> out
                                     # [893:13] alias s -> str_tell_what
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 10
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.893.13.988.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 10
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.893.13.988.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 10
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.893.13.988.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.893.13.988.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.893.13.988.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.893.13.988.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.893.13.988.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.893.13.988.9.1018.13.1029.5.end:
@@ -15750,33 +15445,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 10
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 10
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 10
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1297
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -15784,7 +15479,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.893.13.988.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.893.13.988.9.1018.13.1029.5.end:
                                 func.printer.print_all.893.13.988.9.1018.13.1029.5.end:
                                 # [894:9] return
@@ -16088,15 +15782,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.990.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 1
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 1
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.990.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.990.18.1018.13.1029.5:
@@ -16106,9 +15795,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 1
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 1
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -16375,31 +16063,26 @@ main:
                                     # [910:13] alias self -> out
                                     # [910:13] alias s -> str_say_what
                                     # [69:10] self.print(s, array_length(s))
-                                    # [69:19] allocate scratch register -> t0
-                                    # [69:19] t0 = array_length(s)
-                                    # [69:19] = expression
-                                    # [69:19] array_length(s)
-                                    li t0, 9
                                     # [64:6] printer.print(s i8[], count)
                                     func.printer.print.69.10.910.13.991.9.1018.13.1029.5:
                                         # [69:10] alias self -> self
                                         # [69:10] alias s -> s
-                                        # [69:10] alias count -> t0
+                                        # [69:10] alias count -> 9
                                         # [65:10] self.print_at(s, count, 0)
                                         # [58:6] printer.print_at(s i8[], count, start)
                                         func.printer.print_at.65.10.69.10.910.13.991.9.1018.13.1029.5:
                                             # [65:10] alias self -> self
                                             # [65:10] alias s -> s
-                                            # [65:10] alias count -> count
+                                            # [65:10] alias count -> 9
                                             # [65:10] alias start -> 0
                                             if.59.8.65.10.69.10.910.13.991.9.1018.13.1029.5:
                                             # [59:8] ? self.silenced
                                             # [59:8] ? shorthand: self.silenced
                                             cmp.59.8.65.10.69.10.910.13.991.9.1018.13.1029.5:
-                                            # [59:8] allocate scratch register -> t1
-                                            lbu t1, 911(s0)
-                                            bne t1, zero, func.printer.print_at.65.10.69.10.910.13.991.9.1018.13.1029.5.end
-                                            # [59:8] free scratch register t1
+                                            # [59:8] allocate scratch register -> t0
+                                            lbu t0, 911(s0)
+                                            bne t0, zero, func.printer.print_at.65.10.69.10.910.13.991.9.1018.13.1029.5.end
+                                            # [59:8] free scratch register t0
                                             if.59.8.65.10.69.10.910.13.991.9.1018.13.1029.5.code:
                                                 # [59:22] return
                                             if.59.5.65.10.69.10.910.13.991.9.1018.13.1029.5.end:
@@ -16410,33 +16093,33 @@ main:
                                             # [61:11] 1
                                             li a0, 1
                                             # [61:17] count
-                                            addi a2, t0, 0
-                                            # [61:24] allocate scratch register -> t1
+                                            li a2, 9
+                                            # [61:24] allocate scratch register -> t0
                                             # [61:24] start
-                                            li t1, 0
+                                            li t0, 0
                                             # [61:24] bounds check begin
                                             # [61:24] lower bound
-                                            bltz t1, 1f
+                                            bltz t0, 1f
                                             bltz a2, 1f
                                             # [61:24] upper bound
+                                            # [61:24] allocate scratch register -> t1
                                             # [61:24] allocate scratch register -> t2
-                                            # [61:24] allocate scratch register -> t3
-                                            add t3, t1, a2
-                                            li t2, 9
-                                            bgeu t2, t3, 2f
+                                            add t2, t0, a2
+                                            li t1, 9
+                                            bgeu t1, t2, 2f
                                             1:
                                             # [61:24] source line
                                             li a0, 61
                                             j baz_bounds_panic
                                             2:
-                                            # [61:24] free scratch register t3
                                             # [61:24] free scratch register t2
+                                            # [61:24] free scratch register t1
                                             # [61:24] bounds check end
                                             lui a1, 48
                                             add a1, a1, s0
                                             addi a1, a1, 1346
-                                            add a1, a1, t1
-                                            # [61:5] free scratch register t1
+                                            add a1, a1, t0
+                                            # [61:5] free scratch register t0
                                             # [61:5] allocate named register a7
                                             call a7, .Lbaz_write
                                             # [61:5] free named register a7
@@ -16444,7 +16127,6 @@ main:
                                             # [61:5] free named register a1
                                             # [61:5] free named register a0
                                         func.printer.print_at.65.10.69.10.910.13.991.9.1018.13.1029.5.end:
-                                        # [69:10] free scratch register t0
                                     func.printer.print.69.10.910.13.991.9.1018.13.1029.5.end:
                                 func.printer.print_all.910.13.991.9.1018.13.1029.5.end:
                                 # [911:9] return
@@ -16933,15 +16615,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.993.18.1018.13.1029.5.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 4
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 4
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.993.18.1018.13.1029.5.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.993.18.1018.13.1029.5:
@@ -16951,9 +16628,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 4
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 4
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -17048,31 +16724,26 @@ main:
                                 # [937:9] alias self -> out
                                 # [937:9] alias s -> str_help
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 358
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.937.9.994.9.1018.13.1029.5:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 358
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.937.9.994.9.1018.13.1029.5:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 358
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.937.9.994.9.1018.13.1029.5:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.937.9.994.9.1018.13.1029.5:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.937.9.994.9.1018.13.1029.5.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.937.9.994.9.1018.13.1029.5.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.937.9.994.9.1018.13.1029.5.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.937.9.994.9.1018.13.1029.5.end:
@@ -17083,33 +16754,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 358
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 358
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 358
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1355
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -17117,7 +16788,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.937.9.994.9.1018.13.1029.5.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.937.9.994.9.1018.13.1029.5.end:
                             func.printer.print_all.937.9.994.9.1018.13.1029.5.end:
                         func.action_help.994.9.1018.13.1029.5.end:
@@ -17129,31 +16799,26 @@ main:
                             # [997:13] alias self -> out
                             # [997:13] alias s -> str_not_understood
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 15
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.997.13.1018.13.1029.5:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 15
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.997.13.1018.13.1029.5:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 15
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.997.13.1018.13.1029.5:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.997.13.1018.13.1029.5:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.997.13.1018.13.1029.5.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.997.13.1018.13.1029.5.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.997.13.1018.13.1029.5.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.997.13.1018.13.1029.5.end:
@@ -17164,31 +16829,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 15
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 15
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 15
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     addi a1, s0, 888
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -17196,7 +16861,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.997.13.1018.13.1029.5.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.997.13.1018.13.1029.5.end:
                         func.printer.print_all.997.13.1018.13.1029.5.end:
                     if.957.5.1018.13.1029.5.end:
@@ -17300,31 +16964,26 @@ main:
         # [1037:9] alias self -> out
         # [1037:9] alias s -> str_ascii_art
         # [69:10] self.print(s, array_length(s))
-        # [69:19] allocate scratch register -> t0
-        # [69:19] t0 = array_length(s)
-        # [69:19] = expression
-        # [69:19] array_length(s)
-        li t0, 824
         # [64:6] printer.print(s i8[], count)
         func.printer.print.69.10.1037.9:
             # [69:10] alias self -> self
             # [69:10] alias s -> s
-            # [69:10] alias count -> t0
+            # [69:10] alias count -> 824
             # [65:10] self.print_at(s, count, 0)
             # [58:6] printer.print_at(s i8[], count, start)
             func.printer.print_at.65.10.69.10.1037.9:
                 # [65:10] alias self -> self
                 # [65:10] alias s -> s
-                # [65:10] alias count -> count
+                # [65:10] alias count -> 824
                 # [65:10] alias start -> 0
                 if.59.8.65.10.69.10.1037.9:
                 # [59:8] ? self.silenced
                 # [59:8] ? shorthand: self.silenced
                 cmp.59.8.65.10.69.10.1037.9:
-                # [59:8] allocate scratch register -> t1
-                lbu t1, 911(s0)
-                bne t1, zero, func.printer.print_at.65.10.69.10.1037.9.end
-                # [59:8] free scratch register t1
+                # [59:8] allocate scratch register -> t0
+                lbu t0, 911(s0)
+                bne t0, zero, func.printer.print_at.65.10.69.10.1037.9.end
+                # [59:8] free scratch register t0
                 if.59.8.65.10.69.10.1037.9.code:
                     # [59:22] return
                 if.59.5.65.10.69.10.1037.9.end:
@@ -17335,31 +16994,31 @@ main:
                 # [61:11] 1
                 li a0, 1
                 # [61:17] count
-                addi a2, t0, 0
-                # [61:24] allocate scratch register -> t1
+                li a2, 824
+                # [61:24] allocate scratch register -> t0
                 # [61:24] start
-                li t1, 0
+                li t0, 0
                 # [61:24] bounds check begin
                 # [61:24] lower bound
-                bltz t1, 1f
+                bltz t0, 1f
                 bltz a2, 1f
                 # [61:24] upper bound
+                # [61:24] allocate scratch register -> t1
                 # [61:24] allocate scratch register -> t2
-                # [61:24] allocate scratch register -> t3
-                add t3, t1, a2
-                li t2, 824
-                bgeu t2, t3, 2f
+                add t2, t0, a2
+                li t1, 824
+                bgeu t1, t2, 2f
                 1:
                 # [61:24] source line
                 li a0, 61
                 j baz_bounds_panic
                 2:
-                # [61:24] free scratch register t3
                 # [61:24] free scratch register t2
+                # [61:24] free scratch register t1
                 # [61:24] bounds check end
                 addi a1, s0, 0
-                add a1, a1, t1
-                # [61:5] free scratch register t1
+                add a1, a1, t0
+                # [61:5] free scratch register t0
                 # [61:5] allocate named register a7
                 call a7, .Lbaz_write
                 # [61:5] free named register a7
@@ -17367,7 +17026,6 @@ main:
                 # [61:5] free named register a1
                 # [61:5] free named register a0
             func.printer.print_at.65.10.69.10.1037.9.end:
-            # [69:10] free scratch register t0
         func.printer.print.69.10.1037.9.end:
     func.printer.print_all.1037.9.end:
     # [1038:9] out.print_all(str_hello)
@@ -17376,31 +17034,26 @@ main:
         # [1038:9] alias self -> out
         # [1038:9] alias s -> str_hello
         # [69:10] self.print(s, array_length(s))
-        # [69:19] allocate scratch register -> t0
-        # [69:19] t0 = array_length(s)
-        # [69:19] = expression
-        # [69:19] array_length(s)
-        li t0, 41
         # [64:6] printer.print(s i8[], count)
         func.printer.print.69.10.1038.9:
             # [69:10] alias self -> self
             # [69:10] alias s -> s
-            # [69:10] alias count -> t0
+            # [69:10] alias count -> 41
             # [65:10] self.print_at(s, count, 0)
             # [58:6] printer.print_at(s i8[], count, start)
             func.printer.print_at.65.10.69.10.1038.9:
                 # [65:10] alias self -> self
                 # [65:10] alias s -> s
-                # [65:10] alias count -> count
+                # [65:10] alias count -> 41
                 # [65:10] alias start -> 0
                 if.59.8.65.10.69.10.1038.9:
                 # [59:8] ? self.silenced
                 # [59:8] ? shorthand: self.silenced
                 cmp.59.8.65.10.69.10.1038.9:
-                # [59:8] allocate scratch register -> t1
-                lbu t1, 911(s0)
-                bne t1, zero, func.printer.print_at.65.10.69.10.1038.9.end
-                # [59:8] free scratch register t1
+                # [59:8] allocate scratch register -> t0
+                lbu t0, 911(s0)
+                bne t0, zero, func.printer.print_at.65.10.69.10.1038.9.end
+                # [59:8] free scratch register t0
                 if.59.8.65.10.69.10.1038.9.code:
                     # [59:22] return
                 if.59.5.65.10.69.10.1038.9.end:
@@ -17411,31 +17064,31 @@ main:
                 # [61:11] 1
                 li a0, 1
                 # [61:17] count
-                addi a2, t0, 0
-                # [61:24] allocate scratch register -> t1
+                li a2, 41
+                # [61:24] allocate scratch register -> t0
                 # [61:24] start
-                li t1, 0
+                li t0, 0
                 # [61:24] bounds check begin
                 # [61:24] lower bound
-                bltz t1, 1f
+                bltz t0, 1f
                 bltz a2, 1f
                 # [61:24] upper bound
+                # [61:24] allocate scratch register -> t1
                 # [61:24] allocate scratch register -> t2
-                # [61:24] allocate scratch register -> t3
-                add t3, t1, a2
-                li t2, 41
-                bgeu t2, t3, 2f
+                add t2, t0, a2
+                li t1, 41
+                bgeu t1, t2, 2f
                 1:
                 # [61:24] source line
                 li a0, 61
                 j baz_bounds_panic
                 2:
-                # [61:24] free scratch register t3
                 # [61:24] free scratch register t2
+                # [61:24] free scratch register t1
                 # [61:24] bounds check end
                 addi a1, s0, 824
-                add a1, a1, t1
-                # [61:5] free scratch register t1
+                add a1, a1, t0
+                # [61:5] free scratch register t0
                 # [61:5] allocate named register a7
                 call a7, .Lbaz_write
                 # [61:5] free named register a7
@@ -17443,7 +17096,6 @@ main:
                 # [61:5] free named register a1
                 # [61:5] free named register a0
             func.printer.print_at.65.10.69.10.1038.9.end:
-            # [69:10] free scratch register t0
         func.printer.print.69.10.1038.9.end:
     func.printer.print_all.1038.9.end:
     # [1040:5] var cur_entity_id = 0
@@ -17672,31 +17324,26 @@ main:
                             # [237:13] alias self -> out
                             # [237:13] alias s -> str_said
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t5
-                            # [69:19] t5 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t5, 6
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.237.13.250.11.1045.39:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t5
+                                # [69:10] alias count -> 6
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.237.13.250.11.1045.39:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 6
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.237.13.250.11.1045.39:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.237.13.250.11.1045.39:
-                                    # [59:8] allocate scratch register -> t6
-                                    lbu t6, 911(s0)
-                                    bne t6, zero, func.printer.print_at.65.10.69.10.237.13.250.11.1045.39.end
-                                    # [59:8] free scratch register t6
+                                    # [59:8] allocate scratch register -> t5
+                                    lbu t5, 911(s0)
+                                    bne t5, zero, func.printer.print_at.65.10.69.10.237.13.250.11.1045.39.end
+                                    # [59:8] free scratch register t5
                                     if.59.8.65.10.69.10.237.13.250.11.1045.39.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.237.13.250.11.1045.39.end:
@@ -17707,31 +17354,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t5, 0
-                                    # [61:24] allocate scratch register -> t6
+                                    li a2, 6
+                                    # [61:24] allocate scratch register -> t5
                                     # [61:24] start
-                                    li t6, 0
+                                    li t5, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t6, 1f
+                                    bltz t5, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t6
                                     # [61:24] allocate scratch register -> s1
-                                    # [61:24] allocate scratch register -> s2
-                                    add s2, t6, a2
-                                    li s1, 6
-                                    bgeu s1, s2, 2f
+                                    add s1, t5, a2
+                                    li t6, 6
+                                    bgeu t6, s1, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register s2
                                     # [61:24] free scratch register s1
+                                    # [61:24] free scratch register t6
                                     # [61:24] bounds check end
                                     addi a1, s0, 920
-                                    add a1, a1, t6
-                                    # [61:5] free scratch register t6
+                                    add a1, a1, t5
+                                    # [61:5] free scratch register t5
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -17739,7 +17386,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.237.13.250.11.1045.39.end:
-                                # [69:10] free scratch register t5
                             func.printer.print.69.10.237.13.250.11.1045.39.end:
                         func.printer.print_all.237.13.250.11.1045.39.end:
                     if.236.5.250.11.1045.39.end:
@@ -17758,31 +17404,26 @@ main:
                             # [240:13] alias self -> out
                             # [240:13] alias s -> str_told_u
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t5
-                            # [69:19] t5 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t5, 8
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.240.13.250.11.1045.39:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t5
+                                # [69:10] alias count -> 8
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.240.13.250.11.1045.39:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 8
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.240.13.250.11.1045.39:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.240.13.250.11.1045.39:
-                                    # [59:8] allocate scratch register -> t6
-                                    lbu t6, 911(s0)
-                                    bne t6, zero, func.printer.print_at.65.10.69.10.240.13.250.11.1045.39.end
-                                    # [59:8] free scratch register t6
+                                    # [59:8] allocate scratch register -> t5
+                                    lbu t5, 911(s0)
+                                    bne t5, zero, func.printer.print_at.65.10.69.10.240.13.250.11.1045.39.end
+                                    # [59:8] free scratch register t5
                                     if.59.8.65.10.69.10.240.13.250.11.1045.39.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.240.13.250.11.1045.39.end:
@@ -17793,31 +17434,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t5, 0
-                                    # [61:24] allocate scratch register -> t6
+                                    li a2, 8
+                                    # [61:24] allocate scratch register -> t5
                                     # [61:24] start
-                                    li t6, 0
+                                    li t5, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t6, 1f
+                                    bltz t5, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t6
                                     # [61:24] allocate scratch register -> s1
-                                    # [61:24] allocate scratch register -> s2
-                                    add s2, t6, a2
-                                    li s1, 8
-                                    bgeu s1, s2, 2f
+                                    add s1, t5, a2
+                                    li t6, 8
+                                    bgeu t6, s1, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register s2
                                     # [61:24] free scratch register s1
+                                    # [61:24] free scratch register t6
                                     # [61:24] bounds check end
                                     addi a1, s0, 912
-                                    add a1, a1, t6
-                                    # [61:5] free scratch register t6
+                                    add a1, a1, t5
+                                    # [61:5] free scratch register t5
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -17825,7 +17466,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.240.13.250.11.1045.39.end:
-                                # [69:10] free scratch register t5
                             func.printer.print.69.10.240.13.250.11.1045.39.end:
                         func.printer.print_all.240.13.250.11.1045.39.end:
                     if.239.5.250.11.1045.39.end:
@@ -17847,31 +17487,26 @@ main:
                             # [243:13] alias self -> out
                             # [243:13] alias s -> str_space
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t5
-                            # [69:19] t5 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t5, 1
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.243.13.250.11.1045.39:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t5
+                                # [69:10] alias count -> 1
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.243.13.250.11.1045.39:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 1
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.243.13.250.11.1045.39:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.243.13.250.11.1045.39:
-                                    # [59:8] allocate scratch register -> t6
-                                    lbu t6, 911(s0)
-                                    bne t6, zero, func.printer.print_at.65.10.69.10.243.13.250.11.1045.39.end
-                                    # [59:8] free scratch register t6
+                                    # [59:8] allocate scratch register -> t5
+                                    lbu t5, 911(s0)
+                                    bne t5, zero, func.printer.print_at.65.10.69.10.243.13.250.11.1045.39.end
+                                    # [59:8] free scratch register t5
                                     if.59.8.65.10.69.10.243.13.250.11.1045.39.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.243.13.250.11.1045.39.end:
@@ -17882,31 +17517,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t5, 0
-                                    # [61:24] allocate scratch register -> t6
+                                    li a2, 1
+                                    # [61:24] allocate scratch register -> t5
                                     # [61:24] start
-                                    li t6, 0
+                                    li t5, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t6, 1f
+                                    bltz t5, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t6
                                     # [61:24] allocate scratch register -> s1
-                                    # [61:24] allocate scratch register -> s2
-                                    add s2, t6, a2
-                                    li s1, 1
-                                    bgeu s1, s2, 2f
+                                    add s1, t5, a2
+                                    li t6, 1
+                                    bgeu t6, s1, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register s2
                                     # [61:24] free scratch register s1
+                                    # [61:24] free scratch register t6
                                     # [61:24] bounds check end
                                     addi a1, s0, 926
-                                    add a1, a1, t6
-                                    # [61:5] free scratch register t6
+                                    add a1, a1, t5
+                                    # [61:5] free scratch register t5
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -17914,7 +17549,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.243.13.250.11.1045.39.end:
-                                # [69:10] free scratch register t5
                             func.printer.print.69.10.243.13.250.11.1045.39.end:
                         func.printer.print_all.243.13.250.11.1045.39.end:
                     if.242.5.250.11.1045.39.end:
@@ -17998,31 +17632,26 @@ main:
                         # [73:10] alias self -> self
                         # [73:10] alias s -> str_nl
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t5
-                        # [69:19] t5 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t5, 1
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.73.10.251.13.1045.39:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t5
+                            # [69:10] alias count -> 1
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.73.10.251.13.1045.39:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 1
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.73.10.251.13.1045.39:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.73.10.251.13.1045.39:
-                                # [59:8] allocate scratch register -> t6
-                                lbu t6, 911(s0)
-                                bne t6, zero, func.printer.print_at.65.10.69.10.73.10.251.13.1045.39.end
-                                # [59:8] free scratch register t6
+                                # [59:8] allocate scratch register -> t5
+                                lbu t5, 911(s0)
+                                bne t5, zero, func.printer.print_at.65.10.69.10.73.10.251.13.1045.39.end
+                                # [59:8] free scratch register t5
                                 if.59.8.65.10.69.10.73.10.251.13.1045.39.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.73.10.251.13.1045.39.end:
@@ -18033,31 +17662,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t5, 0
-                                # [61:24] allocate scratch register -> t6
+                                li a2, 1
+                                # [61:24] allocate scratch register -> t5
                                 # [61:24] start
-                                li t6, 0
+                                li t5, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t6, 1f
+                                bltz t5, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t6
                                 # [61:24] allocate scratch register -> s1
-                                # [61:24] allocate scratch register -> s2
-                                add s2, t6, a2
-                                li s1, 1
-                                bgeu s1, s2, 2f
+                                add s1, t5, a2
+                                li t6, 1
+                                bgeu t6, s1, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register s2
                                 # [61:24] free scratch register s1
+                                # [61:24] free scratch register t6
                                 # [61:24] bounds check end
                                 addi a1, s0, 879
-                                add a1, a1, t6
-                                # [61:5] free scratch register t6
+                                add a1, a1, t5
+                                # [61:5] free scratch register t5
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -18065,7 +17694,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.73.10.251.13.1045.39.end:
-                            # [69:10] free scratch register t5
                         func.printer.print.69.10.73.10.251.13.1045.39.end:
                     func.printer.print_all.73.10.251.13.1045.39.end:
                 func.printer.println.251.13.1045.39.end:
@@ -18097,31 +17725,26 @@ main:
                 # [73:10] alias self -> self
                 # [73:10] alias s -> str_nl
                 # [69:10] self.print(s, array_length(s))
-                # [69:19] allocate scratch register -> t0
-                # [69:19] t0 = array_length(s)
-                # [69:19] = expression
-                # [69:19] array_length(s)
-                li t0, 1
                 # [64:6] printer.print(s i8[], count)
                 func.printer.print.69.10.73.10.1046.13:
                     # [69:10] alias self -> self
                     # [69:10] alias s -> s
-                    # [69:10] alias count -> t0
+                    # [69:10] alias count -> 1
                     # [65:10] self.print_at(s, count, 0)
                     # [58:6] printer.print_at(s i8[], count, start)
                     func.printer.print_at.65.10.69.10.73.10.1046.13:
                         # [65:10] alias self -> self
                         # [65:10] alias s -> s
-                        # [65:10] alias count -> count
+                        # [65:10] alias count -> 1
                         # [65:10] alias start -> 0
                         if.59.8.65.10.69.10.73.10.1046.13:
                         # [59:8] ? self.silenced
                         # [59:8] ? shorthand: self.silenced
                         cmp.59.8.65.10.69.10.73.10.1046.13:
-                        # [59:8] allocate scratch register -> t1
-                        lbu t1, 911(s0)
-                        bne t1, zero, func.printer.print_at.65.10.69.10.73.10.1046.13.end
-                        # [59:8] free scratch register t1
+                        # [59:8] allocate scratch register -> t0
+                        lbu t0, 911(s0)
+                        bne t0, zero, func.printer.print_at.65.10.69.10.73.10.1046.13.end
+                        # [59:8] free scratch register t0
                         if.59.8.65.10.69.10.73.10.1046.13.code:
                             # [59:22] return
                         if.59.5.65.10.69.10.73.10.1046.13.end:
@@ -18132,31 +17755,31 @@ main:
                         # [61:11] 1
                         li a0, 1
                         # [61:17] count
-                        addi a2, t0, 0
-                        # [61:24] allocate scratch register -> t1
+                        li a2, 1
+                        # [61:24] allocate scratch register -> t0
                         # [61:24] start
-                        li t1, 0
+                        li t0, 0
                         # [61:24] bounds check begin
                         # [61:24] lower bound
-                        bltz t1, 1f
+                        bltz t0, 1f
                         bltz a2, 1f
                         # [61:24] upper bound
+                        # [61:24] allocate scratch register -> t1
                         # [61:24] allocate scratch register -> t2
-                        # [61:24] allocate scratch register -> t3
-                        add t3, t1, a2
-                        li t2, 1
-                        bgeu t2, t3, 2f
+                        add t2, t0, a2
+                        li t1, 1
+                        bgeu t1, t2, 2f
                         1:
                         # [61:24] source line
                         li a0, 61
                         j baz_bounds_panic
                         2:
-                        # [61:24] free scratch register t3
                         # [61:24] free scratch register t2
+                        # [61:24] free scratch register t1
                         # [61:24] bounds check end
                         addi a1, s0, 879
-                        add a1, a1, t1
-                        # [61:5] free scratch register t1
+                        add a1, a1, t0
+                        # [61:5] free scratch register t0
                         # [61:5] allocate named register a7
                         call a7, .Lbaz_write
                         # [61:5] free named register a7
@@ -18164,7 +17787,6 @@ main:
                         # [61:5] free named register a1
                         # [61:5] free named register a0
                     func.printer.print_at.65.10.69.10.73.10.1046.13.end:
-                    # [69:10] free scratch register t0
                 func.printer.print.69.10.73.10.1046.13.end:
             func.printer.print_all.73.10.1046.13.end:
         func.printer.println.1046.13.end:
@@ -18254,31 +17876,26 @@ main:
                     # [306:13] alias self -> out
                     # [306:13] alias s -> str_u_r_in
                     # [69:10] self.print(s, array_length(s))
-                    # [69:19] allocate scratch register -> t2
-                    # [69:19] t2 = array_length(s)
-                    # [69:19] = expression
-                    # [69:19] array_length(s)
-                    li t2, 7
                     # [64:6] printer.print(s i8[], count)
                     func.printer.print.69.10.306.13.1047.60:
                         # [69:10] alias self -> self
                         # [69:10] alias s -> s
-                        # [69:10] alias count -> t2
+                        # [69:10] alias count -> 7
                         # [65:10] self.print_at(s, count, 0)
                         # [58:6] printer.print_at(s i8[], count, start)
                         func.printer.print_at.65.10.69.10.306.13.1047.60:
                             # [65:10] alias self -> self
                             # [65:10] alias s -> s
-                            # [65:10] alias count -> count
+                            # [65:10] alias count -> 7
                             # [65:10] alias start -> 0
                             if.59.8.65.10.69.10.306.13.1047.60:
                             # [59:8] ? self.silenced
                             # [59:8] ? shorthand: self.silenced
                             cmp.59.8.65.10.69.10.306.13.1047.60:
-                            # [59:8] allocate scratch register -> t3
-                            lbu t3, 911(s0)
-                            bne t3, zero, func.printer.print_at.65.10.69.10.306.13.1047.60.end
-                            # [59:8] free scratch register t3
+                            # [59:8] allocate scratch register -> t2
+                            lbu t2, 911(s0)
+                            bne t2, zero, func.printer.print_at.65.10.69.10.306.13.1047.60.end
+                            # [59:8] free scratch register t2
                             if.59.8.65.10.69.10.306.13.1047.60.code:
                                 # [59:22] return
                             if.59.5.65.10.69.10.306.13.1047.60.end:
@@ -18289,33 +17906,33 @@ main:
                             # [61:11] 1
                             li a0, 1
                             # [61:17] count
-                            addi a2, t2, 0
-                            # [61:24] allocate scratch register -> t3
+                            li a2, 7
+                            # [61:24] allocate scratch register -> t2
                             # [61:24] start
-                            li t3, 0
+                            li t2, 0
                             # [61:24] bounds check begin
                             # [61:24] lower bound
-                            bltz t3, 1f
+                            bltz t2, 1f
                             bltz a2, 1f
                             # [61:24] upper bound
+                            # [61:24] allocate scratch register -> t3
                             # [61:24] allocate scratch register -> t4
-                            # [61:24] allocate scratch register -> t5
-                            add t5, t3, a2
-                            li t4, 7
-                            bgeu t4, t5, 2f
+                            add t4, t2, a2
+                            li t3, 7
+                            bgeu t3, t4, 2f
                             1:
                             # [61:24] source line
                             li a0, 61
                             j baz_bounds_panic
                             2:
-                            # [61:24] free scratch register t5
                             # [61:24] free scratch register t4
+                            # [61:24] free scratch register t3
                             # [61:24] bounds check end
                             lui a1, 29
                             add a1, a1, s0
                             addi a1, a1, -84
-                            add a1, a1, t3
-                            # [61:5] free scratch register t3
+                            add a1, a1, t2
+                            # [61:5] free scratch register t2
                             # [61:5] allocate named register a7
                             call a7, .Lbaz_write
                             # [61:5] free named register a7
@@ -18323,7 +17940,6 @@ main:
                             # [61:5] free named register a1
                             # [61:5] free named register a0
                         func.printer.print_at.65.10.69.10.306.13.1047.60.end:
-                        # [69:10] free scratch register t2
                     func.printer.print.69.10.306.13.1047.60.end:
                 func.printer.print_all.306.13.1047.60.end:
                 # [307:19] self.name.print()
@@ -18405,31 +18021,26 @@ main:
                         # [73:10] alias self -> self
                         # [73:10] alias s -> str_nl
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t2
-                        # [69:19] t2 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t2, 1
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.73.10.308.13.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t2
+                            # [69:10] alias count -> 1
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.73.10.308.13.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 1
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.73.10.308.13.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.73.10.308.13.1047.60:
-                                # [59:8] allocate scratch register -> t3
-                                lbu t3, 911(s0)
-                                bne t3, zero, func.printer.print_at.65.10.69.10.73.10.308.13.1047.60.end
-                                # [59:8] free scratch register t3
+                                # [59:8] allocate scratch register -> t2
+                                lbu t2, 911(s0)
+                                bne t2, zero, func.printer.print_at.65.10.69.10.73.10.308.13.1047.60.end
+                                # [59:8] free scratch register t2
                                 if.59.8.65.10.69.10.73.10.308.13.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.73.10.308.13.1047.60.end:
@@ -18440,31 +18051,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t2, 0
-                                # [61:24] allocate scratch register -> t3
+                                li a2, 1
+                                # [61:24] allocate scratch register -> t2
                                 # [61:24] start
-                                li t3, 0
+                                li t2, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t3, 1f
+                                bltz t2, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t3
                                 # [61:24] allocate scratch register -> t4
-                                # [61:24] allocate scratch register -> t5
-                                add t5, t3, a2
-                                li t4, 1
-                                bgeu t4, t5, 2f
+                                add t4, t2, a2
+                                li t3, 1
+                                bgeu t3, t4, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t5
                                 # [61:24] free scratch register t4
+                                # [61:24] free scratch register t3
                                 # [61:24] bounds check end
                                 addi a1, s0, 879
-                                add a1, a1, t3
-                                # [61:5] free scratch register t3
+                                add a1, a1, t2
+                                # [61:5] free scratch register t2
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -18472,7 +18083,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.73.10.308.13.1047.60.end:
-                            # [69:10] free scratch register t2
                         func.printer.print.69.10.73.10.308.13.1047.60.end:
                     func.printer.print_all.73.10.308.13.1047.60.end:
                 func.printer.println.308.13.1047.60.end:
@@ -18565,31 +18175,26 @@ main:
                         # [73:10] alias self -> self
                         # [73:10] alias s -> str_nl
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t2
-                        # [69:19] t2 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t2, 1
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.73.10.312.13.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t2
+                            # [69:10] alias count -> 1
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.73.10.312.13.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 1
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.73.10.312.13.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.73.10.312.13.1047.60:
-                                # [59:8] allocate scratch register -> t3
-                                lbu t3, 911(s0)
-                                bne t3, zero, func.printer.print_at.65.10.69.10.73.10.312.13.1047.60.end
-                                # [59:8] free scratch register t3
+                                # [59:8] allocate scratch register -> t2
+                                lbu t2, 911(s0)
+                                bne t2, zero, func.printer.print_at.65.10.69.10.73.10.312.13.1047.60.end
+                                # [59:8] free scratch register t2
                                 if.59.8.65.10.69.10.73.10.312.13.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.73.10.312.13.1047.60.end:
@@ -18600,31 +18205,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t2, 0
-                                # [61:24] allocate scratch register -> t3
+                                li a2, 1
+                                # [61:24] allocate scratch register -> t2
                                 # [61:24] start
-                                li t3, 0
+                                li t2, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t3, 1f
+                                bltz t2, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t3
                                 # [61:24] allocate scratch register -> t4
-                                # [61:24] allocate scratch register -> t5
-                                add t5, t3, a2
-                                li t4, 1
-                                bgeu t4, t5, 2f
+                                add t4, t2, a2
+                                li t3, 1
+                                bgeu t3, t4, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t5
                                 # [61:24] free scratch register t4
+                                # [61:24] free scratch register t3
                                 # [61:24] bounds check end
                                 addi a1, s0, 879
-                                add a1, a1, t3
-                                # [61:5] free scratch register t3
+                                add a1, a1, t2
+                                # [61:5] free scratch register t2
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -18632,7 +18237,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.73.10.312.13.1047.60.end:
-                            # [69:10] free scratch register t2
                         func.printer.print.69.10.73.10.312.13.1047.60.end:
                     func.printer.print_all.73.10.312.13.1047.60.end:
                 func.printer.println.312.13.1047.60.end:
@@ -18708,31 +18312,26 @@ main:
                         # [318:17] alias self -> out
                         # [318:17] alias s -> str_uc
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t5
-                        # [69:19] t5 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t5, 4
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.318.17.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t5
+                            # [69:10] alias count -> 4
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.318.17.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 4
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.318.17.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.318.17.1047.60:
-                                # [59:8] allocate scratch register -> t6
-                                lbu t6, 911(s0)
-                                bne t6, zero, func.printer.print_at.65.10.69.10.318.17.1047.60.end
-                                # [59:8] free scratch register t6
+                                # [59:8] allocate scratch register -> t5
+                                lbu t5, 911(s0)
+                                bne t5, zero, func.printer.print_at.65.10.69.10.318.17.1047.60.end
+                                # [59:8] free scratch register t5
                                 if.59.8.65.10.69.10.318.17.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.318.17.1047.60.end:
@@ -18743,31 +18342,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t5, 0
-                                # [61:24] allocate scratch register -> t6
+                                li a2, 4
+                                # [61:24] allocate scratch register -> t5
                                 # [61:24] start
-                                li t6, 0
+                                li t5, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t6, 1f
+                                bltz t5, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t6
                                 # [61:24] allocate scratch register -> s1
-                                # [61:24] allocate scratch register -> s2
-                                add s2, t6, a2
-                                li s1, 4
-                                bgeu s1, s2, 2f
+                                add s1, t5, a2
+                                li t6, 4
+                                bgeu t6, s1, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register s2
                                 # [61:24] free scratch register s1
+                                # [61:24] free scratch register t6
                                 # [61:24] bounds check end
                                 addi a1, s0, 865
-                                add a1, a1, t6
-                                # [61:5] free scratch register t6
+                                add a1, a1, t5
+                                # [61:5] free scratch register t5
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -18775,7 +18374,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.318.17.1047.60.end:
-                            # [69:10] free scratch register t5
                         func.printer.print.69.10.318.17.1047.60.end:
                     func.printer.print_all.318.17.1047.60.end:
                 j if.317.9.1047.60.end
@@ -18786,31 +18384,26 @@ main:
                         # [320:17] alias self -> out
                         # [320:17] alias s -> str_comma
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t5
-                        # [69:19] t5 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t5, 2
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.320.17.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t5
+                            # [69:10] alias count -> 2
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.320.17.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 2
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.320.17.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.320.17.1047.60:
-                                # [59:8] allocate scratch register -> t6
-                                lbu t6, 911(s0)
-                                bne t6, zero, func.printer.print_at.65.10.69.10.320.17.1047.60.end
-                                # [59:8] free scratch register t6
+                                # [59:8] allocate scratch register -> t5
+                                lbu t5, 911(s0)
+                                bne t5, zero, func.printer.print_at.65.10.69.10.320.17.1047.60.end
+                                # [59:8] free scratch register t5
                                 if.59.8.65.10.69.10.320.17.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.320.17.1047.60.end:
@@ -18821,31 +18414,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t5, 0
-                                # [61:24] allocate scratch register -> t6
+                                li a2, 2
+                                # [61:24] allocate scratch register -> t5
                                 # [61:24] start
-                                li t6, 0
+                                li t5, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t6, 1f
+                                bltz t5, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t6
                                 # [61:24] allocate scratch register -> s1
-                                # [61:24] allocate scratch register -> s2
-                                add s2, t6, a2
-                                li s1, 2
-                                bgeu s1, s2, 2f
+                                add s1, t5, a2
+                                li t6, 2
+                                bgeu t6, s1, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register s2
                                 # [61:24] free scratch register s1
+                                # [61:24] free scratch register t6
                                 # [61:24] bounds check end
                                 addi a1, s0, 883
-                                add a1, a1, t6
-                                # [61:5] free scratch register t6
+                                add a1, a1, t5
+                                # [61:5] free scratch register t5
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -18853,7 +18446,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.320.17.1047.60.end:
-                            # [69:10] free scratch register t5
                         func.printer.print.69.10.320.17.1047.60.end:
                     func.printer.print_all.320.17.1047.60.end:
                 if.317.9.1047.60.end:
@@ -19022,31 +18614,26 @@ main:
                         # [327:17] alias self -> out
                         # [327:17] alias s -> str_uc
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t5
-                        # [69:19] t5 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t5, 4
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.327.17.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t5
+                            # [69:10] alias count -> 4
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.327.17.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 4
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.327.17.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.327.17.1047.60:
-                                # [59:8] allocate scratch register -> t6
-                                lbu t6, 911(s0)
-                                bne t6, zero, func.printer.print_at.65.10.69.10.327.17.1047.60.end
-                                # [59:8] free scratch register t6
+                                # [59:8] allocate scratch register -> t5
+                                lbu t5, 911(s0)
+                                bne t5, zero, func.printer.print_at.65.10.69.10.327.17.1047.60.end
+                                # [59:8] free scratch register t5
                                 if.59.8.65.10.69.10.327.17.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.327.17.1047.60.end:
@@ -19057,31 +18644,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t5, 0
-                                # [61:24] allocate scratch register -> t6
+                                li a2, 4
+                                # [61:24] allocate scratch register -> t5
                                 # [61:24] start
-                                li t6, 0
+                                li t5, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t6, 1f
+                                bltz t5, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t6
                                 # [61:24] allocate scratch register -> s1
-                                # [61:24] allocate scratch register -> s2
-                                add s2, t6, a2
-                                li s1, 4
-                                bgeu s1, s2, 2f
+                                add s1, t5, a2
+                                li t6, 4
+                                bgeu t6, s1, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register s2
                                 # [61:24] free scratch register s1
+                                # [61:24] free scratch register t6
                                 # [61:24] bounds check end
                                 addi a1, s0, 865
-                                add a1, a1, t6
-                                # [61:5] free scratch register t6
+                                add a1, a1, t5
+                                # [61:5] free scratch register t5
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -19089,7 +18676,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.327.17.1047.60.end:
-                            # [69:10] free scratch register t5
                         func.printer.print.69.10.327.17.1047.60.end:
                     func.printer.print_all.327.17.1047.60.end:
                 j if.326.9.1047.60.end
@@ -19100,31 +18686,26 @@ main:
                         # [329:17] alias self -> out
                         # [329:17] alias s -> str_comma
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t5
-                        # [69:19] t5 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t5, 2
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.329.17.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t5
+                            # [69:10] alias count -> 2
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.329.17.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 2
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.329.17.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.329.17.1047.60:
-                                # [59:8] allocate scratch register -> t6
-                                lbu t6, 911(s0)
-                                bne t6, zero, func.printer.print_at.65.10.69.10.329.17.1047.60.end
-                                # [59:8] free scratch register t6
+                                # [59:8] allocate scratch register -> t5
+                                lbu t5, 911(s0)
+                                bne t5, zero, func.printer.print_at.65.10.69.10.329.17.1047.60.end
+                                # [59:8] free scratch register t5
                                 if.59.8.65.10.69.10.329.17.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.329.17.1047.60.end:
@@ -19135,31 +18716,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t5, 0
-                                # [61:24] allocate scratch register -> t6
+                                li a2, 2
+                                # [61:24] allocate scratch register -> t5
                                 # [61:24] start
-                                li t6, 0
+                                li t5, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t6, 1f
+                                bltz t5, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t6
                                 # [61:24] allocate scratch register -> s1
-                                # [61:24] allocate scratch register -> s2
-                                add s2, t6, a2
-                                li s1, 2
-                                bgeu s1, s2, 2f
+                                add s1, t5, a2
+                                li t6, 2
+                                bgeu t6, s1, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register s2
                                 # [61:24] free scratch register s1
+                                # [61:24] free scratch register t6
                                 # [61:24] bounds check end
                                 addi a1, s0, 883
-                                add a1, a1, t6
-                                # [61:5] free scratch register t6
+                                add a1, a1, t5
+                                # [61:5] free scratch register t5
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -19167,7 +18748,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.329.17.1047.60.end:
-                            # [69:10] free scratch register t5
                         func.printer.print.69.10.329.17.1047.60.end:
                     func.printer.print_all.329.17.1047.60.end:
                 if.326.9.1047.60.end:
@@ -19311,31 +18891,26 @@ main:
                         # [73:10] alias self -> self
                         # [73:10] alias s -> str_nl
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t2
-                        # [69:19] t2 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t2, 1
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.73.10.335.13.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t2
+                            # [69:10] alias count -> 1
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.73.10.335.13.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 1
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.73.10.335.13.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.73.10.335.13.1047.60:
-                                # [59:8] allocate scratch register -> t3
-                                lbu t3, 911(s0)
-                                bne t3, zero, func.printer.print_at.65.10.69.10.73.10.335.13.1047.60.end
-                                # [59:8] free scratch register t3
+                                # [59:8] allocate scratch register -> t2
+                                lbu t2, 911(s0)
+                                bne t2, zero, func.printer.print_at.65.10.69.10.73.10.335.13.1047.60.end
+                                # [59:8] free scratch register t2
                                 if.59.8.65.10.69.10.73.10.335.13.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.73.10.335.13.1047.60.end:
@@ -19346,31 +18921,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t2, 0
-                                # [61:24] allocate scratch register -> t3
+                                li a2, 1
+                                # [61:24] allocate scratch register -> t2
                                 # [61:24] start
-                                li t3, 0
+                                li t2, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t3, 1f
+                                bltz t2, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t3
                                 # [61:24] allocate scratch register -> t4
-                                # [61:24] allocate scratch register -> t5
-                                add t5, t3, a2
-                                li t4, 1
-                                bgeu t4, t5, 2f
+                                add t4, t2, a2
+                                li t3, 1
+                                bgeu t3, t4, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t5
                                 # [61:24] free scratch register t4
+                                # [61:24] free scratch register t3
                                 # [61:24] bounds check end
                                 addi a1, s0, 879
-                                add a1, a1, t3
-                                # [61:5] free scratch register t3
+                                add a1, a1, t2
+                                # [61:5] free scratch register t2
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -19378,7 +18953,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.73.10.335.13.1047.60.end:
-                            # [69:10] free scratch register t2
                         func.printer.print.69.10.73.10.335.13.1047.60.end:
                     func.printer.print_all.73.10.335.13.1047.60.end:
                 func.printer.println.335.13.1047.60.end:
@@ -19400,31 +18974,26 @@ main:
                     # [338:13] alias self -> out
                     # [338:13] alias s -> str_exits
                     # [69:10] self.print(s, array_length(s))
-                    # [69:19] allocate scratch register -> t2
-                    # [69:19] t2 = array_length(s)
-                    # [69:19] = expression
-                    # [69:19] array_length(s)
-                    li t2, 7
                     # [64:6] printer.print(s i8[], count)
                     func.printer.print.69.10.338.13.1047.60:
                         # [69:10] alias self -> self
                         # [69:10] alias s -> s
-                        # [69:10] alias count -> t2
+                        # [69:10] alias count -> 7
                         # [65:10] self.print_at(s, count, 0)
                         # [58:6] printer.print_at(s i8[], count, start)
                         func.printer.print_at.65.10.69.10.338.13.1047.60:
                             # [65:10] alias self -> self
                             # [65:10] alias s -> s
-                            # [65:10] alias count -> count
+                            # [65:10] alias count -> 7
                             # [65:10] alias start -> 0
                             if.59.8.65.10.69.10.338.13.1047.60:
                             # [59:8] ? self.silenced
                             # [59:8] ? shorthand: self.silenced
                             cmp.59.8.65.10.69.10.338.13.1047.60:
-                            # [59:8] allocate scratch register -> t3
-                            lbu t3, 911(s0)
-                            bne t3, zero, func.printer.print_at.65.10.69.10.338.13.1047.60.end
-                            # [59:8] free scratch register t3
+                            # [59:8] allocate scratch register -> t2
+                            lbu t2, 911(s0)
+                            bne t2, zero, func.printer.print_at.65.10.69.10.338.13.1047.60.end
+                            # [59:8] free scratch register t2
                             if.59.8.65.10.69.10.338.13.1047.60.code:
                                 # [59:22] return
                             if.59.5.65.10.69.10.338.13.1047.60.end:
@@ -19435,31 +19004,31 @@ main:
                             # [61:11] 1
                             li a0, 1
                             # [61:17] count
-                            addi a2, t2, 0
-                            # [61:24] allocate scratch register -> t3
+                            li a2, 7
+                            # [61:24] allocate scratch register -> t2
                             # [61:24] start
-                            li t3, 0
+                            li t2, 0
                             # [61:24] bounds check begin
                             # [61:24] lower bound
-                            bltz t3, 1f
+                            bltz t2, 1f
                             bltz a2, 1f
                             # [61:24] upper bound
+                            # [61:24] allocate scratch register -> t3
                             # [61:24] allocate scratch register -> t4
-                            # [61:24] allocate scratch register -> t5
-                            add t5, t3, a2
-                            li t4, 7
-                            bgeu t4, t5, 2f
+                            add t4, t2, a2
+                            li t3, 7
+                            bgeu t3, t4, 2f
                             1:
                             # [61:24] source line
                             li a0, 61
                             j baz_bounds_panic
                             2:
-                            # [61:24] free scratch register t5
                             # [61:24] free scratch register t4
+                            # [61:24] free scratch register t3
                             # [61:24] bounds check end
                             addi a1, s0, 869
-                            add a1, a1, t3
-                            # [61:5] free scratch register t3
+                            add a1, a1, t2
+                            # [61:5] free scratch register t2
                             # [61:5] allocate named register a7
                             call a7, .Lbaz_write
                             # [61:5] free named register a7
@@ -19467,7 +19036,6 @@ main:
                             # [61:5] free named register a1
                             # [61:5] free named register a0
                         func.printer.print_at.65.10.69.10.338.13.1047.60.end:
-                        # [69:10] free scratch register t2
                     func.printer.print.69.10.338.13.1047.60.end:
                 func.printer.print_all.338.13.1047.60.end:
                 # [339:9] foo self.links, self.links_len
@@ -19512,31 +19080,26 @@ main:
                             # [340:27] alias self -> out
                             # [340:27] alias s -> str_comma
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t5
-                            # [69:19] t5 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t5, 2
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.340.27.1047.60:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t5
+                                # [69:10] alias count -> 2
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.340.27.1047.60:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 2
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.340.27.1047.60:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.340.27.1047.60:
-                                    # [59:8] allocate scratch register -> t6
-                                    lbu t6, 911(s0)
-                                    bne t6, zero, func.printer.print_at.65.10.69.10.340.27.1047.60.end
-                                    # [59:8] free scratch register t6
+                                    # [59:8] allocate scratch register -> t5
+                                    lbu t5, 911(s0)
+                                    bne t5, zero, func.printer.print_at.65.10.69.10.340.27.1047.60.end
+                                    # [59:8] free scratch register t5
                                     if.59.8.65.10.69.10.340.27.1047.60.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.340.27.1047.60.end:
@@ -19547,31 +19110,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t5, 0
-                                    # [61:24] allocate scratch register -> t6
+                                    li a2, 2
+                                    # [61:24] allocate scratch register -> t5
                                     # [61:24] start
-                                    li t6, 0
+                                    li t5, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t6, 1f
+                                    bltz t5, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t6
                                     # [61:24] allocate scratch register -> s1
-                                    # [61:24] allocate scratch register -> s2
-                                    add s2, t6, a2
-                                    li s1, 2
-                                    bgeu s1, s2, 2f
+                                    add s1, t5, a2
+                                    li t6, 2
+                                    bgeu t6, s1, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register s2
                                     # [61:24] free scratch register s1
+                                    # [61:24] free scratch register t6
                                     # [61:24] bounds check end
                                     addi a1, s0, 883
-                                    add a1, a1, t6
-                                    # [61:5] free scratch register t6
+                                    add a1, a1, t5
+                                    # [61:5] free scratch register t5
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -19579,7 +19142,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.340.27.1047.60.end:
-                                # [69:10] free scratch register t5
                             func.printer.print.69.10.340.27.1047.60.end:
                         func.printer.print_all.340.27.1047.60.end:
                     if.340.13.1047.60.end:
@@ -19703,31 +19265,26 @@ main:
                         # [73:10] alias self -> self
                         # [73:10] alias s -> str_nl
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t2
-                        # [69:19] t2 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t2, 1
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.73.10.343.13.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t2
+                            # [69:10] alias count -> 1
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.73.10.343.13.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 1
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.73.10.343.13.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.73.10.343.13.1047.60:
-                                # [59:8] allocate scratch register -> t3
-                                lbu t3, 911(s0)
-                                bne t3, zero, func.printer.print_at.65.10.69.10.73.10.343.13.1047.60.end
-                                # [59:8] free scratch register t3
+                                # [59:8] allocate scratch register -> t2
+                                lbu t2, 911(s0)
+                                bne t2, zero, func.printer.print_at.65.10.69.10.73.10.343.13.1047.60.end
+                                # [59:8] free scratch register t2
                                 if.59.8.65.10.69.10.73.10.343.13.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.73.10.343.13.1047.60.end:
@@ -19738,31 +19295,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t2, 0
-                                # [61:24] allocate scratch register -> t3
+                                li a2, 1
+                                # [61:24] allocate scratch register -> t2
                                 # [61:24] start
-                                li t3, 0
+                                li t2, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t3, 1f
+                                bltz t2, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t3
                                 # [61:24] allocate scratch register -> t4
-                                # [61:24] allocate scratch register -> t5
-                                add t5, t3, a2
-                                li t4, 1
-                                bgeu t4, t5, 2f
+                                add t4, t2, a2
+                                li t3, 1
+                                bgeu t3, t4, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t5
                                 # [61:24] free scratch register t4
+                                # [61:24] free scratch register t3
                                 # [61:24] bounds check end
                                 addi a1, s0, 879
-                                add a1, a1, t3
-                                # [61:5] free scratch register t3
+                                add a1, a1, t2
+                                # [61:5] free scratch register t2
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -19770,7 +19327,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.73.10.343.13.1047.60.end:
-                            # [69:10] free scratch register t2
                         func.printer.print.69.10.73.10.343.13.1047.60.end:
                     func.printer.print_all.73.10.343.13.1047.60.end:
                 func.printer.println.343.13.1047.60.end:
@@ -19863,31 +19419,26 @@ main:
                         # [73:10] alias self -> self
                         # [73:10] alias s -> str_nl
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t2
-                        # [69:19] t2 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t2, 1
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.73.10.347.13.1047.60:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t2
+                            # [69:10] alias count -> 1
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.73.10.347.13.1047.60:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 1
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.73.10.347.13.1047.60:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.73.10.347.13.1047.60:
-                                # [59:8] allocate scratch register -> t3
-                                lbu t3, 911(s0)
-                                bne t3, zero, func.printer.print_at.65.10.69.10.73.10.347.13.1047.60.end
-                                # [59:8] free scratch register t3
+                                # [59:8] allocate scratch register -> t2
+                                lbu t2, 911(s0)
+                                bne t2, zero, func.printer.print_at.65.10.69.10.73.10.347.13.1047.60.end
+                                # [59:8] free scratch register t2
                                 if.59.8.65.10.69.10.73.10.347.13.1047.60.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.73.10.347.13.1047.60.end:
@@ -19898,31 +19449,31 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t2, 0
-                                # [61:24] allocate scratch register -> t3
+                                li a2, 1
+                                # [61:24] allocate scratch register -> t2
                                 # [61:24] start
-                                li t3, 0
+                                li t2, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t3, 1f
+                                bltz t2, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t3
                                 # [61:24] allocate scratch register -> t4
-                                # [61:24] allocate scratch register -> t5
-                                add t5, t3, a2
-                                li t4, 1
-                                bgeu t4, t5, 2f
+                                add t4, t2, a2
+                                li t3, 1
+                                bgeu t3, t4, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t5
                                 # [61:24] free scratch register t4
+                                # [61:24] free scratch register t3
                                 # [61:24] bounds check end
                                 addi a1, s0, 879
-                                add a1, a1, t3
-                                # [61:5] free scratch register t3
+                                add a1, a1, t2
+                                # [61:5] free scratch register t2
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -19930,7 +19481,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.73.10.347.13.1047.60.end:
-                            # [69:10] free scratch register t2
                         func.printer.print.69.10.73.10.347.13.1047.60.end:
                     func.printer.print_all.73.10.347.13.1047.60.end:
                 func.printer.println.347.13.1047.60.end:
@@ -20047,31 +19597,26 @@ main:
             # [1049:13] alias self -> out
             # [1049:13] alias s -> str_prompt
             # [69:10] self.print(s, array_length(s))
-            # [69:19] allocate scratch register -> t0
-            # [69:19] t0 = array_length(s)
-            # [69:19] = expression
-            # [69:19] array_length(s)
-            li t0, 3
             # [64:6] printer.print(s i8[], count)
             func.printer.print.69.10.1049.13:
                 # [69:10] alias self -> self
                 # [69:10] alias s -> s
-                # [69:10] alias count -> t0
+                # [69:10] alias count -> 3
                 # [65:10] self.print_at(s, count, 0)
                 # [58:6] printer.print_at(s i8[], count, start)
                 func.printer.print_at.65.10.69.10.1049.13:
                     # [65:10] alias self -> self
                     # [65:10] alias s -> s
-                    # [65:10] alias count -> count
+                    # [65:10] alias count -> 3
                     # [65:10] alias start -> 0
                     if.59.8.65.10.69.10.1049.13:
                     # [59:8] ? self.silenced
                     # [59:8] ? shorthand: self.silenced
                     cmp.59.8.65.10.69.10.1049.13:
-                    # [59:8] allocate scratch register -> t1
-                    lbu t1, 911(s0)
-                    bne t1, zero, func.printer.print_at.65.10.69.10.1049.13.end
-                    # [59:8] free scratch register t1
+                    # [59:8] allocate scratch register -> t0
+                    lbu t0, 911(s0)
+                    bne t0, zero, func.printer.print_at.65.10.69.10.1049.13.end
+                    # [59:8] free scratch register t0
                     if.59.8.65.10.69.10.1049.13.code:
                         # [59:22] return
                     if.59.5.65.10.69.10.1049.13.end:
@@ -20082,31 +19627,31 @@ main:
                     # [61:11] 1
                     li a0, 1
                     # [61:17] count
-                    addi a2, t0, 0
-                    # [61:24] allocate scratch register -> t1
+                    li a2, 3
+                    # [61:24] allocate scratch register -> t0
                     # [61:24] start
-                    li t1, 0
+                    li t0, 0
                     # [61:24] bounds check begin
                     # [61:24] lower bound
-                    bltz t1, 1f
+                    bltz t0, 1f
                     bltz a2, 1f
                     # [61:24] upper bound
+                    # [61:24] allocate scratch register -> t1
                     # [61:24] allocate scratch register -> t2
-                    # [61:24] allocate scratch register -> t3
-                    add t3, t1, a2
-                    li t2, 3
-                    bgeu t2, t3, 2f
+                    add t2, t0, a2
+                    li t1, 3
+                    bgeu t1, t2, 2f
                     1:
                     # [61:24] source line
                     li a0, 61
                     j baz_bounds_panic
                     2:
-                    # [61:24] free scratch register t3
                     # [61:24] free scratch register t2
+                    # [61:24] free scratch register t1
                     # [61:24] bounds check end
                     addi a1, s0, 876
-                    add a1, a1, t1
-                    # [61:5] free scratch register t1
+                    add a1, a1, t0
+                    # [61:5] free scratch register t0
                     # [61:5] allocate named register a7
                     call a7, .Lbaz_write
                     # [61:5] free named register a7
@@ -20114,7 +19659,6 @@ main:
                     # [61:5] free named register a1
                     # [61:5] free named register a0
                 func.printer.print_at.65.10.69.10.1049.13.end:
-                # [69:10] free scratch register t0
             func.printer.print.69.10.1049.13.end:
         func.printer.print_all.1049.13.end:
         # [1050:12] tz.input()
@@ -20154,16 +19698,14 @@ main:
                     # [99:12] ? nbytes == array_length(self.array)
                     # [99:12] ? nbytes == array_length(self.array)
                     cmp.99.12.400.14.1050.12:
-                    # [99:22] allocate scratch register -> t0
-                        # [99:22] t0 = array_length(self.array)
-                        # [99:22] = expression
-                        # [99:22] array_length(self.array)
-                        li t0, 127
+                    # [99:22] src: folded constant 'array_length(self.array)'
+                    # [99:12] allocate scratch register -> t0
+                    lui t0, 48
+                    add t0, t0, s0
+                    lw t0, 1968(t0)
                     # [99:12] allocate scratch register -> t1
-                    lui t1, 48
-                    add t1, t1, s0
-                    lw t1, 1968(t1)
-                    beq t1, t0, loop.98.5.400.14.1050.12.end
+                    li t1, 127
+                    beq t0, t1, loop.98.5.400.14.1050.12.end
                     # [99:12] free scratch register t1
                     # [99:12] free scratch register t0
                     if.99.12.400.14.1050.12.code:
@@ -20292,31 +19834,26 @@ main:
                                 # [104:21] alias self -> out
                                 # [104:21] alias s -> str_erase
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t0
-                                # [69:19] t0 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t0, 3
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.104.21.400.14.1050.12:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t0
+                                    # [69:10] alias count -> 3
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.104.21.400.14.1050.12:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 3
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.104.21.400.14.1050.12:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.104.21.400.14.1050.12:
-                                        # [59:8] allocate scratch register -> t1
-                                        lbu t1, 911(s0)
-                                        bne t1, zero, func.printer.print_at.65.10.69.10.104.21.400.14.1050.12.end
-                                        # [59:8] free scratch register t1
+                                        # [59:8] allocate scratch register -> t0
+                                        lbu t0, 911(s0)
+                                        bne t0, zero, func.printer.print_at.65.10.69.10.104.21.400.14.1050.12.end
+                                        # [59:8] free scratch register t0
                                         if.59.8.65.10.69.10.104.21.400.14.1050.12.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.104.21.400.14.1050.12.end:
@@ -20327,31 +19864,31 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t0, 0
-                                        # [61:24] allocate scratch register -> t1
+                                        li a2, 3
+                                        # [61:24] allocate scratch register -> t0
                                         # [61:24] start
-                                        li t1, 0
+                                        li t0, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t1, 1f
+                                        bltz t0, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t1
                                         # [61:24] allocate scratch register -> t2
-                                        # [61:24] allocate scratch register -> t3
-                                        add t3, t1, a2
-                                        li t2, 3
-                                        bgeu t2, t3, 2f
+                                        add t2, t0, a2
+                                        li t1, 3
+                                        bgeu t1, t2, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t3
                                         # [61:24] free scratch register t2
+                                        # [61:24] free scratch register t1
                                         # [61:24] bounds check end
                                         addi a1, s0, 885
-                                        add a1, a1, t1
-                                        # [61:5] free scratch register t1
+                                        add a1, a1, t0
+                                        # [61:5] free scratch register t0
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -20359,7 +19896,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.104.21.400.14.1050.12.end:
-                                    # [69:10] free scratch register t0
                                 func.printer.print.69.10.104.21.400.14.1050.12.end:
                             func.printer.print_all.104.21.400.14.1050.12.end:
                         if.102.13.400.14.1050.12.end:
@@ -20505,31 +20041,26 @@ main:
                 # [73:10] alias self -> self
                 # [73:10] alias s -> str_nl
                 # [69:10] self.print(s, array_length(s))
-                # [69:19] allocate scratch register -> t0
-                # [69:19] t0 = array_length(s)
-                # [69:19] = expression
-                # [69:19] array_length(s)
-                li t0, 1
                 # [64:6] printer.print(s i8[], count)
                 func.printer.print.69.10.73.10.1051.13:
                     # [69:10] alias self -> self
                     # [69:10] alias s -> s
-                    # [69:10] alias count -> t0
+                    # [69:10] alias count -> 1
                     # [65:10] self.print_at(s, count, 0)
                     # [58:6] printer.print_at(s i8[], count, start)
                     func.printer.print_at.65.10.69.10.73.10.1051.13:
                         # [65:10] alias self -> self
                         # [65:10] alias s -> s
-                        # [65:10] alias count -> count
+                        # [65:10] alias count -> 1
                         # [65:10] alias start -> 0
                         if.59.8.65.10.69.10.73.10.1051.13:
                         # [59:8] ? self.silenced
                         # [59:8] ? shorthand: self.silenced
                         cmp.59.8.65.10.69.10.73.10.1051.13:
-                        # [59:8] allocate scratch register -> t1
-                        lbu t1, 911(s0)
-                        bne t1, zero, func.printer.print_at.65.10.69.10.73.10.1051.13.end
-                        # [59:8] free scratch register t1
+                        # [59:8] allocate scratch register -> t0
+                        lbu t0, 911(s0)
+                        bne t0, zero, func.printer.print_at.65.10.69.10.73.10.1051.13.end
+                        # [59:8] free scratch register t0
                         if.59.8.65.10.69.10.73.10.1051.13.code:
                             # [59:22] return
                         if.59.5.65.10.69.10.73.10.1051.13.end:
@@ -20540,31 +20071,31 @@ main:
                         # [61:11] 1
                         li a0, 1
                         # [61:17] count
-                        addi a2, t0, 0
-                        # [61:24] allocate scratch register -> t1
+                        li a2, 1
+                        # [61:24] allocate scratch register -> t0
                         # [61:24] start
-                        li t1, 0
+                        li t0, 0
                         # [61:24] bounds check begin
                         # [61:24] lower bound
-                        bltz t1, 1f
+                        bltz t0, 1f
                         bltz a2, 1f
                         # [61:24] upper bound
+                        # [61:24] allocate scratch register -> t1
                         # [61:24] allocate scratch register -> t2
-                        # [61:24] allocate scratch register -> t3
-                        add t3, t1, a2
-                        li t2, 1
-                        bgeu t2, t3, 2f
+                        add t2, t0, a2
+                        li t1, 1
+                        bgeu t1, t2, 2f
                         1:
                         # [61:24] source line
                         li a0, 61
                         j baz_bounds_panic
                         2:
-                        # [61:24] free scratch register t3
                         # [61:24] free scratch register t2
+                        # [61:24] free scratch register t1
                         # [61:24] bounds check end
                         addi a1, s0, 879
-                        add a1, a1, t1
-                        # [61:5] free scratch register t1
+                        add a1, a1, t0
+                        # [61:5] free scratch register t0
                         # [61:5] allocate named register a7
                         call a7, .Lbaz_write
                         # [61:5] free named register a7
@@ -20572,7 +20103,6 @@ main:
                         # [61:5] free named register a1
                         # [61:5] free named register a0
                     func.printer.print_at.65.10.69.10.73.10.1051.13.end:
-                    # [69:10] free scratch register t0
                 func.printer.print.69.10.73.10.1051.13.end:
             func.printer.print_all.73.10.1051.13.end:
         func.printer.println.1051.13.end:
@@ -20825,15 +20355,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.957.11.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 2
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 2
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.957.11.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.957.11.1052.9:
@@ -20843,9 +20368,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 2
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 2
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -21178,31 +20702,26 @@ main:
                             # [502:13] alias self -> out
                             # [502:13] alias s -> str_go_where
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 9
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.502.13.958.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 9
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.502.13.958.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 9
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.502.13.958.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.502.13.958.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.502.13.958.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.502.13.958.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.502.13.958.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.502.13.958.9.1052.9.end:
@@ -21213,33 +20732,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 9
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 9
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 9
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 960
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -21247,7 +20766,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.502.13.958.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.502.13.958.9.1052.9.end:
                         func.printer.print_all.502.13.958.9.1052.9.end:
                         # [503:9] return
@@ -21292,15 +20810,10 @@ main:
                                     sub t1, t1, t2
                                     # [444:22] free scratch register t2
                                 func.tokenizer.len.452.16.506.11.958.9.1052.9.end:
-                            # [452:25] allocate scratch register -> t2
-                                # [452:25] t2 = array_length(str)
-                                # [452:25] = expression
-                                # [452:25] array_length(str)
-                                li t2, 4
-                            xor t0, t1, t2
+                            # [452:25] src: folded constant 'array_length(str)'
+                            xori t0, t1, 4
                             sltiu t0, t0, 1
                             beq t0, zero, bool.452.11.506.11.958.9.1052.9.end
-                            # [452:11] free scratch register t2
                             # [452:11] free scratch register t1
                             # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                             cmp.453.11.506.11.958.9.1052.9:
@@ -21310,9 +20823,8 @@ main:
                                 # [453:11] allocate scratch register -> t3
                                 # [453:11] t1: source, t2: destination, t3: count
                                 # [453:57] array_length(str)
-                                # [453:57] t3 = array_length(str)
-                                # [453:57] = expression
-                                # [453:57] array_length(str)
+                                # [453:57] t3 = 4
+                                # [453:57] src: folded constant 'array_length(str)'
                                 li t3, 4
                                 # [453:24] str
                                 # [453:24] bounds check begin
@@ -21780,31 +21292,26 @@ main:
                             # [521:13] alias self -> out
                             # [521:13] alias s -> str_no_such_exit
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 16
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.521.13.958.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 16
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.521.13.958.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 16
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.521.13.958.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.521.13.958.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.521.13.958.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.521.13.958.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.521.13.958.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.521.13.958.9.1052.9.end:
@@ -21815,33 +21322,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 16
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 16
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 16
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 969
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -21849,7 +21356,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.521.13.958.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.521.13.958.9.1052.9.end:
                         func.printer.print_all.521.13.958.9.1052.9.end:
                         # [522:9] return
@@ -22340,31 +21846,26 @@ main:
                         # [532:9] alias self -> out
                         # [532:9] alias s -> str_went_to
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 8
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.532.9.958.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 8
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.532.9.958.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 8
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.532.9.958.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.532.9.958.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.532.9.958.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.532.9.958.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.532.9.958.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.532.9.958.9.1052.9.end:
@@ -22375,33 +21876,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 8
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 8
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 8
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 952
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -22409,7 +21910,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.532.9.958.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.532.9.958.9.1052.9.end:
                     func.printer.print_all.532.9.958.9.1052.9.end:
                     # [533:8] tz.print()
@@ -22511,31 +22011,26 @@ main:
                             # [73:10] alias self -> self
                             # [73:10] alias s -> str_nl
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 1
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.73.10.534.9.958.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 1
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.73.10.534.9.958.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 1
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.73.10.534.9.958.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.73.10.534.9.958.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.73.10.534.9.958.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.73.10.534.9.958.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.73.10.534.9.958.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.73.10.534.9.958.9.1052.9.end:
@@ -22546,31 +22041,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 1
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 1
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 1
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     addi a1, s0, 879
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -22578,7 +22073,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.73.10.534.9.958.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.73.10.534.9.958.9.1052.9.end:
                         func.printer.print_all.73.10.534.9.958.9.1052.9.end:
                     func.printer.println.534.9.958.9.1052.9.end:
@@ -22607,98 +22101,94 @@ main:
                         # [538:15] alias s -> str_went_to
                         # [91:5] array_copy(s, self.array[self.len], array_length(s))
                         # [91:5] allocate scratch register -> t0
-                        # [91:5] allocate scratch register -> t1
-                        # [91:5] allocate scratch register -> t2
-                        # [91:5] t0: source, t1: destination, t2: count
                         # [91:41] array_length(s)
-                        # [91:41] t2 = array_length(s)
-                        # [91:41] = expression
-                        # [91:41] array_length(s)
-                        li t2, 8
+                        # [91:41] t0 = 8
+                        # [91:41] src: folded constant 'array_length(s)'
+                        li t0, 8
                         # [91:16] s
                         # [91:16] bounds check begin
                         # [91:16] lower bound
-                        # [91:16] t2 lower bound covered by the unsigned upper bound
+                        # [91:16] t0 lower bound covered by the unsigned upper bound
                         # [91:16] upper bound
-                        # [91:16] allocate scratch register -> t3
-                        li t3, 8
-                        bgeu t3, t2, 2f
+                        # [91:16] allocate scratch register -> t1
+                        li t1, 8
+                        bgeu t1, t0, 2f
                         1:
                         # [91:16] source line
                         li a0, 91
                         j baz_bounds_panic
                         2:
-                        # [91:16] free scratch register t3
+                        # [91:16] free scratch register t1
                         # [91:16] bounds check end
-                        lui t0, 48
-                        add t0, t0, s0
-                        addi t0, t0, 952
                         # [91:19] self.array[self.len]
-                        # [91:30] allocate scratch register -> t3
+                        # [91:30] allocate scratch register -> t1
                         # [91:30] set array index
                         # [91:30] self.len
-                        lui t3, 49
-                        add t3, t3, s0
-                        lw t3, -1980(t3)
+                        lui t1, 49
+                        add t1, t1, s0
+                        lw t1, -1980(t1)
                         # [91:30] bounds check begin
                         # [91:30] lower bound
-                        # [91:30] count t2 lower bound already checked
-                        bltz t3, 1f
+                        # [91:30] count t0 lower bound already checked
+                        bltz t1, 1f
                         # [91:30] upper bound
-                        # [91:30] allocate scratch register -> t4
-                        # [91:30] allocate scratch register -> t5
-                        add t5, t3, t2
-                        li t4, 127
-                        bgeu t4, t5, 2f
+                        # [91:30] allocate scratch register -> t2
+                        # [91:30] allocate scratch register -> t3
+                        add t3, t1, t0
+                        li t2, 127
+                        bgeu t2, t3, 2f
                         1:
                         # [91:30] source line
                         li a0, 91
                         j baz_bounds_panic
                         2:
-                        # [91:30] free scratch register t5
-                        # [91:30] free scratch register t4
+                        # [91:30] free scratch register t3
+                        # [91:30] free scratch register t2
                         # [91:30] bounds check end
-                        add t1, s0, t3
-                        # allocate scratch register -> t4
-                        lui t4, 48
-                        add t1, t1, t4
-                        # free scratch register t4
-                        addi t1, t1, 1988
-                        # [91:5] free scratch register t3
-                        # [91:5] t2: elements to bytes (1 bytes/element)
+                        # [91:5] allocate scratch register -> t2
                         # [91:5] allocate scratch register -> t3
-                        # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                        # [91:5] copy bytes; skip if none
-                        beqz t2, 4f
-                        add t2, t2, t0
-                        1:
-                        lbu t3, 0(t0)
-                        sb t3, 0(t1)
-                        addi t0, t0, 1
-                        addi t1, t1, 1
-                        bne t0, t2, 1b
-                        4:
+                        lui t3, 48
+                        add t3, t3, s0
+                        # [91:5] allocate scratch register -> t4
+                        add t4, s0, t1
+                        # [91:5] allocate scratch register -> t5
+                        lui t5, 48
+                        add t4, t4, t5
+                        # [91:5] free scratch register t5
+                        lbu t2, 952(t3)
+                        sb t2, 1988(t4)
+                        lbu t2, 953(t3)
+                        sb t2, 1989(t4)
+                        lbu t2, 954(t3)
+                        sb t2, 1990(t4)
+                        lbu t2, 955(t3)
+                        sb t2, 1991(t4)
+                        lbu t2, 956(t3)
+                        sb t2, 1992(t4)
+                        lbu t2, 957(t3)
+                        sb t2, 1993(t4)
+                        lbu t2, 958(t3)
+                        sb t2, 1994(t4)
+                        lbu t2, 959(t3)
+                        sb t2, 1995(t4)
+                        # [91:5] free scratch register t4
                         # [91:5] free scratch register t3
                         # [91:5] free scratch register t2
                         # [91:5] free scratch register t1
                         # [91:5] free scratch register t0
                         # [92:5] self.len = self.len + array_length(s)
                         # [92:16] self.len
-                        # [92:27] self.len + array_length(s)
-                        # [92:27] src: expression
-                        # [92:27] allocate scratch register -> t0
-                        # [92:27] array_length(s)
-                        li t0, 8
-                        # [92:27] allocate scratch register -> t1
-                        lui t1, 49
-                        add t1, t1, s0
-                        # [92:27] allocate scratch register -> t2
-                        lw t2, -1980(t1)
-                        add t2, t2, t0
-                        sw t2, -1980(t1)
-                        # [92:27] free scratch register t2
-                        # [92:27] free scratch register t1
-                        # [92:27] free scratch register t0
+                        # [92:16] self.len + 8
+                        # [92:16] src: folded constant '+ array_length(s)'
+                        # [92:16] allocate scratch register -> t0
+                        lui t0, 49
+                        add t0, t0, s0
+                        # [92:16] allocate scratch register -> t1
+                        lw t1, -1980(t0)
+                        addi t1, t1, 8
+                        sw t1, -1980(t0)
+                        # [92:16] free scratch register t1
+                        # [92:16] free scratch register t0
                     func.str.add.538.15.958.9.1052.9.end:
                     # [539:15] went_text.add_name( link_names.array[ rooms.array[cur_room_id].links[found_ix].link_name_id ] )
                     # [541:13] allocate scratch register -> t0
@@ -23422,98 +22912,104 @@ main:
                         # [560:18] alias s -> str_arrived_from
                         # [91:5] array_copy(s, self.array[self.len], array_length(s))
                         # [91:5] allocate scratch register -> t0
-                        # [91:5] allocate scratch register -> t1
-                        # [91:5] allocate scratch register -> t2
-                        # [91:5] t0: source, t1: destination, t2: count
                         # [91:41] array_length(s)
-                        # [91:41] t2 = array_length(s)
-                        # [91:41] = expression
-                        # [91:41] array_length(s)
-                        li t2, 13
+                        # [91:41] t0 = 13
+                        # [91:41] src: folded constant 'array_length(s)'
+                        li t0, 13
                         # [91:16] s
                         # [91:16] bounds check begin
                         # [91:16] lower bound
-                        # [91:16] t2 lower bound covered by the unsigned upper bound
+                        # [91:16] t0 lower bound covered by the unsigned upper bound
                         # [91:16] upper bound
-                        # [91:16] allocate scratch register -> t3
-                        li t3, 13
-                        bgeu t3, t2, 2f
+                        # [91:16] allocate scratch register -> t1
+                        li t1, 13
+                        bgeu t1, t0, 2f
                         1:
                         # [91:16] source line
                         li a0, 91
                         j baz_bounds_panic
                         2:
-                        # [91:16] free scratch register t3
+                        # [91:16] free scratch register t1
                         # [91:16] bounds check end
-                        lui t0, 48
-                        add t0, t0, s0
-                        addi t0, t0, 989
                         # [91:19] self.array[self.len]
-                        # [91:30] allocate scratch register -> t3
+                        # [91:30] allocate scratch register -> t1
                         # [91:30] set array index
                         # [91:30] self.len
-                        lui t3, 49
-                        add t3, t3, s0
-                        lw t3, -1840(t3)
+                        lui t1, 49
+                        add t1, t1, s0
+                        lw t1, -1840(t1)
                         # [91:30] bounds check begin
                         # [91:30] lower bound
-                        # [91:30] count t2 lower bound already checked
-                        bltz t3, 1f
+                        # [91:30] count t0 lower bound already checked
+                        bltz t1, 1f
                         # [91:30] upper bound
-                        # [91:30] allocate scratch register -> t4
-                        # [91:30] allocate scratch register -> t5
-                        add t5, t3, t2
-                        li t4, 127
-                        bgeu t4, t5, 2f
+                        # [91:30] allocate scratch register -> t2
+                        # [91:30] allocate scratch register -> t3
+                        add t3, t1, t0
+                        li t2, 127
+                        bgeu t2, t3, 2f
                         1:
                         # [91:30] source line
                         li a0, 91
                         j baz_bounds_panic
                         2:
-                        # [91:30] free scratch register t5
-                        # [91:30] free scratch register t4
+                        # [91:30] free scratch register t3
+                        # [91:30] free scratch register t2
                         # [91:30] bounds check end
-                        add t1, s0, t3
-                        # allocate scratch register -> t4
-                        lui t4, 49
-                        add t1, t1, t4
-                        # free scratch register t4
-                        addi t1, t1, -1968
-                        # [91:5] free scratch register t3
-                        # [91:5] t2: elements to bytes (1 bytes/element)
+                        # [91:5] allocate scratch register -> t2
                         # [91:5] allocate scratch register -> t3
-                        # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                        # [91:5] copy bytes; skip if none
-                        beqz t2, 4f
-                        add t2, t2, t0
-                        1:
-                        lbu t3, 0(t0)
-                        sb t3, 0(t1)
-                        addi t0, t0, 1
-                        addi t1, t1, 1
-                        bne t0, t2, 1b
-                        4:
+                        lui t3, 48
+                        add t3, t3, s0
+                        # [91:5] allocate scratch register -> t4
+                        add t4, s0, t1
+                        # [91:5] allocate scratch register -> t5
+                        lui t5, 49
+                        add t4, t4, t5
+                        # [91:5] free scratch register t5
+                        lbu t2, 989(t3)
+                        sb t2, -1968(t4)
+                        lbu t2, 990(t3)
+                        sb t2, -1967(t4)
+                        lbu t2, 991(t3)
+                        sb t2, -1966(t4)
+                        lbu t2, 992(t3)
+                        sb t2, -1965(t4)
+                        lbu t2, 993(t3)
+                        sb t2, -1964(t4)
+                        lbu t2, 994(t3)
+                        sb t2, -1963(t4)
+                        lbu t2, 995(t3)
+                        sb t2, -1962(t4)
+                        lbu t2, 996(t3)
+                        sb t2, -1961(t4)
+                        lbu t2, 997(t3)
+                        sb t2, -1960(t4)
+                        lbu t2, 998(t3)
+                        sb t2, -1959(t4)
+                        lbu t2, 999(t3)
+                        sb t2, -1958(t4)
+                        lbu t2, 1000(t3)
+                        sb t2, -1957(t4)
+                        lbu t2, 1001(t3)
+                        sb t2, -1956(t4)
+                        # [91:5] free scratch register t4
                         # [91:5] free scratch register t3
                         # [91:5] free scratch register t2
                         # [91:5] free scratch register t1
                         # [91:5] free scratch register t0
                         # [92:5] self.len = self.len + array_length(s)
                         # [92:16] self.len
-                        # [92:27] self.len + array_length(s)
-                        # [92:27] src: expression
-                        # [92:27] allocate scratch register -> t0
-                        # [92:27] array_length(s)
-                        li t0, 13
-                        # [92:27] allocate scratch register -> t1
-                        lui t1, 49
-                        add t1, t1, s0
-                        # [92:27] allocate scratch register -> t2
-                        lw t2, -1840(t1)
-                        add t2, t2, t0
-                        sw t2, -1840(t1)
-                        # [92:27] free scratch register t2
-                        # [92:27] free scratch register t1
-                        # [92:27] free scratch register t0
+                        # [92:16] self.len + 13
+                        # [92:16] src: folded constant '+ array_length(s)'
+                        # [92:16] allocate scratch register -> t0
+                        lui t0, 49
+                        add t0, t0, s0
+                        # [92:16] allocate scratch register -> t1
+                        lw t1, -1840(t0)
+                        addi t1, t1, 13
+                        sw t1, -1840(t0)
+                        # [92:16] free scratch register t1
+                        # [92:16] free scratch register t0
                     func.str.add.560.18.958.9.1052.9.end:
                     # [561:18] arrived_text.add_name( link_names.array[ rooms.array[to_room_id].links[to_found_ix].link_name_id ] )
                     # [563:13] allocate scratch register -> t0
@@ -24059,15 +23555,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.960.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 2
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 2
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.960.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.960.18.1052.9:
@@ -24077,9 +23568,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 2
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 2
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -24410,31 +23900,26 @@ main:
                             # [596:13] alias self -> out
                             # [596:13] alias s -> str_what_exit_name_to
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 30
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.596.13.961.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 30
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.596.13.961.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 30
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.596.13.961.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.596.13.961.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.596.13.961.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.596.13.961.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.596.13.961.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.596.13.961.9.1052.9.end:
@@ -24445,33 +23930,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 30
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 30
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 30
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1002
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -24479,7 +23964,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.596.13.961.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.596.13.961.9.1052.9.end:
                         func.printer.print_all.596.13.961.9.1052.9.end:
                         # [597:9] return
@@ -25227,31 +24711,26 @@ main:
                             # [609:13] alias self -> out
                             # [609:13] alias s -> str_what_exit_name_back
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 36
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.609.13.961.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 36
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.609.13.961.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 36
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.609.13.961.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.609.13.961.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.609.13.961.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.609.13.961.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.609.13.961.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.609.13.961.9.1052.9.end:
@@ -25262,33 +24741,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 36
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 36
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 36
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1032
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -25296,7 +24775,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.609.13.961.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.609.13.961.9.1052.9.end:
                         func.printer.print_all.609.13.961.9.1052.9.end:
                         # [610:9] return
@@ -25961,31 +25439,26 @@ main:
                         # [632:9] alias self -> out
                         # [632:9] alias s -> str_new_room_created
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 17
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.632.9.961.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 17
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.632.9.961.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 17
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.632.9.961.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.632.9.961.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.632.9.961.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.632.9.961.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.632.9.961.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.632.9.961.9.1052.9.end:
@@ -25996,33 +25469,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 17
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 17
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 17
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1068
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -26030,7 +25503,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.632.9.961.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.632.9.961.9.1052.9.end:
                     func.printer.print_all.632.9.961.9.1052.9.end:
                 func.action_new_room.961.9.1052.9.end:
@@ -26074,15 +25546,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.963.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 2
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 2
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.963.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.963.18.1052.9:
@@ -26092,9 +25559,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 2
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 2
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -26526,31 +25992,26 @@ main:
                         # [642:9] alias self -> out
                         # [642:9] alias s -> str_new_room_description
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 21
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.642.9.964.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 21
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.642.9.964.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 21
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.642.9.964.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.642.9.964.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.642.9.964.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.642.9.964.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.642.9.964.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.642.9.964.9.1052.9.end:
@@ -26561,33 +26022,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 21
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 21
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 21
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1085
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -26595,7 +26056,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.642.9.964.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.642.9.964.9.1052.9.end:
                     func.printer.print_all.642.9.964.9.1052.9.end:
                 func.action_set_room_description.964.9.1052.9.end:
@@ -26639,15 +26099,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.966.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 3
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 3
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.966.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.966.18.1052.9:
@@ -26657,9 +26112,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 3
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 3
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -27126,15 +26580,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.969.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 3
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 3
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.969.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.969.18.1052.9:
@@ -27144,9 +26593,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 3
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 3
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -27477,31 +26925,26 @@ main:
                             # [659:13] alias self -> out
                             # [659:13] alias s -> str_what_name
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 10
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.659.13.970.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 10
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.659.13.970.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 10
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.659.13.970.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.659.13.970.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.659.13.970.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.659.13.970.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.659.13.970.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.659.13.970.9.1052.9.end:
@@ -27512,33 +26955,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 10
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 10
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 10
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1106
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -27546,7 +26989,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.659.13.970.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.659.13.970.9.1052.9.end:
                         func.printer.print_all.659.13.970.9.1052.9.end:
                         # [660:9] return
@@ -27590,31 +27032,26 @@ main:
                             # [664:13] alias self -> out
                             # [664:13] alias s -> str_name_too_long
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 14
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.664.13.970.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 14
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.664.13.970.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 14
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.664.13.970.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.664.13.970.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.664.13.970.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.664.13.970.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.664.13.970.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.664.13.970.9.1052.9.end:
@@ -27625,33 +27062,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 14
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 14
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 14
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1116
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -27659,7 +27096,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.664.13.970.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.664.13.970.9.1052.9.end:
                         func.printer.print_all.664.13.970.9.1052.9.end:
                         # [665:9] return
@@ -27862,31 +27298,26 @@ main:
                         # [670:9] alias self -> out
                         # [670:9] alias s -> str_new_room_name
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 14
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.670.9.970.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 14
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.670.9.970.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 14
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.670.9.970.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.670.9.970.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.670.9.970.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.670.9.970.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.670.9.970.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.670.9.970.9.1052.9.end:
@@ -27897,33 +27328,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 14
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 14
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 14
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1130
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -27931,7 +27362,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.670.9.970.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.670.9.970.9.1052.9.end:
                     func.printer.print_all.670.9.970.9.1052.9.end:
                 func.action_set_room_name.970.9.1052.9.end:
@@ -27975,15 +27405,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.972.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 2
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 2
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.972.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.972.18.1052.9:
@@ -27993,9 +27418,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 2
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 2
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -28326,31 +27750,26 @@ main:
                             # [679:13] alias self -> out
                             # [679:13] alias s -> str_what_name
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 10
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.679.13.973.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 10
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.679.13.973.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 10
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.679.13.973.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.679.13.973.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.679.13.973.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.679.13.973.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.679.13.973.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.679.13.973.9.1052.9.end:
@@ -28361,33 +27780,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 10
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 10
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 10
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1106
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -28395,7 +27814,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.679.13.973.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.679.13.973.9.1052.9.end:
                         func.printer.print_all.679.13.973.9.1052.9.end:
                         # [680:9] return
@@ -28794,31 +28212,26 @@ main:
                         # [691:9] alias self -> out
                         # [691:9] alias s -> str_new_entity_created
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 19
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.691.9.973.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 19
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.691.9.973.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 19
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.691.9.973.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.691.9.973.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.691.9.973.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.691.9.973.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.691.9.973.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.691.9.973.9.1052.9.end:
@@ -28829,33 +28242,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 19
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 19
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 19
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1144
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -28863,7 +28276,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.691.9.973.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.691.9.973.9.1052.9.end:
                     func.printer.print_all.691.9.973.9.1052.9.end:
                 func.action_new_entity.973.9.1052.9.end:
@@ -28907,15 +28319,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.975.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 2
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 2
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.975.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.975.18.1052.9:
@@ -28925,9 +28332,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 2
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 2
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -29258,31 +28664,26 @@ main:
                             # [700:13] alias self -> out
                             # [700:13] alias s -> str_what_name
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 10
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.700.13.976.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 10
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.700.13.976.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 10
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.700.13.976.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.700.13.976.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.700.13.976.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.700.13.976.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.700.13.976.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.700.13.976.9.1052.9.end:
@@ -29293,33 +28694,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 10
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 10
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 10
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1106
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -29327,7 +28728,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.700.13.976.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.700.13.976.9.1052.9.end:
                         func.printer.print_all.700.13.976.9.1052.9.end:
                         # [701:9] return
@@ -29651,31 +29051,26 @@ main:
                         # [710:9] alias self -> out
                         # [710:9] alias s -> str_new_object_created
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 19
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.710.9.976.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 19
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.710.9.976.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 19
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.710.9.976.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.710.9.976.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.710.9.976.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.710.9.976.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.710.9.976.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.710.9.976.9.1052.9.end:
@@ -29686,33 +29081,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 19
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 19
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 19
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1163
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -29720,7 +29115,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.710.9.976.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.710.9.976.9.1052.9.end:
                     func.printer.print_all.710.9.976.9.1052.9.end:
                 func.action_new_object.976.9.1052.9.end:
@@ -29764,15 +29158,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.978.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 1
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 1
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.978.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.978.18.1052.9:
@@ -29782,9 +29171,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 1
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 1
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -29933,31 +29321,26 @@ main:
                             # [719:13] alias self -> out
                             # [719:13] alias s -> str_u_have_nothing
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 15
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.719.13.979.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 15
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.719.13.979.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 15
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.719.13.979.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.719.13.979.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.719.13.979.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.719.13.979.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.719.13.979.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.719.13.979.9.1052.9.end:
@@ -29968,33 +29351,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 15
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 15
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 15
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1190
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -30002,7 +29385,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.719.13.979.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.719.13.979.9.1052.9.end:
                         func.printer.print_all.719.13.979.9.1052.9.end:
                         # [720:9] return
@@ -30096,31 +29478,26 @@ main:
                                 # [728:17] alias self -> out
                                 # [728:17] alias s -> str_u_have
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t3
-                                # [69:19] t3 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t3, 8
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.728.17.979.9.1052.9:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t3
+                                    # [69:10] alias count -> 8
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.728.17.979.9.1052.9:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 8
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.728.17.979.9.1052.9:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.728.17.979.9.1052.9:
-                                        # [59:8] allocate scratch register -> t4
-                                        lbu t4, 911(s0)
-                                        bne t4, zero, func.printer.print_at.65.10.69.10.728.17.979.9.1052.9.end
-                                        # [59:8] free scratch register t4
+                                        # [59:8] allocate scratch register -> t3
+                                        lbu t3, 911(s0)
+                                        bne t3, zero, func.printer.print_at.65.10.69.10.728.17.979.9.1052.9.end
+                                        # [59:8] free scratch register t3
                                         if.59.8.65.10.69.10.728.17.979.9.1052.9.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.728.17.979.9.1052.9.end:
@@ -30131,33 +29508,33 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t3, 0
-                                        # [61:24] allocate scratch register -> t4
+                                        li a2, 8
+                                        # [61:24] allocate scratch register -> t3
                                         # [61:24] start
-                                        li t4, 0
+                                        li t3, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t4, 1f
+                                        bltz t3, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t4
                                         # [61:24] allocate scratch register -> t5
-                                        # [61:24] allocate scratch register -> t6
-                                        add t6, t4, a2
-                                        li t5, 8
-                                        bgeu t5, t6, 2f
+                                        add t5, t3, a2
+                                        li t4, 8
+                                        bgeu t4, t5, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t6
                                         # [61:24] free scratch register t5
+                                        # [61:24] free scratch register t4
                                         # [61:24] bounds check end
                                         lui a1, 48
                                         add a1, a1, s0
                                         addi a1, a1, 1182
-                                        add a1, a1, t4
-                                        # [61:5] free scratch register t4
+                                        add a1, a1, t3
+                                        # [61:5] free scratch register t3
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -30165,7 +29542,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.728.17.979.9.1052.9.end:
-                                    # [69:10] free scratch register t3
                                 func.printer.print.69.10.728.17.979.9.1052.9.end:
                             func.printer.print_all.728.17.979.9.1052.9.end:
                             # [729:13] first_printed = true
@@ -30185,31 +29561,26 @@ main:
                                 # [731:17] alias self -> out
                                 # [731:17] alias s -> str_comma
                                 # [69:10] self.print(s, array_length(s))
-                                # [69:19] allocate scratch register -> t3
-                                # [69:19] t3 = array_length(s)
-                                # [69:19] = expression
-                                # [69:19] array_length(s)
-                                li t3, 2
                                 # [64:6] printer.print(s i8[], count)
                                 func.printer.print.69.10.731.17.979.9.1052.9:
                                     # [69:10] alias self -> self
                                     # [69:10] alias s -> s
-                                    # [69:10] alias count -> t3
+                                    # [69:10] alias count -> 2
                                     # [65:10] self.print_at(s, count, 0)
                                     # [58:6] printer.print_at(s i8[], count, start)
                                     func.printer.print_at.65.10.69.10.731.17.979.9.1052.9:
                                         # [65:10] alias self -> self
                                         # [65:10] alias s -> s
-                                        # [65:10] alias count -> count
+                                        # [65:10] alias count -> 2
                                         # [65:10] alias start -> 0
                                         if.59.8.65.10.69.10.731.17.979.9.1052.9:
                                         # [59:8] ? self.silenced
                                         # [59:8] ? shorthand: self.silenced
                                         cmp.59.8.65.10.69.10.731.17.979.9.1052.9:
-                                        # [59:8] allocate scratch register -> t4
-                                        lbu t4, 911(s0)
-                                        bne t4, zero, func.printer.print_at.65.10.69.10.731.17.979.9.1052.9.end
-                                        # [59:8] free scratch register t4
+                                        # [59:8] allocate scratch register -> t3
+                                        lbu t3, 911(s0)
+                                        bne t3, zero, func.printer.print_at.65.10.69.10.731.17.979.9.1052.9.end
+                                        # [59:8] free scratch register t3
                                         if.59.8.65.10.69.10.731.17.979.9.1052.9.code:
                                             # [59:22] return
                                         if.59.5.65.10.69.10.731.17.979.9.1052.9.end:
@@ -30220,31 +29591,31 @@ main:
                                         # [61:11] 1
                                         li a0, 1
                                         # [61:17] count
-                                        addi a2, t3, 0
-                                        # [61:24] allocate scratch register -> t4
+                                        li a2, 2
+                                        # [61:24] allocate scratch register -> t3
                                         # [61:24] start
-                                        li t4, 0
+                                        li t3, 0
                                         # [61:24] bounds check begin
                                         # [61:24] lower bound
-                                        bltz t4, 1f
+                                        bltz t3, 1f
                                         bltz a2, 1f
                                         # [61:24] upper bound
+                                        # [61:24] allocate scratch register -> t4
                                         # [61:24] allocate scratch register -> t5
-                                        # [61:24] allocate scratch register -> t6
-                                        add t6, t4, a2
-                                        li t5, 2
-                                        bgeu t5, t6, 2f
+                                        add t5, t3, a2
+                                        li t4, 2
+                                        bgeu t4, t5, 2f
                                         1:
                                         # [61:24] source line
                                         li a0, 61
                                         j baz_bounds_panic
                                         2:
-                                        # [61:24] free scratch register t6
                                         # [61:24] free scratch register t5
+                                        # [61:24] free scratch register t4
                                         # [61:24] bounds check end
                                         addi a1, s0, 883
-                                        add a1, a1, t4
-                                        # [61:5] free scratch register t4
+                                        add a1, a1, t3
+                                        # [61:5] free scratch register t3
                                         # [61:5] allocate named register a7
                                         call a7, .Lbaz_write
                                         # [61:5] free named register a7
@@ -30252,7 +29623,6 @@ main:
                                         # [61:5] free named register a1
                                         # [61:5] free named register a0
                                     func.printer.print_at.65.10.69.10.731.17.979.9.1052.9.end:
-                                    # [69:10] free scratch register t3
                                 func.printer.print.69.10.731.17.979.9.1052.9.end:
                             func.printer.print_all.731.17.979.9.1052.9.end:
                         if.727.9.979.9.1052.9.end:
@@ -30376,31 +29746,26 @@ main:
                             # [73:10] alias self -> self
                             # [73:10] alias s -> str_nl
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 1
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.73.10.737.9.979.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 1
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.73.10.737.9.979.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 1
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.73.10.737.9.979.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.73.10.737.9.979.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.73.10.737.9.979.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.73.10.737.9.979.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.73.10.737.9.979.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.73.10.737.9.979.9.1052.9.end:
@@ -30411,31 +29776,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 1
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 1
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 1
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     addi a1, s0, 879
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -30443,7 +29808,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.73.10.737.9.979.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.73.10.737.9.979.9.1052.9.end:
                         func.printer.print_all.73.10.737.9.979.9.1052.9.end:
                     func.printer.println.737.9.979.9.1052.9.end:
@@ -30488,15 +29852,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.981.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 1
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 1
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.981.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.981.18.1052.9:
@@ -30506,9 +29865,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 1
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 1
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -30839,31 +30197,26 @@ main:
                             # [748:13] alias self -> out
                             # [748:13] alias s -> str_drop_what
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 10
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.748.13.982.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 10
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.748.13.982.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 10
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.748.13.982.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.748.13.982.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.748.13.982.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.748.13.982.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.748.13.982.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.748.13.982.9.1052.9.end:
@@ -30874,33 +30227,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 10
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 10
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 10
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1205
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -30908,7 +30261,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.748.13.982.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.748.13.982.9.1052.9.end:
                         func.printer.print_all.748.13.982.9.1052.9.end:
                         # [749:9] return
@@ -31240,31 +30592,26 @@ main:
                             # [763:13] alias self -> out
                             # [763:13] alias s -> str_not_carrying
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 19
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.763.13.982.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 19
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.763.13.982.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 19
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.763.13.982.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.763.13.982.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.763.13.982.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.763.13.982.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.763.13.982.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.763.13.982.9.1052.9.end:
@@ -31275,33 +30622,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 19
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 19
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 19
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1215
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -31309,7 +30656,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.763.13.982.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.763.13.982.9.1052.9.end:
                         func.printer.print_all.763.13.982.9.1052.9.end:
                         # [764:9] return
@@ -31698,31 +31044,26 @@ main:
                         # [773:9] alias self -> out
                         # [773:9] alias s -> str_dropped
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 8
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.773.9.982.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 8
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.773.9.982.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 8
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.773.9.982.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.773.9.982.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.773.9.982.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.773.9.982.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.773.9.982.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.773.9.982.9.1052.9.end:
@@ -31733,33 +31074,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 8
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 8
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 8
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1234
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -31767,7 +31108,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.773.9.982.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.773.9.982.9.1052.9.end:
                     func.printer.print_all.773.9.982.9.1052.9.end:
                     # [774:8] tz.print()
@@ -31869,31 +31209,26 @@ main:
                             # [73:10] alias self -> self
                             # [73:10] alias s -> str_nl
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 1
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.73.10.775.9.982.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 1
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.73.10.775.9.982.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 1
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.73.10.775.9.982.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.73.10.775.9.982.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.73.10.775.9.982.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.73.10.775.9.982.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.73.10.775.9.982.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.73.10.775.9.982.9.1052.9.end:
@@ -31904,31 +31239,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 1
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 1
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 1
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     addi a1, s0, 879
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -31936,7 +31271,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.73.10.775.9.982.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.73.10.775.9.982.9.1052.9.end:
                         func.printer.print_all.73.10.775.9.982.9.1052.9.end:
                     func.printer.println.775.9.982.9.1052.9.end:
@@ -31981,15 +31315,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.984.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 1
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 1
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.984.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.984.18.1052.9:
@@ -31999,9 +31328,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 1
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 1
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -32334,31 +31662,26 @@ main:
                             # [788:13] alias self -> out
                             # [788:13] alias s -> str_give_what
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 10
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.788.13.985.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 10
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.788.13.985.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 10
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.788.13.985.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.788.13.985.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.788.13.985.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.788.13.985.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.788.13.985.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.788.13.985.9.1052.9.end:
@@ -32369,33 +31692,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 10
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 10
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 10
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1242
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -32403,7 +31726,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.788.13.985.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.788.13.985.9.1052.9.end:
                         func.printer.print_all.788.13.985.9.1052.9.end:
                         # [789:9] return
@@ -32735,31 +32057,26 @@ main:
                             # [803:13] alias self -> out
                             # [803:13] alias s -> str_not_carrying
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 19
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.803.13.985.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 19
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.803.13.985.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 19
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.803.13.985.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.803.13.985.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.803.13.985.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.803.13.985.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.803.13.985.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.803.13.985.9.1052.9.end:
@@ -32770,33 +32087,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 19
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 19
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 19
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1215
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -32804,7 +32121,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.803.13.985.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.803.13.985.9.1052.9.end:
                         func.printer.print_all.803.13.985.9.1052.9.end:
                         # [804:9] return
@@ -33174,31 +32490,26 @@ main:
                             # [813:13] alias self -> out
                             # [813:13] alias s -> str_give_to_whom
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 13
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.813.13.985.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 13
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.813.13.985.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 13
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.813.13.985.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.813.13.985.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.813.13.985.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.813.13.985.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.813.13.985.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.813.13.985.9.1052.9.end:
@@ -33209,33 +32520,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 13
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 13
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 13
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1252
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -33243,7 +32554,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.813.13.985.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.813.13.985.9.1052.9.end:
                         func.printer.print_all.813.13.985.9.1052.9.end:
                         # [814:9] return
@@ -33733,31 +33043,26 @@ main:
                             # [831:13] alias self -> out
                             # [831:13] alias s -> str_is_not_here
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 13
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.831.13.985.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 13
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.831.13.985.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 13
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.831.13.985.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.831.13.985.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.831.13.985.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.831.13.985.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.831.13.985.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.831.13.985.9.1052.9.end:
@@ -33768,33 +33073,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 13
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 13
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 13
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1265
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -33802,7 +33107,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.831.13.985.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.831.13.985.9.1052.9.end:
                         func.printer.print_all.831.13.985.9.1052.9.end:
                         # [832:9] return
@@ -34076,31 +33380,26 @@ main:
                         # [839:9] alias self -> out
                         # [839:9] alias s -> str_gave
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 5
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.839.9.985.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 5
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.839.9.985.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 5
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.839.9.985.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.839.9.985.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.839.9.985.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.839.9.985.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.839.9.985.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.839.9.985.9.1052.9.end:
@@ -34111,33 +33410,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 5
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 5
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 5
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1278
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -34145,7 +33444,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.839.9.985.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.839.9.985.9.1052.9.end:
                     func.printer.print_all.839.9.985.9.1052.9.end:
                     # [840:17] object_name.print()
@@ -34227,31 +33525,26 @@ main:
                         # [841:9] alias self -> out
                         # [841:9] alias s -> str_to
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 4
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.841.9.985.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 4
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.841.9.985.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 4
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.841.9.985.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.841.9.985.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.841.9.985.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.841.9.985.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.841.9.985.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.841.9.985.9.1052.9.end:
@@ -34262,33 +33555,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 4
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 4
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 4
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1283
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -34296,7 +33589,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.841.9.985.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.841.9.985.9.1052.9.end:
                     func.printer.print_all.841.9.985.9.1052.9.end:
                     # [842:36] entities.array[to_entity].name.print()
@@ -34412,31 +33704,26 @@ main:
                             # [73:10] alias self -> self
                             # [73:10] alias s -> str_nl
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 1
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.73.10.843.9.985.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 1
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.73.10.843.9.985.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 1
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.73.10.843.9.985.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.73.10.843.9.985.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.73.10.843.9.985.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.73.10.843.9.985.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.73.10.843.9.985.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.73.10.843.9.985.9.1052.9.end:
@@ -34447,31 +33734,31 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 1
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 1
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 1
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     addi a1, s0, 879
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -34479,7 +33766,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.73.10.843.9.985.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.73.10.843.9.985.9.1052.9.end:
                         func.printer.print_all.73.10.843.9.985.9.1052.9.end:
                     func.printer.println.843.9.985.9.1052.9.end:
@@ -34508,98 +33794,88 @@ main:
                         # [846:15] alias s -> str_gave
                         # [91:5] array_copy(s, self.array[self.len], array_length(s))
                         # [91:5] allocate scratch register -> t0
-                        # [91:5] allocate scratch register -> t1
-                        # [91:5] allocate scratch register -> t2
-                        # [91:5] t0: source, t1: destination, t2: count
                         # [91:41] array_length(s)
-                        # [91:41] t2 = array_length(s)
-                        # [91:41] = expression
-                        # [91:41] array_length(s)
-                        li t2, 5
+                        # [91:41] t0 = 5
+                        # [91:41] src: folded constant 'array_length(s)'
+                        li t0, 5
                         # [91:16] s
                         # [91:16] bounds check begin
                         # [91:16] lower bound
-                        # [91:16] t2 lower bound covered by the unsigned upper bound
+                        # [91:16] t0 lower bound covered by the unsigned upper bound
                         # [91:16] upper bound
-                        # [91:16] allocate scratch register -> t3
-                        li t3, 5
-                        bgeu t3, t2, 2f
+                        # [91:16] allocate scratch register -> t1
+                        li t1, 5
+                        bgeu t1, t0, 2f
                         1:
                         # [91:16] source line
                         li a0, 91
                         j baz_bounds_panic
                         2:
-                        # [91:16] free scratch register t3
+                        # [91:16] free scratch register t1
                         # [91:16] bounds check end
-                        lui t0, 48
-                        add t0, t0, s0
-                        addi t0, t0, 1278
                         # [91:19] self.array[self.len]
-                        # [91:30] allocate scratch register -> t3
+                        # [91:30] allocate scratch register -> t1
                         # [91:30] set array index
                         # [91:30] self.len
-                        lui t3, 49
-                        add t3, t3, s0
-                        lw t3, -1952(t3)
+                        lui t1, 49
+                        add t1, t1, s0
+                        lw t1, -1952(t1)
                         # [91:30] bounds check begin
                         # [91:30] lower bound
-                        # [91:30] count t2 lower bound already checked
-                        bltz t3, 1f
+                        # [91:30] count t0 lower bound already checked
+                        bltz t1, 1f
                         # [91:30] upper bound
-                        # [91:30] allocate scratch register -> t4
-                        # [91:30] allocate scratch register -> t5
-                        add t5, t3, t2
-                        li t4, 127
-                        bgeu t4, t5, 2f
+                        # [91:30] allocate scratch register -> t2
+                        # [91:30] allocate scratch register -> t3
+                        add t3, t1, t0
+                        li t2, 127
+                        bgeu t2, t3, 2f
                         1:
                         # [91:30] source line
                         li a0, 91
                         j baz_bounds_panic
                         2:
-                        # [91:30] free scratch register t5
-                        # [91:30] free scratch register t4
+                        # [91:30] free scratch register t3
+                        # [91:30] free scratch register t2
                         # [91:30] bounds check end
-                        add t1, s0, t3
-                        # allocate scratch register -> t4
-                        lui t4, 48
-                        add t1, t1, t4
-                        # free scratch register t4
-                        addi t1, t1, 2016
-                        # [91:5] free scratch register t3
-                        # [91:5] t2: elements to bytes (1 bytes/element)
+                        # [91:5] allocate scratch register -> t2
                         # [91:5] allocate scratch register -> t3
-                        # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                        # [91:5] copy bytes; skip if none
-                        beqz t2, 4f
-                        add t2, t2, t0
-                        1:
-                        lbu t3, 0(t0)
-                        sb t3, 0(t1)
-                        addi t0, t0, 1
-                        addi t1, t1, 1
-                        bne t0, t2, 1b
-                        4:
+                        lui t3, 48
+                        add t3, t3, s0
+                        # [91:5] allocate scratch register -> t4
+                        add t4, s0, t1
+                        # [91:5] allocate scratch register -> t5
+                        lui t5, 48
+                        add t4, t4, t5
+                        # [91:5] free scratch register t5
+                        lbu t2, 1278(t3)
+                        sb t2, 2016(t4)
+                        lbu t2, 1279(t3)
+                        sb t2, 2017(t4)
+                        lbu t2, 1280(t3)
+                        sb t2, 2018(t4)
+                        lbu t2, 1281(t3)
+                        sb t2, 2019(t4)
+                        lbu t2, 1282(t3)
+                        sb t2, 2020(t4)
+                        # [91:5] free scratch register t4
                         # [91:5] free scratch register t3
                         # [91:5] free scratch register t2
                         # [91:5] free scratch register t1
                         # [91:5] free scratch register t0
                         # [92:5] self.len = self.len + array_length(s)
                         # [92:16] self.len
-                        # [92:27] self.len + array_length(s)
-                        # [92:27] src: expression
-                        # [92:27] allocate scratch register -> t0
-                        # [92:27] array_length(s)
-                        li t0, 5
-                        # [92:27] allocate scratch register -> t1
-                        lui t1, 49
-                        add t1, t1, s0
-                        # [92:27] allocate scratch register -> t2
-                        lw t2, -1952(t1)
-                        add t2, t2, t0
-                        sw t2, -1952(t1)
-                        # [92:27] free scratch register t2
-                        # [92:27] free scratch register t1
-                        # [92:27] free scratch register t0
+                        # [92:16] self.len + 5
+                        # [92:16] src: folded constant '+ array_length(s)'
+                        # [92:16] allocate scratch register -> t0
+                        lui t0, 49
+                        add t0, t0, s0
+                        # [92:16] allocate scratch register -> t1
+                        lw t1, -1952(t0)
+                        addi t1, t1, 5
+                        sw t1, -1952(t0)
+                        # [92:16] free scratch register t1
+                        # [92:16] free scratch register t0
                     func.str.add.846.15.985.9.1052.9.end:
                     # [847:15] gave_text.add_name(entities.array[to_entity].name)
                     # [847:39] allocate scratch register -> t0
@@ -34737,96 +34013,76 @@ main:
                         # [848:15] alias s -> str_space
                         # [91:5] array_copy(s, self.array[self.len], array_length(s))
                         # [91:5] allocate scratch register -> t0
-                        # [91:5] allocate scratch register -> t1
-                        # [91:5] allocate scratch register -> t2
-                        # [91:5] t0: source, t1: destination, t2: count
                         # [91:41] array_length(s)
-                        # [91:41] t2 = array_length(s)
-                        # [91:41] = expression
-                        # [91:41] array_length(s)
-                        li t2, 1
+                        # [91:41] t0 = 1
+                        # [91:41] src: folded constant 'array_length(s)'
+                        li t0, 1
                         # [91:16] s
                         # [91:16] bounds check begin
                         # [91:16] lower bound
-                        # [91:16] t2 lower bound covered by the unsigned upper bound
+                        # [91:16] t0 lower bound covered by the unsigned upper bound
                         # [91:16] upper bound
-                        # [91:16] allocate scratch register -> t3
-                        li t3, 1
-                        bgeu t3, t2, 2f
+                        # [91:16] allocate scratch register -> t1
+                        li t1, 1
+                        bgeu t1, t0, 2f
                         1:
                         # [91:16] source line
                         li a0, 91
                         j baz_bounds_panic
                         2:
-                        # [91:16] free scratch register t3
+                        # [91:16] free scratch register t1
                         # [91:16] bounds check end
-                        addi t0, s0, 926
                         # [91:19] self.array[self.len]
-                        # [91:30] allocate scratch register -> t3
+                        # [91:30] allocate scratch register -> t1
                         # [91:30] set array index
                         # [91:30] self.len
-                        lui t3, 49
-                        add t3, t3, s0
-                        lw t3, -1952(t3)
+                        lui t1, 49
+                        add t1, t1, s0
+                        lw t1, -1952(t1)
                         # [91:30] bounds check begin
                         # [91:30] lower bound
-                        # [91:30] count t2 lower bound already checked
-                        bltz t3, 1f
+                        # [91:30] count t0 lower bound already checked
+                        bltz t1, 1f
                         # [91:30] upper bound
-                        # [91:30] allocate scratch register -> t4
-                        # [91:30] allocate scratch register -> t5
-                        add t5, t3, t2
-                        li t4, 127
-                        bgeu t4, t5, 2f
+                        # [91:30] allocate scratch register -> t2
+                        # [91:30] allocate scratch register -> t3
+                        add t3, t1, t0
+                        li t2, 127
+                        bgeu t2, t3, 2f
                         1:
                         # [91:30] source line
                         li a0, 91
                         j baz_bounds_panic
                         2:
-                        # [91:30] free scratch register t5
-                        # [91:30] free scratch register t4
+                        # [91:30] free scratch register t3
+                        # [91:30] free scratch register t2
                         # [91:30] bounds check end
-                        add t1, s0, t3
-                        # allocate scratch register -> t4
-                        lui t4, 48
-                        add t1, t1, t4
-                        # free scratch register t4
-                        addi t1, t1, 2016
-                        # [91:5] free scratch register t3
-                        # [91:5] t2: elements to bytes (1 bytes/element)
+                        # [91:5] allocate scratch register -> t2
                         # [91:5] allocate scratch register -> t3
-                        # [91:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                        # [91:5] copy bytes; skip if none
-                        beqz t2, 4f
-                        add t2, t2, t0
-                        1:
-                        lbu t3, 0(t0)
-                        sb t3, 0(t1)
-                        addi t0, t0, 1
-                        addi t1, t1, 1
-                        bne t0, t2, 1b
-                        4:
+                        add t3, s0, t1
+                        # [91:5] allocate scratch register -> t4
+                        lui t4, 48
+                        add t3, t3, t4
+                        # [91:5] free scratch register t4
+                        lbu t2, 926(s0)
+                        sb t2, 2016(t3)
                         # [91:5] free scratch register t3
                         # [91:5] free scratch register t2
                         # [91:5] free scratch register t1
                         # [91:5] free scratch register t0
                         # [92:5] self.len = self.len + array_length(s)
                         # [92:16] self.len
-                        # [92:27] self.len + array_length(s)
-                        # [92:27] src: expression
-                        # [92:27] allocate scratch register -> t0
-                        # [92:27] array_length(s)
-                        li t0, 1
-                        # [92:27] allocate scratch register -> t1
-                        lui t1, 49
-                        add t1, t1, s0
-                        # [92:27] allocate scratch register -> t2
-                        lw t2, -1952(t1)
-                        add t2, t2, t0
-                        sw t2, -1952(t1)
-                        # [92:27] free scratch register t2
-                        # [92:27] free scratch register t1
-                        # [92:27] free scratch register t0
+                        # [92:16] self.len + 1
+                        # [92:16] src: folded constant '+ array_length(s)'
+                        # [92:16] allocate scratch register -> t0
+                        lui t0, 49
+                        add t0, t0, s0
+                        # [92:16] allocate scratch register -> t1
+                        lw t1, -1952(t0)
+                        addi t1, t1, 1
+                        sw t1, -1952(t0)
+                        # [92:16] free scratch register t1
+                        # [92:16] free scratch register t0
                     func.str.add.848.15.985.9.1052.9.end:
                     # [849:15] gave_text.add_name(object_name)
                     # [181:10] mut str.add_name(nm name)
@@ -35286,15 +34542,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.987.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 1
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 1
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.987.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.987.18.1052.9:
@@ -35304,9 +34555,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 1
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 1
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -35637,31 +34887,26 @@ main:
                             # [863:13] alias self -> out
                             # [863:13] alias s -> str_tell_whom
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 10
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.863.13.988.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 10
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.863.13.988.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 10
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.863.13.988.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.863.13.988.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.863.13.988.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.863.13.988.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.863.13.988.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.863.13.988.9.1052.9.end:
@@ -35672,33 +34917,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 10
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 10
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 10
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1287
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -35706,7 +34951,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.863.13.988.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.863.13.988.9.1052.9.end:
                         func.printer.print_all.863.13.988.9.1052.9.end:
                         # [864:9] return
@@ -36022,31 +35266,26 @@ main:
                             # [878:13] alias self -> out
                             # [878:13] alias s -> str_does_not_exist
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 16
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.878.13.988.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 16
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.878.13.988.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 16
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.878.13.988.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.878.13.988.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.878.13.988.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.878.13.988.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.878.13.988.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.878.13.988.9.1052.9.end:
@@ -36057,33 +35296,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 16
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 16
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 16
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1307
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -36091,7 +35330,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.878.13.988.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.878.13.988.9.1052.9.end:
                         func.printer.print_all.878.13.988.9.1052.9.end:
                         # [879:9] return
@@ -36239,31 +35477,26 @@ main:
                             # [884:13] alias self -> out
                             # [884:13] alias s -> str_has_too_many_messages
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 23
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.884.13.988.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 23
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.884.13.988.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 23
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.884.13.988.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.884.13.988.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.884.13.988.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.884.13.988.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.884.13.988.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.884.13.988.9.1052.9.end:
@@ -36274,33 +35507,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 23
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 23
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 23
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1323
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -36308,7 +35541,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.884.13.988.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.884.13.988.9.1052.9.end:
                         func.printer.print_all.884.13.988.9.1052.9.end:
                         # [885:9] return
@@ -36492,31 +35724,26 @@ main:
                             # [893:13] alias self -> out
                             # [893:13] alias s -> str_tell_what
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 10
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.893.13.988.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 10
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.893.13.988.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 10
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.893.13.988.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.893.13.988.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.893.13.988.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.893.13.988.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.893.13.988.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.893.13.988.9.1052.9.end:
@@ -36527,33 +35754,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 10
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 10
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 10
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1297
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -36561,7 +35788,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.893.13.988.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.893.13.988.9.1052.9.end:
                         func.printer.print_all.893.13.988.9.1052.9.end:
                         # [894:9] return
@@ -36870,15 +36096,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.990.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 1
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 1
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.990.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.990.18.1052.9:
@@ -36888,9 +36109,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 1
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 1
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -37157,31 +36377,26 @@ main:
                             # [910:13] alias self -> out
                             # [910:13] alias s -> str_say_what
                             # [69:10] self.print(s, array_length(s))
-                            # [69:19] allocate scratch register -> t0
-                            # [69:19] t0 = array_length(s)
-                            # [69:19] = expression
-                            # [69:19] array_length(s)
-                            li t0, 9
                             # [64:6] printer.print(s i8[], count)
                             func.printer.print.69.10.910.13.991.9.1052.9:
                                 # [69:10] alias self -> self
                                 # [69:10] alias s -> s
-                                # [69:10] alias count -> t0
+                                # [69:10] alias count -> 9
                                 # [65:10] self.print_at(s, count, 0)
                                 # [58:6] printer.print_at(s i8[], count, start)
                                 func.printer.print_at.65.10.69.10.910.13.991.9.1052.9:
                                     # [65:10] alias self -> self
                                     # [65:10] alias s -> s
-                                    # [65:10] alias count -> count
+                                    # [65:10] alias count -> 9
                                     # [65:10] alias start -> 0
                                     if.59.8.65.10.69.10.910.13.991.9.1052.9:
                                     # [59:8] ? self.silenced
                                     # [59:8] ? shorthand: self.silenced
                                     cmp.59.8.65.10.69.10.910.13.991.9.1052.9:
-                                    # [59:8] allocate scratch register -> t1
-                                    lbu t1, 911(s0)
-                                    bne t1, zero, func.printer.print_at.65.10.69.10.910.13.991.9.1052.9.end
-                                    # [59:8] free scratch register t1
+                                    # [59:8] allocate scratch register -> t0
+                                    lbu t0, 911(s0)
+                                    bne t0, zero, func.printer.print_at.65.10.69.10.910.13.991.9.1052.9.end
+                                    # [59:8] free scratch register t0
                                     if.59.8.65.10.69.10.910.13.991.9.1052.9.code:
                                         # [59:22] return
                                     if.59.5.65.10.69.10.910.13.991.9.1052.9.end:
@@ -37192,33 +36407,33 @@ main:
                                     # [61:11] 1
                                     li a0, 1
                                     # [61:17] count
-                                    addi a2, t0, 0
-                                    # [61:24] allocate scratch register -> t1
+                                    li a2, 9
+                                    # [61:24] allocate scratch register -> t0
                                     # [61:24] start
-                                    li t1, 0
+                                    li t0, 0
                                     # [61:24] bounds check begin
                                     # [61:24] lower bound
-                                    bltz t1, 1f
+                                    bltz t0, 1f
                                     bltz a2, 1f
                                     # [61:24] upper bound
+                                    # [61:24] allocate scratch register -> t1
                                     # [61:24] allocate scratch register -> t2
-                                    # [61:24] allocate scratch register -> t3
-                                    add t3, t1, a2
-                                    li t2, 9
-                                    bgeu t2, t3, 2f
+                                    add t2, t0, a2
+                                    li t1, 9
+                                    bgeu t1, t2, 2f
                                     1:
                                     # [61:24] source line
                                     li a0, 61
                                     j baz_bounds_panic
                                     2:
-                                    # [61:24] free scratch register t3
                                     # [61:24] free scratch register t2
+                                    # [61:24] free scratch register t1
                                     # [61:24] bounds check end
                                     lui a1, 48
                                     add a1, a1, s0
                                     addi a1, a1, 1346
-                                    add a1, a1, t1
-                                    # [61:5] free scratch register t1
+                                    add a1, a1, t0
+                                    # [61:5] free scratch register t0
                                     # [61:5] allocate named register a7
                                     call a7, .Lbaz_write
                                     # [61:5] free named register a7
@@ -37226,7 +36441,6 @@ main:
                                     # [61:5] free named register a1
                                     # [61:5] free named register a0
                                 func.printer.print_at.65.10.69.10.910.13.991.9.1052.9.end:
-                                # [69:10] free scratch register t0
                             func.printer.print.69.10.910.13.991.9.1052.9.end:
                         func.printer.print_all.910.13.991.9.1052.9.end:
                         # [911:9] return
@@ -37759,15 +36973,10 @@ main:
                             sub t1, t1, t2
                             # [444:22] free scratch register t2
                         func.tokenizer.len.452.16.993.18.1052.9.end:
-                    # [452:25] allocate scratch register -> t2
-                        # [452:25] t2 = array_length(str)
-                        # [452:25] = expression
-                        # [452:25] array_length(str)
-                        li t2, 4
-                    xor t0, t1, t2
+                    # [452:25] src: folded constant 'array_length(str)'
+                    xori t0, t1, 4
                     sltiu t0, t0, 1
                     beq t0, zero, bool.452.11.993.18.1052.9.end
-                    # [452:11] free scratch register t2
                     # [452:11] free scratch register t1
                     # [453:11] ? shorthand: arrays_equal(str, self.str.array[self.start], array_length(str))
                     cmp.453.11.993.18.1052.9:
@@ -37777,9 +36986,8 @@ main:
                         # [453:11] allocate scratch register -> t3
                         # [453:11] t1: source, t2: destination, t3: count
                         # [453:57] array_length(str)
-                        # [453:57] t3 = array_length(str)
-                        # [453:57] = expression
-                        # [453:57] array_length(str)
+                        # [453:57] t3 = 4
+                        # [453:57] src: folded constant 'array_length(str)'
                         li t3, 4
                         # [453:24] str
                         # [453:24] bounds check begin
@@ -37874,31 +37082,26 @@ main:
                         # [937:9] alias self -> out
                         # [937:9] alias s -> str_help
                         # [69:10] self.print(s, array_length(s))
-                        # [69:19] allocate scratch register -> t0
-                        # [69:19] t0 = array_length(s)
-                        # [69:19] = expression
-                        # [69:19] array_length(s)
-                        li t0, 358
                         # [64:6] printer.print(s i8[], count)
                         func.printer.print.69.10.937.9.994.9.1052.9:
                             # [69:10] alias self -> self
                             # [69:10] alias s -> s
-                            # [69:10] alias count -> t0
+                            # [69:10] alias count -> 358
                             # [65:10] self.print_at(s, count, 0)
                             # [58:6] printer.print_at(s i8[], count, start)
                             func.printer.print_at.65.10.69.10.937.9.994.9.1052.9:
                                 # [65:10] alias self -> self
                                 # [65:10] alias s -> s
-                                # [65:10] alias count -> count
+                                # [65:10] alias count -> 358
                                 # [65:10] alias start -> 0
                                 if.59.8.65.10.69.10.937.9.994.9.1052.9:
                                 # [59:8] ? self.silenced
                                 # [59:8] ? shorthand: self.silenced
                                 cmp.59.8.65.10.69.10.937.9.994.9.1052.9:
-                                # [59:8] allocate scratch register -> t1
-                                lbu t1, 911(s0)
-                                bne t1, zero, func.printer.print_at.65.10.69.10.937.9.994.9.1052.9.end
-                                # [59:8] free scratch register t1
+                                # [59:8] allocate scratch register -> t0
+                                lbu t0, 911(s0)
+                                bne t0, zero, func.printer.print_at.65.10.69.10.937.9.994.9.1052.9.end
+                                # [59:8] free scratch register t0
                                 if.59.8.65.10.69.10.937.9.994.9.1052.9.code:
                                     # [59:22] return
                                 if.59.5.65.10.69.10.937.9.994.9.1052.9.end:
@@ -37909,33 +37112,33 @@ main:
                                 # [61:11] 1
                                 li a0, 1
                                 # [61:17] count
-                                addi a2, t0, 0
-                                # [61:24] allocate scratch register -> t1
+                                li a2, 358
+                                # [61:24] allocate scratch register -> t0
                                 # [61:24] start
-                                li t1, 0
+                                li t0, 0
                                 # [61:24] bounds check begin
                                 # [61:24] lower bound
-                                bltz t1, 1f
+                                bltz t0, 1f
                                 bltz a2, 1f
                                 # [61:24] upper bound
+                                # [61:24] allocate scratch register -> t1
                                 # [61:24] allocate scratch register -> t2
-                                # [61:24] allocate scratch register -> t3
-                                add t3, t1, a2
-                                li t2, 358
-                                bgeu t2, t3, 2f
+                                add t2, t0, a2
+                                li t1, 358
+                                bgeu t1, t2, 2f
                                 1:
                                 # [61:24] source line
                                 li a0, 61
                                 j baz_bounds_panic
                                 2:
-                                # [61:24] free scratch register t3
                                 # [61:24] free scratch register t2
+                                # [61:24] free scratch register t1
                                 # [61:24] bounds check end
                                 lui a1, 48
                                 add a1, a1, s0
                                 addi a1, a1, 1355
-                                add a1, a1, t1
-                                # [61:5] free scratch register t1
+                                add a1, a1, t0
+                                # [61:5] free scratch register t0
                                 # [61:5] allocate named register a7
                                 call a7, .Lbaz_write
                                 # [61:5] free named register a7
@@ -37943,7 +37146,6 @@ main:
                                 # [61:5] free named register a1
                                 # [61:5] free named register a0
                             func.printer.print_at.65.10.69.10.937.9.994.9.1052.9.end:
-                            # [69:10] free scratch register t0
                         func.printer.print.69.10.937.9.994.9.1052.9.end:
                     func.printer.print_all.937.9.994.9.1052.9.end:
                 func.action_help.994.9.1052.9.end:
@@ -37955,31 +37157,26 @@ main:
                     # [997:13] alias self -> out
                     # [997:13] alias s -> str_not_understood
                     # [69:10] self.print(s, array_length(s))
-                    # [69:19] allocate scratch register -> t0
-                    # [69:19] t0 = array_length(s)
-                    # [69:19] = expression
-                    # [69:19] array_length(s)
-                    li t0, 15
                     # [64:6] printer.print(s i8[], count)
                     func.printer.print.69.10.997.13.1052.9:
                         # [69:10] alias self -> self
                         # [69:10] alias s -> s
-                        # [69:10] alias count -> t0
+                        # [69:10] alias count -> 15
                         # [65:10] self.print_at(s, count, 0)
                         # [58:6] printer.print_at(s i8[], count, start)
                         func.printer.print_at.65.10.69.10.997.13.1052.9:
                             # [65:10] alias self -> self
                             # [65:10] alias s -> s
-                            # [65:10] alias count -> count
+                            # [65:10] alias count -> 15
                             # [65:10] alias start -> 0
                             if.59.8.65.10.69.10.997.13.1052.9:
                             # [59:8] ? self.silenced
                             # [59:8] ? shorthand: self.silenced
                             cmp.59.8.65.10.69.10.997.13.1052.9:
-                            # [59:8] allocate scratch register -> t1
-                            lbu t1, 911(s0)
-                            bne t1, zero, func.printer.print_at.65.10.69.10.997.13.1052.9.end
-                            # [59:8] free scratch register t1
+                            # [59:8] allocate scratch register -> t0
+                            lbu t0, 911(s0)
+                            bne t0, zero, func.printer.print_at.65.10.69.10.997.13.1052.9.end
+                            # [59:8] free scratch register t0
                             if.59.8.65.10.69.10.997.13.1052.9.code:
                                 # [59:22] return
                             if.59.5.65.10.69.10.997.13.1052.9.end:
@@ -37990,31 +37187,31 @@ main:
                             # [61:11] 1
                             li a0, 1
                             # [61:17] count
-                            addi a2, t0, 0
-                            # [61:24] allocate scratch register -> t1
+                            li a2, 15
+                            # [61:24] allocate scratch register -> t0
                             # [61:24] start
-                            li t1, 0
+                            li t0, 0
                             # [61:24] bounds check begin
                             # [61:24] lower bound
-                            bltz t1, 1f
+                            bltz t0, 1f
                             bltz a2, 1f
                             # [61:24] upper bound
+                            # [61:24] allocate scratch register -> t1
                             # [61:24] allocate scratch register -> t2
-                            # [61:24] allocate scratch register -> t3
-                            add t3, t1, a2
-                            li t2, 15
-                            bgeu t2, t3, 2f
+                            add t2, t0, a2
+                            li t1, 15
+                            bgeu t1, t2, 2f
                             1:
                             # [61:24] source line
                             li a0, 61
                             j baz_bounds_panic
                             2:
-                            # [61:24] free scratch register t3
                             # [61:24] free scratch register t2
+                            # [61:24] free scratch register t1
                             # [61:24] bounds check end
                             addi a1, s0, 888
-                            add a1, a1, t1
-                            # [61:5] free scratch register t1
+                            add a1, a1, t0
+                            # [61:5] free scratch register t0
                             # [61:5] allocate named register a7
                             call a7, .Lbaz_write
                             # [61:5] free named register a7
@@ -38022,7 +37219,6 @@ main:
                             # [61:5] free named register a1
                             # [61:5] free named register a0
                         func.printer.print_at.65.10.69.10.997.13.1052.9.end:
-                        # [69:10] free scratch register t0
                     func.printer.print.69.10.997.13.1052.9.end:
                 func.printer.print_all.997.13.1052.9.end:
             if.957.5.1052.9.end:
@@ -38033,31 +37229,26 @@ main:
             # [1053:13] alias self -> out
             # [1053:13] alias s -> str_turn_end
             # [69:10] self.print(s, array_length(s))
-            # [69:19] allocate scratch register -> t0
-            # [69:19] t0 = array_length(s)
-            # [69:19] = expression
-            # [69:19] array_length(s)
-            li t0, 3
             # [64:6] printer.print(s i8[], count)
             func.printer.print.69.10.1053.13:
                 # [69:10] alias self -> self
                 # [69:10] alias s -> s
-                # [69:10] alias count -> t0
+                # [69:10] alias count -> 3
                 # [65:10] self.print_at(s, count, 0)
                 # [58:6] printer.print_at(s i8[], count, start)
                 func.printer.print_at.65.10.69.10.1053.13:
                     # [65:10] alias self -> self
                     # [65:10] alias s -> s
-                    # [65:10] alias count -> count
+                    # [65:10] alias count -> 3
                     # [65:10] alias start -> 0
                     if.59.8.65.10.69.10.1053.13:
                     # [59:8] ? self.silenced
                     # [59:8] ? shorthand: self.silenced
                     cmp.59.8.65.10.69.10.1053.13:
-                    # [59:8] allocate scratch register -> t1
-                    lbu t1, 911(s0)
-                    bne t1, zero, func.printer.print_at.65.10.69.10.1053.13.end
-                    # [59:8] free scratch register t1
+                    # [59:8] allocate scratch register -> t0
+                    lbu t0, 911(s0)
+                    bne t0, zero, func.printer.print_at.65.10.69.10.1053.13.end
+                    # [59:8] free scratch register t0
                     if.59.8.65.10.69.10.1053.13.code:
                         # [59:22] return
                     if.59.5.65.10.69.10.1053.13.end:
@@ -38068,31 +37259,31 @@ main:
                     # [61:11] 1
                     li a0, 1
                     # [61:17] count
-                    addi a2, t0, 0
-                    # [61:24] allocate scratch register -> t1
+                    li a2, 3
+                    # [61:24] allocate scratch register -> t0
                     # [61:24] start
-                    li t1, 0
+                    li t0, 0
                     # [61:24] bounds check begin
                     # [61:24] lower bound
-                    bltz t1, 1f
+                    bltz t0, 1f
                     bltz a2, 1f
                     # [61:24] upper bound
+                    # [61:24] allocate scratch register -> t1
                     # [61:24] allocate scratch register -> t2
-                    # [61:24] allocate scratch register -> t3
-                    add t3, t1, a2
-                    li t2, 3
-                    bgeu t2, t3, 2f
+                    add t2, t0, a2
+                    li t1, 3
+                    bgeu t1, t2, 2f
                     1:
                     # [61:24] source line
                     li a0, 61
                     j baz_bounds_panic
                     2:
-                    # [61:24] free scratch register t3
                     # [61:24] free scratch register t2
+                    # [61:24] free scratch register t1
                     # [61:24] bounds check end
                     addi a1, s0, 880
-                    add a1, a1, t1
-                    # [61:5] free scratch register t1
+                    add a1, a1, t0
+                    # [61:5] free scratch register t0
                     # [61:5] allocate named register a7
                     call a7, .Lbaz_write
                     # [61:5] free named register a7
@@ -38100,7 +37291,6 @@ main:
                     # [61:5] free named register a1
                     # [61:5] free named register a0
                 func.printer.print_at.65.10.69.10.1053.13.end:
-                # [69:10] free scratch register t0
             func.printer.print.69.10.1053.13.end:
         func.printer.print_all.1053.13.end:
         # [1054:9] cur_entity_id = cur_entity_id + 1
@@ -38483,4 +37673,4 @@ vars.end:
 #                     dat size: 198427 B
 #              dat var padding: 5 B
 #                max vars size: 2552 B
-#                 instructions: 12405
+#                 instructions: 12308

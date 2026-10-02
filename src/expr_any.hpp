@@ -686,8 +686,13 @@ class expr_any final : public statement {
         -> std::optional<int64_t> {
 
         const expr_arith* const arith{std::get_if<expr_arith>(&e)};
-        if (arith == nullptr or arith->is_expression()) {
+        if (arith == nullptr) {
             return std::nullopt;
+        }
+
+        // e.g. 'array_length(a)', folded at the default width like a count
+        if (arith->is_expression()) {
+            return arith->folded_constant(tc, tc.get_type_default());
         }
 
         const ident_info info{tc.make_ident_info(*arith)};

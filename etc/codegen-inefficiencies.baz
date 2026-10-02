@@ -75,8 +75,9 @@ func main() {
     # 2; xor')
     assert(arr3[0] + 2 == 3 + 0 + 2)
 
-    # constant compared with constant: 'li t1, 2; xori t0, t1, 2; sltiu' for
-    # a known result, x86: 'mov r14, 2; cmp r14, 2; sete' (13 sites)
+    # fixed: constant compared with constant, no code for
+    # 'array_length(arr3) == 2' (was 'li t1, 2; xori t0, t1, 2; sltiu', x86:
+    # 'mov r14, 2; cmp r14, 2; sete')
     assert(array_length(arr3) == 2)
 
     # fixed: constant index, 'sw t0, 8(s0)' (was 'li; slli; add; sw')
@@ -150,9 +151,9 @@ func main() {
     var q = p1
     assert(equal(p1, q))
 
-    # the 'array_length' count is known but takes the run-time count path:
-    # 'li t2, 8; slli t2, t2, 2', chunk split and tail tests instead of the
-    # known-size copy, x86: 'mov rcx, 8' then 'shl rcx, 3' (41 rv32i sites)
+    # fixed: the 'array_length' count is known, the known-size copy is used
+    # (was 'li t2, 8; slli t2, t2, 2', chunk split and tail tests, x86: 'mov
+    # rcx, 8' then 'shl rcx, 3')
     array_copy(worlds[1].locations, worlds[0].locations,
                array_length(worlds[0].locations))
 

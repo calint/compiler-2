@@ -1,0 +1,16 @@
+=== 9:     res = array_length(s) # folds
+            mov r14, 6
+=== 18:     if array_length(a) != 4 { # folds
+=== 23:     array_copy(a, b, array_length(a)) # folds
+    mov rax, qword [rbp]
+    mov qword [rbp + 16], rax
+    mov rax, qword [rbp + 8]
+    mov qword [rbp + 24], rax
+=== 27:     b[array_length(a) - 1] = 9 # folds
+    mov dword [rbp + 28], 9
+=== 30:     n = array_length(a) * 2 + 1 # folds
+    mov qword [rbp + 32], 9
+=== 32:     n = n + array_length(b) # folds
+    add qword [rbp + 32], 4
+=== 34:     n = -array_length(b) # folds
+    mov qword [rbp + 32], -4

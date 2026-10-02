@@ -71,20 +71,6 @@ medium, easiest first
     functionality; still a bit messy
 [ ] reorder locals by alignment, largest first, to reduce padding
 [ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
-[ ] constant known at compile: other users of constants use
-    'statement::folded_constant'
-    => 'expr_any::constant_element_value' (needs a width parameter):
-       constant indexes, '{...}' packing, 'array_copy' count, inline argument
-       aliasing ('stmt_identifier', 'stmt_call', 'stmt_builtin_array_copy')
-[ ] survey (2026-09-28): an 'array_length(...)' count is known but 'array_copy'
-    takes the run-time count path: 'li t2, 8; slli t2, t2, 2', chunk split and
-    tail tests instead of the known-size copy, x86 'mov rcx, 8' then
-    'shl rcx, 3' (41 rv32i sites)
-    => part of 'constant known at compile: other users' above
-[ ] survey (2026-09-28): a constant compared with a constant is evaluated at
-    run time: 'array_length(arr3) == 2' is 'li t1, 2; xori t0, t1, 2; sltiu',
-    x86 'mov r14, 2; cmp r14, 2; sete' (13 sites)
-    => part of 'constant known at compile: other users' above
 [ ] rv32i: a constant above 16 bytes stored at an address inside a word
     ('copy_bytes' loop, e.g. a long string into 'var s[40] i8' at an odd
     offset) loops bytes: the constant is word aligned and the destination is
@@ -408,6 +394,16 @@ too hard right now
 --------------------------------------------------------------------------------
 resolved
 --------------------------------------------------------------------------------
+[x] constant known at compile: other users of constants use
+    'statement::folded_constant'; survey (2026-09-28): an 'array_length(...)'
+    count took the run-time 'array_copy' path (41 rv32i sites) and a constant
+    compared with a constant was evaluated at run time (13 sites)
+    => 'stmt_builtin_array_length::folded_constant' (default width only, so
+       'compile' still rejects a narrower destination, test 211) and
+       'expr_any::constant_element_value' folds expressions at the default
+       width: constant indexes, '{...}' packing, 'array_copy' count, inline
+       argument aliasing; test 677 (test 342 uses a variable so its index is
+       still checked at run time)
 [x] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [x] local code generation found in the survey of all coverage tests on both
     targets (2026-09-28), completed parts

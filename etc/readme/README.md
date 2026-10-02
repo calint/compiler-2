@@ -130,10 +130,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5891           2299          18878
+C/C++ Header                    54           5897           2303          18896
 C++                              1            104             22            403
 -------------------------------------------------------------------------------
-SUM:                            55           5995           2321          19281
+SUM:                            55           6001           2325          19299
 -------------------------------------------------------------------------------
 ```
 
@@ -1722,18 +1722,18 @@ main:
             syscall
         if.38.24.378.5.end:
     func.assert.378.5.end:
-    mov rcx, 8
-    mov r15, 381
-    cmp rcx, 8
-    cmova rbp, r15
+    mov r15, 8
+    mov r14, 381
+    cmp r15, 8
+    cmova rbp, r14
+    ja baz_bounds_panic
+    mov r14, 382
+    cmp r15, 8
+    cmova rbp, r14
     ja baz_bounds_panic
     lea rsi, [rbp + 816]
-    mov r15, 382
-    cmp rcx, 8
-    cmova rbp, r15
-    ja baz_bounds_panic
     lea rdi, [rbp + 752]
-    shl rcx, 3
+    mov rcx, 64
     rep movsb
     cmp.387.12:
     cmp qword [rbp + 760], 65518
@@ -1780,20 +1780,9 @@ main:
     func.assert.388.5.end:
     mov qword [rbp + 1264], -1
     mov qword [rbp + 1272], 2
-    cmp.395.12:
-        mov r14, 2
-    cmp r14, 2
-    sete r15b
-    bool.395.12.end:
     func.assert.395.5:
         if.38.27.395.5:
         cmp.38.27.395.5:
-        cmp r15b, 0
-        jne if.38.24.395.5.end
-        if.38.27.395.5.code:
-            mov rdi, 1
-            mov rax, 60
-            syscall
         if.38.24.395.5.end:
     func.assert.395.5.end:
     cmp.396.12:
@@ -1981,8 +1970,7 @@ main:
     syscall
     mov rdi, 1
     mov rdx, 1
-    mov r15, 13
-    sub r15, 1
+    mov r15, 12
     mov r14, 425
     test r15, r15
     cmovs rbp, r14
@@ -4789,47 +4777,48 @@ main:
 ;       [378:5] free scratch register r15
     func.assert.378.5.end:
 ;   [380:5] array_copy( worlds[1].locations, worlds[0].locations, array_length(worlds[0].locations) )
+;   [380:5] allocate scratch register -> r15
+;   [383:9] array_length(worlds[0].locations)
+;   [383:9] r15 = 8
+;   [383:9] src: folded constant 'array_length(worlds[0].locations)'
+    mov r15, 8
+;   [381:9] worlds[1].locations
+;   [381:9] bounds check begin
+;   [381:9] allocate scratch register -> r14
+;   [381:9] source line
+    mov r14, 381
+;   [381:9] lower bound
+;   [381:9] r15 lower bound covered by the unsigned upper bound
+;   [381:9] upper bound
+    cmp r15, 8
+    cmova rbp, r14
+    ja baz_bounds_panic
+;   [381:9] free scratch register r14
+;   [381:9] bounds check end
+;   [382:9] worlds[0].locations
+;   [382:9] bounds check begin
+;   [382:9] allocate scratch register -> r14
+;   [382:9] source line
+    mov r14, 382
+;   [382:9] lower bound
+;   [382:9] r15 lower bound covered by the unsigned upper bound
+;   [382:9] upper bound
+    cmp r15, 8
+    cmova rbp, r14
+    ja baz_bounds_panic
+;   [382:9] free scratch register r14
+;   [382:9] bounds check end
 ;   [380:5] allocate named register rsi
 ;   [380:5] allocate named register rdi
 ;   [380:5] allocate named register rcx
-;   [383:9] array_length(worlds[0].locations)
-;   [383:9] rcx = array_length(worlds[0].locations)
-;   [383:9] = expression
-;   [383:9] array_length(worlds[0].locations)
-    mov rcx, 8
-;   [381:9] worlds[1].locations
-;   [381:9] bounds check begin
-;   [381:9] allocate scratch register -> r15
-;   [381:9] source line
-    mov r15, 381
-;   [381:9] lower bound
-;   [381:9] rcx lower bound covered by the unsigned upper bound
-;   [381:9] upper bound
-    cmp rcx, 8
-    cmova rbp, r15
-    ja baz_bounds_panic
-;   [381:9] free scratch register r15
-;   [381:9] bounds check end
     lea rsi, [rbp + 816]
-;   [382:9] worlds[0].locations
-;   [382:9] bounds check begin
-;   [382:9] allocate scratch register -> r15
-;   [382:9] source line
-    mov r15, 382
-;   [382:9] lower bound
-;   [382:9] rcx lower bound covered by the unsigned upper bound
-;   [382:9] upper bound
-    cmp rcx, 8
-    cmova rbp, r15
-    ja baz_bounds_panic
-;   [382:9] free scratch register r15
-;   [382:9] bounds check end
     lea rdi, [rbp + 752]
-    shl rcx, 3
+    mov rcx, 64
     rep movsb
 ;   [380:5] free named register rcx
 ;   [380:5] free named register rdi
 ;   [380:5] free named register rsi
+;   [380:5] free scratch register r15
 ;   [387:5] assert(worlds[0].locations[1] == 0xffee)
 ;   [387:12] allocate scratch register -> r15
 ;   [387:12] ? worlds[0].locations[1] == 0xffee
@@ -4868,9 +4857,8 @@ main:
 ;       [388:12] allocate named register rdi
 ;       [388:12] allocate named register rcx
 ;       [391:14] array_length(worlds[0].locations)
-;       [391:14] rcx = array_length(worlds[0].locations)
-;       [391:14] = expression
-;       [391:14] array_length(worlds[0].locations)
+;       [391:14] rcx = 8
+;       [391:14] src: folded constant 'array_length(worlds[0].locations)'
         mov rcx, 8
 ;       [389:14] worlds[0].locations
 ;       [389:14] bounds check begin
@@ -4935,38 +4923,15 @@ main:
     mov qword [rbp + 1264], -1
     mov qword [rbp + 1272], 2
 ;   [395:5] assert(array_length(arr2) == 2)
-;   [395:12] allocate scratch register -> r15
-;   [395:12] ? array_length(arr2) == 2
-;   [395:12] ? array_length(arr2) == 2
-    cmp.395.12:
-;   [395:12] allocate scratch register -> r14
-;       [395:12] r14 = array_length(arr2)
-;       [395:12] = expression
-;       [395:12] array_length(arr2)
-        mov r14, 2
-    cmp r14, 2
-;   [395:12] free scratch register r14
-    sete r15b
-    bool.395.12.end:
 ;   [38:6] assert(ok bool)
     func.assert.395.5:
-;       [395:5] alias ok -> r15b
+;       [395:5] alias ok -> 1
         if.38.27.395.5:
 ;       [38:27] ? not ok
 ;       [38:27] ? shorthand: not ok
         cmp.38.27.395.5:
-        cmp r15b, 0
-        jne if.38.24.395.5.end
-        if.38.27.395.5.code:
-;           [38:34] exit(1)
-;           [38:34] allocate named register rdi
-;           [38:39] 1
-            mov rdi, 1
-            mov rax, 60
-            syscall
-;           [38:34] free named register rdi
+;       [38:31] const eval to false
         if.38.24.395.5.end:
-;       [395:5] free scratch register r15
     func.assert.395.5.end:
 ;   [396:5] assert(arr2[0] == -1)
 ;   [396:12] allocate scratch register -> r15
@@ -5432,13 +5397,9 @@ main:
 ;   [425:19] 1
     mov rdx, 1
 ;   [425:22] allocate scratch register -> r15
-;   [425:22] r15 = array_length(bye)
-;   [425:22] = expression
-;   [425:22] array_length(bye)
-    mov r15, 13
-;   [425:22] r15 - 1
-;   [425:22] src: folded constant '- 1'
-    sub r15, 1
+;   [425:22] r15 = 12
+;   [425:22] src: folded constant 'array_length(bye) - 1'
+    mov r15, 12
 ;   [425:22] bounds check begin
 ;   [425:22] allocate scratch register -> r14
 ;   [425:22] source line
@@ -5960,14 +5921,14 @@ resb 65536
 vars.end:
 ; free named register rbp
 
-;   removed jumps to next code: 129
+;   removed jumps to next code: 128
 ;    removed unreachable jumps: 2
-; removed same target branches: 52
+; removed same target branches: 51
 ; inverted branches over jumps: 7
 ; max scratch registers in use: 4
 ;            max frames in use: 10
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 1004
+;                 instructions: 995
 ```
