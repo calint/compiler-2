@@ -31,6 +31,11 @@ class stmt_call : public expression {
     std::vector<token> arg_delims_tk_;
     token close_paren_tk_;
 
+    struct storage_conflict {
+        std::string reason;
+        std::string fix;
+    };
+
   public:
     stmt_call(toc& tc, unary_ops uops, const token tk,
               const token open_paren_tk, tokenizer& tz)
@@ -251,18 +256,18 @@ class stmt_call : public expression {
             }
 
             if (is_result_checked and dst_info.is_var()) {
-                const std::optional<std::string> reason{
-                    shared_storage_reason(tc, dst_info, info),
+                const std::optional<storage_conflict> conflict{
+                    shared_storage_conflict(tc, dst_info, info),
                 };
 
-                if (reason) {
+                if (conflict) {
                     throw compiler_exception{
                         arg.tok(),
                         std::format("{} '{}' may share storage with the "
-                                    "result destination '{}' ({}), use a "
-                                    "separate variable",
+                                    "result destination '{}' ({}), {}",
                                     describe_argument(i), arg.identifier(),
-                                    dst_info.elem_path.front(), *reason)};
+                                    dst_info.elem_path.front(),
+                                    conflict->reason, conflict->fix)};
                 }
             }
 
@@ -273,21 +278,21 @@ class stmt_call : public expression {
                     continue;
                 }
 
-                const std::optional<std::string> reason{
-                    shared_storage_reason(tc, other.info, info),
+                const std::optional<storage_conflict> conflict{
+                    shared_storage_conflict(tc, other.info, info),
                 };
 
-                if (reason and
+                if (conflict and
                     not reach_disjoint_bytes(args_.at(other.index), arg)) {
 
                     throw compiler_exception{
                         arg.tok(),
                         std::format("{} '{}' may share storage with {} '{}' "
-                                    "({}), use a separate variable",
+                                    "({}), {}",
                                     describe_argument(i), arg.identifier(),
                                     describe_argument(other.index),
                                     args_.at(other.index).identifier(),
-                                    *reason)};
+                                    conflict->reason, conflict->fix)};
                 }
             }
 
@@ -514,13 +519,19 @@ class stmt_call : public expression {
         return path.substr(0, path.find('.'));
     }
 
-    [[nodiscard]] static auto pointer_reason(const std::string_view param,
-                                             const std::string_view global)
-        -> std::string {
+    [[nodiscard]] static auto pointer_conflict(const std::string_view param,
+                                               const std::string_view global)
+        -> storage_conflict {
 
-        return std::format("'{}' is a non-inline parameter, its caller is "
-                           "unknown so it may point into global '{}'",
-                           param, global);
+        return {
+            .reason{
+                std::format("'{}' is a parameter of a 'noinline' function "
+                            "with unknown callers and may point into "
+                            "global '{}', see docs/noinline-aliasing.md",
+                            param, global),
+            },
+            .fix{std::format("copy '{}' to a local variable", param)},
+        };
     }
 
     // the ranges are offsets into the variable the argument names, so they
@@ -547,27 +558,30 @@ class stmt_call : public expression {
 
     // compares resolved variable roots, so any overlap of fields or elements
     // counts as shared
-    [[nodiscard]] static auto shared_storage_reason(const toc& tc,
-                                                    const ident_info& lhs,
-                                                    const ident_info& rhs)
-        -> std::optional<std::string> {
+    [[nodiscard]] static auto shared_storage_conflict(const toc& tc,
+                                                      const ident_info& lhs,
+                                                      const ident_info& rhs)
+        -> std::optional<storage_conflict> {
 
         const std::string_view lhs_root{lhs.elem_path.front()};
         const std::string_view rhs_root{rhs.elem_path.front()};
 
         if (lhs_root == rhs_root) {
-            return std::format("both name '{}'", lhs_root);
+            return storage_conflict{
+                .reason{std::format("both name '{}'", lhs_root)},
+                .fix{"use a separate variable"},
+            };
         }
 
         // a non-inline parameter points into its caller's storage, which can
         // be a global the callee also names directly. two parameters cannot
         // share storage because their own call site was checked
         if (lhs.is_pointer and tc.is_global_var(rhs_root)) {
-            return pointer_reason(lhs_root, rhs_root);
+            return pointer_conflict(lhs_root, rhs_root);
         }
 
         if (rhs.is_pointer and tc.is_global_var(lhs_root)) {
-            return pointer_reason(rhs_root, lhs_root);
+            return pointer_conflict(rhs_root, lhs_root);
         }
 
         return std::nullopt;
