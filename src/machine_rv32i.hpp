@@ -1131,7 +1131,9 @@ class machine_rv32i : public machine {
                                              const type& value_type) const
         -> operand override {
 
-        validate_scalar(token{}, value_type);
+        // the allocating callers validated the type with their token
+        assert(is_scalar(value_type));
+
         const size_t index{register_index(name)};
 
         assert(index != register_names_.size());
@@ -4344,6 +4346,12 @@ class machine_rv32i : public machine {
         return register_index(name) != register_names_.size();
     }
 
+    [[nodiscard]] static auto is_scalar(const type& value_type) -> bool {
+        return value_type.is_builtin() and
+               (value_type.size_bytes() == 1 or value_type.size_bytes() == 2 or
+                value_type.size_bytes() == 4);
+    }
+
     // 'x op constant' is 'x': all bits for 'and', zero for the others
     [[nodiscard]] static auto keeps_destination(const op instruction,
                                                 const int32_t constant,
@@ -4802,9 +4810,7 @@ class machine_rv32i : public machine {
     static auto validate_scalar(const token& src_loc_tk, const type& value_type)
         -> void {
 
-        if (not value_type.is_builtin() or
-            (value_type.size_bytes() != 1 and value_type.size_bytes() != 2 and
-             value_type.size_bytes() != 4)) {
+        if (not is_scalar(value_type)) {
             throw compiler_exception{
                 src_loc_tk, "RV32I requires an 8-, 16-, or 32-bit scalar"};
         }

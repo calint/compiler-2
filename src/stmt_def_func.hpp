@@ -61,8 +61,7 @@ class stmt_def_func final : public statement {
         }
 
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{name_tk_,
-                                     "expected '(' after function name"};
+            throw compiler_exception{tz, "expected '(' after function name"};
         }
 
         parse_params(tc, tz);

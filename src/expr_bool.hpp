@@ -677,7 +677,7 @@ class expr_bool final : public statement {
                 if (enclosed_) {
                     // yes, fail
                     throw compiler_exception{
-                        tok(), "expected ')' to close expression"};
+                        op_tk, "expected ')' to close expression"};
                 }
 
                 // success

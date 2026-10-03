@@ -91,7 +91,7 @@ class stmt_builtin_array_copy final : public statement {
         if (array_src_info.type_ref().name() !=
             array_dst_info.type_ref().name()) {
             throw compiler_exception{
-                tok(),
+                dst_.tok(),
                 std::format("source type '{}' does not match destination "
                             "type '{}'",
                             array_src_info.type_ref().name(),

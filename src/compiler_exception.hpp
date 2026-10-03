@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cassert>
 #include <exception>
 #include <string>
 #include <utility>
@@ -23,7 +24,10 @@ class compiler_exception final : public std::exception {
     compiler_exception(const token& src_loc_tk, std::string message)
         : msg{std::move(message)}, line{src_loc_tk.at_line()},
           start_index{src_loc_tk.start_index()},
-          end_index{src_loc_tk.end_index()} {}
+          end_index{src_loc_tk.end_index()} {
+
+        assert(line != 0);
+    }
 
     // defined in 'tokenizer.hpp'
     compiler_exception(const tokenizer& tz, std::string message);

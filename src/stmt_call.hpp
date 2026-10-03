@@ -40,7 +40,7 @@ class stmt_call : public expression {
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tok(), "expected '(' after function name"};
+            throw compiler_exception{tz, "expected '(' after function name"};
         }
 
         if (not tc.is_func_builtin(func_name_)) {
@@ -64,7 +64,7 @@ class stmt_call : public expression {
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tok(), "expected '(' after method name"};
+            throw compiler_exception{tz, "expected '(' after method name"};
         }
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
@@ -136,8 +136,7 @@ class stmt_call : public expression {
 
         open_paren_tk_ = tz.is_next_char_token('(');
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{constructor_name_tk_,
-                                     "expected '(' after constructor name"};
+            throw compiler_exception{tz, "expected '(' after constructor name"};
         }
 
         parse_arguments(tc, tz, func);

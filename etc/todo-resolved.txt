@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] compiler_exception with line number 0 should be file level issues only.
+    other exceptions should point to the cause in offending source to precise
+    token that caused the exception. in encoded string make a position token at
+    the offending location within the string
+    => done (2026-10-03): 'compiler_exception::file_level' (line 0, printed
+       as 'file: message') for a missing 'main'; an unterminated string
+       points at its opening quote; an unsupported escape in a string or
+       character literal points at its backslash (tests 157, 159, 185, 547,
+       558, 727-729, 740, 749)
+    => done (2026-10-03): the machine methods 'advance_array_iteration',
+       'set_array_copy_source', 'set_array_copy_destination',
+       'set_memory_equal_left', 'set_memory_equal_right' and 'unary' take a
+       'src_loc_tk' (also 'unary_ops::compile'), and the x86_64 helpers that
+       lower addresses ('lea', 'add', 'inc', 'cmp_lowered', 'test', 'neg',
+       'setcc', ...) pass it on, so an out of scratch registers error points
+       at the statement that caused it; the fixed start and finish code of
+       the backends keeps 'token{}', it cannot fail on user input
+    => done (2026-10-03): audit of the throw sites: a missing ')', ']', '(' or
+       '=' points at the token found instead ('tz'), e.g. tests 196, 203,
+       218, 224, 250, 253, 566, 659, 694, 696; an unclosed '(' in a condition
+       points at the unexpected token (209); type mismatches of 'equal',
+       'arrays_equal' and 'array_copy' point at the second argument (170,
+       171, 688); an array size mismatch in an assignment points at the
+       source (163); empty 'dat' arrays point at '[' (360)
+    => done (2026-10-03): 'compiler_exception' asserts a non-zero line, so
+       only 'file_level' has line 0; 'test-rv32i-address.cpp' throws with a
+       real position, and 'machine_rv32i::make_register_operand' asserts the
+       scalar type instead of throwing (callers validate it)
 [x] any exception thrown needs a source location
     => done (2026-10-03): the storage size helpers in 'decouple.hpp' take a
        token and throw 'compiler_exception' (tests 744-748), invalid string

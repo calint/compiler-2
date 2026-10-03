@@ -1,2 +1,2 @@
 
-360.baz:3:5: empty arrays require a specified size
+360.baz:3:15: empty arrays require a specified size

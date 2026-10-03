@@ -53,8 +53,7 @@ class stmt_def_type_field final : public statement {
 
         close_bracket_tk_ = tz.is_next_char_token(']');
         if (close_bracket_tk_.is_empty()) {
-            throw compiler_exception{array_count_const_.tok(),
-                                     "expected ']' after array size"};
+            throw compiler_exception{tz, "expected ']' after array size"};
         }
     }
 

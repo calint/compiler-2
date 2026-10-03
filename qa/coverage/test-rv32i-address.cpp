@@ -33,6 +33,9 @@ class assembly_output : public std::ostringstream {
 };
 
 auto main(const int argc, const char* argv[]) -> int {
+    // the diagnostics of the rejected calls need a real position
+    const token source_tk{token::position(0, 1)};
+
     // the branches that 'resolved_branch' grows
     const auto branch_op =
         [](const std::string_view mnemonic) -> assembler_rv32i::op {
@@ -1179,7 +1182,7 @@ func main() {
         bool x86_exhausted{};
         try {
             static_cast<void>(
-                x86_backend.alloc_scratch_register(token{}, 0, integer64));
+                x86_backend.alloc_scratch_register(source_tk, 0, integer64));
         } catch (const compiler_exception&) {
             x86_exhausted = true;
         }
@@ -1188,8 +1191,8 @@ func main() {
         // a register needed by an instruction is rejected, not overwritten
         bool x86_conflict{};
         try {
-            static_cast<void>(
-                x86_backend.alloc_named_register(token{}, 0, "rcx", integer64));
+            static_cast<void>(x86_backend.alloc_named_register(
+                source_tk, 0, "rcx", integer64));
         } catch (const compiler_exception& error) {
             x86_conflict = std::string_view{error.what()}.contains(
                 "holds a scratch value");
@@ -1462,7 +1465,7 @@ func main() {
                 shift_output.str({});
                 bool rejected{};
                 try {
-                    backend.shift(token{}, 0, operation, destination,
+                    backend.shift(source_tk, 0, operation, destination,
                                   operand::imm(std::string{count}, integer));
                 } catch (const compiler_exception&) {
                     rejected = true;
@@ -1948,21 +1951,21 @@ func main() {
                     switch (operation) {
                     case 0:
                         backend.address_of(
-                            token{}, 0, operand::reg("a0", integer), address);
+                            source_tk, 0, operand::reg("a0", integer), address);
                         break;
 
                     case 1:
                         backend.copy_value(
-                            token{}, 0, operand::reg("a0", integer), address);
+                            source_tk, 0, operand::reg("a0", integer), address);
                         break;
 
                     case 2:
-                        backend.copy_value(token{}, 0, address,
+                        backend.copy_value(source_tk, 0, address,
                                            operand::reg("a0", integer));
                         break;
 
                     default:
-                        backend.copy_value(token{}, 0, address, address);
+                        backend.copy_value(source_tk, 0, address, address);
                         break;
                     }
                 } catch (const compiler_exception& error) {
@@ -1978,7 +1981,7 @@ func main() {
          {INT64_MIN, INT64_C(-4294967296), INT64_C(4294967296), INT64_MAX}) {
         bool rejected{};
         try {
-            backend.address_of(token{}, 1, operand::reg("a0", integer),
+            backend.address_of(source_tk, 1, operand::reg("a0", integer),
                                operand::mem("a1", {}, 1, offset, integer));
         } catch (const compiler_exception&) {
             rejected = true;
@@ -1991,7 +1994,7 @@ func main() {
         assert(not backend.can_lower_index_scale(scale));
         bool rejected{};
         try {
-            backend.address_of(token{}, 1, operand::reg("a0", integer),
+            backend.address_of(source_tk, 1, operand::reg("a0", integer),
                                operand::mem("a1", "a2", scale, 0, integer));
         } catch (const compiler_exception& error) {
             rejected = std::string_view{error.what()}.contains(
@@ -2009,13 +2012,6 @@ func main() {
                rejected_line == "# max scratch registers in use: 0");
     }
 
-    bool rejected_i64{};
-    try {
-        static_cast<void>(backend.make_register_operand("a0", integer64));
-    } catch (const compiler_exception&) {
-        rejected_i64 = true;
-    }
-    assert(rejected_i64);
     std::vector<operand> held_registers;
     for (size_t count{}; count < 29; ++count) {
         held_registers.push_back(
@@ -2023,7 +2019,7 @@ func main() {
     }
     bool exhausted{};
     try {
-        backend.address_of(token{}, 1, operand::reg("a0", integer),
+        backend.address_of(source_tk, 1, operand::reg("a0", integer),
                            operand::mem("a0", {}, 1, 8196, integer));
     } catch (const compiler_exception&) {
         exhausted = true;
@@ -2070,7 +2066,7 @@ func main() {
         bool pool_exhausted{};
         try {
             static_cast<void>(
-                backend.alloc_scratch_register(token{}, 0, integer));
+                backend.alloc_scratch_register(source_tk, 0, integer));
         } catch (const compiler_exception&) {
             pool_exhausted = true;
         }
@@ -2080,7 +2076,7 @@ func main() {
             bool rejected_named{};
             try {
                 static_cast<void>(
-                    backend.alloc_named_register(token{}, 0, name, integer));
+                    backend.alloc_named_register(source_tk, 0, name, integer));
             } catch (const compiler_exception&) {
                 rejected_named = true;
             }
@@ -2839,7 +2835,7 @@ func main() {
         backend.alloc_named_register(token{}, 0, "a7", integer)};
     bool syscall_conflict{};
     try {
-        backend.read(token{}, 1, operand::reg("a0", integer),
+        backend.read(source_tk, 1, operand::reg("a0", integer),
                      operand::reg("a0", integer), operand::reg("a1", integer),
                      operand::reg("a2", integer));
     } catch (const compiler_exception&) {

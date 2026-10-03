@@ -32,9 +32,8 @@ class stmt_def_const final : public statement {
 
         equals_tk_ = tz.is_next_char_token('=');
         if (equals_tk_.is_empty()) {
-            throw compiler_exception{name_tk_,
-                                     "expected '=' followed by a constant "
-                                     "value"};
+            throw compiler_exception{
+                tz, "expected '=' followed by a constant value"};
         }
 
         const_ = {tc, tz, 0};

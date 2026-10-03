@@ -43,7 +43,7 @@ class stmt_builtin_equal final : public expression {
 
         close_paren_tk_ = tz.is_next_char_token(')');
         if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tok(), "expected ')' after the arguments"};
+            throw compiler_exception{tz, "expected ')' after the arguments"};
         }
     }
 
@@ -80,10 +80,11 @@ class stmt_builtin_equal final : public expression {
 
         if (lhs_info.type_ref().name() != rhs_info.type_ref().name()) {
             throw compiler_exception{
-                tok(), std::format("source and compare types are not the "
-                                   "same. source is '{}' and compare is '{}'",
-                                   lhs_info.type_ref().name(),
-                                   rhs_info.type_ref().name())};
+                rhs_.tok(),
+                std::format("source and compare types are not the "
+                            "same. source is '{}' and compare is '{}'",
+                            lhs_info.type_ref().name(),
+                            rhs_info.type_ref().name())};
         }
 
         size_t size_bytes{lhs_info.type_ref().size_bytes()};

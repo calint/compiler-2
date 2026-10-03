@@ -84,7 +84,8 @@ class stmt_assign_var final : public statement {
                 src_info.array_len != var_dst_info.array_len) {
 
                 throw compiler_exception{
-                    tok(), "source and destination array sizes do not match"};
+                    expr_.tok(),
+                    "source and destination array sizes do not match"};
             }
         }
 

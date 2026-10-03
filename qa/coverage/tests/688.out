@@ -1,2 +1,2 @@
 
-688.baz:6:13: source and compare types are not the same. source is 'i8' and compare is 'i16'
+688.baz:6:22: source and compare types are not the same. source is 'i8' and compare is 'i16'
