@@ -505,6 +505,46 @@ class stmt_call : public expression {
         throw_parameter_type_mismatch(arg, param, info);
     }
 
+    // 'p' of 'p.x.y'
+    [[nodiscard]] static auto named_variable(const expr_any& arg)
+        -> std::string_view {
+
+        const std::string_view path{arg.identifier()};
+
+        return path.substr(0, path.find('.'));
+    }
+
+    [[nodiscard]] static auto pointer_reason(const std::string_view param,
+                                             const std::string_view global)
+        -> std::string {
+
+        return std::format("'{}' is a non-inline parameter, its caller is "
+                           "unknown so it may point into global '{}'",
+                           param, global);
+    }
+
+    // the ranges are offsets into the variable the argument names, so they
+    // are only comparable when both name the same one
+    [[nodiscard]] static auto reach_disjoint_bytes(const expr_any& lhs,
+                                                   const expr_any& rhs)
+        -> bool {
+
+        const std::optional<field_coverage::range> lhs_range{
+            lhs.accessed_range(),
+        };
+        const std::optional<field_coverage::range> rhs_range{
+            rhs.accessed_range(),
+        };
+
+        assert(lhs_range and rhs_range);
+
+        if (named_variable(lhs) != named_variable(rhs)) {
+            return false;
+        }
+
+        return not lhs_range->overlaps(*rhs_range);
+    }
+
     // compares resolved variable roots, so any overlap of fields or elements
     // counts as shared
     [[nodiscard]] static auto shared_storage_reason(const toc& tc,
@@ -531,46 +571,6 @@ class stmt_call : public expression {
         }
 
         return std::nullopt;
-    }
-
-    [[nodiscard]] static auto pointer_reason(const std::string_view param,
-                                             const std::string_view global)
-        -> std::string {
-
-        return std::format("'{}' is a non-inline parameter, its caller is "
-                           "unknown so it may point into global '{}'",
-                           param, global);
-    }
-
-    // 'p' of 'p.x.y'
-    [[nodiscard]] static auto named_variable(const expr_any& arg)
-        -> std::string_view {
-
-        const std::string_view path{arg.identifier()};
-
-        return path.substr(0, path.find('.'));
-    }
-
-    // the ranges are offsets into the variable the argument names, so they
-    // are only comparable when both name the same one
-    [[nodiscard]] static auto reach_disjoint_bytes(const expr_any& lhs,
-                                                   const expr_any& rhs)
-        -> bool {
-
-        const std::optional<field_coverage::range> lhs_range{
-            lhs.accessed_range(),
-        };
-        const std::optional<field_coverage::range> rhs_range{
-            rhs.accessed_range(),
-        };
-
-        assert(lhs_range and rhs_range);
-
-        if (named_variable(lhs) != named_variable(rhs)) {
-            return false;
-        }
-
-        return not lhs_range->overlaps(*rhs_range);
     }
 
     [[noreturn]] static auto
