@@ -496,7 +496,7 @@ dat str_no_such_exit = "cannot go there\n"
 dat str_home = "home"
 dat str_arrived_from = "arrived from "
 
-func action_go(cur_entity_id, tz mut tokenizer) {
+func action_go(eid, tz mut tokenizer) {
     tz.next()
     if tz.is_empty() {
         out.print_all(str_go_where)
@@ -506,7 +506,7 @@ func action_go(cur_entity_id, tz mut tokenizer) {
     if tz.is_str(str_home) exit(0)
 
     # find link
-    let cur_room_id = entities.array[cur_entity_id].room_id
+    let cur_room_id = entities.array[eid].room_id
 
     let links_len = rooms.array[cur_room_id].links_len
     var found_ix = links_len
@@ -524,10 +524,10 @@ func action_go(cur_entity_id, tz mut tokenizer) {
 
     # move entity
     let to_room_id = rooms.array[cur_room_id].links[found_ix].to
-    entities.array[cur_entity_id].room_id = to_room_id 
+    entities.array[eid].room_id = to_room_id 
 
-    let discarded = rooms.array[to_room_id].entities.add(cur_entity_id)
-    rooms.array[cur_room_id].entities.delete_element(cur_entity_id)
+    let discarded = rooms.array[to_room_id].entities.add(eid)
+    rooms.array[cur_room_id].entities.delete_element(eid)
 
     out.print_all(str_went_to)
     tz.print()
@@ -542,7 +542,7 @@ func action_go(cur_entity_id, tz mut tokenizer) {
         ]
     )
 
-    notify_room(cur_room_id, cur_entity_id, message_event, went_text)
+    notify_room(cur_room_id, eid, message_event, went_text)
 
     let to_links_len = rooms.array[to_room_id].links_len
     var to_found_ix = to_links_len
@@ -564,7 +564,7 @@ func action_go(cur_entity_id, tz mut tokenizer) {
         ]
     )
 
-    notify_room(to_room_id, cur_entity_id, message_event, arrived_text)
+    notify_room(to_room_id, eid, message_event, arrived_text)
 }
 
 func find_link_name_or_make(tz tokenizer) res {
@@ -578,7 +578,8 @@ func find_link_name_or_make(tz tokenizer) res {
 
     if res != link_names.len return
 
-    link_names.array[link_names.len] = tz.to_name()
+    let name = tz.to_name()
+    link_names.array[link_names.len] = name
 
     res = link_names.len
 
@@ -589,7 +590,7 @@ dat str_what_exit_name_to = "what is exit name to new room\n"
 dat str_what_exit_name_back = "what is exit name back to this room\n"
 dat str_new_room_created = "new room created\n"
 
-func action_new_room(cur_entity_id, tz mut tokenizer) {
+func action_new_room(eid, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -597,7 +598,7 @@ func action_new_room(cur_entity_id, tz mut tokenizer) {
         return
     }
 
-    let cur_room_id = entities.array[cur_entity_id].room_id 
+    let cur_room_id = entities.array[eid].room_id 
 
     let cur_room_next_link_id = rooms.array[cur_room_id].links_len
 
@@ -634,25 +635,27 @@ func action_new_room(cur_entity_id, tz mut tokenizer) {
 
 dat str_new_room_description = "new room description\n"
 
-func action_set_room_description(cur_entity_id, tz mut tokenizer) {
+func action_set_room_description(eid, tz mut tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    rooms.array[entities.array[cur_entity_id].room_id].description = tz.to_str()
+    let new_description = tz.to_str()
+    rooms.array[entities.array[eid].room_id].description = new_description
 
     out.print_all(str_new_room_description)
 }
 
-func action_set_room_note(cur_entity_id, tz mut tokenizer) {
+func action_set_room_note(eid, tz mut tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    rooms.array[entities.array[cur_entity_id].room_id].note = tz.to_str()
+    let new_note = tz.to_str()
+    rooms.array[entities.array[eid].room_id].note = new_note
 }
 
 dat str_what_name = "what name\n"
 dat str_name_too_long = "name too long\n"
 dat str_new_room_name = "new room name\n"
 
-func action_set_room_name(cur_entity_id, tz mut tokenizer) {
+func action_set_room_name(eid, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -665,14 +668,15 @@ func action_set_room_name(cur_entity_id, tz mut tokenizer) {
         return
     }
 
-    rooms.array[entities.array[cur_entity_id].room_id].name = tz.to_name()
+    let new_name = tz.to_name()
+    rooms.array[entities.array[eid].room_id].name = new_name
 
     out.print_all(str_new_room_name)
 }
 
 dat str_new_entity_created = "new entity created\n"
 
-func action_new_entity(cur_entity_id, tz mut tokenizer) {
+func action_new_entity(eid, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -682,7 +686,7 @@ func action_new_entity(cur_entity_id, tz mut tokenizer) {
 
     let name = tz.to_name()
 
-    let room_id = entities.array[cur_entity_id].room_id
+    let room_id = entities.array[eid].room_id
 
     let entity_id = entities.add(name, room_id)
 
@@ -693,7 +697,7 @@ func action_new_entity(cur_entity_id, tz mut tokenizer) {
 
 dat str_new_object_created = "new object created\n"
 
-func action_new_object(cur_entity_id, tz mut tokenizer) {
+func action_new_object(eid, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -705,7 +709,7 @@ func action_new_object(cur_entity_id, tz mut tokenizer) {
 
     let object_id = objects.add(name)
 
-    let discarded = entities.array[cur_entity_id].objects.add(object_id)
+    let discarded = entities.array[eid].objects.add(object_id)
 
     out.print_all(str_new_object_created)
 }
@@ -713,8 +717,8 @@ func action_new_object(cur_entity_id, tz mut tokenizer) {
 dat str_u_have = "u have: "
 dat str_u_have_nothing = "u have nothing\n"
 
-func action_inventory(cur_entity_id, tz tokenizer) {
-    let len = entities.array[cur_entity_id].objects.len
+func action_inventory(eid, tz tokenizer) {
+    let len = entities.array[eid].objects.len
     if  len == 0 {
         out.print_all(str_u_have_nothing)
         return
@@ -722,7 +726,7 @@ func action_inventory(cur_entity_id, tz tokenizer) {
 
     var first_printed = false
 
-    foo entities.array[cur_entity_id].objects.array, len {
+    foo entities.array[eid].objects.array, len {
 
         if not first_printed {
             out.print_all(str_u_have)
@@ -741,7 +745,7 @@ dat str_drop_what = "drop what\n"
 dat str_not_carrying = "u do not have that\n"
 dat str_dropped = "dropped "
 
-func action_drop(cur_entity_id, tz mut tokenizer) {
+func action_drop(eid, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -750,9 +754,9 @@ func action_drop(cur_entity_id, tz mut tokenizer) {
     }
 
     # find object in inventory
-    let len = entities.array[cur_entity_id].objects.len
+    let len = entities.array[eid].objects.len
     var found_ix = len
-    foo entities.array[cur_entity_id].objects.array, len {
+    foo entities.array[eid].objects.array, len {
         if tz.is_name(objects.array[e].name) {
             found_ix = i
             break
@@ -765,10 +769,10 @@ func action_drop(cur_entity_id, tz mut tokenizer) {
     }
 
     # move object from inventory to room
-    let object_id = entities.array[cur_entity_id].objects.array[found_ix]
-    let room_id = entities.array[cur_entity_id].room_id
+    let object_id = entities.array[eid].objects.array[found_ix]
+    let room_id = entities.array[eid].room_id
     let discarded = rooms.array[room_id].objects.add(object_id)
-    entities.array[cur_entity_id].objects.delete_index(found_ix)
+    entities.array[eid].objects.delete_index(found_ix)
 
     out.print_all(str_dropped)
     tz.print()
@@ -781,7 +785,7 @@ dat str_is_not_here = " is not here\n"
 dat str_gave = "gave "
 dat str_to = " to "
 
-func action_give(cur_entity_id, tz mut tokenizer) {
+func action_give(eid, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -790,9 +794,9 @@ func action_give(cur_entity_id, tz mut tokenizer) {
     }
 
     # find object in inventory
-    let len = entities.array[cur_entity_id].objects.len
+    let len = entities.array[eid].objects.len
     var found_ix = len
-    foo entities.array[cur_entity_id].objects.array, len {
+    foo entities.array[eid].objects.array, len {
         if tz.is_name(objects.array[e].name) {
             found_ix = i
             break
@@ -804,7 +808,7 @@ func action_give(cur_entity_id, tz mut tokenizer) {
         return
     }
 
-    let object_id = entities.array[cur_entity_id].objects.array[found_ix]
+    let object_id = entities.array[eid].objects.array[found_ix]
     let object_name = objects.array[object_id].name
 
     tz.next()
@@ -815,11 +819,11 @@ func action_give(cur_entity_id, tz mut tokenizer) {
     }
 
     # find other entity in the same room
-    let room_id = entities.array[cur_entity_id].room_id
+    let room_id = entities.array[eid].room_id
     let room_entities_len = rooms.array[room_id].entities.len
     var to_entity = room_entities_len
     foo rooms.array[room_id].entities.array, room_entities_len {
-        if e == cur_entity_id continue
+        if e == eid continue
         if tz.is_name(entities.array[e].name) {
             to_entity = e
             break
@@ -834,7 +838,7 @@ func action_give(cur_entity_id, tz mut tokenizer) {
 
     # move object between inventories
     let discarded = entities.array[to_entity].objects.add(object_id)
-    entities.array[cur_entity_id].objects.delete_index(found_ix)
+    entities.array[eid].objects.delete_index(found_ix)
 
     out.print_all(str_gave)
     object_name.print()
@@ -848,7 +852,7 @@ func action_give(cur_entity_id, tz mut tokenizer) {
     gave_text.add(str_space)
     gave_text.add_name(object_name)
 
-    notify_room(room_id, cur_entity_id, message_event, gave_text)
+    notify_room(room_id, eid, message_event, gave_text)
 }
 
 dat str_tell_whom = "tell whom\n"
@@ -856,7 +860,7 @@ dat str_tell_what = "tell what\n"
 dat str_does_not_exist = " does not exist\n"
 dat str_has_too_many_messages = " has too many messages\n"
 
-func action_tell(cur_entity_id, tz mut tokenizer) {
+func action_tell(eid, tz mut tokenizer) {
     tz.next()
 
     if tz.is_empty() {
@@ -896,12 +900,12 @@ func action_tell(cur_entity_id, tz mut tokenizer) {
 
     let text = tz.to_str()
 
-    entities.array[to_entity].messages.add(cur_entity_id, message_told, text)
+    entities.array[to_entity].messages.add(eid, message_told, text)
 }
 
 dat str_say_what = "say what\n"
 
-func action_say(cur_entity_id, tz mut tokenizer) {
+func action_say(eid, tz mut tokenizer) {
     # the text is the rest of the line
     tz.skip_whitespace()
     tz.to_end()
@@ -913,7 +917,7 @@ func action_say(cur_entity_id, tz mut tokenizer) {
 
     let text = tz.to_str()
 
-    notify_room(entities.array[cur_entity_id].room_id, cur_entity_id,
+    notify_room(entities.array[eid].room_id, eid,
                     message_said, text)
 }
 
@@ -933,7 +937,7 @@ dat str_help = "\
   new entity: en <name>\n\
 "
 
-func action_help(cur_entity_id, tz tokenizer) {
+func action_help(eid, tz tokenizer) {
     out.print_all(str_help)
 }
 
@@ -951,47 +955,52 @@ dat str_action_set_room_description = "rd"
 dat str_action_set_room_note = "rnt"
 dat str_action_new_entity = "en"
 
-func parse_input(cur_entity_id, tz mut tokenizer) {
+# note: `noinline` because it unfolds into a lot of code and called from 2
+#       locations
+func noinline parse_input(ceid, tz mut tokenizer) {
     tz.first()
 
+    # a copy, the parameter may point into a global the actions also name
+    var eid = ceid
+
     if tz.is_str(str_action_go) {
-        action_go(cur_entity_id, tz)
+        action_go(eid, tz)
 
     } else if tz.is_str(str_action_new_room) {
-        action_new_room(cur_entity_id, tz)
+        action_new_room(eid, tz)
 
     } else if tz.is_str(str_action_set_room_description) {
-        action_set_room_description(cur_entity_id, tz)
+        action_set_room_description(eid, tz)
 
     } else if tz.is_str(str_action_set_room_note) {
-        action_set_room_note(cur_entity_id, tz)
+        action_set_room_note(eid, tz)
 
     } else if tz.is_str(str_action_set_room_name) {
-        action_set_room_name(cur_entity_id, tz)
+        action_set_room_name(eid, tz)
 
     } else if tz.is_str(str_action_new_entity) {
-        action_new_entity(cur_entity_id, tz)
+        action_new_entity(eid, tz)
 
     } else if tz.is_str(str_action_new_object) {
-        action_new_object(cur_entity_id, tz)
+        action_new_object(eid, tz)
 
     } else if tz.is_str(str_action_inventory) {
-        action_inventory(cur_entity_id, tz)
+        action_inventory(eid, tz)
 
     } else if tz.is_str(str_action_drop) {
-        action_drop(cur_entity_id, tz)
+        action_drop(eid, tz)
 
     } else if tz.is_str(str_action_give) {
-        action_give(cur_entity_id, tz)
+        action_give(eid, tz)
 
     } else if tz.is_str(str_action_tell) {
-        action_tell(cur_entity_id, tz)
+        action_tell(eid, tz)
 
     } else if tz.is_str(str_action_say) {
-        action_say(cur_entity_id, tz)
+        action_say(eid, tz)
 
     } else if tz.is_str(str_action_help) {
-        action_help(cur_entity_id, tz)
+        action_help(eid, tz)
 
     } else {
         out.print_all(str_not_understood)
@@ -1010,11 +1019,11 @@ en me\n"
 # runs the lines of the script as the bare entity, a line ends with '\n'
 func run_creation_script(tz mut tokenizer) {
     var line_start = 0
+    var eid = 0
     foo str_creation_script {
         if e == '\n' {
             tz.set_line(str_creation_script, line_start, i - line_start)
-            var cur_entity_id = 0
-            parse_input(cur_entity_id, tz)
+            parse_input(eid, tz)
             line_start = i + 1
         }
     }
@@ -1035,21 +1044,21 @@ func main() {
     out.print_all(str_ascii_art)
     out.print_all(str_hello)
 
-    var cur_entity_id = 0
+    var eid = 0
     loop {
-        if cur_entity_id == entities.len {
-            cur_entity_id = 0
+        if eid == entities.len {
+            eid = 0
         }
-        entities.array[cur_entity_id].print_messages()
+        entities.array[eid].print_messages()
         out.println()
-        rooms.array[entities.array[cur_entity_id].room_id].print(cur_entity_id)
-        entities.array[cur_entity_id].name.print()
+        rooms.array[entities.array[eid].room_id].print(eid)
+        entities.array[eid].name.print()
         out.print_all(str_prompt)
         tz.input()
         out.println()
-        parse_input(cur_entity_id, tz)
+        parse_input(eid, tz)
         out.print_all(str_turn_end)
-        cur_entity_id = cur_entity_id + 1
+        eid = eid + 1
     }
 }
 

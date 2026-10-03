@@ -537,8 +537,8 @@ class stmt_call : public expression {
                                              const std::string_view global)
         -> std::string {
 
-        return std::format("'{}' is a non-inline parameter that may point "
-                           "into global '{}'",
+        return std::format("'{}' is a non-inline parameter, its caller is "
+                           "unknown so it may point into global '{}'",
                            param, global);
     }
 
