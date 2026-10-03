@@ -511,11 +511,17 @@ auto print_call_frames(
     }
 }
 
-// 'line' and 'start_index' locate the error, the column is derived from them
+// 'line' and 'start_index' locate the error, the column is derived from them,
+// line 0 is a problem of the whole file
 auto print_source_error(const std::string_view src_file_name,
                         const std::string_view src, const size_t line,
                         const size_t start_index,
                         const std::string_view message) -> void {
+
+    if (line == 0) {
+        std::println(stderr, "\n{}: {}", src_file_name, message);
+        return;
+    }
 
     const auto [line_num,
                 col]{line_and_col_num_for_char_index(line, start_index, src)};

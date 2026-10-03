@@ -118,7 +118,7 @@ class stmt_identifier : public statement {
 
         x.copy_value(tok(), indent, dst_info.operand, op);
 
-        get_unary_ops().compile(tc, indent, dst_info.operand);
+        get_unary_ops().compile(tc, indent, tok(), dst_info.operand);
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }

@@ -8,6 +8,23 @@ better assembler code, medium, largest gain first
     other exceptions should point to the cause in offending source to precise
     token that caused the exception. in encoded string make a position token at
     the offending location within the string
+    => done (2026-10-03): 'compiler_exception::file_level' (line 0, printed
+       as 'file: message') for a missing 'main'; an unterminated string
+       points at its opening quote; an unsupported escape in a string or
+       character literal points at its backslash (tests 157, 159, 185, 547,
+       558, 727-729, 740, 749)
+    => done (2026-10-03): the machine methods 'advance_array_iteration',
+       'set_array_copy_source', 'set_array_copy_destination',
+       'set_memory_equal_left', 'set_memory_equal_right' and 'unary' take a
+       'src_loc_tk' (also 'unary_ops::compile'), and the x86_64 helpers that
+       lower addresses ('lea', 'add', 'inc', 'cmp_lowered', 'test', 'neg',
+       'setcc', ...) pass it on, so an out of scratch registers error points
+       at the statement that caused it; left with 'token{}': the fixed
+       start and finish code of the backends, which cannot fail on user input
+    => left: an assert that only 'file_level' has line 0 needs the backend
+       test 'test-rv32i-address.cpp', which throws with 'token{}' on purpose,
+       to use real positions
+    => left: audit the remaining throw sites for the most precise token
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
 [ ] medium: roome.baz (2026-09-29): an inline bool call used as a condition is

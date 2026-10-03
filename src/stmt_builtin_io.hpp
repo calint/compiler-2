@@ -67,7 +67,7 @@ class stmt_builtin_io final : public stmt_call {
 
         emit_call(x, indent, result, args);
 
-        get_unary_ops().compile(tc, indent, result);
+        get_unary_ops().compile(tc, indent, tok(), result);
         if (not dst_info.is_empty()) {
             x.copy_value(tok(), indent, dst_info.operand, result);
         }

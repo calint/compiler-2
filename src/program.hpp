@@ -235,12 +235,7 @@ class program final {
 
     // the main function is compiled where the program starts
     static auto compile_main(toc& tc, const size_t indent) -> void {
-        // no token names a missing 'main', so the error points at line 1
-        const token start_of_source{"", 0, "", 0, "", 1, false};
-
-        const stmt_def_func& func_main{
-            tc.get_func_or_throw(start_of_source, "main"),
-        };
+        const stmt_def_func& func_main{tc.get_main_or_throw()};
 
         if (not func_main.is_inlined()) {
             throw compiler_exception{func_main.tok(),

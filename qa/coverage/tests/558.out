@@ -1,2 +1,2 @@
 
-558.baz:4:13: unsupported escape in string "a\qb"
+558.baz:4:15: unsupported escape in string "a\qb"

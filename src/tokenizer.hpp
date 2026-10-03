@@ -33,7 +33,7 @@ class tokenizer final {
     // returns a token, which is a marker at the current position with empty
     // name and whitespace
     [[nodiscard]] auto cur_position_token() const -> token {
-        return {"", char_ix_, "", char_ix_, "", at_line_, false};
+        return token::position(char_ix_, at_line_);
     }
 
     [[nodiscard]] auto is_eos() const -> bool {
@@ -162,9 +162,8 @@ class tokenizer final {
             // points at the opening quote since the end of the line is
             // reported as column 0
             if (is_eos() or is_peek_char('\n')) {
-                throw compiler_exception{
-                    token{"", bgn_ix, "", bgn_ix, "", at_line, false},
-                    "unterminated character literal"};
+                throw compiler_exception{token::position(bgn_ix, at_line),
+                                         "unterminated character literal"};
             }
 
             const char ch{next_char()};
@@ -191,11 +190,16 @@ class tokenizer final {
                                            const size_t at_line,
                                            const size_t bgn_ix) -> token {
 
+        // points at the opening quote, the string may run to the end of the
+        // source
+        const token open_quote_tk{token::position(bgn_ix, at_line)};
+
         while (true) {
             if (is_next_char('\\')) {
                 // read the escaped character
                 if (is_eos()) {
-                    throw compiler_exception{*this, "unterminated string"};
+                    throw compiler_exception{open_quote_tk,
+                                             "unterminated string"};
                 }
                 (void)next_char();
                 continue;
@@ -206,7 +210,7 @@ class tokenizer final {
             }
 
             if (is_eos()) {
-                throw compiler_exception{*this, "unterminated string"};
+                throw compiler_exception{open_quote_tk, "unterminated string"};
             }
             (void)next_char();
         }
@@ -219,10 +223,13 @@ class tokenizer final {
             end_ix,    ws_after, at_line,
             true};
 
-        if (not token::decode_string(string_tk.string_text())) {
+        if (const std::optional<token> escape_tk{
+                string_tk.unsupported_escape_position(),
+            }) {
+
             throw compiler_exception{
-                string_tk, std::format("unsupported escape in string \"{}\"",
-                                       string_tk.text())};
+                *escape_tk, std::format("unsupported escape in string \"{}\"",
+                                        string_tk.text())};
         }
 
         return string_tk;

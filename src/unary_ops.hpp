@@ -37,8 +37,8 @@ class unary_ops final {
 
     // implemented in 'decouple_impl.hpp'
     // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-    auto compile(toc& tc, const size_t indent, const operand& dst_info) const
-        -> void;
+    auto compile(toc& tc, const size_t indent, const token& src_loc_tk,
+                 const operand& dst_info) const -> void;
 
     [[nodiscard]] auto evaluate_constant(int64_t v) const -> int64_t {
         for (const char op : ops_ | std::views::reverse) {

@@ -369,7 +369,8 @@ class machine_rv32i : public machine {
         return 4;
     }
 
-    auto advance_array_iteration(const size_t indent, const operand& iterator,
+    auto advance_array_iteration(const token& src_loc_tk, const size_t indent,
+                                 const operand& iterator,
                                  const operand& counter,
                                  const size_t element_size_bytes,
                                  const operand& limit,
@@ -381,14 +382,14 @@ class machine_rv32i : public machine {
 
         const address_scope scope{*this, iterator, counter};
 
-        add_subtract(token{}, indent, '+', iterator,
+        add_subtract(src_loc_tk, indent, '+', iterator,
                      operand::imm(std::format("{}", element_size_bytes),
                                   default_type()));
 
-        add_subtract(token{}, indent, '+', counter,
+        add_subtract(src_loc_tk, indent, '+', counter,
                      operand::imm("1", default_type()));
 
-        emit_comparison(token{}, indent, counter, limit,
+        emit_comparison(src_loc_tk, indent, counter, limit,
                         {
                             .operation{"!="},
                             .inverted{},
@@ -1292,30 +1293,31 @@ class machine_rv32i : public machine {
                               default_type()));
     }
 
-    auto set_array_copy_destination(const size_t indent, const operand& address)
+    auto set_array_copy_destination(const token& src_loc_tk,
+                                    const size_t indent, const operand& address)
         -> void override {
 
         record_bulk_address_start(address);
-        address_of(token{}, indent, bulk_registers_.back().at(1), address);
+        address_of(src_loc_tk, indent, bulk_registers_.back().at(1), address);
     }
 
-    auto set_array_copy_source(const size_t indent, const operand& address)
-        -> void override {
+    auto set_array_copy_source(const token& src_loc_tk, const size_t indent,
+                               const operand& address) -> void override {
 
         record_bulk_address_start(address);
-        address_of(token{}, indent, bulk_registers_.back().at(0), address);
+        address_of(src_loc_tk, indent, bulk_registers_.back().at(0), address);
     }
 
-    auto set_memory_equal_left(const size_t indent, const operand& address)
-        -> void override {
+    auto set_memory_equal_left(const token& src_loc_tk, const size_t indent,
+                               const operand& address) -> void override {
 
-        set_array_copy_source(indent, address);
+        set_array_copy_source(src_loc_tk, indent, address);
     }
 
-    auto set_memory_equal_right(const size_t indent, const operand& address)
-        -> void override {
+    auto set_memory_equal_right(const token& src_loc_tk, const size_t indent,
+                                const operand& address) -> void override {
 
-        set_array_copy_destination(indent, address);
+        set_array_copy_destination(src_loc_tk, indent, address);
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -1396,19 +1398,20 @@ class machine_rv32i : public machine {
                    operand::imm(value ? "1" : "0", default_type()));
     }
 
-    auto unary(const size_t indent, const char operation,
-               const operand& destination) -> void override {
+    auto unary(const token& src_loc_tk, const size_t indent,
+               const char operation, const operand& destination)
+        -> void override {
 
         assert(operation == '-' or operation == '~');
 
-        validate_scalar(token{}, destination.type_ref());
+        validate_scalar(src_loc_tk, destination.type_ref());
 
         assert(destination.is_register() or destination.is_memory());
 
         const address_scope scope{*this, destination, operand{}};
 
         const loaded_destination loaded{
-            load_destination(token{}, indent, destination),
+            load_destination(src_loc_tk, indent, destination),
         };
 
         if (operation == '-') {
@@ -3453,7 +3456,7 @@ class machine_rv32i : public machine {
 
         // all low bits set is multiplication by minus one at this width
         if (multiplier == mask) {
-            unary(indent, '-', product);
+            unary(src_loc_tk, indent, '-', product);
             return;
         }
 

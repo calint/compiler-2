@@ -1,0 +1,6 @@
+# an unsupported escape after a line continuation is located on its own line
+
+func main() {
+    var s = "ab\
+cd\qe"
+}

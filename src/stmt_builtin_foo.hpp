@@ -136,7 +136,7 @@ class stmt_builtin_foo final : public statement {
         x.label(indent, loop_label);
         code_.compile(tc, indent, ident_info::make_empty());
         x.label(indent + 1, loop_label + ".continue");
-        x.advance_array_iteration(indent + 2, reg_iter, reg_counter,
+        x.advance_array_iteration(tok(), indent + 2, reg_iter, reg_counter,
                                   ii.type_ref().size_bytes(), limit,
                                   loop_label);
 

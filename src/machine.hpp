@@ -111,9 +111,9 @@ class machine {
 
     // 'limit' is the constant array size or a register holding a count
     virtual auto advance_array_iteration(
-        const size_t indent, const operand& iterator, const operand& counter,
-        const size_t element_size_bytes, const operand& limit,
-        const std::string_view loop_label) -> void = 0;
+        const token& src_loc_tk, const size_t indent, const operand& iterator,
+        const operand& counter, const size_t element_size_bytes,
+        const operand& limit, const std::string_view loop_label) -> void = 0;
 
     [[nodiscard]] virtual auto
     alloc_named_register(const token& src_loc_tk, const size_t indent,
@@ -354,16 +354,20 @@ class machine {
                              const operand& index,
                              const size_t element_size_bytes) -> void = 0;
 
-    virtual auto set_array_copy_destination(const size_t indent,
+    virtual auto set_array_copy_destination(const token& src_loc_tk,
+                                            const size_t indent,
                                             const operand& address) -> void = 0;
 
-    virtual auto set_array_copy_source(const size_t indent,
+    virtual auto set_array_copy_source(const token& src_loc_tk,
+                                       const size_t indent,
                                        const operand& address) -> void = 0;
 
-    virtual auto set_memory_equal_left(const size_t indent,
+    virtual auto set_memory_equal_left(const token& src_loc_tk,
+                                       const size_t indent,
                                        const operand& address) -> void = 0;
 
-    virtual auto set_memory_equal_right(const size_t indent,
+    virtual auto set_memory_equal_right(const token& src_loc_tk,
+                                        const size_t indent,
                                         const operand& address) -> void = 0;
 
     virtual auto shift(const token& src_loc_tk, const size_t indent,
@@ -376,8 +380,8 @@ class machine {
                                const operand& dst, const bool value)
         -> void = 0;
 
-    virtual auto unary(const size_t indent, const char operation,
-                       const operand& dst) -> void = 0;
+    virtual auto unary(const token& src_loc_tk, const size_t indent,
+                       const char operation, const operand& dst) -> void = 0;
 
     virtual auto
     validate_data_element_size(const token& src_loc_tk,

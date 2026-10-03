@@ -1,2 +1,2 @@
 
-729.baz:4:13: unsupported escape in string "a\xzzb"
+729.baz:4:15: unsupported escape in string "a\xzzb"

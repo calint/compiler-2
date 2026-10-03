@@ -649,7 +649,7 @@ auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
     const auto compile_in_field{
         [&] -> void {
             x.copy_value(src.tok(), indent, dst, src_op);
-            uops.compile(tc, indent, dst);
+            uops.compile(tc, indent, src.tok(), dst);
         },
     };
 
@@ -659,7 +659,7 @@ auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
         };
 
         x.copy_value(src.tok(), indent, reg, src_op);
-        uops.compile(tc, indent, reg);
+        uops.compile(tc, indent, src.tok(), reg);
         x.copy_value(src.tok(), indent, dst, reg);
         x.free_scratch_register(src.tok(), indent, reg);
     });
@@ -757,13 +757,13 @@ auto expr_type::is_indexed() const -> bool {
 
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-auto unary_ops::compile(toc& tc, const size_t indent,
+auto unary_ops::compile(toc& tc, const size_t indent, const token& src_loc_tk,
                         const operand& dst_info) const -> void {
 
     machine& x{tc.machine()};
 
     for (const char o : ops_ | std::views::reverse) {
-        x.unary(indent, o, dst_info);
+        x.unary(src_loc_tk, indent, o, dst_info);
     }
 }
 

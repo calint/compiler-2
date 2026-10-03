@@ -612,10 +612,10 @@ auto main(const int argc, const char* argv[]) -> int {
         comments.str({});
         const operand count{located.begin_array_copy(location, 1)};
         located.copy_value(location, 1, count, operand::imm("2", integer));
-        located.set_array_copy_source(1,
+        located.set_array_copy_source(location, 1,
                                       operand::mem("s0", {}, 1, 216, integer));
         located.set_array_copy_destination(
-            1, operand::mem("s0", {}, 1, 208, integer));
+            location, 1, operand::mem("s0", {}, 1, 208, integer));
         located.end_array_copy(location, 1, 4, 4);
         for (const std::string_view text :
              {"t0: source, t1: destination, t2: count",
@@ -767,7 +767,7 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println(
                 "    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1");
             backend.advance_array_iteration(
-                1, operand::reg("s2", integer),
+                token{}, 1, operand::reg("s2", integer),
                 operand::mem("sp", {}, 1, 0, integer), stride,
                 operand::imm("3", integer), loop_label);
             std::println("    li t0, {}\n    beq s2, t0, 1f\n"
@@ -799,7 +799,7 @@ auto main(const int argc, const char* argv[]) -> int {
         // register nothing reads
         const auto padding = [&](const size_t count) -> void {
             for (size_t i{}; i < count; ++i) {
-                backend.unary(1, '~', operand::reg("s4", integer));
+                backend.unary(token{}, 1, '~', operand::reg("s4", integer));
             }
         };
 
@@ -822,7 +822,7 @@ auto main(const int argc, const char* argv[]) -> int {
             backend.add_subtract(token{}, 1, '+', iterator,
                                  operand::imm("1", integer));
 
-            backend.advance_array_iteration(1, iterator, counter, 4,
+            backend.advance_array_iteration(token{}, 1, iterator, counter, 4,
                                             operand::imm("3", integer),
                                             loop_label);
 
@@ -1337,8 +1337,10 @@ func main() {
             backend.copy_value(token{}, 0, count, operand::imm("7", integer));
             std::println(shift_output, "la {}, buffer",
                          held.back().base_register());
-            backend.set_memory_equal_left(0, operand::mem(held.back(), byte));
-            backend.set_memory_equal_right(0, operand::mem(held.back(), byte));
+            backend.set_memory_equal_left(token{}, 0,
+                                          operand::mem(held.back(), byte));
+            backend.set_memory_equal_right(token{}, 0,
+                                           operand::mem(held.back(), byte));
             shift_output.str({});
             backend.end_arrays_equal(token{}, 0, 1, 4, result);
         } else {
@@ -1566,11 +1568,11 @@ func main() {
             assert(shift_output.str() == zero_result);
         }
         shift_output.str({});
-        backend.unary(0, '~', operand::reg("a0", *value_type));
+        backend.unary(token{}, 0, '~', operand::reg("a0", *value_type));
         assert(shift_output.str() == "xori a0, a0, -1\n");
     }
     shift_output.str({});
-    backend.unary(0, '-', operand::reg("a0", integer));
+    backend.unary(token{}, 0, '-', operand::reg("a0", integer));
     assert(shift_output.str() == "sub a0, zero, a0\n");
     shift_output.str({});
     backend.bitwise(token{}, 0, '&', operand::reg("a0", byte),
@@ -2186,9 +2188,9 @@ func main() {
                         token{}, 1, count,
                         operand::imm(std::format("{}", size_bytes), integer));
                     backend.set_array_copy_source(
-                        1, operand::mem("a0", {}, 1, 0, byte));
+                        token{}, 1, operand::mem("a0", {}, 1, 0, byte));
                     backend.set_array_copy_destination(
-                        1, operand::mem("a1", {}, 1, 0, byte));
+                        token{}, 1, operand::mem("a1", {}, 1, 0, byte));
                     backend.end_array_copy(token{}, 1, 1, known_alignment);
                 } else {
                     std::println(
@@ -2565,7 +2567,7 @@ func main() {
                     backend.copy_value(
                         token{}, 1, destination,
                         operand::imm(std::format("{}", initial), integer));
-                    backend.unary(1, operation, destination);
+                    backend.unary(token{}, 1, operation, destination);
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
                                        destination);
                     const uint32_t bits{static_cast<uint32_t>(initial)};

@@ -1,2 +1,2 @@
 
-740.baz:3:9: unsupported escape in string "a\qb"
+740.baz:3:11: unsupported escape in string "a\qb"

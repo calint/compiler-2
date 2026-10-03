@@ -402,10 +402,10 @@ main:
                     # [406:23] free scratch register t5
                     # [406:23] bounds check end
                     add t1, s0, t4
-                    # allocate scratch register -> t5
+                    # [406:5] allocate scratch register -> t5
                     lui t5, 1048575
                     add t1, t1, t5
-                    # free scratch register t5
+                    # [406:5] free scratch register t5
                     addi t1, t1, 1978
                     # [406:5] free scratch register t4
                     # [406:36] self.str.array
@@ -9871,10 +9871,10 @@ main:
                                 # [134:20] bounds check end
                                 slli t0, t3, 2
                                 add t0, t0, s0
-                                # allocate scratch register -> t4
+                                # [133:5] allocate scratch register -> t4
                                 lui t4, 1048527
                                 add t0, t0, t4
-                                # free scratch register t4
+                                # [133:5] free scratch register t4
                                 addi t0, t0, 1192
                                 # [133:5] free scratch register t3
                                 # [135:9] self.array[ix]
@@ -9902,10 +9902,10 @@ main:
                                 # [135:20] bounds check end
                                 slli t1, t3, 2
                                 add t1, t1, s0
-                                # allocate scratch register -> t4
+                                # [133:5] allocate scratch register -> t4
                                 lui t4, 1048527
                                 add t1, t1, t4
-                                # free scratch register t4
+                                # [133:5] free scratch register t4
                                 addi t1, t1, 1192
                                 # [133:5] free scratch register t3
                                 # [133:5] t2: elements to bytes (4 bytes/element)
@@ -11874,10 +11874,10 @@ main:
                                 # [134:20] bounds check end
                                 slli t0, t3, 2
                                 add t0, t0, s0
-                                # allocate scratch register -> t4
+                                # [133:5] allocate scratch register -> t4
                                 lui t4, 1048527
                                 add t0, t0, t4
-                                # free scratch register t4
+                                # [133:5] free scratch register t4
                                 addi t0, t0, 1192
                                 # [133:5] free scratch register t3
                                 # [135:9] self.array[ix]
@@ -11905,10 +11905,10 @@ main:
                                 # [135:20] bounds check end
                                 slli t1, t3, 2
                                 add t1, t1, s0
-                                # allocate scratch register -> t4
+                                # [133:5] allocate scratch register -> t4
                                 lui t4, 1048527
                                 add t1, t1, t4
-                                # free scratch register t4
+                                # [133:5] free scratch register t4
                                 addi t1, t1, 1192
                                 # [133:5] free scratch register t3
                                 # [133:5] t2: elements to bytes (4 bytes/element)

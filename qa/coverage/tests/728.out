@@ -1,2 +1,2 @@
 
-728.baz:4:13: unsupported escape in character literal '\x4'
+728.baz:4:14: unsupported escape in character literal '\x4'

@@ -133,4 +133,6 @@ Working agreements for AI sessions in this repository.
   the reviewer.
 - Magic numbers (`+ 1`, `subspan(1, n - 2)`) in new or touched code: add a
   `note:` on the line below.
+  - The note names the offset and its reason, e.g. `// note: +1 because the
+    text starts after the opening quote`.
 - Non-obvious new code: brief rationale (why, not what).

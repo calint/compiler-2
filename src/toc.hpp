@@ -686,6 +686,15 @@ class toc final {
         std::unreachable();
     }
 
+    // no token names a missing 'main'
+    [[nodiscard]] auto get_main_or_throw() const -> const stmt_def_func& {
+        if (not funcs_.has("main")) {
+            throw compiler_exception::file_level("function 'main' not found");
+        }
+
+        return *funcs_.get_const_ref("main").def;
+    }
+
     [[nodiscard]] auto get_string_constants() const
         -> std::span<const machine::string_constant> {
 
@@ -1017,8 +1026,16 @@ class toc final {
 
         const std::optional<char> decoded{token::decode_escape(body.substr(1))};
         if (not decoded) {
+            const size_t backslash_index{src_loc_tk.start_index() + 1};
+            // note: +1 because the backslash follows the opening quote
+            const token escape_tk{
+                src_loc_tk.is_text(str)
+                    ? token::position(backslash_index, src_loc_tk.at_line())
+                    : src_loc_tk,
+            };
+
             throw compiler_exception{
-                src_loc_tk,
+                escape_tk,
                 std::format("unsupported escape in character literal {}", str)};
         }
 

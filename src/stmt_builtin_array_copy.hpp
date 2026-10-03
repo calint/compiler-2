@@ -119,15 +119,16 @@ class stmt_builtin_array_copy final : public statement {
         src_.compile_address(tc, indent, tok(), array_src_info.lea_path,
                              count_register, x.array_copy_source_register(),
                              [&](const operand& address) -> void {
-                                 x.set_array_copy_source(indent, address);
+                                 x.set_array_copy_source(tok(), indent,
+                                                         address);
                              });
 
-        dst_.compile_address(tc, indent, tok(), array_dst_info.lea_path,
-                             count_register,
-                             x.array_copy_destination_register(),
-                             [&](const operand& address) -> void {
-                                 x.set_array_copy_destination(indent, address);
-                             });
+        dst_.compile_address(
+            tc, indent, tok(), array_dst_info.lea_path, count_register,
+            x.array_copy_destination_register(),
+            [&](const operand& address) -> void {
+                x.set_array_copy_destination(tok(), indent, address);
+            });
 
         x.end_array_copy(tok(), indent, array_src_info.type_ref().size_bytes(),
                          array_src_info.type_ref().alignment());

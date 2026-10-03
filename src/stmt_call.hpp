@@ -783,7 +783,7 @@ class stmt_call : public expression {
                 tc.make_ident_info(tok(), return_info.ident_tk.text()),
             };
 
-            get_unary_ops().compile(tc, indent, ret_info.operand);
+            get_unary_ops().compile(tc, indent, tok(), ret_info.operand);
         }
 
         tc.exit_func(func.name());
@@ -1216,7 +1216,7 @@ class stmt_call : public expression {
 
         allocated_registers.push_back(reg);
         x.copy_value(param.tok(), indent, reg, arg_info.operand);
-        arg.get_unary_ops().compile(tc, indent, reg);
+        arg.get_unary_ops().compile(tc, indent, arg.tok(), reg);
 
         return alias_info::make_register(param.identifier(), param.get_type(),
                                          reg);

@@ -119,12 +119,14 @@ class stmt_builtin_equal final : public expression {
 
         lhs_.compile_address(tc, indent, tok(), lhs_info.lea_path, {}, {},
                              [&](const operand& address) -> void {
-                                 x.set_memory_equal_left(indent, address);
+                                 x.set_memory_equal_left(tok(), indent,
+                                                         address);
                              });
 
         rhs_.compile_address(tc, indent, tok(), rhs_info.lea_path, {}, {},
                              [&](const operand& address) -> void {
-                                 x.set_memory_equal_right(indent, address);
+                                 x.set_memory_equal_right(tok(), indent,
+                                                          address);
                              });
 
         x.end_memory_equal(tok(), indent, size_bytes,

@@ -457,7 +457,7 @@ class expr_arith final : public expression {
         };
 
         x.copy_value(src.tok(), indent, reg, src_operand);
-        src.get_unary_ops().compile(tc, indent, reg);
+        src.get_unary_ops().compile(tc, indent, src.tok(), reg);
 
         return reg;
     }
@@ -596,7 +596,7 @@ class expr_arith final : public expression {
         if (first.op == '-') {
             machine& x{tc.machine()};
 
-            x.unary(indent, '-', dst_info.operand);
+            x.unary(tok(), indent, '-', dst_info.operand);
         }
     }
 
@@ -662,7 +662,7 @@ class expr_arith final : public expression {
         compile_elements(tc, indent, dst_info);
 
         // apply unary expressions on destination
-        uops_.compile(tc, indent, dst_info.operand);
+        uops_.compile(tc, indent, tok(), dst_info.operand);
     }
 
     // 'ws_before_op_tk' belongs to what follows the list

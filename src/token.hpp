@@ -118,6 +118,43 @@ class token final {
 
     [[nodiscard]] auto text() const -> std::string_view { return text_; }
 
+    // the marker at the first unsupported escape of a string token, as
+    // 'decode_string' rejects it
+    [[nodiscard]] auto unsupported_escape_position() const
+        -> std::optional<token> {
+
+        size_t line{at_line_};
+        for (size_t i{}; i < text_.size(); ++i) {
+            if (text_.at(i) == '\n') {
+                ++line;
+                continue;
+            }
+
+            if (text_.at(i) != '\\') {
+                continue;
+            }
+
+            const std::string_view escape{text_.substr(i + 1)};
+
+            // a backslash before a line end continues the string
+            if (escape.starts_with('\n') or escape.starts_with("\r\n")) {
+                continue;
+            }
+
+            const size_t escape_size{escape.starts_with('x') ? 3UZ : 1UZ};
+            if (not decode_escape(escape.substr(0, escape_size))) {
+                const size_t backslash_index{start_ix_ + 1 + i};
+                // note: +1 because the text starts after the opening quote
+
+                return position(backslash_index, line);
+            }
+
+            i += escape_size;
+        }
+
+        return std::nullopt;
+    }
+
     //
     // statics
     //
@@ -228,6 +265,13 @@ class token final {
         }
 
         return text;
+    }
+
+    // a marker at 'index' with empty text and whitespace
+    [[nodiscard]] static auto position(const size_t index, const size_t line)
+        -> token {
+
+        return {"", index, "", index, "", line, false};
     }
 
   private:

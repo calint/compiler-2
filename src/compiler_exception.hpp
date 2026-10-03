@@ -55,4 +55,20 @@ class compiler_exception final : public std::exception {
             .text{std::move(text)},
         });
     }
+
+    //
+    // statics
+    //
+
+    // a problem of the whole file, e.g. a missing 'main', has line 0 and no
+    // position, every other exception points at the token that caused it
+    [[nodiscard]] static auto file_level(std::string message)
+        -> compiler_exception {
+
+        return compiler_exception{std::move(message)};
+    }
+
+  private:
+    explicit compiler_exception(std::string message)
+        : msg{std::move(message)} {}
 };

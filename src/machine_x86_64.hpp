@@ -233,16 +233,17 @@ class machine_x86_64 final : public machine {
         return size_qword;
     }
 
-    auto advance_array_iteration(const size_t indent, const operand& iterator,
+    auto advance_array_iteration(const token& src_loc_tk, const size_t indent,
+                                 const operand& iterator,
                                  const operand& counter,
                                  const size_t element_size_bytes,
                                  const operand& limit,
                                  const std::string_view loop_label)
         -> void override {
 
-        add(indent, iterator, immediate(element_size_bytes));
-        inc(indent, counter);
-        cmp(indent, counter, limit);
+        add(src_loc_tk, indent, iterator, immediate(element_size_bytes));
+        inc(src_loc_tk, indent, counter);
+        cmp_lowered(src_loc_tk, indent, counter, limit);
         assembler_.jcc(indent, condition::ne, loop_label);
     }
 
@@ -366,7 +367,7 @@ class machine_x86_64 final : public machine {
         }
 
         comment(src_loc_tk, indent, "set function frame base");
-        lea(indent,
+        lea(src_loc_tk, indent,
             make_register_operand(frame_base_register(), default_type()),
             frame_address, true);
 
@@ -449,7 +450,7 @@ class machine_x86_64 final : public machine {
                     continue;
                 }
 
-                test(indent, *value, *value);
+                test(src_loc_tk, indent, *value, *value);
                 branch_to_bounds_panic(indent, condition::s, reported_line);
             }
         }
@@ -497,10 +498,10 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        lea(indent, start, frame_address, true);
+        lea(src_loc_tk, indent, start, frame_address, true);
         assembler_.instruction(indent, op::lea, to_argument(remaining),
                                assembler_x86_64::memory::of_symbol("vars"));
-        cmp(indent, start, remaining);
+        cmp_lowered(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::b, failure_label);
 
         // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
@@ -508,11 +509,11 @@ class machine_x86_64 final : public machine {
             indent, op::mov, to_argument(remaining),
             assembler_x86_64::immediate::of_expression("vars.end", true));
 
-        cmp(indent, start, remaining);
+        cmp_lowered(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, failure_label);
         emit_op(src_loc_tk, indent, op::sub, remaining, start);
         mov(src_loc_tk, indent, start, frame_size_bytes);
-        cmp(indent, start, remaining);
+        cmp_lowered(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, failure_label);
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
@@ -552,8 +553,8 @@ class machine_x86_64 final : public machine {
         free_scratch_registers(src_loc_tk, indent, scratch_registers_to_free);
 
         if (not action.destination.is_empty()) {
-            store_comparison(indent, action.operation, action.inverted,
-                             action.destination);
+            store_comparison(src_loc_tk, indent, action.operation,
+                             action.inverted, action.destination);
         }
 
         if (not action.target.empty()) {
@@ -572,7 +573,7 @@ class machine_x86_64 final : public machine {
         if (size_bytes > threshold_for_rep_movs_size_bytes) {
             copy_with_rep_movsb(src_loc_tk, indent, dst, size_bytes,
                                 [&](const operand& pointer) -> void {
-                                    lea(indent, pointer, src);
+                                    lea(src_loc_tk, indent, pointer, src);
                                 });
 
             return;
@@ -886,10 +887,10 @@ class machine_x86_64 final : public machine {
         scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
                                     element_size_bytes);
 
-        test(indent, qword_register("rcx"), qword_register("rcx"));
+        test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
         assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(indent, dst, inverted);
+        store_equal_result(src_loc_tk, indent, dst, inverted);
     }
 
     auto end_main() -> void override {
@@ -930,7 +931,7 @@ class machine_x86_64 final : public machine {
         }
 
         release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(indent, dst, inverted);
+        store_equal_result(src_loc_tk, indent, dst, inverted);
     }
 
     auto exit(const token& src_loc_tk, const size_t indent,
@@ -1149,28 +1150,29 @@ class machine_x86_64 final : public machine {
                                     element_size_bytes);
     }
 
-    auto set_array_copy_destination(const size_t indent, const operand& address)
+    auto set_array_copy_destination(const token& src_loc_tk,
+                                    const size_t indent, const operand& address)
         -> void override {
 
-        lea(indent, qword_register("rdi"), address);
+        lea(src_loc_tk, indent, qword_register("rdi"), address);
     }
 
-    auto set_array_copy_source(const size_t indent, const operand& address)
-        -> void override {
+    auto set_array_copy_source(const token& src_loc_tk, const size_t indent,
+                               const operand& address) -> void override {
 
-        lea(indent, qword_register("rsi"), address);
+        lea(src_loc_tk, indent, qword_register("rsi"), address);
     }
 
-    auto set_memory_equal_left(const size_t indent, const operand& address)
-        -> void override {
+    auto set_memory_equal_left(const token& src_loc_tk, const size_t indent,
+                               const operand& address) -> void override {
 
-        lea(indent, qword_register("rsi"), address);
+        lea(src_loc_tk, indent, qword_register("rsi"), address);
     }
 
-    auto set_memory_equal_right(const size_t indent, const operand& address)
-        -> void override {
+    auto set_memory_equal_right(const token& src_loc_tk, const size_t indent,
+                                const operand& address) -> void override {
 
-        lea(indent, qword_register("rdi"), address);
+        lea(src_loc_tk, indent, qword_register("rdi"), address);
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -1219,16 +1221,16 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, dst, immediate(value ? 1 : 0));
     }
 
-    auto unary(const size_t indent, const char operation, const operand& dst)
-        -> void override {
+    auto unary(const token& src_loc_tk, const size_t indent,
+               const char operation, const operand& dst) -> void override {
 
         switch (operation) {
         case '~':
-            not_op(indent, dst);
+            not_op(src_loc_tk, indent, dst);
             return;
 
         case '-':
-            neg(indent, dst);
+            neg(src_loc_tk, indent, dst);
             return;
 
         default:
@@ -1302,10 +1304,10 @@ class machine_x86_64 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rdi", default_type());
             reserve_named_register(src_loc_tk, indent, "rcx", default_type());
             xor_op(
-                indent,
+                src_loc_tk, indent,
                 machine_x86_64::make_register_operand("al", builtin_type_i8()),
                 machine_x86_64::make_register_operand("al", builtin_type_i8()));
-            lea(indent, qword_register("rdi"), dst);
+            lea(src_loc_tk, indent, qword_register("rdi"), dst);
             mov(src_loc_tk, indent, qword_register("rcx"),
                 immediate(size_bytes));
             assembler_.instruction(indent, op::rep_stosb);
@@ -1401,10 +1403,10 @@ class machine_x86_64 final : public machine {
     }
 
   private:
-    auto add(const size_t indent, const operand& dst, const operand& src)
-        -> void {
+    auto add(const token& src_loc_tk, const size_t indent, const operand& dst,
+             const operand& src) -> void {
 
-        emit_binary(indent, op::add, dst, src);
+        emit_binary(src_loc_tk, indent, op::add, dst, src);
     }
 
     // adds 'index * scale' of 'value' to the register 'sum'
@@ -1489,10 +1491,10 @@ class machine_x86_64 final : public machine {
         emit_op(src_loc_tk, indent, op::cmp, dst_op, src_op);
     }
 
-    auto cmp(const size_t indent, const operand& dst, const operand& src)
-        -> void {
+    auto cmp_lowered(const token& src_loc_tk, const size_t indent,
+                     const operand& dst, const operand& src) -> void {
 
-        emit_binary(indent, op::cmp, dst, src);
+        emit_binary(src_loc_tk, indent, op::cmp, dst, src);
     }
 
     // a range 'index + count' may end at the array count
@@ -1502,7 +1504,8 @@ class machine_x86_64 final : public machine {
         -> void {
 
         if (reg_count.is_empty()) {
-            cmp(indent, reg_to_check, immediate(array_count));
+            cmp_lowered(src_loc_tk, indent, reg_to_check,
+                        immediate(array_count));
             return;
         }
 
@@ -1514,12 +1517,12 @@ class machine_x86_64 final : public machine {
         assert(reg_count.type_ref().size_bytes() == size_qword and
                reg_to_check.type_ref().size_bytes() == size_qword);
 
-        lea(indent, reg_top_idx,
+        lea(src_loc_tk, indent, reg_top_idx,
             operand::mem(reg_count.base_register(),
                          reg_to_check.base_register(), 1, 0,
                          builtin_type_i64()));
 
-        cmp(indent, reg_top_idx, immediate(array_count));
+        cmp_lowered(src_loc_tk, indent, reg_top_idx, immediate(array_count));
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
     }
 
@@ -1535,7 +1538,7 @@ class machine_x86_64 final : public machine {
         reserve_named_register(src_loc_tk, indent, "rcx", default_type());
 
         load_source_address(qword_register("rsi"));
-        lea(indent, qword_register("rdi"), dst);
+        lea(src_loc_tk, indent, qword_register("rdi"), dst);
         mov(src_loc_tk, indent, qword_register("rcx"), immediate(size_bytes));
 
         assembler_.instruction(indent, op::rep_movsb);
@@ -1551,10 +1554,11 @@ class machine_x86_64 final : public machine {
                                to_argument(src));
     }
 
-    auto emit_binary(const size_t indent, const op code, const operand& dst,
-                     const operand& src) -> void {
+    auto emit_binary(const token& src_loc_tk, const size_t indent,
+                     const op code, const operand& dst, const operand& src)
+        -> void {
 
-        with_lowered_addresses(token{}, indent, dst, src,
+        with_lowered_addresses(src_loc_tk, indent, dst, src,
                                [&](const operand& lowered_dst,
                                    const operand& lowered_src) -> void {
                                    emit(indent, code, lowered_dst, lowered_src);
@@ -1701,7 +1705,7 @@ class machine_x86_64 final : public machine {
         if (not divisor.is_immediate() and
             divisor.type_ref().size_bytes() == size_qword) {
 
-            idiv(indent, divisor);
+            idiv(src_loc_tk, indent, divisor);
             return;
         }
 
@@ -1710,15 +1714,15 @@ class machine_x86_64 final : public machine {
         };
 
         mov(src_loc_tk, indent, scratch_reg, divisor);
-        idiv(indent, scratch_reg);
+        idiv(src_loc_tk, indent, scratch_reg);
         free_scratch_register(src_loc_tk, indent, scratch_reg);
     }
 
-    auto emit_unary(const size_t indent, const op code, const operand& value)
-        -> void {
+    auto emit_unary(const token& src_loc_tk, const size_t indent, const op code,
+                    const operand& value) -> void {
 
         with_lowered_addresses(
-            token{}, indent, value, operand{},
+            src_loc_tk, indent, value, operand{},
             [&](const operand& lowered,
                 [[maybe_unused]] const operand& empty) -> void {
                 assembler_.instruction(indent, code, to_argument(lowered));
@@ -1768,8 +1772,10 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg_sx);
     }
 
-    auto idiv(const size_t indent, const operand& value) -> void {
-        emit_unary(indent, op::idiv, value);
+    auto idiv(const token& src_loc_tk, const size_t indent,
+              const operand& value) -> void {
+
+        emit_unary(src_loc_tk, indent, op::idiv, value);
     }
 
     template <std::integral value_t>
@@ -1783,8 +1789,10 @@ class machine_x86_64 final : public machine {
         emit_op(src_loc_tk, indent, op::imul, dst_op, src_op);
     }
 
-    auto inc(const size_t indent, const operand& dst) -> void {
-        emit_unary(indent, op::inc, dst);
+    auto inc(const token& src_loc_tk, const size_t indent, const operand& dst)
+        -> void {
+
+        emit_unary(src_loc_tk, indent, op::inc, dst);
     }
 
     auto io_syscall(const token& src_loc_tk, const size_t indent,
@@ -1806,11 +1814,12 @@ class machine_x86_64 final : public machine {
         invoke_syscall(indent);
     }
 
-    auto lea(const size_t indent, const operand& dst, const operand& address,
-             const bool explicit_displacement = false) -> void {
+    auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
+             const operand& address, const bool explicit_displacement = false)
+        -> void {
 
         with_lowered_addresses(
-            token{}, indent, dst, address,
+            src_loc_tk, indent, dst, address,
             [&](const operand& lowered_dst,
                 const operand& lowered_address) -> void {
                 assembler_.instruction(
@@ -1825,7 +1834,7 @@ class machine_x86_64 final : public machine {
                   const operand& dst, const operand& address) -> void {
 
         if (dst.is_register()) {
-            lea(indent, dst, address);
+            lea(src_loc_tk, indent, dst, address);
             return;
         }
 
@@ -1833,7 +1842,7 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        lea(indent, reg, address);
+        lea(src_loc_tk, indent, reg, address);
         mov(src_loc_tk, indent, dst, reg);
 
         free_scratch_register(src_loc_tk, indent, reg);
@@ -1907,7 +1916,7 @@ class machine_x86_64 final : public machine {
 
         // 'xor' is the shorter idiom but cannot target memory
         if (multiplier == 0 and product.is_register()) {
-            xor_op(indent, product, product);
+            xor_op(src_loc_tk, indent, product, product);
             return true;
         }
 
@@ -1922,7 +1931,7 @@ class machine_x86_64 final : public machine {
 
         // all low bits set is multiplication by minus one at this width
         if (multiplier == mask) {
-            neg(indent, product);
+            neg(src_loc_tk, indent, product);
             return true;
         }
 
@@ -1936,12 +1945,16 @@ class machine_x86_64 final : public machine {
         return true;
     }
 
-    auto neg(const size_t indent, const operand& value) -> void {
-        emit_unary(indent, op::neg, value);
+    auto neg(const token& src_loc_tk, const size_t indent, const operand& value)
+        -> void {
+
+        emit_unary(src_loc_tk, indent, op::neg, value);
     }
 
-    auto not_op(const size_t indent, const operand& value) -> void {
-        emit_unary(indent, op::not_op, value);
+    auto not_op(const token& src_loc_tk, const size_t indent,
+                const operand& value) -> void {
+
+        emit_unary(src_loc_tk, indent, op::not_op, value);
     }
 
     auto pop(const size_t indent, const operand& dst) -> void {
@@ -2041,7 +2054,8 @@ class machine_x86_64 final : public machine {
         }
 
         if (std::has_single_bit(element_size_bytes)) {
-            shl(indent, value, immediate(std::countr_zero(element_size_bytes)));
+            shl(src_loc_tk, indent, value,
+                immediate(std::countr_zero(element_size_bytes)));
             return;
         }
 
@@ -2053,21 +2067,21 @@ class machine_x86_64 final : public machine {
             std::ranges::count(allocations_, false, &allocation::named));
     }
 
-    auto setcc(const size_t indent, const condition cc, const operand& value)
-        -> void {
+    auto setcc(const token& src_loc_tk, const size_t indent, const condition cc,
+               const operand& value) -> void {
 
         with_lowered_addresses(
-            token{}, indent, value, operand{},
+            src_loc_tk, indent, value, operand{},
             [&](const operand& lowered,
                 [[maybe_unused]] const operand& empty) -> void {
                 assembler_.setcc(indent, cc, to_argument(lowered));
             });
     }
 
-    auto shl(const size_t indent, const operand& dst, const operand& src)
-        -> void {
+    auto shl(const token& src_loc_tk, const size_t indent, const operand& dst,
+             const operand& src) -> void {
 
-        emit_binary(indent, op::shl, dst, src);
+        emit_binary(src_loc_tk, indent, op::shl, dst, src);
     }
 
     [[nodiscard]] auto sized_memory(const operand& value,
@@ -2121,28 +2135,30 @@ class machine_x86_64 final : public machine {
         return std::format("{}:{}", line, col);
     }
 
-    auto store_comparison(const size_t indent,
+    auto store_comparison(const token& src_loc_tk, const size_t indent,
                           const std::string_view comparison,
                           const bool inverted, const operand& dst) -> void {
 
         if (dst.is_memory()) {
-            setcc(indent, condition_for_comparison(comparison, inverted),
+            setcc(src_loc_tk, indent,
+                  condition_for_comparison(comparison, inverted),
                   sized_memory(dst, size_byte));
 
             return;
         }
-        setcc(indent, condition_for_comparison(comparison, inverted), dst);
+        setcc(src_loc_tk, indent,
+              condition_for_comparison(comparison, inverted), dst);
     }
 
-    auto store_equal_result(const size_t indent, const operand& dst,
-                            const bool inverted) -> void {
+    auto store_equal_result(const token& src_loc_tk, const size_t indent,
+                            const operand& dst, const bool inverted) -> void {
 
         const condition cc{inverted ? condition::ne : condition::e};
         if (dst.is_register()) {
-            setcc(indent, cc, sized_register(dst, size_byte));
+            setcc(src_loc_tk, indent, cc, sized_register(dst, size_byte));
             return;
         }
-        setcc(indent, cc, sized_memory(dst, size_byte));
+        setcc(src_loc_tk, indent, cc, sized_memory(dst, size_byte));
     }
 
     auto store_immediate_part(const token& src_loc_tk, const size_t indent,
@@ -2159,10 +2175,10 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(indent, op::syscall);
     }
 
-    auto test(const size_t indent, const operand& dst, const operand& src)
-        -> void {
+    auto test(const token& src_loc_tk, const size_t indent, const operand& dst,
+              const operand& src) -> void {
 
-        emit_binary(indent, op::test, dst, src);
+        emit_binary(src_loc_tk, indent, op::test, dst, src);
     }
 
     [[noreturn]] auto throw_register_in_use(const token& src_loc_tk,
@@ -2229,10 +2245,10 @@ class machine_x86_64 final : public machine {
         unavailable_registers_ = saved_unavailable;
     }
 
-    auto xor_op(const size_t indent, const operand& dst, const operand& src)
-        -> void {
+    auto xor_op(const token& src_loc_tk, const size_t indent,
+                const operand& dst, const operand& src) -> void {
 
-        emit_binary(indent, op::xor_op, dst, src);
+        emit_binary(src_loc_tk, indent, op::xor_op, dst, src);
     }
 
     //

@@ -116,13 +116,15 @@ class stmt_builtin_arrays_equal final : public expression {
         lhs_.compile_address(tc, indent, tok(), lhs_info.lea_path,
                              count_register, x.memory_equal_left_register(),
                              [&](const operand& address) -> void {
-                                 x.set_memory_equal_left(indent, address);
+                                 x.set_memory_equal_left(tok(), indent,
+                                                         address);
                              });
 
         rhs_.compile_address(tc, indent, tok(), rhs_info.lea_path,
                              count_register, x.memory_equal_right_register(),
                              [&](const operand& address) -> void {
-                                 x.set_memory_equal_right(indent, address);
+                                 x.set_memory_equal_right(tok(), indent,
+                                                          address);
                              });
 
         x.end_arrays_equal(tok(), indent, lhs_info.type_ref().size_bytes(),

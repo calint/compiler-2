@@ -174,7 +174,7 @@ class stmt_builtin_convert final : public expression {
                                 const ident_info& dst_info) const -> void {
 
         arg_.compile(tc, indent, dst_info);
-        get_unary_ops().compile(tc, indent, dst_info.operand);
+        get_unary_ops().compile(tc, indent, tok(), dst_info.operand);
     }
 
     // the argument is computed at its own width and stored narrowed
@@ -191,7 +191,7 @@ class stmt_builtin_convert final : public expression {
 
         // '-' and '~' give the same low bits at any width, so the one store
         // also narrows their result
-        get_unary_ops().compile(tc, indent, wide);
+        get_unary_ops().compile(tc, indent, tok(), wide);
 
         x.copy_value(tok(), indent, dst_info.operand, wide);
         x.free_scratch_register(tok(), indent, wide);
