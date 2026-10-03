@@ -1,16 +1,21 @@
-#!/bin/bash
+#!/bin/sh
 # runs a flat rv32i image on the fpga emulator, the image is loaded at 0 and
 # the uart is the terminal
 # usage: run-rv32i-fpga.sh [prog-rv32i-fpga.bin]
 # the emulator exits with the program's exit code
 set -eu
+
+# resolve before changing directory since the argument is relative to the caller
+if [ $# -gt 0 ]; then
+    set -- "$(realpath "$1")"
+fi
+
 cd "$(dirname "$0")"
 
-# a given image is relative to the caller's directory
-IMAGE="$(realpath "${1:-$(dirname "$0")/prog-rv32i-fpga.bin}")"
+IMAGE="${1:-prog-rv32i-fpga.bin}"
 
 EMULATOR=fpga-emulator/osqa
-if [[ ! -x $EMULATOR ]]; then
+if [ ! -x "$EMULATOR" ]; then
     fpga-emulator/make.sh
 fi
 

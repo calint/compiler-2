@@ -1,7 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 # runs a flat rv32i image in qemu user mode by wrapping it unchanged in an elf
 # usage: run-rv32i-bin-as-elf.sh [prog-rv32i.bin] [vars size, the compiler's --vars]
 set -eu
+
+# resolve before changing directory since the argument is relative to the caller
+if [ $# -gt 0 ]; then
+    set -- "$(realpath "$1")"
+fi
+
 cd "$(dirname "$0")"
 
 IMAGE="$(realpath "${1:-prog-rv32i.bin}")"

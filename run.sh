@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/bin/sh
+set -eu
 cd "$(dirname "$0")"
 
 TARGET=x86_64
@@ -31,24 +31,24 @@ esac
 
 # rv32i-qemu and rv32i-fpga emit rv32i assembly
 RV32I=
-if [[ "$TARGET" == rv32i* ]]; then
-    RV32I=1
-fi
+case "$TARGET" in
+rv32i*) RV32I=1 ;;
+esac
 
 SEP="--------------------------------------------------------------------------------"
-echo $SEP
+echo "$SEP"
 printf './baz --checks=noub,line'
-printf ' %q' "$@"
+printf ' %s' "$@"
 printf '\n'
 # a '--checks' in the arguments replaces the default one
 ./baz --checks=noub,line "$@" >"$ASM"
-echo $SEP
+echo "$SEP"
 COMMENT=';'
-if [[ -n "$RV32I" ]]; then
+if [ -n "$RV32I" ]; then
     COMMENT='#'
 fi
 awk -v comment="$COMMENT" '$0 !~ "^[[:space:]]*" comment && $0 !~ /^[[:space:]]*$/ { print }' "$ASM" >"$ASM_NO_COMMENTS"
-if [[ -n "$RV32I" ]]; then
+if [ -n "$RV32I" ]; then
     awk '
 		/^[[:space:]]*[[:alpha:]][[:alnum:]]*[[:space:]]/ {
 			instructions++
@@ -62,11 +62,11 @@ else
     grep -E '^\s*jmp\s.*.*$' "$ASM" | wc | awk '{print "jmp: " $1}'
     grep -E '^\s*j[a-z]{1,2}\s' "$ASM" | grep -v '^\s*jmp\s' | wc | awk '{print "jcc: " $1}'
 fi
-echo $SEP
-if [[ "$TARGET" == rv32i-qemu || "$TARGET" == rv32i-fpga ]]; then
+echo "$SEP"
+if [ "$TARGET" = rv32i-qemu ] || [ "$TARGET" = rv32i-fpga ]; then
     # the compiler writes the image, no linking needed
     ls --color -la "$ASM" "$ASM_NO_COMMENTS" "$IMAGE"
-elif [[ "$TARGET" == rv32i ]]; then
+elif [ "$TARGET" = rv32i ]; then
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj "$ASM" -o "$OBJ"
     ld.lld -m elf32lriscv -e _start -o "$BIN" "$OBJ"
     ls --color -la "$ASM" "$ASM_NO_COMMENTS" "$BIN"
@@ -75,18 +75,18 @@ else
     ld -s -T baz.ld -o "$BIN" "$OBJ"
     ls --color -la "$ASM" "$ASM_NO_COMMENTS" "$BIN"
 fi
-echo $SEP
+echo "$SEP"
 
 set +e # don't stop at errors
-if [[ "$TARGET" == rv32i-qemu ]]; then
+if [ "$TARGET" = rv32i-qemu ]; then
     ./run-rv32i-qemu.sh "$IMAGE"
-elif [[ "$TARGET" == rv32i ]]; then
+elif [ "$TARGET" = rv32i ]; then
     qemu-riscv32 "$BIN"
-elif [[ "$TARGET" == rv32i-fpga ]]; then
+elif [ "$TARGET" = rv32i-fpga ]; then
     ./run-rv32i-fpga.sh "$IMAGE"
 else
     "$BIN"
 fi
 RET=$?
-echo $SEP
-echo returned: $RET
+echo "$SEP"
+echo "returned: $RET"
