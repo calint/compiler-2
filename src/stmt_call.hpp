@@ -769,6 +769,16 @@ class stmt_call : public expression {
             aliasing_signature(tc, dst_info, func),
         };
 
+        // note: what the body can reject depends only on which arguments are
+        //       the same variable, e.g. 'f(v, v, n)' but not 'f(v, w, n)',
+        //       and on which are a global, since the body may name that
+        //       global too, e.g. 'f(v, g, n)'; so 'f(v, w, n)' and
+        //       'f(x, y, z)' give the same result and are checked once
+        //
+        //       the call is added before its dry run, so the same kind of
+        //       call reached inside it, e.g. a recursive call, returns here;
+        //       the kinds are finitely many, so the nested dry runs end
+
         if (not signature or not tc.add_checked_noninline_call(*signature)) {
             return;
         }
