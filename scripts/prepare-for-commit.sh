@@ -1,11 +1,9 @@
 #!/bin/sh
-set -e
+set -eu
 cd "$(dirname "$0")"
 
 cd ..
 
-# echo fix const on everything
-# qa/lint/fix-source.py --apply
 echo clang tidy
 qa/lint/clang-tidy.sh fix
 echo organize source

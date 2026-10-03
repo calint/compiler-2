@@ -1,11 +1,11 @@
 #!/bin/sh
-set -e
+set -eu
 cd "$(dirname "$0")"
 
 cd ..
 
 TAG=$(date "+%Y-%m-%d--%H-%M")
-if [ -n "$1" ]; then
+if [ -n "${1:-}" ]; then
     TAG="${TAG}--$1"
 fi
 

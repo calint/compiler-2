@@ -1,18 +1,16 @@
 #!/bin/sh
-set -e
-cd $(dirname "$0")
-cd ..
-cd build
-rm -rf *
+set -eu
+cd "$(dirname "$0")"
+cd ../build
+rm -rf ./*
 cmake ..
 make
 cd ..
 SEP="--------------------------------------------------------------------------------"
-CMD="sudo perf record -g build/baz $@"
-echo $SEP
-echo $CMD
-echo $SEP
-$CMD >/dev/null
+echo "$SEP"
+echo "sudo perf record -g build/baz $*"
+echo "$SEP"
+sudo perf record -g build/baz "$@" >/dev/null
 sudo chmod +r perf.data
 echo
 perf report --stdio --no-children --sort symbol,overhead |
@@ -22,4 +20,4 @@ perf report --stdio --no-children --sort symbol,overhead |
   sort -t'%' -k1 -rn |
   tee perf-report.txt
 
-echo $SEP
+echo "$SEP"
