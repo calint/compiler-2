@@ -636,6 +636,8 @@ class machine_rv32i : public machine {
         assembler_.label(indent, "1");
         branch(indent, failure_label);
         assembler_.label(indent, "2");
+        free_scratch_register(src_loc_tk, indent, remaining);
+        free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 

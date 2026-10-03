@@ -431,9 +431,9 @@ main:
                 1:
                 j baz_frame_overflow
                 2:
-                # [1029:13] frame capacity check end
                 # [1029:13] free scratch register t3
                 # [1029:13] free scratch register t2
+                # [1029:13] frame capacity check end
                 # [1029:13] address of argument 'eid' to parameter 'cur_entity_id'
                 # [1029:13] allocate scratch register -> t2
                 addi t2, s0, -1888
@@ -3750,9 +3750,9 @@ main:
         1:
         j baz_frame_overflow
         2:
-        # [1062:9] frame capacity check end
         # [1062:9] free scratch register t1
         # [1062:9] free scratch register t0
+        # [1062:9] frame capacity check end
         # [1062:9] address of argument 'eid' to parameter 'cur_entity_id'
         # [1062:9] allocate scratch register -> t0
         addi t0, s0, -1892
