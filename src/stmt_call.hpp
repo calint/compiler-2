@@ -3,9 +3,11 @@
 //           2025-10-08
 //           2026-09-08
 
+#include <algorithm>
 #include <cassert>
 #include <format>
 #include <memory>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <string>
@@ -257,7 +259,7 @@ class stmt_call : public expression {
 
             if (is_result_checked and dst_info.is_var()) {
                 const std::optional<storage_conflict> conflict{
-                    shared_storage_conflict(tc, dst_info, info),
+                    shared_storage_conflict(dst_info, info),
                 };
 
                 if (conflict) {
@@ -279,7 +281,7 @@ class stmt_call : public expression {
                 }
 
                 const std::optional<storage_conflict> conflict{
-                    shared_storage_conflict(tc, other.info, info),
+                    shared_storage_conflict(other.info, info),
                 };
 
                 if (conflict and
@@ -440,6 +442,7 @@ class stmt_call : public expression {
                            const stmt_def_func& func) const -> void {
 
         assert_noninline_call(tc, dst_info, func);
+        check_noninline_aliasing(tc, indent, dst_info, func);
 
         machine& x{tc.machine()};
 
@@ -519,21 +522,6 @@ class stmt_call : public expression {
         return path.substr(0, path.find('.'));
     }
 
-    [[nodiscard]] static auto pointer_conflict(const std::string_view param,
-                                               const std::string_view global)
-        -> storage_conflict {
-
-        return {
-            .reason{
-                std::format("'{}' is a parameter of a 'noinline' function "
-                            "with unknown callers and may point into "
-                            "global '{}', see docs/noinline-aliasing.md",
-                            param, global),
-            },
-            .fix{std::format("copy '{}' to a local variable", param)},
-        };
-    }
-
     // the ranges are offsets into the variable the argument names, so they
     // are only comparable when both name the same one
     [[nodiscard]] static auto reach_disjoint_bytes(const expr_any& lhs,
@@ -558,8 +546,7 @@ class stmt_call : public expression {
 
     // compares resolved variable roots, so any overlap of fields or elements
     // counts as shared
-    [[nodiscard]] static auto shared_storage_conflict(const toc& tc,
-                                                      const ident_info& lhs,
+    [[nodiscard]] static auto shared_storage_conflict(const ident_info& lhs,
                                                       const ident_info& rhs)
         -> std::optional<storage_conflict> {
 
@@ -571,17 +558,6 @@ class stmt_call : public expression {
                 .reason{std::format("both name '{}'", lhs_root)},
                 .fix{"use a separate variable"},
             };
-        }
-
-        // a non-inline parameter points into its caller's storage, which can
-        // be a global the callee also names directly. two parameters cannot
-        // share storage because their own call site was checked
-        if (lhs.is_pointer and tc.is_global_var(rhs_root)) {
-            return pointer_conflict(lhs_root, rhs_root);
-        }
-
-        if (rhs.is_pointer and tc.is_global_var(lhs_root)) {
-            return pointer_conflict(rhs_root, lhs_root);
         }
 
         return std::nullopt;
@@ -607,6 +583,57 @@ class stmt_call : public expression {
         }
 
         e.add_call_frame(call_begin_token(), statement::trimmed_source(*this));
+    }
+
+    // the callee and which arguments are globals or the same local, the only
+    // facts the aliasing checks of the body depend on. empty when an argument
+    // is a parameter of the enclosing non-inline function, the calls of that
+    // function are checked with their own arguments
+    [[nodiscard]] auto aliasing_signature(const toc& tc,
+                                          const ident_info& dst_info,
+                                          const stmt_def_func& func) const
+        -> std::optional<std::string> {
+
+        std::vector<ident_info> infos;
+
+        if (func.returns()) {
+            infos.push_back(dst_info);
+        }
+
+        for (const expr_any& arg : args_) {
+            infos.push_back(tc.make_ident_info(arg));
+        }
+
+        std::string signature{func.name()};
+        std::vector<std::string_view> locals;
+
+        for (const ident_info& info : infos) {
+            if (info.is_pointer) {
+                return std::nullopt;
+            }
+
+            // a temporary shares storage with nothing
+            if (info.elem_path.empty()) {
+                signature += " temporary";
+                continue;
+            }
+
+            const std::string_view root{info.elem_path.front()};
+
+            if (tc.is_global_var(root)) {
+                signature += std::format(" global {}", root);
+                continue;
+            }
+
+            if (std::ranges::find(locals, root) == locals.end()) {
+                locals.push_back(root);
+            }
+
+            signature += std::format(
+                " local {}", std::ranges::find(locals, root) - locals.begin());
+        }
+
+        return signature;
     }
 
     // an argument reaches its parameter by reference, so a value that has no
@@ -730,6 +757,29 @@ class stmt_call : public expression {
     // the receiver of a method is written before the name
     [[nodiscard]] auto call_begin_token() const -> const token& {
         return is_method() ? args_.at(0).tok() : tok();
+    }
+
+    // the body is compiled once for all callers, so this call's aliasing is
+    // checked by compiling the body as an inline call and dropping the code
+    auto check_noninline_aliasing(toc& tc, const size_t indent,
+                                  const ident_info& dst_info,
+                                  const stmt_def_func& func) const -> void {
+
+        const std::optional<std::string> signature{
+            aliasing_signature(tc, dst_info, func),
+        };
+
+        if (not signature or not tc.add_checked_noninline_call(*signature)) {
+            return;
+        }
+
+        try {
+            tc.check_only(
+                [&] -> void { compile_inline(tc, indent, dst_info, func); });
+        } catch (compiler_exception& e) {
+            add_call_frame(e);
+            throw;
+        }
     }
 
     // the result address comes first, then one address per argument
@@ -1013,11 +1063,10 @@ class stmt_call : public expression {
     [[nodiscard]] auto is_inside_call(const compiler_exception& e) const
         -> bool {
 
-        // note: a callee is defined before its call, so a body error is not
-        //       located after the call
-        assert(e.start_index <= close_paren_tk_.end_index());
-
-        return e.start_index >= call_begin_token().start_index();
+        // note: a recursive call is checked inside its own body, so an error
+        //       can be located after the call
+        return e.start_index >= call_begin_token().start_index() and
+               e.start_index <= close_paren_tk_.end_index();
     }
 
     [[nodiscard]] auto is_method() const -> bool {

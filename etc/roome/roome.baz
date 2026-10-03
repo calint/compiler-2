@@ -957,17 +957,7 @@ dat str_action_new_entity = "en"
 
 # note: `noinline` because it unfolds into a lot of code and called from 2
 #       locations
-func noinline parse_input(cur_entity_id, tz mut tokenizer) {
-
-    # note: because this is a `noinline` its callers are unknown, so `eid` and
-    #       `tz` may point into globals such as `rooms` or `entities`. `eid`
-    #       and `tz` cannot share storage with each other (the call site is
-    #       checked) but an action that mutates a global must not receive an
-    #       `eid` that may point into it, copy `eid` to a local variable first,
-    #       see docs/noinline-aliasing.md
-
-    let eid = cur_entity_id
-
+func noinline parse_input(eid, tz mut tokenizer) {
     tz.first()
 
     if tz.is_str(str_action_go) {

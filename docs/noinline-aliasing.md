@@ -1,99 +1,54 @@
-# Aliasing and `noinline` parameters
+# Aliasing and `noinline` calls
 
-## The error
+## The rule
 
-```
-roome.baz:529:58: argument 1 'eid' may share storage with receiver
-    'rooms.array.entities' ('eid' is a parameter of a 'noinline' function with
-    unknown callers and may point into global 'rooms', see
-    docs/noinline-aliasing.md), copy 'eid' to a local variable
-roome.baz:970:9: called from 'action_go(eid, tz)'
-```
-
-The call at line 529, `rooms.array[to_room_id].entities.add(eid)`, hands `eid`
-to a function that mutates `rooms`. If `eid` lives inside `rooms`, the mutation
-can change `eid` while `add` still reads it.
-
-## Which names are involved
-
-The conflict is between the parameter and the global the callee writes to, not
-between two parameters:
-
-| pair                     | checked at | result                         |
-|--------------------------|------------|--------------------------------|
-| `eid`  vs. `tz`          | call site  | already proven distinct there  |
-| `eid`  vs. global `rooms`| callee     | unknown, rejected              |
-| `tz`   vs. global `rooms`| callee     | unknown, rejected if both used |
-
-`tz` is `mut`, but that is not what triggers this error: the receiver
-`rooms...entities` is the mutated side and `eid` is the argument.
-
-## Why `noinline` cannot know
-
-An inlined function is compiled at its call site, so the compiler sees the
-real variable behind every argument. A `noinline` function is compiled once and
-shared by all callers, so a parameter is only a pointer.
+A call to a `noinline` function is accepted when the same call would compile
+as an inline call. The compiler checks this at each call site by compiling the
+body with the real arguments and dropping the code, so the aliasing checks see
+the variables the arguments name:
 
 ```
-inlined: each call site is known
+var g = 2
 
-  caller A:  f(local_a)         f's 'eid' is 'local_a'   -> not in 'rooms'
-  caller B:  f(rooms...x)       f's 'eid' is 'rooms...x' -> in 'rooms'
-             (each copy is checked on its own)
+func swap_values(x mut, y mut) { ... }
 
+func noinline outer(a mut) {
+    swap_values(a, g)
+}
 
-noinline: one body, many callers
-
-  caller A:  f(local_a) ----+
-                            +--> f(eid)   'eid' is a pointer, to what?
-  caller B:  f(rooms...x) --+
-
-  memory
-  +---------------------------+   +-----------+
-  | global 'rooms'            |   | local_a   |
-  |  +------+------+------+   |   +-----------+
-  |  | ...  | x    | ...  |   |        ^
-  |  +------+------+------+   |        |
-  +--------------^------------+        |
-                 |                     |
-                 +---- 'eid' ----------+   one of these, unknown to f
+func main() {
+    var v = 1
+    outer(v)        # ok: 'a' is 'v', not 'g'
+    outer(g)        # error: 'a' and 'g' both name 'g'
+}
 ```
 
-Inside the body the compiler has to assume the worst case: `eid` points into
-`rooms`. Then:
-
 ```
-rooms.array[to_room_id].entities.add(eid)
-        \_____________  _________/     \_/
-                      \/                |
-          writes into 'rooms'      reads 'eid'
-
-   rooms: [ ... | entities[ a b c ] | ... ]
-                          ^
-                          'eid' may be one of a, b, c
-                          'add' shifts or overwrites them -> 'eid' changes
-                          while 'add' is still using it
+x.baz:12:20: argument 2 'g' may share storage with argument 1 'a' (both name
+    'g'), use a separate variable
+x.baz:17:5: called from 'outer(g)'
 ```
 
-Whether the caller really passes such an `eid` does not matter. The body is
-shared, so one possible caller is enough to reject it. A pointer to a global
-cannot be excluded without seeing every caller.
+## Why the check is per call
 
-## Fix
+The body of a `noinline` function is compiled once and shared by all callers,
+so a parameter is only a pointer in the generated code. Which variable it
+points to is known only at a call site. Checking there gives the exact answer
+for each caller.
 
-Copy the value into a local variable. A local is its own storage, so no
-callee write can reach it:
+## Details
 
-```
-let id = eid                           # 'id' cannot point into 'rooms'
-rooms.array[to_room_id].entities.add(id)
-```
-
-Copy whichever side is cheaper; for a scalar like `eid` this is a single move.
-A copy of the mutated global or of a large struct is rarely the better choice.
+- A call is checked once for each pattern of its arguments: which are globals
+  and which are the same local. Calls with the same pattern share the check.
+- A call inside a `noinline` body that passes a parameter of that body is
+  checked when the body's own callers are, with their arguments.
+- A recursive call has the same pattern as the call that started it, so it is
+  not checked again.
+- A `noinline` function that is never called is compiled for syntax and types
+  only, its aliasing is not checked.
+- The check compiles the body once more per pattern, the code is dropped.
 
 ## Related
 
-- Message source: `shared_storage_reason()` in `src/stmt_call.hpp`.
-- Example of the pattern in use: the note above `parse_input` in
-  `etc/roome/roome.baz`.
+- Source: `check_noninline_aliasing()` in `src/stmt_call.hpp` and
+  `toc::check_only()` in `src/toc.hpp`.

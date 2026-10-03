@@ -17,6 +17,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -666,6 +667,13 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         assembler_.define_constant(name, static_cast<int64_t>(value));
+    }
+
+    auto discard_lines(const std::function_ref<void()> emit) -> void override {
+
+        // buffered because comments are otherwise written as emitted
+        assembler_.emit_buffered(
+            [&] -> void { std::ignore = assembler_.capture(emit); });
     }
 
     auto divide(const token& src_loc_tk, const size_t indent,

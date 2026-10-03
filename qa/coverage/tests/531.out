@@ -1,2 +1,3 @@
 
-531.baz:11:21: argument 1 'value' may share storage with the result destination 'total' ('value' is a parameter of a 'noinline' function with unknown callers and may point into global 'total', see docs/noinline-aliasing.md), copy 'value' to a local variable
+531.baz:11:21: argument 1 'value' may share storage with the result destination 'total' (both name 'total'), use a separate variable
+531.baz:15:5: called from 'bump(total)'

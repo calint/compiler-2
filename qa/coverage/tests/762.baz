@@ -1,6 +1,6 @@
-# a global passed to a non-inline function that also names it shares storage
+# a global reaches a global named by a callee through two non-inline calls
 
-var g = 1
+var g = 2
 
 func swap_values(x mut, y mut) {
     var tmp = x
@@ -12,6 +12,10 @@ func noinline outer(a mut) {
     swap_values(a, g)
 }
 
+func noinline middle(b mut) {
+    outer(b)
+}
+
 func main() {
-    outer(g)
+    middle(g)
 }

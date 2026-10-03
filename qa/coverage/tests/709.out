@@ -1,2 +1,3 @@
 
-709.baz:12:20: argument 2 'g' may share storage with argument 1 'a' ('a' is a parameter of a 'noinline' function with unknown callers and may point into global 'g', see docs/noinline-aliasing.md), copy 'a' to a local variable
+709.baz:12:20: argument 2 'g' may share storage with argument 1 'a' (both name 'g'), use a separate variable
+709.baz:16:5: called from 'outer(g)'

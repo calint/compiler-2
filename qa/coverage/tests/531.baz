@@ -1,4 +1,4 @@
-# --checks=alias: a non-inline parameter may point to a global it also names
+# --checks=alias: a global passed to a non-inline function that also names it
 
 var total = 3
 

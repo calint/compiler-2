@@ -9,6 +9,7 @@
 #include <ranges>
 #include <span>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 #include "assembler_rv32i.hpp"
@@ -863,6 +864,13 @@ class machine_rv32i : public machine {
         assert(value <= std::numeric_limits<uint32_t>::max());
 
         assembler_.define_constant(name, static_cast<int64_t>(value));
+    }
+
+    auto discard_lines(const std::function_ref<void()> emit) -> void override {
+
+        // buffered because comments are otherwise written as emitted
+        assembler_.emit_buffered(
+            [&] -> void { std::ignore = assembler_.capture(emit); });
     }
 
     auto divide(const token& src_loc_tk, const size_t indent,

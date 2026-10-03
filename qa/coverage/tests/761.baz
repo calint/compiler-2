@@ -1,6 +1,6 @@
-# a global passed to a non-inline function that also names it shares storage
+# a non-inline parameter shares storage with a global only if a caller passes it
 
-var g = 1
+var g = 2
 
 func swap_values(x mut, y mut) {
     var tmp = x
@@ -13,5 +13,7 @@ func noinline outer(a mut) {
 }
 
 func main() {
-    outer(g)
+    var v = 1
+    outer(v)
+    exit(v * 10 + g)
 }

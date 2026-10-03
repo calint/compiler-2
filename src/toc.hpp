@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <ranges>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -232,6 +233,12 @@ class frame final {
             std::max(peak_storage_size_bytes_, size_bytes);
     }
 
+    auto restore_peak_storage_size_bytes(const size_t size_bytes) -> void {
+        assert(not storage_base_register_.empty());
+
+        peak_storage_size_bytes_ = size_bytes;
+    }
+
     auto set_padding_between_dats_and_vars(const size_t size_bytes) -> void {
         assert(stack_padding_size_bytes_ == 0);
 
@@ -300,6 +307,7 @@ class toc final {
     std::vector<const stmt_def_func*> func_defs_;
     std::vector<const statement*> data_;
     std::vector<machine::string_constant> string_constants_;
+    std::set<std::string> checked_noninline_calls_;
     lut<func_info> funcs_;
     lut<type_info> types_;
     const type* type_void_{};
@@ -316,6 +324,8 @@ class toc final {
     bool bounds_check_lower_{};
     bool frame_check_{};
     bool alias_check_{};
+    // the locals of a dry run live in the callee's own frame
+    bool capacity_unchecked_{};
 
   public:
     toc(::machine& backend, const std::string_view source,
@@ -340,6 +350,13 @@ class toc final {
 
         return add_read_only_constant("init", src_loc_tk,
                                       token::encode_string(bytes));
+    }
+
+    // false when the signature was already added, so a call is checked once
+    [[nodiscard]] auto add_checked_noninline_call(std::string signature)
+        -> bool {
+
+        return checked_noninline_calls_.insert(std::move(signature)).second;
     }
 
     auto add_const(const token& src_loc_tk, const size_t indent,
@@ -521,6 +538,34 @@ class toc final {
             .lower{bounds_check_lower_},
             .with_line{bounds_check_with_line_},
         };
+    }
+
+    // runs 'compile' for its errors only: its output, string constants and
+    // use of storage leave no trace
+    auto check_only(const std::function_ref<void()> compile) -> void {
+        frame* const storage_frame{find_storage_location(false).storage_frame};
+
+        const size_t max_frame_count{usage_max_frame_count_};
+        const size_t max_vars_size_bytes{usage_max_vars_size_bytes_};
+        const size_t string_constant_count{string_constants_.size()};
+        const bool was_capacity_unchecked{capacity_unchecked_};
+        const size_t peak_storage_size_bytes{
+            storage_frame ? storage_frame->peak_storage_size_bytes() : 0,
+        };
+
+        capacity_unchecked_ = true;
+
+        machine_.get().discard_output(compile);
+
+        capacity_unchecked_ = was_capacity_unchecked;
+        usage_max_frame_count_ = max_frame_count;
+        usage_max_vars_size_bytes_ = max_vars_size_bytes;
+        string_constants_.resize(string_constant_count);
+
+        if (storage_frame) {
+            storage_frame->restore_peak_storage_size_bytes(
+                peak_storage_size_bytes);
+        }
     }
 
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
@@ -1128,8 +1173,9 @@ class toc final {
                               const std::string_view name,
                               const size_t allocated_size_bytes) const -> void {
 
-        if (allocated_size_bytes <=
-            vars_capacity_bytes_ - used_vars_size_bytes()) {
+        if (capacity_unchecked_ or
+            allocated_size_bytes <=
+                vars_capacity_bytes_ - used_vars_size_bytes()) {
 
             return;
         }

@@ -1,0 +1,14 @@
+# a recursive non-inline call is checked once
+
+func noinline count_down(n mut) {
+    if n > 0 {
+        n = n - 1
+        count_down(n)
+    }
+}
+
+func main() {
+    var v = 3
+    count_down(v)
+    exit(v)
+}

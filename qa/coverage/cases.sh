@@ -1597,7 +1597,7 @@ SRC=529 && COMPERR
 # --checks=alias: an inline parameter resolves to the global it aliases
 SRC=530 && OPTS="$UB_ALIAS" COMPERR
 
-# --checks=alias: a non-inline parameter may point to a global it also names
+# --checks=alias: a global passed to a non-inline function that also names it
 SRC=531 && OPTS="$UB_ALIAS" COMPERR
 
 # --checks=alias: calls whose references cannot share storage are accepted
@@ -2185,7 +2185,7 @@ SRC=707 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower"
 # a constant count is range checked by the lower check alone
 SRC=708 && EXP=0 && RUN_ERR_OPTS "--vars=65536 --checks=lower"
 
-# a non-inline parameter and a global it also names may share storage
+# a global passed to a non-inline function that also names it shares storage
 SRC=709 && COMPERR
 
 # a constant passed to a mut parameter cannot be written
@@ -2340,3 +2340,12 @@ if [[ $MACHINE != x86_64 ]]; then SRC=759 && COMPERR; fi
 
 # a constant shift by zero changes nothing
 SRC=760 && EXP=5 && RUN
+
+# a non-inline parameter shares storage with a global only if a caller passes it
+SRC=761 && EXP=21 && RUN
+
+# a global reaches a global named by a callee through two non-inline calls
+SRC=762 && COMPERR
+
+# a recursive non-inline call is checked once
+SRC=763 && EXP=0 && RUN
