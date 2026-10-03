@@ -1010,15 +1010,13 @@ en me\n"
 # runs the lines of the script as the bare entity, a line ends with '\n'
 func run_creation_script(tz mut tokenizer) {
     var line_start = 0
-    var i = 0
-    loop {
-        if i == array_length(str_creation_script) break
-        if str_creation_script[i] == '\n' {
+    foo str_creation_script {
+        if e == '\n' {
             tz.set_line(str_creation_script, line_start, i - line_start)
-            parse_input(0, tz)
+            var cur_entity_id = 0
+            parse_input(cur_entity_id, tz)
             line_start = i + 1
         }
-        i = i + 1
     }
 }
 

@@ -250,13 +250,20 @@ class stmt_call : public expression {
                 continue;
             }
 
-            if (is_result_checked and dst_info.is_var() and
-                may_share_storage(tc, dst_info, info)) {
-                throw compiler_exception{
-                    arg.tok(),
-                    std::format("{} may share storage with the result "
-                                "destination, use a separate variable",
-                                describe_argument(i))};
+            if (is_result_checked and dst_info.is_var()) {
+                const std::optional<std::string> reason{
+                    shared_storage_reason(tc, dst_info, info),
+                };
+
+                if (reason) {
+                    throw compiler_exception{
+                        arg.tok(),
+                        std::format("{} '{}' may share storage with the "
+                                    "result destination '{}' ({}), use a "
+                                    "separate variable",
+                                    describe_argument(i), arg.identifier(),
+                                    dst_info.elem_path.front(), *reason)};
+                }
             }
 
             const bool is_read_only{func.param(i).is_read_only()};
@@ -266,15 +273,21 @@ class stmt_call : public expression {
                     continue;
                 }
 
-                if (may_share_storage(tc, other.info, info) and
+                const std::optional<std::string> reason{
+                    shared_storage_reason(tc, other.info, info),
+                };
+
+                if (reason and
                     not reach_disjoint_bytes(args_.at(other.index), arg)) {
 
                     throw compiler_exception{
                         arg.tok(),
-                        std::format("{} may share storage with {}, use a "
-                                    "separate variable",
-                                    describe_argument(i),
-                                    describe_argument(other.index))};
+                        std::format("{} '{}' may share storage with {} '{}' "
+                                    "({}), use a separate variable",
+                                    describe_argument(i), arg.identifier(),
+                                    describe_argument(other.index),
+                                    args_.at(other.index).identifier(),
+                                    *reason)};
                 }
             }
 
@@ -494,25 +507,39 @@ class stmt_call : public expression {
 
     // compares resolved variable roots, so any overlap of fields or elements
     // counts as shared
-    [[nodiscard]] static auto may_share_storage(const toc& tc,
-                                                const ident_info& lhs,
-                                                const ident_info& rhs) -> bool {
+    [[nodiscard]] static auto shared_storage_reason(const toc& tc,
+                                                    const ident_info& lhs,
+                                                    const ident_info& rhs)
+        -> std::optional<std::string> {
 
         const std::string_view lhs_root{lhs.elem_path.front()};
         const std::string_view rhs_root{rhs.elem_path.front()};
 
         if (lhs_root == rhs_root) {
-            return true;
+            return std::format("both name '{}'", lhs_root);
         }
 
         // a non-inline parameter points into its caller's storage, which can
         // be a global the callee also names directly. two parameters cannot
         // share storage because their own call site was checked
         if (lhs.is_pointer and tc.is_global_var(rhs_root)) {
-            return true;
+            return pointer_reason(lhs_root, rhs_root);
         }
 
-        return rhs.is_pointer and tc.is_global_var(lhs_root);
+        if (rhs.is_pointer and tc.is_global_var(lhs_root)) {
+            return pointer_reason(rhs_root, lhs_root);
+        }
+
+        return std::nullopt;
+    }
+
+    [[nodiscard]] static auto pointer_reason(const std::string_view param,
+                                             const std::string_view global)
+        -> std::string {
+
+        return std::format("'{}' is a non-inline parameter that may point "
+                           "into global '{}'",
+                           param, global);
     }
 
     // 'p' of 'p.x.y'

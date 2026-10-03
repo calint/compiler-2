@@ -1,2 +1,2 @@
 
-531.baz:11:21: argument 1 may share storage with the result destination, use a separate variable
+531.baz:11:21: argument 1 'value' may share storage with the result destination 'total' ('value' is a non-inline parameter that may point into global 'total'), use a separate variable

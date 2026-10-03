@@ -1,2 +1,2 @@
 
-527.baz:12:18: argument 1 may share storage with the result destination, use a separate variable
+527.baz:12:18: argument 1 'ps' may share storage with the result destination 'ps' (both name 'ps'), use a separate variable

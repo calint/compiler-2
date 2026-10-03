@@ -1,2 +1,2 @@
 
-709.baz:12:20: argument 2 may share storage with argument 1, use a separate variable
+709.baz:12:20: argument 2 'g' may share storage with argument 1 'a' ('a' is a non-inline parameter that may point into global 'g'), use a separate variable
