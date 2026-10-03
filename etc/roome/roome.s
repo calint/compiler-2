@@ -434,7 +434,7 @@ main:
                 # [1029:13] frame capacity check end
                 # [1029:13] free scratch register t3
                 # [1029:13] free scratch register t2
-                # [1029:13] address of argument 'eid' to parameter 'ceid'
+                # [1029:13] address of argument 'eid' to parameter 'cur_entity_id'
                 # [1029:13] allocate scratch register -> t2
                 addi t2, s0, -1888
                 sw t2, -1880(s0)
@@ -3753,7 +3753,7 @@ main:
         # [1062:9] frame capacity check end
         # [1062:9] free scratch register t1
         # [1062:9] free scratch register t0
-        # [1062:9] address of argument 'eid' to parameter 'ceid'
+        # [1062:9] address of argument 'eid' to parameter 'cur_entity_id'
         # [1062:9] allocate scratch register -> t0
         addi t0, s0, -1892
         sw t0, -1888(s0)
@@ -3852,17 +3852,17 @@ main:
     j loop.1051.5
     loop.1051.5.end:
 #
-# [960:15] noinline parse_input(ceid, tz mut tokenizer)
+# [960:15] noinline parse_input(cur_entity_id, tz mut tokenizer)
 func.parse_input:
 # allocate named register s1
     addi sp, sp, -16
     sw ra, 0(sp)
-    # [960:27] ceid: i32 (4 B @ [s1])
-    # [960:33] tz: tokenizer (140 B @ [s1 + 4])
-    # [965:5] var eid = ceid
+    # [960:27] cur_entity_id: i32 (4 B @ [s1])
+    # [960:42] tz: tokenizer (140 B @ [s1 + 4])
+    # [965:5] var eid = cur_entity_id
     # [965:9] eid: i32 (4 B @ [s1 + 8])
-    # [965:9] eid = ceid
-    # [965:15] ceid
+    # [965:9] eid = cur_entity_id
+    # [965:15] cur_entity_id
     # [965:15] allocate scratch register -> t0
     lw t0, 0(s1)
     # [965:15] allocate scratch register -> t1
