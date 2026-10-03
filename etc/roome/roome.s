@@ -3859,15 +3859,26 @@ func.parse_input:
     sw ra, 0(sp)
     # [960:27] ceid: i32 (4 B @ [s1])
     # [960:33] tz: tokenizer (140 B @ [s1 + 4])
-    # [961:8] tz.first()
-    # [961:5] allocate scratch register -> t0
+    # [965:5] var eid = ceid
+    # [965:9] eid: i32 (4 B @ [s1 + 8])
+    # [965:9] eid = ceid
+    # [965:15] ceid
+    # [965:15] allocate scratch register -> t0
+    lw t0, 0(s1)
+    # [965:15] allocate scratch register -> t1
+    lw t1, 0(t0)
+    sw t1, 8(s1)
+    # [965:15] free scratch register t1
+    # [965:15] free scratch register t0
+    # [967:8] tz.first()
+    # [967:5] allocate scratch register -> t0
     lw t0, 4(s1)
     # [423:10] mut tokenizer.first()
-    func.tokenizer.first.961.8:
-        # [961:8] alias self -> tz
+    func.tokenizer.first.967.8:
+        # [967:8] alias self -> tz
         # [424:10] self.skip_whitespace()
         # [410:10] mut tokenizer.skip_whitespace()
-        func.tokenizer.skip_whitespace.424.10.961.8:
+        func.tokenizer.skip_whitespace.424.10.967.8:
             # [424:10] alias self -> self
             # [411:5] self.start = self.end
             # [411:18] self.end
@@ -3876,19 +3887,19 @@ func.parse_input:
             sw t1, 132(t0)
             # [411:18] free scratch register t1
             # [412:5] label
-            loop.412.5.424.10.961.8:
-                if.413.12.424.10.961.8:
+            loop.412.5.424.10.967.8:
+                if.413.12.424.10.967.8:
                 # [413:12] ? self.start >= self.str.len
                 # [413:12] ? self.start >= self.str.len
-                cmp.413.12.424.10.961.8:
+                cmp.413.12.424.10.967.8:
                 # [413:12] allocate scratch register -> t1
                 lw t1, 132(t0)
                 # [413:12] allocate scratch register -> t2
                 lw t2, 128(t0)
-                blt t1, t2, if.413.9.424.10.961.8.end
+                blt t1, t2, if.413.9.424.10.967.8.end
                 # [413:12] free scratch register t2
                 # [413:12] free scratch register t1
-                if.413.12.424.10.961.8.code:
+                if.413.12.424.10.967.8.code:
                     # [414:13] self.end = self.start
                     # [414:24] self.start
                     # [414:24] allocate scratch register -> t1
@@ -3896,12 +3907,12 @@ func.parse_input:
                     sw t1, 136(t0)
                     # [414:24] free scratch register t1
                     # [415:13] return
-                    j func.tokenizer.skip_whitespace.424.10.961.8.end
-                if.413.9.424.10.961.8.end:
-                if.417.12.424.10.961.8:
+                    j func.tokenizer.skip_whitespace.424.10.967.8.end
+                if.413.9.424.10.967.8.end:
+                if.417.12.424.10.967.8:
                 # [417:12] ? self.str.array[self.start] != ' '
                 # [417:12] ? self.str.array[self.start] != ' '
-                cmp.417.12.424.10.961.8:
+                cmp.417.12.424.10.967.8:
                 # [417:27] allocate scratch register -> t1
                 # [417:27] set array index
                 # [417:27] self.start
@@ -3925,13 +3936,13 @@ func.parse_input:
                 lb t2, 0(t2)
                 # [417:12] allocate scratch register -> t3
                 li t3, 32
-                bne t2, t3, loop.412.5.424.10.961.8.end
+                bne t2, t3, loop.412.5.424.10.967.8.end
                 # [417:12] free scratch register t3
                 # [417:12] free scratch register t2
                 # [417:12] free scratch register t1
-                if.417.12.424.10.961.8.code:
+                if.417.12.424.10.967.8.code:
                     # [417:46] break
-                if.417.9.424.10.961.8.end:
+                if.417.9.424.10.967.8.end:
                 # [418:9] self.start = self.start + 1
                 # [418:22] self.start
                 # [418:22] self.start + 1
@@ -3941,15 +3952,15 @@ func.parse_input:
                 addi t1, t1, 1
                 sw t1, 132(t0)
                 # [418:22] free scratch register t1
-            j loop.412.5.424.10.961.8
-            loop.412.5.424.10.961.8.end:
+            j loop.412.5.424.10.967.8
+            loop.412.5.424.10.967.8.end:
             # [420:5] self.end = self.start
             # [420:16] self.start
             # [420:16] allocate scratch register -> t1
             lw t1, 132(t0)
             sw t1, 136(t0)
             # [420:16] free scratch register t1
-        func.tokenizer.skip_whitespace.424.10.961.8.end:
+        func.tokenizer.skip_whitespace.424.10.967.8.end:
         # [425:5] self.end = self.start
         # [425:16] self.start
         # [425:16] allocate scratch register -> t1
@@ -3957,25 +3968,25 @@ func.parse_input:
         sw t1, 136(t0)
         # [425:16] free scratch register t1
         # [426:5] label
-        loop.426.5.961.8:
-            if.427.12.961.8:
+        loop.426.5.967.8:
+            if.427.12.967.8:
             # [427:12] ? self.end >= self.str.len
             # [427:12] ? self.end >= self.str.len
-            cmp.427.12.961.8:
+            cmp.427.12.967.8:
             # [427:12] allocate scratch register -> t1
             lw t1, 136(t0)
             # [427:12] allocate scratch register -> t2
             lw t2, 128(t0)
-            bge t1, t2, loop.426.5.961.8.end
+            bge t1, t2, loop.426.5.967.8.end
             # [427:12] free scratch register t2
             # [427:12] free scratch register t1
-            if.427.12.961.8.code:
+            if.427.12.967.8.code:
                 # [427:37] break
-            if.427.9.961.8.end:
-            if.428.12.961.8:
+            if.427.9.967.8.end:
+            if.428.12.967.8:
             # [428:12] ? self.str.array[self.end] == ' '
             # [428:12] ? self.str.array[self.end] == ' '
-            cmp.428.12.961.8:
+            cmp.428.12.967.8:
             # [428:27] allocate scratch register -> t1
             # [428:27] set array index
             # [428:27] self.end
@@ -3999,13 +4010,13 @@ func.parse_input:
             lb t2, 0(t2)
             # [428:12] allocate scratch register -> t3
             li t3, 32
-            beq t2, t3, loop.426.5.961.8.end
+            beq t2, t3, loop.426.5.967.8.end
             # [428:12] free scratch register t3
             # [428:12] free scratch register t2
             # [428:12] free scratch register t1
-            if.428.12.961.8.code:
+            if.428.12.967.8.code:
                 # [428:44] break
-            if.428.9.961.8.end:
+            if.428.9.967.8.end:
             # [429:9] self.end = self.end + 1
             # [429:20] self.end
             # [429:20] self.end + 1
@@ -4015,21 +4026,10 @@ func.parse_input:
             addi t1, t1, 1
             sw t1, 136(t0)
             # [429:20] free scratch register t1
-        j loop.426.5.961.8
-        loop.426.5.961.8.end:
-        # [961:8] free scratch register t0
-    func.tokenizer.first.961.8.end:
-    # [963:5] var eid = ceid
-    # [963:9] eid: i32 (4 B @ [s1 + 8])
-    # [963:9] eid = ceid
-    # [963:15] ceid
-    # [963:15] allocate scratch register -> t0
-    lw t0, 0(s1)
-    # [963:15] allocate scratch register -> t1
-    lw t1, 0(t0)
-    sw t1, 8(s1)
-    # [963:15] free scratch register t1
-    # [963:15] free scratch register t0
+        j loop.426.5.967.8
+        loop.426.5.967.8.end:
+        # [967:8] free scratch register t0
+    func.tokenizer.first.967.8.end:
     if.969.8:
     # [969:8] ? tz.is_str(str_action_go)
     # [969:8] ? shorthand: tz.is_str(str_action_go)
