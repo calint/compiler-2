@@ -1,4 +1,7 @@
 #!/bin/sh
+# like 'test-all.sh' for the targets that need no qemu system or fpga emulator:
+# the compiler cases on x86_64 and rv32i, then 'test-cli.sh' and
+# 'test-arena.py'
 set -e
 
 cd "$(dirname "$0")"

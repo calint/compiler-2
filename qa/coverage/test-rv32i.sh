@@ -1,4 +1,9 @@
 #!/bin/sh
+# tests the RV32I backend with the driver 'test-rv32i-address.cpp': the driver
+# runs its host checks and prints test programs, which are assembled, linked
+# and executed under qemu, and their output and exit codes are compared
+#
+# usage: test-rv32i.sh
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -12,6 +17,8 @@ for tool in clang++ llvm-mc ld.lld qemu-riscv32; do
     }
 done
 
+# the main runtime program: instruction selection checked by execution, with
+# the read and write results compared with 'tests/434.out'
 printf 'rv32i address lowering: compiling backend tests\n'
 clang++ -std=c++26 -O3 -Wno-braced-scalar-init \
     "$SCRIPT_DIR/test-rv32i-address.cpp" -o "$TEST_DIR/generate"
@@ -23,6 +30,7 @@ ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
 printf 'rv32i address lowering: executing with QEMU\n'
 qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/434.in" > "$TEST_DIR/output"
 cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/434.out"
+# division by zero traps with SIGTRAP (qemu reports 133)
 printf 'rv32i arithmetic: checking division by zero trap\n'
 ld.lld -m elf32lriscv -e divide_by_zero -o "$TEST_DIR/divide-by-zero" "$TEST_DIR/test.o"
 ulimit -c 0
@@ -34,6 +42,7 @@ if [ "$status" -ne 133 ]; then
     exit 1
 fi
 printf 'rv32i arithmetic: division by zero trap: ok\n'
+# a failed bounds check prints 'panic: bounds at line N' and exits with 255
 printf 'rv32i bounds: checking diagnostic line numbers\n'
 for line in 0 9 123 4294967295; do
     ld.lld -m elf32lriscv -e "bounds_line_$line" -o "$TEST_DIR/bounds" "$TEST_DIR/test.o"
@@ -43,6 +52,8 @@ for line in 0 9 123 4294967295; do
     printf 'panic: bounds at line %s\n' "$line" > "$TEST_DIR/expected"
     cmp "$TEST_DIR/err" "$TEST_DIR/expected"
 done
+# the bounds matrix finishes without a failure, and the failure handler
+# without line information exits silently
 for mode in bounds-matrix bounds-silent; do
     printf 'rv32i bounds: %s\n' "$mode"
     "$TEST_DIR/generate" "$mode" > "$TEST_DIR/bounds.s"
@@ -59,6 +70,7 @@ for mode in bounds-matrix bounds-silent; do
     test ! -s "$TEST_DIR/err"
 done
 printf 'rv32i address lowering: ok\n'
+# every escape of a string literal reaches the output unchanged
 printf 'rv32i strings and write: compiling and executing\n'
 "$TEST_DIR/generate" strings-syscall > "$TEST_DIR/strings.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
@@ -68,6 +80,7 @@ qemu-riscv32 "$TEST_DIR/strings" > "$TEST_DIR/output"
 printf '\101\000\007\010\011\012\013\014\015\033\042\047\140\134\000\177\200\377\101\102' > "$TEST_DIR/expected"
 cmp "$TEST_DIR/output" "$TEST_DIR/expected"
 printf 'rv32i strings and write: ok\n'
+# 'equal', 'arrays_equal' and 'array_copy' on arrays of records
 printf 'rv32i bulk operations: compiling and executing\n'
 "$TEST_DIR/generate" bulk > "$TEST_DIR/bulk.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
@@ -75,6 +88,7 @@ llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/bulk" "$TEST_DIR/bulk.o"
 qemu-riscv32 "$TEST_DIR/bulk"
 printf 'rv32i bulk operations: ok\n'
+# a loop whose body does not fit in a branch
 printf 'rv32i array iteration: executing loop body larger than 4 KiB\n'
 "$TEST_DIR/generate" long-loop > "$TEST_DIR/long-loop.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
@@ -82,6 +96,8 @@ llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/long-loop" "$TEST_DIR/long-loop.o"
 timeout -k 1s 5s qemu-riscv32 "$TEST_DIR/long-loop"
 printf 'rv32i array iteration: long loop: ok\n'
+# jumps beyond the reach of 'j' (4 KiB) and 'jal' (1 MiB): the assembly has
+# the short and the long forms, and the program still works
 printf 'rv32i jumps: resolving and executing jumps beyond 4 KiB and 1 MiB\n'
 for mode in far-jumps far-jumps-optimized; do
     "$TEST_DIR/generate" "$mode" > "$TEST_DIR/far-jumps.s"
@@ -97,6 +113,7 @@ for mode in far-jumps far-jumps-optimized; do
     timeout -k 1s 20s qemu-riscv32 "$TEST_DIR/far-jumps"
 done
 printf 'rv32i jumps: far jumps: ok\n'
+# the same for the jumps that 'foo', 'if', 'break' and 'continue' generate
 printf 'rv32i jumps: compiling and executing foo, if, break and continue beyond 4 KiB and 1 MiB\n'
 for mode in far-foo far-foo-optimized; do
     "$TEST_DIR/generate" "$mode" > "$TEST_DIR/far-foo.s"
@@ -112,6 +129,7 @@ for mode in far-foo far-foo-optimized; do
     timeout -k 1s 20s qemu-riscv32 "$TEST_DIR/far-foo"
 done
 printf 'rv32i jumps: far foo: ok\n'
+# function calls keep the registers they must, and frame size checks
 for mode in noninline frame-checks; do
     printf 'rv32i functions: %s\n' "$mode"
     "$TEST_DIR/generate" "$mode" > "$TEST_DIR/functions.s"

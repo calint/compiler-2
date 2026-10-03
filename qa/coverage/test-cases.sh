@@ -1,4 +1,11 @@
 #!/bin/sh
+# runs the compiler cases of 'cases.sh' for one target, a simpler runner than
+# 'test-coverage.sh', and writes the coverage report
+#
+# usage: test-cases.sh [nobuild]
+#   nobuild  uses the existing compiler and writes no report
+#
+# the target is the variable MACHINE: x86_64 (default) or rv32i
 
 set -e
 

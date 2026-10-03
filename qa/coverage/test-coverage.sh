@@ -1,4 +1,15 @@
 #!/bin/bash
+# runs the compiler cases of 'cases.sh' for one target and builds the coverage
+# report from the profiles of all runs
+#
+# usage: test-coverage.sh [--target=x86|x86_64|rv32i|rv32i-qemu|rv32i-fpga]
+#                         clean|build|run|report
+#   clean   remove profiles, reports and generated files
+#   build   build the compiler with coverage and sanitizers
+#   run     run all cases for the target; x86_64 runs the program natively,
+#           rv32i under qemu user mode, rv32i-qemu in a qemu system with a
+#           uart, and rv32i-fpga in the fpga emulator
+#   report  merge the profiles into 'report/'
 
 set -e
 

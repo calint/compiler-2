@@ -1,4 +1,9 @@
 #!/bin/bash
+# checks the command line of the compiler: option values that are accepted or
+# rejected (the exit code is the expectation), the target selection, the
+# binary name, and the '--nopt' and '--reproduce-source' behavior
+#
+# usage: test-cli.sh
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
