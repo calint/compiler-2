@@ -1,4 +1,4 @@
-# a constant shift by a negative count is not folded
+# a constant shift by a negative count is not folded, rv32i rejects it
 
 let n = -1
 

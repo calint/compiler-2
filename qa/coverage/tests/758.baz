@@ -1,0 +1,7 @@
+# rv32i: a constant shift count of an 8-bit value must be below 8
+
+func main() {
+    var c = i8(1)
+    c = c << 8
+    exit(c)
+}

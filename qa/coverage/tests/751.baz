@@ -1,0 +1,10 @@
+# the largest constant shift counts of narrow values
+
+func main() {
+    var c = i8(1)
+    var d = i16(1)
+    c = c << 7
+    d = d << 15
+    d = d >> 15
+    exit(c + d + 130)
+}

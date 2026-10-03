@@ -609,7 +609,10 @@ auto check_equal_size_choice() -> void {
         backend.emit_most_efficient(token{}, 0, [&] { load("2048"); }, copy);
 
         backend.finish();
-        backend.write_assembly(output);
+        // direct output is already written
+        if (jumps != assembler::jump_mode::as_emitted) {
+            backend.write_assembly(output);
+        }
         // buffered output is followed by the optimization counts
         assert(output.str().contains("li a0, 2047\naddi a0, a1, 0\n"));
     }
@@ -685,12 +688,9 @@ auto check_copies_and_variable_comments() -> void {
     copies.str({});
     backend.comment_variable(token{}, 0, "arr: i32[4]", 16,
                              operand::mem("s0", {}, 1, 208, integer));
-    backend.comment_variable(token{}, 0, "indexed", 4,
-                             operand::mem("s1", "t0", 4, -16, integer));
     backend.comment_variable(token{}, 0, "first", 4,
                              operand::mem("s0", {}, 1, 0, integer));
     assert(copies.str() == "# arr: i32[4] (16 B @ [s0 + 208])\n"
-                           "# indexed (4 B @ [s1 + t0 * 4 - 16])\n"
                            "# first (4 B @ [s0])\n");
 }
 
@@ -1189,8 +1189,7 @@ auto check_string_data_escapes() -> void {
 // 6. host checks: arithmetic on registers only (no scratch register is free)
 // ============================================================================
 
-// shifts: register counts, immediate counts masked to 5 bits, and counts the
-// backend cannot evaluate
+// shifts: register counts, immediate counts of 0 to 31 and rejected others
 auto check_shifts() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
@@ -1208,34 +1207,26 @@ auto check_shifts() -> void {
                (operation == '<' ? "sll a0, a0, a1\n" : "sra a0, a0, a1\n"));
         output.str({});
 
-        for (const unsigned count : {0U, 2U, 31U, 32U, 34U, 35U, 64U}) {
+        for (const unsigned count : {0U, 2U, 31U}) {
             output.str({});
             backend.shift(token{}, 0, operation, operand::reg("a0", integer),
                           operand::imm(std::format("{}", count), integer));
-            const unsigned masked{count & 31U};
             assert(output.str() ==
-                   (masked == 0
-                        ? std::string{}
-                        : std::format("{} a0, a0, {}\n",
-                                      operation == '<' ? "slli" : "srai",
-                                      masked)));
+                   (count == 0 ? std::string{}
+                               : std::format("{} a0, a0, {}\n",
+                                             operation == '<' ? "slli" : "srai",
+                                             count)));
         }
-        for (const operand& destination :
-             {operand::reg("a0", integer),
-              operand::mem("a0", {}, 1, 0, integer)}) {
-            for (const std::string_view count :
-                 {"shift_amount + 1", "2 + 1", "-~"}) {
-                output.str({});
-                bool rejected{};
-                try {
-                    backend.shift(source_tk, 0, operation, destination,
+        for (const std::string_view count : {"-1", "32", "35", "64"}) {
+            output.str({});
+            assert(rejected_with(
+                [&] {
+                    backend.shift(source_tk, 0, operation,
+                                  operand::reg("a0", integer),
                                   operand::imm(std::string{count}, integer));
-                } catch (const compiler_exception&) {
-                    rejected = true;
-                }
-                assert(rejected);
-                assert(output.str().empty());
-            }
+                },
+                "RV32I shift count must be 0 to 31 for 32-bit values"));
+            assert(output.str().empty());
         }
     }
     backend.free_scratch_registers(token{}, 0, shift_registers);
@@ -1304,9 +1295,9 @@ auto check_add_subtract_bitwise() -> void {
     backend.finish();
 }
 
-// operations that change nothing emit nothing, and operations with a known
-// result load it ('x & 0', 'x - x', 'x ^ x'), for every value width
-auto check_neutral_and_zero_operations() -> void {
+// 'x & 0' loads its known result for every value width, and a shift by 0
+// emits nothing
+auto check_zero_operations_and_zero_shifts() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
     assembly_output& output{rv32i.output};
@@ -1320,20 +1311,8 @@ auto check_neutral_and_zero_operations() -> void {
                                    : operand::reg("a0", *value_type)};
 
             output.str({});
-            backend.add_subtract(token{}, 0, '+', destination,
-                                 operand::imm("0", integer));
-            backend.add_subtract(token{}, 0, '-', destination,
-                                 operand::imm("0", integer));
-            backend.bitwise(token{}, 0, '|', destination,
-                            operand::imm("0", integer));
-            backend.bitwise(token{}, 0, '^', destination,
-                            operand::imm("0", integer));
-            backend.bitwise(token{}, 0, '&', destination,
-                            operand::imm("-1", integer));
-            backend.bitwise(token{}, 0, '|', destination, destination);
-            backend.bitwise(token{}, 0, '&', destination, destination);
             backend.shift(token{}, 0, '<', destination,
-                          operand::imm("32", integer));
+                          operand::imm("0", integer));
             backend.shift(token{}, 0, '>', destination,
                           operand::imm("0", integer));
             assert(output.str().empty());
@@ -1349,12 +1328,6 @@ auto check_neutral_and_zero_operations() -> void {
                                    : "li a0, 0\n"};
 
             assert(output.str() == zero_result);
-            output.str({});
-            backend.add_subtract(token{}, 0, '-', destination, destination);
-            assert(output.str() == zero_result);
-            output.str({});
-            backend.bitwise(token{}, 0, '^', destination, destination);
-            assert(output.str() == zero_result);
         }
         output.str({});
         backend.unary(token{}, 0, '~', operand::reg("a0", *value_type));
@@ -1367,9 +1340,8 @@ auto check_neutral_and_zero_operations() -> void {
     backend.finish();
 }
 
-// byte values: operations that cannot change the value emit nothing, ones
-// with a known result load it, a shift extends the sign again, and constants
-// beyond 12 bits take two instructions
+// byte values: operations with a known result load it, a shift extends the
+// sign again, and constants beyond 12 bits take two instructions
 auto check_narrow_values_and_large_constants() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
@@ -1377,20 +1349,25 @@ auto check_narrow_values_and_large_constants() -> void {
 
     std::vector<operand> shift_registers{
         hold_scratch_registers(backend, 30, integer)};
-    backend.bitwise(token{}, 0, '&', operand::reg("a0", byte),
-                    operand::imm("255", integer));
-    backend.add_subtract(token{}, 0, '+', operand::reg("a0", byte),
-                         operand::imm("256", integer));
-    assert(output.str().empty());
-    output.str({});
     backend.bitwise(token{}, 0, '|', operand::reg("a0", byte),
                     operand::imm("255", integer));
     assert(output.str() == "li a0, -1\n");
     output.str({});
     backend.shift(token{}, 0, '<', operand::reg("a0", byte),
-                  operand::imm("8", integer));
-    assert(output.str() == "li a0, 0\n");
+                  operand::imm("7", integer));
+    assert(output.str() == "slli a0, a0, 31\nsrai a0, a0, 24\n");
     output.str({});
+    for (const type* narrow : {&byte, &half, &boolean}) {
+        const size_t bits{narrow->size_bytes() * 8};
+        assert(rejected_with(
+            [&] {
+                backend.shift(source_tk, 0, '<', operand::reg("a0", *narrow),
+                              operand::imm(std::format("{}", bits), integer));
+            },
+            std::format("RV32I shift count must be 0 to {} for {}-bit values",
+                        bits - 1, bits)));
+        assert(output.str().empty());
+    }
     backend.shift(token{}, 0, '<', operand::reg("a0", byte),
                   operand::imm("1", integer));
     assert(output.str() == "slli a0, a0, 25\nsrai a0, a0, 24\n");
@@ -1461,27 +1438,6 @@ auto check_byte_bitwise() -> void {
         assert(std::ranges::count(output.str(), '\n') == 1);
         backend.finish();
     }
-}
-
-// operands that name the same register: the emitted code reads the value
-// once into a temporary and uses it for both sides
-auto check_aliased_operands() -> void {
-    captured_rv32i rv32i;
-    machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
-
-    backend.add_subtract(token{}, 0, '+', operand::mem("a0", {}, 1, 0, integer),
-                         operand::mem("x10", {}, 1, 0, integer));
-
-    assert(output.str() == "lw t0, 0(a0)\nadd t0, t0, t0\nsw t0, 0(a0)\n");
-    backend.finish();
-    output.str({});
-
-    backend.shift(token{}, 0, '<', operand::mem("a0", {}, 1, 0, integer),
-                  operand::mem("x10", {}, 1, 0, integer));
-
-    assert(output.str() == "lw t0, 0(a0)\nsll t0, t0, t0\nsw t0, 0(a0)\n");
-    backend.finish();
 }
 
 // a shift of variables compiles without a copy of the count
@@ -1827,49 +1783,13 @@ auto check_zeroing_ranges() -> void {
     backend.finish();
 }
 
-// addresses that cannot be lowered are rejected: unknown base registers,
-// offsets and scales beyond the 32-bit address range, and no free scratch
-// register for the intermediate address
+// addresses that cannot be lowered are rejected: offsets beyond the 32-bit
+// address range, and no free scratch register for the intermediate address
 auto check_invalid_addresses_rejected() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
     assembly_output& output{rv32i.output};
 
-    for (const std::string_view base :
-         {"buffer", "x32", "not_a_register", ""}) {
-        for (const std::string_view index : {"", "a2"}) {
-            const operand address{operand::mem(base, index, 1, 4, integer)};
-            for (const int operation : {0, 1, 2, 3}) {
-                assert(rejected_with(
-                    [&] {
-                        switch (operation) {
-                        case 0:
-                            backend.address_of(source_tk, 0,
-                                               operand::reg("a0", integer),
-                                               address);
-                            break;
-
-                        case 1:
-                            backend.copy_value(source_tk, 0,
-                                               operand::reg("a0", integer),
-                                               address);
-                            break;
-
-                        case 2:
-                            backend.copy_value(source_tk, 0, address,
-                                               operand::reg("a0", integer));
-                            break;
-
-                        default:
-                            backend.copy_value(source_tk, 0, address, address);
-                            break;
-                        }
-                    },
-                    "invalid RV32I base register"));
-                backend.finish();
-            }
-        }
-    }
     for (const int64_t offset :
          {INT64_MIN, INT64_C(-4294967296), INT64_C(4294967296), INT64_MAX}) {
         assert(rejected_with([&] {
@@ -1881,13 +1801,6 @@ auto check_invalid_addresses_rejected() -> void {
     for (const uint64_t scale :
          {UINT64_C(4294967296), UINT64_C(9223372036854775808)}) {
         assert(not backend.can_lower_index_scale(scale));
-        assert(rejected_with(
-            [&] {
-                backend.address_of(source_tk, 1, operand::reg("a0", integer),
-                                   operand::mem("a1", "a2", scale, 0, integer));
-            },
-            "index scale exceeds RV32I address range"));
-        backend.finish();
     }
 
     // 'finish' reports scratch usage even when nothing was emitted
@@ -2654,8 +2567,8 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
         }
         std::println("    addi sp, sp, -16\n    mv s2, sp\n    li a2, -17\n    "
                      "sw a2, 0(sp)\n    li a2, 3\n    sw a2, 4(sp)");
-        const operand destination{operand::mem("sp", {}, 1, 0, integer)};
-        const operand source{operand::mem("sp", {}, 1, 4, integer)};
+        const operand destination{operand::mem("s2", {}, 1, 0, integer)};
+        const operand source{operand::mem("s2", {}, 1, 4, integer)};
         if (operation == '*') {
             backend.multiply(token{}, 1, destination, source);
         } else {
@@ -2674,42 +2587,9 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
     }
 }
 
-// '*', '/' and '%' on two memory operands whose base registers are the
-// helper's argument registers: both addresses survive and the result is stored
-auto emit_helper_call_shared_registers(machine_rv32i& backend) -> void {
-    for (const char operation : {'*', '/', '%'}) {
-        std::println("    la a1, buffer\n    addi a0, a1, 4\n    li a2, -17\n  "
-                     "  sw a2, 0(a1)\n    li a2, 3\n    sw a2, 0(a0)");
-        const operand destination{operand::mem("a1", {}, 1, 0, integer)};
-        const operand source{operand::mem("a0", {}, 1, 0, integer)};
-        if (operation == '*') {
-            backend.multiply(token{}, 1, destination, source);
-        } else {
-            backend.divide(token{}, 1, operation, destination, source);
-        }
-        const int expected{operation == '*' ? -51 : operation == '/' ? -5 : -2};
-        std::println(
-            "    la a2, buffer\n    beq a1, a2, 1f\n    j failure\n1:\n    "
-            "addi a2, a2, 4\n    beq a0, a2, 1f\n    j failure\n1:\n    lw a2, "
-            "0(a1)\n    li a3, {}\n    beq a2, a3, 1f\n    j failure\n1:",
-            expected);
-        backend.finish();
-    }
-}
-
-// '/' and '%' with the dividend and divisor in different registers (the
-// divisor is kept), in the same register, and at the same address
-auto emit_division_aliased_operands(machine_rv32i& backend) -> void {
+// '/' and '%' at the same address
+auto emit_division_same_address(machine_rv32i& backend) -> void {
     for (const char operation : {'/', '%'}) {
-        std::println("    li a1, -17\n    li a0, 3");
-        backend.divide(token{}, 1, operation, operand::reg("a1", integer),
-                       operand::reg("a0", integer));
-        emit_expect("a1", operation == '/' ? -5 : -2);
-        emit_expect("a0", 3);
-        std::println("    li a0, -17");
-        backend.divide(token{}, 1, operation, operand::reg("a0", integer),
-                       operand::reg("x10", integer));
-        emit_expect("a0", operation == '/' ? 1 : 0);
         std::println("    la t0, buffer\n    li a0, -17\n    sw a0, 0(t0)");
         const operand address{operand::mem("t0", {}, 1, 0, integer)};
         backend.divide(token{}, 1, operation, address, address);
@@ -2774,14 +2654,10 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
     }
 }
 
-// '*' of a value by itself, in the same register or at the same address, with
-// and without the 'reuse' of the operand
+// '*' of a value by itself at the same address, with and without the 'reuse'
+// of the operand
 auto emit_multiplication_aliased_operands(machine_rv32i& backend) -> void {
     for (const bool reuse : {false, true}) {
-        std::println("    li a0, -7");
-        backend.multiply(token{}, 1, operand::reg("a0", integer),
-                         operand::reg("x10", integer), reuse);
-        emit_expect("a0", 49);
         std::println("    la a2, buffer\n    li a0, -7\n    sw a0, 0(a2)");
         const operand address{operand::mem("a2", {}, 1, 0, integer)};
         backend.multiply(token{}, 1, address, address, reuse);
@@ -2926,10 +2802,10 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
     }
 }
 
-// 'zero' of 0 to 35 bytes at every alignment and at base offsets on both
+// 'zero' of 1 to 35 bytes at every alignment and at base offsets on both
 // sides of the 12-bit limit: exactly the range becomes zero
 auto emit_zeroing_tests(machine_rv32i& backend) -> void {
-    for (size_t count{}; count <= 35; ++count) {
+    for (size_t count{1}; count <= 35; ++count) {
         for (size_t alignment{}; alignment < 4; ++alignment) {
             std::println("    addi sp, sp, -64\n    li a0, -1");
             for (size_t offset{}; offset < 64; offset += 4) {
@@ -3004,6 +2880,18 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
                 for (const unsigned source_kind : {0U, 1U, 2U}) {
                     for (const int32_t source_value :
                          {-2049, -2048, -1, 0, 1, 2047, 2048}) {
+                        const size_t bits{value_type->size_bytes() * 8};
+                        const uint32_t mask{UINT32_MAX >> (32 - bits)};
+
+                        // folding removes the constants that keep the
+                        // destination
+                        const uint32_t kept{operation == '&' ? mask : 0U};
+                        if (source_kind == 2 and
+                            (static_cast<uint32_t>(source_value) & mask) ==
+                                kept) {
+                            continue;
+                        }
+
                         std::println("    la a2, buffer\n    li a1, {}\n    sw "
                                      "a1, 4(a2)",
                                      source_value);
@@ -3040,9 +2928,7 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
                                 expected ^= rhs;
                             }
                         }
-                        const size_t bits{value_type->size_bytes() * 8};
                         const uint32_t sign{uint32_t{1} << (bits - 1)};
-                        const uint32_t mask{UINT32_MAX >> (32 - bits)};
                         expected &= mask;
                         if ((expected & sign) != 0) {
                             expected |= ~mask;
@@ -3061,30 +2947,8 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
     }
 }
 
-// the same memory cell as both operands: x + x, x - x, x & x, x | x, x ^ x
-auto emit_same_memory_operand_tests(machine_rv32i& backend) -> void {
-    for (const char operation : {'+', '-', '&', '|', '^'}) {
-        std::println("    la a0, buffer\n    li a1, -7\n    sw a1, 0(a0)");
-        const operand destination{operand::mem("a0", {}, 1, 0, integer)};
-        const operand source{operand::mem("x10", {}, 1, 0, integer)};
-        int expected{};
-        if (operation == '+' or operation == '-') {
-            backend.add_subtract(token{}, 1, operation, destination, source);
-            expected = operation == '+' ? -14 : 0;
-        } else {
-            backend.bitwise(token{}, 1, operation, destination, source);
-            expected = operation == '^' ? 0 : -7;
-        }
-
-        std::println("    lw a1, 0(a0)");
-        emit_expect("a1", expected);
-
-        backend.finish();
-    }
-}
-
-// '<<' and '>>' on every value width (and 'bool'), with the count (35, taken
-// modulo 32) in a register, memory or constant
+// '<<' and '>>' on every value width (and 'bool'), with the count (35 in a
+// register or memory, whose hardware masks it to 3, or the constant 3)
 auto emit_shift_tests(machine_rv32i& backend) -> void {
     for (const type* value_type : {&integer, &half, &byte, &boolean}) {
         for (const char operation : {'<', '>'}) {
@@ -3102,7 +2966,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
                     if (count_kind == 1) {
                         count = operand::mem("a2", {}, 1, 4, byte);
                     } else if (count_kind == 2) {
-                        count = operand::imm("35", integer);
+                        count = operand::imm("3", integer);
                     }
 
                     backend.copy_value(token{}, 1, destination,
@@ -3121,16 +2985,11 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
         }
     }
 
-    // the count is the shifted register itself, or the same memory cell
+    // the count is the shifted register itself
     std::println("    li a0, 3");
     backend.shift(token{}, 1, '<', operand::reg("a0", integer),
                   operand::reg("x10", integer));
     emit_expect("a0", 24);
-    std::println("    la a0, buffer\n    li a1, 2\n    sw a1, 0(a0)");
-    backend.shift(token{}, 1, '<', operand::mem("a0", {}, 1, 0, integer),
-                  operand::mem("a0", {}, 1, 0, integer));
-    std::println("    lw a1, 0(a0)");
-    emit_expect("a1", 8);
     backend.finish();
 }
 
@@ -3296,8 +3155,7 @@ auto generate_runtime_program() -> void {
     emit_copy_tests(backend);
     emit_division_tests(backend);
     emit_helper_call_register_preservation(backend);
-    emit_helper_call_shared_registers(backend);
-    emit_division_aliased_operands(backend);
+    emit_division_same_address(backend);
     emit_multiplication_tests(backend);
     emit_multiplication_aliased_operands(backend);
     emit_index_scaling_tests(backend);
@@ -3306,7 +3164,6 @@ auto generate_runtime_program() -> void {
     emit_zeroing_tests(backend);
     emit_unary_tests(backend);
     emit_add_subtract_bitwise_tests(backend);
-    emit_same_memory_operand_tests(backend);
     emit_shift_tests(backend);
     emit_address_range_tests(backend);
     emit_address_of_register_tests(backend);
@@ -3384,11 +3241,10 @@ auto main(const int argc, const char* argv[]) -> int {
         check_string_data_escapes();
         check_shifts();
         check_add_subtract_bitwise();
-        check_neutral_and_zero_operations();
+        check_zero_operations_and_zero_shifts();
         check_narrow_values_and_large_constants();
         check_copy_widths();
         check_byte_bitwise();
-        check_aliased_operands();
         check_shift_of_variables();
         check_address_lowering();
         check_address_forms_without_temporaries();

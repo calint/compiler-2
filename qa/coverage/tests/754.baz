@@ -1,0 +1,34 @@
+# rv32i: a remainder keeps its result while loop registers are saved
+
+dat a = []{1, 2}
+
+func main() {
+    var x = 100
+    foo a {
+        foo a {
+            foo a {
+                foo a {
+                    foo a {
+                        foo a {
+                            foo a {
+                                foo a {
+                                    foo a {
+                                        foo a {
+                                            foo a {
+                                                foo a {
+                                                    x = x + 7
+                                                    x = x % (i + 3)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    exit(x + 1)
+}

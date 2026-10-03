@@ -1,0 +1,10 @@
+# x86: a constant shift count beyond the width is not folded
+
+func main() {
+    var zero = 0
+    if zero != 0 {
+        var c = 1 << 64
+        exit(c)
+    }
+    exit(7)
+}

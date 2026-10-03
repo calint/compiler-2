@@ -1,0 +1,7 @@
+# rv32i: a constant shift count of a 32-bit value must be below 32
+
+func main() {
+    var a = 1
+    a = a << 32
+    exit(a)
+}

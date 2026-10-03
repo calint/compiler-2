@@ -1,0 +1,7 @@
+# rv32i: a constant right shift count of a 16-bit value must be below 16
+
+func main() {
+    var d = i16(1)
+    d = d >> 16
+    exit(d)
+}

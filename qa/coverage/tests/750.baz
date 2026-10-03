@@ -1,0 +1,6 @@
+# rv32i: a 64-bit variable is wider than a register
+
+func main() {
+    var a = i64(6)
+    exit(1)
+}

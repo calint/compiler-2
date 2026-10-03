@@ -1,0 +1,10 @@
+# a range with a runtime start and count when only the upper limit is checked
+
+dat text = "ab\n"
+
+func main() {
+    var n = 2
+    var s = 1
+    write(1, text, n, s)
+    exit(0)
+}

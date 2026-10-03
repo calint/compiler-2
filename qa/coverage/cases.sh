@@ -2215,8 +2215,8 @@ SRC=717 && EXP=0 && RUN
 # a record value reads the whole destination after writing a field
 SRC=718 && COMPERR
 
-# a constant shift by a negative count is not folded
-SRC=719 && EXP=0 && RUN
+# a constant shift by a negative count is not folded, rv32i rejects it
+if [[ $MACHINE == x86_64 ]]; then SRC=719 && EXP=0 && RUN; else SRC=719 && COMPERR; fi
 
 # dat is only allowed in the global scope
 SRC=720 && COMPERR
@@ -2307,3 +2307,33 @@ if [[ $MACHINE == x86_64 ]]; then SRC=748 && COMPERR; fi
 
 # an unsupported escape after a line continuation is located on its own line
 SRC=749 && COMPERR
+
+# rv32i: a 64-bit variable is wider than a register
+if [[ $MACHINE != x86_64 ]]; then SRC=750 && COMPERR; fi
+
+# the largest constant shift counts of narrow values
+SRC=751 && EXP=1 && RUN
+
+# a sum with a constant that does not fit one immediate
+SRC=752 && EXP=3 && RUN
+
+# rv32i: loops nested so deeply that no scratch register is left for a far jump
+if [[ $MACHINE != x86_64 ]]; then SRC=753 && EXP=101 && RUN; fi
+
+# rv32i: a remainder keeps its result while loop registers are saved
+if [[ $MACHINE != x86_64 ]]; then SRC=754 && EXP=2 && RUN; fi
+
+# a range with a runtime start and count when only the upper limit is checked
+SRC=755 && EXP=0 && OPTS="--vars=262144 --checks=upper --reproduce-source" RUN
+
+# rv32i: a constant shift count of a 32-bit value must be below 32
+if [[ $MACHINE != x86_64 ]]; then SRC=756 && COMPERR; fi
+
+# x86: a constant shift count beyond the width is not folded
+if [[ $MACHINE == x86_64 ]]; then SRC=757 && EXP=7 && RUN; fi
+
+# rv32i: a constant shift count of an 8-bit value must be below 8
+if [[ $MACHINE != x86_64 ]]; then SRC=758 && COMPERR; fi
+
+# rv32i: a constant right shift count of a 16-bit value must be below 16
+if [[ $MACHINE != x86_64 ]]; then SRC=759 && COMPERR; fi

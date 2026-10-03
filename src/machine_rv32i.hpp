@@ -1157,7 +1157,7 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, product.type_ref());
         validate_scalar(src_loc_tk, factor.type_ref());
-        validate_destination_storage(src_loc_tk, product, "multiply");
+        validate_destination_storage(src_loc_tk, product);
 
         // validate memory operands even when a constant eliminates the
         // operation
@@ -1330,30 +1330,31 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_shift_operand(src_loc_tk, count);
-        validate_destination_storage(src_loc_tk, dst, "shift");
+        validate_destination_storage(src_loc_tk, dst);
 
         const std::optional<int32_t> constant{immediate_value(count)};
 
         // immediate shifts must be resolved here rather than by the assembler
-        if (count.is_immediate() and not constant.has_value()) {
-            throw compiler_exception{src_loc_tk,
-                                     "invalid RV32I immediate shift count"};
+        assert(not count.is_immediate() or constant.has_value());
+
+        const size_t bits{dst.type_ref().size_bytes() * 8};
+
+        if (constant.has_value() and
+            (*constant < 0 or std::cmp_greater_equal(*constant, bits))) {
+
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("RV32I shift count must be 0 to {} for {}-bit "
+                            "values",
+                            bits - 1, bits)};
+            // note: bits - 1 because the count is below the width
         }
 
         const uint32_t shift_count{
-            static_cast<uint32_t>(constant.value_or(0)) & 31U,
+            static_cast<uint32_t>(constant.value_or(0)),
         };
-        const size_t bits{dst.type_ref().size_bytes() * 8};
 
         if (constant.has_value() and shift_count == 0) {
-            return;
-        }
-
-        // every bit is shifted out
-        if (constant.has_value() and shift_count >= bits and
-            (operation == '<' or dst.type_ref().name() == "bool")) {
-
-            store_constant_result(src_loc_tk, indent, dst, 0);
             return;
         }
 
@@ -1492,10 +1493,8 @@ class machine_rv32i : public machine {
 
     // a named binary image is written together with the assembly source
     auto write_assembly(std::ostream& os) -> void override {
-        // written output was not kept to assemble
-        if (not assembler_.is_buffering()) {
-            return;
-        }
+        // a build buffers its output
+        assert(assembler_.is_buffering());
 
         // the check precedes any output so a failing build writes nothing
         assembler_.resolve_jumps();
@@ -1526,9 +1525,7 @@ class machine_rv32i : public machine {
               const operand& destination, const size_t size_bytes,
               const size_t alignment) -> void override {
 
-        if (size_bytes == 0) {
-            return;
-        }
+        assert(size_bytes != 0);
 
         const access_start start{start_of(destination, alignment)};
 
@@ -1639,10 +1636,9 @@ class machine_rv32i : public machine {
             narrowed_immediate(src, destination.type_ref()),
         };
 
-        if (constant.has_value() and
-            keeps_destination(instruction, *constant, width)) {
-            return;
-        }
+        // folding removes the operations that keep the destination
+        assert(not constant.has_value() or
+               not keeps_destination(instruction, *constant, width));
 
         if (constant.has_value() and
             yields_constant(instruction, *constant, width)) {
@@ -1659,19 +1655,8 @@ class machine_rv32i : public machine {
                  destination.type_ref().name() == src.type_ref().name()),
         };
 
-        // 'x & x' and 'x | x' are 'x'
-        if (identical and
-            (instruction == op::and_op or instruction == op::or_op)) {
-            return;
-        }
-
-        // 'x - x' and 'x ^ x' are 0
-        if (identical and
-            (instruction == op::sub or instruction == op::xor_op)) {
-
-            store_constant_result(src_loc_tk, indent, destination, 0);
-            return;
-        }
+        // folding removes the operations of a location with itself
+        assert(not identical);
 
         const address_scope scope{*this, destination, src};
 
@@ -1729,24 +1714,15 @@ class machine_rv32i : public machine {
             unavailable_registers_ |= register_mask(name);
         }
 
-        // stack operands must be read before the save area changes sp
-        const bool stack_operands{
-            uses_register(destination, "sp") or uses_register(source, "sp"),
-        };
-        operand left;
-        operand right;
-        if (stack_operands) {
-            left = alloc_scratch_register(src_loc_tk, indent, default_type());
-            right = alloc_scratch_register(src_loc_tk, indent, default_type());
-            copy_value(src_loc_tk, indent, left, destination);
-            copy_value(src_loc_tk, indent, right, source);
-        }
+        // variables and frames are based on 's0' and 's1', and the save area
+        // moves sp
+        assert(not uses_register(destination, "sp"));
+        assert(not uses_register(source, "sp"));
 
         // save caller values before argument setup overwrites a0 or a1
         const size_t stack_bytes{save_registers(indent, saved)};
 
-        load_helper_arguments(src_loc_tk, indent, destination, source, left,
-                              right);
+        load_helper_arguments(src_loc_tk, indent, destination, source);
 
         assembler_.call(indent, division ? ".Lbaz_divide" : ".Lbaz_multiply");
 
@@ -1755,7 +1731,7 @@ class machine_rv32i : public machine {
         };
 
         // the destination is not restored so it can retain the result
-        if (destination.is_register() and not stack_operands) {
+        if (destination.is_register()) {
             copy_value(src_loc_tk, indent, destination, result);
             restore_saved_registers(indent, saved, stack_bytes);
 
@@ -1763,7 +1739,7 @@ class machine_rv32i : public machine {
         }
 
         const operand kept{
-            preserved_helper_result(src_loc_tk, indent, result, left, saved),
+            preserved_helper_result(src_loc_tk, indent, result, saved),
         };
 
         restore_saved_registers(indent, saved, stack_bytes);
@@ -2778,8 +2754,7 @@ class machine_rv32i : public machine {
         }
 
         const operand right{
-            source_register(src_loc_tk, indent, destination, src, left,
-                            constant),
+            source_register(src_loc_tk, indent, destination, src, constant),
         };
 
         assembler_.register_op(indent, instruction, left.base_register(),
@@ -2963,10 +2938,8 @@ class machine_rv32i : public machine {
                                 const operand& left, const operand& right,
                                 const comparison_action& action) -> void {
 
-        // no target means the comparison result is discarded
-        if (action.target.empty()) {
-            return;
-        }
+        // a comparison without a boolean result is a branch
+        assert(not action.target.empty());
 
         const bool inverted{action.inverted != not action.branch_on_true};
 
@@ -3116,13 +3089,10 @@ class machine_rv32i : public machine {
             return result;
         }
 
-        if (register_index(right.base_register()) == 0) {
-            return left.base_register();
-        }
-
-        if (register_index(left.base_register()) == 0) {
-            return right.base_register();
-        }
+        // an operand that is not tested directly is in a register other than
+        // 'zero'
+        assert(register_index(left.base_register()) != 0 and
+               register_index(right.base_register()) != 0);
 
         // neither operand is zero and the constant did not fit
         assembler_.xor_op(indent, result, left.base_register(),
@@ -3200,49 +3170,19 @@ class machine_rv32i : public machine {
         };
     }
 
-    // writes 'destination' to a0 and 'source' to a1 without losing an input
+    // writes 'destination' to a0 and 'source' to a1
     auto load_helper_arguments(const token& src_loc_tk, const size_t indent,
                                const operand& destination,
-                               const operand& source,
-                               const operand& staged_destination,
-                               const operand& staged_source) -> void {
+                               const operand& source) -> void {
 
         const operand first_argument{operand::reg("a0", default_type())};
         const operand second_argument{operand::reg("a1", default_type())};
 
-        // stack operands were staged before the save area moved sp
-        if (not staged_destination.is_empty()) {
-            copy_value(src_loc_tk, indent, first_argument, staged_destination);
-            copy_value(src_loc_tk, indent, second_argument, staged_source);
+        // argument registers are allocated last, so no operand lives in a0
+        assert(not uses_register(source, "a0"));
 
-            return;
-        }
-
-        // the source does not need the old a0 so no staging is necessary
-        if (not uses_register(source, "a0")) {
-            copy_value(src_loc_tk, indent, first_argument, destination);
-            copy_value(src_loc_tk, indent, second_argument, source);
-
-            return;
-        }
-
-        // consume the source before loading the destination into a0
-        if (not uses_register(destination, "a1")) {
-            copy_value(src_loc_tk, indent, second_argument, source);
-            copy_value(src_loc_tk, indent, first_argument, destination);
-
-            return;
-        }
-
-        // neither argument can be written first without losing an input
-        const operand staged{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        copy_value(src_loc_tk, indent, staged, source);
         copy_value(src_loc_tk, indent, first_argument, destination);
-        copy_value(src_loc_tk, indent, second_argument, staged);
-        free_scratch_register(src_loc_tk, indent, staged);
+        copy_value(src_loc_tk, indent, second_argument, source);
     }
 
     auto load_into(const token& src_loc_tk, const size_t indent,
@@ -3274,15 +3214,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        // li materializes a constant using one or more RV32I instructions
-        if (src.is_immediate()) {
-            assembler_.li(
-                indent, value.base_register(),
-                assembler_rv32i::immediate::of_symbol(src.immediate()));
-
-            return;
-        }
-
+        // constants are stored by the caller
         std::unreachable();
     }
 
@@ -3501,7 +3433,7 @@ class machine_rv32i : public machine {
 
     // a register holding the result after the saved registers are restored
     auto preserved_helper_result(const token& src_loc_tk, const size_t indent,
-                                 const operand& result, const operand& staged,
+                                 const operand& result,
                                  const std::span<const std::string_view> saved)
         -> operand {
 
@@ -3509,15 +3441,13 @@ class machine_rv32i : public machine {
             std::ranges::find(saved, result.base_register()) != saved.end(),
         };
 
-        if (staged.is_empty() and not restored) {
+        if (not restored) {
             return result;
         }
 
-        // reuse stack staging or protect a result register being restored
+        // protect a result register being restored
         const operand kept{
-            staged.is_empty()
-                ? alloc_scratch_register(src_loc_tk, indent, default_type())
-                : staged,
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
         copy_value(src_loc_tk, indent, kept, result);
@@ -3658,7 +3588,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        // known counts already have rv32's five-bit shift semantics applied
+        // known counts are below the width of the value
         assembler_.immediate_op(indent, operation == '<' ? op::slli : op::srai,
                                 loaded.value.base_register(),
                                 loaded.value.base_register(), shift_count);
@@ -3673,8 +3603,7 @@ class machine_rv32i : public machine {
                            const loaded_destination& loaded) -> void {
 
         const operand amount{
-            source_register(src_loc_tk, indent, dst, count, loaded.value,
-                            std::nullopt),
+            source_register(src_loc_tk, indent, dst, count, std::nullopt),
         };
 
         assembler_.register_op(indent, operation == '<' ? op::sll : op::sra,
@@ -3686,15 +3615,12 @@ class machine_rv32i : public machine {
                                operation == '<');
     }
 
-    // 'left' already holds the source when both name the same memory
     auto source_register(const token& src_loc_tk, const size_t indent,
                          const operand& destination, const operand& src,
-                         const operand& left,
                          const std::optional<int32_t> constant) -> operand {
 
-        if (same_memory(destination, src)) {
-            return left;
-        }
+        // folding removes the operations of a location with itself
+        assert(not same_memory(destination, src));
 
         if (src.is_register()) {
             return src;
@@ -4147,9 +4073,8 @@ class machine_rv32i : public machine {
         const size_t index{register_index(result.base_register())};
 
         // 'zero' discards writes and 'sp' holds the stack
-        if (index == register_index("zero") or index == register_index("sp")) {
-            return false;
-        }
+        assert(index != register_index("zero") and
+               index != register_index("sp"));
 
         // writing the left value into one of the operands' registers would
         // destroy an address or the count before the walk is done with it; an
@@ -4172,9 +4097,7 @@ class machine_rv32i : public machine {
         const size_t dst_index{register_index(destination.base_register())};
 
         // zero discards writes, so it cannot hold the computed address
-        if (dst_index == 0) {
-            return false;
-        }
+        assert(dst_index != 0);
 
         const size_t base_index{register_index(address.base_register())};
 
@@ -4267,20 +4190,13 @@ class machine_rv32i : public machine {
     [[nodiscard]] static auto format_address(const operand& address)
         -> std::string {
 
-        std::string text{address.base_register()};
-        if (not address.index_register().empty()) {
-            if (not text.empty()) {
-                text += " + ";
-            }
-            text += address.index_register();
-            if (address.scale() > 1) {
-                text += std::format(" * {}", address.scale());
-            }
-        }
+        // variables and frames are addressed from a base register
+        assert(not address.base_register().empty());
+        assert(address.index_register().empty());
 
-        if (text.empty()) {
-            text = std::format("{}", address.displacement());
-        } else if (address.displacement() < 0) {
+        std::string text{address.base_register()};
+
+        if (address.displacement() < 0) {
             const uint64_t magnitude{
                 uint64_t{} - static_cast<uint64_t>(address.displacement()),
             };
@@ -4498,11 +4414,9 @@ class machine_rv32i : public machine {
                        (dst_type.name() == "bool");
         }
 
-        if (dst_type.name() == "bool") {
-            return *constant < 0 or
-                   std::cmp_greater(*constant,
-                                    std::numeric_limits<uint8_t>::max());
-        }
+        // a constant is narrowed to the width of a destination, a bool
+        // destination has no constant operand
+        assert(dst_type.name() != "bool");
 
         const int64_t limit{
             static_cast<int64_t>(uint64_t{1}
@@ -4762,45 +4676,27 @@ class machine_rv32i : public machine {
     static auto validate_address(const token& src_loc_tk,
                                  const operand& address) -> void {
 
-        if (not address.is_memory()) {
-            throw compiler_exception{src_loc_tk,
-                                     "RV32I requires a memory address"};
-        }
+        assert(address.is_memory());
+        assert(is_register(address.base_register()));
+        assert(address.index_register().empty() or
+               is_register(address.index_register()));
+
+        // an element size beyond the address range cannot be allocated
+        assert(address.index_register().empty() or
+               address.scale() <= UINT32_MAX);
 
         constexpr int64_t limit{std::numeric_limits<uint32_t>::max()};
         if (address.displacement() < -limit or address.displacement() > limit) {
             throw compiler_exception{
                 src_loc_tk, "address offset exceeds RV32I address range"};
         }
-
-        if (not is_register(address.base_register())) {
-            throw compiler_exception{src_loc_tk, "invalid RV32I base register"};
-        }
-
-        if (not address.index_register().empty() and
-            not is_register(address.index_register())) {
-            throw compiler_exception{src_loc_tk,
-                                     "invalid RV32I index register"};
-        }
-
-        if (not address.index_register().empty() and
-            address.scale() > UINT32_MAX) {
-            throw compiler_exception{src_loc_tk,
-                                     "index scale exceeds RV32I address range"};
-        }
     }
 
     // the result is written in place
     static auto validate_destination_storage(const token& src_loc_tk,
-                                             const operand& dst,
-                                             const std::string_view operation)
-        -> void {
+                                             const operand& dst) -> void {
 
-        if (not(dst.is_register() or dst.is_memory())) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("invalid RV32I {} destination", operation)};
-        }
+        assert(dst.is_register() or dst.is_memory());
 
         if (dst.is_memory()) {
             validate_address(src_loc_tk, dst);
