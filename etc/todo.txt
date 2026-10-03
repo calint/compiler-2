@@ -4,6 +4,9 @@ each open item starts with its difficulty: easy, medium or hard
 --------------------------------------------------------------------------------
 better assembler code, medium, largest gain first
 --------------------------------------------------------------------------------
+[ ] ai test suite in c++ being human readable
+[ ] "dat" replaced with "let"?
+[ ] any exception thrown needs a source location
 [ ] medium: roome.baz (2026-09-29): an inline bool call used as a condition is
     materialized then tested: x86 'sete r15b' ... 'cmp r15b, 0; je', rv32i
     'xor t0, t0, t1; sltiu t0, t0, 1; beq t0, zero' instead of

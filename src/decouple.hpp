@@ -100,9 +100,8 @@ class expr_any;
 }
 
 [[nodiscard]] inline auto address_offset(const size_t size_bytes) -> int64_t {
-    if (not std::in_range<int64_t>(size_bytes)) {
-        throw std::overflow_error{"address offset exceeds signed 64-bit range"};
-    }
+    // storage sizes are limited to the signed 64-bit range
+    assert(std::in_range<int64_t>(size_bytes));
 
     return static_cast<int64_t>(size_bytes);
 }
@@ -114,11 +113,9 @@ class expr_any;
 
     const int64_t size{address_offset(size_bytes)};
 
-    if (size != 0 and (count > std::numeric_limits<int64_t>::max() / size or
-                       count < std::numeric_limits<int64_t>::min() / size)) {
-
-        throw std::overflow_error{"address offset exceeds signed 64-bit range"};
-    }
+    // constant indices are bounds checked against the storage size
+    assert(size == 0 or (count <= std::numeric_limits<int64_t>::max() / size and
+                         count >= std::numeric_limits<int64_t>::min() / size));
 
     return count * size;
 }
@@ -126,11 +123,8 @@ class expr_any;
 [[nodiscard]] inline auto add_address_offset(const int64_t base,
                                              const int64_t offset) -> int64_t {
 
-    if ((offset > 0 and base > std::numeric_limits<int64_t>::max() - offset) or
-        (offset < 0 and base < std::numeric_limits<int64_t>::min() - offset)) {
-
-        throw std::overflow_error{"address offset overflow"};
-    }
+    assert(offset <= 0 or base <= std::numeric_limits<int64_t>::max() - offset);
+    assert(offset >= 0 or base >= std::numeric_limits<int64_t>::min() - offset);
 
     return base + offset;
 }
@@ -180,10 +174,6 @@ class operand {
         return kind_ == kind::immediate;
     }
 
-    [[nodiscard]] auto is_indexed() const -> bool {
-        return not index_register_.empty() or displacement_ != 0;
-    }
-
     [[nodiscard]] auto is_memory() const -> bool {
         return kind_ == kind::memory;
     }
@@ -213,9 +203,7 @@ class operand {
     [[nodiscard]] static auto imm(std::string value, const type& value_type)
         -> operand {
 
-        if (value.empty()) {
-            throw std::invalid_argument{"operand text must not be empty"};
-        }
+        assert(not value.empty());
 
         operand result;
         result.kind_ = kind::immediate;
@@ -232,10 +220,7 @@ class operand {
         -> operand {
 
         assert(std::has_single_bit(index_scale));
-
-        if (base.empty() and index.empty() and offset == 0) {
-            throw std::invalid_argument{"operand address must not be empty"};
-        }
+        assert(not base.empty() or not index.empty() or offset != 0);
 
         operand result;
         result.kind_ = kind::memory;
@@ -260,9 +245,7 @@ class operand {
     [[nodiscard]] static auto reg(const std::string_view name,
                                   const type& value_type) -> operand {
 
-        if (name.empty()) {
-            throw std::invalid_argument{"operand text must not be empty"};
-        }
+        assert(not name.empty());
 
         operand result;
         result.kind_ = kind::reg;

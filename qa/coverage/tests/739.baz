@@ -1,0 +1,7 @@
+# rv32i: data elements must be 1, 2 or 4 bytes
+
+dat d = i64[]{1, 2}
+
+func main() {
+    exit(0)
+}

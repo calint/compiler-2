@@ -132,11 +132,7 @@ class assembler_rv32i final : public assembler {
         [[nodiscard]] static auto checked_number(const integral_t value)
             -> int64_t {
 
-            if (not std::in_range<int64_t>(value)) {
-                throw panic_exception{
-                    std::format("immediate {} exceeds 64 bits", value),
-                };
-            }
+            assert(std::in_range<int64_t>(value));
 
             return static_cast<int64_t>(value);
         }
@@ -338,13 +334,6 @@ class assembler_rv32i final : public assembler {
                    alignment{.size_bytes{size_bytes}});
     }
 
-    auto and_op(const size_t indent, const std::string_view rd,
-                const std::string_view rs1, const std::string_view rs2)
-        -> void {
-
-        register_op(indent, op::and_op, rd, rs1, rs2);
-    }
-
     auto andi(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
 
@@ -379,13 +368,6 @@ class assembler_rv32i final : public assembler {
         branch_zero(indent, op::beqz, rs, target);
     }
 
-    auto bge(const size_t indent, const std::string_view rs1,
-             const std::string_view rs2, const std::string_view target)
-        -> void {
-
-        branch(indent, op::bge, rs1, rs2, target);
-    }
-
     auto bgeu(const size_t indent, const std::string_view rs1,
               const std::string_view rs2, const std::string_view target)
         -> void {
@@ -393,57 +375,10 @@ class assembler_rv32i final : public assembler {
         branch(indent, op::bgeu, rs1, rs2, target);
     }
 
-    auto bgez(const size_t indent, const std::string_view rs,
-              const std::string_view target) -> void {
-
-        branch_zero(indent, op::bgez, rs, target);
-    }
-
-    auto bgt(const size_t indent, const std::string_view rs1,
-             const std::string_view rs2, const std::string_view target)
-        -> void {
-
-        branch(indent, op::bgt, rs1, rs2, target);
-    }
-
-    auto bgtu(const size_t indent, const std::string_view rs1,
-              const std::string_view rs2, const std::string_view target)
-        -> void {
-
-        branch(indent, op::bgtu, rs1, rs2, target);
-    }
-
     auto bgtz(const size_t indent, const std::string_view rs,
               const std::string_view target) -> void {
 
         branch_zero(indent, op::bgtz, rs, target);
-    }
-
-    auto ble(const size_t indent, const std::string_view rs1,
-             const std::string_view rs2, const std::string_view target)
-        -> void {
-
-        branch(indent, op::ble, rs1, rs2, target);
-    }
-
-    auto bleu(const size_t indent, const std::string_view rs1,
-              const std::string_view rs2, const std::string_view target)
-        -> void {
-
-        branch(indent, op::bleu, rs1, rs2, target);
-    }
-
-    auto blez(const size_t indent, const std::string_view rs,
-              const std::string_view target) -> void {
-
-        branch_zero(indent, op::blez, rs, target);
-    }
-
-    auto blt(const size_t indent, const std::string_view rs1,
-             const std::string_view rs2, const std::string_view target)
-        -> void {
-
-        branch(indent, op::blt, rs1, rs2, target);
     }
 
     auto bltu(const size_t indent, const std::string_view rs1,
@@ -670,28 +605,10 @@ class assembler_rv32i final : public assembler {
                   std::format("{}{}:", indentation(indent), name));
     }
 
-    auto lb(const size_t indent, const std::string_view rd, immediate offset,
-            const std::string_view base) -> void {
-
-        load(indent, op::lb, rd, std::move(offset), base);
-    }
-
     auto lbu(const size_t indent, const std::string_view rd, immediate offset,
              const std::string_view base) -> void {
 
         load(indent, op::lbu, rd, std::move(offset), base);
-    }
-
-    auto lh(const size_t indent, const std::string_view rd, immediate offset,
-            const std::string_view base) -> void {
-
-        load(indent, op::lh, rd, std::move(offset), base);
-    }
-
-    auto lhu(const size_t indent, const std::string_view rd, immediate offset,
-             const std::string_view base) -> void {
-
-        load(indent, op::lhu, rd, std::move(offset), base);
     }
 
     auto li(const size_t indent, const std::string_view rd, immediate value)
@@ -891,18 +808,6 @@ class assembler_rv32i final : public assembler {
         store(indent, op::sb, src, std::move(offset), base);
     }
 
-    auto sh(const size_t indent, const std::string_view src, immediate offset,
-            const std::string_view base) -> void {
-
-        store(indent, op::sh, src, std::move(offset), base);
-    }
-
-    auto sll(const size_t indent, const std::string_view rd,
-             const std::string_view rs1, const std::string_view rs2) -> void {
-
-        register_op(indent, op::sll, rd, rs1, rs2);
-    }
-
     auto slli(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
 
@@ -933,22 +838,10 @@ class assembler_rv32i final : public assembler {
         register_op(indent, op::sltu, rd, rs1, rs2);
     }
 
-    auto sra(const size_t indent, const std::string_view rd,
-             const std::string_view rs1, const std::string_view rs2) -> void {
-
-        register_op(indent, op::sra, rd, rs1, rs2);
-    }
-
     auto srai(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
 
         immediate_op(indent, op::srai, rd, rs1, std::move(value));
-    }
-
-    auto srl(const size_t indent, const std::string_view rd,
-             const std::string_view rs1, const std::string_view rs2) -> void {
-
-        register_op(indent, op::srl, rd, rs1, rs2);
     }
 
     auto srli(const size_t indent, const std::string_view rd,
@@ -1172,9 +1065,8 @@ class assembler_rv32i final : public assembler {
         -> size_t override {
 
         const std::optional<size_t> size_bytes{line_size_bytes(text)};
-        if (not size_bytes) {
-            throw panic_exception{std::format("cannot size '{}'", text)};
-        }
+
+        assert(size_bytes);
 
         return *size_bytes;
     }
@@ -1192,10 +1084,7 @@ class assembler_rv32i final : public assembler {
     auto add_instruction(const size_t indent, instruction ins,
                          const spelling& names) -> void {
 
-        if (not has_valid_immediate(ins)) {
-            throw panic_exception{std::format("immediate out of range in '{}'",
-                                              instruction_text(ins, names))};
-        }
+        assert(has_valid_immediate(ins));
 
         std::string text{indentation(indent) + instruction_text(ins, names)};
 
@@ -1229,10 +1118,7 @@ class assembler_rv32i final : public assembler {
                         [](const int64_t v) -> bool { return v == 0; }),
             };
 
-            if (l.code_size != 0 or (data != nullptr and not is_zero_fill)) {
-                throw panic_exception{
-                    std::format("initialized bss content '{}'", trim(l.text))};
-            }
+            assert(l.code_size == 0 and (data == nullptr or is_zero_fill));
         }
     }
 
@@ -1292,10 +1178,8 @@ class assembler_rv32i final : public assembler {
         const jump_registers* const compared{
             std::get_if<jump_registers>(record_of(l)),
         };
-        if (compared == nullptr) {
-            throw panic_exception{
-                std::format("no registers for '{}'", trim(l.text))};
-        }
+
+        assert(compared != nullptr);
 
         if (reach_form == jump_reach::branch) {
             return {
@@ -1305,10 +1189,8 @@ class assembler_rv32i final : public assembler {
         }
 
         const std::optional<std::string_view> inverted{inverse(jump.mnemonic)};
-        if (not inverted) {
-            throw panic_exception{
-                std::format("no inverse for '{}'", jump.mnemonic)};
-        }
+
+        assert(inverted);
 
         // the inverted branch skips the jump that follows it
         std::vector<uint32_t> words{
@@ -1336,10 +1218,8 @@ class assembler_rv32i final : public assembler {
         }
 
         const instruction* const ins{std::get_if<instruction>(record_of(l))};
-        if (ins == nullptr) {
-            throw panic_exception{
-                std::format("no binary form for '{}'", trim(l.text))};
-        }
+
+        assert(ins != nullptr);
 
         return encode_instruction(*ins, line_index, address, symbols);
     }
@@ -1755,9 +1635,7 @@ class assembler_rv32i final : public assembler {
             return ".word";
 
         default:
-            throw panic_exception{
-                std::format("no rv32i data directive for {} byte elements",
-                            element_size_bytes)};
+            std::unreachable();
         }
     }
 
@@ -1772,10 +1650,7 @@ class assembler_rv32i final : public assembler {
                                             const uint8_t rs2,
                                             const int64_t offset) -> uint32_t {
 
-        if (not fits(offset, branch_min, branch_max) or offset % 2 != 0) {
-            throw panic_exception{
-                std::format("branch offset {} out of range", offset)};
-        }
+        assert(fits(offset, branch_min, branch_max) and offset % 2 == 0);
 
         const uint32_t bits{static_cast<uint32_t>(offset)};
         const uint32_t imm_12{((bits >> 12U) & 1U) << 31U};
@@ -1871,10 +1746,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto encode_jal(const uint8_t rd, const int64_t offset)
         -> uint32_t {
 
-        if (not fits(offset, jal_min, jal_max) or offset % 2 != 0) {
-            throw panic_exception{
-                std::format("jump offset {} out of range", offset)};
-        }
+        assert(fits(offset, jal_min, jal_max) and offset % 2 == 0);
 
         const uint32_t bits{static_cast<uint32_t>(offset)};
         const uint32_t imm_20{((bits >> 20U) & 1U) << 31U};
@@ -1943,10 +1815,7 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            if (operation != '~') {
-                throw panic_exception{
-                    std::format("unknown unary operation '{}'", operation)};
-            }
+            assert(operation == '~');
 
             bits = ~bits;
         }
@@ -1962,8 +1831,7 @@ class assembler_rv32i final : public assembler {
             }
         }
 
-        throw panic_exception{
-            std::format("unknown instruction '{}'", mnemonic)};
+        std::unreachable();
     }
 
     [[nodiscard]] static auto fits(const int64_t number, const int64_t min,
@@ -2450,9 +2318,8 @@ class assembler_rv32i final : public assembler {
         -> uint8_t {
 
         const std::optional<uint8_t> number{register_number(name)};
-        if (not number) {
-            throw panic_exception{std::format("unknown register '{}'", name)};
-        }
+
+        assert(number);
 
         return *number;
     }
@@ -2463,10 +2330,7 @@ class assembler_rv32i final : public assembler {
                                           const int64_t distance)
         -> std::vector<uint32_t> {
 
-        if (not std::in_range<int32_t>(distance)) {
-            throw panic_exception{
-                std::format("distance {} exceeds 2 GiB", distance)};
-        }
+        assert(std::in_range<int32_t>(distance));
 
         return {
             encode_upper(auipc_encoding, base, upper_part(distance)),

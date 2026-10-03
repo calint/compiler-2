@@ -109,6 +109,8 @@ Working agreements for AI sessions in this repository.
 - Duplicates become a named helper; split nested calls into named steps.
 - Plain lookup loops when ranges read worse.
 - Preserve behavior and cleanup when restructuring.
+- Code that user input cannot reach is dead code: turn it into an `assert` (or
+  remove it) instead of testing it; reachable code gets a test.
 
 ## Tools
 

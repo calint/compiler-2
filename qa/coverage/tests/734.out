@@ -1,0 +1,2 @@
+
+734.baz:8:31: cannot allocate register rcx because it was allocated at 8:5

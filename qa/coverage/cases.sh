@@ -737,3 +737,15 @@ SRC=728 && COMPERR
 SRC=729 && COMPERR
 SRC=730 && COMPERR
 SRC=731 && COMPERR
+if [[ $MACHINE == x86_64 ]]; then SRC=732 && COMPERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=733 && COMPERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=734 && COMPERR; fi
+SRC=735 && DIFF
+if [[ $MACHINE != x86_64 ]]; then SRC=736 && COMPERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=737 && COMPERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=738 && OPTS="--vars=65536" COMPERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=739 && COMPERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=740 && COMPERR; fi
+if [[ $MACHINE == rv32i ]]; then SRC=741 && OPTS="--vars=0x300000000" COMPERR; fi
+SRC=742 && EXP=7 && RUN
+SRC=743 && EXP=0 && RUN

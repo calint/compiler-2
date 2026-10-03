@@ -443,25 +443,6 @@ auto main(const int argc, const char* argv[]) -> int {
     const type byte{"i8", 1, true};
     const type boolean{"bool", 1, true};
     const type empty{"void", 0, true};
-    if (argc > 1 and std::string_view{argv[1]} == "x86-scales") {
-        machine_x86_64 backend{std::cout, {}};
-        backend.set_builtin_types(integer64, integer, half, byte);
-        std::println("bits 64\nsection .text\nglobal _start\n_start:");
-        for (const uint64_t scale : {UINT64_C(256), UINT64_C(4294967296),
-                                     UINT64_C(9223372036854775808)}) {
-            std::println("mov rax, 5\nmov rbx, 100\ncmp rax, rax");
-            backend.address_of(
-                token{}, 0, operand::reg("rcx", integer64),
-                operand::mem("rbx", "rax", scale, 40, integer64));
-            std::println("jnz failure\nmov rdx, {}\ncmp rcx, rdx\njne failure",
-                         uint64_t{140} + 5 * scale);
-        }
-        std::println("mov rax, 60\nxor rdi, rdi\nsyscall\nfailure:\nmov rax, "
-                     "60\nmov rdi, 1\nsyscall");
-        backend.finish();
-
-        return 0;
-    }
     {
         for (const auto [instruction, cost] :
              std::array<std::pair<std::string_view, size_t>, 13>{

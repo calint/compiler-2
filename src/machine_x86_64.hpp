@@ -996,9 +996,8 @@ class machine_x86_64 final : public machine {
         -> operand override {
 
         const size_t size_bytes{register_size_bytes(name)};
-        if (size_bytes == 0) {
-            throw std::invalid_argument{"unknown register"};
-        }
+
+        assert(size_bytes != 0);
 
         if (size_bytes == value_type.size_bytes()) {
             return operand::reg(name, value_type);
@@ -1331,9 +1330,8 @@ class machine_x86_64 final : public machine {
     allocated_register_type(const std::string_view name) const -> const type* {
 
         const size_t size_bytes{register_size_bytes(name)};
-        if (size_bytes == 0) {
-            return nullptr;
-        }
+
+        assert(size_bytes != 0);
 
         const std::string canonical_name{sized_register_name(name, size_qword)};
 
@@ -1384,10 +1382,6 @@ class machine_x86_64 final : public machine {
                 return size_byte;
             }
         }
-        if (name == "ah" or name == "bh" or name == "ch" or name == "dh") {
-
-            return size_byte;
-        }
 
         return 0;
     }
@@ -1409,41 +1403,16 @@ class machine_x86_64 final : public machine {
     }
 
     // adds 'index * scale' of 'value' to the register 'sum'
-    auto add_scaled_index(const token& src_loc_tk, const size_t indent,
-                          const std::string_view sum, const operand& value,
-                          std::vector<operand>& registers) -> void {
+    auto add_scaled_index(const size_t indent, const std::string_view sum,
+                          const operand& value) -> void {
 
-        if (value.index_register() != "rsp" and
-            can_lower_index_scale(value.scale())) {
+        // scratch index registers and encodable scales only
+        assert(value.index_register() != "rsp" and
+               can_lower_index_scale(value.scale()));
 
-            assembler_.instruction(
-                indent, op::lea, sum,
-                register_sum(sum, value.index_register(), value.scale()));
-
-            return;
-        }
-
-        const operand scaled{
-            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
-        };
-
-        registers.push_back(scaled);
-        const std::string_view multiple{scaled.base_register()};
-        assembler_.instruction(indent, op::mov, multiple,
-                               std::string_view{value.index_register()});
-
-        // adds the index times each set bit of the scale
-        for (uint64_t remaining{value.scale()}; remaining != 0;
-             remaining >>= 1U) {
-            if ((remaining & 1U) != 0) {
-                assembler_.instruction(indent, op::lea, sum,
-                                       register_sum(sum, multiple, 1));
-            }
-            if (remaining > 1) {
-                assembler_.instruction(indent, op::lea, multiple,
-                                       register_sum(multiple, multiple, 1));
-            }
-        }
+        assembler_.instruction(
+            indent, op::lea, sum,
+            register_sum(sum, value.index_register(), value.scale()));
     }
 
     [[nodiscard]] auto address_is_encodable(const operand& value) const
@@ -1536,21 +1505,14 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        // narrower registers need the widening copy of 'mov'
-        const bool is_qword_pair{
-            reg_count.type_ref().size_bytes() == size_qword and
-                reg_to_check.type_ref().size_bytes() == size_qword,
-        };
+        // index and count registers have the default type
+        assert(reg_count.type_ref().size_bytes() == size_qword and
+               reg_to_check.type_ref().size_bytes() == size_qword);
 
-        if (is_qword_pair) {
-            lea(indent, reg_top_idx,
-                operand::mem(reg_count.base_register(),
-                             reg_to_check.base_register(), 1, 0,
-                             builtin_type_i64()));
-        } else {
-            mov(src_loc_tk, indent, reg_top_idx, reg_count);
-            add(indent, reg_top_idx, reg_to_check);
-        }
+        lea(indent, reg_top_idx,
+            operand::mem(reg_count.base_register(),
+                         reg_to_check.base_register(), 1, 0,
+                         builtin_type_i64()));
 
         cmp(indent, reg_top_idx, immediate(array_count));
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
@@ -1894,7 +1856,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (not value.index_register().empty()) {
-            add_scaled_index(src_loc_tk, indent, sum, value, registers);
+            add_scaled_index(indent, sum, value);
         }
 
         return operand::mem(address.base_register(), {}, 1, 0,
@@ -2144,9 +2106,7 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        if (src_loc_tk.at_line() == 0) {
-            return "0:0";
-        }
+        assert(src_loc_tk.at_line() != 0);
 
         const auto [line, col]{
             line_and_col_num_for_char_index(src_loc_tk.at_line(),
@@ -2210,14 +2170,8 @@ class machine_x86_64 final : public machine {
                               &allocation::name),
         };
 
-        // an operation protecting its operands blocks it without an allocation
-        if (holder == allocations_.end()) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("cannot allocate register {} because an operand "
-                            "uses it",
-                            reg)};
-        }
+        // operands are protected only while lowering a single instruction
+        assert(holder != allocations_.end());
 
         // the last resort scratch registers are also needed by instructions
         if (not holder->named) {
@@ -2348,10 +2302,8 @@ class machine_x86_64 final : public machine {
 
         const std::optional<uint64_t> bits{immediate_bits(src)};
 
-        // symbolic immediates such as frame sizes are left to the assembler
-        if (not bits) {
-            return false;
-        }
+        // symbolic immediates such as frame sizes do not reach here
+        assert(bits);
 
         return not std::in_range<int32_t>(std::bit_cast<int64_t>(*bits));
     }
@@ -2401,9 +2353,9 @@ class machine_x86_64 final : public machine {
             return rhs.is_register() and
                    lhs.base_register() == rhs.base_register();
         }
-        if (lhs.is_immediate()) {
-            return rhs.is_immediate() and lhs.immediate() == rhs.immediate();
-        }
+
+        assert(not lhs.is_immediate());
+
         if (not lhs.is_memory() or not rhs.is_memory()) {
             return lhs.is_empty() and rhs.is_empty();
         }
@@ -2472,10 +2424,7 @@ class machine_x86_64 final : public machine {
         // map canonical 64-bit register names to size-specific aliases
         for (const register_names& names : register_names_) {
             if (name != names.qword and name != names.dword and
-                name != names.word and name != names.byte and
-                (name.size() != 2 or name.at(1) != 'h' or
-                 names.byte.size() != 2 or names.byte.at(1) != 'l' or
-                 name.at(0) != names.byte.at(0))) {
+                name != names.word and name != names.byte) {
                 continue;
             }
             switch (size_bytes) {

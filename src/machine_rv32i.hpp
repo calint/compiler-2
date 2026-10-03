@@ -300,21 +300,14 @@ class machine_rv32i : public machine {
                          const std::span<const std::string_view> clobbered)
         -> void {
 
-        std::vector<std::string_view> saved;
-        for (const std::string_view name : clobbered) {
-            if (is_register_allocated(name)) {
-                saved.push_back(name);
-            }
-        }
+        // the clobbered registers follow a1 and a2, which the call needs, in
+        // the allocation order, so they are free whenever the call is made
+        assert(std::ranges::none_of(clobbered,
+                                    [&](const std::string_view name) -> bool {
+                                        return is_register_allocated(name);
+                                    }));
 
-        if (saved.empty()) {
-            assembler_.call(indent, label, "a7");
-            return;
-        }
-
-        const size_t stack_bytes{save_registers(indent, saved)};
         assembler_.call(indent, label, "a7");
-        restore_saved_registers(indent, saved, stack_bytes);
     }
 
   public:
@@ -350,11 +343,9 @@ class machine_rv32i : public machine {
                     const operand& dst, const operand& address)
         -> void override {
 
-        if (not(dst.is_register() or dst.is_memory()) or
-            dst.type_ref().size_bytes() != 4) {
-            throw compiler_exception{
-                src_loc_tk, "RV32I address destination must be 32-bit storage"};
-        }
+        assert(dst.is_register() or dst.is_memory());
+        assert(dst.type_ref().size_bytes() == 4);
+
         const address_scope scope{*this, dst, address};
         const operand value{working_register(src_loc_tk, indent, dst)};
 
@@ -385,10 +376,8 @@ class machine_rv32i : public machine {
                                  const std::string_view loop_label)
         -> void override {
 
-        if (element_size_bytes > std::numeric_limits<uint32_t>::max()) {
-            throw compiler_exception{token{},
-                                     "array iteration exceeds RV32I range"};
-        }
+        // element sizes are limited by the variables that hold the arrays
+        assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
 
         const address_scope scope{*this, iterator, counter};
 
@@ -579,11 +568,9 @@ class machine_rv32i : public machine {
             return;
         }
 
-        if (array_count > std::numeric_limits<uint32_t>::max() or
-            src_loc_tk.at_line() > std::numeric_limits<uint32_t>::max()) {
-            throw compiler_exception{src_loc_tk,
-                                     "bounds check exceeds RV32I range"};
-        }
+        // array lengths are limited by the variables that hold the arrays
+        assert(array_count <= std::numeric_limits<uint32_t>::max() and
+               src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
 
         comment(src_loc_tk, indent, "bounds check begin");
         emit_bounds_check(src_loc_tk, indent, reg_to_check, array_count,
@@ -681,10 +668,8 @@ class machine_rv32i : public machine {
                         const operand& dst, const bool inverted = false)
         -> void override {
 
-        if (size_bytes > std::numeric_limits<uint32_t>::max()) {
-            throw compiler_exception{
-                src_loc_tk, "comparison size exceeds RV32I address range"};
-        }
+        // compared sizes are limited by the variables that hold the data
+        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
 
         // unrolled accesses can follow where each address is within its word
         const std::array<access_start, 2> starts{
@@ -781,9 +766,8 @@ class machine_rv32i : public machine {
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_scalar(src_loc_tk, src.type_ref());
 
-        if (not(dst.is_register() or dst.is_memory()) or src.is_empty()) {
-            throw compiler_exception{src_loc_tk, "invalid RV32I copy operands"};
-        }
+        assert(dst.is_register() or dst.is_memory());
+        assert(not src.is_empty());
 
         if (dst.is_memory()) {
             validate_address(src_loc_tk, dst);
@@ -867,9 +851,9 @@ class machine_rv32i : public machine {
     auto define_constant(const std::string_view name, const size_t value)
         -> void override {
 
-        if (value > std::numeric_limits<uint32_t>::max()) {
-            throw compiler_exception{token{}, "constant exceeds RV32I range"};
-        }
+        // frame sizes are limited by the variables that hold the frames
+        assert(value <= std::numeric_limits<uint32_t>::max());
+
         assembler_.define_constant(name, static_cast<int64_t>(value));
     }
 
@@ -881,11 +865,9 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_division_operand(src_loc_tk, divisor);
-        // division requires a writable quotient or remainder destination
-        if (not(dst.is_register() or dst.is_memory())) {
-            throw compiler_exception{src_loc_tk,
-                                     "invalid RV32I division destination"};
-        }
+
+        assert(dst.is_register() or dst.is_memory());
+
         divide_helper_used_ = true;
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor, true,
                                operation == '%');
@@ -1305,13 +1287,10 @@ class machine_rv32i : public machine {
                      const operand& index, const size_t element_size_bytes)
         -> void override {
 
-        // index scaling uses the target's address width
-        if (index.type_ref().size_bytes() != address_size_bytes() or
-            element_size_bytes > std::numeric_limits<uint32_t>::max()) {
-
-            throw compiler_exception{src_loc_tk,
-                                     "index scale exceeds RV32I address range"};
-        }
+        // index scaling uses the target's address width, element sizes are
+        // limited by the variables that hold the arrays
+        assert(index.type_ref().size_bytes() == address_size_bytes());
+        assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
 
         multiply(src_loc_tk, indent, index,
                  operand::imm(std::format("{}", element_size_bytes),
@@ -1428,10 +1407,9 @@ class machine_rv32i : public machine {
         assert(operation == '-' or operation == '~');
 
         validate_scalar(token{}, destination.type_ref());
-        if (not(destination.is_register() or destination.is_memory())) {
-            throw compiler_exception{token{},
-                                     "invalid RV32I unary destination"};
-        }
+
+        assert(destination.is_register() or destination.is_memory());
+
         const address_scope scope{*this, destination, operand{}};
 
         const loaded_destination loaded{
@@ -1633,10 +1611,9 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, destination.type_ref());
         validate_scalar(src_loc_tk, src.type_ref());
-        if (not(destination.is_register() or destination.is_memory())) {
-            throw compiler_exception{src_loc_tk,
-                                     "invalid RV32I operation destination"};
-        }
+
+        assert(destination.is_register() or destination.is_memory());
+
         if (destination.is_memory()) {
             validate_address(src_loc_tk, destination);
         }
@@ -3294,7 +3271,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        throw compiler_exception{src_loc_tk, "invalid RV32I copy source"};
+        std::unreachable();
     }
 
     // a register holding 'address'
@@ -4053,7 +4030,21 @@ class machine_rv32i : public machine {
         size_t count{};
         size_t offset{};
         while (offset < size_bytes) {
-            offset += aligned_width_at(size_bytes, offset, starts);
+            const size_t width{aligned_width_at(size_bytes, offset, starts)};
+
+            // a word access keeps every start word aligned, so whole words
+            // follow until fewer than a word remain
+            if (width == word_size_bytes_) {
+                const size_t word_count{
+                    (size_bytes - offset) / word_size_bytes_,
+                };
+
+                count += word_count;
+                offset += word_count * word_size_bytes_;
+                continue;
+            }
+
+            offset += width;
             ++count;
         }
 

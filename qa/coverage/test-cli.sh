@@ -127,6 +127,24 @@ CLI_CHECKS_NOUB() {
     echo ok
 }
 
+CLI_FILE_ERRORS() {
+    echo -n "cli unreadable source and unwritable image: "
+    set +e
+    "$BIN" missing-source.baz >gen.s 2>err
+    local exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "cannot open file 'missing-source.baz'" err
+    set +e
+    "$BIN" --target=rv32i --bin=missing-directory/gen-rv32i.bin 015.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    [[ ! -s gen.s ]]
+    grep -Fq "cannot write 'missing-directory/gen-rv32i.bin'" err
+    echo ok
+}
+
 CLI_FPGA_MEMORY() {
     echo -n "cli rv32i-fpga memory size: "
     local memory_size=$((0x800000)) stack_size=$((0x10000))
@@ -187,6 +205,7 @@ CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE
 CLI_JUMP_OPTIMIZATIONS
 CLI_CHECKS_NOUB
+CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

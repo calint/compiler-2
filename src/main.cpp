@@ -1,5 +1,6 @@
 // reviewed: 2025-09-29
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -485,12 +486,11 @@ default_binary_file_name(const std::string_view src_file_name,
             os, src, jumps, binary_file_name, stack_size_bytes);
     }
 
-    if (target == "rv32i-fpga") {
-        return std::make_unique<machine_rv32i_fpga>(
-            os, src, jumps, binary_file_name, stack_size_bytes);
-    }
+    // the command line accepts only these four targets
+    assert(target == "rv32i-fpga");
 
-    throw panic_exception{std::format("unknown target '{}'", target)};
+    return std::make_unique<machine_rv32i_fpga>(
+        os, src, jumps, binary_file_name, stack_size_bytes);
 }
 
 // every command line error ends with the same hint

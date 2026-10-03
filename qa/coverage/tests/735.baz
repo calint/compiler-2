@@ -1,0 +1,15 @@
+# a system call inside nested loops keeps the loop register 'r11' of x86
+
+dat a = i8[]{65, 10}
+
+func main() {
+    foo a {
+        foo a {
+            foo a {
+                foo a {
+                    write(1, a, 2)
+                }
+            }
+        }
+    }
+}

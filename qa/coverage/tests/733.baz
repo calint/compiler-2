@@ -1,0 +1,22 @@
+# x86: a loop counter held in 'rax' cannot be a divisor
+
+dat a = []{1, 2}
+
+func main() {
+    var x = 100
+    foo a {
+        foo a {
+            foo a {
+                foo a {
+                    foo a {
+                        foo a {
+                            foo a {
+                                x = x / i
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

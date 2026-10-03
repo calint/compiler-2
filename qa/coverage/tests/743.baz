@@ -1,0 +1,9 @@
+# and with zero and or with all bits yield constants
+
+func main() {
+    var a = 5
+    var b = 6
+    a = a & 0
+    b = b | -1
+    exit(a + b + 1)
+}
