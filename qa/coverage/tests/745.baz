@@ -1,0 +1,6 @@
+# a record field whose size exceeds the signed 64-bit range
+
+type big { a i64[4611686018427387904] }
+
+func main() {
+}

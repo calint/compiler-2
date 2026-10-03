@@ -438,11 +438,8 @@ class expr_any final : public statement {
             token::decode_string(string_tk_.string_text()),
         };
 
-        if (not bytes) {
-            throw compiler_exception{
-                string_tk_, std::format("unsupported escape in string \"{}\"",
-                                        string_tk_.text())};
-        }
+        // the tokenizer rejects unsupported escapes
+        assert(bytes);
 
         const size_t size_bytes{bytes->size()};
 

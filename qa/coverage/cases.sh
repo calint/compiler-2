@@ -745,7 +745,12 @@ if [[ $MACHINE != x86_64 ]]; then SRC=736 && COMPERR; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=737 && COMPERR; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=738 && OPTS="--vars=65536" COMPERR; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=739 && COMPERR; fi
-if [[ $MACHINE != x86_64 ]]; then SRC=740 && COMPERR; fi
+SRC=740 && COMPERR
 if [[ $MACHINE == rv32i ]]; then SRC=741 && OPTS="--vars=0x300000000" COMPERR; fi
 SRC=742 && EXP=7 && RUN
 SRC=743 && EXP=0 && RUN
+SRC=744 && COMPERR
+SRC=745 && COMPERR
+SRC=746 && COMPERR
+SRC=747 && COMPERR
+if [[ $MACHINE == x86_64 ]]; then SRC=748 && COMPERR; fi

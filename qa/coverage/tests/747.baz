@@ -1,0 +1,7 @@
+# data arrays whose sizes together exceed the signed 64-bit range
+
+dat a = i8[4611686018427387904]{}
+dat b = i8[4611686018427387904]{}
+
+func main() {
+}

@@ -628,7 +628,7 @@ class stmt_identifier : public statement {
 
         return {
             .offset{access_range_.offset},
-            .size_bytes{storage_size_bytes(info)},
+            .size_bytes{storage_size_bytes(tok(), info)},
         };
     }
 
@@ -955,14 +955,15 @@ class stmt_identifier : public statement {
         return storage.operand;
     }
 
-    [[nodiscard]] static auto storage_size_bytes(const ident_info& info)
+    [[nodiscard]] static auto storage_size_bytes(const token& src_loc_tk,
+                                                 const ident_info& info)
         -> size_t {
 
         if (not info.is_array) {
             return info.type_ref().size_bytes();
         }
 
-        return multiply_storage_size(info.type_ref().size_bytes(),
+        return multiply_storage_size(src_loc_tk, info.type_ref().size_bytes(),
                                      info.array_len);
     }
 };

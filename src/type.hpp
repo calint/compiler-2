@@ -72,7 +72,7 @@ class type final {
             //       loop
 
             const type_field& tf{tp->field(src_loc_tk, field_name)};
-            offset = add_storage_size(offset, tf.offset);
+            offset = sum_storage_size(offset, tf.offset);
             tp = tf.type_ptr;
             is_array = tf.is_array;
             array_count = tf.array_count;
@@ -107,11 +107,13 @@ class type final {
 
     // fields are placed at offsets aligned to their type and the size is
     // rounded up so that array elements stay aligned
-    auto add_field(const std::string_view name, const type& tp,
-                   const bool is_array, const size_t array_count) -> void {
+    auto add_field(const token& src_loc_tk, const std::string_view name,
+                   const type& tp, const bool is_array,
+                   const size_t array_count) -> void {
 
         const size_t total_size_bytes{
-            multiply_storage_size(tp.size_bytes_, is_array ? array_count : 1),
+            multiply_storage_size(src_loc_tk, tp.size_bytes_,
+                                  is_array ? array_count : 1),
         };
 
         const size_t offset{
@@ -121,7 +123,8 @@ class type final {
         fields_.emplace_back(std::string{name}, &tp, offset, total_size_bytes,
                              array_count, is_array);
 
-        fields_end_bytes_ = add_storage_size(offset, total_size_bytes);
+        fields_end_bytes_ =
+            add_storage_size(src_loc_tk, offset, total_size_bytes);
         alignment_ = std::max(alignment_, tp.alignment_);
         size_bytes_ = align_storage_size(fields_end_bytes_, alignment_);
     }
@@ -193,7 +196,7 @@ class type final {
             //       loop
 
             const type_field& tf{tp->field(src_loc_tk, field_name)};
-            offset = add_storage_size(offset, tf.offset);
+            offset = sum_storage_size(offset, tf.offset);
             tp = tf.type_ptr;
         }
 

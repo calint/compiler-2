@@ -1,0 +1,5 @@
+# an array whose size exceeds the signed 64-bit range
+
+func main() {
+    var a = i64[4611686018427387904]{}
+}

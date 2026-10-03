@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] any exception thrown needs a source location
+    => done (2026-10-03): the storage size helpers in 'decouple.hpp' take a
+       token and throw 'compiler_exception' (tests 744-748), invalid string
+       escapes are rejected by the tokenizer, 'validate_data_element_size'
+       locates the rv32i data element size error, a missing 'main' points at
+       line 1; the remaining sums use 'sum_storage_size', which asserts
+[x] size overflow errors had no source location: a huge array size, a record
+    field, two huge 'dat' arrays, 'array_copy' with a huge constant count made
+    'add_storage_size' and 'multiply_storage_size' throw 'std::overflow_error',
+    which 'main.cpp' printed as a bare message without file and line
+    => done (2026-10-03): see above, 'main.cpp' no longer catches
+       'std::overflow_error'; 'address_offset', 'scaled_address_offset' and
+       'add_address_offset' were not reached from user input and now assert
 [x] change all array access using [ ] to checked using .at
 [x] --checks=alias: accept disjoint constant paths by comparing byte ranges
     (137.baz-140.baz, 294.baz, 418.baz)

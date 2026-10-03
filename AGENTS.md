@@ -88,6 +88,9 @@ Working agreements for AI sessions in this repository.
   go-ahead.
 - One consistency topic at a time across all sources.
 - Todo items one by one, each with a focused check.
+- Finished items of `etc/todo.txt` move to `etc/todo-resolved.txt` (right
+  after its header, `[x]` with a `=> done (date): ...` note); never delete
+  them.
 - Done means:
   - built;
   - focused tests run;

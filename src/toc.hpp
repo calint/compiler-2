@@ -129,7 +129,7 @@ class frame final {
                  const bool is_dat = false) -> void {
 
         allocated_stack_size_bytes_ =
-            add_storage_size(allocated_stack_size_bytes_, allocated_size_bytes);
+            sum_storage_size(allocated_stack_size_bytes_, allocated_size_bytes);
 
         vars_.put(var.name, var);
 
@@ -139,7 +139,7 @@ class frame final {
     }
 
     [[nodiscard]] auto allocated_stack_size_bytes() const -> size_t {
-        return add_storage_size(allocated_stack_size_bytes_,
+        return sum_storage_size(allocated_stack_size_bytes_,
                                 stack_padding_size_bytes_);
     }
 
@@ -376,7 +376,8 @@ class toc final {
 
         // same padding as 'add_var' places before the dat
         total_dat_size_bytes_ =
-            add_storage_size(align_storage_size(total_dat_size_bytes_,
+            add_storage_size(stmt->tok(),
+                             align_storage_size(total_dat_size_bytes_,
                                                 stmt->get_type().alignment()),
                              stmt->dat_size_bytes());
         const size_t alignment{machine_.get().data_alignment()};
@@ -452,7 +453,7 @@ class toc final {
         const size_t var_size_bytes{
             var.is_pointer
                 ? machine_.get().address_size_bytes()
-                : multiply_storage_size(var.type_ptr->size_bytes(),
+                : multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
                                         var.is_array ? var.array_len : 1),
         };
 
@@ -464,7 +465,7 @@ class toc final {
         if (not is_dat and not vars_entry_gap_applied_) {
             frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
             vars_size_bytes_ =
-                add_storage_size(vars_size_bytes_, vars_entry_gap_);
+                add_storage_size(src_loc_tk, vars_size_bytes_, vars_entry_gap_);
             vars_entry_gap_applied_ = true;
         }
 
@@ -480,7 +481,7 @@ class toc final {
         };
 
         const size_t allocated_size_bytes{
-            add_storage_size(padding_bytes, var_size_bytes),
+            add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
         };
 
         if (not is_dat) {
@@ -491,16 +492,17 @@ class toc final {
 
         if (storage_frame) {
             var.base_register = storage_frame->storage_base_register();
-            storage_frame->record_storage_size_bytes(
-                add_storage_size(base_offset, allocated_size_bytes));
+            storage_frame->record_storage_size_bytes(add_storage_size(
+                src_loc_tk, base_offset, allocated_size_bytes));
         } else {
             var.offset =
                 add_address_offset(var.offset, -variables_base_shift_bytes());
         }
 
+        // the total accepts the size before a frame sums it
+        vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
+                                            allocated_size_bytes);
         frames_.back().add_var(var, allocated_size_bytes, is_dat);
-        vars_size_bytes_ =
-            add_storage_size(vars_size_bytes_, allocated_size_bytes);
 
         // stats
         if (not is_dat) {
@@ -878,7 +880,7 @@ class toc final {
 
         size_t local_size_bytes{};
         for (const frame& frm : frames_ | std::views::reverse) {
-            local_size_bytes = add_storage_size(
+            local_size_bytes = sum_storage_size(
                 local_size_bytes, frm.allocated_stack_size_bytes());
             if (not frm.storage_base_register().empty()) {
                 return operand::mem(frm.storage_base_register(), {}, 1,
@@ -889,7 +891,7 @@ class toc final {
         }
 
         const size_t root_size_bytes{
-            add_storage_size(vars_size_bytes_,
+            sum_storage_size(vars_size_bytes_,
                              vars_entry_gap_applied_ ? 0 : vars_entry_gap_),
         };
 
@@ -1151,7 +1153,7 @@ class toc final {
 
         x.comment_variable(
             src_loc_tk, indent, text,
-            multiply_storage_size(name_info.type_ref().size_bytes(),
+            multiply_storage_size(src_loc_tk, name_info.type_ref().size_bytes(),
                                   name_info.is_array ? name_info.array_len : 1),
             name_info.operand);
     }
@@ -1201,7 +1203,7 @@ class toc final {
         size_t local_size_bytes{};
 
         for (frame& frm : frames_ | std::views::reverse) {
-            local_size_bytes = add_storage_size(
+            local_size_bytes = sum_storage_size(
                 local_size_bytes, frm.allocated_stack_size_bytes());
 
             if (not frm.storage_base_register().empty()) {
@@ -1453,10 +1455,10 @@ class toc final {
         }
 
         const size_t dats_bytes{
-            add_storage_size(total_dat_size_bytes_, vars_entry_gap_),
+            sum_storage_size(total_dat_size_bytes_, vars_entry_gap_),
         };
 
-        return address_offset(add_storage_size(dats_bytes, *past_vars_bytes));
+        return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
     }
 
     //

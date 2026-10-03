@@ -214,10 +214,18 @@ class tokenizer final {
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_trailing_whitespace()};
 
-        return {
+        token string_tk{
             ws_before, bgn_ix,   src_.substr(bgn_ix + 1, end_ix - bgn_ix - 2),
             end_ix,    ws_after, at_line,
             true};
+
+        if (not token::decode_string(string_tk.string_text())) {
+            throw compiler_exception{
+                string_tk, std::format("unsupported escape in string \"{}\"",
+                                       string_tk.text())};
+        }
+
+        return string_tk;
     }
 
     // string token text excludes the quotes

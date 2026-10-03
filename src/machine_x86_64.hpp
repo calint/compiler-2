@@ -1236,6 +1236,11 @@ class machine_x86_64 final : public machine {
         }
     }
 
+    auto validate_data_element_size(
+        [[maybe_unused]] const token& src_loc_tk,
+        [[maybe_unused]] const size_t element_size_bytes) const
+        -> void override {}
+
     auto validate_division_operand(const token& src_loc_tk,
                                    const operand& divisor) const
         -> void override {

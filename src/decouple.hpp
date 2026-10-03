@@ -11,12 +11,12 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
+#include "compiler_exception.hpp"
 #include "token.hpp"
 
 [[nodiscard]] inline auto line_and_col_num_for_char_index(
@@ -48,29 +48,46 @@ class stmt_block;
 class type;
 class expr_any;
 
-[[nodiscard]] inline auto add_storage_size(const size_t base,
+// alignment padding of a size at the limit stays in the signed 64-bit range
+inline constexpr size_t max_storage_size_bytes{
+    static_cast<size_t>(std::numeric_limits<int64_t>::max()) - 16,
+};
+
+[[nodiscard]] inline auto add_storage_size(const token& src_loc_tk,
+                                           const size_t base,
                                            const size_t size_bytes) -> size_t {
 
-    if (size_bytes > static_cast<size_t>(std::numeric_limits<int64_t>::max()) or
-        base > static_cast<size_t>(std::numeric_limits<int64_t>::max()) -
-                   size_bytes) {
+    if (size_bytes > max_storage_size_bytes or
+        base > max_storage_size_bytes - size_bytes) {
 
-        throw std::overflow_error{"storage size exceeds signed 64-bit range"};
+        throw compiler_exception{src_loc_tk,
+                                 "storage size exceeds signed 64-bit range"};
     }
 
     return base + size_bytes;
 }
 
-[[nodiscard]] inline auto multiply_storage_size(const size_t size_bytes,
+[[nodiscard]] inline auto multiply_storage_size(const token& src_loc_tk,
+                                                const size_t size_bytes,
                                                 const size_t count) -> size_t {
 
-    if (count != 0 and
-        size_bytes >
-            static_cast<size_t>(std::numeric_limits<int64_t>::max()) / count) {
-        throw std::overflow_error{"storage size exceeds signed 64-bit range"};
+    if (count != 0 and size_bytes > max_storage_size_bytes / count) {
+        throw compiler_exception{src_loc_tk,
+                                 "storage size exceeds signed 64-bit range"};
     }
 
     return size_bytes * count;
+}
+
+// the sum of sizes that 'add_storage_size' or 'multiply_storage_size' already
+// accepted, in a place with no source location
+[[nodiscard]] inline auto sum_storage_size(const size_t base,
+                                           const size_t size_bytes) -> size_t {
+
+    assert(size_bytes <= max_storage_size_bytes);
+    assert(base <= max_storage_size_bytes - size_bytes);
+
+    return base + size_bytes;
 }
 
 // rounds 'size_bytes' up to a multiple of 'alignment', a power of two
@@ -79,7 +96,7 @@ class expr_any;
 
     assert(std::has_single_bit(alignment));
 
-    return add_storage_size(size_bytes,
+    return sum_storage_size(size_bytes,
                             (alignment - (size_bytes % alignment)) % alignment);
 }
 

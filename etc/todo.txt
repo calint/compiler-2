@@ -4,9 +4,12 @@ each open item starts with its difficulty: easy, medium or hard
 --------------------------------------------------------------------------------
 better assembler code, medium, largest gain first
 --------------------------------------------------------------------------------
+[ ] compiler_exception with line number 0 should be file level issues only.
+    other exceptions should point to the cause in offending source to precise
+    token that caused the exception. in encoded string make a position token at
+    the offending location within the string
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
-[ ] any exception thrown needs a source location
 [ ] medium: roome.baz (2026-09-29): an inline bool call used as a condition is
     materialized then tested: x86 'sete r15b' ... 'cmp r15b, 0; je', rv32i
     'xor t0, t0, t1; sltiu t0, t0, 1; beq t0, zero' instead of
@@ -206,22 +209,6 @@ other, medium, easiest first
 [ ] medium: --checks=alias: route inline builtin results through a scratch
     register instead of rejecting (077.baz, 135.baz, 394.baz, 397.baz, 485.baz)
     => then re-enable 485.baz
-[ ] medium: low priority: size overflow errors have no source location: a huge
-    array size ('var a = [4611686018427387904]{}', a record field 'a[...]', two
-    huge 'dat' arrays, 'array_copy' with a huge constant count) makes the
-    helpers in 'decouple.hpp' ('add_storage_size', 'multiply_storage_size')
-    throw 'std::overflow_error', which 'main.cpp' prints as a bare message
-    without file and line
-    => throw sites: 'toc::add_var' (via 'stmt_def_var'), 'type::add_field'
-       (via 'stmt_def_type'), 'frame::add_var' (via 'stmt_def_dat'),
-       'stmt_builtin_array_copy::compile_constant_count'
-    => options: catch at each caller and throw 'compiler_exception' with its
-       token, or pass 'src_loc_tk' to the helpers (about 35 call sites);
-       translating in the 'stmt_block'/'program' statement loops was tried
-       and rejected
-    => 'address_offset', 'scaled_address_offset' and 'add_address_offset'
-       were not reached from user input
-    => then add tests for the located errors
 --------------------------------------------------------------------------------
 other, hard, easiest first
 --------------------------------------------------------------------------------

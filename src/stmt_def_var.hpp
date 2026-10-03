@@ -53,10 +53,10 @@ class stmt_def_var final : public statement {
                        equals_tk_, is_array_, array_count_};
 
         // the newly defined variable is not yet assigned in its initialization
-        assert_var_not_used(
-            name_tk_.text(),
-            field_coverage{multiply_storage_size(
-                get_type().size_bytes(), is_array_ ? array_count_ : 1)});
+        assert_var_not_used(name_tk_.text(),
+                            field_coverage{multiply_storage_size(
+                                name_tk_, get_type().size_bytes(),
+                                is_array_ ? array_count_ : 1)});
 
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it

@@ -379,6 +379,11 @@ class machine {
     virtual auto unary(const size_t indent, const char operation,
                        const operand& dst) -> void = 0;
 
+    virtual auto
+    validate_data_element_size(const token& src_loc_tk,
+                               const size_t element_size_bytes) const
+        -> void = 0;
+
     virtual auto validate_division_operand(const token& src_loc_tk,
                                            const operand& divisor) const
         -> void = 0;

@@ -1424,15 +1424,6 @@ func main() {
     backend.emit_string_data(R"baz(hello\n\x007)baz");
     assert(shift_output.str() == R"baz(.ascii "hello\n\0007")baz"
                                  "\n");
-    for (const std::string_view text : {"\\", "\\x", "\\x1", "\\xGG", "\\q"}) {
-        bool rejected{};
-        try {
-            backend.emit_string_data(text);
-        } catch (const compiler_exception&) {
-            rejected = true;
-        }
-        assert(rejected);
-    }
     shift_output.str({});
     std::vector<operand> shift_registers;
     for (size_t count{}; count < 30; ++count) {

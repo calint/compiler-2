@@ -104,7 +104,8 @@ class stmt_builtin_equal final : public expression {
                                          "sizes"};
             }
 
-            size_bytes = multiply_storage_size(size_bytes, lhs_info.array_len);
+            size_bytes = multiply_storage_size(lhs_.tok(), size_bytes,
+                                               lhs_info.array_len);
         }
 
         if (x.compares_directly()) {

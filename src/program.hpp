@@ -222,7 +222,7 @@ class program final {
 
             s->compile_data(tc);
 
-            dat_offset = add_storage_size(dat_offset + padding_bytes,
+            dat_offset = add_storage_size(s->tok(), dat_offset + padding_bytes,
                                           s->dat_size_bytes());
         }
 
@@ -235,7 +235,12 @@ class program final {
 
     // the main function is compiled where the program starts
     static auto compile_main(toc& tc, const size_t indent) -> void {
-        const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
+        // no token names a missing 'main', so the error points at line 1
+        const token start_of_source{"", 0, "", 0, "", 1, false};
+
+        const stmt_def_func& func_main{
+            tc.get_func_or_throw(start_of_source, "main"),
+        };
 
         if (not func_main.is_inlined()) {
             throw compiler_exception{func_main.tok(),

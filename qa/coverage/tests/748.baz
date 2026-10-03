@@ -1,0 +1,7 @@
+# x86: a copy whose byte count exceeds the signed 64-bit range
+
+func main() {
+    var a = i64[8]{}
+    var b = i64[8]{}
+    array_copy(a, b, 9223372036854775807)
+}

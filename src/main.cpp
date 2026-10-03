@@ -355,9 +355,6 @@ examples:
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
         return 1;
-    } catch (const std::overflow_error& e) {
-        std::println(stderr, "\n{}", e.what());
-        return 1;
     } catch (...) {
         std::println(stderr, "\nunknown exception");
         return 1;

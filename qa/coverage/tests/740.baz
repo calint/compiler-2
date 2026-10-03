@@ -1,4 +1,4 @@
-# rv32i: an unknown escape in a string constant
+# an unknown escape in a string constant
 
 dat s = "a\qb"
 

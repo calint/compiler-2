@@ -185,8 +185,8 @@ class stmt_builtin_array_copy final : public statement {
         };
 
         x.copy(tok(), indent, src_operand, dst_operand,
-               multiply_storage_size(array_src_info.type_ref().size_bytes(),
-                                     count),
+               multiply_storage_size(
+                   tok(), array_src_info.type_ref().size_bytes(), count),
                array_src_info.type_ref().alignment());
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);

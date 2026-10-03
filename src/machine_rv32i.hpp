@@ -990,12 +990,9 @@ class machine_rv32i : public machine {
                             const data_initializer& value) const
         -> void override {
 
-        if (element_size_bytes != 1 and element_size_bytes != 2 and
-            element_size_bytes != 4) {
-
-            throw compiler_exception{
-                token{}, "RV32I data elements must be 1, 2, or 4 bytes"};
-        }
+        // 'validate_data_element_size' rejects other sizes
+        assert(element_size_bytes == 1 or element_size_bytes == 2 or
+               element_size_bytes == 4);
 
         assembler_.repeated_data(element_size_bytes, count, value.uops,
                                  value.value);
@@ -1017,10 +1014,9 @@ class machine_rv32i : public machine {
 
     auto emit_string_data(const std::string_view value) -> void override {
         const std::optional<std::string> bytes{token::decode_string(value)};
-        if (not bytes) {
-            throw compiler_exception{token{},
-                                     "unsupported RV32I string escape"};
-        }
+
+        // the tokenizer rejects unsupported escapes
+        assert(bytes);
 
         assembler_.ascii(*bytes);
     }
@@ -1136,9 +1132,8 @@ class machine_rv32i : public machine {
 
         validate_scalar(token{}, value_type);
         const size_t index{register_index(name)};
-        if (index == register_names_.size()) {
-            throw compiler_exception{token{}, "invalid RV32I register"};
-        }
+
+        assert(index != register_names_.size());
 
         return operand::reg(register_names_.at(index), value_type);
     }
@@ -1438,6 +1433,18 @@ class machine_rv32i : public machine {
 
         store_operation_result(indent, destination, loaded.address,
                                loaded.value, false);
+    }
+
+    auto validate_data_element_size(const token& src_loc_tk,
+                                    const size_t element_size_bytes) const
+        -> void override {
+
+        if (element_size_bytes != 1 and element_size_bytes != 2 and
+            element_size_bytes != 4) {
+
+            throw compiler_exception{
+                src_loc_tk, "RV32I data elements must be 1, 2, or 4 bytes"};
+        }
     }
 
     auto validate_division_operand(const token& src_loc_tk,

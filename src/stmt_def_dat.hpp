@@ -111,7 +111,7 @@ class stmt_def_dat final : public statement {
     }
 
     [[nodiscard]] auto dat_size_bytes() const -> size_t override {
-        return multiply_storage_size(get_type().size_bytes(),
+        return multiply_storage_size(name_tk_, get_type().size_bytes(),
                                      elroot_.is_array ? elroot_.array_count
                                                       : 1);
     }
@@ -255,6 +255,8 @@ class stmt_def_dat final : public statement {
                                      const elem& elroot) -> void {
 
         machine& x{tc.machine()};
+
+        x.validate_data_element_size(elroot.tk, tp.size_bytes());
 
         if (not elroot.is_array) {
             x.comment(elroot.tk, 0, "{}", tp.name());
@@ -400,7 +402,7 @@ class stmt_def_dat final : public statement {
                   tp.name(), tp.size_bytes());
 
         x.emit_zero_data(
-            multiply_storage_size(tp.size_bytes(), remaining_count));
+            multiply_storage_size(elroot.tk, tp.size_bytes(), remaining_count));
     }
 
     // '{' elements '}', empty zeroes a sized array

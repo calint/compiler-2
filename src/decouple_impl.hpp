@@ -418,7 +418,8 @@ auto expr_type::assert_record_field_not_reading(const expr_any& src,
     for (size_t i{}; i < src.element_count(); ++i) {
         const expr_type& element{src.as_expr_type(i)};
         const size_t element_offset{
-            field_offset + multiply_storage_size(element_size_bytes, i),
+            field_offset +
+                multiply_storage_size(src.tok(), element_size_bytes, i),
         };
 
         if (element.is_identifier()) {
@@ -562,7 +563,7 @@ auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     };
 
     const size_t size_bytes{
-        multiply_storage_size(dst_type.size_bytes(),
+        multiply_storage_size(tok(), dst_type.size_bytes(),
                               src_info.is_array ? src_info.array_len : 1),
     };
 
