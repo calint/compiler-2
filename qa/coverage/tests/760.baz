@@ -1,0 +1,8 @@
+# a constant shift by zero changes nothing
+
+func main() {
+    var a = 5
+    a = a << 0
+    a = a >> 0
+    exit(a)
+}

@@ -2,13 +2,10 @@
 // reviewed: 2025-09-28
 
 #include <algorithm>
-#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
-
-#include "panic_exception.hpp"
 
 template <class T> class lut final {
     struct elem {
@@ -28,7 +25,9 @@ template <class T> class lut final {
                 return e.data;
             }
         }
-        throw panic_exception{std::format("element not found: {}", key)};
+
+        // callers look up keys they have defined
+        std::unreachable();
     }
 
     [[nodiscard]] auto get_ref(const std::string_view key) -> T& {
@@ -37,7 +36,9 @@ template <class T> class lut final {
                 return e.data;
             }
         }
-        throw panic_exception{std::format("element not found: {}", key)};
+
+        // callers look up keys they have defined
+        std::unreachable();
     }
 
     [[nodiscard]] auto has(const std::string_view key) const -> bool {

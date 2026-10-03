@@ -353,10 +353,10 @@ class assembler_x86_64 final : public assembler {
 
         std::string s{address.symbol};
 
+        // a symbol is addressed relative to rip or with an index
+        assert(address.symbol.empty() or address.base.empty());
+
         if (not address.base.empty()) {
-            if (not s.empty()) {
-                s += " + ";
-            }
             s += address.base;
         }
 
@@ -426,7 +426,7 @@ class assembler_x86_64 final : public assembler {
 
     [[nodiscard]] auto
     inverse_branch_mnemonic(const std::string_view mnemonic) const
-        -> std::optional<std::string_view> override {
+        -> std::string_view override {
 
         constexpr std::array<mnemonic_pair, 3> pairs{
             {

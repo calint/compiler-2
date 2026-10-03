@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cassert>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -48,7 +49,7 @@ class statement {
     [[nodiscard]] virtual auto accessed_range() const
         -> std::optional<field_coverage::range> {
 
-        return std::nullopt;
+        std::unreachable();
     }
 
     // throws if the value would silently lose bits when stored as 'dst_type'
@@ -73,7 +74,9 @@ class statement {
         std::unreachable();
     }
 
-    virtual auto compile_data([[maybe_unused]] toc& tc) const -> void {}
+    virtual auto compile_data([[maybe_unused]] toc& tc) const -> void {
+        std::unreachable();
+    }
 
     [[nodiscard]] virtual auto
     compile_lea([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
@@ -87,7 +90,9 @@ class statement {
         std::unreachable();
     }
 
-    [[nodiscard]] virtual auto dat_size_bytes() const -> size_t { return 0; }
+    [[nodiscard]] virtual auto dat_size_bytes() const -> size_t {
+        std::unreachable();
+    }
 
     // the value computed in a register of 'width_type' when known at compile,
     // empty when computed at run time
@@ -142,13 +147,13 @@ class statement {
         assert_var_not_used(flow.var, flow.assigned);
     }
 
-    // reports every read of 'var' in this statement
+    // reports every read of 'var' in this statement, a leaf is never named
+    // like a variable
     virtual auto visit_reads(const std::string_view var,
-                             const read_visitor reader) const -> void {
+                             [[maybe_unused]] const read_visitor reader) const
+        -> void {
 
-        if (identifier() == var) {
-            reader(token_, identifier(), std::nullopt);
-        }
+        assert(identifier() != var);
     }
 
     //

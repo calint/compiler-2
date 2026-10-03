@@ -2337,3 +2337,6 @@ if [[ $MACHINE != x86_64 ]]; then SRC=758 && COMPERR; fi
 
 # rv32i: a constant right shift count of a 16-bit value must be below 16
 if [[ $MACHINE != x86_64 ]]; then SRC=759 && COMPERR; fi
+
+# a constant shift by zero changes nothing
+SRC=760 && EXP=5 && RUN

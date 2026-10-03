@@ -599,7 +599,8 @@ class machine {
     }
 
     // immediates are decimal numbers prefixed by unary '-' and '~' operators
-    // returns two's complement bits or empty for symbolic expressions
+    // returns two's complement bits or empty for an operand that is not an
+    // immediate
     [[nodiscard]] static auto immediate_bits(const operand& value)
         -> std::optional<uint64_t> {
 
@@ -609,9 +610,8 @@ class machine {
 
         const std::string_view text{value.immediate()};
         const size_t digits{text.find_first_not_of("-~")};
-        if (digits == std::string_view::npos) {
-            return std::nullopt;
-        }
+
+        assert(digits != std::string_view::npos);
 
         const std::string_view number{text.substr(digits)};
         const char* const end{std::to_address(number.end())};
@@ -620,9 +620,7 @@ class machine {
             std::from_chars(std::to_address(number.begin()), end, bits),
         };
 
-        if (parsed.ec != std::errc{} or parsed.ptr != end) {
-            return std::nullopt;
-        }
+        assert(parsed.ec == std::errc{} and parsed.ptr == end);
 
         for (const char operation :
              text.substr(0, digits) | std::views::reverse) {

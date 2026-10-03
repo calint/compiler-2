@@ -178,6 +178,17 @@ CLI_FPGA_MEMORY() {
     echo "ok (image $image_size B, vars up to $vars_fit B)"
 }
 
+CLI_QEMU_STACK() {
+    echo -n "cli rv32i-qemu stack size: "
+    set +e
+    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000000 430.baz >gen.s 2>err
+    local exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "stack size exceeds RV32I address range" err
+    echo ok
+}
+
 CLI --vars=65536 0 --help
 CLI --vars=0x10000 0 --help
 CLI --vars= 1 --help
@@ -212,5 +223,6 @@ CLI_JUMP_OPTIMIZATIONS
 CLI_CHECKS_NOUB
 CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
+CLI_QEMU_STACK
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

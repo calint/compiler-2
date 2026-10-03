@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cassert>
 #include <charconv>
 #include <format>
 #include <memory>
@@ -212,9 +213,10 @@ class token final {
         }
     }
 
-    // the bytes of string text such as "a\n", empty at an unsupported escape
+    // the bytes of string text such as "a\n", whose escapes the tokenizer
+    // has checked
     [[nodiscard]] static auto decode_string(const std::string_view text)
-        -> std::optional<std::string> {
+        -> std::string {
 
         std::string bytes;
         for (size_t i{}; i < text.size(); ++i) {
@@ -232,9 +234,7 @@ class token final {
                 decode_escape(text.substr(i + 1, escape_size)),
             };
 
-            if (not decoded) {
-                return std::nullopt;
-            }
+            assert(decoded);
 
             bytes += *decoded;
             i += escape_size;

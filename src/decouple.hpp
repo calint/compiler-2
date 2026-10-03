@@ -378,34 +378,27 @@ struct ident_info {
         return *type_path.back();
     }
 
+    // an empty info has no type, every path has one entry per element
     [[nodiscard]] auto validate_invariants() const -> bool {
-        if (is_empty()) {
-            return id.empty() and elem_path.empty() and type_path.empty() and
-                   lea_path.empty();
-        }
-
-        if (id.empty() or elem_path.empty() or type_path.empty()) {
-            return false;
-        }
-
-        if (elem_path.size() != type_path.size() or
-            elem_path.size() != lea_path.size()) {
-
-            return false;
-        }
+        const bool paths_match{
+            not id.empty() and not elem_path.empty() and
+                elem_path.size() == type_path.size() and
+                elem_path.size() == lea_path.size(),
+        };
 
         if (is_const()) {
-            return elem_path.size() == 1 and operand.is_empty();
+            return paths_match and elem_path.size() == 1 and operand.is_empty();
         }
 
         if (is_register()) {
-            return elem_path.size() == 1 and operand.is_register() and
+            return paths_match and elem_path.size() == 1 and
+                   operand.is_register() and
                    not operand.base_register().empty() and
                    operand.index_register().empty() and
                    operand.displacement() == 0;
         }
 
-        return is_var();
+        return paths_match and is_var();
     }
 
     //

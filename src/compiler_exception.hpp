@@ -40,18 +40,6 @@ class compiler_exception final : public std::exception {
     // innermost call first, each call inlined the one before it
     std::vector<call_frame> call_frames;
 
-    //
-    // overridden methods
-    //
-
-    [[nodiscard]] auto what() const noexcept -> const char* override {
-        return msg.c_str();
-    }
-
-    //
-    // class methods
-    //
-
     auto add_call_frame(const token& call_tk, std::string text) -> void {
         call_frames.push_back({
             .line{call_tk.at_line()},

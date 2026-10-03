@@ -187,7 +187,6 @@ class assembler_rv32i final : public assembler {
 
     static constexpr uint8_t zero_register{};
     static constexpr uint8_t return_address_register{1};
-    static constexpr uint8_t frame_pointer_register{8};
 
     static constexpr int64_t immediate_min{-2048};
     static constexpr int64_t immediate_max{2047};
@@ -269,16 +268,6 @@ class assembler_rv32i final : public assembler {
     };
 
     std::vector<record> records_;
-
-    // instructions that assemble to one 4-byte word
-    static constexpr std::array<std::string_view, 46> single_instructions{
-        "add",  "addi", "sub",   "and",    "andi",  "or",  "ori",  "xor",
-        "xori", "sll",  "slli",  "srl",    "srli",  "sra", "srai", "slt",
-        "slti", "sltu", "sltiu", "lui",    "auipc", "lb",  "lbu",  "lh",
-        "lhu",  "lw",   "sb",    "sh",     "sw",    "j",   "jr",   "jalr",
-        "mv",   "ret",  "ecall", "ebreak", "nop",   "neg", "not",  "seqz",
-        "snez", "sltz", "sgtz",  "beq",    "bne",   "blt",
-    };
 
   public:
     static constexpr std::array<std::string_view, 32> register_names{
@@ -933,7 +922,7 @@ class assembler_rv32i final : public assembler {
     }
 
     [[nodiscard]] static auto inverse(const std::string_view mnemonic)
-        -> std::optional<std::string_view> {
+        -> std::string_view {
 
         constexpr std::array<mnemonic_pair, 8> pairs{
             {
@@ -966,36 +955,21 @@ class assembler_rv32i final : public assembler {
         return two_instructions_bytes;
     }
 
-    // labels, directives and comments occupy no space, unknown instructions
-    // have no size
+    // labels, directives and comments occupy no space, instructions are added
+    // as records except for jumps, which start as one instruction
     [[nodiscard]] static auto line_size_bytes(const std::string_view text)
-        -> std::optional<size_t> {
+        -> size_t {
 
         const std::string_view code{code_part(text)};
 
-        if (code.empty() or code.back() == ':') {
+        if (code.empty() or code.back() == ':' or is_sizeless_directive(code)) {
             return 0;
         }
 
-        if (code.front() == '.') {
-            if (is_sizeless_directive(code)) {
-                return 0;
-            }
-
-            return std::nullopt;
-        }
-
-        const size_t split{code.find_first_of(" \t")};
-
-        const std::string_view arguments{
-            split == std::string_view::npos ? std::string_view{}
-                                            : code.substr(split),
-        };
-
-        return instruction_size_bytes(code.substr(0, split), arguments);
+        return one_instruction_bytes;
     }
 
-    // abi names, 'x' numbers and 'fp' name the same registers
+    // abi names only, the backend names registers that way
     [[nodiscard]] static auto register_number(const std::string_view name)
         -> std::optional<uint8_t> {
 
@@ -1005,32 +979,7 @@ class assembler_rv32i final : public assembler {
             }
         }
 
-        if (name == "fp") {
-            return frame_pointer_register;
-        }
-
-        // 'x05' does not name a register
-        if (name.size() < 2 or name.front() != 'x' or
-            (name.size() > 2 and name.at(1) == '0')) {
-
-            return std::nullopt;
-        }
-
-        const std::string_view digits{name.substr(1)};
-        const char* const end{std::to_address(digits.end())};
-        uint8_t number{};
-
-        const std::from_chars_result parsed{
-            std::from_chars(std::to_address(digits.begin()), end, number),
-        };
-
-        if (parsed.ec != std::errc{} or parsed.ptr != end or
-            number >= register_names.size()) {
-
-            return std::nullopt;
-        }
-
-        return number;
+        return std::nullopt;
     }
 
   private:
@@ -1045,9 +994,8 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto format_jump(const jump_info& jump) const
         -> std::string override {
 
-        if (jump.operands.empty()) {
-            return std::format("{} {}", jump.mnemonic, jump.target);
-        }
+        // only branches are formatted, when inverted
+        assert(not jump.operands.empty());
 
         return std::format("{} {}, {}", jump.mnemonic, jump.operands,
                            jump.target);
@@ -1055,20 +1003,15 @@ class assembler_rv32i final : public assembler {
 
     [[nodiscard]] auto
     inverse_branch_mnemonic(const std::string_view mnemonic) const
-        -> std::optional<std::string_view> override {
+        -> std::string_view override {
 
         return inverse(mnemonic);
     }
 
-    // an unsized instruction would make every later offset unreliable
     [[nodiscard]] auto text_code_size(const std::string_view text) const
         -> size_t override {
 
-        const std::optional<size_t> size_bytes{line_size_bytes(text)};
-
-        assert(size_bytes);
-
-        return *size_bytes;
+        return line_size_bytes(text);
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const
@@ -1188,13 +1131,11 @@ class assembler_rv32i final : public assembler {
             };
         }
 
-        const std::optional<std::string_view> inverted{inverse(jump.mnemonic)};
-
-        assert(inverted);
+        const std::string_view inverted{inverse(jump.mnemonic)};
 
         // the inverted branch skips the jump that follows it
         std::vector<uint32_t> words{
-            branch_word(find_op(*inverted), compared->rs1, compared->rs2,
+            branch_word(find_op(inverted), compared->rs1, compared->rs2,
                         static_cast<int64_t>(l.code_size)),
         };
 
@@ -1261,10 +1202,8 @@ class assembler_rv32i final : public assembler {
 
             // an unknown offset would leave the jump unchecked
             const auto target{labels.find(l.jump->target)};
-            if (target == labels.end()) {
-                throw panic_exception{std::format(
-                    "jump to undefined label '{}'", l.jump->target)};
-            }
+
+            assert(target != labels.end());
 
             if (reaches(l, offsets.at(index), offsets.at(target->second))) {
                 continue;
@@ -1485,8 +1424,7 @@ class assembler_rv32i final : public assembler {
             std::format(".Lbaz_jump.{}", skip_count++),
         };
 
-        std::println(os, "{}{} {}, {}", indent,
-                     inverse(l.jump->mnemonic).value_or(std::string_view{}),
+        std::println(os, "{}{} {}, {}", indent, inverse(l.jump->mnemonic),
                      l.jump->operands, skip_label);
 
         write_long_jump(os, indent, l);
@@ -1710,7 +1648,7 @@ class assembler_rv32i final : public assembler {
         }
 
         if (operands == form::load_immediate) {
-            return load_immediate(ins.rd, value, not ins.value.symbol.empty());
+            return load_immediate(ins.rd, value);
         }
 
         if (operands == form::load_address) {
@@ -1788,10 +1726,7 @@ class assembler_rv32i final : public assembler {
 
         const form operands{info(ins.code).operands};
         if (operands == form::load_immediate) {
-            // a symbol's value is unknown until the end
-            if (not ins.value.symbol.empty()) {
-                return two_instructions_bytes;
-            }
+            assert(ins.value.symbol.empty());
 
             return li_value_size_bytes(ins.value.number);
         }
@@ -1874,11 +1809,8 @@ class assembler_rv32i final : public assembler {
         }
 
         if (operands == form::load_immediate) {
-            if (symbolic) {
-                return value.symbol_part == immediate::part::whole;
-            }
-
-            return fits(value.number, std::numeric_limits<int32_t>::min(),
+            return not symbolic and
+                   fits(value.number, std::numeric_limits<int32_t>::min(),
                         std::numeric_limits<uint32_t>::max());
         }
 
@@ -2121,34 +2053,6 @@ class assembler_rv32i final : public assembler {
         return infos.at(std::to_underlying(code));
     }
 
-    // sizes under '.option norvc' and '.option norelax'
-    [[nodiscard]] static auto
-    instruction_size_bytes(const std::string_view mnemonic,
-                           const std::string_view arguments)
-        -> std::optional<size_t> {
-
-        if (mnemonic == "li") {
-            return li_size_bytes(arguments);
-        }
-
-        // norelax keeps address, call and long jump sequences at two
-        // instructions
-        if (mnemonic == "la" or mnemonic == "call" or mnemonic == "jump" or
-            mnemonic == "tail") {
-
-            return two_instructions_bytes;
-        }
-
-        if (inverse(mnemonic) or
-            std::ranges::find(single_instructions, mnemonic) !=
-                single_instructions.end()) {
-
-            return one_instruction_bytes;
-        }
-
-        return std::nullopt;
-    }
-
     [[nodiscard]] static auto instruction_text(const instruction& ins,
                                                const spelling& names)
         -> std::string {
@@ -2229,58 +2133,25 @@ class assembler_rv32i final : public assembler {
 
         const std::string_view name{code.substr(0, code.find_first_of(" \t"))};
 
-        return name == ".option" or name == ".globl" or name == ".equ" or
-               name == ".text" or name == ".data" or name == ".section";
+        return name == ".option" or name == ".globl" or name == ".equ";
     }
 
-    [[nodiscard]] static auto li_size_bytes(const std::string_view arguments)
-        -> size_t {
-
-        const size_t comma{arguments.find(',')};
-        if (comma == std::string_view::npos) {
-            return two_instructions_bytes;
-        }
-
-        const std::string_view literal{trim(arguments.substr(comma + 1))};
-        if (literal.empty()) {
-            return two_instructions_bytes;
-        }
-
-        int64_t parsed{};
-        const char* const end{std::to_address(literal.end())};
-
-        const std::from_chars_result conversion{
-            std::from_chars(std::to_address(literal.begin()), end, parsed),
-        };
-
-        // unresolved expressions retain the conservative size
-        if (conversion.ec != std::errc{} or conversion.ptr != end or
-            parsed < std::numeric_limits<int32_t>::min() or
-            std::cmp_greater(parsed, std::numeric_limits<uint32_t>::max())) {
-
-            return two_instructions_bytes;
-        }
-
-        return li_value_size_bytes(parsed);
-    }
-
-    // the sequence 'li' expands to, both instructions for a symbol since its
-    // size was fixed before its value was known
-    [[nodiscard]] static auto
-    load_immediate(const uint8_t rd, const int64_t value, const bool symbolic)
+    // the sequence 'li' expands to
+    [[nodiscard]] static auto load_immediate(const uint8_t rd,
+                                             const int64_t value)
         -> std::vector<uint32_t> {
 
         const int32_t number{
             std::bit_cast<int32_t>(static_cast<uint32_t>(value)),
         };
 
-        if (not symbolic and fits(number, immediate_min, immediate_max)) {
+        if (fits(number, immediate_min, immediate_max)) {
             return {encode_immediate(addi_encoding, rd, zero_register, number)};
         }
 
         const uint32_t upper{encode_upper(lui_encoding, rd, upper_part(value))};
         const int32_t lower{lower_part(value)};
-        if (not symbolic and lower == 0) {
+        if (lower == 0) {
             return {upper};
         }
 
@@ -2383,9 +2254,7 @@ class assembler_rv32i final : public assembler {
             symbols.local_labels.find(name.substr(0, name.size() - 1)),
         };
 
-        if (name.size() < 2 or locals == symbols.local_labels.end()) {
-            throw panic_exception{std::format("undefined symbol '{}'", name)};
-        }
+        assert(name.size() >= 2 and locals != symbols.local_labels.end());
 
         const std::vector<std::pair<size_t, int64_t>>& definitions{
             locals->second,
@@ -2411,7 +2280,8 @@ class assembler_rv32i final : public assembler {
             }
         }
 
-        throw panic_exception{std::format("undefined symbol '{}'", name)};
+        // the backend refers to labels it defines
+        std::unreachable();
     }
 
     [[nodiscard]] static auto total_size_bytes(const std::vector<line>& lines)

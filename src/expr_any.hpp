@@ -434,14 +434,9 @@ class expr_any final : public statement {
 
         machine& x{tc.machine()};
 
-        const std::optional<std::string> bytes{
-            token::decode_string(string_tk_.string_text()),
-        };
+        const std::string bytes{token::decode_string(string_tk_.string_text())};
 
-        // the tokenizer rejects unsupported escapes
-        assert(bytes);
-
-        const size_t size_bytes{bytes->size()};
+        const size_t size_bytes{bytes.size()};
 
         const size_t array_count{destination_array_count(dst_info)};
 
@@ -456,7 +451,7 @@ class expr_any final : public statement {
 
         // an empty string has nothing to store
         if (size_bytes != 0) {
-            x.copy_bytes(string_tk_, indent, *bytes, dst,
+            x.copy_bytes(string_tk_, indent, bytes, dst,
                          dst_info.type_ref().alignment(), [&] -> std::string {
                              return tc.add_string_constant(string_tk_);
                          });

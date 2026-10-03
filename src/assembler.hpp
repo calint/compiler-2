@@ -400,8 +400,7 @@ class assembler {
     // the other mnemonic of the pair holding 'mnemonic'
     [[nodiscard]] static auto
     paired_mnemonic(const std::span<const mnemonic_pair> pairs,
-                    const std::string_view mnemonic)
-        -> std::optional<std::string_view> {
+                    const std::string_view mnemonic) -> std::string_view {
 
         for (const auto& [first, second] : pairs) {
             if (mnemonic == first) {
@@ -412,7 +411,8 @@ class assembler {
             }
         }
 
-        return std::nullopt;
+        // the branches the optimizer inverts are all paired
+        std::unreachable();
     }
 
     [[nodiscard]] static auto trim(const std::string_view text)
@@ -440,7 +440,7 @@ class assembler {
     // the branch taken exactly when 'mnemonic' is not taken
     [[nodiscard]] virtual auto
     inverse_branch_mnemonic(std::string_view mnemonic) const
-        -> std::optional<std::string_view> = 0;
+        -> std::string_view = 0;
 
     // zero for labels, comments and directives that emit no code
     [[nodiscard]] virtual auto text_code_size(std::string_view text) const
@@ -485,25 +485,17 @@ class assembler {
             return next;
         }
 
-        return std::nullopt;
+        // the code ends with an instruction that is no jump
+        std::unreachable();
     }
 
-    // branches without an inverse are kept
-    [[nodiscard]] auto invert(line& l, std::string target) const -> bool {
+    // every branch the optimizer sees has an inverse
+    auto invert(line& l, std::string target) const -> void {
         jump_info& jump{*l.jump};
-        const std::optional<std::string_view> inverted{
-            inverse_branch_mnemonic(jump.mnemonic),
-        };
 
-        if (not inverted) {
-            return false;
-        }
-
-        jump.mnemonic = *inverted;
+        jump.mnemonic = inverse_branch_mnemonic(jump.mnemonic);
         jump.target = std::move(target);
         l.text = std::string{leading_whitespace(l.text)} + format_jump(jump);
-
-        return true;
     }
 
     [[nodiscard]] auto is_label_text(const std::string_view text) const
@@ -551,13 +543,10 @@ class assembler {
             return false;
         }
 
-        // an undefined target is left to the target's assembling
-        const std::optional<size_t> target{destination(labels, *branch.jump)};
-        if (not target) {
-            return false;
-        }
+        // the backend defines the labels it jumps to
+        const size_t target{destination(labels, *branch.jump)};
 
-        const size_t target_code{next_instruction(*target)};
+        const size_t target_code{next_instruction(target)};
 
         // execution continues at the target anyway
         if (target_code == next_instruction(index + 1)) {
@@ -585,16 +574,10 @@ class assembler {
             return true;
         }
 
-        const std::optional<size_t> jump_target{
-            destination(labels, *jump.jump),
-        };
-
-        if (not jump_target) {
-            return false;
-        }
+        const size_t jump_target{destination(labels, *jump.jump)};
 
         // both outcomes continue at the same place
-        if (target_code == next_instruction(*jump_target)) {
+        if (target_code == next_instruction(jump_target)) {
             remove(branch);
             ++optimizations_.same_outcome_branches;
 
@@ -606,9 +589,7 @@ class assembler {
             return false;
         }
 
-        if (not invert(branch, jump.jump->target)) {
-            return false;
-        }
+        invert(branch, jump.jump->target);
 
         remove(jump);
         ++optimizations_.inverted_branches;
@@ -684,12 +665,11 @@ class assembler {
 
     [[nodiscard]] static auto
     destination(const std::unordered_map<std::string_view, size_t>& labels,
-                const jump_info& jump) -> std::optional<size_t> {
+                const jump_info& jump) -> size_t {
 
         const auto found{labels.find(jump.target)};
-        if (found == labels.end()) {
-            return std::nullopt;
-        }
+
+        assert(found != labels.end());
 
         return found->second;
     }

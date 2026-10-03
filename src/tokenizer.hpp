@@ -136,6 +136,7 @@ class tokenizer final {
     // at an unrelated position
     auto put_back_token(const token& t) -> void {
         assert(t.source_end_index() == char_ix_);
+        assert(not t.is_string());
         assert(is_token_text_at_source(t));
 
         move_back(char_ix_ - t.source_begin_index());
@@ -235,18 +236,9 @@ class tokenizer final {
         return string_tk;
     }
 
-    // string token text excludes the quotes
     [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {
-        const std::string_view src{
-            src_.substr(t.start_index(), t.end_index() - t.start_index()),
-        };
-
-        if (not t.is_string()) {
-            return src == t.text();
-        }
-
-        return src.size() == t.text().size() + 2 and
-               src.substr(1, t.text().size()) == t.text();
+        return src_.substr(t.start_index(), t.end_index() - t.start_index()) ==
+               t.text();
     }
 
     auto move_back(size_t nchars) -> void {

@@ -1014,12 +1014,7 @@ class machine_rv32i : public machine {
     }
 
     auto emit_string_data(const std::string_view value) -> void override {
-        const std::optional<std::string> bytes{token::decode_string(value)};
-
-        // the tokenizer rejects unsupported escapes
-        assert(bytes);
-
-        assembler_.ascii(*bytes);
+        assembler_.ascii(token::decode_string(value));
     }
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {
@@ -1647,16 +1642,11 @@ class machine_rv32i : public machine {
             return;
         }
 
-        const bool identical{
-            same_memory(destination, src) or
-                (destination.is_register() and src.is_register() and
-                 register_index(destination.base_register()) ==
-                     register_index(src.base_register()) and
-                 destination.type_ref().name() == src.type_ref().name()),
-        };
-
         // folding removes the operations of a location with itself
-        assert(not identical);
+        assert(not same_memory(destination, src));
+        assert(not destination.is_register() or not src.is_register() or
+               register_index(destination.base_register()) !=
+                   register_index(src.base_register()));
 
         const address_scope scope{*this, destination, src};
 
