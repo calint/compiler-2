@@ -1,5 +1,6 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
+--------------------------------------------------------------------------------
 each open item starts with its difficulty: easy, medium or hard
 --------------------------------------------------------------------------------
 better assembler code, medium, largest gain first
