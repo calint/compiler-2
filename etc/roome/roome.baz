@@ -960,8 +960,11 @@ dat str_action_new_entity = "en"
 func noinline parse_input(ceid, tz mut tokenizer) {
     tz.first()
 
-    # a copy, the parameter may point into a global the actions also name
     var eid = ceid
+    
+    # note: because this is a `noinlin` both arguments might be references into
+    #       shared global state thus any action on `tz` might change `ceid` so
+    #       make a local copy before calling to make sure `ceid` does not change
 
     if tz.is_str(str_action_go) {
         action_go(eid, tz)
