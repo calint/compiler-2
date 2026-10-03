@@ -597,9 +597,10 @@ class machine_rv32i : public machine {
         assert(frame_address.index_register().empty());
         assert(frame_size_bytes.is_immediate());
 
+        const address_scope scope{*this, frame_address, frame_size_bytes};
+
         comment(src_loc_tk, indent, "frame capacity check begin");
 
-        const address_scope scope{*this, frame_address, frame_size_bytes};
         const operand start{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
