@@ -16,7 +16,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <utility>
 
 #include "assembler.hpp"
 #include "compiler_exception.hpp"
@@ -355,9 +354,6 @@ examples:
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
         return 1;
-    } catch (...) {
-        std::println(stderr, "\nunknown exception");
-        return 1;
     }
 
     return 0;
@@ -382,15 +378,17 @@ examples:
                                     const size_t alignment)
     -> std::optional<size_t> {
 
-    uint64_t parsed_size_bytes{};
+    static_assert(sizeof(size_t) == sizeof(uint64_t));
+
+    size_t parsed_size_bytes{};
     try {
         const std::string digits{text};
         size_t chars_read{};
+        // stoull throws for empty text and for text without digits
         parsed_size_bytes = std::stoull(digits, &chars_read, 0);
 
-        if (digits.empty() or digits.starts_with('-') or
-            chars_read != digits.size() or parsed_size_bytes == 0 or
-            not std::in_range<size_t>(parsed_size_bytes)) {
+        if (digits.starts_with('-') or chars_read != digits.size() or
+            parsed_size_bytes == 0) {
 
             throw std::invalid_argument{std::format("invalid {}", name)};
         }
@@ -408,7 +406,7 @@ examples:
         return std::nullopt;
     }
 
-    return static_cast<size_t>(parsed_size_bytes);
+    return parsed_size_bytes;
 }
 
 // each '--checks' replaces the earlier ones, empty parts are ignored

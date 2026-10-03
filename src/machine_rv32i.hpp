@@ -44,6 +44,10 @@ class machine_rv32i : public machine {
     // the return address slot keeps sp 16-byte aligned
     static constexpr int64_t frame_save_bytes_{16};
     static constexpr size_t word_size_bytes_{4};
+    static constexpr size_t address_space_bytes_{
+        size_t{std::numeric_limits<uint32_t>::max()} + 1,
+    };
+    // note: +1 because the highest address is the maximum value
 
     static constexpr const decltype(assembler_rv32i::register_names)&
         register_names_{assembler_rv32i::register_names};
@@ -1493,6 +1497,7 @@ class machine_rv32i : public machine {
 
         // the check precedes any output so a failing build writes nothing
         assembler_.resolve_jumps();
+        check_address_range(assembler_.memory_end_address());
         check_memory_end(assembler_.memory_end_address());
 
         // counted after resolving because grown jumps take more instructions,
@@ -4104,6 +4109,18 @@ class machine_rv32i : public machine {
         }
 
         return true;
+    }
+
+    // the code and data of the image cannot be addressed beyond 32 bits
+    static auto check_address_range(const size_t memory_end_address) -> void {
+        if (memory_end_address <= address_space_bytes_) {
+            return;
+        }
+
+        throw panic_exception{std::format(
+            "code, data and variables use {} B, which exceeds the RV32I "
+            "address range",
+            memory_end_address)};
     }
 
     // what a loop of 'width' byte accesses does, e.g. 'copy 4-byte words'

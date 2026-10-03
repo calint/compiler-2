@@ -7,7 +7,6 @@
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
-#include "decouple.hpp"
 #include "machine_rv32i_bare_metal.hpp"
 #include "panic_exception.hpp"
 

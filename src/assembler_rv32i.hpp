@@ -4,7 +4,6 @@
 #include <array>
 #include <bit>
 #include <cassert>
-#include <charconv>
 #include <concepts>
 #include <cstdint>
 #include <format>
@@ -19,7 +18,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -198,6 +196,7 @@ class assembler_rv32i final : public assembler {
     static constexpr int64_t branch_max{4094};
     static constexpr int64_t jal_min{-1048576};
     static constexpr int64_t jal_max{1048574};
+    static constexpr int64_t address_space_bytes{0x100000000};
 
     struct instruction {
         op code{};
@@ -2201,7 +2200,9 @@ class assembler_rv32i final : public assembler {
                                           const int64_t distance)
         -> std::vector<uint32_t> {
 
-        assert(std::in_range<int32_t>(distance));
+        // addresses are 32 bit, so the distance wraps around the address space
+        assert(distance > -address_space_bytes and
+               distance < address_space_bytes);
 
         return {
             encode_upper(auipc_encoding, base, upper_part(distance)),

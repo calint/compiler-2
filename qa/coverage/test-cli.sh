@@ -132,6 +132,27 @@ CLI_CHECKS_NOUB() {
     echo ok
 }
 
+CLI_CHECKS_LIST() {
+    echo -n "cli --checks list: "
+    "$BIN" 015.baz >gen.s 2>err
+    "$BIN" --checks=upper,lower 015.baz >out 2>err
+    if cmp -s gen.s out; then
+        echo "FAILED. --checks=upper,lower changed nothing"
+        exit 1
+    fi
+    "$BIN" --checks=upper,,lower, 015.baz >gen.s 2>err
+    "$BIN" --checks=upper,lower 015.baz >out 2>err
+    cmp -s gen.s out
+    # a later option replaces the earlier ones, empty ones included
+    "$BIN" --checks=upper,lower --checks= 015.baz >gen.s 2>err
+    "$BIN" 015.baz >out 2>err
+    cmp -s gen.s out
+    "$BIN" --checks=upper --checks=lower 015.baz >gen.s 2>err
+    "$BIN" --checks=lower 015.baz >out 2>err
+    cmp -s gen.s out
+    echo ok
+}
+
 CLI_FILE_ERRORS() {
     echo -n "cli unreadable source and unwritable image: "
     set +e
@@ -147,6 +168,36 @@ CLI_FILE_ERRORS() {
     [[ $exit_code -eq 1 ]]
     [[ ! -s gen.s ]]
     grep -Fq "cannot write 'missing-directory/gen-rv32i.bin'" err
+    echo ok
+}
+
+CLI_ADDRESS_RANGE() {
+    echo -n "cli rv32i address range: "
+    local target
+    for target in rv32i rv32i-qemu rv32i-fpga; do
+        printf 'dat big = i8[3000000000]{}\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
+        set +e
+        "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
+        local exit_code=$?
+        set -e
+        # fpga rejects it for its device memory, the others accept it
+        if [[ $target == rv32i-fpga ]]; then
+            [[ $exit_code -eq 1 ]]
+            grep -Fq "of device memory" err
+        else
+            [[ $exit_code -eq 0 ]]
+        fi
+        printf 'dat big = i8[5000000000]{}\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
+        rm -f gen-rv32i.bin
+        set +e
+        "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
+        exit_code=$?
+        set -e
+        [[ $exit_code -eq 1 ]]
+        [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
+        grep -Fq "exceeds the RV32I address range" err
+    done
+    rm -f gen-range.baz gen-rv32i.bin
     echo ok
 }
 
@@ -189,6 +240,7 @@ CLI_QEMU_STACK() {
     echo ok
 }
 
+CLI -h 0
 CLI --vars=65536 0 --help
 CLI --vars=0x10000 0 --help
 CLI --vars= 1 --help
@@ -221,8 +273,10 @@ CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE
 CLI_JUMP_OPTIMIZATIONS
 CLI_CHECKS_NOUB
+CLI_CHECKS_LIST
 CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
 CLI_QEMU_STACK
+CLI_ADDRESS_RANGE
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

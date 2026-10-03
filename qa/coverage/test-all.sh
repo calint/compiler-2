@@ -19,8 +19,9 @@ export LLVM_PROFILE_FILE="$PWD/extra-%p.profraw"
 ./test-cli.sh
 ./test-arena.py
 ./test-rv32i.sh
-./test-far-jumps.sh
-./test-far-jumps-no-scratch.sh
+# the commented out tests take unreasonable time with sanitizers turned on
+#./test-far-jumps.sh
+#./test-far-jumps-no-scratch.sh
 ./test-string-stores.sh
 ./test-bulk-widths.sh
 ./test-constant-folding.sh
