@@ -2,8 +2,8 @@
 --   '#baz-global?' true when the identifier refers to a file level 'dat', 'var' or 'let'
 --   '#baz-parameter?' true when the identifier refers to a function parameter
 --   or the named return value
---   '#baz-type?' true when the identifier names a 'type' of the file, e.g. the
---   initializer of 'var tz = tokenizer'
+--   '#baz-type?' true when the identifier names a 'type' of the file or a
+--   built-in type, e.g. the initializer of 'var tz = tokenizer' or 'var x = i8'
 -- directive for queries/aerial.scm:
 --   '#baz-qualified-name! @receiver @name' sets the text of @name to
 --   'receiver.name', or leaves it alone when there is no receiver
@@ -35,6 +35,9 @@ local declaration_types = {
   data_declaration = true,
   variable_declaration = true,
 }
+
+-- a bare built-in type name is a zero value, e.g. 'var x = i8'
+local builtin_types = { bool = true, i8 = true, i16 = true, i32 = true, i64 = true, int = true }
 
 local function field_has(parent, field, node)
   for _, n in ipairs(parent:field(field)) do
@@ -112,6 +115,10 @@ local function is_global(program, name, source)
 end
 
 local function is_type(program, name, source)
+  if builtin_types[name] then
+    return true
+  end
+
   for c in program:iter_children() do
     if c:type() == "type_definition" and name_is(c:field("name")[1], name, source) then
       return true

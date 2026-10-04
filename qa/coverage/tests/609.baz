@@ -77,7 +77,7 @@ func main() {
     n = n * 100
     assert(7, n == -300)
 
-    var d = i(small) # is default
+    var d = int(small) # is default
     d = d * 100
     assert(22, d == -300)
 

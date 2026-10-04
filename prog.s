@@ -558,20 +558,20 @@ main:
         if.38.24.222.5.end:
 ;       [222:5] free scratch register r15
     func.assert.222.5.end:
-;   [225:5] var wide = i(i16(small))
+;   [225:5] var wide = int(i16(small))
 ;   [225:9] wide: i64 (8 B @ [rbp + 408])
-;   [225:9] wide = i(i16(small))
-;   [225:16] wide = i(i16(small))
+;   [225:9] wide = int(i16(small))
+;   [225:16] wide = int(i16(small))
 ;   [225:16] = expression
 ;   [225:16] instructions without scratch register 2, with 3
-;   [225:18] wide = i16(small)
-;   [225:18] = expression
-;   [225:18] instructions without scratch register 2, with 3
-;   [225:22] small
-;   [225:22] allocate scratch register -> r15
+;   [225:20] wide = i16(small)
+;   [225:20] = expression
+;   [225:20] instructions without scratch register 2, with 3
+;   [225:24] small
+;   [225:24] allocate scratch register -> r15
     movsx r15, byte [rbp + 400]
     mov qword [rbp + 408], r15
-;   [225:22] free scratch register r15
+;   [225:24] free scratch register r15
 ;   [226:5] assert(wide == -56)
 ;   [226:12] allocate scratch register -> r15
 ;   [226:12] ? wide == -56

@@ -13,6 +13,7 @@
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "stmt_assign_var.hpp"
+#include "stmt_builtin_convert.hpp"
 #include "stmt_identifier.hpp"
 #include "token.hpp"
 #include "type.hpp"
@@ -140,6 +141,12 @@ class stmt_def_var final : public statement {
         const token tk{tz.next_token()};
         if (is_record_literal(tc, tk, tz) or is_bare_record_type(tc, tk, tz)) {
             set_type(tc.get_type_or_throw(tk, tk.text()));
+            return;
+        }
+
+        // e.g. 'var x = i8' is 'i8(0)'
+        if (is_bare_builtin_type(tc, tk, tz)) {
+            set_type(stmt_builtin_convert::conversion_type(tc, tk));
             return;
         }
 

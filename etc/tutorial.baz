@@ -105,9 +105,9 @@ func sized_types() {
     assert(small == -56)
     # arithmetic wraps at the width of the destination
 
-    var wide = i(small)
+    var wide = int(small)
     assert(wide == -56)
-    # 'i(x)' converts to the default type
+    # 'int(x)' converts to the default type
 
 #   small = wide
 #   compile error because the value might not fit, narrowing must be

@@ -1,2 +1,2 @@
 
-625.baz:4:13: cannot resolve identifier 'i'
+625.baz:4:13: cannot resolve identifier 'int'

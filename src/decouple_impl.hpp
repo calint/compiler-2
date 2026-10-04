@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
@@ -151,6 +152,26 @@ auto is_bare_record_type(const toc& tc, const token& tk, tokenizer& tz)
     const char next{tz.peek_char_after_whitespace()};
 
     return next != '{' and next != '[' and next != '.';
+}
+
+// declared in 'decouple.hpp'
+// e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
+// a builtin type name not followed by '(' or '[' has no other meaning
+auto is_bare_builtin_type(const toc& tc, const token& tk, tokenizer& tz)
+    -> bool {
+
+    if (not(stmt_builtin_convert::is_builtin_name(tk.text()) or
+            tk.is_text("bool")) or
+        tc.is_var_or_alias(tk.text()) or tc.has_const(tk.text())) {
+
+        return false;
+    }
+
+    const char next{tz.peek_char_after_whitespace()};
+
+    // an arithmetic operator would continue the expression, e.g. 'i8 + 1'
+    return next != '(' and next != '[' and
+           !absl::StrContains(std::string_view{"+-*/%&|^<>"}, next);
 }
 
 // declared in 'decouple.hpp'

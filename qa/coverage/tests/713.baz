@@ -1,6 +1,6 @@
-# a type name alone is not a data value
+# a type name followed by an operator is not a data value
 
-dat x = i8
+dat x = i8 + 1
 
 func main() {
 }

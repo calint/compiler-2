@@ -16,7 +16,7 @@
 #include "unary_ops.hpp"
 
 // e.g. 'i8(x)' converts 'x' to the type, a narrowing store truncates on
-// purpose; 'i(x)' converts to the default type of the target
+// purpose; 'int(x)' converts to the default type of the target
 class stmt_builtin_convert final : public expression {
     token open_paren_tk_;
     expr_arith arg_;
@@ -51,6 +51,14 @@ class stmt_builtin_convert final : public expression {
         }
     }
 
+    // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is
+    // 'false'
+    stmt_builtin_convert(const toc& tc, const token tk)
+        : expression{tk, {}}, folded_(tk.is_text("bool") ? "false" : "0") {
+
+        set_type(conversion_type(tc, tk));
+    }
+
     stmt_builtin_convert() = default;
 
     //
@@ -59,6 +67,12 @@ class stmt_builtin_convert final : public expression {
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
+
+        // the bare form has no argument
+        if (open_paren_tk_.is_empty()) {
+            return;
+        }
+
         open_paren_tk_.source_to(os);
         arg_.source_to(os);
         close_paren_tk_.source_to(os);
@@ -155,7 +169,7 @@ class stmt_builtin_convert final : public expression {
     [[nodiscard]] static auto conversion_type(const toc& tc, const token& tk)
         -> const type& {
 
-        if (tk.is_text("i")) {
+        if (tk.is_text("int")) {
             return tc.get_type_default();
         }
 
@@ -165,8 +179,8 @@ class stmt_builtin_convert final : public expression {
     [[nodiscard]] static auto is_builtin_name(const std::string_view name)
         -> bool {
 
-        return name == "i" or name == "i8" or name == "i16" or name == "i32" or
-               name == "i64";
+        return name == "int" or name == "i8" or name == "i16" or
+               name == "i32" or name == "i64";
     }
 
   private:
@@ -199,6 +213,11 @@ class stmt_builtin_convert final : public expression {
 
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<int64_t> {
+
+        // the bare form has no argument
+        if (open_paren_tk_.is_empty()) {
+            return 0;
+        }
 
         if (arg_.is_expression()) {
             return std::nullopt;

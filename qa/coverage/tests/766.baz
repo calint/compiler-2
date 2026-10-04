@@ -1,0 +1,43 @@
+# a built-in type initializer without '(0)' is the same as with '(0)', 'bool'
+# is 'false'
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+dat d8 = i8
+dat d16 = i16
+dat d32 = i32
+dat dd = int
+dat db = bool
+
+func main() {
+    var a = i8
+    var b = i16
+    var c = i32
+    var d = int
+    var e = i8(0)
+
+    assert(1, a == 0 and b == 0 and c == 0 and d == 0 and e == 0)
+    assert(2, d8 == 0 and d16 == 0 and d32 == 0 and dd == 0)
+
+    a = 5
+    assert(3, a == 5)
+
+    var f = bool
+    assert(6, not f and not db)
+    f = true
+    assert(7, f)
+
+    # the foo counter named 'i' is not a type
+    var arr = [3]{4, 5, 6}
+    var sum = 0
+    foo arr {
+        var k = i
+        sum = sum + k
+    }
+    assert(4, sum == 0 + 1 + 2)
+
+    # a constant named 'int' is not the type either
+    let int = 5
+    var x = int
+    assert(5, x == 5)
+}

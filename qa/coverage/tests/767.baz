@@ -1,0 +1,5 @@
+# a type name followed by an operator is not an initializer
+
+func main() {
+    var x = i8 + 1
+}

@@ -2,6 +2,7 @@
 // reviewed: 2025-09-29
 
 #include <cassert>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -26,14 +27,16 @@ class expr_bool_op final : public statement {
     bool is_expression_{};
 
   public:
-    expr_bool_op(toc& tc, tokenizer& tz)
-        : statement{tz.next_whitespace_token()} {
+    expr_bool_op(toc& tc, tokenizer& tz,
+                 std::unique_ptr<statement> first_expression = {})
+        : statement{first_expression ? tz.cur_position_token()
+                                     : tz.next_whitespace_token()} {
 
         set_type(tc.get_type_bool());
 
         bool is_not{};
         // e.g. if not a == 3 ...
-        while (true) {
+        while (not first_expression) {
             const token t{tz.next_token()};
             if (not t.is_text("not")) {
                 tz.put_back_token(t);
@@ -44,7 +47,15 @@ class expr_bool_op final : public statement {
         }
         is_not_ = is_not;
 
-        lhs_ = {tc, tz, true};
+        lhs_ = {tc,
+                tz,
+                true,
+                false,
+                {},
+                false,
+                {},
+                expr_arith::initial_precedence,
+                std::move(first_expression)};
 
         ws_pre_op_ = tz.next_whitespace_token();
 
@@ -646,7 +657,8 @@ class expr_bool final : public statement {
   public:
     expr_bool(toc& tc, const token tk, tokenizer& tz,
               const bool enclosed = false, const token not_tk = {},
-              const token open_paren_tk = {})
+              const token open_paren_tk = {},
+              std::unique_ptr<statement> first_expression = {})
         : statement{tk}, not_tk_{not_tk}, open_paren_tk_{open_paren_tk},
           enclosed_{enclosed} {
 
@@ -656,7 +668,13 @@ class expr_bool final : public statement {
 
         // parse
         while (true) {
-            parse_element(tc, tz);
+            // a caller might have supplied the first operand it already parsed
+            if (first_expression) {
+                bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz,
+                                    std::move(first_expression));
+            } else {
+                parse_element(tc, tz);
+            }
 
             // end of '(...)' enclosed expression?
             if (enclosed_) {

@@ -38,7 +38,7 @@ compiler writes the binary image itself.
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
-  `write`, `exit`, `i`, `i8`, `i16`, `i32`, `i64`
+  `write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 
 ## Howto
 
@@ -131,10 +131,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           5998           2427          18899
+C/C++ Header                    54           6019           2440          18985
 C++                              1            106             25            399
 -------------------------------------------------------------------------------
-SUM:                            55           6104           2452          19298
+SUM:                            55           6125           2465          19384
 -------------------------------------------------------------------------------
 ```
 
@@ -365,9 +365,9 @@ func main() {
     assert(small == -56)
     # `i8(100)` gives the variable type `i8`, arithmetic wraps at its width
 
-    var wide = i(i16(small))
+    var wide = int(i16(small))
     assert(wide == -56)
-    # `i(x)` converts to the default type
+    # `int(x)` converts to the default type
 
 #   small = wide
 #   compile time error because the value might not fit, narrowing must be
@@ -2772,20 +2772,20 @@ main:
         if.38.24.222.5.end:
 ;       [222:5] free scratch register r15
     func.assert.222.5.end:
-;   [225:5] var wide = i(i16(small))
+;   [225:5] var wide = int(i16(small))
 ;   [225:9] wide: i64 (8 B @ [rbp + 408])
-;   [225:9] wide = i(i16(small))
-;   [225:16] wide = i(i16(small))
+;   [225:9] wide = int(i16(small))
+;   [225:16] wide = int(i16(small))
 ;   [225:16] = expression
 ;   [225:16] instructions without scratch register 2, with 3
-;   [225:18] wide = i16(small)
-;   [225:18] = expression
-;   [225:18] instructions without scratch register 2, with 3
-;   [225:22] small
-;   [225:22] allocate scratch register -> r15
+;   [225:20] wide = i16(small)
+;   [225:20] = expression
+;   [225:20] instructions without scratch register 2, with 3
+;   [225:24] small
+;   [225:24] allocate scratch register -> r15
     movsx r15, byte [rbp + 400]
     mov qword [rbp + 408], r15
-;   [225:22] free scratch register r15
+;   [225:24] free scratch register r15
 ;   [226:5] assert(wide == -56)
 ;   [226:12] allocate scratch register -> r15
 ;   [226:12] ? wide == -56

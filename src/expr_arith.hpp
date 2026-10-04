@@ -61,9 +61,6 @@ class expr_arith final : public expression {
     static constexpr char precedence_bitwise_xor{5};
     static constexpr char precedence_shift{6};
 
-    // higher than the highest precedence
-    static constexpr char initial_precedence{7};
-
   public:
     expr_arith(toc& tc, tokenizer& tz, const bool in_args = false,
                const bool enclosed = false, const token open_paren_tk = {},
@@ -150,6 +147,9 @@ class expr_arith final : public expression {
     }
 
     expr_arith() = default;
+
+    // higher than the highest precedence
+    static constexpr char initial_precedence{7};
 
     //
     // overridden methods

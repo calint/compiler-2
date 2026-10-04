@@ -38,7 +38,7 @@ end
 local keywords = {}
 for word in
   ([[let mut dat func noinline type var return if loop foo else break continue
-  not and or true false bool i8 i16 i32 i64]]):gmatch("%S+")
+  not and or true false bool int i8 i16 i32 i64]]):gmatch("%S+")
 do
   keywords[word] = true
 end

@@ -174,7 +174,7 @@ class stmt_def_dat final : public statement {
         return static_cast<size_t>(array_count_const_.value());
     }
 
-    // e.g. 'i8(3)' or 'i(3)'
+    // e.g. 'i8(3)' or 'int(3)'
     [[nodiscard]] auto parse_conversion(const toc& tc, tokenizer& tz) -> elem {
         open_paren_tk_ = tz.is_next_char_token('(');
 
@@ -243,6 +243,16 @@ class stmt_def_dat final : public statement {
             set_type(tc.get_type_or_throw(tk, tk.text()));
 
             return parse_type(tc, tz, get_type());
+        }
+
+        // e.g. 'dat x = i8' is 'i8(0)', the token is printed as the value
+        if (is_bare_builtin_type(tc, tk, tz)) {
+            set_type(stmt_builtin_convert::conversion_type(tc, tk));
+
+            elem el{};
+            el.src_loc_tk = tk;
+
+            return el;
         }
 
         if (stmt_builtin_convert::is_builtin_name(tk.text()) and

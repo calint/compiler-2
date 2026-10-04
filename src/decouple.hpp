@@ -516,3 +516,6 @@ struct ident_info {
 
 [[nodiscard]] auto is_bare_record_type(const toc& tc, const token& tk,
                                        tokenizer& tz) -> bool;
+
+[[nodiscard]] auto is_bare_builtin_type(const toc& tc, const token& tk,
+                                        tokenizer& tz) -> bool;

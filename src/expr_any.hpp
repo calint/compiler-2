@@ -16,6 +16,7 @@
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "expr_type.hpp"
+#include "stmt_builtin_convert.hpp"
 #include "stmt_const.hpp"
 
 class expr_any final : public statement {
@@ -741,10 +742,51 @@ class expr_any final : public statement {
 
         if (tp.name() == tc.get_type_bool().name()) {
             // destination is boolean
+
+            // e.g. 'var b = bool' is 'var b = false'
+            if (is_initializer) {
+                const token pos_tk{tz.cur_position_token()};
+                const token tk{tz.next_token()};
+                if (is_bare_builtin_type(tc, tk, tz)) {
+                    return expr_bool{
+                        tc,
+                        pos_tk,
+                        tz,
+                        false,
+                        {},
+                        {},
+                        std::make_unique<stmt_builtin_convert>(tc, tk),
+                    };
+                }
+
+                tz.put_back_token(tk);
+            }
+
             return expr_bool{tc, tz.next_whitespace_token(), tz};
         }
 
         // destination is a built-in (register) value
+
+        // e.g. 'var x = i8' is 'var x = i8(0)'
+        if (is_initializer) {
+            const token tk{tz.next_token()};
+            if (is_bare_builtin_type(tc, tk, tz)) {
+                return expr_arith{
+                    tc,
+                    tz,
+                    in_args,
+                    false,
+                    {},
+                    false,
+                    {},
+                    expr_arith::initial_precedence,
+                    std::make_unique<stmt_builtin_convert>(tc, tk),
+                };
+            }
+
+            tz.put_back_token(tk);
+        }
+
         return expr_arith{tc, tz, in_args};
     }
 };

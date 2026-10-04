@@ -38,7 +38,7 @@ compiler writes the binary image itself.
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
-  `write`, `exit`, `i`, `i8`, `i16`, `i32`, `i64`
+  `write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 
 ## Howto
 

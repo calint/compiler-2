@@ -1902,10 +1902,10 @@ SRC=623 && COMPERR
 # 'true' and 'false' are of type 'bool' and cannot be arithmetic operands
 SRC=624 && COMPERR
 
-# 'i' is not a type name, an array literal of the default type omits it
+# 'int' is not a type name, an array literal of the default type omits it
 SRC=625 && COMPERR
 
-# 'i' is not a type name, an array argument of the default type is 'arr[]'
+# 'int' is not a type name, an array argument of the default type is 'arr[]'
 SRC=626 && COMPERR
 
 # an array literal without a type name has the default type which must match
@@ -2199,7 +2199,7 @@ SRC=711 && COMPERR
 # a constant element decides a boolean list passed to an inline function
 SRC=712 && EXP=2 && RUN
 
-# a type name alone is not a data value
+# a type name followed by an operator is not a data value
 SRC=713 && COMPERR
 
 # a read-only argument cannot be passed to a mut parameter of a method
@@ -2326,7 +2326,7 @@ if [[ $MACHINE != x86_64 ]]; then SRC=753 && EXP=101 && RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=754 && EXP=2 && RUN; fi
 
 # a range with a runtime start and count when only the upper limit is checked
-SRC=755 && EXP=0 && OPTS="--vars=262144 --checks=upper --reproduce-source" RUN
+SRC=755 && OPTS="--vars=262144 --checks=upper --reproduce-source" DIFF
 
 # rv32i: a constant shift count of a 32-bit value must be below 32
 if [[ $MACHINE != x86_64 ]]; then SRC=756 && COMPERR; fi
@@ -2357,3 +2357,9 @@ SRC=764 && COMPERR
 
 # a type or array initializer without '{}' is the same as with an empty '{}'
 SRC=765 && EXP=0 && RUN
+
+# a built-in type initializer without '(0)' is the same as with '(0)'
+SRC=766 && EXP=0 && RUN
+
+# a type name followed by an operator is not an initializer
+SRC=767 && COMPERR
