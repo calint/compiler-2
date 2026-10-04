@@ -68,37 +68,16 @@ class stmt_def_func final : public statement {
         parse_receiver(tc, tz);
 
         // e.g. 'func tokenizer.to<T type>()'
-        std::vector<token> param_tks;
-        if (open_paren_tk_.is_empty() and
-            tz.peek_char_after_whitespace() == '<') {
+        if (is_generic_head(tz)) {
+            parse_generic(tc, tk, tz, type_args, generic_instance);
+        } else {
+            assert(type_args.empty());
 
-            param_tks = parse_type_params(tz);
-
-            if (type_args.empty()) {
-                define_generic(tc, tk, tz, param_tks, generic_instance);
-                return;
-            }
-
-            assert(type_args.size() == param_tks.size());
-
-            name_ = toc::generic_instance_name(name_, type_args);
-            bind_type_args(tc, param_tks, type_args);
-
-            open_paren_tk_ = tz.is_next_char_token('(');
-        }
-
-        assert(type_args.empty() or not param_tks.empty());
-
-        parse_signature(tc, tz);
-
-        parse_body(tc, tz);
-
-        for (const token& param_tk : param_tks) {
-            tc.unbind_type_alias(param_tk.text());
+            parse_function(tc, tz);
         }
 
         if (generic_instance != nullptr) {
-            unbind_generic_instance(tc, *generic_instance);
+            tc.unbind_generic_instance(*generic_instance);
         }
     }
 
@@ -357,20 +336,16 @@ class stmt_def_func final : public statement {
                                  "'mut' requires a method 'type.name'"};
     }
 
-    // the type name of the method and the type arguments name their types, the
-    // constants are added to the frame of the body
+    // the constants of the instance are added to the frame of the body
     auto bind_generic_instance(toc& tc, const generic_type_instance& instance)
         -> void {
 
-        tc.bind_type_alias(name_tk_, name_tk_.text(), *instance.type_ptr);
+        tc.bind_generic_instance(name_tk_, instance);
 
         for (const generic_binding& binding : instance.bindings) {
             if (binding.type_ptr == nullptr) {
                 constants_.push_back(binding);
-                continue;
             }
-
-            tc.bind_type_alias(name_tk_, binding.name, *binding.type_ptr);
         }
     }
 
@@ -387,20 +362,16 @@ class stmt_def_func final : public statement {
             param_names.emplace_back(param_tk.text());
         }
 
-        std::optional<generic_type_instance> receiver_instance;
-        if (generic_instance != nullptr) {
-            receiver_instance = *generic_instance;
-        }
+        std::optional<generic_type_instance> receiver_instance{
+            generic_instance != nullptr ? std::optional{*generic_instance}
+                                        : std::nullopt,
+        };
 
         tc.add_generic_func(name_tk_, name_, func_tk, start_tk_,
                             std::move(param_names),
                             std::move(receiver_instance));
 
-        keep_generic_text(tc, func_tk, tz);
-
-        if (generic_instance != nullptr) {
-            unbind_generic_instance(tc, *generic_instance);
-        }
+        generic_text_ = tz.skip_braced_block_after(func_tk);
     }
 
     // e.g. 'func text.print()' of the generic type 'text': every instance of
@@ -412,13 +383,19 @@ class stmt_def_func final : public statement {
 
         tc.add_generic_method(type_name, func_tk, start_tk_);
 
-        keep_generic_text(tc, func_tk, tz);
+        generic_text_ = tz.skip_braced_block_after(func_tk);
 
         for (const generic_type_instance& instance :
              tc.get_generic_type_instances(type_name)) {
 
             instantiate_generic_method(tc, func_tk, start_tk_, instance);
         }
+    }
+
+    // e.g. the '<' of 'func tokenizer.to<T type>()'
+    [[nodiscard]] auto is_generic_head(tokenizer& tz) const -> bool {
+        return open_paren_tk_.is_empty() and
+               tz.peek_char_after_whitespace() == '<';
     }
 
     // e.g. the 'text' of 'func text.print()'
@@ -428,16 +405,6 @@ class stmt_def_func final : public statement {
         return open_paren_tk_.is_empty() and
                tc.is_generic_type(name_tk_.text()) and
                tz.peek_char_after_whitespace() == '.';
-    }
-
-    auto keep_generic_text(const toc& tc, const token& func_tk, tokenizer& tz)
-        -> void {
-
-        tz.skip_braced_block();
-
-        const size_t begin_ix{func_tk.source_end_index()};
-        generic_text_ = tc.source().substr(
-            begin_ix, tz.cur_char_index_in_source() - begin_ix);
     }
 
     // the function scope is established before the body is parsed, its
@@ -455,6 +422,38 @@ class stmt_def_func final : public statement {
         code_ = {tc, tz, true};
 
         tc.exit_func(name());
+    }
+
+    auto parse_function(toc& tc, tokenizer& tz) -> void {
+        parse_signature(tc, tz);
+
+        parse_body(tc, tz);
+    }
+
+    // a generic function is kept for its instances, an instance is the
+    // definition parsed with its type parameters bound
+    auto parse_generic(toc& tc, const token& func_tk, tokenizer& tz,
+                       const std::span<const type* const> type_args,
+                       const generic_type_instance* const generic_instance)
+        -> void {
+
+        const std::vector<token> param_tks{parse_type_params(tz)};
+
+        if (type_args.empty()) {
+            define_generic(tc, func_tk, tz, param_tks, generic_instance);
+            return;
+        }
+
+        assert(type_args.size() == param_tks.size());
+
+        name_ = toc::generic_instance_name(name_, type_args);
+        bind_type_args(tc, param_tks, type_args);
+
+        open_paren_tk_ = tz.is_next_char_token('(');
+
+        parse_function(tc, tz);
+
+        unbind_type_args(tc, param_tks);
     }
 
     // 'name_tk_' is the receiver type, a method gets an implicit first
@@ -680,16 +679,12 @@ class stmt_def_func final : public statement {
         return param_tks;
     }
 
-    static auto unbind_generic_instance(toc& tc,
-                                        const generic_type_instance& instance)
+    static auto unbind_type_args(toc& tc,
+                                 const std::span<const token> param_tks)
         -> void {
 
-        tc.unbind_type_alias(instance.generic_name);
-
-        for (const generic_binding& binding : instance.bindings) {
-            if (binding.type_ptr != nullptr) {
-                tc.unbind_type_alias(binding.name);
-            }
+        for (const token& param_tk : param_tks) {
+            tc.unbind_type_alias(param_tk.text());
         }
     }
 };

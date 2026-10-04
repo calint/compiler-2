@@ -1221,28 +1221,16 @@ class stmt_call : public expression {
                                    func_name_, tok().text())};
         }
 
-        generic_tks_.emplace_back(open_tk);
+        const generic_arguments args{generic_arguments::parse(tz, open_tk)};
+
+        generic_tks_.append_range(args.list_tks);
 
         std::vector<const type*> type_args;
+        type_args.reserve(args.arg_tks.size());
 
-        while (true) {
-            const token type_tk{tz.next_token()};
+        for (const token& type_tk : args.arg_tks) {
             type_args.emplace_back(
                 &tc.get_type_or_throw(type_tk, type_tk.text()));
-            generic_tks_.emplace_back(type_tk);
-
-            const token close_tk{tz.is_next_char_token('>')};
-            if (not close_tk.is_empty()) {
-                generic_tks_.emplace_back(close_tk);
-                break;
-            }
-
-            const token delim_tk{tz.is_next_char_token(',')};
-            if (delim_tk.is_empty()) {
-                throw compiler_exception{
-                    tz, "expected ',' or '>' after type argument"};
-            }
-            generic_tks_.emplace_back(delim_tk);
         }
 
         return instantiate_generic_func(tc, tok(), func_name_, type_args);

@@ -665,6 +665,20 @@ class toc final {
         comment_var(src_loc_tk, indent, var);
     }
 
+    // the generic type and its type arguments name their types while a method
+    // of the instance is parsed
+    auto bind_generic_instance(const token& src_loc_tk,
+                               const generic_type_instance& instance) -> void {
+
+        bind_type_alias(src_loc_tk, instance.generic_name, *instance.type_ptr);
+
+        for (const generic_binding& binding : instance.bindings) {
+            if (binding.type_ptr != nullptr) {
+                bind_type_alias(src_loc_tk, binding.name, *binding.type_ptr);
+            }
+        }
+    }
+
     // a type parameter names its argument while an instance is parsed
     auto bind_type_alias(const token& src_loc_tk, const std::string_view name,
                          const type& tpe) -> void {
@@ -1250,6 +1264,25 @@ class toc final {
         };
 
         return std::format("{}:{}", line, col);
+    }
+
+    // undoes the type bindings, constants stay in their block
+    auto
+    unbind_generic_bindings(const std::span<const generic_binding> bindings)
+        -> void {
+
+        for (const generic_binding& binding : bindings) {
+            if (binding.type_ptr != nullptr) {
+                unbind_type_alias(binding.name);
+            }
+        }
+    }
+
+    auto unbind_generic_instance(const generic_type_instance& instance)
+        -> void {
+
+        unbind_type_alias(instance.generic_name);
+        unbind_generic_bindings(instance.bindings);
     }
 
     auto unbind_type_alias(const std::string_view name) -> void {

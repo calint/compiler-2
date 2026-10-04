@@ -96,6 +96,24 @@ auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
                                        tz);
 }
 
+// parses the generic definition again at 'start_tk' as an instance, the type
+// parameters of the callers are hidden meanwhile
+static auto add_generic_instance(toc& tc, const token& func_tk,
+                                 const token& start_tk,
+                                 const std::span<const type* const> type_args,
+                                 const generic_type_instance* const receiver)
+    -> void {
+
+    tokenizer tz{tc.source(), start_tk};
+
+    tc.enter_generic_instance();
+
+    tc.add_func_instance(
+        std::make_shared<stmt_def_func>(tc, func_tk, tz, type_args, receiver));
+
+    tc.exit_generic_instance();
+}
+
 // declared in 'decouple.hpp'
 // called from 'stmt_call'
 auto instantiate_generic_func(toc& tc, const token& call_tk,
@@ -120,21 +138,15 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
         return name;
     }
 
-    tokenizer tz{tc.source(), generic.start_tk};
-
     // an error in the instance reports the call that needed it
-    tc.enter_generic_instance();
-
     try {
-        tc.add_func_instance(std::make_shared<stmt_def_func>(
-            tc, generic.func_tk, tz, type_args,
-            generic.receiver_instance ? &*generic.receiver_instance : nullptr));
+        add_generic_instance(
+            tc, generic.func_tk, generic.start_tk, type_args,
+            generic.receiver_instance ? &*generic.receiver_instance : nullptr);
     } catch (compiler_exception& e) {
         e.add_call_frame(call_tk, name);
         throw;
     }
-
-    tc.exit_generic_instance();
 
     return name;
 }
@@ -145,14 +157,7 @@ auto instantiate_generic_method(toc& tc, const token& func_tk,
                                 const token& start_tk,
                                 const generic_type_instance& instance) -> void {
 
-    tokenizer tz{tc.source(), start_tk};
-
-    tc.enter_generic_instance();
-
-    tc.add_func_instance(std::make_shared<stmt_def_func>(
-        tc, func_tk, tz, std::span<const type* const>{}, &instance));
-
-    tc.exit_generic_instance();
+    add_generic_instance(tc, func_tk, start_tk, {}, &instance);
 }
 
 // declared in 'decouple.hpp'

@@ -160,6 +160,17 @@ class tokenizer final {
         move_back(n);
     }
 
+    // skips the next braced block and returns the source text from the end of
+    // 'tk' to the end of the block
+    auto skip_braced_block_after(const token& tk) -> std::string_view {
+        skip_braced_block();
+
+        const size_t begin_ix{tk.source_end_index()};
+        // note: the text starts after 'tk' because its statement prints 'tk'
+
+        return src_.substr(begin_ix, char_ix_ - begin_ix);
+    }
+
     // skips up to and including the '}' that closes the next '{', strings and
     // character literals may contain braces
     auto skip_braced_block() -> void {

@@ -135,6 +135,21 @@ class stmt_def_type final : public statement {
     }
 
   private:
+    // the methods of the generic type see the arguments of the alias
+    auto add_instance(toc& tc, const token& generic_tk,
+                      std::vector<generic_binding> bindings) -> void {
+
+        const generic_type_instance instance{
+            .generic_name{generic_tk.text()},
+            .type_ptr{&type_},
+            .bindings{std::move(bindings)},
+        };
+
+        tc.add_generic_type_instance(instance);
+
+        instantiate_generic_methods(tc, instance);
+    }
+
     auto add_type(toc& tc) -> void {
         // initialize the type definition
         type_.set_name(name_tk_.text());
@@ -163,11 +178,7 @@ class stmt_def_type final : public statement {
         tc.add_generic_type(name_tk_, name_tk_.text(), start_tk_,
                             generic_param::parse(tz));
 
-        tz.skip_braced_block();
-
-        const size_t begin_ix{type_tk.source_end_index()};
-        generic_text_ = tc.source().substr(
-            begin_ix, tz.cur_char_index_in_source() - begin_ix);
+        generic_text_ = tz.skip_braced_block_after(type_tk);
     }
 
     // e.g. 'type str = text<127>' is the type 'str' with the fields of the
@@ -175,25 +186,11 @@ class stmt_def_type final : public statement {
     auto parse_alias(toc& tc, tokenizer& tz) -> void {
         alias_tks_.emplace_back(tz.is_next_char_token('='));
 
-        const token generic_tk{tz.next_token()};
-        alias_tks_.emplace_back(generic_tk);
-
-        if (not tc.is_generic_type(generic_tk.text())) {
-            throw compiler_exception{
-                generic_tk,
-                std::format("'{}' is not a generic type", generic_tk.text())};
-        }
-
+        const token generic_tk{parse_alias_generic(tc, tz)};
         const generic_type_info generic{tc.get_generic_type(generic_tk.text())};
         const std::vector<token> arg_tks{parse_alias_args(tz)};
 
-        if (arg_tks.size() != generic.params.size()) {
-            throw compiler_exception{
-                generic_tk,
-                std::format("generic type '{}' takes {} argument(s), got {}",
-                            generic_tk.text(), generic.params.size(),
-                            arg_tks.size())};
-        }
+        assert_arg_count(generic_tk, generic, arg_tks);
 
         // the constant arguments live in a block of their own
         tc.enter_block();
@@ -202,36 +199,15 @@ class stmt_def_type final : public statement {
             bind_args(tc, generic.params, arg_tks),
         };
 
-        tokenizer generic_tz{tc.source(), generic.start_tk};
-        std::ignore = generic_tz.next_token();
-        std::ignore = generic_param::parse(generic_tz);
-
-        open_brace_tk_ = generic_tz.is_next_char_token('{');
-
-        assert(not open_brace_tk_.is_empty());
-
-        parse_fields(tc, generic_tz);
+        parse_generic_fields(tc, generic);
 
         add_type(tc);
 
-        for (const generic_param& param : generic.params) {
-            if (param.is_type) {
-                tc.unbind_type_alias(param.name_tk.text());
-            }
-        }
+        tc.unbind_generic_bindings(bindings);
 
         tc.exit_block();
 
-        // the methods of the generic type see the arguments
-        const generic_type_instance instance{
-            .generic_name{generic_tk.text()},
-            .type_ptr{&type_},
-            .bindings{std::move(bindings)},
-        };
-
-        tc.add_generic_type_instance(instance);
-
-        instantiate_generic_methods(tc, instance);
+        add_instance(tc, generic_tk, std::move(bindings));
     }
 
     // appends the tokens after the name to 'alias_tks_' and returns the
@@ -246,33 +222,25 @@ class stmt_def_type final : public statement {
                             alias_tks_.back().text())};
         }
 
-        alias_tks_.emplace_back(open_tk);
+        generic_arguments args{generic_arguments::parse(tz, open_tk)};
 
-        std::vector<token> arg_tks;
+        alias_tks_.append_range(args.list_tks);
 
-        while (true) {
-            const token arg_tk{tz.next_token()};
-            if (arg_tk.text().empty()) {
-                throw compiler_exception{tz, "expected a generic argument"};
-            }
+        return std::move(args.arg_tks);
+    }
 
-            arg_tks.emplace_back(arg_tk);
-            alias_tks_.emplace_back(arg_tk);
+    // appends the name of the generic type to 'alias_tks_'
+    auto parse_alias_generic(const toc& tc, tokenizer& tz) -> token {
+        const token generic_tk{tz.next_token()};
+        alias_tks_.emplace_back(generic_tk);
 
-            const token close_tk{tz.is_next_char_token('>')};
-            if (not close_tk.is_empty()) {
-                alias_tks_.emplace_back(close_tk);
-
-                return arg_tks;
-            }
-
-            const token delim_tk{tz.is_next_char_token(',')};
-            if (delim_tk.is_empty()) {
-                throw compiler_exception{
-                    tz, "expected ',' or '>' after generic argument"};
-            }
-            alias_tks_.emplace_back(delim_tk);
+        if (not tc.is_generic_type(generic_tk.text())) {
+            throw compiler_exception{
+                generic_tk,
+                std::format("'{}' is not a generic type", generic_tk.text())};
         }
+
+        return generic_tk;
     }
 
     auto parse_fields(toc& tc, tokenizer& tz) -> void {
@@ -300,9 +268,39 @@ class stmt_def_type final : public statement {
         }
     }
 
+    // the fields are those of the generic definition, parsed again
+    auto parse_generic_fields(toc& tc, const generic_type_info& generic)
+        -> void {
+
+        tokenizer generic_tz{tc.source(), generic.start_tk};
+        std::ignore = generic_tz.next_token();
+        std::ignore = generic_param::parse(generic_tz);
+
+        open_brace_tk_ = generic_tz.is_next_char_token('{');
+
+        assert(not open_brace_tk_.is_empty());
+
+        parse_fields(tc, generic_tz);
+    }
+
     //
     // statics
     //
+
+    static auto assert_arg_count(const token& generic_tk,
+                                 const generic_type_info& generic,
+                                 const std::span<const token> arg_tks) -> void {
+
+        if (arg_tks.size() == generic.params.size()) {
+            return;
+        }
+
+        throw compiler_exception{
+            generic_tk,
+            std::format("generic type '{}' takes {} argument(s), got {}",
+                        generic_tk.text(), generic.params.size(),
+                        arg_tks.size())};
+    }
 
     // a type parameter names its argument, a constant parameter is a constant
     // of the current block
