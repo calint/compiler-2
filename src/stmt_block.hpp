@@ -175,7 +175,7 @@ class stmt_block final : public statement {
         }
 
         // e.g. 'show<name>(x)', the call reads the type arguments
-        if (tc.is_generic_func(si.identifier()) and
+        if (tc.generics().has_func(si.identifier()) and
             tz.peek_char_after_whitespace() == '<') {
 
             return create_stmt_call(tc, tz, si, token{});

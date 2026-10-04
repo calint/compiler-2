@@ -106,12 +106,10 @@ static auto add_generic_instance(toc& tc, const token& func_tk,
 
     tokenizer tz{tc.source(), start_tk};
 
-    tc.enter_generic_instance();
+    const generic_instance_scope scope{tc};
 
     tc.add_func_instance(
         std::make_shared<stmt_def_func>(tc, func_tk, tz, type_args, receiver));
-
-    tc.exit_generic_instance();
 }
 
 // declared in 'decouple.hpp'
@@ -121,7 +119,7 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
                               const std::span<const type* const> type_args)
     -> std::string {
 
-    const generic_func_info generic{tc.get_generic_func(generic_name)};
+    const generic_func_info generic{tc.generics().get_func(generic_name)};
 
     if (type_args.size() != generic.param_names.size()) {
         throw compiler_exception{
@@ -132,7 +130,7 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
                         type_args.size())};
     }
 
-    std::string name{toc::generic_instance_name(generic_name, type_args)};
+    std::string name{generic_registry::instance_name(generic_name, type_args)};
 
     if (tc.is_func(name)) {
         return name;
@@ -166,7 +164,7 @@ auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
     -> void {
 
     for (const generic_method_info& method :
-         tc.get_generic_methods(instance.generic_name)) {
+         tc.generics().get_methods(instance.generic_name)) {
 
         instantiate_generic_method(tc, method.func_tk, method.start_tk,
                                    instance);
@@ -297,7 +295,7 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     }
 
     // e.g. 'show<name>(x)', the call reads the type arguments
-    if (tc.is_generic_func(tk.text()) and
+    if (tc.generics().has_func(tk.text()) and
         tz.peek_char_after_whitespace() == '<') {
 
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, token{},
@@ -417,7 +415,7 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
         return;
     }
 
-    if (tc.is_generic_func(tok().text()) and
+    if (tc.generics().has_func(tok().text()) and
         tz.peek_char_after_whitespace() == '<') {
 
         stmt_call_ =

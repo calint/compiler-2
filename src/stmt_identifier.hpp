@@ -516,7 +516,7 @@ class stmt_identifier : public statement {
         // type arguments of a generic method
         if (tz.peek_char_after_whitespace() == '(' or
             (tz.peek_char_after_whitespace() == '<' and
-             tc.is_generic_func(
+             tc.generics().has_func(
                  std::format("{}.{}", path_type.name(), name_tk.text())))) {
 
             return true;

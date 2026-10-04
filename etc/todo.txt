@@ -245,6 +245,11 @@ other, hard, easiest first
        nodes; checked with a headless nvim test over a generics file (22
        checks, 16 of them failed with the previous plugin); no regression
        test in the repository yet
+    => cleanup (2026-10-04): 'generics.hpp' holds the generic structs,
+       'generic_param', 'generic_arguments' and 'generic_registry' ('toc'
+       owns one, 'tc.generics()'); 'type_alias_scope.hpp' binds and hides
+       type names with scopes that undo themselves; 'tokenizer::
+       skip_braced_block_after' keeps the text of a generic definition
     => left: constants as parameters of functions ('func f<n>()'); a generic
        type as a type anywhere ('a text<4>' as field or parameter type,
        needs '>>' split); generic constructors; a call frame that names the

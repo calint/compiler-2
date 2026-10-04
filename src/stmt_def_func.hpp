@@ -17,6 +17,7 @@
 #include "decouple.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
+#include "type_alias_scope.hpp"
 
 class stmt_def_func final : public statement {
     // where the definition continues after 'func', an instance starts here
@@ -60,24 +61,23 @@ class stmt_def_func final : public statement {
             return;
         }
 
+        // the type names of an instance end with the constructor
+        type_alias_scope aliases{tc};
+
         // e.g. 'text' in 'func text.print()' is the instance of the type
         if (generic_instance != nullptr) {
-            bind_generic_instance(tc, *generic_instance);
+            bind_generic_instance(aliases, *generic_instance);
         }
 
         parse_receiver(tc, tz);
 
         // e.g. 'func tokenizer.to<T type>()'
         if (is_generic_head(tz)) {
-            parse_generic(tc, tk, tz, type_args, generic_instance);
+            parse_generic(tc, aliases, tk, tz, type_args, generic_instance);
         } else {
             assert(type_args.empty());
 
             parse_function(tc, tz);
-        }
-
-        if (generic_instance != nullptr) {
-            tc.unbind_generic_instance(*generic_instance);
         }
     }
 
@@ -337,10 +337,10 @@ class stmt_def_func final : public statement {
     }
 
     // the constants of the instance are added to the frame of the body
-    auto bind_generic_instance(toc& tc, const generic_type_instance& instance)
-        -> void {
+    auto bind_generic_instance(type_alias_scope& aliases,
+                               const generic_type_instance& instance) -> void {
 
-        tc.bind_generic_instance(name_tk_, instance);
+        aliases.bind_instance(name_tk_, instance);
 
         for (const generic_binding& binding : instance.bindings) {
             if (binding.type_ptr == nullptr) {
@@ -381,12 +381,12 @@ class stmt_def_func final : public statement {
 
         const std::string_view type_name{name_tk_.text()};
 
-        tc.add_generic_method(type_name, func_tk, start_tk_);
+        tc.generics().add_method(type_name, func_tk, start_tk_);
 
         generic_text_ = tz.skip_braced_block_after(func_tk);
 
         for (const generic_type_instance& instance :
-             tc.get_generic_type_instances(type_name)) {
+             tc.generics().get_type_instances(type_name)) {
 
             instantiate_generic_method(tc, func_tk, start_tk_, instance);
         }
@@ -403,7 +403,7 @@ class stmt_def_func final : public statement {
                                               tokenizer& tz) const -> bool {
 
         return open_paren_tk_.is_empty() and
-               tc.is_generic_type(name_tk_.text()) and
+               tc.generics().has_type(name_tk_.text()) and
                tz.peek_char_after_whitespace() == '.';
     }
 
@@ -432,7 +432,8 @@ class stmt_def_func final : public statement {
 
     // a generic function is kept for its instances, an instance is the
     // definition parsed with its type parameters bound
-    auto parse_generic(toc& tc, const token& func_tk, tokenizer& tz,
+    auto parse_generic(toc& tc, type_alias_scope& aliases, const token& func_tk,
+                       tokenizer& tz,
                        const std::span<const type* const> type_args,
                        const generic_type_instance* const generic_instance)
         -> void {
@@ -446,14 +447,12 @@ class stmt_def_func final : public statement {
 
         assert(type_args.size() == param_tks.size());
 
-        name_ = toc::generic_instance_name(name_, type_args);
-        bind_type_args(tc, param_tks, type_args);
+        name_ = generic_registry::instance_name(name_, type_args);
+        bind_type_args(aliases, param_tks, type_args);
 
         open_paren_tk_ = tz.is_next_char_token('(');
 
         parse_function(tc, tz);
-
-        unbind_type_args(tc, param_tks);
     }
 
     // 'name_tk_' is the receiver type, a method gets an implicit first
@@ -616,14 +615,15 @@ class stmt_def_func final : public statement {
     //
 
     // the type parameters name their arguments while the instance is parsed
-    static auto bind_type_args(toc& tc, const std::span<const token> param_tks,
+    static auto bind_type_args(type_alias_scope& aliases,
+                               const std::span<const token> param_tks,
                                const std::span<const type* const> type_args)
         -> void {
 
         for (const auto [param_tk, type_arg] :
              std::views::zip(param_tks, type_args)) {
 
-            tc.bind_type_alias(param_tk, param_tk.text(), *type_arg);
+            aliases.bind(param_tk, param_tk.text(), *type_arg);
         }
     }
 
@@ -677,14 +677,5 @@ class stmt_def_func final : public statement {
         }
 
         return param_tks;
-    }
-
-    static auto unbind_type_args(toc& tc,
-                                 const std::span<const token> param_tks)
-        -> void {
-
-        for (const token& param_tk : param_tks) {
-            tc.unbind_type_alias(param_tk.text());
-        }
     }
 };

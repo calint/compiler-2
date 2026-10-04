@@ -47,7 +47,7 @@ class stmt_call : public expression {
           open_paren_tk_{open_paren_tk} {
 
         // e.g. 'convert<i8>(x)', the caller found the '<' or the '('
-        if (tc.is_generic_func(func_name_)) {
+        if (tc.generics().has_func(func_name_)) {
             func_name_ = parse_generic_arguments(tc, tz);
             open_paren_tk_ = tz.is_next_char_token('(');
         }
@@ -1238,7 +1238,7 @@ class stmt_call : public expression {
 
     // a generic function has its type arguments before the '('
     auto read_open_paren(toc& tc, tokenizer& tz) -> token {
-        if (tc.is_generic_func(func_name_)) {
+        if (tc.generics().has_func(func_name_)) {
             func_name_ = parse_generic_arguments(tc, tz);
         }
 

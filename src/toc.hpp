@@ -17,7 +17,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "generic_param.hpp"
+#include "generics.hpp"
 #include "lut.hpp"
 #include "machine.hpp"
 #include "statement.hpp"
@@ -42,49 +42,6 @@ struct noninline_instance {
     const stmt_def_func* func{};
     // one per array parameter, in parameter order
     std::vector<size_t> array_lengths;
-};
-
-// an argument of an instance of a generic type, a type or a constant
-struct generic_binding {
-    std::string name;
-    // null for a constant
-    const type* type_ptr{};
-    int64_t value{};
-};
-
-// the methods of a generic type see the arguments of their instance
-struct generic_type_instance {
-    std::string generic_name;
-    const type* type_ptr{};
-    std::vector<generic_binding> bindings;
-};
-
-// a function with type parameters, e.g. 'func tokenizer.to<T type>()'. every
-// distinct list of type arguments is the definition parsed again from
-// 'start_tk' as an instance. the method of a generic type with type parameters
-// of its own is one generic function per instance of the type
-struct generic_func_info {
-    token src_loc_tk;
-    token func_tk;
-    token start_tk;
-    std::vector<std::string> param_names;
-    std::optional<generic_type_instance> receiver_instance;
-};
-
-// a type with parameters, e.g. 'type text<capacity> {...}'. 'type str =
-// text<127>' parses the fields again from 'start_tk' as the type 'str'
-struct generic_type_info {
-    token src_loc_tk;
-    token start_tk;
-    std::vector<generic_param> params;
-};
-
-// a method of a generic type, e.g. 'func text.print()', every instance of the
-// type gets its own method
-struct generic_method_info {
-    std::string type_name;
-    token func_tk;
-    token start_tk;
 };
 
 struct alias_info {
@@ -362,11 +319,7 @@ class toc final {
     std::vector<machine::string_constant> string_constants_;
     std::set<std::string> checked_noninline_calls_;
     lut<func_info> funcs_;
-    lut<generic_func_info> generic_funcs_;
-    lut<generic_type_info> generic_types_;
-    std::vector<generic_method_info> generic_methods_;
-    // the instances made of each generic type
-    std::vector<generic_type_instance> generic_type_instances_;
+    generic_registry generics_;
     lut<type_info> types_;
     // the type parameters bound while an instance is parsed
     std::vector<std::pair<std::string, type_info>> type_aliases_;
@@ -502,49 +455,21 @@ class toc final {
 
         assert_function_not_defined(src_loc_tk, name);
 
-        generic_funcs_.put(std::move(name),
-                           {
-                               .src_loc_tk{src_loc_tk},
-                               .func_tk{func_tk},
-                               .start_tk{start_tk},
-                               .param_names{
-                                   std::move(param_names),
-                               },
-                               .receiver_instance{
-                                   std::move(receiver_instance),
-                               },
-                           });
-    }
-
-    auto add_generic_method(const std::string_view type_name,
-                            const token& func_tk, const token& start_tk)
-        -> void {
-
-        generic_methods_.push_back({
-            .type_name{type_name},
-            .func_tk{func_tk},
-            .start_tk{start_tk},
-        });
+        generics_.add_func(src_loc_tk, std::move(name), func_tk, start_tk,
+                           std::move(param_names),
+                           std::move(receiver_instance));
     }
 
     auto add_generic_type(const token& src_loc_tk, const std::string_view name,
                           const token& start_tk,
                           std::vector<generic_param> params) -> void {
 
-        if (types_.has(name) or generic_types_.has(name)) {
+        if (types_.has(name) or generics_.has_type(name)) {
             throw compiler_exception{
                 src_loc_tk, std::format("type '{}' already defined", name)};
         }
 
-        generic_types_.put(std::string{name}, {
-                                                  .src_loc_tk{src_loc_tk},
-                                                  .start_tk{start_tk},
-                                                  .params{std::move(params)},
-                                              });
-    }
-
-    auto add_generic_type_instance(generic_type_instance instance) -> void {
-        generic_type_instances_.emplace_back(std::move(instance));
+        generics_.add_type(src_loc_tk, name, start_tk, std::move(params));
     }
 
     // a body is emitted once per distinct instance
@@ -663,20 +588,6 @@ class toc final {
         }
 
         comment_var(src_loc_tk, indent, var);
-    }
-
-    // the generic type and its type arguments name their types while a method
-    // of the instance is parsed
-    auto bind_generic_instance(const token& src_loc_tk,
-                               const generic_type_instance& instance) -> void {
-
-        bind_type_alias(src_loc_tk, instance.generic_name, *instance.type_ptr);
-
-        for (const generic_binding& binding : instance.bindings) {
-            if (binding.type_ptr != nullptr) {
-                bind_type_alias(src_loc_tk, binding.name, *binding.type_ptr);
-            }
-        }
     }
 
     // a type parameter names its argument while an instance is parsed
@@ -847,6 +758,12 @@ class toc final {
         usage_max_frame_count_ = 0;
     }
 
+    [[nodiscard]] auto generics() -> generic_registry& { return generics_; }
+
+    [[nodiscard]] auto generics() const -> const generic_registry& {
+        return generics_;
+    }
+
     [[nodiscard]] auto get_call_path() const -> std::string_view {
         return current_func_frame().call_path();
     }
@@ -888,48 +805,6 @@ class toc final {
         -> const type& {
 
         return *get_func_info_or_throw(src_loc_tk, name).type_ptr;
-    }
-
-    [[nodiscard]] auto get_generic_func(const std::string_view name) const
-        -> const generic_func_info& {
-
-        return generic_funcs_.get_const_ref(name);
-    }
-
-    [[nodiscard]] auto
-    get_generic_methods(const std::string_view type_name) const
-        -> std::vector<generic_method_info> {
-
-        std::vector<generic_method_info> methods;
-
-        for (const generic_method_info& method : generic_methods_) {
-            if (method.type_name == type_name) {
-                methods.push_back(method);
-            }
-        }
-
-        return methods;
-    }
-
-    [[nodiscard]] auto get_generic_type(const std::string_view name) const
-        -> const generic_type_info& {
-
-        return generic_types_.get_const_ref(name);
-    }
-
-    [[nodiscard]] auto
-    get_generic_type_instances(const std::string_view generic_name) const
-        -> std::vector<generic_type_instance> {
-
-        std::vector<generic_type_instance> instances;
-
-        for (const generic_type_instance& instance : generic_type_instances_) {
-            if (instance.generic_name == generic_name) {
-                instances.push_back(instance);
-            }
-        }
-
-        return instances;
     }
 
     [[nodiscard]] auto get_lea_operand(const size_t indent,
@@ -1072,25 +947,13 @@ class toc final {
     [[nodiscard]] auto is_frame_check() const -> bool { return frame_check_; }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
-        return funcs_.has(name) or generic_funcs_.has(name);
+        return funcs_.has(name) or generics_.has_func(name);
     }
 
     [[nodiscard]] auto is_func_builtin(const std::string_view name) const
         -> bool {
 
         return funcs_.get_const_ref(name).def == nullptr;
-    }
-
-    [[nodiscard]] auto is_generic_func(const std::string_view name) const
-        -> bool {
-
-        return generic_funcs_.has(name);
-    }
-
-    [[nodiscard]] auto is_generic_type(const std::string_view name) const
-        -> bool {
-
-        return generic_types_.has(name);
     }
 
     // a local with the same name shadows it, so this may report a local
@@ -1266,25 +1129,6 @@ class toc final {
         return std::format("{}:{}", line, col);
     }
 
-    // undoes the type bindings, constants stay in their block
-    auto
-    unbind_generic_bindings(const std::span<const generic_binding> bindings)
-        -> void {
-
-        for (const generic_binding& binding : bindings) {
-            if (binding.type_ptr != nullptr) {
-                unbind_type_alias(binding.name);
-            }
-        }
-    }
-
-    auto unbind_generic_instance(const generic_type_instance& instance)
-        -> void {
-
-        unbind_type_alias(instance.generic_name);
-        unbind_generic_bindings(instance.bindings);
-    }
-
     auto unbind_type_alias(const std::string_view name) -> void {
         types_.erase(name);
         std::erase_if(type_aliases_, [name](const auto& alias) -> bool {
@@ -1316,27 +1160,6 @@ class toc final {
         throw compiler_exception{
             st.tok(),
             std::format("array '{}' must be indexed", st.identifier())};
-    }
-
-    // e.g. 'tokenizer.to<name>' for the generic 'tokenizer.to'
-    [[nodiscard]] static auto
-    generic_instance_name(const std::string_view generic_name,
-                          const std::span<const type* const> type_args)
-        -> std::string {
-
-        std::string name{generic_name};
-        name += '<';
-
-        for (const type* const type_arg : type_args) {
-            if (name.back() != '<') {
-                name += ',';
-            }
-            name += type_arg->name();
-        }
-
-        name += '>';
-
-        return name;
     }
 
     // the tokenizer keeps the quotes in the text of a character literal
@@ -1469,8 +1292,8 @@ class toc final {
                             source_location_hr(fn.src_loc_tk))};
         }
 
-        if (generic_funcs_.has(name)) {
-            const generic_func_info& fn{generic_funcs_.get_const_ref(name)};
+        if (generics_.has_func(name)) {
+            const generic_func_info& fn{generics_.get_func(name)};
             throw compiler_exception{
                 src_loc_tk,
                 std::format("function '{}' already defined at {}", name,
