@@ -168,6 +168,8 @@ class stmt_block final : public statement {
             return create_stmt_constructor_call(tc, tz, tk);
         }
 
+        assert_no_type_args_for_plain_func(tc, tk, tz);
+
         stmt_identifier si{tc, {}, tk, tz};
 
         if (si.is_method_receiver()) {

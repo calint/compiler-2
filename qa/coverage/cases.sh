@@ -2525,3 +2525,12 @@ SRC=819 && COMPERR
 
 # a method of a generic type is defined once, the instance reports it
 SRC=820 && COMPERR
+
+# a function that is not generic takes no type arguments
+SRC=821 && COMPERR
+
+# also in an expression
+SRC=822 && COMPERR
+
+# an alias names a generic type, not a type
+SRC=823 && COMPERR

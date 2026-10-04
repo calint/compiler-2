@@ -1,0 +1,8 @@
+# a function that is not generic takes no type arguments
+
+func show(x) {}
+
+func main() {
+    var a = 1
+    show<i32>(a)
+}

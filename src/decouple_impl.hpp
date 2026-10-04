@@ -181,6 +181,24 @@ auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
 }
 
 // declared in 'decouple.hpp'
+auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
+                                        tokenizer& tz) -> void {
+
+    // a variable of that name is an operand of '<'
+    if (not tc.is_func(tk.text()) or tc.generics().has_func(tk.text()) or
+        tc.is_var_or_alias(tk.text()) or
+        tz.peek_char_after_whitespace() != '<') {
+
+        return;
+    }
+
+    throw compiler_exception{
+        tk, std::format("function '{}' is not generic, it takes no type "
+                        "arguments",
+                        tk.text())};
+}
+
+// declared in 'decouple.hpp'
 auto is_generic_call(const toc& tc, const std::string_view name, tokenizer& tz)
     -> bool {
 
@@ -316,6 +334,8 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, token{},
                                            tz);
     }
+
+    assert_no_type_args_for_plain_func(tc, tk, tz);
 
     if (is_constructor_call(tc, tk, tz)) {
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz);

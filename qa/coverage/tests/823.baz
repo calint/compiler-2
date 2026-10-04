@@ -1,0 +1,9 @@
+# an alias names a generic type, not a type
+
+type name {
+    x,
+}
+
+type str = name<8>
+
+func main() {}

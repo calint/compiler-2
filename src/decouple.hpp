@@ -526,6 +526,11 @@ instantiate_generic_func(toc& tc, const token& call_tk,
 [[nodiscard]] auto is_generic_call(const toc& tc, std::string_view name,
                                    tokenizer& tz) -> bool;
 
+// e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
+// the '<' as an operator
+auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
+                                        tokenizer& tz) -> void;
+
 [[nodiscard]] auto is_array_literal(const toc& tc, const token& tk,
                                     tokenizer& tz) -> bool;
 

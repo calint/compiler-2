@@ -1,0 +1,8 @@
+# also in an expression
+
+func twice(x) res { res = x * 2 }
+
+func main() {
+    var a = 1
+    var b = twice<i32>(a)
+}

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -23,13 +24,19 @@ class stmt_def_func final : public statement {
     // what a function has from generics: a generic definition is only text and
     // the method of a generic type has the constants of its instance
     struct generic_part {
+        enum class kind : uint8_t {
+            // not from generics
+            none,
+            // kept as text for its instances
+            definition,
+            // the definition parsed again with the type arguments bound
+            instance,
+        };
+
+        kind mode{kind::none};
         // the text after 'func', only the instances of the definition parse it
         std::string text;
         std::vector<generic_binding> constants;
-
-        [[nodiscard]] auto is_definition() const -> bool {
-            return not text.empty();
-        }
     };
 
     // where the definition continues after 'func', an instance starts here
@@ -79,6 +86,8 @@ class stmt_def_func final : public statement {
 
         // e.g. 'text' in 'func text.print()' is the instance of the type
         if (generic_instance != nullptr) {
+            generic_.mode = generic_part::kind::instance;
+
             bind_generic_instance(aliases, *generic_instance);
         }
 
@@ -102,6 +111,8 @@ class stmt_def_func final : public statement {
         // an instance is the definition parsed with the type parameters bound
         assert(type_args.size() == param_tks.size());
 
+        generic_.mode = generic_part::kind::instance;
+
         name_ = generic_registry::instance_name(name_, type_args);
         bind_type_args(aliases, param_tks, type_args);
         open_paren_tk_ = tz.is_next_char_token('(');
@@ -116,7 +127,7 @@ class stmt_def_func final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        if (generic_.is_definition()) {
+        if (generic_.mode == generic_part::kind::definition) {
             statement::source_to(os);
             std::print(os, "{}", generic_.text);
 
@@ -418,6 +429,7 @@ class stmt_def_func final : public statement {
                             std::move(param_names),
                             std::move(receiver_instance));
 
+        generic_.mode = generic_part::kind::definition;
         generic_.text = tz.skip_braced_block_after(func_tk);
     }
 
@@ -430,6 +442,7 @@ class stmt_def_func final : public statement {
 
         tc.generics().add_method(type_name, func_tk, start_tk_);
 
+        generic_.mode = generic_part::kind::definition;
         generic_.text = tz.skip_braced_block_after(func_tk);
 
         for (const generic_type_instance& instance :

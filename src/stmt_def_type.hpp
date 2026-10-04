@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <cassert>
+#include <cstdint>
 #include <format>
 #include <optional>
 #include <print>
@@ -15,6 +16,15 @@
 #include "type.hpp"
 
 class stmt_def_type final : public statement {
+    enum class kind : uint8_t {
+        plain,
+        // kept as text for its aliases
+        generic,
+        // e.g. 'type str = text<127>', an instance of a generic type
+        alias,
+    };
+
+    kind kind_{kind::plain};
     // where the definition continues after 'type', an alias parses it again
     token start_tk_;
     token name_tk_;
@@ -71,7 +81,7 @@ class stmt_def_type final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
 
-        if (not generic_text_.empty()) {
+        if (kind_ == kind::generic) {
             std::print(os, "{}", generic_text_);
 
             return;
@@ -79,7 +89,7 @@ class stmt_def_type final : public statement {
 
         name_tk_.source_to(os);
 
-        if (not alias_tks_.empty()) {
+        if (kind_ == kind::alias) {
             for (const token& t : alias_tks_) {
                 t.source_to(os);
             }
@@ -112,7 +122,7 @@ class stmt_def_type final : public statement {
         -> void override {
 
         // only its aliases are types
-        if (not generic_text_.empty()) {
+        if (kind_ == kind::generic) {
             return;
         }
 
@@ -189,12 +199,14 @@ class stmt_def_type final : public statement {
         tc.add_generic_type(name_tk_, name_tk_.text(), start_tk_,
                             std::move(params));
 
+        kind_ = kind::generic;
         generic_text_ = tz.skip_braced_block_after(type_tk);
     }
 
     // e.g. 'type str = text<127>' is the type 'str' with the fields of the
     // generic type 'text' for the arguments
     auto parse_alias(toc& tc, tokenizer& tz) -> void {
+        kind_ = kind::alias;
         alias_tks_.emplace_back(tz.is_next_char_token('='));
 
         const token generic_tk{parse_alias_generic(tc, tz)};
@@ -233,10 +245,18 @@ class stmt_def_type final : public statement {
         const token generic_tk{tz.next_token()};
         alias_tks_.emplace_back(generic_tk);
 
+        if (tc.has_type(generic_tk.text())) {
+            throw compiler_exception{
+                generic_tk, std::format("'{}' is a type, not a generic type",
+                                        generic_tk.text())};
+        }
+
         if (not tc.generics().has_type(generic_tk.text())) {
             throw compiler_exception{
                 generic_tk,
-                std::format("'{}' is not a generic type", generic_tk.text())};
+                std::format("'{}' is not a generic type, a generic type is "
+                            "defined before the alias that names it",
+                            generic_tk.text())};
         }
 
         return generic_tk;
