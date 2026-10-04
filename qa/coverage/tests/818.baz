@@ -1,0 +1,10 @@
+# the arguments of an instance are checked like those of any function
+
+func id<T type>(a T) res T {
+    res = a
+}
+
+func main() {
+    var a = 1
+    var b = id<i16>(a)
+}

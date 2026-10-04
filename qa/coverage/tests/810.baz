@@ -1,0 +1,7 @@
+# a comma in a generic parameter list is followed by a parameter
+
+type pair<first type, > {
+    a first,
+}
+
+func main() {}

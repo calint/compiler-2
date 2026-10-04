@@ -44,13 +44,7 @@ class stmt_call : public expression {
     stmt_call(toc& tc, unary_ops uops, const token tk,
               const token open_paren_tk, tokenizer& tz)
         : expression{tk, std::move(uops)}, func_name_{tk.text()},
-          open_paren_tk_{open_paren_tk} {
-
-        // e.g. 'convert<i8>(x)', the caller found the '<' or the '('
-        if (tc.generics().has_func(func_name_)) {
-            func_name_ = parse_generic_arguments(tc, tz);
-            open_paren_tk_ = tz.is_next_char_token('(');
-        }
+          open_paren_tk_{read_open_paren(tc, tz, open_paren_tk)} {
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
@@ -74,7 +68,7 @@ class stmt_call : public expression {
               std::format("{}.{}", receiver.get_type().name(),
                           receiver.method_name_token().text()),
           },
-          open_paren_tk_{read_open_paren(tc, tz)} {
+          open_paren_tk_{read_open_paren(tc, tz, std::nullopt)} {
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
@@ -1252,13 +1246,19 @@ class stmt_call : public expression {
         return instantiate_generic_func(tc, tok(), func_name_, type_args);
     }
 
-    // a generic function has its type arguments before the '('
-    auto read_open_paren(toc& tc, tokenizer& tz) -> token {
+    // a generic function has its type arguments before the '(', e.g.
+    // 'convert<i8>(x)'. 'found' is the '(' a caller has read, otherwise it is
+    // read here
+    auto read_open_paren(toc& tc, tokenizer& tz,
+                         const std::optional<token>& found) -> token {
+
         if (tc.generics().has_func(func_name_)) {
             func_name_ = parse_generic_arguments(tc, tz);
+
+            return tz.is_next_char_token('(');
         }
 
-        return tz.is_next_char_token('(');
+        return found ? *found : tz.is_next_char_token('(');
     }
 
     // e.g. 'foo', 'lst.add' or 'point.at'

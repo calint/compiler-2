@@ -1,0 +1,5 @@
+# a generic parameter is a constant or has the kind 'type'
+
+func f<T int>() {}
+
+func main() {}

@@ -1,0 +1,7 @@
+# a type parameter is not known outside its generic
+
+func f<T type>(x T) {}
+
+func main() {
+    var y = T{}
+}

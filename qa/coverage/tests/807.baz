@@ -1,0 +1,5 @@
+# a generic parameter list has at least one parameter
+
+func f<>() {}
+
+func main() {}

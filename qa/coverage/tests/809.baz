@@ -1,0 +1,5 @@
+# generic parameters are separated by a comma
+
+func f<T type U type>() {}
+
+func main() {}

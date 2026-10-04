@@ -1,0 +1,7 @@
+# a generic function cannot have the name of a function
+
+func f() {}
+
+func f<T type>() {}
+
+func main() {}

@@ -104,12 +104,10 @@ static auto add_generic_instance(toc& tc, const token& func_tk,
                                  const generic_type_instance* const receiver)
     -> void {
 
-    tokenizer tz{tc.source(), start_tk};
-
     tc.types().hide_aliases();
 
-    tc.add_func_instance(
-        std::make_shared<stmt_def_func>(tc, func_tk, tz, type_args, receiver));
+    tc.add_func_instance(stmt_def_func::make_instance(tc, func_tk, start_tk,
+                                                      type_args, receiver));
 
     tc.types().restore_aliases();
 }

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <print>
@@ -48,12 +49,17 @@ class stmt_def_func final : public statement {
     generic_part generic_;
 
   public:
+    // parses the function definition in the user code
+    stmt_def_func(toc& tc, const token tk, tokenizer& tz)
+        : stmt_def_func{tc, tk, tz, {}, nullptr} {}
+
     // 'type_args' are the arguments of an instance of a generic definition, the
     // tokenizer is then at the start of that definition. 'generic_instance' is
-    // the instance of a generic type that an instance of its method is for
+    // the instance of a generic type that an instance of its method is for.
+    // 'make_instance' is the way to make one
     stmt_def_func(toc& tc, const token tk, tokenizer& tz,
-                  const std::span<const type* const> type_args = {},
-                  const generic_type_instance* const generic_instance = nullptr)
+                  const std::span<const type* const> type_args,
+                  const generic_type_instance* const generic_instance)
         : statement{tk}, start_tk_{tz.cur_position_token()},
           name_tk_{tz.next_token()},
           open_paren_tk_{tz.is_next_char_token('(')} {
@@ -271,6 +277,23 @@ class stmt_def_func final : public statement {
                 returns_->type_tk.source_to(os);
             }
         }
+    }
+
+    //
+    // statics
+    //
+
+    // the instance of a generic definition, parsed again from 'start_tk'
+    [[nodiscard]] static auto
+    make_instance(toc& tc, const token& func_tk, const token& start_tk,
+                  const std::span<const type* const> type_args,
+                  const generic_type_instance* const generic_instance)
+        -> std::shared_ptr<stmt_def_func> {
+
+        tokenizer tz{tc.source(), start_tk};
+
+        return std::make_shared<stmt_def_func>(tc, func_tk, tz, type_args,
+                                               generic_instance);
     }
 
   private:

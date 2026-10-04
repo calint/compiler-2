@@ -1,0 +1,10 @@
+# a generic type is known where the alias is, not before
+
+type str = text<8>
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+func main() {}

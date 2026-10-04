@@ -1,0 +1,11 @@
+# a generic type cannot have the name of another generic type
+
+type pair<first type> {
+    a first,
+}
+
+type pair<second type> {
+    b second,
+}
+
+func main() {}

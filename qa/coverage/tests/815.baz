@@ -1,0 +1,10 @@
+# the constant argument of an alias must make a valid type
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<0>
+
+func main() {}

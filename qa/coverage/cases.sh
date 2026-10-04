@@ -2480,3 +2480,48 @@ SRC=804 && EXP=0 && RUN
 
 # a generic definition without its closing brace
 SRC=805 && COMPERR
+
+# the label of a noinline generic instance does not clash with a noinline method
+SRC=806 && EXP=0 && RUN
+
+# a generic parameter list has at least one parameter
+SRC=807 && COMPERR
+
+# a generic parameter is a constant or has the kind 'type'
+SRC=808 && COMPERR
+
+# generic parameters are separated by a comma
+SRC=809 && COMPERR
+
+# a comma in a generic parameter list is followed by a parameter
+SRC=810 && COMPERR
+
+# a parameter of a generic function does not hide a type
+SRC=811 && COMPERR
+
+# a generic function cannot have the name of a function
+SRC=812 && COMPERR
+
+# a function cannot have the name of a generic function
+SRC=813 && COMPERR
+
+# a generic type cannot have the name of another generic type
+SRC=814 && COMPERR
+
+# the constant argument of an alias must make a valid type
+SRC=815 && COMPERR
+
+# a generic type is known where the alias is, not before
+SRC=816 && COMPERR
+
+# a type parameter is not known outside its generic
+SRC=817 && COMPERR
+
+# the arguments of an instance are checked like those of any function
+SRC=818 && COMPERR
+
+# an alias is defined once
+SRC=819 && COMPERR
+
+# a method of a generic type is defined once, the instance reports it
+SRC=820 && COMPERR

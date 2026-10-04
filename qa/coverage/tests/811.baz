@@ -1,0 +1,7 @@
+# a parameter of a generic function does not hide a type
+
+type name {x}
+
+func f<name type>() {}
+
+func main() {}

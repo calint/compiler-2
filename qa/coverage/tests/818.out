@@ -1,0 +1,2 @@
+
+818.baz:9:21: parameter 'a': required 'i16', got 'i64'

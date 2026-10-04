@@ -1,0 +1,11 @@
+# an alias is defined once
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<8>
+type str = text<9>
+
+func main() {}
