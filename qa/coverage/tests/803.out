@@ -1,2 +1,4 @@
 
 803.baz:7:18: generic parameter 'T' of 'make' needs a type, got the constant '1'
+    var m = make<1>(2)
+                 ^

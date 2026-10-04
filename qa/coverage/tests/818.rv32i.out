@@ -1,2 +1,4 @@
 
 818.baz:9:21: parameter 'a': required 'i16', got 'i32'
+    var b = id<i16>(a)
+                    ^

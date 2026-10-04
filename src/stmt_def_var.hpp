@@ -123,14 +123,20 @@ class stmt_def_var final : public statement {
                            : array_element_type(tc, tz));
 
         // later statements read the size while parsing, e.g. 'var b = a'
-        trial_parse(tc, tz, [this, &tc, &tz] -> void {
-            array_count_ =
-                expr_any{tc, tz, get_type(), false, true, 0}.array_count();
+        token bracket_tk;
+        trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
+            const expr_any initializer{tc, tz, get_type(), false, true, 0};
+
+            array_count_ = initializer.array_count();
+            bracket_tk = initializer.open_bracket_token();
         });
 
         if (array_count_ == 0) {
-            throw compiler_exception{name_tk_,
-                                     "expected array size greater than 0"};
+            // e.g. the '[' of 'var a = i8[]{}', a string has no bracket
+            throw compiler_exception{
+                bracket_tk.is_empty() ? name_tk_ : bracket_tk,
+                "expected array size greater than 0",
+            };
         }
     }
 

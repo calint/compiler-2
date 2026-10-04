@@ -1,2 +1,4 @@
 
 510.baz:4:35: '-a' of type 'i16' is narrowed to 'i8', use 'i8(...)'
+func main() { var a = i16(300) f(-a) }
+                                  ^

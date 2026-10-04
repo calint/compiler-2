@@ -1,2 +1,4 @@
 
 658.baz:9:9: read-only 'x' cannot be passed to a 'mut' parameter, 'x' is declared with 'let'
+    set(x)
+        ^

@@ -332,12 +332,14 @@ class stmt_call : public expression {
         // a non-inline result needs a memory destination, not the register
         // the conversion computes into
         if (not func.is_inlined()) {
-            throw compiler_exception{tok(), message};
+            throw compiler_exception{dst_info.error_token(tok()), message};
         }
 
-        throw compiler_exception{tok(),
-                                 std::format("{}, use '{}(...)'", message,
-                                             dst_info.type_ref().name())};
+        throw compiler_exception{
+            dst_info.error_token(tok()),
+            std::format("{}, use '{}(...)'", message,
+                        dst_info.type_ref().name()),
+        };
     }
 
     [[nodiscard]] auto compile_builtin_arguments(

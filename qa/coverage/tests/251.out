@@ -1,2 +1,4 @@
 
 251.baz:5:21: constant not supported
+    var z = equal(a,1)
+                    ^

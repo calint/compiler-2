@@ -1,2 +1,4 @@
 
 627.baz:6:9: expected type 'i8', got 'i64'
+    a = [2]{1, 2}
+        ^

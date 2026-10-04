@@ -1,2 +1,4 @@
 
 361.baz:3:25: expected '}' after 2 elements in array of size 2
+dat values = i8[2]{ 1, 2, 3 }
+                        ^

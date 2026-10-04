@@ -1,2 +1,4 @@
 
-255.baz:3:19: expected array size greater than 0
+255.baz:3:25: expected array size greater than 0
+func main() { var a = i8[]{} }
+                        ^

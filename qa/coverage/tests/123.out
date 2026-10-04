@@ -1,2 +1,4 @@
 
-123.baz:3:1: function may return without setting its return value
+123.baz:3:15: function may return without setting its return value
+func foozi(i) res {
+              ^~~

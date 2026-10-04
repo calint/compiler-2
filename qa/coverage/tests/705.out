@@ -1,2 +1,4 @@
 
 705.baz:4:13: cannot resolve identifier '$'
+    let t = $
+            ^

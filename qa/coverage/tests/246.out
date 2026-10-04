@@ -1,2 +1,4 @@
 
 246.baz:8:7: expected type 'p', got 'q'
+    f(y)
+      ^

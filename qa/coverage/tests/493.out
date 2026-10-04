@@ -1,2 +1,4 @@
 
 493.baz:5:22: parameter 'value': required 'i8', got 'i32'
+    var small = take(big)
+                     ^

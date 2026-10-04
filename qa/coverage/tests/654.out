@@ -1,2 +1,4 @@
 
 654.baz:5:5: cannot assign to read-only 'a', 'a' is declared with 'let'
+    a[0] = 3
+    ^

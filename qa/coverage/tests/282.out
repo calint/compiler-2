@@ -1,2 +1,4 @@
 
 282.baz:4:17: function 'missing' not found
+    var value = missing()
+                ^~~~~~~

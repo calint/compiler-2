@@ -1,2 +1,4 @@
 
 616.baz:5:11: expected '=' followed by an initializer, e.g. 'var x = i32(0)'
+    var x i32
+          ^

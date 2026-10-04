@@ -304,6 +304,8 @@ struct ident_info {
 
   public:
     std::string id;
+    // where the name is in the source, empty for a register
+    token src_loc_tk;
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<::operand> lea_path;
@@ -316,6 +318,11 @@ struct ident_info {
     read_only_cause read_only_why{};
     bool use_operand{}; // operand overrides any location calculation
     kind kind{};
+
+    // the name for an error about it, 'fallback' without a place in the source
+    [[nodiscard]] auto error_token(const token& fallback) const -> token {
+        return src_loc_tk.is_empty() ? fallback : src_loc_tk;
+    }
 
     [[nodiscard]] auto has_lea() const -> bool {
         return std::ranges::any_of(lea_path, [](const ::operand& lea) -> bool {
@@ -417,6 +424,7 @@ struct ident_info {
 
         return {
             .id{ident},
+            .src_loc_tk{},
             .elem_path{std::string{elem}},
             .type_path{&tp},
             .lea_path{::operand{}},
@@ -429,6 +437,7 @@ struct ident_info {
     [[nodiscard]] static auto make_empty() -> ident_info {
         return {
             .id{},
+            .src_loc_tk{},
             .elem_path{},
             .type_path{},
             .lea_path{},
@@ -445,6 +454,7 @@ struct ident_info {
 
         return {
             .id{ident},
+            .src_loc_tk{},
             .elem_path{reg.base_register()},
             .type_path{&reg.type_ref()},
             .lea_path{::operand{}},
@@ -467,6 +477,7 @@ struct ident_info {
 
         return {
             .id{std::move(ident)},
+            .src_loc_tk{},
             .elem_path{std::move(elem_path)},
             .type_path{std::move(type_path)},
             .lea_path{lea_count, ::operand{}},

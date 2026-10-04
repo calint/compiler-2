@@ -1,2 +1,4 @@
 
 744.baz:4:9: storage size exceeds signed 64-bit range
+    var a = i64[4611686018427387904]{}
+        ^

@@ -1,2 +1,4 @@
 
 458.baz:2:22: expected ',' or ')' after parameter 'values'
+func helper(values[] i32) {}
+                     ^

@@ -1,2 +1,4 @@
 
 238.baz:4:19: expected argument 2 ('y')
+func main() { f(1 2) }
+                  ^

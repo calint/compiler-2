@@ -1,2 +1,4 @@
 
 218.baz:3:7: expected '=' followed by a constant value
+let x 1
+      ^

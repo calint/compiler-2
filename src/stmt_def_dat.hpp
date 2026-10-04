@@ -8,6 +8,7 @@
 #include <ranges>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -620,6 +621,9 @@ class stmt_def_dat final : public statement {
             }
 
             if (counter == flds.size()) {
+                // the error is at the initializer that is too much
+                std::ignore = tz.is_next_char_token(',');
+
                 throw compiler_exception{
                     tz, std::format("too many initializers for type '{}'",
                                     tp.name())};

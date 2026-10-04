@@ -1,2 +1,4 @@
 
 736.baz:17:49: cannot allocate register a1
+                                                write(1, a, 2)
+                                                ^~~~~

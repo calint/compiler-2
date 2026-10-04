@@ -1,2 +1,4 @@
 
-225.baz:3:1: function may return without setting its return value
+225.baz:3:10: function may return without setting its return value
+func f() result { }
+         ^~~~~~

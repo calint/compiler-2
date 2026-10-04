@@ -1,2 +1,4 @@
 
 655.baz:6:19: cannot copy into read-only 'd', 'd' is declared with 'let'
+    array_copy(s, d, 2)
+                  ^

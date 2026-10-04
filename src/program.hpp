@@ -145,7 +145,7 @@ class program final {
 
             assignment_flow flow{
                 .var{ret_info->ident_tk.text()},
-                .func_tk{f->tok()},
+                .src_loc_tk{ret_info->ident_tk},
                 .assigned{field_coverage{ret_info->type_ptr->size_bytes()}},
                 .at_breaks{},
                 .is_reachable{true},
@@ -164,7 +164,7 @@ class program final {
 
         assignment_flow flow{
             .var{},
-            .func_tk{func.tok()},
+            .src_loc_tk{func.tok()},
             .assigned{field_coverage{0}},
             .at_breaks{},
             .is_reachable{true},
@@ -238,7 +238,7 @@ class program final {
         const stmt_def_func& func_main{tc.get_main_or_throw()};
 
         if (not func_main.is_inlined()) {
-            throw compiler_exception{func_main.tok(),
+            throw compiler_exception{func_main.noinline_token(),
                                      "main cannot be declared noinline"};
         }
 

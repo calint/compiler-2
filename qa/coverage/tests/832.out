@@ -1,2 +1,4 @@
 
 832.baz:4:16: an array needs a constant size, e.g. 'i8[4]'
+    var a = i8[]
+               ^

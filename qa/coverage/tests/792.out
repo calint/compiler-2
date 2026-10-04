@@ -1,3 +1,7 @@
 
 792.baz:9:16: cannot resolve identifier 'nothing'
+    self.len = nothing
+               ^~~~~~~
 792.baz:12:6: instantiated by 'type str = text<8>'
+type str = text<8>
+     ^~~

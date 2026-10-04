@@ -1,2 +1,4 @@
 
 638.baz:3:20: expected a constant for 'i16'
+dat a = i16[2]{ 1, }
+                   ^

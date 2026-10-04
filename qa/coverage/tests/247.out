@@ -1,2 +1,4 @@
 
 247.baz:3:24: this built-in function does not accept unary operations
+func main() { var z = -equal(1,1) }
+                       ^~~~~

@@ -1,2 +1,4 @@
 
 741.baz:4:13: address offset exceeds RV32I address range
+    var a = i8[5000000000]{}
+            ^

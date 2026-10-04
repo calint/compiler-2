@@ -1,2 +1,4 @@
 
 703.baz:4:7: expected a constant array size greater than 0
+    a[]
+      ^

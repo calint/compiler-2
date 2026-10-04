@@ -1,2 +1,4 @@
 
 569.baz:8:15: 'self' is reserved
+func list.add(self) {
+              ^~~~

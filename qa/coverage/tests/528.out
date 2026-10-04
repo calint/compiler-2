@@ -1,2 +1,4 @@
 
 528.baz:10:17: argument 1 'x' may share storage with the result destination 'x' (both name 'x'), use a separate variable
+    x = add_one(x)
+                ^

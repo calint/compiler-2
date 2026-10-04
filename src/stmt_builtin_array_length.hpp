@@ -62,9 +62,11 @@ class stmt_builtin_array_length final : public expression {
         assert(not dst_info.is_const());
 
         if (dst_info.type_ref().name() != tc.get_type_default().name()) {
-            throw compiler_exception{tok(),
-                                     std::format("destination must be an '{}'",
-                                                 tc.get_type_default().name())};
+            throw compiler_exception{
+                dst_info.error_token(tok()),
+                std::format("destination must be an '{}'",
+                            tc.get_type_default().name()),
+            };
         }
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};

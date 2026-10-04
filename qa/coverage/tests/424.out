@@ -1,2 +1,4 @@
 
 424.baz:4:36: expression arguments are unsupported
+func main() { var value = 1 target(value + 1) }
+                                   ^

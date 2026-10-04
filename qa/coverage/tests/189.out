@@ -1,2 +1,4 @@
 
 189.baz:2:15: cannot assign to constant '1'
+func main() { x = 2 }
+              ^

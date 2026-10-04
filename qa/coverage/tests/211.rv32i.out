@@ -1,2 +1,4 @@
 
-211.baz:6:9: destination must be an 'i32'
+211.baz:6:5: destination must be an 'i32'
+    n = array_length(a)
+    ^

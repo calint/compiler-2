@@ -1,2 +1,4 @@
 
 615.baz:4:25: too many elements specified for array of size 2
+    var a = i8[2]{1, 2, 3}
+                        ^

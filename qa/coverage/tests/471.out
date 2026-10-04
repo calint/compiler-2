@@ -1,2 +1,4 @@
 
 471.baz:4:19: use of uninitialized variable 'p'
+    var p = point{p.y, 2}
+                  ^

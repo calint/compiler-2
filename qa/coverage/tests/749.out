@@ -1,3 +1,5 @@
 
 749.baz:5:3: unsupported escape in string "ab\
 cd\qe"
+cd\qe"
+  ^

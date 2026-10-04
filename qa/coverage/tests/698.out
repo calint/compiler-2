@@ -1,2 +1,4 @@
 
 698.baz:8:18: cannot resolve identifier 'noop.x'
+    var y = noop.x
+                 ^

@@ -1,2 +1,4 @@
 
 787.baz:17:7: cannot deduce 'T' of generic function 'str.append', write 'append<...>'
+    s.append(str)
+      ^~~~~~

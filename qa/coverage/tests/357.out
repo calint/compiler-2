@@ -1,2 +1,4 @@
 
 357.baz:4:5: cannot resolve identifier 'object'
+    object.method()
+    ^~~~~~

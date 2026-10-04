@@ -1,2 +1,4 @@
 
 121.baz:8:23: use of uninitialized variable 'x'
+    var x = i32(foozi(x))
+                      ^

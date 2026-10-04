@@ -1,2 +1,4 @@
 
 586.baz:5:28: array 'arr' must be indexed
+    var ok = equal(arr[1], arr)
+                           ^~~

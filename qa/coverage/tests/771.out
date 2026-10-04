@@ -1,3 +1,7 @@
 
 771.baz:4:13: index 2 is out of bounds for array 'v' of size 2
+    res = v[2]
+            ^
 771.baz:11:9: called from 'third(b)'
+    r = third(b)
+        ^~~~~

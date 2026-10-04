@@ -1,2 +1,4 @@
 
-481.baz:3:1: function may return without setting its return value
+481.baz:3:18: function may return without setting its return value
+func make_pair() res pair {
+                 ^~~

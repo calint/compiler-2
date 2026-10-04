@@ -1,2 +1,4 @@
 
 356.baz:6:22: source must be an array
+    var dst = small{ value }
+                     ^~~~~

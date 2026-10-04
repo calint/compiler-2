@@ -1,2 +1,4 @@
 
 748.baz:6:5: storage size exceeds signed 64-bit range
+    array_copy(a, b, 9223372036854775807)
+    ^~~~~~~~~~

@@ -1,2 +1,4 @@
 
 808.baz:3:10: expected 'type' after generic parameter 'T'
+func f<T int>() {}
+         ^~~

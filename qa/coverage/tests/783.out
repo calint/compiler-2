@@ -1,2 +1,4 @@
 
 783.baz:8:17: generic parameter 'capacity' of 'text' needs a constant, got 'unknown'
+type str = text<unknown>
+                ^~~~~~~

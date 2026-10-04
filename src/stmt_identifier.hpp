@@ -65,19 +65,19 @@ class stmt_identifier : public statement {
             throw compiler_exception{tz, "expected an identifier"};
         }
 
-        token tk_prv{tk};
+        token src_loc_tk{tk};
 
         while (true) {
             assert_indexable(tc, tz, tk);
             parse_element(tc, tz, tk);
 
-            if (not extends_path(tc, tz, tk, tk_prv)) {
+            if (not extends_path(tc, tz, tk, src_loc_tk)) {
                 break;
             }
         }
 
         if (not tc.is_func(path_as_string_)) {
-            resolve_type(tc, tk_prv);
+            resolve_type(tc, src_loc_tk);
         }
 
         resolve_access_range(tc);
@@ -318,6 +318,11 @@ class stmt_identifier : public statement {
         return not method_name_tk_.is_empty();
     }
 
+    // the name at the end of the path, e.g. 'data' of 'q1.data'
+    [[nodiscard]] auto last_token() const -> const token& {
+        return elems_.back().name_tk;
+    }
+
     [[nodiscard]] auto method_dot_token() const -> const token& {
         return method_dot_tk_;
     }
@@ -387,37 +392,39 @@ class stmt_identifier : public statement {
     }
 
     // 'ps.x' does not mean 'ps[0].x'
-    auto assert_element_selected(const toc& tc, const token& tk) const -> void {
+    auto assert_element_selected(const toc& tc, const token& src_loc_tk) const
+        -> void {
 
         if (elems_.back().array_index_expr or tc.is_func(path_as_string_)) {
             return;
         }
 
-        if (not tc.make_ident_info(tk, path_as_string_).is_array) {
+        if (not tc.make_ident_info(src_loc_tk, path_as_string_).is_array) {
             return;
         }
 
         throw compiler_exception{
-            tk, std::format("array '{}' must be indexed", path_as_string_)};
+            src_loc_tk,
+            std::format("array '{}' must be indexed", path_as_string_)};
     }
 
     // the '[' of an element needs an array
-    auto assert_indexable(const toc& tc, tokenizer& tz, const token& tk) const
-        -> void {
+    auto assert_indexable(const toc& tc, tokenizer& tz,
+                          const token& src_loc_tk) const -> void {
 
         if (tc.is_func(path_as_string_)) {
             return;
         }
 
         const ident_info cur_ident_info{
-            tc.make_ident_info(tk, path_as_string_),
+            tc.make_ident_info(src_loc_tk, path_as_string_),
         };
 
         if (tz.peek_char_after_whitespace() == '[' and
             not cur_ident_info.is_array) {
 
             throw compiler_exception{
-                tk,
+                src_loc_tk,
                 std::format("cannot index non-array '{}'", path_as_string_)};
         }
     }
@@ -425,7 +432,7 @@ class stmt_identifier : public statement {
     // without a method 'T.m' a following '(' would otherwise be reported as a
     // missing field
     auto assert_not_method_call(const toc& tc, tokenizer& tz,
-                                const token& path_tk,
+                                const token& src_loc_tk,
                                 const token& name_tk) const -> void {
 
         if (tc.is_func(path_as_string_)) {
@@ -436,7 +443,7 @@ class stmt_identifier : public statement {
             return;
         }
 
-        const ident_info info{tc.make_ident_info(path_tk, path_as_string_)};
+        const ident_info info{tc.make_ident_info(src_loc_tk, path_as_string_)};
 
         throw compiler_exception{
             name_tk, std::format("method '{}' not found in type '{}'",
@@ -445,9 +452,9 @@ class stmt_identifier : public statement {
 
     // a '.' followed by a field continues the path with that field, a method
     // name ends it with the path as the receiver; 'tk' becomes the field and
-    // 'tk_prv' the token before it
+    // 'src_loc_tk' the token before it
     [[nodiscard]] auto extends_path(toc& tc, tokenizer& tz, token& tk,
-                                    token& tk_prv) -> bool {
+                                    token& src_loc_tk) -> bool {
 
         const token dot_tk{tz.is_next_char_token('.')};
         if (dot_tk.is_empty()) {
@@ -467,7 +474,7 @@ class stmt_identifier : public statement {
         assert_not_method_call(tc, tz, tk, next_tk);
 
         elem_delims_tk_.emplace_back(dot_tk);
-        tk_prv = tk;
+        src_loc_tk = tk;
         tk = next_tk;
         path_as_string_.push_back('.');
         path_as_string_ += tk.text();
@@ -495,14 +502,14 @@ class stmt_identifier : public statement {
 
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] auto is_method_name(const toc& tc, tokenizer& tz,
-                                      const token& path_tk,
+                                      const token& src_loc_tk,
                                       const token& name_tk) const -> bool {
 
         if (tc.is_func(path_as_string_)) {
             return false;
         }
 
-        const ident_info info{tc.make_ident_info(path_tk, path_as_string_)};
+        const ident_info info{tc.make_ident_info(src_loc_tk, path_as_string_)};
 
         const type& path_type{info.type_ref()};
 
@@ -613,8 +620,8 @@ class stmt_identifier : public statement {
     }
 
     // the path is an array only while its last element is not indexed
-    auto resolve_type(const toc& tc, const token& tk_prv) -> void {
-        const ident_info ii{tc.make_ident_info(tk_prv, path_as_string_)};
+    auto resolve_type(const toc& tc, const token& src_loc_tk) -> void {
+        const ident_info ii{tc.make_ident_info(src_loc_tk, path_as_string_)};
 
         set_type(ii.type_ref());
 

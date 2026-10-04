@@ -1,2 +1,4 @@
 
 807.baz:3:8: expected a name for the generic parameter
+func f<>() {}
+       ^

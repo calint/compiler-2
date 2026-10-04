@@ -1,2 +1,4 @@
 
-230.baz:7:16: expected type 'i8', got 'i16'
+230.baz:7:19: expected type 'i8', got 'i16'
+    var p1 = p{q1.data}
+                  ^~~~

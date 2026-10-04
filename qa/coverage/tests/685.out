@@ -1,2 +1,4 @@
 
 685.baz:3:9: cannot parse constant '1abc'
+let x = 1abc
+        ^~~~

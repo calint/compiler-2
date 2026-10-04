@@ -1,2 +1,4 @@
 
 797.baz:8:13: generic type 'text' is not a type, name an instance first, e.g. 'type str = text<...>'
+func show(t text) {
+            ^~~~

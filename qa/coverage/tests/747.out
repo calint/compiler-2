@@ -1,2 +1,4 @@
 
 747.baz:4:5: storage size exceeds signed 64-bit range
+dat b = i8[4611686018427387904]{}
+    ^

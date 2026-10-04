@@ -1,2 +1,4 @@
 
 204.baz:3:10: type 'nope' not found
+func f(x nope) {}
+         ^~~~

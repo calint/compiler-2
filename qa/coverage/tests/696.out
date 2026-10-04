@@ -1,2 +1,4 @@
 
 696.baz:15:1: expected '(' after constructor name
+}
+^

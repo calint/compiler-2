@@ -1,2 +1,4 @@
 
 788.baz:14:22: expected ',' or '>' after generic argument
+    var m = make<name(2)
+                     ^

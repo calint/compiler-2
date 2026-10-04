@@ -1,2 +1,4 @@
 
 492.baz:4:13: constant '257' does not fit 'n' of type 'i8'
+    if n == 257 { exit(1) }
+            ^

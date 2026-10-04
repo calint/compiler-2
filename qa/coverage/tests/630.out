@@ -1,3 +1,7 @@
 
 630.baz:10:5: return value is discarded
+    two()
+    ^~~
 630.baz:14:13: called from 'one()'
+    var r = one()
+            ^~~

@@ -1,2 +1,4 @@
 
 643.baz:4:19: cannot copy into read-only 'd', parameter 'd' is not declared 'mut'
+    array_copy(s, d, 2)
+                  ^

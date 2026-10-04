@@ -250,7 +250,7 @@ class expr_type final : public statement {
         item.visit_reads(
             dst.root,
             [&dst, &written](
-                const token& use_tk, const std::string_view read_text,
+                const token& src_loc_tk, const std::string_view read_text,
                 const std::optional<field_coverage::range>& accessed) -> void {
                 if (accessed and not accessed->overlaps(written)) {
                     return;
@@ -259,7 +259,7 @@ class expr_type final : public statement {
                 // a runtime index may or may not refer to the written element
                 if (not dst.is_exact) {
                     throw compiler_exception{
-                        use_tk,
+                        src_loc_tk,
                         std::format(
                             "'{}' may have been overwritten in the same "
                             "statement",
@@ -267,7 +267,7 @@ class expr_type final : public statement {
                 }
 
                 throw compiler_exception{
-                    use_tk,
+                    src_loc_tk,
                     std::format("'{}' is read but has been overwritten in the "
                                 "same statement",
                                 read_text)};

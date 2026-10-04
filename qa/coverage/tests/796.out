@@ -1,2 +1,4 @@
 
 796.baz:7:8: generic parameter 'name' hides the type 'name' defined at 3:6, use another name
+func f<name type>(x name) {
+       ^~~~

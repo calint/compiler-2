@@ -1,2 +1,4 @@
 
 739.baz:3:15: RV32I data elements must be 1, 2, or 4 bytes
+dat d = i64[]{1, 2}
+              ^

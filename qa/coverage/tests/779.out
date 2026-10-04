@@ -1,2 +1,4 @@
 
 779.baz:3:11: generic parameter 'T' of a function must have the kind 'type', e.g. 'T type'
+func make<T>(n) res {
+          ^

@@ -1,2 +1,4 @@
 
 648.baz:9:10: argument 2 'x' may share storage with argument 1 'x' (both name 'x'), use a separate variable
+    f(x, x)
+         ^

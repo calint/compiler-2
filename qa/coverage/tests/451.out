@@ -1,2 +1,4 @@
 
 451.baz:2:20: expected ',' followed by another field in type 'point'
+type point { value : i32 }
+                   ^

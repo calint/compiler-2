@@ -119,15 +119,16 @@ class field_coverage final {
 
 // receives each read of a variable, an empty range reads the whole variable
 using read_visitor = std::function_ref<void(
-    const token& use_tk, std::string_view read_text,
+    const token& src_loc_tk, std::string_view read_text,
     const std::optional<field_coverage::range>& accessed)>;
 
 // definite-assignment walk of one variable through a function body
 struct assignment_flow {
     std::string_view var;
 
-    // reported when a 'return' may leave 'var' unset
-    token func_tk;
+    // the declaration of the result, reported when a 'return' may leave 'var'
+    // unset
+    token src_loc_tk;
 
     // bytes assigned on every path reaching the current statement
     field_coverage assigned;
@@ -143,7 +144,7 @@ struct assignment_flow {
         }
 
         throw compiler_exception{
-            func_tk, "function may return without setting its return value"};
+            src_loc_tk, "function may return without setting its return value"};
     }
 
     // a path that never reaches the next statement cannot narrow a merge

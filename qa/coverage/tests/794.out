@@ -1,3 +1,7 @@
 
 794.baz:4:11: type 'nope' not found
+    array nope[capacity],
+          ^~~~
 794.baz:8:6: instantiated by 'type str = text<8>'
+type str = text<8>
+     ^~~

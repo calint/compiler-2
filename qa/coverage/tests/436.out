@@ -1,2 +1,4 @@
 
 436.baz:3:34: argument 2 must be an array
+func main() { var n = 0 write(1, n, 1) }
+                                 ^

@@ -1,2 +1,4 @@
 
 194.baz:3:19: expected name of data
+func main() { dat = 1 }
+                  ^

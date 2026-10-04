@@ -1147,9 +1147,14 @@ class toc final {
         -> ident_info {
 
         // the name refers to the declared array, 'ps[1]' accesses one element
-        return as_element_if(
-            st.is_array_element(),
-            make_ident_info_or_throw(st.tok(), st.identifier()));
+        const ident_info declared{
+            make_ident_info_or_throw(st.tok(), st.identifier()),
+        };
+        ident_info info{as_element_if(st.is_array_element(), declared)};
+
+        info.src_loc_tk = st.tok();
+
+        return info;
     }
 
     [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
@@ -1424,6 +1429,14 @@ class toc final {
 
         if (funcs_.has(name)) {
             const func_info& fn{funcs_.get_const_ref(name)};
+
+            // a built-in function has no source location
+            if (fn.src_loc_tk.at_line() == 0) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("function '{}' is a built-in function", name)};
+            }
+
             throw compiler_exception{
                 src_loc_tk,
                 std::format("function '{}' already defined at {}", name,

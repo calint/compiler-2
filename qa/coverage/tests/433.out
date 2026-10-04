@@ -1,2 +1,4 @@
 
-433.baz:3:6: function 'exit' already defined at 0:1
+433.baz:3:6: function 'exit' is a built-in function
+func exit() {}
+     ^~~~

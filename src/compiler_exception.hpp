@@ -19,6 +19,7 @@ class compiler_exception final : public std::exception {
     struct call_frame {
         size_t line{};
         size_t start_index{};
+        size_t end_index{};
         std::string text;
         std::string reason;
     };
@@ -48,6 +49,7 @@ class compiler_exception final : public std::exception {
         call_frames.push_back({
             .line{call_tk.at_line()},
             .start_index{call_tk.start_index()},
+            .end_index{call_tk.end_index()},
             .text{std::move(text)},
             .reason{std::move(reason)},
         });

@@ -1,5 +1,6 @@
 // reviewed: 2025-09-29
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -100,8 +101,13 @@ auto print_call_frames(std::string_view src_file_name, std::string_view src,
 
 auto print_source_error(const std::string_view src_file_name,
                         const std::string_view src, const size_t line,
-                        const size_t start_index,
+                        const size_t start_index, const size_t end_index,
                         const std::string_view message) -> void;
+
+auto print_source_line(std::string_view src, size_t start_index,
+                       size_t end_index) -> void;
+
+[[nodiscard]] auto is_utf8_continuation(char ch) -> bool;
 } // namespace
 
 auto main(const int argc, const char** const argv) -> int {
@@ -346,7 +352,7 @@ examples:
 
     } catch (const compiler_exception& e) {
         print_source_error(opts.src_file_name, src, e.line, e.start_index,
-                           e.msg);
+                           e.end_index, e.msg);
 
         print_call_frames(opts.src_file_name, src, e.call_frames);
 
@@ -506,6 +512,8 @@ auto print_call_frames(
 
         std::println(stderr, "{}:{}:{}: {} '{}'", src_file_name, line_num, col,
                      frame.reason, frame.text);
+
+        print_source_line(src, frame.start_index, frame.end_index);
     }
 }
 
@@ -513,7 +521,7 @@ auto print_call_frames(
 // line 0 is a problem of the whole file
 auto print_source_error(const std::string_view src_file_name,
                         const std::string_view src, const size_t line,
-                        const size_t start_index,
+                        const size_t start_index, const size_t end_index,
                         const std::string_view message) -> void {
 
     if (line == 0) {
@@ -526,5 +534,63 @@ auto print_source_error(const std::string_view src_file_name,
 
     std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line_num, col,
                  message);
+
+    print_source_line(src, start_index, end_index);
+}
+
+// the bytes after the first one of a multi-byte UTF-8 character
+auto is_utf8_continuation(const char ch) -> bool {
+    constexpr unsigned char first{0x80};
+    constexpr unsigned char last{0xBF};
+
+    const auto byte{static_cast<unsigned char>(ch)};
+
+    return byte >= first and byte <= last;
+}
+
+// the source line of the error with a '^' under its first character and a '~'
+// under the rest of the token, a position without a token has only the '^'
+auto print_source_line(const std::string_view src, const size_t start_index,
+                       const size_t end_index) -> void {
+
+    if (start_index >= src.size()) {
+        return;
+    }
+
+    // note: the character at 'start_index' can be the line end
+    const size_t before_start{
+        start_index == 0 ? std::string_view::npos
+                         : src.rfind('\n', start_index - 1),
+    };
+    const size_t line_bgn{
+        before_start == std::string_view::npos ? 0 : before_start + 1,
+    };
+    const size_t line_end{std::min(src.find('\n', start_index), src.size())};
+
+    std::string_view line{src.substr(line_bgn, line_end - line_bgn)};
+    if (line.ends_with('\r')) {
+        line.remove_suffix(1);
+    }
+
+    // an error at the end of a file has no line to show
+    if (line.empty()) {
+        return;
+    }
+
+    // a tab stays a tab so that the mark lines up, a character counts once
+    std::string padding;
+    for (const char ch : src.substr(line_bgn, start_index - line_bgn)) {
+        if (ch == '\t') {
+            padding += '\t';
+        } else if (not is_utf8_continuation(ch)) {
+            padding += ' ';
+        }
+    }
+
+    const size_t mark_end{std::min(end_index, line_bgn + line.size())};
+    const size_t mark_size{mark_end > start_index ? mark_end - start_index : 1};
+
+    std::println(stderr, "{}\n{}^{}", line, padding,
+                 std::string(mark_size - 1, '~'));
 }
 } // namespace

@@ -168,7 +168,7 @@ class statement {
         visit_reads(
             var,
             [&var, &assigned](
-                const token& use_tk,
+                const token& src_loc_tk,
                 [[maybe_unused]] const std::string_view read_text,
                 const std::optional<field_coverage::range>& accessed) -> void {
                 const bool is_assigned{
@@ -179,7 +179,7 @@ class statement {
                     return;
                 }
 
-                throw_uninitialized(use_tk, var);
+                throw_uninitialized(src_loc_tk, var);
             });
     }
 
@@ -205,7 +205,7 @@ class statement {
         visit_reads(
             var,
             [&is_read](
-                [[maybe_unused]] const token& use_tk,
+                [[maybe_unused]] const token& src_loc_tk,
                 [[maybe_unused]] const std::string_view read_text,
                 [[maybe_unused]] const std::optional<field_coverage::range>&
                     accessed) -> void { is_read = true; });
@@ -273,7 +273,7 @@ class statement {
 
     // writes are rejected at parse, so a function that is never called is
     // checked too; 'action' completes "cannot ...", e.g. 'assign to'
-    static auto assert_not_read_only(const token& tk,
+    static auto assert_not_read_only(const token& src_loc_tk,
                                      const std::string_view action,
                                      const std::string_view name,
                                      const ident_info& info) -> void {
@@ -282,9 +282,9 @@ class statement {
             return;
         }
 
-        throw compiler_exception{tk, std::format("cannot {} read-only '{}'{}",
-                                                 action, name,
-                                                 read_only_hint(info))};
+        throw compiler_exception{
+            src_loc_tk, std::format("cannot {} read-only '{}'{}", action, name,
+                                    read_only_hint(info))};
     }
 
     [[nodiscard]] static auto fits_size_bytes(const int64_t value,
@@ -397,12 +397,12 @@ class statement {
                         dst_type.name())};
     }
 
-    [[noreturn]] static auto throw_uninitialized(const token& use_tk,
+    [[noreturn]] static auto throw_uninitialized(const token& src_loc_tk,
                                                  const std::string_view var)
         -> void {
 
         throw compiler_exception{
-            use_tk, std::format("use of uninitialized variable '{}'", var)};
+            src_loc_tk, std::format("use of uninitialized variable '{}'", var)};
     }
 
   private:

@@ -1,2 +1,4 @@
 
 101.baz:4:13: use of uninitialized variable 'x'
+    var x = x + 1
+            ^

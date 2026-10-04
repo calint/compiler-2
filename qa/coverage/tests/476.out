@@ -1,2 +1,4 @@
 
-476.baz:3:1: function may return without setting its return value
+476.baz:3:13: function may return without setting its return value
+func half() res point {
+            ^~~

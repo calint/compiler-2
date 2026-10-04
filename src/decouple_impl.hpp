@@ -16,6 +16,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -408,6 +409,9 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         }
 
         if (counter == field_count) {
+            // the error is at the field that is too much
+            std::ignore = tz.is_next_char_token(',');
+
             throw compiler_exception{
                 tz, std::format("too many fields specified for type '{}'",
                                 tp.name())};
@@ -488,8 +492,10 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
 
     if (tp.name() != src_info.type_ref().name()) {
         throw compiler_exception{
-            tok(), std::format("expected type '{}', got '{}'", tp.name(),
-                               src_info.type_ref().name())};
+            stmt_ident_->last_token(),
+            std::format("expected type '{}', got '{}'", tp.name(),
+                        src_info.type_ref().name()),
+        };
     }
 }
 

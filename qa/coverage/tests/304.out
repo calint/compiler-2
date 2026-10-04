@@ -1,2 +1,4 @@
 
 304.baz:7:19: cannot index non-array 'p.x'
+    var value = p.x[0]
+                  ^

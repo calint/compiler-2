@@ -1,2 +1,4 @@
 
 217.baz:3:5: expected name of constant
+let = 1
+    ^

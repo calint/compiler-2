@@ -1,2 +1,4 @@
 
 737.baz:21:61: out of RV32I scratch registers
+                                                            foo a {
+                                                            ^~~

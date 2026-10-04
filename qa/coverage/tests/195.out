@@ -1,2 +1,4 @@
 
 195.baz:4:25: only arrays of type 'i8' can be initialized with strings
+func main() { dat x = p{"x"} }
+                        ^~~

@@ -1,2 +1,4 @@
 
 243.baz:4:28: expected '{' to open type initializer for 'p'
+func main() { dat x = p[2]{1,2} }
+                           ^

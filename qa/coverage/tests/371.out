@@ -1,2 +1,4 @@
 
 371.baz:4:1: 'dat' can only be added before any 'var'
+dat data = 2
+^~~

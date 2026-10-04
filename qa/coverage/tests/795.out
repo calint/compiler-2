@@ -1,2 +1,4 @@
 
 795.baz:3:16: generic parameter 'T' is declared twice
+func f<T type, T type>(x T) {
+               ^

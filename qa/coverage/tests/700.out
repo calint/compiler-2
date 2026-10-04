@@ -1,2 +1,4 @@
 
 700.baz:4:13: argument 2 must be an array
+    read(0, 1 + 2, 1)
+            ^

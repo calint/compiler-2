@@ -1,3 +1,7 @@
 
 711.baz:11:5: cannot assign to constant '1'
+    k = 3
+    ^
 711.baz:16:5: called from 'p.bad()'
+    p.bad()
+    ^

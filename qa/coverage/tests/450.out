@@ -1,2 +1,4 @@
 
 450.baz:2:25: expected '=' followed by an initializer, e.g. 'var x = i32(0)'
+func main() { var value : i32 }
+                        ^

@@ -234,6 +234,10 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
+    [[nodiscard]] auto noinline_token() const -> const token& {
+        return noinline_tk_;
+    }
+
     [[nodiscard]] auto param(const size_t ix) const
         -> const stmt_def_func_param& {
 

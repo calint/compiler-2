@@ -1,3 +1,7 @@
 
 710.baz:6:5: cannot assign to constant '1'
+    x = x + 1
+    ^
 710.baz:10:5: called from 'bump(c)'
+    bump(c)
+    ^~~~

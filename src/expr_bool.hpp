@@ -524,6 +524,9 @@ class expr_bool_op final : public statement {
 
         if (tz.is_next_char('=')) {
             if (not tz.is_next_char('=')) {
+                // the error is at the '=' that is alone
+                tz.put_back_char('=');
+
                 throw compiler_exception{tz, "expected '=='"};
             }
 
@@ -532,6 +535,9 @@ class expr_bool_op final : public statement {
 
         if (tz.is_next_char('!')) {
             if (not tz.is_next_char('=')) {
+                // the error is at the '!' that is alone
+                tz.put_back_char('!');
+
                 throw compiler_exception{tz, "expected '!='"};
             }
 

@@ -1,2 +1,4 @@
 
 344.baz:4:21: expected a constant array size greater than 0
+    var values = i8[0]{}
+                    ^

@@ -1,2 +1,4 @@
 
 160.baz:3:23: cannot resolve identifier '123abc'
+func main() { var x = 123abc }
+                      ^~~~~~

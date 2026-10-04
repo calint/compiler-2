@@ -392,6 +392,10 @@ class expr_any final : public statement {
         return string_tk_.is_string();
     }
 
+    [[nodiscard]] auto open_bracket_token() const -> const token& {
+        return open_bracket_tk_;
+    }
+
   private:
     // the remaining count would wrap around past the array size
     auto assert_room_for_element(const tokenizer& tz) const -> void {

@@ -1,2 +1,4 @@
 
 501.baz:5:17: argument 1 cannot be a temporary
+    var s = sum({ 1, 2 })
+                ^

@@ -79,6 +79,10 @@ class stmt_builtin_arrays_equal final : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
+        // the destination is named in the source, the error is at its name
+        assert_destination_type(dst_info.type_ref(),
+                                dst_info.error_token(tok()));
+
         compile_boolean(tc, indent, dst_info.operand, false);
     }
 
@@ -100,11 +104,7 @@ class stmt_builtin_arrays_equal final : public expression {
                             rhs_info.type_ref().name())};
         }
 
-        if (dst.type_ref().name() != get_type().name()) {
-            throw compiler_exception{
-                tok(), std::format("destination type must be '{}', not '{}'",
-                                   get_type().name(), dst.type_ref().name())};
-        }
+        assert_destination_type(dst.type_ref(), tok());
 
         const operand count_register{x.begin_memory_equal(tok(), indent)};
 
@@ -141,5 +141,20 @@ class stmt_builtin_arrays_equal final : public expression {
         lhs_.visit_reads(var, reader);
         rhs_.visit_reads(var, reader);
         count_.visit_reads(var, reader);
+    }
+
+  private:
+    auto assert_destination_type(const type& dst_type,
+                                 const token& src_loc_tk) const -> void {
+
+        if (dst_type.name() == get_type().name()) {
+            return;
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("destination type must be '{}', not '{}'",
+                        get_type().name(), dst_type.name()),
+        };
     }
 };
