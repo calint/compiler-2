@@ -897,7 +897,8 @@ vim.lsp.config("baz", {
   cmd = server,
   filetypes = { "baz" },
   root_dir = function(bufnr, on_dir)
-    on_dir(vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr)))
+    local file = vim.api.nvim_buf_get_name(bufnr)
+    on_dir(vim.fs.root(file, { ".git" }) or vim.fs.dirname(file))
   end,
 })
 vim.lsp.enable("baz")
