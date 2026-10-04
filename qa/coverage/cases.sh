@@ -2387,7 +2387,8 @@ SRC=773 && COMPERR
 # generic functions: type parameters replaced per list of type arguments
 SRC=774 && EXP=0 && RUN
 
-# a generic function is called with type arguments
+# a generic function is called with type arguments when its arguments do not
+# tell them
 SRC=775 && COMPERR
 
 # a generic function takes as many type arguments as type parameters
@@ -2424,7 +2425,8 @@ SRC=785 && COMPERR
 # a method of a generic type with a type parameter of its own
 SRC=786 && EXP=0 && RUN
 
-# the type parameter of such a method is given by the call
+# the type argument of a method is deduced from a variable, not from an
+# expression
 SRC=787 && COMPERR
 
 # the type arguments of a call end with '>'
@@ -2534,3 +2536,30 @@ SRC=822 && COMPERR
 
 # an alias names a generic type, not a type
 SRC=823 && COMPERR
+
+# the type arguments of a call are deduced from variables, fields and elements
+SRC=824 && EXP=0 && RUN
+
+# a literal does not tell the type
+SRC=825 && COMPERR
+
+# the arguments of a deduced instance are checked like any other
+SRC=826 && COMPERR
+
+# an array parameter does not tell the type
+SRC=827 && COMPERR
+
+# a type name assigned is the zero value of that type
+SRC=828 && EXP=0 && RUN
+
+# a type name alone is its zero value in a record literal and in an index
+SRC=829 && EXP=0 && RUN
+
+# a type name alone as an argument is a temporary
+SRC=830 && COMPERR
+
+# an array assigned without braces needs a size
+SRC=831 && COMPERR
+
+# an array declared without braces needs a size
+SRC=832 && COMPERR

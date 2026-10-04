@@ -360,12 +360,12 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 //       it needs the 'expr_any' definition, which would otherwise create a
 //       circular include between 'expr_type.hpp' and 'expr_any.hpp'
 expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
-                     const bool is_array_destination, const bool is_initializer)
+                     const bool is_array_destination)
     : statement{tz.next_token()}, is_array_destination_{is_array_destination} {
 
     set_type(tp);
 
-    const bool is_bare{is_initializer and is_bare_record_type(tc, tok(), tz)};
+    const bool is_bare{is_bare_record_type(tc, tok(), tz)};
 
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination

@@ -5,7 +5,11 @@ each open item starts with its difficulty: easy, medium or hard
 --------------------------------------------------------------------------------
 better assembler code, medium, largest gain first
 --------------------------------------------------------------------------------
-[ ] deduce when there is only one type in context and generic only has one type
+[x] deduce the type arguments of a generic call (2026-10-05): from a variable,
+    field or element passed for a parameter declared with the type parameter
+    ('s.append(n)' for 'func text.append<T type>(s T)'); roome.baz uses it
+    => left: from the destination ('x.f = tz.to()' for 'res T') needs the
+       expected type at the call parse
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
 [ ] medium: roome.baz (2026-09-29): an inline bool call used as a condition is

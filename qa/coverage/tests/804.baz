@@ -22,7 +22,7 @@ func text.size() res {
 func text.cap2() res { res = self.size() * 2 }
 
 func wrap<T type>() res T {
-    res = T{}
+    res = T
 }
 
 func outer<T type>() res {
@@ -42,8 +42,8 @@ func noinline ni<T type>(n) res {
 }
 
 func main() {
-    var a = str{}
-    var b = name{}
+    var a = str
+    var b = name
     assert(1, a.size() == 8)
     assert(2, b.size() == 4)
     assert(3, b.cap2() == 8)

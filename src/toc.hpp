@@ -558,12 +558,13 @@ class toc final {
     auto add_generic_func(
         const token& src_loc_tk, std::string name, const token& func_tk,
         const token& start_tk, std::vector<std::string> param_names,
+        std::vector<std::optional<size_t>> deduced_from,
         std::optional<generic_type_instance> receiver_instance = {}) -> void {
 
         assert_function_not_defined(src_loc_tk, name);
 
         generics_.add_func(src_loc_tk, std::move(name), func_tk, start_tk,
-                           std::move(param_names),
+                           std::move(param_names), std::move(deduced_from),
                            std::move(receiver_instance));
     }
 

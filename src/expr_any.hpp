@@ -44,11 +44,10 @@ class expr_any final : public statement {
     bool is_unsized_destination_{};
 
   public:
-    // an initializer may be a type or array without '{}', e.g. 'var p = point'
-    // and 'var a = i8[4]'
+    // a type or array may be written without '{}', e.g. 'var p = point', 'p =
+    // point' and 'var a = i8[4]'
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             const bool is_array, const size_t array_count,
-             const bool is_initializer = false)
+             const bool is_array, const size_t array_count)
         : statement{tz.next_whitespace_token()}, array_count_{array_count},
           is_array_{is_array} {
 
@@ -56,8 +55,7 @@ class expr_any final : public statement {
 
         // the basic case
         if (not is_array) {
-            vars_.emplace_back(
-                parse_variant(tc, tz, tp, in_args, is_initializer));
+            vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
             return;
         }
 
@@ -80,13 +78,15 @@ class expr_any final : public statement {
         open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty() and not open_bracket_tk_.is_empty()) {
             // e.g. 'var a = i8[4]' is 'i8[4]{}'
-            if (is_initializer) {
-                return;
+            if (not literal_count_const_.has_value()) {
+                throw compiler_exception{
+                    close_bracket_tk_,
+                    std::format("an array needs a constant size, e.g. "
+                                "'{}[4]'",
+                                element_type_tk_.text())};
             }
 
-            throw compiler_exception{tz,
-                                     std::format("expected '{{' after '{}[]'",
-                                                 element_type_tk_.text())};
+            return;
         }
 
         if (open_brace_tk_.is_empty()) {
@@ -730,37 +730,35 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
-                                            const type& tp, const bool in_args,
-                                            const bool is_initializer = false)
+                                            const type& tp, const bool in_args)
         -> expr_variant {
 
         if (not tp.is_builtin()) {
             // destination is not a built-in (register) value
             // assume assign type value
-            return expr_type{tc, tz, tp, false, is_initializer};
+            return expr_type{tc, tz, tp, false};
         }
 
         if (tp.name() == tc.get_type_bool().name()) {
             // destination is boolean
 
             // e.g. 'var b = bool' is 'var b = false'
-            if (is_initializer) {
-                const token pos_tk{tz.cur_position_token()};
-                const token tk{tz.next_token()};
-                if (is_bare_builtin_type(tc, tk, tz)) {
-                    return expr_bool{
-                        tc,
-                        pos_tk,
-                        tz,
-                        false,
-                        {},
-                        {},
-                        std::make_unique<stmt_builtin_convert>(tc, tk),
-                    };
-                }
-
-                tz.put_back_token(tk);
+            const token pos_tk{tz.cur_position_token()};
+            const token tk{tz.next_token()};
+            if (is_bare_builtin_type(tc, tk, tz)) {
+                return expr_bool{
+                    tc,
+                    pos_tk,
+                    tz,
+                    false,
+                    {},
+                    {},
+                    std::make_unique<stmt_builtin_convert>(tc, tk),
+                };
             }
+
+            // note: rewound by position, a string token cannot be put back
+            tz.rewind_to_position(pos_tk);
 
             return expr_bool{tc, tz.next_whitespace_token(), tz};
         }
@@ -768,24 +766,23 @@ class expr_any final : public statement {
         // destination is a built-in (register) value
 
         // e.g. 'var x = i8' is 'var x = i8(0)'
-        if (is_initializer) {
-            const token tk{tz.next_token()};
-            if (is_bare_builtin_type(tc, tk, tz)) {
-                return expr_arith{
-                    tc,
-                    tz,
-                    in_args,
-                    false,
-                    {},
-                    false,
-                    {},
-                    expr_arith::initial_precedence,
-                    std::make_unique<stmt_builtin_convert>(tc, tk),
-                };
-            }
-
-            tz.put_back_token(tk);
+        const token pos_tk{tz.cur_position_token()};
+        const token tk{tz.next_token()};
+        if (is_bare_builtin_type(tc, tk, tz)) {
+            return expr_arith{
+                tc,
+                tz,
+                in_args,
+                false,
+                {},
+                false,
+                {},
+                expr_arith::initial_precedence,
+                std::make_unique<stmt_builtin_convert>(tc, tk),
+            };
         }
+
+        tz.rewind_to_position(pos_tk);
 
         return expr_arith{tc, tz, in_args};
     }

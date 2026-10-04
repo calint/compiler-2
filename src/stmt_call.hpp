@@ -1048,6 +1048,46 @@ class stmt_call : public expression {
         x.free_scratch_register(tok(), indent, address);
     }
 
+    // the type arguments of 'f(x)' for 'func f<T type>(s T)': a type parameter
+    // is the type of the argument for a parameter declared with that type, when
+    // the argument is a variable. a literal or an expression does not tell
+    // its type
+    auto deduce_generic_arguments(toc& tc, const tokenizer& tz,
+                                  const bool is_paren_read) -> std::string {
+
+        const generic_func_info& generic{tc.generics().get_func(func_name_)};
+
+        tokenizer scan{tz};
+        if (not is_paren_read and scan.is_next_char_token('(').is_empty()) {
+            throw compiler_exception{
+                tok(), std::format("generic function '{}' needs type "
+                                   "arguments, e.g. '{}<...>'",
+                                   func_name_, tok().text())};
+        }
+
+        std::vector<const type*> type_args;
+
+        for (const auto [param_name, from] :
+             std::views::zip(generic.param_names, generic.deduced_from)) {
+
+            const type* const arg_type{
+                from ? argument_type(tc, scan, *from) : nullptr,
+            };
+
+            if (arg_type == nullptr) {
+                throw compiler_exception{
+                    tok(),
+                    std::format("cannot deduce '{}' of generic function '{}' "
+                                "from its arguments, write '{}<...>'",
+                                param_name, func_name_, tok().text())};
+            }
+
+            type_args.push_back(arg_type);
+        }
+
+        return instantiate_generic_func(tc, tok(), func_name_, type_args);
+    }
+
     [[nodiscard]] auto describe_argument(const size_t index) const
         -> std::string {
 
@@ -1206,13 +1246,14 @@ class stmt_call : public expression {
     }
 
     // the instance of a generic function, e.g. '<name>' in 'tz.to<name>()'
-    auto parse_generic_arguments(toc& tc, tokenizer& tz) -> std::string {
+    // without '<' the types are taken from the arguments. 'is_paren_read' is
+    // set when the '(' has been read already
+    auto parse_generic_arguments(toc& tc, tokenizer& tz,
+                                 const bool is_paren_read) -> std::string {
+
         const token open_tk{tz.is_next_char_token('<')};
         if (open_tk.is_empty()) {
-            throw compiler_exception{
-                tok(), std::format("generic function '{}' needs type "
-                                   "arguments, e.g. '{}<...>'",
-                                   func_name_, tok().text())};
+            return deduce_generic_arguments(tc, tz, is_paren_read);
         }
 
         const generic_arguments args{generic_arguments::parse(tz, open_tk)};
@@ -1252,10 +1293,13 @@ class stmt_call : public expression {
     auto read_open_paren(toc& tc, tokenizer& tz,
                          const std::optional<token>& found) -> token {
 
-        if (tc.generics().has_func(func_name_)) {
-            func_name_ = parse_generic_arguments(tc, tz);
+        // a caller that found no '(' passes an empty token
+        const bool is_paren_read{found and not found->is_empty()};
 
-            return tz.is_next_char_token('(');
+        if (tc.generics().has_func(func_name_)) {
+            func_name_ = parse_generic_arguments(tc, tz, is_paren_read);
+
+            return is_paren_read ? *found : tz.is_next_char_token('(');
         }
 
         return found ? *found : tz.is_next_char_token('(');
@@ -1301,6 +1345,33 @@ class stmt_call : public expression {
     //
     // statics
     //
+
+    // the type of the argument at 'index' when it is a variable, a field or an
+    // element, otherwise null. 'tz' is after the '('
+    [[nodiscard]] static auto argument_type(toc& tc, tokenizer tz,
+                                            const size_t index) -> const type* {
+
+        for (size_t i{}; i < index; ++i) {
+            tz.skip_argument();
+            if (tz.is_next_char_token(',').is_empty()) {
+                return nullptr;
+            }
+        }
+
+        const token tk{tz.next_token()};
+        if (not tc.is_var_or_alias(tk.text())) {
+            return nullptr;
+        }
+
+        const stmt_identifier si{tc, {}, tk, tz};
+
+        const char next{tz.peek_char_after_whitespace()};
+        if (si.is_method_receiver() or (next != ',' and next != ')')) {
+            return nullptr;
+        }
+
+        return &tc.make_ident_info(si).type_ref();
+    }
 
     // a non-inline call passes addresses, so only a plain variable of the
     // parameter's type fits

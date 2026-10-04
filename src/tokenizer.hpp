@@ -160,6 +160,30 @@ class tokenizer final {
         move_back(n);
     }
 
+    // skips an argument of a call, up to the ',' or ')' that ends it
+    auto skip_argument() -> void {
+        size_t depth{};
+
+        while (not is_eos()) {
+            const char next{peek_char_after_whitespace()};
+
+            if (depth == 0 and (next == ',' or next == ')')) {
+                return;
+            }
+
+            if (next == '(' or next == '[' or next == '{') {
+                ++depth;
+            } else if (next == ')' or next == ']' or next == '}') {
+                --depth;
+            }
+
+            // a delimiter has an empty token text
+            if (next_token().text().empty() and not is_eos()) {
+                std::ignore = next_char();
+            }
+        }
+    }
+
     // skips up to and including the '}' that closes the next '{', strings and
     // character literals may contain braces
     auto skip_braced_block() -> void {

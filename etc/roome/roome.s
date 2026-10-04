@@ -4716,36 +4716,36 @@ func.parse_input:
             bge zero, t3, foo.503.5.954.9.end
             foo.503.5.954.9:
                 if.504.12.954.9:
-                # [504:12] ? tz.is<name>(link_names.array[e.link_name_id])
-                # [504:12] ? shorthand: tz.is<name>(link_names.array[e.link_name_id])
+                # [504:12] ? tz.is(link_names.array[e.link_name_id])
+                # [504:12] ? shorthand: tz.is(link_names.array[e.link_name_id])
                 cmp.504.12.954.9:
                 # [504:12] allocate scratch register -> t5
-                    # [504:15] t5 = tz.is<name>(link_names.array[e.link_name_id])
+                    # [504:15] t5 = tz.is(link_names.array[e.link_name_id])
                     # [504:15] = expression
-                    # [504:15] tz.is<name>(link_names.array[e.link_name_id])
-                    # [504:41] allocate scratch register -> t6
-                    # [504:41] set array index
-                    # [504:41] e.link_name_id
+                    # [504:15] tz.is(link_names.array[e.link_name_id])
+                    # [504:35] allocate scratch register -> t6
+                    # [504:35] set array index
+                    # [504:35] e.link_name_id
                     lw t6, 0(t2)
-                    # [504:41] bounds check begin
-                    # [504:41] lower bound
-                    # [504:41] t6 lower bound covered by the unsigned upper bound
-                    # [504:41] upper bound
-                    # [504:41] allocate scratch register -> s2
+                    # [504:35] bounds check begin
+                    # [504:35] lower bound
+                    # [504:35] t6 lower bound covered by the unsigned upper bound
+                    # [504:35] upper bound
+                    # [504:35] allocate scratch register -> s2
                     li s2, 1024
                     bltu t6, s2, 2f
                     1:
-                    # [504:41] source line
+                    # [504:35] source line
                     li a0, 504
                     j baz_bounds_panic
                     2:
-                    # [504:41] free scratch register s2
-                    # [504:41] bounds check end
-                    # [504:41] allocate scratch register -> s2
+                    # [504:35] free scratch register s2
+                    # [504:35] bounds check end
+                    # [504:35] allocate scratch register -> s2
                     slli s2, t6, 2
                     add t6, s2, t6
                     slli t6, t6, 2
-                    # [504:41] free scratch register s2
+                    # [504:35] free scratch register s2
                     # [504:15] allocate scratch register -> s2
                     # [504:15] address of parameter 's'
                     add s2, s0, t6
@@ -5756,7 +5756,7 @@ func.parse_input:
                 sw t2, 156(s1)
                 # [94:16] free scratch register t2
             func.str.add.528.15.954.9.end:
-            # [529:15] went_text.append<name>( link_names.array[ rooms.array[cur_room_id].links[found_ix].link_name_id ] )
+            # [529:15] went_text.append( link_names.array[ rooms.array[cur_room_id].links[found_ix].link_name_id ] )
             # [531:13] allocate scratch register -> t2
             # [531:13] set array index
             # [531:13] rooms.array[cur_room_id].links[found_ix].link_name_id
@@ -6518,7 +6518,7 @@ func.parse_input:
                 sw t2, 296(s1)
                 # [94:16] free scratch register t2
             func.str.add.550.18.954.9.end:
-            # [551:18] arrived_text.append<name>( link_names.array[ rooms.array[to_room_id].links[to_found_ix].link_name_id ] )
+            # [551:18] arrived_text.append( link_names.array[ rooms.array[to_room_id].links[to_found_ix].link_name_id ] )
             # [553:13] allocate scratch register -> t2
             # [553:13] set array index
             # [553:13] rooms.array[to_room_id].links[to_found_ix].link_name_id
@@ -7536,13 +7536,13 @@ func.parse_input:
                 bge zero, t3, foo.562.5.595.24.957.9.end
                 foo.562.5.595.24.957.9:
                     if.563.12.595.24.957.9:
-                    # [563:12] ? tz.is<name>(e)
-                    # [563:12] ? shorthand: tz.is<name>(e)
+                    # [563:12] ? tz.is(e)
+                    # [563:12] ? shorthand: tz.is(e)
                     cmp.563.12.595.24.957.9:
                     # [563:12] allocate scratch register -> t5
-                        # [563:15] t5 = tz.is<name>(e)
+                        # [563:15] t5 = tz.is(e)
                         # [563:15] = expression
-                        # [563:15] tz.is<name>(e)
+                        # [563:15] tz.is(e)
                         # [452:6] tokenizer.is(s T) res bool
                         func.tokenizer.is.name.563.15.595.24.957.9:
                             # [563:15] alias res -> t5
@@ -8177,13 +8177,13 @@ func.parse_input:
                 bge zero, t3, foo.562.5.604.29.957.9.end
                 foo.562.5.604.29.957.9:
                     if.563.12.604.29.957.9:
-                    # [563:12] ? tz.is<name>(e)
-                    # [563:12] ? shorthand: tz.is<name>(e)
+                    # [563:12] ? tz.is(e)
+                    # [563:12] ? shorthand: tz.is(e)
                     cmp.563.12.604.29.957.9:
                     # [563:12] allocate scratch register -> t5
-                        # [563:15] t5 = tz.is<name>(e)
+                        # [563:15] t5 = tz.is(e)
                         # [563:15] = expression
-                        # [563:15] tz.is<name>(e)
+                        # [563:15] tz.is(e)
                         # [452:6] tokenizer.is(s T) res bool
                         func.tokenizer.is.name.563.15.604.29.957.9:
                             # [563:15] alias res -> t5
@@ -13342,36 +13342,36 @@ func.parse_input:
             bge zero, t3, foo.749.5.978.9.end
             foo.749.5.978.9:
                 if.750.12.978.9:
-                # [750:12] ? tz.is<name>(objects.array[e].name)
-                # [750:12] ? shorthand: tz.is<name>(objects.array[e].name)
+                # [750:12] ? tz.is(objects.array[e].name)
+                # [750:12] ? shorthand: tz.is(objects.array[e].name)
                 cmp.750.12.978.9:
                 # [750:12] allocate scratch register -> t5
-                    # [750:15] t5 = tz.is<name>(objects.array[e].name)
+                    # [750:15] t5 = tz.is(objects.array[e].name)
                     # [750:15] = expression
-                    # [750:15] tz.is<name>(objects.array[e].name)
-                    # [750:38] allocate scratch register -> t6
-                    # [750:38] set array index
-                    # [750:38] e
+                    # [750:15] tz.is(objects.array[e].name)
+                    # [750:32] allocate scratch register -> t6
+                    # [750:32] set array index
+                    # [750:32] e
                     lw t6, 0(t2)
-                    # [750:38] bounds check begin
-                    # [750:38] lower bound
-                    # [750:38] t6 lower bound covered by the unsigned upper bound
-                    # [750:38] upper bound
-                    # [750:38] allocate scratch register -> s2
+                    # [750:32] bounds check begin
+                    # [750:32] lower bound
+                    # [750:32] t6 lower bound covered by the unsigned upper bound
+                    # [750:32] upper bound
+                    # [750:32] allocate scratch register -> s2
                     li s2, 1024
                     bltu t6, s2, 2f
                     1:
-                    # [750:38] source line
+                    # [750:32] source line
                     li a0, 750
                     j baz_bounds_panic
                     2:
-                    # [750:38] free scratch register s2
-                    # [750:38] bounds check end
-                    # [750:38] allocate scratch register -> s2
+                    # [750:32] free scratch register s2
+                    # [750:32] bounds check end
+                    # [750:32] allocate scratch register -> s2
                     slli s2, t6, 2
                     add t6, s2, t6
                     slli t6, t6, 2
-                    # [750:38] free scratch register s2
+                    # [750:32] free scratch register s2
                     # [750:15] allocate scratch register -> s2
                     # [750:15] address of parameter 's'
                     add s2, s0, t6
@@ -14711,36 +14711,36 @@ func.parse_input:
             bge zero, t3, foo.789.5.981.9.end
             foo.789.5.981.9:
                 if.790.12.981.9:
-                # [790:12] ? tz.is<name>(objects.array[e].name)
-                # [790:12] ? shorthand: tz.is<name>(objects.array[e].name)
+                # [790:12] ? tz.is(objects.array[e].name)
+                # [790:12] ? shorthand: tz.is(objects.array[e].name)
                 cmp.790.12.981.9:
                 # [790:12] allocate scratch register -> t5
-                    # [790:15] t5 = tz.is<name>(objects.array[e].name)
+                    # [790:15] t5 = tz.is(objects.array[e].name)
                     # [790:15] = expression
-                    # [790:15] tz.is<name>(objects.array[e].name)
-                    # [790:38] allocate scratch register -> t6
-                    # [790:38] set array index
-                    # [790:38] e
+                    # [790:15] tz.is(objects.array[e].name)
+                    # [790:32] allocate scratch register -> t6
+                    # [790:32] set array index
+                    # [790:32] e
                     lw t6, 0(t2)
-                    # [790:38] bounds check begin
-                    # [790:38] lower bound
-                    # [790:38] t6 lower bound covered by the unsigned upper bound
-                    # [790:38] upper bound
-                    # [790:38] allocate scratch register -> s2
+                    # [790:32] bounds check begin
+                    # [790:32] lower bound
+                    # [790:32] t6 lower bound covered by the unsigned upper bound
+                    # [790:32] upper bound
+                    # [790:32] allocate scratch register -> s2
                     li s2, 1024
                     bltu t6, s2, 2f
                     1:
-                    # [790:38] source line
+                    # [790:32] source line
                     li a0, 790
                     j baz_bounds_panic
                     2:
-                    # [790:38] free scratch register s2
-                    # [790:38] bounds check end
-                    # [790:38] allocate scratch register -> s2
+                    # [790:32] free scratch register s2
+                    # [790:32] bounds check end
+                    # [790:32] allocate scratch register -> s2
                     slli s2, t6, 2
                     add t6, s2, t6
                     slli t6, t6, 2
-                    # [790:38] free scratch register s2
+                    # [790:32] free scratch register s2
                     # [790:15] allocate scratch register -> s2
                     # [790:15] address of parameter 's'
                     add s2, s0, t6
@@ -15512,32 +15512,32 @@ func.parse_input:
                     # [816:21] continue
                 if.816.9.981.9.end:
                 if.817.12.981.9:
-                # [817:12] ? tz.is<name>(entities.array[e].name)
-                # [817:12] ? shorthand: tz.is<name>(entities.array[e].name)
+                # [817:12] ? tz.is(entities.array[e].name)
+                # [817:12] ? shorthand: tz.is(entities.array[e].name)
                 cmp.817.12.981.9:
                 # [817:12] allocate scratch register -> t5
-                    # [817:15] t5 = tz.is<name>(entities.array[e].name)
+                    # [817:15] t5 = tz.is(entities.array[e].name)
                     # [817:15] = expression
-                    # [817:15] tz.is<name>(entities.array[e].name)
-                    # [817:39] allocate scratch register -> t6
-                    # [817:39] set array index
-                    # [817:39] e
+                    # [817:15] tz.is(entities.array[e].name)
+                    # [817:33] allocate scratch register -> t6
+                    # [817:33] set array index
+                    # [817:33] e
                     lw t6, 0(t2)
-                    # [817:39] bounds check begin
-                    # [817:39] lower bound
-                    # [817:39] t6 lower bound covered by the unsigned upper bound
-                    # [817:39] upper bound
-                    # [817:39] allocate scratch register -> s2
+                    # [817:33] bounds check begin
+                    # [817:33] lower bound
+                    # [817:33] t6 lower bound covered by the unsigned upper bound
+                    # [817:33] upper bound
+                    # [817:33] allocate scratch register -> s2
                     li s2, 32
                     bltu t6, s2, 2f
                     1:
-                    # [817:39] source line
+                    # [817:33] source line
                     li a0, 817
                     j baz_bounds_panic
                     2:
-                    # [817:39] free scratch register s2
-                    # [817:39] bounds check end
-                    # [817:39] allocate scratch register -> s2
+                    # [817:33] free scratch register s2
+                    # [817:33] bounds check end
+                    # [817:33] allocate scratch register -> s2
                     slli s2, t6, 2
                     add s2, s2, t6
                     slli s2, s2, 2
@@ -15545,7 +15545,7 @@ func.parse_input:
                     slli s2, s2, 2
                     sub t6, s2, t6
                     slli t6, t6, 5
-                    # [817:39] free scratch register s2
+                    # [817:33] free scratch register s2
                     # [817:15] allocate scratch register -> s2
                     # [817:15] address of parameter 's'
                     add s2, s0, t6
@@ -16620,26 +16620,26 @@ func.parse_input:
                 sw t2, 184(s1)
                 # [94:16] free scratch register t2
             func.str.add.840.15.981.9.end:
-            # [841:15] gave_text.append<name>(entities.array[to_entity].name)
-            # [841:43] allocate scratch register -> t2
-            # [841:43] set array index
-            # [841:43] to_entity
+            # [841:15] gave_text.append(entities.array[to_entity].name)
+            # [841:37] allocate scratch register -> t2
+            # [841:37] set array index
+            # [841:37] to_entity
             lw t2, 48(s1)
-            # [841:43] bounds check begin
-            # [841:43] lower bound
-            # [841:43] t2 lower bound covered by the unsigned upper bound
-            # [841:43] upper bound
-            # [841:43] allocate scratch register -> t3
+            # [841:37] bounds check begin
+            # [841:37] lower bound
+            # [841:37] t2 lower bound covered by the unsigned upper bound
+            # [841:37] upper bound
+            # [841:37] allocate scratch register -> t3
             li t3, 32
             bltu t2, t3, 2f
             1:
-            # [841:43] source line
+            # [841:37] source line
             li a0, 841
             j baz_bounds_panic
             2:
-            # [841:43] free scratch register t3
-            # [841:43] bounds check end
-            # [841:43] allocate scratch register -> t3
+            # [841:37] free scratch register t3
+            # [841:37] bounds check end
+            # [841:37] allocate scratch register -> t3
             slli t3, t2, 2
             add t3, t3, t2
             slli t3, t3, 2
@@ -16647,7 +16647,7 @@ func.parse_input:
             slli t3, t3, 2
             sub t2, t3, t2
             slli t2, t2, 5
-            # [841:43] free scratch register t3
+            # [841:37] free scratch register t3
             # [841:15] allocate scratch register -> t3
             # [841:15] address of parameter 's'
             add t3, s0, t2
@@ -16816,7 +16816,7 @@ func.parse_input:
                 sw t2, 184(s1)
                 # [94:16] free scratch register t2
             func.str.add.842.15.981.9.end:
-            # [843:15] gave_text.append<name>(object_name)
+            # [843:15] gave_text.append(object_name)
             # [98:10] mut text.append(s T)
             func.str.append.name.843.15.981.9:
                 # [98:10] const capacity = 127
@@ -17656,13 +17656,13 @@ func.parse_input:
             bge zero, t3, foo.863.5.984.9.end
             foo.863.5.984.9:
                 if.864.12.984.9:
-                # [864:12] ? tz.is<name>(e.name)
-                # [864:12] ? shorthand: tz.is<name>(e.name)
+                # [864:12] ? tz.is(e.name)
+                # [864:12] ? shorthand: tz.is(e.name)
                 cmp.864.12.984.9:
                 # [864:12] allocate scratch register -> t5
-                    # [864:15] t5 = tz.is<name>(e.name)
+                    # [864:15] t5 = tz.is(e.name)
                     # [864:15] = expression
-                    # [864:15] tz.is<name>(e.name)
+                    # [864:15] tz.is(e.name)
                     # [452:6] tokenizer.is(s T) res bool
                     func.tokenizer.is.name.864.15.984.9:
                         # [864:15] alias res -> t5

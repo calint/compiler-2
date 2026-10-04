@@ -641,6 +641,13 @@ func generics() {
     # a call names the type arguments, 'fill<small>' and 'fill<large>' are
     # two functions
 
+    fill(s)
+    assert(s.is_full())
+    # the type arguments can be left out when a variable, a field or an
+    # element is passed for a parameter declared with the type parameter,
+    # 'fill(s)' is 'fill<small>(s)'. a literal, an expression or an array
+    # does not tell the type
+
     var m = make<small>(2)
     assert(m.count == 2)
     # the result type can be a parameter

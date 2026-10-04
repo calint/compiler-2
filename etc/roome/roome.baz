@@ -501,7 +501,7 @@ func action_go(eid, tz mut tokenizer) {
     let links_len = rooms.array[cur_room_id].links_len
     var found_ix = links_len
     foo rooms.array[cur_room_id].links, links_len {
-        if tz.is<name>(link_names.array[e.link_name_id]) {
+        if tz.is(link_names.array[e.link_name_id]) {
             found_ix = i
             break
         }
@@ -526,7 +526,7 @@ func action_go(eid, tz mut tokenizer) {
     # the ones left behind see it
     var went_text = str
     went_text.add(str_went_to)
-    went_text.append<name>(
+    went_text.append(
         link_names.array[
             rooms.array[cur_room_id].links[found_ix].link_name_id
         ]
@@ -548,7 +548,7 @@ func action_go(eid, tz mut tokenizer) {
 
     var arrived_text = str
     arrived_text.add(str_arrived_from)
-    arrived_text.append<name>(
+    arrived_text.append(
         link_names.array[
             rooms.array[to_room_id].links[to_found_ix].link_name_id
         ]
@@ -560,7 +560,7 @@ func action_go(eid, tz mut tokenizer) {
 func find_link_name_or_make(tz tokenizer) res {
     res = link_names.len
     foo link_names.array, link_names.len {
-        if tz.is<name>(e) {
+        if tz.is(e) {
             res = i
             break
         }
@@ -747,7 +747,7 @@ func action_drop(eid, tz mut tokenizer) {
     let len = entities.array[eid].objects.len
     var found_ix = len
     foo entities.array[eid].objects.array, len {
-        if tz.is<name>(objects.array[e].name) {
+        if tz.is(objects.array[e].name) {
             found_ix = i
             break
         }
@@ -787,7 +787,7 @@ func action_give(eid, tz mut tokenizer) {
     let len = entities.array[eid].objects.len
     var found_ix = len
     foo entities.array[eid].objects.array, len {
-        if tz.is<name>(objects.array[e].name) {
+        if tz.is(objects.array[e].name) {
             found_ix = i
             break
         }
@@ -814,7 +814,7 @@ func action_give(eid, tz mut tokenizer) {
     var to_entity = room_entities_len
     foo rooms.array[room_id].entities.array, room_entities_len {
         if e == eid continue
-        if tz.is<name>(entities.array[e].name) {
+        if tz.is(entities.array[e].name) {
             to_entity = e
             break
         }
@@ -838,9 +838,9 @@ func action_give(eid, tz mut tokenizer) {
 
     var gave_text = str
     gave_text.add(str_gave)
-    gave_text.append<name>(entities.array[to_entity].name)
+    gave_text.append(entities.array[to_entity].name)
     gave_text.add(str_space)
-    gave_text.append<name>(object_name)
+    gave_text.append(object_name)
 
     notify_room(room_id, eid, message_event, gave_text)
 }
@@ -861,7 +861,7 @@ func action_tell(eid, tz mut tokenizer) {
     # find entity anywhere
     var to_entity = entities.len
     foo entities.array, entities.len {
-        if tz.is<name>(e.name) {
+        if tz.is(e.name) {
             to_entity = i
             break
         }

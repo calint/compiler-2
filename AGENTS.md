@@ -7,8 +7,6 @@ Working agreements for AI sessions in this repository.
 - **No asking needed:** shell commands for build, test, lint, format and
   scratch compiles.
 - **Ask first:** `rm -rf`, `git push`, `git reset --hard`, `git clean`, `sudo`.
-- **Test suites:** the user runs the coverage suites and roome test after
-  changes; build, lint and format only, then say when it is ready for commit.
 - **Scratch files:** only in `/tmp`.
 - **Workspace root:** `/home/c/w/compiler-2`.
 
@@ -117,11 +115,19 @@ Working agreements for AI sessions in this repository.
 - Code that user input cannot reach is dead code: turn it into an `assert` (or
   remove it) instead of testing it; reachable code gets a test.
 
+## Baz code
+
+- Tests and examples in baz: an initializer or an assignment omits the `{}` of
+  a type or an array, the compiler assumes it: `var s = str`, `var a = i8[4]`,
+  `res = T`, not `var s = str{}`.
+
 ## Tools
 
 - Run symbol renames before `git mv`/file renames (open buffers at the old
   path recreate old files on save).
 - Editing pitfalls: see memory `editing.md`.
+- `make.sh` (without `build`) and `run-roome.sh` read input: after `make.sh`
+  type return, after `run-roome.sh` type "go home".
 
 ## Naming
 

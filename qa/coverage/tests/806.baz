@@ -10,7 +10,7 @@ func noinline k.m(v) res { res = v + 1 }
 func noinline kk<T type>(v) res { res = v + 2 }
 
 func main() {
-    var o = k{}
+    var o = k
     var v = 1
     var r = o.m(v)
     var s = kk<m>(v)

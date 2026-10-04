@@ -1,0 +1,33 @@
+# a type or an array without {} is its zero value in an assignment too
+
+func assert(err, ok bool) { if not ok exit(err) }
+type p {x, y}
+type q {a p, arr i8[4]}
+func mk() res p {
+    res = p
+}
+func wrap<T type>() res T {
+    res = T
+}
+func main() {
+    var a = mk()
+    a.x = 5
+    a = p
+    assert(1, a.x == 0)
+    var z = wrap<q>()
+    z.a.x = 3
+    z.a = p
+    assert(2, z.a.x == 0)
+    var n = 7
+    n = i8
+    assert(3, n == 0)
+    var f = true
+    f = bool
+    assert(4, not f)
+    var arr = i8[4]
+    arr[1] = 9
+    arr = i8[4]
+    assert(5, arr[1] == 0)
+    z = q
+    assert(6, z.arr[0] == 0)
+}

@@ -1,4 +1,5 @@
-# the method of a generic type with a type parameter needs the type argument
+# the type argument of a method is deduced from a variable, not from an
+# expression
 
 type text<capacity> {
     array i8[capacity],
@@ -13,5 +14,5 @@ func mut text.append<T type>(s T) {
 
 func main() {
     var s = str
-    s.append(s)
+    s.append(str)
 }

@@ -3,5 +3,5 @@
 func f<T type>(x T) {}
 
 func main() {
-    var y = T{}
+    var y = T
 }

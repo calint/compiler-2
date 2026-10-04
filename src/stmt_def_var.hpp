@@ -50,8 +50,8 @@ class stmt_def_var final : public statement {
         stmt_identifier si{tc, {}, name_tk_, tz};
         equals_tk_ = parse_initializer_equals(tz, tk.text());
 
-        assign_var_ = {tc,        tz,           std::move(si), equals_tk_,
-                       is_array_, array_count_, true};
+        assign_var_ = {tc,         tz,        std::move(si),
+                       equals_tk_, is_array_, array_count_};
 
         // the newly defined variable is not yet assigned in its initialization
         assert_var_not_used(name_tk_.text(),
@@ -124,8 +124,8 @@ class stmt_def_var final : public statement {
 
         // later statements read the size while parsing, e.g. 'var b = a'
         trial_parse(tc, tz, [this, &tc, &tz] -> void {
-            array_count_ = expr_any{tc, tz, get_type(), false, true, 0, true}
-                               .array_count();
+            array_count_ =
+                expr_any{tc, tz, get_type(), false, true, 0}.array_count();
         });
 
         if (array_count_ == 0) {

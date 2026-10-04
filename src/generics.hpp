@@ -187,6 +187,9 @@ struct generic_func_info {
     token func_tk;
     token start_tk;
     std::vector<std::string> param_names;
+    // for each type parameter the first parameter of the function declared
+    // with exactly that type, the argument of a call tells the type
+    std::vector<std::optional<size_t>> deduced_from;
     std::optional<generic_type_instance> receiver_instance;
 };
 
@@ -219,6 +222,7 @@ class generic_registry {
     auto add_func(const token& src_loc_tk, std::string name,
                   const token& func_tk, const token& start_tk,
                   std::vector<std::string> param_names,
+                  std::vector<std::optional<size_t>> deduced_from,
                   std::optional<generic_type_instance> receiver_instance)
         -> void {
 
@@ -227,6 +231,7 @@ class generic_registry {
                                         .func_tk{func_tk},
                                         .start_tk{start_tk},
                                         .param_names{std::move(param_names)},
+                                        .deduced_from{std::move(deduced_from)},
                                         .receiver_instance{
                                             std::move(receiver_instance),
                                         },

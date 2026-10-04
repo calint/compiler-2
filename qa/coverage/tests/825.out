@@ -1,0 +1,2 @@
+
+825.baz:8:13: cannot deduce 'T' of generic function 'same' from its arguments, write 'same<...>'

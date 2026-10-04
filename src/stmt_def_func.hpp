@@ -12,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -426,7 +427,7 @@ class stmt_def_func final : public statement {
         };
 
         tc.add_generic_func(name_tk_, name_, func_tk, start_tk_,
-                            std::move(param_names),
+                            std::move(param_names), deduced_from(param_tks, tz),
                             std::move(receiver_instance));
 
         generic_.mode = generic_part::kind::definition;
@@ -660,6 +661,71 @@ class stmt_def_func final : public statement {
 
             aliases.bind(param_tk, param_tk.text(), *type_arg);
         }
+    }
+
+    // for each type parameter the first parameter declared with exactly its
+    // type, e.g. 's T' in 'func text.append<T type>(s T)', without an array.
+    // 'tz' is before the '(' of the parameters
+    [[nodiscard]] static auto
+    deduced_from(const std::span<const token> param_tks, tokenizer tz)
+        -> std::vector<std::optional<size_t>> {
+
+        std::vector<std::string> types;
+
+        // a parameter is 'name [mut] [type][[]]', anything else ends the scan
+        // and is reported when an instance is parsed
+        if (not tz.is_next_char_token('(').is_empty()) {
+            while (tz.is_next_char_token(')').is_empty()) {
+                if (not types.empty() and
+                    tz.is_next_char_token(',').is_empty()) {
+                    break;
+                }
+
+                const token name_tk{tz.next_token()};
+                if (name_tk.text().empty()) {
+                    break;
+                }
+
+                const auto read_type_tk{
+                    [&tz] -> token {
+                        if (std::string_view{",)["}.contains(
+                                tz.peek_char_after_whitespace())) {
+
+                            return {};
+                        }
+
+                        return tz.next_token();
+                    },
+                };
+
+                token type_tk{read_type_tk()};
+                if (type_tk.is_text("mut")) {
+                    type_tk = read_type_tk();
+                }
+
+                std::string type_text{type_tk.text()};
+
+                // an array is not the type itself
+                if (not tz.is_next_char_token('[').is_empty()) {
+                    type_text.clear();
+                    std::ignore = tz.is_next_char_token(']');
+                }
+
+                types.push_back(std::move(type_text));
+            }
+        }
+
+        std::vector<std::optional<size_t>> from;
+        for (const token& param_tk : param_tks) {
+            const auto it{std::ranges::find(types, param_tk.text())};
+
+            from.push_back(
+                it == types.end()
+                    ? std::nullopt
+                    : std::optional{static_cast<size_t>(it - types.begin())});
+        }
+
+        return from;
     }
 
     // e.g. 'len.4.8', unlike the 'L.C' pairs of inlined calls

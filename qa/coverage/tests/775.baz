@@ -1,4 +1,5 @@
-# a generic function is called with type arguments
+# a generic function is called with type arguments when its arguments do not
+# tell them
 
 type name {
     array i8[4],

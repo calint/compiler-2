@@ -22,7 +22,7 @@ class stmt_assign_var final : public statement {
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si,
                     const token equals_tk, const bool is_array,
-                    const size_t array_count, const bool is_initializer = false)
+                    const size_t array_count)
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           equals_tk_{equals_tk} {
 
@@ -33,8 +33,7 @@ class stmt_assign_var final : public statement {
 
         set_type(dst_info.type_ref());
 
-        expr_ = {tc,       tz,          dst_info.type_ref(), false,
-                 is_array, array_count, is_initializer};
+        expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_count};
 
         if (array_count == 0) {
             array_count_ = expr_.array_count();

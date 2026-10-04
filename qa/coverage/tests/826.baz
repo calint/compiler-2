@@ -1,0 +1,21 @@
+# the arguments of a deduced instance are checked like any other
+
+type name {
+    array i8[4],
+    len,
+}
+
+type str {
+    array i8[8],
+    len,
+}
+
+func same<T type>(a T, b T) res bool {
+    res = a.len == b.len
+}
+
+func main() {
+    var n = name
+    var s = str
+    var r = same(n, s)
+}

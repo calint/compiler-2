@@ -1,0 +1,10 @@
+# an array parameter does not tell the type
+
+func first<T type>(a T[]) res {
+    res = 0
+}
+
+func main() {
+    var a = i8[4]
+    var r = first(a)
+}

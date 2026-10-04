@@ -1,0 +1,9 @@
+# a literal does not tell the type
+
+func same<T type>(a T, b T) res bool {
+    res = a == b
+}
+
+func main() {
+    var r = same(1, 2)
+}

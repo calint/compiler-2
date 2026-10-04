@@ -1,0 +1,6 @@
+# an array assigned without braces needs a size
+
+func main() {
+    var a = i8[4]
+    a = i8[]
+}

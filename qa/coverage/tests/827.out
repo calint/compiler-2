@@ -1,0 +1,2 @@
+
+827.baz:9:13: cannot deduce 'T' of generic function 'first' from its arguments, write 'first<...>'
