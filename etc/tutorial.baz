@@ -581,6 +581,83 @@ func non_inlined() {
 }
 
 #
+# generics
+#
+
+type buffer<capacity> {
+    items i8[capacity],
+    count,
+}
+# a generic type has compile-time parameters in '<...>', 'capacity' is a
+# constant of the default type
+
+type small = buffer<4>
+type large = buffer<16>
+# an alias names an instance, each list of arguments is one type, aliases are
+# top level
+
+func mut buffer.add(v) {
+    self.items[self.count] = i8(v)
+    self.count = self.count + 1
+}
+
+func buffer.is_full() res bool {
+    res = self.count == capacity
+}
+# a method is made for every instance and sees its constants
+
+func make<T type>(n) res T {
+    res.items = {}
+    res.count = n
+}
+# a generic function has parameters in '<...>' too, 'T type' is a type
+
+func fill<T type>(b mut T) {
+    loop {
+        if b.is_full() break
+        b.add(1)
+    }
+}
+
+type pair<first type, second type> {
+    a first,
+    b second,
+}
+type small_large = pair<small, large>
+# a parameter can also be a type, here the types of the fields
+
+func generics() {
+    var s = small
+    var l = large
+    assert(array_length(s.items) == 4 and array_length(l.items) == 16)
+    # the capacity is part of the type
+
+    s.add(7)
+    assert(s.items[0] == 7 and s.count == 1 and not s.is_full())
+
+    fill<small>(s)
+    fill<large>(l)
+    assert(s.is_full() and l.is_full() and l.count == 16)
+    # a call names the type arguments, 'fill<small>' and 'fill<large>' are
+    # two functions
+
+    var m = make<small>(2)
+    assert(m.count == 2)
+    # the result type can be a parameter
+
+    var p = small_large
+    p.a.add(1)
+    p.b.add(2)
+    assert(p.a.count == 1 and p.b.items[0] == 2)
+    # fields of different instances, a generic type is used through an alias
+
+    # an instance is the definition parsed again with the arguments bound, so
+    # an error in a generic shows up at its first use
+    # '<' after the name of a generic is the start of the arguments, anywhere
+    # else it is a comparison
+}
+
+#
 # undefined behavior and checks
 #
 
@@ -635,6 +712,7 @@ func main() {
     arrays_in_types()
     data()
     non_inlined()
+    generics()
     checks()
 }
 # execution starts at 'main' and ends with exit code 0 at the end of it
