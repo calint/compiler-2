@@ -456,19 +456,70 @@ local function call_arguments(call, bufnr)
   return arguments
 end
 
+-- the type parameter 'parameter_name' of a call without '<...>': the type of
+-- the argument for the first parameter declared with that type, or the type the
+-- call is assigned to when it is the result, as the compiler deduces it
+local function deduced_argument(root, bufnr, call, func, parameter_name, result_name, depth)
+  local list = nil
+  for child in func:iter_children() do
+    if child:type() == "parameter_list" then
+      list = child
+    end
+  end
+  local arguments = {}
+  for child in call:iter_children() do
+    if child:type() == "argument_list" then
+      for argument in child:iter_children() do
+        if argument:named() and argument:type() ~= "comment" then
+          arguments[#arguments + 1] = argument
+        end
+      end
+    end
+  end
+  local index = 0
+  for parameter in (list and list:iter_children()) or function() end do
+    if parameter:type() == "parameter" then
+      index = index + 1
+      local declared = parameter:field("type")[1]
+      if declared and declared:type() == "identifier" and text(declared, bufnr) == parameter_name and arguments[index] then
+        local argument_type = type_of_node(root, bufnr, arguments[index], depth + 1)
+        if argument_type and not argument_type.array then
+          return argument_type.name
+        end
+      end
+    end
+  end
+  local parent = call:parent()
+  if result_name == parameter_name and parent and parent:type() == "assignment_statement" then
+    local destinations = parent:field("destination")
+    local destination = destinations[#destinations]
+    if destination and not destination:equal(call) then
+      local destination_type = type_of_node(root, bufnr, destination, depth + 1)
+      if destination_type and not destination_type.array then
+        return destination_type.name
+      end
+    end
+  end
+  return nil
+end
+
 -- the type of the result of a call: a type parameter of the function means
 -- the argument of the call, one of the generic type of a method means the
 -- argument of the alias, and the 'self' of a constructor of a generic type is
 -- the alias it is called on
-local function call_return_type(root, bufnr, call, func, type_name)
+local function call_return_type(root, bufnr, call, func, type_name, depth)
   local result = return_type(bufnr, func)
   if not result then
     return nil
   end
   local arguments = call_arguments(call, bufnr)
   for i, id in ipairs(generic_parameter_names(func)) do
-    if text(id, bufnr) == result.name and arguments[i] then
-      return { name = arguments[i], array = result.array }
+    if text(id, bufnr) == result.name then
+      local argument = arguments[i]
+        or deduced_argument(root, bufnr, call, func, text(id, bufnr), result.name, depth)
+      if argument then
+        return { name = argument, array = result.array }
+      end
     end
   end
   if type_name then
@@ -488,11 +539,11 @@ local function call_type(root, bufnr, call, depth)
   local name = text(call:field("function")[1], bufnr)
   if not call:field("receiver")[1] then
     local id = top_level(root, bufnr, "function", name)
-    return id and call_return_type(root, bufnr, call, id:parent(), nil)
+    return id and call_return_type(root, bufnr, call, id:parent(), nil, depth)
   end
   local type_name = receiver_type_name(root, bufnr, call, depth)
   local method = type_name and methods_named(root, bufnr, name, type_name)[1]
-  return method and call_return_type(root, bufnr, call, method:parent(), type_name)
+  return method and call_return_type(root, bufnr, call, method:parent(), type_name, depth)
 end
 
 -- the user type of an expression node, or nil
@@ -520,7 +571,16 @@ type_of_node = function(root, bufnr, node, depth)
     return field_type
   end
   if t == "array_indexing" then
-    local base = type_of_node(root, bufnr, previous_element(node), depth + 1)
+    local base_node = previous_element(node)
+    -- 'point[4]' without braces is an array of 'point'
+    if base_node and base_node:type() == "identifier" then
+      local name = text(base_node, bufnr)
+      local is_value = local_declaration(base_node, bufnr, name) or top_level(root, bufnr, "value", name)
+      if not is_value and top_level(root, bufnr, "type", name) then
+        return { name = name, array = true }
+      end
+    end
+    local base = type_of_node(root, bufnr, base_node, depth + 1)
     if base and base.array then
       return { name = base.name, array = false }
     end
@@ -593,10 +653,8 @@ local function resolve_value(root, bufnr, node)
   if id then
     return resolved("variable", { id })
   end
-  if node:parent():type() == "receiver" then
-    return resolve_type(root, bufnr, node)
-  end
-  return nil
+  -- a type name alone is the zero value of the type, e.g. 'var p = point'
+  return resolve_type(root, bufnr, node)
 end
 
 -- a type parameter of the enclosing definition hides the types of the file
@@ -623,7 +681,10 @@ local function resolve(root, bufnr, node)
   if parent_type == "member_access" then
     local name = text(node, bufnr)
     local base = type_of_node(root, bufnr, previous_element(parent), 0)
-    if base and not base.array then
+    -- the type of a type parameter is known at the call, the members of every
+    -- type match like those of an unknown type
+    local is_parameter = base and generic_declaration(root, bufnr, node, base.name)
+    if base and not base.array and not is_parameter then
       local exact_field = field_named(root, bufnr, base.name, name)
       return exact_field and resolved("member", { exact_field })
     end
@@ -657,7 +718,9 @@ local function resolve(root, bufnr, node)
   if parent_type == "generic_arguments" then
     return resolve_generic_argument(root, bufnr, node)
   end
-  if parent_type == "parameter" or parent_type == "return_annotation" or declaration_types[parent_type] then
+  -- an initializer is a value, only the destination is declared
+  if parent_type == "parameter" or parent_type == "return_annotation"
+    or (declaration_types[parent_type] and field == "destination") then
     return resolved("variable", { node })
   end
   if parent_type == "function_call" and field == "function" then

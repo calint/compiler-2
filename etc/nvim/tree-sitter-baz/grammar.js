@@ -308,6 +308,7 @@ module.exports = grammar({
       $.initializer_block,
       $.typed_initializer,
       $.typed_array_initializer,
+      $.default_array_value,
       $._access_chain,
       $._literal,
     ),
@@ -443,6 +444,14 @@ module.exports = grammar({
       token.immediate('{'),
       optional($.initializer_list),
       '}',
+    ),
+
+    // e.g. '[4]' is '[4]{}', an array of the default type that is not
+    // initialized; with a type 'i8[4]' reads as an index
+    default_array_value: $ => seq(
+      '[',
+      field('size', $._expression),
+      ']',
     ),
 
     // List of expressions used for positional initialization
