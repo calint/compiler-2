@@ -20081,6 +20081,9 @@ vars.end:
 #           noinline functions:
 #                  parse_input: 1 body, 2 calls, 4850 instructions
 #
+#      uninstantiated generics:
+#                  name.append
+#
 #   removed jumps to next code: 242
 #    removed unreachable jumps: 0
 # removed same target branches: 13

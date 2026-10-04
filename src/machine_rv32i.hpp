@@ -1103,6 +1103,14 @@ class machine_rv32i : public machine {
         assert(not frame_base_reserved_);
 
         finish_output();
+
+        // the report counts after resolving because grown jumps take more
+        // instructions, a failing build writes nothing
+        assert(assembler_.is_buffering());
+
+        assembler_.resolve_jumps();
+        check_address_range(assembler_.memory_end_address());
+        check_memory_end(assembler_.memory_end_address());
     }
 
     [[nodiscard]] auto frame_base_register() const
@@ -1508,17 +1516,6 @@ class machine_rv32i : public machine {
     auto write_assembly(std::ostream& os) -> void override {
         // a build buffers its output
         assert(assembler_.is_buffering());
-
-        // the check precedes any output so a failing build writes nothing
-        assembler_.resolve_jumps();
-        check_address_range(assembler_.memory_end_address());
-        check_memory_end(assembler_.memory_end_address());
-
-        // counted after resolving because grown jumps take more instructions,
-        // and added while still buffering so it ends the written lines
-        assembler_.comment(0, std::format("{:>28}: {}", "instructions",
-                                          assembler_.instruction_count()));
-        assembler_.add_body_report();
 
         assembler_.set_direct_output(&stream());
 

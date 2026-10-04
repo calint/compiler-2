@@ -132,6 +132,8 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
                         type_args.size())};
     }
 
+    tc.generics().mark_func_instantiated(generic_name);
+
     std::string name{generic_registry::instance_name(generic_name, type_args)};
 
     if (tc.is_func(name)) {

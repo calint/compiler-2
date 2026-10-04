@@ -7,6 +7,8 @@ Working agreements for AI sessions in this repository.
 - **No asking needed:** shell commands for build, test, lint, format and
   scratch compiles.
 - **Ask first:** `rm -rf`, `git push`, `git reset --hard`, `git clean`, `sudo`.
+- **Test suites:** the user runs the coverage suites and roome test after
+  changes; build, lint and format only, then say when it is ready for commit.
 - **Scratch files:** only in `/tmp`.
 - **Workspace root:** `/home/c/w/compiler-2`.
 

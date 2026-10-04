@@ -376,6 +376,44 @@ class type_table final {
     }
 };
 
+// a line of a report section, e.g. 'removed unreachable jumps: 0', without a
+// value only the name is written
+struct report_entry {
+    std::string name;
+    std::string value;
+};
+
+// lines of the report after the code: an optional title, the entries aligned
+// and a separator after a titled section
+struct report_section {
+    std::string title;
+    std::vector<report_entry> entries;
+
+    // written as comments, nothing for a section without entries
+    auto write_to(machine& x) const -> void {
+        if (entries.empty()) {
+            return;
+        }
+
+        if (not title.empty()) {
+            x.comment(token{}, 0, "{:>28}:", title);
+        }
+
+        for (const report_entry& entry : entries) {
+            if (entry.value.empty()) {
+                x.comment(token{}, 0, "{:>28}", entry.name);
+                continue;
+            }
+
+            x.comment(token{}, 0, "{:>28}: {}", entry.name, entry.value);
+        }
+
+        if (not title.empty()) {
+            x.comment(token{}, 0, "");
+        }
+    }
+};
+
 class toc final {
     // where a variable is placed, 'storage_frame' is null at the variables base
     struct storage_location {
@@ -788,20 +826,64 @@ class toc final {
         pop_frame();
     }
 
+    // the report after the code, written as comments through the machine
     auto finish() -> void {
         ::machine& x{machine_.get()};
 
-        x.comment(token{}, 0, "           max frames in use: {}",
-                  usage_max_frame_count_);
+        const ::machine::output_statistics stats{x.statistics()};
 
-        x.comment(token{}, 0, "                    dat size: {} B",
-                  total_dat_size_bytes_);
+        x.separate_report();
 
-        x.comment(token{}, 0, "             dat var padding: {} B",
-                  vars_entry_gap_);
+        if (stats.is_counted) {
+            noinline_report(stats).write_to(x);
+        }
 
-        x.comment(token{}, 0, "               max vars size: {} B",
-                  usage_max_vars_size_bytes_);
+        report_section generics_report{
+            .title{"uninstantiated generics"},
+            .entries{},
+        };
+        for (std::string& name : generics_.uninstantiated_func_names()) {
+            generics_report.entries.push_back(
+                {.name{std::move(name)}, .value{}});
+        }
+        generics_report.write_to(x);
+
+        if (stats.is_counted) {
+            optimization_report(stats).write_to(x);
+        }
+
+        report_section usage_report{
+            .title{},
+            .entries{
+                {
+                    .name = "max scratch registers in use",
+                    .value = std::format("{}", stats.max_scratch_registers),
+                },
+                {
+                    .name = "max frames in use",
+                    .value = std::format("{}", usage_max_frame_count_),
+                },
+                {
+                    .name = "dat size",
+                    .value = std::format("{} B", total_dat_size_bytes_),
+                },
+                {
+                    .name = "dat var padding",
+                    .value = std::format("{} B", vars_entry_gap_),
+                },
+                {
+                    .name = "max vars size",
+                    .value = std::format("{} B", usage_max_vars_size_bytes_),
+                },
+            },
+        };
+        if (stats.is_counted) {
+            usage_report.entries.push_back({
+                .name = "instructions",
+                .value = std::format("{}", stats.instruction_count),
+            });
+        }
+        usage_report.write_to(x);
 
         assert(frames_.empty());
         assert(vars_size_bytes_ == 0);
@@ -1777,6 +1859,58 @@ class toc final {
         info.array_len = 0;
 
         return info;
+    }
+
+    [[nodiscard]] static auto
+    noinline_report(const ::machine::output_statistics& stats)
+        -> report_section {
+
+        report_section section{.title{"noinline functions"}, .entries{}};
+
+        for (const assembler::function_summary& f : stats.noinline_functions) {
+            section.entries.push_back({
+                .name{f.function},
+                .value{
+                    std::format(
+                        "{} {}, {} {}, {} instructions{}", f.body_count,
+                        f.body_count == 1 ? "body" : "bodies", f.call_count,
+                        f.call_count == 1 ? "call" : "calls",
+                        f.instruction_count,
+                        f.call_count <= f.body_count ? ", no reuse" : ""),
+                },
+            });
+        }
+
+        return section;
+    }
+
+    [[nodiscard]] static auto
+    optimization_report(const ::machine::output_statistics& stats)
+        -> report_section {
+
+        const assembler::optimization_counts& o{stats.optimizations};
+
+        return {
+            .title{},
+            .entries{
+                {
+                    .name = "removed jumps to next code",
+                    .value = std::format("{}", o.jumps_to_next),
+                },
+                {
+                    .name = "removed unreachable jumps",
+                    .value = std::format("{}", o.unreachable_jumps),
+                },
+                {
+                    .name = "removed same target branches",
+                    .value = std::format("{}", o.same_outcome_branches),
+                },
+                {
+                    .name = "inverted branches over jumps",
+                    .value = std::format("{}", o.inverted_branches),
+                },
+            },
+        };
     }
 
     // makes room in 'lea_path' for the elements 'target_count' adds

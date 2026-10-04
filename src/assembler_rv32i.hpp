@@ -301,6 +301,13 @@ class assembler_rv32i final : public assembler {
                              column, text));
     }
 
+    // a jump to a numeric label such as '1b', which is never grown
+    // machine instructions, so pseudo instructions count as the ones they
+    // expand to, valid once jumps are resolved
+    [[nodiscard]] auto instruction_count() const -> size_t override {
+        return code_size() / one_instruction_bytes;
+    }
+
     //
     // class methods
     //
@@ -539,13 +546,6 @@ class assembler_rv32i final : public assembler {
                             .target{},
                         },
                         {.rd{rd}, .rs1{rs1}, .rs2{}});
-    }
-
-    // a jump to a numeric label such as '1b', which is never grown
-    // machine instructions, so pseudo instructions count as the ones they
-    // expand to, valid once jumps are resolved
-    [[nodiscard]] auto instruction_count() const -> size_t {
-        return code_size() / one_instruction_bytes;
     }
 
     auto j(const size_t indent, const std::string_view target) -> void {

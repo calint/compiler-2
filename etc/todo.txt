@@ -267,13 +267,16 @@ other, hard, easiest first
     ('func f<n>()'), like the constants of generic types
 [ ] medium: low priority: generics: constructors of generic types
 [ ] medium: low priority: generics: a generic that is never instantiated is
-    not checked, so an error in its body is silent until the first use;
-    parse it once with placeholder types where it is defined
-[ ] medium: low priority: generics: document them in etc/readme (syntax,
-    '<' after a known generic name, an instance is the definition parsed
-    again, errors appear at the first instantiation, aliases are top level)
-[ ] medium: low priority: generics: a regression test for the nvim plugin
+    not checked, so an error in its body is silent until the first use
+    => placeholder types would reject valid bodies (fields of 'T', sizes
+       from constants), so the footer of the assembler lists the generic
+       functions without an instance ('uninstantiated generics')
+[-] medium: low priority: generics: document them in etc/readme
+    => etc/tutorial.baz is the source of documentation and has a section on
+       generics; the readme only states 'basic support for generics'
+[-] medium: low priority: generics: a regression test for the nvim plugin
     (baz-lsp.lua, highlights.scm, baz-globals.lua) over a generics file
+    => tested by using it
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
     bodies do not count as assigning

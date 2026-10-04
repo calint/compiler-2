@@ -11,7 +11,9 @@ SEP="---------------------------------------------------------------------------
     etc/roome/roome.baz >etc/roome/roome.s
 echo "$SEP"
 
-tail -n 10 etc/roome/roome.s
+# the report follows the last blank line
+awk 'NF == 0 { report = ""; next } { report = report $0 "\n" } END { printf "%s", report }' \
+    etc/roome/roome.s
 echo "$SEP"
 
 IMAGE=etc/roome/roome-rv32i-fpga.bin

@@ -4,7 +4,9 @@
 #include <cassert>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <optional>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -211,6 +213,7 @@ class generic_registry {
     lut<generic_type_info> types_;
     std::vector<generic_method_info> methods_;
     std::vector<generic_type_instance> type_instances_;
+    std::set<std::string, std::less<>> instantiated_funcs_;
 
   public:
     auto add_func(const token& src_loc_tk, std::string name,
@@ -302,6 +305,28 @@ class generic_registry {
 
     [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
         return types_.has(name);
+    }
+
+    auto mark_func_instantiated(const std::string_view name) -> void {
+        instantiated_funcs_.emplace(name);
+    }
+
+    // the names of the generic functions without an instance, in the order of
+    // definition
+    [[nodiscard]] auto uninstantiated_func_names() const
+        -> std::vector<std::string> {
+
+        std::vector<std::string> names;
+
+        for (std::string& name : funcs_.keys()) {
+            if (not instantiated_funcs_.contains(name) and
+                not std::ranges::contains(names, name)) {
+
+                names.push_back(std::move(name));
+            }
+        }
+
+        return names;
     }
 
     //

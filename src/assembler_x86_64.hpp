@@ -191,6 +191,10 @@ class assembler_x86_64 final : public assembler {
                              column, text));
     }
 
+    [[nodiscard]] auto instruction_count() const -> size_t override {
+        return code_size();
+    }
+
     //
     // class methods
     //
@@ -264,10 +268,6 @@ class assembler_x86_64 final : public assembler {
         add_text(std::format("{}{} {}, {}", indentation(indent),
                              info(code).mnemonic, argument_text(dst),
                              argument_text(src)));
-    }
-
-    [[nodiscard]] auto instruction_count() const -> size_t {
-        return code_size();
     }
 
     auto jcc(const size_t indent, const condition cc,

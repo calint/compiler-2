@@ -50,6 +50,17 @@ template <class T> class lut final {
         return std::ranges::contains(elems_, key, &elem::key);
     }
 
+    [[nodiscard]] auto keys() const -> std::vector<std::string> {
+        std::vector<std::string> result;
+        result.reserve(elems_.size());
+
+        for (const elem& e : elems_) {
+            result.push_back(e.key);
+        }
+
+        return result;
+    }
+
     auto put(std::string key, T data) -> void {
         elems_.emplace_back(std::move(key), std::move(data));
     }
