@@ -2474,3 +2474,9 @@ SRC=802 && COMPERR
 
 # the type argument of a call is not a constant
 SRC=803 && COMPERR
+
+# a generic definition with a type literal, nested generics and recursion
+SRC=804 && EXP=0 && RUN
+
+# a generic definition without its closing brace
+SRC=805 && COMPERR

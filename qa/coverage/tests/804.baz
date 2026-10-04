@@ -1,0 +1,59 @@
+# generics: a type parameter in a type literal, generics calling generics, a
+# generic method calling a method, recursion, noinline instances, braces in
+# comments and strings of a generic definition
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<8>
+type name = text<4>
+
+# braces } in a comment { and in a string
+func text.size() res {
+    let s = "}{"
+    # } {{
+    res = capacity
+}
+
+func text.cap2() res { res = self.size() * 2 }
+
+func wrap<T type>() res T {
+    res = T{}
+}
+
+func outer<T type>() res {
+    var t = wrap<T>()
+    res = t.size()
+}
+
+func rec<T type>(n) res {
+    res = 0
+    if n > 0 {
+        res = rec<T>(n - 1) + 1
+    }
+}
+
+func noinline ni<T type>(n) res {
+    res = n + 1
+}
+
+func main() {
+    var a = str{}
+    var b = name{}
+    assert(1, a.size() == 8)
+    assert(2, b.size() == 4)
+    assert(3, b.cap2() == 8)
+    assert(4, outer<str>() == 8)
+    assert(5, outer<name>() == 4)
+    assert(6, rec<str>(3) == 3)
+    var three = 3
+    var r = ni<str>(three)
+    assert(7, r == 4)
+    var i = 1
+    var j = 2
+    assert(8, i < j)
+}

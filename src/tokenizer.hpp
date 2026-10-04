@@ -184,7 +184,7 @@ class tokenizer final {
             }
 
             if (is_eos()) {
-                throw compiler_exception{*this, "expected '{' to begin block"};
+                throw compiler_exception{*this, "expected '}' to end block"};
             }
 
             // a delimiter has an empty token text

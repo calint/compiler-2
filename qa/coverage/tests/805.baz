@@ -1,0 +1,3 @@
+# an unterminated generic definition
+
+func f<T type>() {

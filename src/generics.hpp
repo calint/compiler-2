@@ -30,6 +30,7 @@ struct generic_param {
     // e.g. '<T type, capacity>', the '<' is next
     [[nodiscard]] static auto parse(tokenizer& tz)
         -> std::vector<generic_param> {
+
         const token open_tk{tz.is_next_char_token('<')};
 
         assert(not open_tk.is_empty());

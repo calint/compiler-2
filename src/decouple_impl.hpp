@@ -350,7 +350,10 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
     const bool is_typed_literal{is_record_literal(tc, tok(), tz) or is_bare};
-    if (is_typed_literal and not tok().is_text(tp.name())) {
+    // note: compared by type, a type parameter names the type of its argument
+    if (is_typed_literal and
+        tc.get_type_or_throw(tok(), tok().text()).name() != tp.name()) {
+
         throw compiler_exception{tok(),
                                  std::format("expected type '{}', got '{}'",
                                              tp.name(), tok().text())};
