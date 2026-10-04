@@ -444,7 +444,7 @@ func tokenizer.print() {
     out.print_at(self.str.array, self.len(), self.start)
 }
 
-func tokenizer.is_str(str i8[]) res bool {
+func tokenizer.is_array(str i8[]) res bool {
     res = self.len() == array_length(str) and
           arrays_equal(str, self.str.array[self.start], array_length(str))
 }
@@ -493,7 +493,7 @@ func action_go(eid, tz mut tokenizer) {
         return
     }
 
-    if tz.is_str(str_home) exit(0)
+    if tz.is_array(str_home) exit(0)
 
     # find link
     let cur_room_id = entities.array[eid].room_id
@@ -950,43 +950,43 @@ dat str_action_new_entity = "en"
 func noinline parse_input(eid, tz mut tokenizer) {
     tz.first()
 
-    if tz.is_str(str_action_go) {
+    if tz.is_array(str_action_go) {
         action_go(eid, tz)
 
-    } else if tz.is_str(str_action_new_room) {
+    } else if tz.is_array(str_action_new_room) {
         action_new_room(eid, tz)
 
-    } else if tz.is_str(str_action_set_room_description) {
+    } else if tz.is_array(str_action_set_room_description) {
         action_set_room_description(eid, tz)
 
-    } else if tz.is_str(str_action_set_room_note) {
+    } else if tz.is_array(str_action_set_room_note) {
         action_set_room_note(eid, tz)
 
-    } else if tz.is_str(str_action_set_room_name) {
+    } else if tz.is_array(str_action_set_room_name) {
         action_set_room_name(eid, tz)
 
-    } else if tz.is_str(str_action_new_entity) {
+    } else if tz.is_array(str_action_new_entity) {
         action_new_entity(eid, tz)
 
-    } else if tz.is_str(str_action_new_object) {
+    } else if tz.is_array(str_action_new_object) {
         action_new_object(eid, tz)
 
-    } else if tz.is_str(str_action_inventory) {
+    } else if tz.is_array(str_action_inventory) {
         action_inventory(eid, tz)
 
-    } else if tz.is_str(str_action_drop) {
+    } else if tz.is_array(str_action_drop) {
         action_drop(eid, tz)
 
-    } else if tz.is_str(str_action_give) {
+    } else if tz.is_array(str_action_give) {
         action_give(eid, tz)
 
-    } else if tz.is_str(str_action_tell) {
+    } else if tz.is_array(str_action_tell) {
         action_tell(eid, tz)
 
-    } else if tz.is_str(str_action_say) {
+    } else if tz.is_array(str_action_say) {
         action_say(eid, tz)
 
-    } else if tz.is_str(str_action_help) {
+    } else if tz.is_array(str_action_help) {
         action_help(eid, tz)
 
     } else {

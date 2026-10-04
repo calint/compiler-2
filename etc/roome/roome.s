@@ -4031,17 +4031,17 @@ func.parse_input:
         # [951:8] free scratch register t0
     func.tokenizer.first.951.8.end:
     if.953.8:
-    # [953:8] ? tz.is_str(str_action_go)
-    # [953:8] ? shorthand: tz.is_str(str_action_go)
+    # [953:8] ? tz.is_array(str_action_go)
+    # [953:8] ? shorthand: tz.is_array(str_action_go)
     cmp.953.8:
     # [953:8] allocate scratch register -> t0
-        # [953:11] t0 = tz.is_str(str_action_go)
+        # [953:11] t0 = tz.is_array(str_action_go)
         # [953:11] = expression
-        # [953:11] tz.is_str(str_action_go)
+        # [953:11] tz.is_array(str_action_go)
         # [953:8] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.953.11:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.953.11:
             # [953:11] alias res -> t0
             # [953:11] alias self -> tz
             # [953:11] alias str -> str_action_go
@@ -4155,7 +4155,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.953.11.end:
             # [953:11] free scratch register t1
-        func.tokenizer.is_str.953.11.end:
+        func.tokenizer.is_array.953.11.end:
     beq t0, zero, if.956.15
     # [953:8] free scratch register t0
     if.953.8.code:
@@ -4430,15 +4430,15 @@ func.parse_input:
                 j func.action_go.954.9.end
             if.491.5.954.9.end:
             if.496.8.954.9:
-            # [496:8] ? tz.is_str(str_home)
-            # [496:8] ? shorthand: tz.is_str(str_home)
+            # [496:8] ? tz.is_array(str_home)
+            # [496:8] ? shorthand: tz.is_array(str_home)
             cmp.496.8.954.9:
             # [496:8] allocate scratch register -> t2
-                # [496:11] t2 = tz.is_str(str_home)
+                # [496:11] t2 = tz.is_array(str_home)
                 # [496:11] = expression
-                # [496:11] tz.is_str(str_home)
-                # [447:6] tokenizer.is_str(str i8[]) res bool
-                func.tokenizer.is_str.496.11.954.9:
+                # [496:11] tz.is_array(str_home)
+                # [447:6] tokenizer.is_array(str i8[]) res bool
+                func.tokenizer.is_array.496.11.954.9:
                     # [496:11] alias res -> t2
                     # [496:11] alias self -> tz
                     # [496:11] alias str -> str_home
@@ -4551,16 +4551,16 @@ func.parse_input:
                         # [449:11] free scratch register t4
                         # [449:11] free scratch register t3
                     bool.448.11.496.11.954.9.end:
-                func.tokenizer.is_str.496.11.954.9.end:
+                func.tokenizer.is_array.496.11.954.9.end:
             beq t2, zero, if.496.5.954.9.end
             # [496:8] free scratch register t2
             if.496.8.954.9.code:
-                # [496:28] exit(0)
-                # [496:28] allocate named register a0
-                # [496:33] 0
+                # [496:30] exit(0)
+                # [496:30] allocate named register a0
+                # [496:35] 0
                 li a0, 0
                 j .Lbaz_exit
-                # [496:28] free named register a0
+                # [496:30] free named register a0
             if.496.5.954.9.end:
             # [499:5] let cur_room_id = entities.array[eid].room_id
             # [499:9] cur_room_id: i32 (4 B @ [s1 + 8])
@@ -7003,17 +7003,17 @@ func.parse_input:
         func.action_go.954.9.end:
     j if.953.5.end
     if.956.15:
-    # [956:15] ? tz.is_str(str_action_new_room)
-    # [956:15] ? shorthand: tz.is_str(str_action_new_room)
+    # [956:15] ? tz.is_array(str_action_new_room)
+    # [956:15] ? shorthand: tz.is_array(str_action_new_room)
     cmp.956.15:
     # [956:15] allocate scratch register -> t0
-        # [956:18] t0 = tz.is_str(str_action_new_room)
+        # [956:18] t0 = tz.is_array(str_action_new_room)
         # [956:18] = expression
-        # [956:18] tz.is_str(str_action_new_room)
+        # [956:18] tz.is_array(str_action_new_room)
         # [956:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.956.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.956.18:
             # [956:18] alias res -> t0
             # [956:18] alias self -> tz
             # [956:18] alias str -> str_action_new_room
@@ -7127,7 +7127,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.956.18.end:
             # [956:18] free scratch register t1
-        func.tokenizer.is_str.956.18.end:
+        func.tokenizer.is_array.956.18.end:
     beq t0, zero, if.959.15
     # [956:15] free scratch register t0
     if.956.15.code:
@@ -8812,17 +8812,17 @@ func.parse_input:
         func.action_new_room.957.9.end:
     j if.953.5.end
     if.959.15:
-    # [959:15] ? tz.is_str(str_action_set_room_description)
-    # [959:15] ? shorthand: tz.is_str(str_action_set_room_description)
+    # [959:15] ? tz.is_array(str_action_set_room_description)
+    # [959:15] ? shorthand: tz.is_array(str_action_set_room_description)
     cmp.959.15:
     # [959:15] allocate scratch register -> t0
-        # [959:18] t0 = tz.is_str(str_action_set_room_description)
+        # [959:18] t0 = tz.is_array(str_action_set_room_description)
         # [959:18] = expression
-        # [959:18] tz.is_str(str_action_set_room_description)
+        # [959:18] tz.is_array(str_action_set_room_description)
         # [959:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.959.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.959.18:
             # [959:18] alias res -> t0
             # [959:18] alias self -> tz
             # [959:18] alias str -> str_action_set_room_description
@@ -8936,7 +8936,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.959.18.end:
             # [959:18] free scratch register t1
-        func.tokenizer.is_str.959.18.end:
+        func.tokenizer.is_array.959.18.end:
     beq t0, zero, if.962.15
     # [959:15] free scratch register t0
     if.959.15.code:
@@ -9331,17 +9331,17 @@ func.parse_input:
         func.action_set_room_description.960.9.end:
     j if.953.5.end
     if.962.15:
-    # [962:15] ? tz.is_str(str_action_set_room_note)
-    # [962:15] ? shorthand: tz.is_str(str_action_set_room_note)
+    # [962:15] ? tz.is_array(str_action_set_room_note)
+    # [962:15] ? shorthand: tz.is_array(str_action_set_room_note)
     cmp.962.15:
     # [962:15] allocate scratch register -> t0
-        # [962:18] t0 = tz.is_str(str_action_set_room_note)
+        # [962:18] t0 = tz.is_array(str_action_set_room_note)
         # [962:18] = expression
-        # [962:18] tz.is_str(str_action_set_room_note)
+        # [962:18] tz.is_array(str_action_set_room_note)
         # [962:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.962.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.962.18:
             # [962:18] alias res -> t0
             # [962:18] alias self -> tz
             # [962:18] alias str -> str_action_set_room_note
@@ -9455,7 +9455,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.962.18.end:
             # [962:18] free scratch register t1
-        func.tokenizer.is_str.962.18.end:
+        func.tokenizer.is_array.962.18.end:
     beq t0, zero, if.965.15
     # [962:15] free scratch register t0
     if.962.15.code:
@@ -9776,17 +9776,17 @@ func.parse_input:
         func.action_set_room_note.963.9.end:
     j if.953.5.end
     if.965.15:
-    # [965:15] ? tz.is_str(str_action_set_room_name)
-    # [965:15] ? shorthand: tz.is_str(str_action_set_room_name)
+    # [965:15] ? tz.is_array(str_action_set_room_name)
+    # [965:15] ? shorthand: tz.is_array(str_action_set_room_name)
     cmp.965.15:
     # [965:15] allocate scratch register -> t0
-        # [965:18] t0 = tz.is_str(str_action_set_room_name)
+        # [965:18] t0 = tz.is_array(str_action_set_room_name)
         # [965:18] = expression
-        # [965:18] tz.is_str(str_action_set_room_name)
+        # [965:18] tz.is_array(str_action_set_room_name)
         # [965:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.965.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.965.18:
             # [965:18] alias res -> t0
             # [965:18] alias self -> tz
             # [965:18] alias str -> str_action_set_room_name
@@ -9900,7 +9900,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.965.18.end:
             # [965:18] free scratch register t1
-        func.tokenizer.is_str.965.18.end:
+        func.tokenizer.is_array.965.18.end:
     beq t0, zero, if.968.15
     # [965:15] free scratch register t0
     if.965.15.code:
@@ -10546,17 +10546,17 @@ func.parse_input:
         func.action_set_room_name.966.9.end:
     j if.953.5.end
     if.968.15:
-    # [968:15] ? tz.is_str(str_action_new_entity)
-    # [968:15] ? shorthand: tz.is_str(str_action_new_entity)
+    # [968:15] ? tz.is_array(str_action_new_entity)
+    # [968:15] ? shorthand: tz.is_array(str_action_new_entity)
     cmp.968.15:
     # [968:15] allocate scratch register -> t0
-        # [968:18] t0 = tz.is_str(str_action_new_entity)
+        # [968:18] t0 = tz.is_array(str_action_new_entity)
         # [968:18] = expression
-        # [968:18] tz.is_str(str_action_new_entity)
+        # [968:18] tz.is_array(str_action_new_entity)
         # [968:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.968.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.968.18:
             # [968:18] alias res -> t0
             # [968:18] alias self -> tz
             # [968:18] alias str -> str_action_new_entity
@@ -10670,7 +10670,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.968.18.end:
             # [968:18] free scratch register t1
-        func.tokenizer.is_str.968.18.end:
+        func.tokenizer.is_array.968.18.end:
     beq t0, zero, if.971.15
     # [968:15] free scratch register t0
     if.968.15.code:
@@ -11381,17 +11381,17 @@ func.parse_input:
         func.action_new_entity.969.9.end:
     j if.953.5.end
     if.971.15:
-    # [971:15] ? tz.is_str(str_action_new_object)
-    # [971:15] ? shorthand: tz.is_str(str_action_new_object)
+    # [971:15] ? tz.is_array(str_action_new_object)
+    # [971:15] ? shorthand: tz.is_array(str_action_new_object)
     cmp.971.15:
     # [971:15] allocate scratch register -> t0
-        # [971:18] t0 = tz.is_str(str_action_new_object)
+        # [971:18] t0 = tz.is_array(str_action_new_object)
         # [971:18] = expression
-        # [971:18] tz.is_str(str_action_new_object)
+        # [971:18] tz.is_array(str_action_new_object)
         # [971:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.971.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.971.18:
             # [971:18] alias res -> t0
             # [971:18] alias self -> tz
             # [971:18] alias str -> str_action_new_object
@@ -11505,7 +11505,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.971.18.end:
             # [971:18] free scratch register t1
-        func.tokenizer.is_str.971.18.end:
+        func.tokenizer.is_array.971.18.end:
     beq t0, zero, if.974.15
     # [971:15] free scratch register t0
     if.971.15.code:
@@ -12138,17 +12138,17 @@ func.parse_input:
         func.action_new_object.972.9.end:
     j if.953.5.end
     if.974.15:
-    # [974:15] ? tz.is_str(str_action_inventory)
-    # [974:15] ? shorthand: tz.is_str(str_action_inventory)
+    # [974:15] ? tz.is_array(str_action_inventory)
+    # [974:15] ? shorthand: tz.is_array(str_action_inventory)
     cmp.974.15:
     # [974:15] allocate scratch register -> t0
-        # [974:18] t0 = tz.is_str(str_action_inventory)
+        # [974:18] t0 = tz.is_array(str_action_inventory)
         # [974:18] = expression
-        # [974:18] tz.is_str(str_action_inventory)
+        # [974:18] tz.is_array(str_action_inventory)
         # [974:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.974.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.974.18:
             # [974:18] alias res -> t0
             # [974:18] alias self -> tz
             # [974:18] alias str -> str_action_inventory
@@ -12262,7 +12262,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.974.18.end:
             # [974:18] free scratch register t1
-        func.tokenizer.is_str.974.18.end:
+        func.tokenizer.is_array.974.18.end:
     beq t0, zero, if.977.15
     # [974:15] free scratch register t0
     if.974.15.code:
@@ -12831,17 +12831,17 @@ func.parse_input:
         func.action_inventory.975.9.end:
     j if.953.5.end
     if.977.15:
-    # [977:15] ? tz.is_str(str_action_drop)
-    # [977:15] ? shorthand: tz.is_str(str_action_drop)
+    # [977:15] ? tz.is_array(str_action_drop)
+    # [977:15] ? shorthand: tz.is_array(str_action_drop)
     cmp.977.15:
     # [977:15] allocate scratch register -> t0
-        # [977:18] t0 = tz.is_str(str_action_drop)
+        # [977:18] t0 = tz.is_array(str_action_drop)
         # [977:18] = expression
-        # [977:18] tz.is_str(str_action_drop)
+        # [977:18] tz.is_array(str_action_drop)
         # [977:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.977.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.977.18:
             # [977:18] alias res -> t0
             # [977:18] alias self -> tz
             # [977:18] alias str -> str_action_drop
@@ -12955,7 +12955,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.977.18.end:
             # [977:18] free scratch register t1
-        func.tokenizer.is_str.977.18.end:
+        func.tokenizer.is_array.977.18.end:
     beq t0, zero, if.980.15
     # [977:15] free scratch register t0
     if.977.15.code:
@@ -14200,17 +14200,17 @@ func.parse_input:
         func.action_drop.978.9.end:
     j if.953.5.end
     if.980.15:
-    # [980:15] ? tz.is_str(str_action_give)
-    # [980:15] ? shorthand: tz.is_str(str_action_give)
+    # [980:15] ? tz.is_array(str_action_give)
+    # [980:15] ? shorthand: tz.is_array(str_action_give)
     cmp.980.15:
     # [980:15] allocate scratch register -> t0
-        # [980:18] t0 = tz.is_str(str_action_give)
+        # [980:18] t0 = tz.is_array(str_action_give)
         # [980:18] = expression
-        # [980:18] tz.is_str(str_action_give)
+        # [980:18] tz.is_array(str_action_give)
         # [980:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.980.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.980.18:
             # [980:18] alias res -> t0
             # [980:18] alias self -> tz
             # [980:18] alias str -> str_action_give
@@ -14324,7 +14324,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.980.18.end:
             # [980:18] free scratch register t1
-        func.tokenizer.is_str.980.18.end:
+        func.tokenizer.is_array.980.18.end:
     beq t0, zero, if.983.15
     # [980:15] free scratch register t0
     if.980.15.code:
@@ -17213,17 +17213,17 @@ func.parse_input:
         func.action_give.981.9.end:
     j if.953.5.end
     if.983.15:
-    # [983:15] ? tz.is_str(str_action_tell)
-    # [983:15] ? shorthand: tz.is_str(str_action_tell)
+    # [983:15] ? tz.is_array(str_action_tell)
+    # [983:15] ? shorthand: tz.is_array(str_action_tell)
     cmp.983.15:
     # [983:15] allocate scratch register -> t0
-        # [983:18] t0 = tz.is_str(str_action_tell)
+        # [983:18] t0 = tz.is_array(str_action_tell)
         # [983:18] = expression
-        # [983:18] tz.is_str(str_action_tell)
+        # [983:18] tz.is_array(str_action_tell)
         # [983:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.983.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.983.18:
             # [983:18] alias res -> t0
             # [983:18] alias self -> tz
             # [983:18] alias str -> str_action_tell
@@ -17337,7 +17337,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.983.18.end:
             # [983:18] free scratch register t1
-        func.tokenizer.is_str.983.18.end:
+        func.tokenizer.is_array.983.18.end:
     beq t0, zero, if.986.15
     # [983:15] free scratch register t0
     if.983.15.code:
@@ -18620,17 +18620,17 @@ func.parse_input:
         func.action_tell.984.9.end:
     j if.953.5.end
     if.986.15:
-    # [986:15] ? tz.is_str(str_action_say)
-    # [986:15] ? shorthand: tz.is_str(str_action_say)
+    # [986:15] ? tz.is_array(str_action_say)
+    # [986:15] ? shorthand: tz.is_array(str_action_say)
     cmp.986.15:
     # [986:15] allocate scratch register -> t0
-        # [986:18] t0 = tz.is_str(str_action_say)
+        # [986:18] t0 = tz.is_array(str_action_say)
         # [986:18] = expression
-        # [986:18] tz.is_str(str_action_say)
+        # [986:18] tz.is_array(str_action_say)
         # [986:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.986.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.986.18:
             # [986:18] alias res -> t0
             # [986:18] alias self -> tz
             # [986:18] alias str -> str_action_say
@@ -18744,7 +18744,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.986.18.end:
             # [986:18] free scratch register t1
-        func.tokenizer.is_str.986.18.end:
+        func.tokenizer.is_array.986.18.end:
     beq t0, zero, if.989.15
     # [986:15] free scratch register t0
     if.986.15.code:
@@ -19426,17 +19426,17 @@ func.parse_input:
         func.action_say.987.9.end:
     j if.953.5.end
     if.989.15:
-    # [989:15] ? tz.is_str(str_action_help)
-    # [989:15] ? shorthand: tz.is_str(str_action_help)
+    # [989:15] ? tz.is_array(str_action_help)
+    # [989:15] ? shorthand: tz.is_array(str_action_help)
     cmp.989.15:
     # [989:15] allocate scratch register -> t0
-        # [989:18] t0 = tz.is_str(str_action_help)
+        # [989:18] t0 = tz.is_array(str_action_help)
         # [989:18] = expression
-        # [989:18] tz.is_str(str_action_help)
+        # [989:18] tz.is_array(str_action_help)
         # [989:15] allocate scratch register -> t1
         lw t1, 4(s1)
-        # [447:6] tokenizer.is_str(str i8[]) res bool
-        func.tokenizer.is_str.989.18:
+        # [447:6] tokenizer.is_array(str i8[]) res bool
+        func.tokenizer.is_array.989.18:
             # [989:18] alias res -> t0
             # [989:18] alias self -> tz
             # [989:18] alias str -> str_action_help
@@ -19550,7 +19550,7 @@ func.parse_input:
                 # [449:11] free scratch register t2
             bool.448.11.989.18.end:
             # [989:18] free scratch register t1
-        func.tokenizer.is_str.989.18.end:
+        func.tokenizer.is_array.989.18.end:
     beq t0, zero, if.953.5.else
     # [989:15] free scratch register t0
     if.989.15.code:
