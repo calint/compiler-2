@@ -19,8 +19,9 @@ class stmt_builtin_equal final : public expression {
     token close_paren_tk_;
 
   public:
-    stmt_builtin_equal(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
-        : expression{tk, std::move(uops)},
+    stmt_builtin_equal(toc& tc, unary_ops uops, const token src_loc_tk,
+                       tokenizer& tz)
+        : expression{src_loc_tk, std::move(uops)},
           open_paren_tk_{tz.is_next_char_token('(')} {
 
         assert_no_unary_ops();

@@ -258,6 +258,10 @@ class stmt_identifier : public statement {
         return true;
     }
 
+    [[nodiscard]] auto name_token() const -> const token& override {
+        return last_token();
+    }
+
     auto visit_reads(const std::string_view var,
                      const read_visitor reader) const -> void override {
 

@@ -130,6 +130,12 @@ class statement {
         return false;
     }
 
+    // where the name an error is about is, the last name of a path for an
+    // identifier, e.g. 'b' of 'a.b'
+    [[nodiscard]] virtual auto name_token() const -> const token& {
+        return token_;
+    }
+
     [[nodiscard]] virtual auto produces_boolean() const -> bool {
         return false;
     }

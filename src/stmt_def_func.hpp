@@ -36,7 +36,7 @@ class stmt_def_func final : public statement {
 
         kind mode{kind::none};
         // the text after 'func', only the instances of the definition parse it
-        std::string text;
+        std::string_view text;
         std::vector<generic_binding> constants;
     };
 

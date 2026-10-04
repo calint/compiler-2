@@ -52,8 +52,8 @@ class stmt_def_dat final : public statement {
 
   public:
     // e.g. 'dat x = i32(0)', the initializer gives the type
-    stmt_def_dat(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()} {
+    stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
+        : statement{src_loc_tk}, name_tk_{tz.next_token()} {
 
         if (name_tk_.is_empty()) {
             throw compiler_exception{name_tk_, "expected name of data"};

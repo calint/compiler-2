@@ -32,7 +32,9 @@ class compiler_exception final : public std::exception {
         assert(line != 0);
     }
 
-    // defined in 'tokenizer.hpp'
+    // defined in 'tokenizer.hpp', the error is at the cursor: the start of the
+    // token that was found instead of the expected one, after the whitespace
+    // that follows the last token read
     compiler_exception(const tokenizer& tz, std::string message);
 
     std::string msg;

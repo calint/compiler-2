@@ -11,7 +11,8 @@ class stmt_loop final : public statement {
     stmt_block code_;
 
   public:
-    stmt_loop(toc& tc, const token tk, tokenizer& tz) : statement{tk} {
+    stmt_loop(toc& tc, const token src_loc_tk, tokenizer& tz)
+        : statement{src_loc_tk} {
         set_type(tc.get_type_void());
         const std::string lbl{tc.create_unique_label(tok(), "loop")};
         tc.enter_loop(lbl);

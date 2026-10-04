@@ -36,7 +36,7 @@ class stmt_def_type final : public statement {
     // the tokens of 'type str = text<127>' after the name
     std::vector<token> alias_tks_;
     // the text after 'type' of a generic definition, only its aliases parse it
-    std::string generic_text_;
+    std::string_view generic_text_;
 
   public:
     stmt_def_type(toc& tc, const token tk, tokenizer& tz)

@@ -21,8 +21,8 @@ class stmt_def_const final : public statement {
     stmt_const const_;
 
   public:
-    stmt_def_const(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()} {
+    stmt_def_const(toc& tc, const token src_loc_tk, tokenizer& tz)
+        : statement{src_loc_tk}, name_tk_{tz.next_token()} {
 
         if (name_tk_.is_empty()) {
             throw compiler_exception{name_tk_, "expected name of constant"};

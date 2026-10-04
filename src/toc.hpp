@@ -1152,7 +1152,7 @@ class toc final {
         };
         ident_info info{as_element_if(st.is_array_element(), declared)};
 
-        info.src_loc_tk = st.tok();
+        info.src_loc_tk = st.name_token();
 
         return info;
     }

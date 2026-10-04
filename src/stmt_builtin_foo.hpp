@@ -22,8 +22,8 @@ class stmt_builtin_foo final : public statement {
     stmt_block code_;
 
   public:
-    stmt_builtin_foo(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk, unary_ops{}} {
+    stmt_builtin_foo(toc& tc, const token src_loc_tk, tokenizer& tz)
+        : statement{src_loc_tk, unary_ops{}} {
 
         set_type(tc.get_type_void());
 
