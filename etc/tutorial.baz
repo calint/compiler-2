@@ -652,6 +652,11 @@ func generics() {
     assert(m.count == 2)
     # the result type can be a parameter
 
+    m = make(3)
+    assert(m.count == 3)
+    # a call assigned to a variable of the result type needs no type arguments,
+    # 'make(3)' is 'make<small>(3)' here
+
     var p = small_large
     p.a.add(1)
     p.b.add(2)

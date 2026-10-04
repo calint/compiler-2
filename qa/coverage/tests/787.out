@@ -1,2 +1,2 @@
 
-787.baz:17:7: cannot deduce 'T' of generic function 'str.append' from its arguments, write 'append<...>'
+787.baz:17:7: cannot deduce 'T' of generic function 'str.append', write 'append<...>'

@@ -177,10 +177,7 @@ class tokenizer final {
                 --depth;
             }
 
-            // a delimiter has an empty token text
-            if (next_token().text().empty() and not is_eos()) {
-                std::ignore = next_char();
-            }
+            skip_token();
         }
     }
 
@@ -211,10 +208,7 @@ class tokenizer final {
                 throw compiler_exception{*this, "expected '}' to end block"};
             }
 
-            // a delimiter has an empty token text
-            if (next_token().text().empty() and not is_eos()) {
-                std::ignore = next_char();
-            }
+            skip_token();
         }
     }
 
@@ -392,6 +386,14 @@ class tokenizer final {
     auto skip_to_end_of_line() -> void {
         const size_t newline{src_.find('\n', char_ix_)};
         char_ix_ = newline == std::string_view::npos ? src_.size() : newline;
+    }
+
+    // skips a token, or the character of a delimiter, which has an empty token
+    // text
+    auto skip_token() -> void {
+        if (next_token().text().empty() and not is_eos()) {
+            std::ignore = next_char();
+        }
     }
 };
 

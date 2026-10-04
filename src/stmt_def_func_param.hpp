@@ -18,18 +18,87 @@ class stmt_def_func_param final : public statement {
     bool is_read_only_{};
 
   public:
+    // the tokens of a parameter 'name [mut] [type][[]]', before the type is
+    // resolved
+    struct syntax {
+        token name_tk;
+        token mut_tk;
+        token type_tk;
+        token open_bracket_tk;
+        token close_bracket_tk;
+
+        [[nodiscard]] auto is_array() const -> bool {
+            return not open_bracket_tk.is_empty();
+        }
+
+        //
+        // statics
+        //
+
+        // e.g. 'v', 'v i32', 'arr[]' and 'arr i32[]' have the default type or
+        // an explicit one, brackets follow the type
+        [[nodiscard]] static auto read(tokenizer& tz) -> syntax {
+            const token name_tk{tz.next_token()};
+            if (name_tk.text().empty()) {
+                throw compiler_exception{tz, "expected a parameter name"};
+            }
+
+            const token mut_tk{read_mut(tz)};
+
+            const token type_tk{
+                is_end_of_type(tz.peek_char_after_whitespace())
+                    ? token{}
+                    : tz.next_token(),
+            };
+
+            const token open_bracket_tk{tz.is_next_char_token('[')};
+            const token close_bracket_tk{
+                open_bracket_tk.is_empty() ? token{}
+                                           : tz.is_next_char_token(']'),
+            };
+
+            if (not open_bracket_tk.is_empty() and
+                close_bracket_tk.is_empty()) {
+                throw compiler_exception{tz, "expected ']'"};
+            }
+
+            return {
+                .name_tk{name_tk},
+                .mut_tk{mut_tk},
+                .type_tk{type_tk},
+                .open_bracket_tk{open_bracket_tk},
+                .close_bracket_tk{close_bracket_tk},
+            };
+        }
+
+      private:
+        //
+        // statics
+        //
+
+        [[nodiscard]] static auto is_end_of_type(const char next) -> bool {
+            return next == ',' or next == ')' or next == '[';
+        }
+
+        // 'mut' after the name allows the body to write the parameter
+        [[nodiscard]] static auto read_mut(tokenizer& tz) -> token {
+            token mut_tk;
+
+            if (not is_end_of_type(tz.peek_char_after_whitespace())) {
+                const token tk{tz.next_token()};
+                if (tk.is_text("mut")) {
+                    mut_tk = tk;
+                } else {
+                    tz.put_back_token(tk);
+                }
+            }
+
+            return mut_tk;
+        }
+    };
+
     stmt_def_func_param(const toc& tc, tokenizer& tz)
-        : statement{tz.next_token()} {
-
-        assert(not tok().text().empty());
-
-        toc::assert_name_not_reserved(tok());
-
-        read_mut(tz);
-        is_read_only_ = mut_tk_.is_empty();
-
-        parse_type(tc, tz);
-    }
+        : stmt_def_func_param{tc, syntax::read(tz)} {}
 
     stmt_def_func_param(const token tk, const type& tp, const bool is_read_only)
         : statement{tk}, is_read_only_{is_read_only} {
@@ -66,44 +135,17 @@ class stmt_def_func_param final : public statement {
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 
   private:
-    // e.g. 'v', 'v i32', 'arr[]' and 'arr i32[]' have the default type or an
-    // explicit one, brackets follow the type
-    auto parse_type(const toc& tc, tokenizer& tz) -> void {
-        const char next{tz.peek_char_after_whitespace()};
-        if (next != ',' and next != ')' and next != '[') {
-            type_tk_ = tz.next_token();
-        }
+    stmt_def_func_param(const toc& tc, const syntax& tokens)
+        : statement{tokens.name_tk}, mut_tk_{tokens.mut_tk},
+          type_tk_{tokens.type_tk}, open_bracket_tk_{tokens.open_bracket_tk},
+          close_bracket_tk_{tokens.close_bracket_tk},
+          is_array_{tokens.is_array()},
+          is_read_only_{tokens.mut_tk.is_empty()} {
+
+        toc::assert_name_not_reserved(tok());
 
         set_type(type_tk_.is_empty()
                      ? tc.get_type_default()
                      : tc.get_type_or_throw(type_tk_, type_tk_.text()));
-
-        open_bracket_tk_ = tz.is_next_char_token('[');
-        if (open_bracket_tk_.is_empty()) {
-            return;
-        }
-
-        close_bracket_tk_ = tz.is_next_char_token(']');
-        if (close_bracket_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ']'"};
-        }
-
-        is_array_ = true;
-    }
-
-    // 'mut' after the name allows the body to write the parameter
-    auto read_mut(tokenizer& tz) -> void {
-        const char next{tz.peek_char_after_whitespace()};
-        if (next == ',' or next == ')' or next == '[') {
-            return;
-        }
-
-        const token tk{tz.next_token()};
-        if (not tk.is_text("mut")) {
-            tz.put_back_token(tk);
-            return;
-        }
-
-        mut_tk_ = tk;
     }
 };

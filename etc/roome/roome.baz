@@ -568,8 +568,7 @@ func find_link_name_or_make(tz tokenizer) res {
 
     if res != link_names.len return
 
-    let name = tz.to<name>()
-    link_names.array[link_names.len] = name
+    link_names.array[link_names.len] = tz.to()
 
     res = link_names.len
 
@@ -628,8 +627,7 @@ dat str_new_room_description = "new room description\n"
 func action_set_room_description(eid, tz mut tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    let new_description = tz.to<str>()
-    rooms.array[entities.array[eid].room_id].description = new_description
+    rooms.array[entities.array[eid].room_id].description = tz.to()
 
     out.print_all(str_new_room_description)
 }
@@ -637,8 +635,7 @@ func action_set_room_description(eid, tz mut tokenizer) {
 func action_set_room_note(eid, tz mut tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    let new_note = tz.to<str>()
-    rooms.array[entities.array[eid].room_id].note = new_note
+    rooms.array[entities.array[eid].room_id].note = tz.to()
 }
 
 dat str_what_name = "what name\n"
@@ -658,8 +655,7 @@ func action_set_room_name(eid, tz mut tokenizer) {
         return
     }
 
-    let new_name = tz.to<name>()
-    rooms.array[entities.array[eid].room_id].name = new_name
+    rooms.array[entities.array[eid].room_id].name = tz.to()
 
     out.print_all(str_new_room_name)
 }

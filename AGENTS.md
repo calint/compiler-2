@@ -121,6 +121,12 @@ Working agreements for AI sessions in this repository.
   a type or an array, the compiler assumes it: `var s = str`, `var a = i8[4]`,
   `res = T`, not `var s = str{}`.
 
+## Tests
+
+- A new error test: check that each `line:column` in its `.out` points at the
+  token where the error is detected (print the source line with a caret), not
+  only that the message reads well.
+
 ## Tools
 
 - Run symbol renames before `git mv`/file renames (open buffers at the old

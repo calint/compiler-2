@@ -446,7 +446,8 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
     if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-        stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
+        stmt_call_ =
+            std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz, &tp);
 
         assert_call_type(tp);
 
@@ -473,8 +474,8 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     stmt_identifier si{tc, unary_ops{}, tok(), tz};
 
     if (si.is_method_receiver()) {
-        stmt_call_ =
-            std::make_shared<stmt_call>(tc, unary_ops{}, std::move(si), tz);
+        stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, std::move(si),
+                                                 tz, &tp);
 
         assert_call_type(tp);
 

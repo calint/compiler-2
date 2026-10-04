@@ -1,0 +1,5 @@
+# a parameter has a name
+
+func f(a, , b) {}
+
+func main() {}

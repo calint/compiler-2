@@ -1,0 +1,47 @@
+# the type arguments of a call are deduced from the type the call is assigned to
+# when it is the result
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type name {
+    array i8[4],
+    len,
+}
+
+type str {
+    array i8[8],
+    len,
+}
+
+type tokenizer {
+    text str,
+}
+
+func tokenizer.to<T type>() res T {
+    res.len = 3
+    res.array = {}
+    array_copy(self.text.array, res.array, res.len)
+}
+
+func make<T type>(n) res T {
+    res.len = n
+    res.array = {}
+}
+
+type holder {
+    n name,
+    s str,
+}
+
+func main() {
+    var tz = tokenizer
+    var h = holder
+    h.n = tz.to()
+    h.s = tz.to()
+    assert(1, h.n.len == 3 and h.s.len == 3)
+    var m = name
+    m = make(2)
+    assert(2, m.len == 2)
+    var r = holder{tz.to(), tz.to()}
+    assert(4, r.n.len == 3)
+}

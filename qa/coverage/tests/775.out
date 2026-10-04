@@ -1,2 +1,2 @@
 
-775.baz:15:13: cannot deduce 'T' of generic function 'make' from its arguments, write 'make<...>'
+775.baz:15:13: cannot deduce 'T' of generic function 'make', write 'make<...>'

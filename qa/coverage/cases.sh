@@ -2563,3 +2563,12 @@ SRC=831 && COMPERR
 
 # an array declared without braces needs a size
 SRC=832 && COMPERR
+
+# a parameter has a name
+SRC=833 && COMPERR
+
+# the parameters of a generic function are read where it is defined
+SRC=834 && COMPERR
+
+# the type arguments of a call are deduced from the type it is assigned to
+SRC=835 && EXP=0 && RUN

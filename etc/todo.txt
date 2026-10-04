@@ -8,8 +8,9 @@ better assembler code, medium, largest gain first
 [x] deduce the type arguments of a generic call (2026-10-05): from a variable,
     field or element passed for a parameter declared with the type parameter
     ('s.append(n)' for 'func text.append<T type>(s T)'); roome.baz uses it
-    => left: from the destination ('x.f = tz.to()' for 'res T') needs the
-       expected type at the call parse
+    => the destination too (2026-10-05): 'x.f = tz.to()' for 'res T', 'expr_
+       type::parse_copy_source' gives the expected type to 'stmt_call'; roome
+       uses it at 4 sites (5957 -> 5960 instructions)
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
 [ ] medium: roome.baz (2026-09-29): an inline bool call used as a condition is

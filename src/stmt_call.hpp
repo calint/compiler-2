@@ -41,10 +41,15 @@ class stmt_call : public expression {
     };
 
   public:
+    // 'expected_type' is the type the call is assigned to, it tells a type
+    // parameter that is the result, e.g. 'x.f = tz.to()'
     stmt_call(toc& tc, unary_ops uops, const token tk,
-              const token open_paren_tk, tokenizer& tz)
+              const token open_paren_tk, tokenizer& tz,
+              const type* const expected_type = nullptr)
         : expression{tk, std::move(uops)}, func_name_{tk.text()},
-          open_paren_tk_{read_open_paren(tc, tz, open_paren_tk)} {
+          open_paren_tk_{
+              read_open_paren(tc, tz, open_paren_tk, expected_type),
+          } {
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
@@ -61,14 +66,17 @@ class stmt_call : public expression {
     }
 
     // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
-    stmt_call(toc& tc, unary_ops uops, stmt_identifier receiver, tokenizer& tz)
+    stmt_call(toc& tc, unary_ops uops, stmt_identifier receiver, tokenizer& tz,
+              const type* const expected_type = nullptr)
         : expression{receiver.method_name_token(), std::move(uops)},
           method_dot_tk_{receiver.method_dot_token()},
           func_name_{
               std::format("{}.{}", receiver.get_type().name(),
                           receiver.method_name_token().text()),
           },
-          open_paren_tk_{read_open_paren(tc, tz, std::nullopt)} {
+          open_paren_tk_{
+              read_open_paren(tc, tz, std::nullopt, expected_type),
+          } {
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
@@ -1050,10 +1058,12 @@ class stmt_call : public expression {
 
     // the type arguments of 'f(x)' for 'func f<T type>(s T)': a type parameter
     // is the type of the argument for a parameter declared with that type, when
-    // the argument is a variable. a literal or an expression does not tell
-    // its type
+    // the argument is a variable, or the type the call is assigned to when it
+    // is the result. a literal or an expression does not tell its type
     auto deduce_generic_arguments(toc& tc, const tokenizer& tz,
-                                  const bool is_paren_read) -> std::string {
+                                  const bool is_paren_read,
+                                  const type* const expected_type)
+        -> std::string {
 
         const generic_func_info& generic{tc.generics().get_func(func_name_)};
 
@@ -1067,18 +1077,24 @@ class stmt_call : public expression {
 
         std::vector<const type*> type_args;
 
-        for (const auto [param_name, from] :
-             std::views::zip(generic.param_names, generic.deduced_from)) {
+        for (const auto [param_name, deduction] :
+             std::views::zip(generic.param_names, generic.deductions)) {
 
-            const type* const arg_type{
-                from ? argument_type(tc, scan, *from) : nullptr,
+            const type* arg_type{
+                deduction.param_index
+                    ? argument_type(tc, scan, *deduction.param_index)
+                    : nullptr,
             };
+
+            if (arg_type == nullptr and deduction.is_result) {
+                arg_type = expected_type;
+            }
 
             if (arg_type == nullptr) {
                 throw compiler_exception{
                     tok(),
-                    std::format("cannot deduce '{}' of generic function '{}' "
-                                "from its arguments, write '{}<...>'",
+                    std::format("cannot deduce '{}' of generic function '{}', "
+                                "write '{}<...>'",
                                 param_name, func_name_, tok().text())};
             }
 
@@ -1249,11 +1265,14 @@ class stmt_call : public expression {
     // without '<' the types are taken from the arguments. 'is_paren_read' is
     // set when the '(' has been read already
     auto parse_generic_arguments(toc& tc, tokenizer& tz,
-                                 const bool is_paren_read) -> std::string {
+                                 const bool is_paren_read,
+                                 const type* const expected_type)
+        -> std::string {
 
         const token open_tk{tz.is_next_char_token('<')};
         if (open_tk.is_empty()) {
-            return deduce_generic_arguments(tc, tz, is_paren_read);
+            return deduce_generic_arguments(tc, tz, is_paren_read,
+                                            expected_type);
         }
 
         const generic_arguments args{generic_arguments::parse(tz, open_tk)};
@@ -1291,13 +1310,15 @@ class stmt_call : public expression {
     // 'convert<i8>(x)'. 'found' is the '(' a caller has read, otherwise it is
     // read here
     auto read_open_paren(toc& tc, tokenizer& tz,
-                         const std::optional<token>& found) -> token {
+                         const std::optional<token>& found,
+                         const type* const expected_type) -> token {
 
         // a caller that found no '(' passes an empty token
         const bool is_paren_read{found and not found->is_empty()};
 
         if (tc.generics().has_func(func_name_)) {
-            func_name_ = parse_generic_arguments(tc, tz, is_paren_read);
+            func_name_ =
+                parse_generic_arguments(tc, tz, is_paren_read, expected_type);
 
             return is_paren_read ? *found : tz.is_next_char_token('(');
         }

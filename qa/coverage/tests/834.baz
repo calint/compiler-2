@@ -1,0 +1,5 @@
+# the parameters of a generic function are read where it is defined
+
+func f<T type>(a T, , b) {}
+
+func main() {}

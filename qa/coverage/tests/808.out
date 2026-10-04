@@ -1,2 +1,2 @@
 
-808.baz:3:8: expected 'type' after generic parameter 'T'
+808.baz:3:10: expected 'type' after generic parameter 'T'

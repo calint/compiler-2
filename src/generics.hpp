@@ -61,11 +61,15 @@ struct generic_param {
             const char next{tz.peek_char_after_whitespace()};
             const bool is_type{next != ',' and next != '>'};
 
-            if (is_type and not tz.next_token().is_text("type")) {
-                throw compiler_exception{
-                    name_tk,
-                    std::format("expected 'type' after generic parameter '{}'",
-                                name_tk.text())};
+            if (is_type) {
+                const token kind_tk{tz.next_token()};
+                if (not kind_tk.is_text("type")) {
+                    throw compiler_exception{
+                        kind_tk,
+                        std::format(
+                            "expected 'type' after generic parameter '{}'",
+                            name_tk.text())};
+                }
             }
 
             params.push_back({.name_tk{name_tk}, .is_type{is_type}});
@@ -178,6 +182,16 @@ struct generic_type_instance {
     }
 };
 
+// how a call without type arguments can tell a type parameter
+struct generic_deduction {
+    // the first parameter declared with exactly that type, e.g. 's T' in
+    // 'func text.append<T type>(s T)', not an array
+    std::optional<size_t> param_index;
+    // the result is declared with exactly that type, e.g. 'res T', the
+    // destination of the call tells it
+    bool is_result{};
+};
+
 // a function with type parameters, e.g. 'func tokenizer.to<T type>()'. every
 // distinct list of type arguments is the definition parsed again from
 // 'start_tk' as an instance. the method of a generic type with type parameters
@@ -186,10 +200,13 @@ struct generic_func_info {
     token src_loc_tk;
     token func_tk;
     token start_tk;
+    // the name in the report, a method is one generic function for all the
+    // instances of its type, e.g. 'text.append' for 'str.append' and
+    // 'name.append'
+    std::string report_name;
     std::vector<std::string> param_names;
-    // for each type parameter the first parameter of the function declared
-    // with exactly that type, the argument of a call tells the type
-    std::vector<std::optional<size_t>> deduced_from;
+    // for each type parameter
+    std::vector<generic_deduction> deductions;
     std::optional<generic_type_instance> receiver_instance;
 };
 
@@ -221,8 +238,8 @@ class generic_registry {
   public:
     auto add_func(const token& src_loc_tk, std::string name,
                   const token& func_tk, const token& start_tk,
-                  std::vector<std::string> param_names,
-                  std::vector<std::optional<size_t>> deduced_from,
+                  std::string report_name, std::vector<std::string> param_names,
+                  std::vector<generic_deduction> deductions,
                   std::optional<generic_type_instance> receiver_instance)
         -> void {
 
@@ -230,8 +247,9 @@ class generic_registry {
                                         .src_loc_tk{src_loc_tk},
                                         .func_tk{func_tk},
                                         .start_tk{start_tk},
+                                        .report_name{std::move(report_name)},
                                         .param_names{std::move(param_names)},
-                                        .deduced_from{std::move(deduced_from)},
+                                        .deductions{std::move(deductions)},
                                         .receiver_instance{
                                             std::move(receiver_instance),
                                         },
@@ -313,7 +331,7 @@ class generic_registry {
     }
 
     auto mark_func_instantiated(const std::string_view name) -> void {
-        instantiated_funcs_.emplace(name);
+        instantiated_funcs_.emplace(funcs_.get_const_ref(name).report_name);
     }
 
     // the names of the generic functions without an instance, in the order of
@@ -323,11 +341,13 @@ class generic_registry {
 
         std::vector<std::string> names;
 
-        for (std::string& name : funcs_.keys()) {
+        for (const std::string& key : funcs_.keys()) {
+            const std::string& name{funcs_.get_const_ref(key).report_name};
+
             if (not instantiated_funcs_.contains(name) and
                 not std::ranges::contains(names, name)) {
 
-                names.push_back(std::move(name));
+                names.push_back(name);
             }
         }
 
