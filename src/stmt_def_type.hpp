@@ -3,72 +3,63 @@
 
 #include <cassert>
 #include <format>
+#include <optional>
+#include <print>
+#include <ranges>
+#include <span>
+#include <tuple>
 #include <vector>
 
+#include "generic_param.hpp"
 #include "stmt_def_type_field.hpp"
 #include "type.hpp"
 
 class stmt_def_type final : public statement {
+    // where the definition continues after 'type', an alias parses it again
+    token start_tk_;
     token name_tk_;
     token open_brace_tk_;
     std::vector<stmt_def_type_field> fields_;
     std::vector<token> field_delims_tk_;
     token close_brace_tk_;
     type type_;
+    // the tokens of 'type str = text<127>' after the name
+    std::vector<token> alias_tks_;
+    // the text after 'type' of a generic definition, only its aliases parse it
+    std::string generic_text_;
 
   public:
     stmt_def_type(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()},
+        : statement{tk}, start_tk_{tz.cur_position_token()},
+          name_tk_{tz.next_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
         toc::assert_name_not_reserved(name_tk_);
+
+        // e.g. 'type text<capacity> {...}'
+        if (open_brace_tk_.is_empty() and
+            tz.peek_char_after_whitespace() == '<') {
+
+            define_generic(tc, tk, tz);
+            return;
+        }
+
+        // e.g. 'type str = text<127>'
+        if (open_brace_tk_.is_empty() and
+            tz.peek_char_after_whitespace() == '=') {
+
+            parse_alias(tc, tz);
+            return;
+        }
 
         if (open_brace_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '{' to begin declaration of type"};
         }
 
-        while (true) {
-            // read field definition with the next token being the name
-            fields_.emplace_back(tc, tz.next_token(), tz);
-            close_brace_tk_ = tz.is_next_char_token('}');
-            if (not close_brace_tk_.is_empty()) {
-                break;
-            }
-            const token t{tz.is_next_char_token(',')};
-            if (t.is_empty()) {
-                throw compiler_exception{
-                    tz, std::format("expected ',' followed by another field "
-                                    "in type '{}'",
-                                    name_tk_.text())};
-            }
-            field_delims_tk_.emplace_back(t);
+        parse_fields(tc, tz);
 
-            // a trailing ',' lets each field end its line the same way
-            close_brace_tk_ = tz.is_next_char_token('}');
-            if (not close_brace_tk_.is_empty()) {
-                break;
-            }
-        }
-        // initialize the type definition
-        type_.set_name(name_tk_.text());
-
-        // add the fields
-        for (const stmt_def_type_field& fld : fields_) {
-            toc::assert_name_not_reserved(fld.tok());
-
-            // get the type of field. no type name means default
-            const type& tp{
-                fld.type_str().empty()
-                    ? tc.get_type_default()
-                    : tc.get_type_or_throw(fld.type_token(), fld.type_str()),
-            };
-
-            type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
-                            fld.array_count());
-        }
-
-        tc.add_type(name_tk_, type_);
+        add_type(tc);
     }
 
     stmt_def_type() = default;
@@ -79,7 +70,23 @@ class stmt_def_type final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
+
+        if (not generic_text_.empty()) {
+            std::print(os, "{}", generic_text_);
+
+            return;
+        }
+
         name_tk_.source_to(os);
+
+        if (not alias_tks_.empty()) {
+            for (const token& t : alias_tks_) {
+                t.source_to(os);
+            }
+
+            return;
+        }
+
         open_brace_tk_.source_to(os);
 
         // note: a type has at least one field
@@ -104,6 +111,11 @@ class stmt_def_type final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
+        // only its aliases are types
+        if (not generic_text_.empty()) {
+            return;
+        }
+
         const type& tp{tc.get_type_or_throw(tok(), name_tk_.text())};
 
         machine& x{tc.machine()};
@@ -120,5 +132,228 @@ class stmt_def_type final : public statement {
                       f.is_array ? std::format("{}", f.array_count) : "");
         }
         x.comment({}, 0, "");
+    }
+
+  private:
+    auto add_type(toc& tc) -> void {
+        // initialize the type definition
+        type_.set_name(name_tk_.text());
+
+        // add the fields
+        for (const stmt_def_type_field& fld : fields_) {
+            toc::assert_name_not_reserved(fld.tok());
+
+            // get the type of field. no type name means default
+            const type& tp{
+                fld.type_str().empty()
+                    ? tc.get_type_default()
+                    : tc.get_type_or_throw(fld.type_token(), fld.type_str()),
+            };
+
+            type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
+                            fld.array_count());
+        }
+
+        tc.add_type(name_tk_, type_);
+    }
+
+    // the text after 'type' is kept for 'source_to' and for the aliases, errors
+    // in it are found when an alias parses it
+    auto define_generic(toc& tc, const token& type_tk, tokenizer& tz) -> void {
+        tc.add_generic_type(name_tk_, name_tk_.text(), start_tk_,
+                            generic_param::parse(tz));
+
+        tz.skip_braced_block();
+
+        const size_t begin_ix{type_tk.source_end_index()};
+        generic_text_ = tc.source().substr(
+            begin_ix, tz.cur_char_index_in_source() - begin_ix);
+    }
+
+    // e.g. 'type str = text<127>' is the type 'str' with the fields of the
+    // generic type 'text' for the arguments
+    auto parse_alias(toc& tc, tokenizer& tz) -> void {
+        alias_tks_.emplace_back(tz.is_next_char_token('='));
+
+        const token generic_tk{tz.next_token()};
+        alias_tks_.emplace_back(generic_tk);
+
+        if (not tc.is_generic_type(generic_tk.text())) {
+            throw compiler_exception{
+                generic_tk,
+                std::format("'{}' is not a generic type", generic_tk.text())};
+        }
+
+        const generic_type_info generic{tc.get_generic_type(generic_tk.text())};
+        const std::vector<token> arg_tks{parse_alias_args(tz)};
+
+        if (arg_tks.size() != generic.params.size()) {
+            throw compiler_exception{
+                generic_tk,
+                std::format("generic type '{}' takes {} argument(s), got {}",
+                            generic_tk.text(), generic.params.size(),
+                            arg_tks.size())};
+        }
+
+        // the constant arguments live in a block of their own
+        tc.enter_block();
+
+        std::vector<generic_binding> bindings{
+            bind_args(tc, generic.params, arg_tks),
+        };
+
+        tokenizer generic_tz{tc.source(), generic.start_tk};
+        std::ignore = generic_tz.next_token();
+        std::ignore = generic_param::parse(generic_tz);
+
+        open_brace_tk_ = generic_tz.is_next_char_token('{');
+
+        assert(not open_brace_tk_.is_empty());
+
+        parse_fields(tc, generic_tz);
+
+        add_type(tc);
+
+        for (const generic_param& param : generic.params) {
+            if (param.is_type) {
+                tc.unbind_type_alias(param.name_tk.text());
+            }
+        }
+
+        tc.exit_block();
+
+        // the methods of the generic type see the arguments
+        const generic_type_instance instance{
+            .generic_name{generic_tk.text()},
+            .type_ptr{&type_},
+            .bindings{std::move(bindings)},
+        };
+
+        tc.add_generic_type_instance(instance);
+
+        instantiate_generic_methods(tc, instance);
+    }
+
+    // appends the tokens after the name to 'alias_tks_' and returns the
+    // arguments
+    auto parse_alias_args(tokenizer& tz) -> std::vector<token> {
+        const token open_tk{tz.is_next_char_token('<')};
+        if (open_tk.is_empty()) {
+            throw compiler_exception{
+                alias_tks_.back(),
+                std::format("generic type '{}' needs arguments, e.g. '{}<...>'",
+                            alias_tks_.back().text(),
+                            alias_tks_.back().text())};
+        }
+
+        alias_tks_.emplace_back(open_tk);
+
+        std::vector<token> arg_tks;
+
+        while (true) {
+            const token arg_tk{tz.next_token()};
+            if (arg_tk.text().empty()) {
+                throw compiler_exception{tz, "expected a generic argument"};
+            }
+
+            arg_tks.emplace_back(arg_tk);
+            alias_tks_.emplace_back(arg_tk);
+
+            const token close_tk{tz.is_next_char_token('>')};
+            if (not close_tk.is_empty()) {
+                alias_tks_.emplace_back(close_tk);
+
+                return arg_tks;
+            }
+
+            const token delim_tk{tz.is_next_char_token(',')};
+            if (delim_tk.is_empty()) {
+                throw compiler_exception{
+                    tz, "expected ',' or '>' after generic argument"};
+            }
+            alias_tks_.emplace_back(delim_tk);
+        }
+    }
+
+    auto parse_fields(toc& tc, tokenizer& tz) -> void {
+        while (true) {
+            // read field definition with the next token being the name
+            fields_.emplace_back(tc, tz.next_token(), tz);
+            close_brace_tk_ = tz.is_next_char_token('}');
+            if (not close_brace_tk_.is_empty()) {
+                break;
+            }
+            const token t{tz.is_next_char_token(',')};
+            if (t.is_empty()) {
+                throw compiler_exception{
+                    tz, std::format("expected ',' followed by another field "
+                                    "in type '{}'",
+                                    name_tk_.text())};
+            }
+            field_delims_tk_.emplace_back(t);
+
+            // a trailing ',' lets each field end its line the same way
+            close_brace_tk_ = tz.is_next_char_token('}');
+            if (not close_brace_tk_.is_empty()) {
+                break;
+            }
+        }
+    }
+
+    //
+    // statics
+    //
+
+    // a type parameter names its argument, a constant parameter is a constant
+    // of the current block
+    [[nodiscard]] static auto
+    bind_args(toc& tc, const std::span<const generic_param> params,
+              const std::span<const token> arg_tks)
+        -> std::vector<generic_binding> {
+
+        std::vector<generic_binding> bindings;
+
+        for (const auto [param, arg_tk] : std::views::zip(params, arg_tks)) {
+            const std::string_view name{param.name_tk.text()};
+
+            if (param.is_type) {
+                const type& type_arg{
+                    tc.get_type_or_throw(arg_tk, arg_tk.text()),
+                };
+
+                tc.bind_type_alias(param.name_tk, name, type_arg);
+                bindings.push_back({.name{name}, .type_ptr{&type_arg}});
+
+                continue;
+            }
+
+            const int64_t value{constant_value(tc, arg_tk)};
+
+            tc.add_const(arg_tk, 0, name, value);
+            bindings.push_back({.name{name}, .value{value}});
+        }
+
+        return bindings;
+    }
+
+    // a number or a constant
+    [[nodiscard]] static auto constant_value(const toc& tc, const token& arg_tk)
+        -> int64_t {
+
+        const std::optional<int64_t> value{
+            toc::parse_constant(arg_tk, arg_tk.text()),
+        };
+
+        if (value) {
+            return *value;
+        }
+
+        if (tc.has_const(arg_tk.text())) {
+            return tc.get_const(arg_tk.text());
+        }
+
+        throw compiler_exception{
+            arg_tk,
+            std::format("expected a constant, got '{}'", arg_tk.text())};
     }
 };

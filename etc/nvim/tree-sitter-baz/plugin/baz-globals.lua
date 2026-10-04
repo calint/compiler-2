@@ -18,6 +18,8 @@ local non_reference_parents = {
   return_annotation = true,
   sized_array_type = true,
   unsized_array_type = true,
+  generic_parameter = true,
+  generic_alias = true,
 }
 
 -- identifiers in these fields name a function, a type or a new declaration
@@ -127,8 +129,72 @@ local function is_type(program, name, source)
   return false
 end
 
+-- "type" for 'T type', "constant" for 'capacity' or nil
+local function generic_parameter_kind(definition, name, source)
+  for c in definition:iter_children() do
+    if c:type() == "generic_parameters" then
+      for p in c:iter_children() do
+        if p:type() == "generic_parameter" and name_is(p:field("name")[1], name, source) then
+          return p:field("kind")[1] and "type" or "constant"
+        end
+      end
+    end
+  end
+  return nil
+end
+
+-- the kind of the generic parameter of a definition and, for a method, of the
+-- generic type it belongs to
+local function generic_kind(definition, name, source)
+  local kind = generic_parameter_kind(definition, name, source)
+  if kind then
+    return kind
+  end
+  local receiver = definition:field("receiver_type")[1]
+  if not receiver then
+    return nil
+  end
+  local receiver_name = vim.treesitter.get_node_text(receiver, source)
+  for c in definition:parent():iter_children() do
+    if c:type() == "type_definition" and name_is(c:field("name")[1], receiver_name, source) then
+      kind = generic_parameter_kind(c, name, source)
+      if kind then
+        return kind
+      end
+    end
+  end
+  return nil
+end
+
+-- uses of a generic parameter: types, array sizes and constants in bodies; the
+-- names of members, parameters and declarations are not uses
+local function is_generic_use(node)
+  local parent = node:parent()
+  if not parent then
+    return false
+  end
+  local parent_type = parent:type()
+  if
+    parent_type == "member_access"
+    or parent_type == "function_definition"
+    or parent_type == "type_definition"
+    or parent_type == "generic_parameter"
+    or parent_type == "generic_alias"
+  then
+    return false
+  end
+  if parent_type == "member_field" or parent_type == "parameter" or parent_type == "return_annotation" then
+    return field_has(parent, "type", node)
+  end
+  if parent_type == "function_call" then
+    return not field_has(parent, "function", node)
+  end
+  return not (declaration_types[parent_type] and field_has(parent, "destination", node))
+end
+
 -- walks outwards through blocks and functions so that the innermost
--- declaration wins: returns "local", "parameter", "global", "type" or nil
+-- declaration wins: returns "local", "parameter", "generic_type",
+-- "generic_constant", "global", "type" or nil
 local function declaration_kind(node, source)
   local name = vim.treesitter.get_node_text(node, source)
   local child = node
@@ -150,6 +216,12 @@ local function declaration_kind(node, source)
     if t == "function_definition" and is_parameter(scope, name, source) then
       return "parameter"
     end
+    if t == "function_definition" or t == "type_definition" then
+      local kind = generic_kind(scope, name, source)
+      if kind then
+        return "generic_" .. kind
+      end
+    end
     child = scope
     scope = scope:parent()
   end
@@ -170,6 +242,20 @@ end
 add_kind_predicate("baz-global?", "global")
 add_kind_predicate("baz-parameter?", "parameter")
 add_kind_predicate("baz-type?", "type")
+
+local function add_generic_predicate(predicate_name, kind)
+  vim.treesitter.query.add_predicate(predicate_name, function(match, _, source, predicate)
+    for _, node in ipairs(match[predicate[2]] or {}) do
+      if not (is_generic_use(node) and declaration_kind(node, source) == kind) then
+        return false
+      end
+    end
+    return true
+  end, { force = true })
+end
+
+add_generic_predicate("baz-generic-type?", "generic_type")
+add_generic_predicate("baz-generic-constant?", "generic_constant")
 
 vim.treesitter.query.add_directive("baz-qualified-name!", function(match, _, source, predicate, metadata)
   local receiver = (match[predicate[2]] or {})[1]

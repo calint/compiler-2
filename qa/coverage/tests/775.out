@@ -1,0 +1,2 @@
+
+775.baz:14:13: generic function 'make' needs type arguments, e.g. 'make<...>'

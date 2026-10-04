@@ -1,0 +1,17 @@
+# the method of a generic type with a type parameter needs the type argument
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<8>
+
+func mut text.append<T type>(s T) {
+    self.len = self.len + s.len
+}
+
+func main() {
+    var s = str
+    s.append(s)
+}

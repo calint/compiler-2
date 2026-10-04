@@ -1,0 +1,15 @@
+# a generic function takes as many type arguments as it has type parameters
+
+type name {
+    array i8[4],
+    len,
+}
+
+func make<T type>(n) res T {
+    res.len = n
+    res.array = {}
+}
+
+func main() {
+    var m = make<name, name>(2)
+}

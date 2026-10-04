@@ -5,6 +5,7 @@
 #include <cassert>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 #include "compiler_exception.hpp"
@@ -23,6 +24,14 @@ class tokenizer final {
   public:
     explicit tokenizer(const std::string_view src_str)
         : src_str_{src_str}, src_{src_str_} {}
+
+    // continues at a position of an earlier pass over the same source
+    tokenizer(const std::string_view src_str, const token& position_tk)
+        : src_str_{src_str}, src_{src_str_},
+          char_ix_{position_tk.start_index()}, at_line_{position_tk.at_line()} {
+
+        assert(char_ix_ <= src_.size());
+    }
 
     [[nodiscard]] auto cur_char_index_in_source() const -> size_t {
         return char_ix_;
@@ -151,6 +160,40 @@ class tokenizer final {
         move_back(n);
     }
 
+    // skips up to and including the '}' that closes the next '{', strings and
+    // character literals may contain braces
+    auto skip_braced_block() -> void {
+        size_t depth{};
+
+        while (true) {
+            if (not is_next_char_token('{').is_empty()) {
+                ++depth;
+                continue;
+            }
+
+            if (not is_next_char_token('}').is_empty()) {
+                if (depth == 0) {
+                    throw compiler_exception{*this,
+                                             "expected '{' to begin block"};
+                }
+
+                if (--depth == 0) {
+                    return;
+                }
+                continue;
+            }
+
+            if (is_eos()) {
+                throw compiler_exception{*this, "expected '{' to begin block"};
+            }
+
+            // a delimiter has an empty token text
+            if (next_token().text().empty() and not is_eos()) {
+                std::ignore = next_char();
+            }
+        }
+    }
+
   private:
     // the opening quote has been read, the text keeps both quotes so it
     // resolves like a numeric constant, e.g. 'a' or '\n'
@@ -174,7 +217,7 @@ class tokenizer final {
 
             // the escaped character may be a quote
             if (ch == '\\' and not is_eos() and not is_peek_char('\n')) {
-                (void)next_char();
+                std::ignore = next_char();
             }
         }
 
@@ -202,7 +245,7 @@ class tokenizer final {
                     throw compiler_exception{open_quote_tk,
                                              "unterminated string"};
                 }
-                (void)next_char();
+                std::ignore = next_char();
                 continue;
             }
 
@@ -213,7 +256,7 @@ class tokenizer final {
             if (is_eos()) {
                 throw compiler_exception{open_quote_tk, "unterminated string"};
             }
-            (void)next_char();
+            std::ignore = next_char();
         }
 
         const size_t end_ix{char_ix_};

@@ -78,21 +78,29 @@ func printer.println_all(s i8[]) {
     self.println()
 }
 
-type str {
-    array i8[127],
+type text<capacity> {
+    array i8[capacity],
     len,
 }
 
-func str.print() {
+type str = text<127>
+
+func text.print() {
     out.print(self.array, self.len)
 }
 
-func mut str.add(s i8[]) {
+func mut text.add(s i8[]) {
     array_copy(s, self.array[self.len], array_length(s))
     self.len = self.len + array_length(s)
 }
 
-func mut str.input() {
+# appends a text of any capacity
+func mut text.append<T type>(s T) {
+    array_copy(s.array, self.array[self.len], s.len)
+    self.len = self.len + s.len
+}
+
+func mut text.input() {
     # the uart does not echo, so each byte is written back as it is read
     var nbytes = 0
     loop {
@@ -110,6 +118,15 @@ func mut str.input() {
         nbytes = nbytes + 1
     }
     self.len = nbytes
+}
+
+func text.equals(nm text) res bool {
+    if self.len != nm.len {
+        res = false
+        return
+    }
+
+    res = arrays_equal(self.array, nm.array, self.len)
 }
 
 let max_name_len = 16
@@ -160,28 +177,7 @@ func mut id_list.add(ix) res {
     self.len = self.len + 1
 }
 
-type name {
-    array i8[max_name_len],
-    len,
-}
-
-func name.print() {
-    out.print(self.array, self.len)
-}
-
-func name.equals(nm name) res bool {
-    if self.len != nm.len {
-        res = false
-        return
-    }
-
-    res = arrays_equal(self.array, nm.array, self.len)
-}
-
-func mut str.add_name(nm name) {
-    array_copy(nm.array, self.array[self.len], nm.len)
-    self.len = self.len + nm.len
-}
+type name = text<max_name_len>
 
 dat str_told_u = " told u "
 dat str_said = " said "
@@ -462,13 +458,7 @@ func tokenizer.is_empty() res bool {
     res = self.start == self.end
 }
 
-func tokenizer.to_name() res name {
-    res.len = self.len()
-    res.array = {}
-    array_copy(self.str.array[self.start], res.array, res.len)
-}
-
-func tokenizer.to_str() res str {
+func tokenizer.to<T type>() res T {
     res.len = self.len()
     res.array = {}
     array_copy(self.str.array[self.start], res.array, res.len)
@@ -536,7 +526,7 @@ func action_go(eid, tz mut tokenizer) {
     # the ones left behind see it
     var went_text = str
     went_text.add(str_went_to)
-    went_text.add_name(
+    went_text.append<name>(
         link_names.array[
             rooms.array[cur_room_id].links[found_ix].link_name_id
         ]
@@ -558,7 +548,7 @@ func action_go(eid, tz mut tokenizer) {
 
     var arrived_text = str
     arrived_text.add(str_arrived_from)
-    arrived_text.add_name(
+    arrived_text.append<name>(
         link_names.array[
             rooms.array[to_room_id].links[to_found_ix].link_name_id
         ]
@@ -578,7 +568,7 @@ func find_link_name_or_make(tz tokenizer) res {
 
     if res != link_names.len return
 
-    let name = tz.to_name()
+    let name = tz.to<name>()
     link_names.array[link_names.len] = name
 
     res = link_names.len
@@ -638,7 +628,7 @@ dat str_new_room_description = "new room description\n"
 func action_set_room_description(eid, tz mut tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    let new_description = tz.to_str()
+    let new_description = tz.to<str>()
     rooms.array[entities.array[eid].room_id].description = new_description
 
     out.print_all(str_new_room_description)
@@ -647,7 +637,7 @@ func action_set_room_description(eid, tz mut tokenizer) {
 func action_set_room_note(eid, tz mut tokenizer) {
     tz.skip_whitespace()
     tz.to_end()
-    let new_note = tz.to_str()
+    let new_note = tz.to<str>()
     rooms.array[entities.array[eid].room_id].note = new_note
 }
 
@@ -668,7 +658,7 @@ func action_set_room_name(eid, tz mut tokenizer) {
         return
     }
 
-    let new_name = tz.to_name()
+    let new_name = tz.to<name>()
     rooms.array[entities.array[eid].room_id].name = new_name
 
     out.print_all(str_new_room_name)
@@ -684,7 +674,7 @@ func action_new_entity(eid, tz mut tokenizer) {
         return
     }
 
-    let name = tz.to_name()
+    let name = tz.to<name>()
 
     let room_id = entities.array[eid].room_id
 
@@ -705,7 +695,7 @@ func action_new_object(eid, tz mut tokenizer) {
         return
     }
 
-    let name = tz.to_name()
+    let name = tz.to<name>()
 
     let object_id = objects.add(name)
 
@@ -848,9 +838,9 @@ func action_give(eid, tz mut tokenizer) {
 
     var gave_text = str
     gave_text.add(str_gave)
-    gave_text.add_name(entities.array[to_entity].name)
+    gave_text.append<name>(entities.array[to_entity].name)
     gave_text.add(str_space)
-    gave_text.add_name(object_name)
+    gave_text.append<name>(object_name)
 
     notify_room(room_id, eid, message_event, gave_text)
 }
@@ -898,7 +888,7 @@ func action_tell(eid, tz mut tokenizer) {
         return
     }
 
-    let text = tz.to_str()
+    let text = tz.to<str>()
 
     entities.array[to_entity].messages.add(eid, message_told, text)
 }
@@ -915,7 +905,7 @@ func action_say(eid, tz mut tokenizer) {
         return
     }
 
-    let text = tz.to_str()
+    let text = tz.to<str>()
 
     notify_room(entities.array[eid].room_id, eid,
                     message_said, text)

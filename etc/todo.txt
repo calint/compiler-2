@@ -209,6 +209,47 @@ other, medium, easiest first
 --------------------------------------------------------------------------------
 other, hard, easiest first
 --------------------------------------------------------------------------------
+[o] hard: generics (2026-10-04, tag pre-generics): types and functions with
+    compile-time parameters, to remove the repetition in roome.baz ('str' and
+    'name' differ in capacity, 'tokenizer.to_name' and 'to_str' in the result
+    type)
+    => syntax: parameters in '<...>', comma separated, 'NAME' is a constant of
+       the default type, 'NAME type' is a type:
+         func tokenizer.to<T type>() res T { ... }       tz.to<name>()
+         type text<capacity> { array i8[capacity], len } type str = text<127>
+       '<' after a known generic name opens the arguments (a function or
+       generic type name is never an operand of '<')
+    => design: an instance is the definition parsed again with the arguments
+       bound, registered under the mangled name 'to<name>'; inline and
+       noinline compile unchanged; the generic itself is never compiled and
+       errors in its body appear at the first instantiation
+    => stage 1 done (2026-10-04): 'func f<T type>' (functions and methods,
+       inline and noinline), calls 'f<name>(x)' and 'tz.to<name>()'; the
+       instance is the definition parsed again from its start (tokenizer at
+       a position, 'skip_braced_block', 'toc' generic registry, type alias
+       bound while the instance is parsed, the type parameters of the caller
+       hidden), mangled name 'tokenizer.to<name>', label 'tokenizer.to.name';
+       tests 774-779
+    => stage 2 done: 'type text<capacity, other type>' and the alias 'type
+       str = text<127>' (top level only, constants bound in a block of their
+       own), methods 'func text.print()' are made for every instance, also for
+       instances made earlier, and see the constants and types of their
+       instance ('capacity'; 'generic_type_instance' in 'toc', constants are
+       added to the frame of each body); tests 780-785; roome.baz uses 'text<capacity>'
+       with 'str' and 'name' and 'tz.to<T type>()' (5957 instructions, as
+       before); tree-sitter grammar.js updated and checked against the tests
+    => nvim (2026-10-04): baz-lsp.lua resolves generic parameters, type and
+       constant arguments, aliases (methods and fields of the generic type,
+       field types through the arguments of the alias) and the result types
+       of generic calls; highlights.scm and baz-globals.lua know the generic
+       nodes; checked with a headless nvim test over a generics file (22
+       checks, 16 of them failed with the previous plugin); no regression
+       test in the repository yet
+    => left: constants as parameters of functions ('func f<n>()'); a generic
+       type as a type anywhere ('a text<4>' as field or parameter type,
+       needs '>>' split); generic constructors; a call frame that names the
+       instantiating alias for errors in methods of generic types;
+       documentation in etc/readme
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
     bodies do not count as assigning

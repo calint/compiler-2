@@ -1,0 +1,75 @@
+# generic functions: the type parameters are replaced by the type arguments,
+# every list of arguments is one instance
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type name {
+    array i8[4],
+    len,
+}
+
+type str {
+    array i8[8],
+    len,
+}
+
+type tokenizer {
+    text str,
+}
+
+# a generic method
+func tokenizer.to<T type>() res T {
+    res.len = 3
+    res.array = {}
+    array_copy(self.text.array, res.array, res.len)
+}
+
+# a generic function with an argument
+func make<T type>(n) res T {
+    res.len = n
+    res.array = {}
+}
+
+# a generic function calling another with its own parameter
+func make_twice<T type>(n) res T {
+    res = make<T>(n * 2)
+}
+
+# a statement call and two type parameters
+func set_len<T type, U type>(t mut T, u mut U, n) {
+    t.len = n
+    u.len = n + 1
+}
+
+func noinline reset<T type>(t mut T) {
+    t.len = 0
+}
+
+func main() {
+    var tz = tokenizer{ str{ "abcdefg", 7 } }
+
+    var n = tz.to<name>()
+    var s = tz.to<str>()
+    assert(1, n.len == 3 and n.array[0] == 'a' and n.array[2] == 'c')
+    assert(2, s.len == 3 and s.array[1] == 'b')
+
+    # the same instance again
+    var again = tz.to<name>()
+    assert(3, again.len == 3)
+
+    var m = make<name>(2)
+    assert(4, m.len == 2)
+
+    var w = make_twice<str>(3)
+    assert(5, w.len == 6)
+
+    set_len<name, str>(n, s, 5)
+    assert(6, n.len == 5 and s.len == 6)
+
+    reset<name>(n)
+    reset<str>(s)
+    assert(7, n.len == 0 and s.len == 0)
+
+    # a '<' after a field is a comparison
+    assert(8, tz.text.len < tz.text.array[0])
+}

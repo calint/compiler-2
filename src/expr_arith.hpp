@@ -12,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -137,7 +138,7 @@ class expr_arith final : public expression {
             // consume the second character of a previously recognized shift
             // operator
             if (ch == '<' or ch == '>') {
-                (void)tz.next_char();
+                std::ignore = tz.next_char();
             }
 
             exprs_.emplace_back(parse_element(tc, tz, in_args));

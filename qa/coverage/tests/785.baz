@@ -1,0 +1,10 @@
+# a type argument names a type
+
+type pair<first type> {
+    a first,
+}
+
+type p = pair<nothing>
+
+func main() {
+}

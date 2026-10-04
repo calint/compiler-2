@@ -5,6 +5,11 @@
 "{" @comment
 "}" @comment
 
+; the angle brackets of generic parameters and arguments, as the other
+; brackets; '<' and '>' of a comparison are operators
+(generic_parameters ["<" ">"] @comment)
+(generic_arguments ["<" ">"] @comment)
+
 (func_keyword) @keyword.function
 (noinline_keyword) @keyword.function
 (type_keyword) @keyword.function
@@ -86,6 +91,15 @@
 
 (unsized_array_type type: (identifier) @type)
 
+; '<T type, capacity>', '<name, 127>' and 'type str = text<127>'; 'capacity'
+; is a constant like those of 'let'
+(generic_parameter name: (identifier) @type)
+(generic_parameter
+  name: (identifier) @constant
+  !kind)
+(generic_arguments (identifier) @type)
+(generic_alias generic_type: (identifier) @type)
+
 (function_call function: (identifier) @function.call)
 (foo_statement array: (identifier) @variable)
 
@@ -107,6 +121,14 @@
 ; plugin/baz-globals.lua
 ((identifier) @type
   (#baz-type? @type))
+
+; a generic parameter used in a type, an array size or a body, predicates in
+; plugin/baz-globals.lua
+((identifier) @type
+  (#baz-generic-type? @type))
+
+((identifier) @constant
+  (#baz-generic-constant? @constant))
 
 (function_definition name: (identifier) @function)
 (type_definition name: (identifier) @type.definition)

@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -47,6 +48,7 @@ class stmt_call;
 class stmt_block;
 class type;
 class expr_any;
+struct generic_type_instance;
 
 // alignment padding of a size at the limit stays in the signed 64-bit range
 inline constexpr size_t max_storage_size_bytes{
@@ -502,6 +504,22 @@ struct ident_info {
 [[nodiscard]] auto create_stmt_method_call(toc& tc, tokenizer& tz,
                                            stmt_identifier receiver)
     -> std::unique_ptr<statement>;
+
+// parses the method of a generic type again for an instance of the type
+auto instantiate_generic_method(toc& tc, const token& func_tk,
+                                const token& start_tk,
+                                const generic_type_instance& instance) -> void;
+
+// the methods defined so far for a new instance of a generic type
+auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
+    -> void;
+
+// parses the generic function again with the type arguments and returns the
+// name of the instance, an instance made before is reused
+[[nodiscard]] auto
+instantiate_generic_func(toc& tc, const token& call_tk,
+                         std::string_view generic_name,
+                         std::span<const type* const> type_args) -> std::string;
 
 [[nodiscard]] auto is_array_literal(const toc& tc, const token& tk,
                                     tokenizer& tz) -> bool;

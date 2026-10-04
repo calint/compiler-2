@@ -1,0 +1,81 @@
+# generic types: constants and types as parameters, one method for all the
+# instances
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+let name_capacity = 4
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<8>
+type name = text<name_capacity>
+
+func text.size() res {
+    res = array_length(self.array)
+}
+
+func mut text.set(n) {
+    self.len = n
+}
+
+func text.equals(other text) res bool {
+    res = self.len == other.len
+}
+
+# a method defined after the instances
+func text.is_empty() res bool {
+    res = self.len == 0
+}
+
+# the constant and the types of the instance are visible in the methods
+func text.is_full() res bool {
+    res = self.len == capacity
+}
+
+func noinline text.capacity_of() res {
+    res = capacity
+}
+
+type pair<first type, second type> {
+    a first,
+    b second,
+}
+
+func pair.copy_a() res first {
+    res = self.a
+}
+
+type name_str = pair<name, str>
+
+func main() {
+    var s = str
+    var n = name
+    assert(1, s.size() == 8)
+    assert(2, n.size() == 4)
+
+    s.set(3)
+    n.set(3)
+    assert(3, s.len == 3 and n.len == 3)
+    assert(4, not s.is_empty() and n.is_empty() == false)
+
+    var s2 = str
+    s2.set(3)
+    assert(5, s.equals(s2))
+
+    var p = name_str
+    p.a.set(2)
+    p.b.set(5)
+    assert(6, p.a.len == 2 and p.b.len == 5 and p.b.size() == 8)
+
+    n.set(4)
+    assert(7, n.is_full() and not s.is_full())
+    var s_capacity = s.capacity_of()
+    var n_capacity = n.capacity_of()
+    assert(8, s_capacity == 8 and n_capacity == 4)
+
+    var a = p.copy_a()
+    assert(9, a.len == 2)
+}

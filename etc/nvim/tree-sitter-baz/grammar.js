@@ -9,6 +9,7 @@ module.exports = grammar({
 
   conflicts: $ => [
     [$._access_chain],
+    [$.function_call, $._access_chain],
   ],
 
   // Helper function for separated lists that must have at least one element
@@ -83,6 +84,7 @@ module.exports = grammar({
         alias($.noinline_keyword, $.identifier),
         alias($.mut_keyword, $.identifier),
       )),
+      optional($.generic_parameters),
       '(',
       optional($.parameter_list),
       ')',
@@ -94,9 +96,37 @@ module.exports = grammar({
     type_definition: $ => seq(
       $.type_keyword,
       field('name', $.identifier),
-      '{',
-      optional($.member_field_list),
-      '}',
+      choice(
+        seq(
+          optional($.generic_parameters),
+          '{',
+          optional($.member_field_list),
+          '}',
+        ),
+        $.generic_alias,
+      ),
+    ),
+
+    // e.g. 'type str = text<127>'
+    generic_alias: $ => seq(
+      '=',
+      field('generic_type', $.identifier),
+      $.generic_arguments,
+    ),
+
+    // e.g. '<T type, capacity>', 'T type' is a type and 'capacity' a constant
+    generic_parameters: $ => seq('<', sep1($.generic_parameter, ','), '>'),
+
+    generic_parameter: $ => seq(
+      field('name', $.identifier),
+      optional(field('kind', $.type_keyword)),
+    ),
+
+    // e.g. '<name>' or '<name, 127>'
+    generic_arguments: $ => seq(
+      '<',
+      sep1(choice($.identifier, $.number_literal), ','),
+      '>',
     ),
 
     // Function/Type Metadata
@@ -207,6 +237,7 @@ module.exports = grammar({
     function_call: $ => seq(
       optional(seq(field('receiver', $.receiver), '.')),
       field('function', $.identifier),
+      optional($.generic_arguments),
       '(',
       optional($.argument_list),
       ')',

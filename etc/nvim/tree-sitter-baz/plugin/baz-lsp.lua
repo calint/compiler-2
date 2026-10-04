@@ -43,7 +43,14 @@ do
   keywords[word] = true
 end
 
-local renameable_kinds = { variable = true, ["function"] = true, type = true, member = true, method = true }
+local renameable_kinds = {
+  variable = true,
+  ["function"] = true,
+  type = true,
+  member = true,
+  method = true,
+  generic = true,
+}
 
 local function text(node, bufnr)
   return vim.treesitter.get_node_text(node, bufnr)
@@ -103,14 +110,117 @@ local function top_level(root, bufnr, kind, name)
   return nil
 end
 
--- type_name is optional: without it the methods of every type match
+-- the 'generic_parameters' node of a function or type definition, or nil
+local function generic_parameters_of(definition)
+  for child in definition:iter_children() do
+    if child:type() == "generic_parameters" then
+      return child
+    end
+  end
+  return nil
+end
+
+-- the name identifiers of the generic parameters of a definition, in order
+local function generic_parameter_names(definition)
+  local names = {}
+  local list = generic_parameters_of(definition)
+  if list then
+    for parameter in list:iter_children() do
+      if parameter:type() == "generic_parameter" then
+        names[#names + 1] = parameter:field("name")[1]
+      end
+    end
+  end
+  return names
+end
+
+-- the generic parameter that the name refers to inside a definition: its own
+-- parameters, then those of the generic type of a method
+local function generic_declaration(root, bufnr, node, name)
+  local scope = node:parent()
+  while scope do
+    local t = scope:type()
+    if t == "function_definition" or t == "type_definition" then
+      local definitions = { scope }
+      local receiver = scope:field("receiver_type")[1]
+      local type_id = receiver and top_level(root, bufnr, "type", text(receiver, bufnr))
+      if type_id then
+        definitions[#definitions + 1] = type_id:parent()
+      end
+      for _, definition in ipairs(definitions) do
+        for _, id in ipairs(generic_parameter_names(definition)) do
+          if text(id, bufnr) == name then
+            return id
+          end
+        end
+      end
+      return nil
+    end
+    scope = scope:parent()
+  end
+  return nil
+end
+
+-- for an alias 'type str = text<127>': the name of the generic type and the
+-- nodes of the arguments; nil for any other type
+local function alias_of(root, bufnr, type_name)
+  local id = top_level(root, bufnr, "type", type_name)
+  if not id then
+    return nil
+  end
+  for child in id:parent():iter_children() do
+    if child:type() == "generic_alias" then
+      local arguments = {}
+      for part in child:iter_children() do
+        if part:type() == "generic_arguments" then
+          for argument in part:iter_children() do
+            if argument:type() == "identifier" or argument:type() == "number_literal" then
+              arguments[#arguments + 1] = argument
+            end
+          end
+        end
+      end
+      return { generic = text(child:field("generic_type")[1], bufnr), arguments = arguments }
+    end
+  end
+  return nil
+end
+
+-- the type that declares the members of a type: the generic type of an alias
+local function member_type_name(root, bufnr, type_name)
+  local alias = alias_of(root, bufnr, type_name)
+  return alias and alias.generic or type_name
+end
+
+-- inside the members of an alias a type parameter of its generic type means
+-- the argument of the alias; nil when it is not a parameter or the argument
+-- is not a name
+local function alias_argument(root, bufnr, type_name, parameter_name)
+  local alias = alias_of(root, bufnr, type_name)
+  local generic_id = alias and top_level(root, bufnr, "type", alias.generic)
+  if not generic_id then
+    return nil
+  end
+  for i, id in ipairs(generic_parameter_names(generic_id:parent())) do
+    if text(id, bufnr) == parameter_name then
+      local argument = alias.arguments[i]
+      return argument and argument:type() == "identifier" and text(argument, bufnr) or nil
+    end
+  end
+  return nil
+end
+
+-- type_name is optional: without it the methods of every type match; the
+-- methods of an alias 'type str = text<127>' are those of 'text'
 local function methods_named(root, bufnr, name, type_name)
+  local member_type = type_name and member_type_name(root, bufnr, type_name)
   local found = {}
   for child in root:iter_children() do
     local receiver = child:type() == "function_definition" and child:field("receiver_type")[1]
     if receiver then
       local id = child:field("name")[1]
-      if text(id, bufnr) == name and (not type_name or text(receiver, bufnr) == type_name) then
+      local receiver_name = text(receiver, bufnr)
+      if text(id, bufnr) == name and (not type_name or receiver_name == type_name or receiver_name == member_type) then
         found[#found + 1] = id
       end
     end
@@ -197,10 +307,11 @@ end
 
 -- the field name identifier of the type, or nil
 local function field_named(root, bufnr, type_name, name)
+  local member_type = member_type_name(root, bufnr, type_name)
   for _, id in ipairs(fields_named(root, bufnr, name)) do
     -- member_field -> member_field_list -> type_definition
     local definition = id:parent():parent():parent()
-    if text(definition:field("name")[1], bufnr) == type_name then
+    if text(definition:field("name")[1], bufnr) == member_type then
       return id
     end
   end
@@ -288,6 +399,10 @@ local function value_type(root, bufnr, id, depth)
     kind = "variable"
   end
   if not decl then
+    -- a bare type name is the zero value of the type, e.g. 'var tz = tokenizer'
+    if top_level(root, bufnr, "type", name) then
+      return { name = name, array = false }
+    end
     return nil
   end
   return declared_type(root, bufnr, decl, kind, name, depth)
@@ -326,15 +441,58 @@ local function return_type(bufnr, func)
   return declared_type(nil, bufnr, annotation:field("name")[1], "variable", text(annotation:field("name")[1], bufnr), 0)
 end
 
+-- the texts of the '<...>' of a call, in order
+local function call_arguments(call, bufnr)
+  local arguments = {}
+  for child in call:iter_children() do
+    if child:type() == "generic_arguments" then
+      for argument in child:iter_children() do
+        if argument:type() == "identifier" or argument:type() == "number_literal" then
+          arguments[#arguments + 1] = text(argument, bufnr)
+        end
+      end
+    end
+  end
+  return arguments
+end
+
+-- the type of the result of a call: a type parameter of the function means
+-- the argument of the call, one of the generic type of a method means the
+-- argument of the alias, and the 'self' of a constructor of a generic type is
+-- the alias it is called on
+local function call_return_type(root, bufnr, call, func, type_name)
+  local result = return_type(bufnr, func)
+  if not result then
+    return nil
+  end
+  local arguments = call_arguments(call, bufnr)
+  for i, id in ipairs(generic_parameter_names(func)) do
+    if text(id, bufnr) == result.name and arguments[i] then
+      return { name = arguments[i], array = result.array }
+    end
+  end
+  if type_name then
+    local argument = alias_argument(root, bufnr, type_name, result.name)
+    if argument then
+      return { name = argument, array = result.array }
+    end
+    local receiver = func:field("receiver_type")[1]
+    if receiver and text(receiver, bufnr) == result.name and result.name ~= type_name then
+      return { name = type_name, array = result.array }
+    end
+  end
+  return result
+end
+
 local function call_type(root, bufnr, call, depth)
   local name = text(call:field("function")[1], bufnr)
   if not call:field("receiver")[1] then
     local id = top_level(root, bufnr, "function", name)
-    return id and return_type(bufnr, id:parent())
+    return id and call_return_type(root, bufnr, call, id:parent(), nil)
   end
   local type_name = receiver_type_name(root, bufnr, call, depth)
   local method = type_name and methods_named(root, bufnr, name, type_name)[1]
-  return method and return_type(bufnr, method:parent())
+  return method and call_return_type(root, bufnr, call, method:parent(), type_name)
 end
 
 -- the user type of an expression node, or nil
@@ -352,7 +510,14 @@ type_of_node = function(root, bufnr, node, depth)
       return nil
     end
     local field = field_named(root, bufnr, base.name, text(node:named_child(0), bufnr))
-    return field and type_from(bufnr, field:parent():field("type")[1])
+    local field_type = field and type_from(bufnr, field:parent():field("type")[1])
+    -- a field of a type parameter of the generic type has the type of the
+    -- argument of the alias
+    local argument = field_type and alias_argument(root, bufnr, base.name, field_type.name)
+    if argument then
+      field_type.name = argument
+    end
+    return field_type
   end
   if t == "array_indexing" then
     local base = type_of_node(root, bufnr, previous_element(node), depth + 1)
@@ -420,6 +585,10 @@ local function resolve_value(root, bufnr, node)
   if id then
     return resolved(kind, { id })
   end
+  id = generic_declaration(root, bufnr, node, name)
+  if id then
+    return resolved("generic", { id })
+  end
   id = top_level(root, bufnr, "value", name)
   if id then
     return resolved("variable", { id })
@@ -428,6 +597,20 @@ local function resolve_value(root, bufnr, node)
     return resolve_type(root, bufnr, node)
   end
   return nil
+end
+
+-- a type parameter of the enclosing definition hides the types of the file
+local function resolve_type_name(root, bufnr, node)
+  local id = generic_declaration(root, bufnr, node, text(node, bufnr))
+  if id then
+    return resolved("generic", { id })
+  end
+  return resolve_type(root, bufnr, node)
+end
+
+-- an argument in '<...>' is a type or a constant
+local function resolve_generic_argument(root, bufnr, node)
+  return resolve_type_name(root, bufnr, node) or resolve_value(root, bufnr, node)
 end
 
 -- what the identifier refers to: { kind = ..., decls = { declaring nodes } }
@@ -463,7 +646,16 @@ local function resolve(root, bufnr, node)
     return resolved(parent:field("receiver_type")[1] and "method" or "function", { node })
   end
   if type_parents[parent_type] and field == "type" then
+    return resolve_type_name(root, bufnr, node)
+  end
+  if parent_type == "generic_parameter" and field == "name" then
+    return resolved("generic", { node })
+  end
+  if parent_type == "generic_alias" and field == "generic_type" then
     return resolve_type(root, bufnr, node)
+  end
+  if parent_type == "generic_arguments" then
+    return resolve_generic_argument(root, bufnr, node)
   end
   if parent_type == "parameter" or parent_type == "return_annotation" or declaration_types[parent_type] then
     return resolved("variable", { node })

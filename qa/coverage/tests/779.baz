@@ -1,0 +1,8 @@
+# a type parameter is declared with the kind 'type'
+
+func make<T>(n) res {
+    res = n
+}
+
+func main() {
+}

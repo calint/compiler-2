@@ -1,0 +1,38 @@
+# a method of a generic type with a type parameter of its own: the receiver
+# type is the instance, the type parameter is given by the call
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<8>
+type name = text<3>
+
+func mut text.append<T type>(s T) {
+    array_copy(s.array, self.array[self.len], s.len)
+    self.len = self.len + s.len
+}
+
+func main() {
+    var n = name
+    n.array = { 'a', 'b', 'c' }
+    n.len = 3
+
+    var s = str
+    s.append<name>(n)
+    s.append<name>(n)
+    assert(1, s.len == 6 and s.array[3] == 'a' and s.array[5] == 'c')
+
+    # the same capacity
+    var t = str
+    t.append<str>(s)
+    assert(2, t.len == 6)
+
+    # the method exists for the other instance too
+    var u = name
+    u.append<name>(n)
+    assert(3, u.len == 3 and u.array[1] == 'b')
+}

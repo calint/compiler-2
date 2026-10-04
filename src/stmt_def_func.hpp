@@ -5,6 +5,7 @@
 #include <cassert>
 #include <optional>
 #include <ostream>
+#include <print>
 #include <ranges>
 #include <span>
 #include <string>
@@ -18,6 +19,8 @@
 #include "stmt_def_func_param.hpp"
 
 class stmt_def_func final : public statement {
+    // where the definition continues after 'func', an instance starts here
+    token start_tk_;
     token noinline_tk_;
     token mut_tk_;
     token name_tk_;
@@ -30,69 +33,73 @@ class stmt_def_func final : public statement {
     token close_paren_tk_;
     std::optional<func_return_info> returns_;
     stmt_block code_;
+    // the text after 'func' of a generic definition, it is only parsed by its
+    // instances
+    std::string generic_text_;
+    // the constant arguments of the generic type that the method is for
+    std::vector<generic_binding> constants_;
 
   public:
-    stmt_def_func(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()},
+    // 'type_args' are the arguments of an instance of a generic definition, the
+    // tokenizer is then at the start of that definition. 'generic_instance' is
+    // the instance of a generic type that an instance of its method is for
+    stmt_def_func(toc& tc, const token tk, tokenizer& tz,
+                  const std::span<const type* const> type_args = {},
+                  const generic_type_instance* const generic_instance = nullptr)
+        : statement{tk}, start_tk_{tz.cur_position_token()},
+          name_tk_{tz.next_token()},
           open_paren_tk_{tz.is_next_char_token('(')} {
 
-        if (name_tk_.is_text("noinline") and open_paren_tk_.is_empty()) {
-            noinline_tk_ = name_tk_;
-            name_tk_ = tz.next_token();
-            open_paren_tk_ = tz.is_next_char_token('(');
-        }
-
-        // a function named 'mut' is followed by '('
-        if (name_tk_.is_text("mut") and open_paren_tk_.is_empty()) {
-            mut_tk_ = name_tk_;
-            name_tk_ = tz.next_token();
-            open_paren_tk_ = tz.is_next_char_token('(');
-        }
-
-        name_ = name_tk_.text();
+        parse_modifiers(tz);
 
         toc::assert_name_not_reserved(name_tk_);
 
-        // e.g. 'func list.add(x)'
-        if (open_paren_tk_.is_empty()) {
-            method_dot_tk_ = tz.is_next_char_token('.');
-            if (not method_dot_tk_.is_empty()) {
-                parse_method_name(tc, tz);
-                open_paren_tk_ = tz.is_next_char_token('(');
+        // e.g. 'func text.print()' of the generic type 'text'
+        if (generic_instance == nullptr and is_generic_method_head(tc, tz)) {
+            define_generic_method(tc, tk, tz);
+            return;
+        }
+
+        // e.g. 'text' in 'func text.print()' is the instance of the type
+        if (generic_instance != nullptr) {
+            bind_generic_instance(tc, *generic_instance);
+        }
+
+        parse_receiver(tc, tz);
+
+        // e.g. 'func tokenizer.to<T type>()'
+        std::vector<token> param_tks;
+        if (open_paren_tk_.is_empty() and
+            tz.peek_char_after_whitespace() == '<') {
+
+            param_tks = parse_type_params(tz);
+
+            if (type_args.empty()) {
+                define_generic(tc, tk, tz, param_tks, generic_instance);
+                return;
             }
+
+            assert(type_args.size() == param_tks.size());
+
+            name_ = toc::generic_instance_name(name_, type_args);
+            bind_type_args(tc, param_tks, type_args);
+
+            open_paren_tk_ = tz.is_next_char_token('(');
         }
 
-        if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected '(' after function name"};
+        assert(type_args.empty() or not param_tks.empty());
+
+        parse_signature(tc, tz);
+
+        parse_body(tc, tz);
+
+        for (const token& param_tk : param_tks) {
+            tc.unbind_type_alias(param_tk.text());
         }
 
-        parse_params(tc, tz);
-
-        parse_returns(tc, tz);
-
-        assert_mut_has_receiver();
-
-        // known only after the result: a constructor builds 'self' instead
-        if (is_method()) {
-            add_self_param(tc);
+        if (generic_instance != nullptr) {
+            unbind_generic_instance(tc, *generic_instance);
         }
-
-        tc.add_func(name_tk_, name_, statement::get_type(), this);
-
-        // establish the function scope before parsing its body
-        tc.enter_func(name(), {}, {}, is_inlined());
-
-        // register variables without emitting output so that the function body
-        // can be parsed
-
-        // note: 'parse_returns' only creates a return with a name
-        assert(not returns_ or not returns_->ident_tk.text().empty());
-
-        add_signature_vars(tc, 0, false, {});
-
-        code_ = {tc, tz, true};
-
-        tc.exit_func(name());
     }
 
     stmt_def_func() = default;
@@ -102,6 +109,13 @@ class stmt_def_func final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
+        if (not generic_text_.empty()) {
+            statement::source_to(os);
+            std::print(os, "{}", generic_text_);
+
+            return;
+        }
+
         source_def_to(os, false);
         code_.source_to(os);
     }
@@ -113,6 +127,14 @@ class stmt_def_func final : public statement {
     //
     // class methods
     //
+
+    // the constant arguments of the generic type of a method, in the frame of
+    // the body
+    auto add_constants(toc& tc, const size_t indent) const -> void {
+        for (const generic_binding& constant : constants_) {
+            tc.add_const(name_tk_, indent, constant.name, constant.value);
+        }
+    }
 
     [[nodiscard]] auto array_param_count() const -> size_t {
         return static_cast<size_t>(
@@ -126,10 +148,11 @@ class stmt_def_func final : public statement {
         -> std::string {
 
         if (array_lengths.empty()) {
-            return std::format("func.{}", name());
+            return std::format("func.{}", label_name(name()));
         }
 
-        return std::format("func.{}.{}", name(), instance_path(array_lengths));
+        return std::format("func.{}.{}", label_name(name()),
+                           instance_path(array_lengths));
     }
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
@@ -151,6 +174,7 @@ class stmt_def_func final : public statement {
                       array_lengths.empty() ? std::string{}
                                             : instance_path(array_lengths),
                       {}, false, x.frame_base_register());
+        add_constants(tc, indent + 1);
         add_signature_vars(tc, indent + 1, true, array_lengths);
         code_.compile(tc, indent, ident_info::make_empty());
         x.return_function(indent + 1);
@@ -333,6 +357,106 @@ class stmt_def_func final : public statement {
                                  "'mut' requires a method 'type.name'"};
     }
 
+    // the type name of the method and the type arguments name their types, the
+    // constants are added to the frame of the body
+    auto bind_generic_instance(toc& tc, const generic_type_instance& instance)
+        -> void {
+
+        tc.bind_type_alias(name_tk_, name_tk_.text(), *instance.type_ptr);
+
+        for (const generic_binding& binding : instance.bindings) {
+            if (binding.type_ptr == nullptr) {
+                constants_.push_back(binding);
+                continue;
+            }
+
+            tc.bind_type_alias(name_tk_, binding.name, *binding.type_ptr);
+        }
+    }
+
+    // the text after 'func' is kept for 'source_to' and for the instances,
+    // errors in it are found when an instance is parsed. a method of a generic
+    // type keeps the instance it was made for
+    auto define_generic(toc& tc, const token& func_tk, tokenizer& tz,
+                        const std::span<const token> param_tks,
+                        const generic_type_instance* const generic_instance)
+        -> void {
+
+        std::vector<std::string> param_names;
+        for (const token& param_tk : param_tks) {
+            param_names.emplace_back(param_tk.text());
+        }
+
+        std::optional<generic_type_instance> receiver_instance;
+        if (generic_instance != nullptr) {
+            receiver_instance = *generic_instance;
+        }
+
+        tc.add_generic_func(name_tk_, name_, func_tk, start_tk_,
+                            std::move(param_names),
+                            std::move(receiver_instance));
+
+        keep_generic_text(tc, func_tk, tz);
+
+        if (generic_instance != nullptr) {
+            unbind_generic_instance(tc, *generic_instance);
+        }
+    }
+
+    // e.g. 'func text.print()' of the generic type 'text': every instance of
+    // the type gets the method, also those made after this definition
+    auto define_generic_method(toc& tc, const token& func_tk, tokenizer& tz)
+        -> void {
+
+        const std::string_view type_name{name_tk_.text()};
+
+        tc.add_generic_method(type_name, func_tk, start_tk_);
+
+        keep_generic_text(tc, func_tk, tz);
+
+        for (const generic_type_instance& instance :
+             tc.get_generic_type_instances(type_name)) {
+
+            instantiate_generic_method(tc, func_tk, start_tk_, instance);
+        }
+    }
+
+    // e.g. the 'text' of 'func text.print()'
+    [[nodiscard]] auto is_generic_method_head(const toc& tc,
+                                              tokenizer& tz) const -> bool {
+
+        return open_paren_tk_.is_empty() and
+               tc.is_generic_type(name_tk_.text()) and
+               tz.peek_char_after_whitespace() == '.';
+    }
+
+    auto keep_generic_text(const toc& tc, const token& func_tk, tokenizer& tz)
+        -> void {
+
+        tz.skip_braced_block();
+
+        const size_t begin_ix{func_tk.source_end_index()};
+        generic_text_ = tc.source().substr(
+            begin_ix, tz.cur_char_index_in_source() - begin_ix);
+    }
+
+    // the function scope is established before the body is parsed, its
+    // variables are registered without emitting output
+    auto parse_body(toc& tc, tokenizer& tz) -> void {
+        tc.enter_func(name(), {}, {}, is_inlined());
+
+        add_constants(tc, 0);
+
+        // note: 'parse_returns' only creates a return with a name
+        assert(not returns_ or not returns_->ident_tk.text().empty());
+
+        add_signature_vars(tc, 0, false, {});
+
+        code_ = {tc, tz, true};
+
+        tc.exit_func(name());
+    }
+
     // 'name_tk_' is the receiver type, a method gets an implicit first
     // parameter 'self' of that type and a constructor builds a 'self' of it
     auto parse_method_name(const toc& tc, tokenizer& tz) -> void {
@@ -356,6 +480,24 @@ class stmt_def_func final : public statement {
 
         name_ =
             std::format("{}.{}", receiver_type.name(), method_name_tk_.text());
+    }
+
+    // 'noinline' and 'mut' before the name; a function can be named like them
+    // when '(' follows
+    auto parse_modifiers(tokenizer& tz) -> void {
+        if (name_tk_.is_text("noinline") and open_paren_tk_.is_empty()) {
+            noinline_tk_ = name_tk_;
+            name_tk_ = tz.next_token();
+            open_paren_tk_ = tz.is_next_char_token('(');
+        }
+
+        if (name_tk_.is_text("mut") and open_paren_tk_.is_empty()) {
+            mut_tk_ = name_tk_;
+            name_tk_ = tz.next_token();
+            open_paren_tk_ = tz.is_next_char_token('(');
+        }
+
+        name_ = name_tk_.text();
     }
 
     auto parse_param_delimiter(tokenizer& tz) -> void {
@@ -382,6 +524,21 @@ class stmt_def_func final : public statement {
 
             close_paren_tk_ = tz.is_next_char_token(')');
         }
+    }
+
+    // e.g. 'func list.add(x)'
+    auto parse_receiver(const toc& tc, tokenizer& tz) -> void {
+        if (not open_paren_tk_.is_empty()) {
+            return;
+        }
+
+        method_dot_tk_ = tz.is_next_char_token('.');
+        if (method_dot_tk_.is_empty()) {
+            return;
+        }
+
+        parse_method_name(tc, tz);
+        open_paren_tk_ = tz.is_next_char_token('(');
     }
 
     // 'name [type]' of the returned value, without a name the type is void
@@ -414,6 +571,26 @@ class stmt_def_func final : public statement {
         set_type(tp);
     }
 
+    // '(parameters) [result]', then the calls after it know the function
+    auto parse_signature(toc& tc, tokenizer& tz) -> void {
+        if (open_paren_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected '(' after function name"};
+        }
+
+        parse_params(tc, tz);
+
+        parse_returns(tc, tz);
+
+        assert_mut_has_receiver();
+
+        // known only after the result: a constructor builds 'self' instead
+        if (is_method()) {
+            add_self_param(tc);
+        }
+
+        tc.add_func(name_tk_, name_, statement::get_type(), this);
+    }
+
     // e.g. 'func point.at(x, y) self' builds a 'point'
     auto set_constructor_result(const toc& tc, const token& self_tk,
                                 const token& type_tk) -> void {
@@ -439,6 +616,18 @@ class stmt_def_func final : public statement {
     // statics
     //
 
+    // the type parameters name their arguments while the instance is parsed
+    static auto bind_type_args(toc& tc, const std::span<const token> param_tks,
+                               const std::span<const type* const> type_args)
+        -> void {
+
+        for (const auto [param_tk, type_arg] :
+             std::views::zip(param_tks, type_args)) {
+
+            tc.bind_type_alias(param_tk, param_tk.text(), *type_arg);
+        }
+    }
+
     // e.g. 'len.4.8', unlike the 'L.C' pairs of inlined calls
     [[nodiscard]] static auto
     instance_path(const std::span<const size_t> array_lengths) -> std::string {
@@ -450,5 +639,57 @@ class stmt_def_func final : public statement {
         }
 
         return path;
+    }
+
+    // a label has no '<', '>' or ',', e.g. 'tokenizer.to<name>' is
+    // 'tokenizer.to.name'
+    [[nodiscard]] static auto label_name(const std::string_view name)
+        -> std::string {
+
+        std::string label;
+
+        for (const char ch : name) {
+            if (ch == '<' or ch == ',') {
+                label.push_back('.');
+            } else if (ch != '>') {
+                label.push_back(ch);
+            }
+        }
+
+        return label;
+    }
+
+    // e.g. '<T type, U type>', a generic function has type parameters only
+    [[nodiscard]] static auto parse_type_params(tokenizer& tz)
+        -> std::vector<token> {
+
+        std::vector<token> param_tks;
+
+        for (const generic_param& param : generic_param::parse(tz)) {
+            if (not param.is_type) {
+                throw compiler_exception{
+                    param.name_tk,
+                    std::format("generic parameter '{}' of a function must "
+                                "have the kind 'type', e.g. '{} type'",
+                                param.name_tk.text(), param.name_tk.text())};
+            }
+
+            param_tks.emplace_back(param.name_tk);
+        }
+
+        return param_tks;
+    }
+
+    static auto unbind_generic_instance(toc& tc,
+                                        const generic_type_instance& instance)
+        -> void {
+
+        tc.unbind_type_alias(instance.generic_name);
+
+        for (const generic_binding& binding : instance.bindings) {
+            if (binding.type_ptr != nullptr) {
+                tc.unbind_type_alias(binding.name);
+            }
+        }
     }
 };

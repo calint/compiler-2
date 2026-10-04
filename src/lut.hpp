@@ -16,6 +16,11 @@ template <class T> class lut final {
     std::vector<elem> elems_;
 
   public:
+    auto erase(const std::string_view key) -> void {
+        std::erase_if(elems_,
+                      [key](const elem& e) -> bool { return e.key == key; });
+    }
+
     // note: for clarity, get_const_ref instead of overloading get_ref
     [[nodiscard]] auto get_const_ref(const std::string_view key) const
         -> const T& {

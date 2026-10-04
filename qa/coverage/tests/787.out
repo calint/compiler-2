@@ -1,0 +1,2 @@
+
+787.baz:16:7: generic function 'str.append' needs type arguments, e.g. 'append<...>'

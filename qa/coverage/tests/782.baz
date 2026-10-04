@@ -1,0 +1,11 @@
+# a generic type takes as many arguments as parameters
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<4, 5>
+
+func main() {
+}

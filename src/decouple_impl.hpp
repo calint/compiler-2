@@ -96,6 +96,78 @@ auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
                                        tz);
 }
 
+// declared in 'decouple.hpp'
+// called from 'stmt_call'
+auto instantiate_generic_func(toc& tc, const token& call_tk,
+                              const std::string_view generic_name,
+                              const std::span<const type* const> type_args)
+    -> std::string {
+
+    const generic_func_info generic{tc.get_generic_func(generic_name)};
+
+    if (type_args.size() != generic.param_names.size()) {
+        throw compiler_exception{
+            call_tk,
+            std::format("generic function '{}' takes {} type argument(s), "
+                        "got {}",
+                        generic_name, generic.param_names.size(),
+                        type_args.size())};
+    }
+
+    std::string name{toc::generic_instance_name(generic_name, type_args)};
+
+    if (tc.is_func(name)) {
+        return name;
+    }
+
+    tokenizer tz{tc.source(), generic.start_tk};
+
+    // an error in the instance reports the call that needed it
+    tc.enter_generic_instance();
+
+    try {
+        tc.add_func_instance(std::make_shared<stmt_def_func>(
+            tc, generic.func_tk, tz, type_args,
+            generic.receiver_instance ? &*generic.receiver_instance : nullptr));
+    } catch (compiler_exception& e) {
+        e.add_call_frame(call_tk, name);
+        throw;
+    }
+
+    tc.exit_generic_instance();
+
+    return name;
+}
+
+// declared in 'decouple.hpp'
+// called from 'stmt_def_func' and 'stmt_def_type'
+auto instantiate_generic_method(toc& tc, const token& func_tk,
+                                const token& start_tk,
+                                const generic_type_instance& instance) -> void {
+
+    tokenizer tz{tc.source(), start_tk};
+
+    tc.enter_generic_instance();
+
+    tc.add_func_instance(std::make_shared<stmt_def_func>(
+        tc, func_tk, tz, std::span<const type* const>{}, &instance));
+
+    tc.exit_generic_instance();
+}
+
+// declared in 'decouple.hpp'
+// called from 'stmt_def_type'
+auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
+    -> void {
+
+    for (const generic_method_info& method :
+         tc.get_generic_methods(instance.generic_name)) {
+
+        instantiate_generic_method(tc, method.func_tk, method.start_tk,
+                                   instance);
+    }
+}
+
 // a type name hidden by a var or alias is an identifier instead
 static auto is_type_name_followed_by(const toc& tc, const token& tk,
                                      tokenizer& tz, const char next) -> bool {
@@ -219,6 +291,14 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, t, tz);
     }
 
+    // e.g. 'show<name>(x)', the call reads the type arguments
+    if (tc.is_generic_func(tk.text()) and
+        tz.peek_char_after_whitespace() == '<') {
+
+        return std::make_unique<stmt_call>(tc, std::move(uops), tk, token{},
+                                           tz);
+    }
+
     if (is_constructor_call(tc, tk, tz)) {
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz);
     }
@@ -326,6 +406,17 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
 
     if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
         stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
+
+        assert_call_type(tp);
+
+        return;
+    }
+
+    if (tc.is_generic_func(tok().text()) and
+        tz.peek_char_after_whitespace() == '<') {
+
+        stmt_call_ =
+            std::make_shared<stmt_call>(tc, unary_ops{}, tok(), token{}, tz);
 
         assert_call_type(tp);
 

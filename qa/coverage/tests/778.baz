@@ -1,0 +1,14 @@
+# the body of a generic function is checked for the type argument of a call
+
+type name {
+    array i8[4],
+    len,
+}
+
+func make<T type>(n) res T {
+    res.size = n
+}
+
+func main() {
+    var m = make<name>(2)
+}

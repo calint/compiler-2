@@ -174,6 +174,13 @@ class stmt_block final : public statement {
             return create_stmt_method_call(tc, tz, std::move(si));
         }
 
+        // e.g. 'show<name>(x)', the call reads the type arguments
+        if (tc.is_generic_func(si.identifier()) and
+            tz.peek_char_after_whitespace() == '<') {
+
+            return create_stmt_call(tc, tz, si, token{});
+        }
+
         if (const token t{tz.is_next_char_token('=')}; not t.is_empty()) {
             return std::make_unique<stmt_assign_var>(
                 tc, tz, std::move(si), t, si.is_array(), si.array_count());

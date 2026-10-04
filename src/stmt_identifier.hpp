@@ -512,8 +512,13 @@ class stmt_identifier : public statement {
             return false;
         }
 
-        // a method and a field may share a name, only the call has '('
-        if (tz.peek_char_after_whitespace() == '(') {
+        // a method and a field may share a name, only the call has '(' or the
+        // type arguments of a generic method
+        if (tz.peek_char_after_whitespace() == '(' or
+            (tz.peek_char_after_whitespace() == '<' and
+             tc.is_generic_func(
+                 std::format("{}.{}", path_type.name(), name_tk.text())))) {
+
             return true;
         }
 

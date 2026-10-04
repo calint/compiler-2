@@ -2383,3 +2383,46 @@ SRC=772 && EXP=255 && RUN_ERR
 
 # an array argument must have the element type of the parameter
 SRC=773 && COMPERR
+
+# generic functions: type parameters replaced per list of type arguments
+SRC=774 && EXP=0 && RUN
+
+# a generic function is called with type arguments
+SRC=775 && COMPERR
+
+# a generic function takes as many type arguments as type parameters
+SRC=776 && COMPERR
+
+# a type argument names a type
+SRC=777 && COMPERR
+
+# the body of a generic function is checked per instance
+SRC=778 && COMPERR
+
+# a type parameter has the kind 'type'
+SRC=779 && COMPERR
+
+# generic types: constants and types as parameters, one method for all the
+# instances of a type
+SRC=780 && EXP=0 && RUN
+
+# an alias names a generic type
+SRC=781 && COMPERR
+
+# a generic type takes as many arguments as parameters
+SRC=782 && COMPERR
+
+# the argument of a constant parameter is a number or a constant
+SRC=783 && COMPERR
+
+# a generic type is used with arguments
+SRC=784 && COMPERR
+
+# the argument of a type parameter names a type
+SRC=785 && COMPERR
+
+# a method of a generic type with a type parameter of its own
+SRC=786 && EXP=0 && RUN
+
+# the type parameter of such a method is given by the call
+SRC=787 && COMPERR

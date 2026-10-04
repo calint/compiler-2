@@ -27,6 +27,8 @@ class stmt_call : public expression {
     // e.g. the '.' and 'at' in 'point.at(1, 2)', 'tok()' is the type
     token constructor_dot_tk_;
     token constructor_name_tk_;
+    // e.g. '<', 'name' and '>' in 'tz.to<name>()'
+    std::vector<token> generic_tks_;
     std::string func_name_;
     token open_paren_tk_;
     std::vector<expr_any> args_;
@@ -43,6 +45,12 @@ class stmt_call : public expression {
               const token open_paren_tk, tokenizer& tz)
         : expression{tk, std::move(uops)}, func_name_{tk.text()},
           open_paren_tk_{open_paren_tk} {
+
+        // e.g. 'convert<i8>(x)', the caller found the '<' or the '('
+        if (tc.is_generic_func(func_name_)) {
+            func_name_ = parse_generic_arguments(tc, tz);
+            open_paren_tk_ = tz.is_next_char_token('(');
+        }
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
@@ -66,7 +74,7 @@ class stmt_call : public expression {
               std::format("{}.{}", receiver.get_type().name(),
                           receiver.method_name_token().text()),
           },
-          open_paren_tk_{tz.is_next_char_token('(')} {
+          open_paren_tk_{read_open_paren(tc, tz)} {
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
@@ -889,6 +897,8 @@ class stmt_call : public expression {
 
         tc.enter_func(func.name(), new_call_path, ret_jmp_label);
 
+        func.add_constants(tc, indent + 1);
+
         // add aliases
         for (const alias_info& e : aliases_to_add) {
             x.comment_alias(tok(), indent + 1, e.from, e.to, e.lea);
@@ -1201,6 +1211,52 @@ class stmt_call : public expression {
         }
     }
 
+    // the instance of a generic function, e.g. '<name>' in 'tz.to<name>()'
+    auto parse_generic_arguments(toc& tc, tokenizer& tz) -> std::string {
+        const token open_tk{tz.is_next_char_token('<')};
+        if (open_tk.is_empty()) {
+            throw compiler_exception{
+                tok(), std::format("generic function '{}' needs type "
+                                   "arguments, e.g. '{}<...>'",
+                                   func_name_, tok().text())};
+        }
+
+        generic_tks_.emplace_back(open_tk);
+
+        std::vector<const type*> type_args;
+
+        while (true) {
+            const token type_tk{tz.next_token()};
+            type_args.emplace_back(
+                &tc.get_type_or_throw(type_tk, type_tk.text()));
+            generic_tks_.emplace_back(type_tk);
+
+            const token close_tk{tz.is_next_char_token('>')};
+            if (not close_tk.is_empty()) {
+                generic_tks_.emplace_back(close_tk);
+                break;
+            }
+
+            const token delim_tk{tz.is_next_char_token(',')};
+            if (delim_tk.is_empty()) {
+                throw compiler_exception{
+                    tz, "expected ',' or '>' after type argument"};
+            }
+            generic_tks_.emplace_back(delim_tk);
+        }
+
+        return instantiate_generic_func(tc, tok(), func_name_, type_args);
+    }
+
+    // a generic function has its type arguments before the '('
+    auto read_open_paren(toc& tc, tokenizer& tz) -> token {
+        if (tc.is_generic_func(func_name_)) {
+            func_name_ = parse_generic_arguments(tc, tz);
+        }
+
+        return tz.is_next_char_token('(');
+    }
+
     // e.g. 'foo', 'lst.add' or 'point.at'
     auto source_callee_to(std::ostream& os) const -> void {
         if (is_constructor()) {
@@ -1212,6 +1268,7 @@ class stmt_call : public expression {
 
         if (not is_method()) {
             expression::source_to(os);
+            source_generic_to(os);
             return;
         }
 
@@ -1219,6 +1276,13 @@ class stmt_call : public expression {
         args_.front().source_to(os);
         method_dot_tk_.source_to(os);
         tok().source_to(os);
+        source_generic_to(os);
+    }
+
+    auto source_generic_to(std::ostream& os) const -> void {
+        for (const token& t : generic_tks_) {
+            t.source_to(os);
+        }
     }
 
     [[noreturn]] auto throw_missing_argument(const tokenizer& tz,
