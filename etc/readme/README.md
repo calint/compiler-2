@@ -32,7 +32,7 @@ compiler writes the binary image itself.
   * compile time rejection of calls where a result or argument may share
     storage
 * inlined functions
-* limited support for non-inlined functions
+* support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
 * basic support for generics
