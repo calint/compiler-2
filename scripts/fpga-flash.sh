@@ -2,10 +2,11 @@
 set -eu
 
 print_usage() {
-    echo "usage: fpga-flash.sh <20k|9k> [source file]"
+    echo "usage: fpga-flash.sh <20k|9k> [source file] [usb device]"
     echo
     echo "  20k | 9k      required, the board to flash (tangnano20k or tangnano9k)"
     echo "  source file   optional, defaults to etc/roome/roome.baz"
+    echo "  usb device    optional, <bus>:<device> as shown by lsusb, defaults to the first ft2232 found"
 }
 
 BOARD="${1:-}"
@@ -25,6 +26,8 @@ SOURCE_FILE=""
 if [ -n "${2:-}" ]; then
     SOURCE_FILE=$(realpath "$2")
 fi
+
+USB_DEVICE="${3:-}"
 
 cd "$(dirname "$0")"
 
@@ -63,7 +66,29 @@ if [ "$FILE_SIZE" -gt "$FIRMWARE_FILE_MAX_SIZE_BYTES" ]; then
     exit 1
 fi
 
+if [ -n "$USB_DEVICE" ]; then
+    set -- --busdev-num "$USB_DEVICE"
+else
+    set --
+fi
+
+# check the usb device before flashing to avoid the loader's raw error output
+if ! DETECT_OUTPUT=$(openFPGALoader "$@" --detect 2>&1); then
+    echo
+    if [ -n "$USB_DEVICE" ]; then
+        printf '\033[31musb device '"'%s'"' not found or not usable.\033[0m\n' "$USB_DEVICE"
+    else
+        printf '\033[31mno usb device found for the board.\033[0m\n'
+    fi
+    echo "check that the board is connected and powered, list devices with lsusb,"
+    echo "and pass an alternative as the third argument: <bus>:<device>"
+    echo
+    echo "loader output:"
+    echo "$DETECT_OUTPUT" | sed 's/^/  /'
+    exit 1
+fi
+
 echo "flashing '$FIRMWARE_FILE' to '$BOARD_NAME' at offset $FIRMWARE_FLASH_OFFSET"
 echo
 
-openFPGALoader --offset "$FIRMWARE_FLASH_OFFSET" --external-flash "$FIRMWARE_FILE"
+openFPGALoader "$@" --offset "$FIRMWARE_FLASH_OFFSET" --external-flash "$FIRMWARE_FILE"

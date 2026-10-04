@@ -27,8 +27,15 @@ with open(input_path, "rb") as f:
     lines = f.read().splitlines(keepends=True)
 
 # the board sends bare line feeds so the bytes are compared unchanged
-port = serial.Serial(device, 115200, bytesize=8, parity="N", stopbits=1,
-                     xonxoff=False, rtscts=False, dsrdtr=False, timeout=echo_timeout)
+try:
+    port = serial.Serial(device, 115200, bytesize=8, parity="N", stopbits=1,
+                         xonxoff=False, rtscts=False, dsrdtr=False, timeout=echo_timeout)
+except serial.SerialException as error:
+    print(f"roome: {error}")
+    print("roome: check that the board is connected, list devices with"
+          " 'ls /dev/ttyUSB*', and pass the right one: fpga-test.sh <serial device>")
+    sys.exit(1)
+
 port.reset_input_buffer()
 received = bytearray()
 
