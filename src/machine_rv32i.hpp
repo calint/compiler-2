@@ -601,6 +601,9 @@ class machine_rv32i : public machine {
         const address_scope scope{*this, frame_address, frame_size_bytes};
 
         comment(src_loc_tk, indent, "frame capacity check begin");
+        comment(src_loc_tk, indent,
+                "callee storage starts after the caller's storage ({})",
+                format_address(frame_address));
 
         const operand start{
             alloc_scratch_register(src_loc_tk, indent, default_type()),

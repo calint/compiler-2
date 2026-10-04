@@ -416,6 +416,7 @@ main:
                 func.tokenizer.set_line.1022.16.1033.5.end:
                 # [1023:13] parse_input(eid, tz)
                 # [1023:13] frame capacity check begin
+                # [1023:13] callee storage starts after the caller's storage (s0 - 1880)
                 # [1023:13] allocate scratch register -> t2
                 # [1023:13] allocate scratch register -> t3
                 addi t2, s0, -1880
@@ -3735,6 +3736,7 @@ main:
         func.printer.println.1055.13.end:
         # [1056:9] parse_input(eid, tz)
         # [1056:9] frame capacity check begin
+        # [1056:9] callee storage starts after the caller's storage (s0 - 1888)
         # [1056:9] allocate scratch register -> t0
         # [1056:9] allocate scratch register -> t1
         addi t0, s0, -1888
