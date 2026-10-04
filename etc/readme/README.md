@@ -13,6 +13,7 @@ compiler writes the binary image itself.
 * super-loop program with non-reentrant inlined functions
 * support for non-inlined functions
 * opt-in checks that makes the language ub-free
+* basic support for generics
 
 ## Supports
 
@@ -34,6 +35,7 @@ compiler writes the binary image itself.
 * limited support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
+* basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`
@@ -131,10 +133,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    56           6351           2591          20015
+C/C++ Header                    55           6345           2592          19997
 C++                              1            106             25            399
 -------------------------------------------------------------------------------
-SUM:                            57           6457           2616          20414
+SUM:                            56           6451           2617          20396
 -------------------------------------------------------------------------------
 ```
 

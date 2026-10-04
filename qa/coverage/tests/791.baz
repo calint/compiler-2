@@ -1,0 +1,11 @@
+# the arguments of an alias are not empty
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<>
+
+func main() {
+}

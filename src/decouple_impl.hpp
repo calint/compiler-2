@@ -106,10 +106,12 @@ static auto add_generic_instance(toc& tc, const token& func_tk,
 
     tokenizer tz{tc.source(), start_tk};
 
-    const generic_instance_scope scope{tc};
+    tc.enter_generic_instance();
 
     tc.add_func_instance(
         std::make_shared<stmt_def_func>(tc, func_tk, tz, type_args, receiver));
+
+    tc.exit_generic_instance();
 }
 
 // declared in 'decouple.hpp'
@@ -119,7 +121,7 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
                               const std::span<const type* const> type_args)
     -> std::string {
 
-    const generic_func_info generic{tc.generics().get_func(generic_name)};
+    const generic_func_info& generic{tc.generics().get_func(generic_name)};
 
     if (type_args.size() != generic.param_names.size()) {
         throw compiler_exception{
@@ -169,6 +171,14 @@ auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
         instantiate_generic_method(tc, method.func_tk, method.start_tk,
                                    instance);
     }
+}
+
+// declared in 'decouple.hpp'
+auto is_generic_call(const toc& tc, const std::string_view name, tokenizer& tz)
+    -> bool {
+
+    return tc.generics().has_func(name) and
+           tz.peek_char_after_whitespace() == '<';
 }
 
 // a type name hidden by a var or alias is an identifier instead
@@ -295,9 +305,7 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     }
 
     // e.g. 'show<name>(x)', the call reads the type arguments
-    if (tc.generics().has_func(tk.text()) and
-        tz.peek_char_after_whitespace() == '<') {
-
+    if (is_generic_call(tc, tk.text(), tz)) {
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, token{},
                                            tz);
     }
@@ -415,9 +423,7 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
         return;
     }
 
-    if (tc.generics().has_func(tok().text()) and
-        tz.peek_char_after_whitespace() == '<') {
-
+    if (is_generic_call(tc, tok().text(), tz)) {
         stmt_call_ =
             std::make_shared<stmt_call>(tc, unary_ops{}, tok(), token{}, tz);
 

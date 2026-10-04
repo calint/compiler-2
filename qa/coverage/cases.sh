@@ -2426,3 +2426,15 @@ SRC=786 && EXP=0 && RUN
 
 # the type parameter of such a method is given by the call
 SRC=787 && COMPERR
+
+# the type arguments of a call end with '>'
+SRC=788 && COMPERR
+
+# the type arguments of a call are not empty
+SRC=789 && COMPERR
+
+# the arguments of an alias end with '>'
+SRC=790 && COMPERR
+
+# the arguments of an alias are not empty
+SRC=791 && COMPERR

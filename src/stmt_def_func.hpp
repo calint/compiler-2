@@ -17,9 +17,20 @@
 #include "decouple.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
-#include "type_alias_scope.hpp"
 
 class stmt_def_func final : public statement {
+    // what a function has from generics: a generic definition is only text and
+    // the method of a generic type has the constants of its instance
+    struct generic_part {
+        // the text after 'func', only the instances of the definition parse it
+        std::string text;
+        std::vector<generic_binding> constants;
+
+        [[nodiscard]] auto is_definition() const -> bool {
+            return not text.empty();
+        }
+    };
+
     // where the definition continues after 'func', an instance starts here
     token start_tk_;
     token noinline_tk_;
@@ -34,11 +45,7 @@ class stmt_def_func final : public statement {
     token close_paren_tk_;
     std::optional<func_return_info> returns_;
     stmt_block code_;
-    // the text after 'func' of a generic definition, it is only parsed by its
-    // instances
-    std::string generic_text_;
-    // the constant arguments of the generic type that the method is for
-    std::vector<generic_binding> constants_;
+    generic_part generic_;
 
   public:
     // 'type_args' are the arguments of an instance of a generic definition, the
@@ -71,14 +78,29 @@ class stmt_def_func final : public statement {
 
         parse_receiver(tc, tz);
 
-        // e.g. 'func tokenizer.to<T type>()'
-        if (is_generic_head(tz)) {
-            parse_generic(tc, aliases, tk, tz, type_args, generic_instance);
-        } else {
+        // e.g. 'func list.add(x)' or 'func f(x)'
+        if (not is_generic_head(tz)) {
             assert(type_args.empty());
 
             parse_function(tc, tz);
+            return;
         }
+
+        // e.g. 'func tokenizer.to<T type>()' is kept for its instances
+        const std::vector<token> param_tks{parse_type_params(tz)};
+        if (type_args.empty()) {
+            define_generic(tc, tk, tz, param_tks, generic_instance);
+            return;
+        }
+
+        // an instance is the definition parsed with the type parameters bound
+        assert(type_args.size() == param_tks.size());
+
+        name_ = generic_registry::instance_name(name_, type_args);
+        bind_type_args(aliases, param_tks, type_args);
+        open_paren_tk_ = tz.is_next_char_token('(');
+
+        parse_function(tc, tz);
     }
 
     stmt_def_func() = default;
@@ -88,9 +110,9 @@ class stmt_def_func final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        if (not generic_text_.empty()) {
+        if (generic_.is_definition()) {
             statement::source_to(os);
-            std::print(os, "{}", generic_text_);
+            std::print(os, "{}", generic_.text);
 
             return;
         }
@@ -110,7 +132,7 @@ class stmt_def_func final : public statement {
     // the constant arguments of the generic type of a method, in the frame of
     // the body
     auto add_constants(toc& tc, const size_t indent) const -> void {
-        for (const generic_binding& constant : constants_) {
+        for (const generic_binding& constant : generic_.constants) {
             tc.add_const(name_tk_, indent, constant.name, constant.value);
         }
     }
@@ -344,7 +366,7 @@ class stmt_def_func final : public statement {
 
         for (const generic_binding& binding : instance.bindings) {
             if (binding.type_ptr == nullptr) {
-                constants_.push_back(binding);
+                generic_.constants.push_back(binding);
             }
         }
     }
@@ -371,7 +393,7 @@ class stmt_def_func final : public statement {
                             std::move(param_names),
                             std::move(receiver_instance));
 
-        generic_text_ = tz.skip_braced_block_after(func_tk);
+        generic_.text = tz.skip_braced_block_after(func_tk);
     }
 
     // e.g. 'func text.print()' of the generic type 'text': every instance of
@@ -383,7 +405,7 @@ class stmt_def_func final : public statement {
 
         tc.generics().add_method(type_name, func_tk, start_tk_);
 
-        generic_text_ = tz.skip_braced_block_after(func_tk);
+        generic_.text = tz.skip_braced_block_after(func_tk);
 
         for (const generic_type_instance& instance :
              tc.generics().get_type_instances(type_name)) {
@@ -428,31 +450,6 @@ class stmt_def_func final : public statement {
         parse_signature(tc, tz);
 
         parse_body(tc, tz);
-    }
-
-    // a generic function is kept for its instances, an instance is the
-    // definition parsed with its type parameters bound
-    auto parse_generic(toc& tc, type_alias_scope& aliases, const token& func_tk,
-                       tokenizer& tz,
-                       const std::span<const type* const> type_args,
-                       const generic_type_instance* const generic_instance)
-        -> void {
-
-        const std::vector<token> param_tks{parse_type_params(tz)};
-
-        if (type_args.empty()) {
-            define_generic(tc, func_tk, tz, param_tks, generic_instance);
-            return;
-        }
-
-        assert(type_args.size() == param_tks.size());
-
-        name_ = generic_registry::instance_name(name_, type_args);
-        bind_type_args(aliases, param_tks, type_args);
-
-        open_paren_tk_ = tz.is_next_char_token('(');
-
-        parse_function(tc, tz);
     }
 
     // 'name_tk_' is the receiver type, a method gets an implicit first

@@ -1,0 +1,15 @@
+# the type arguments of a call are not empty
+
+type name {
+    array i8[4],
+    len,
+}
+
+func make<T type>(n) res T {
+    res.len = n
+    res.array = {}
+}
+
+func main() {
+    var m = make<>(2)
+}

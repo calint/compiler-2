@@ -13,7 +13,6 @@
 #include "generics.hpp"
 #include "stmt_def_type_field.hpp"
 #include "type.hpp"
-#include "type_alias_scope.hpp"
 
 class stmt_def_type final : public statement {
     // where the definition continues after 'type', an alias parses it again

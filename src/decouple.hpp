@@ -521,6 +521,11 @@ instantiate_generic_func(toc& tc, const token& call_tk,
                          std::string_view generic_name,
                          std::span<const type* const> type_args) -> std::string;
 
+// e.g. 'show<name>(x)', a generic function name followed by '<' has no other
+// meaning
+[[nodiscard]] auto is_generic_call(const toc& tc, std::string_view name,
+                                   tokenizer& tz) -> bool;
+
 [[nodiscard]] auto is_array_literal(const toc& tc, const token& tk,
                                     tokenizer& tz) -> bool;
 

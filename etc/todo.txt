@@ -247,12 +247,12 @@ other, hard, easiest first
        test in the repository yet
     => cleanup (2026-10-04): 'generics.hpp' holds the generic structs,
        'generic_param', 'generic_arguments' and 'generic_registry' ('toc'
-       owns one, 'tc.generics()'); 'type_alias_scope.hpp' binds and hides
-       type names with scopes that undo themselves; 'tokenizer::
-       skip_braced_block_after' keeps the text of a generic definition
-    => left: constants as parameters of functions ('func f<n>()'); a generic
-       type as a type anywhere ('a text<4>' as field or parameter type,
-       needs '>>' split); generic constructors; a call frame that names the
+       owns one, 'tc.generics()'); 'type_alias_scope' (in 'toc.hpp') binds
+       type names and unbinds them itself; 'tokenizer::
+       skip_braced_block_after' keeps the text of a generic definition;
+       tests 788-791 cover the errors of the '<...>' argument lists
+    => left: constants as parameters of functions ('func f<n>()'); generic
+       constructors; a call frame that names the
        instantiating alias for errors in methods of generic types;
        documentation in etc/readme
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
