@@ -1297,6 +1297,7 @@ class machine_x86_64 final : public machine {
         if (assembler_.is_buffering()) {
             assembler_.comment(0, std::format("{:>28}: {}", "instructions",
                                               assembler_.instruction_count()));
+            assembler_.add_body_report();
         }
 
         assembler_.write(os);

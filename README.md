@@ -131,10 +131,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    54           6053           2458          19082
+C/C++ Header                    54           6094           2474          19222
 C++                              1            106             25            399
 -------------------------------------------------------------------------------
-SUM:                            55           6159           2483          19481
+SUM:                            55           6200           2499          19621
 -------------------------------------------------------------------------------
 ```
 
@@ -5844,6 +5844,10 @@ resb 65536
 vars.end:
 ; free named register rbp
 
+;           noinline functions:
+;                    print_num: 1 body, 2 calls, 62 instructions
+;                    factorial: 1 body, 2 calls, 35 instructions
+;
 ;   removed jumps to next code: 129
 ;    removed unreachable jumps: 2
 ; removed same target branches: 51

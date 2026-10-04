@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: report at the end of the generated code on noinline functions
+    (2026-10-04) so the user can decide between noinline and inline
+    => done (2026-10-04): a 'noinline functions:' block before the optimization
+       counts with a line per noinline function, e.g. 'sum: 2 bodies, 3
+       calls, 30 instructions' with ', no reuse' when calls <= bodies; the
+       lines are reserved in 'assembler::add_optimization_counts' and
+       written by 'add_body_report' once jumps are resolved; calls are the
+       'call' lines of the final code ('assembler::mark_call'), sizes sum
+       'line::code_size' of the range recorded by 'begin_body'/'end_body' in
+       'program::compile_noninline_body'; test 'CLI_NOINLINE_REPORT'
+    => not an error: the estimate depends on target and '--nopt', and
+       'noinline' may be needed for recursion or code size; an opt-in check
+       for one non-recursive call can follow if wanted
 [x] hard: non-inline functions take array parameters, e.g. 'func noinline
     f(values i8[])' called with 'f(items)'
     => done (2026-10-04): the body is compiled once per distinct combination

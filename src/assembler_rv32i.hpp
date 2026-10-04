@@ -446,6 +446,7 @@ class assembler_rv32i final : public assembler {
                             .target{std::string{target}},
                         },
                         {.rd{link}, .rs1{}, .rs2{}});
+        mark_call(target);
     }
 
     auto data(const size_t element_size_bytes,
@@ -998,6 +999,13 @@ class assembler_rv32i final : public assembler {
 
         return std::format("{} {}, {}", jump.mnemonic, jump.operands,
                            jump.target);
+    }
+
+    // pseudo instructions count as the ones they expand to
+    [[nodiscard]] auto instructions_in(const size_t code_size) const
+        -> size_t override {
+
+        return code_size / one_instruction_bytes;
     }
 
     [[nodiscard]] auto

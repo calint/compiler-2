@@ -3630,6 +3630,10 @@ resb 65536
 vars.end:
 ; free named register rbp
 
+;           noinline functions:
+;                    print_num: 1 body, 2 calls, 62 instructions
+;                    factorial: 1 body, 2 calls, 35 instructions
+;
 ;   removed jumps to next code: 129
 ;    removed unreachable jumps: 2
 ; removed same target branches: 51

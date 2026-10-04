@@ -20058,6 +20058,9 @@ vars:
 vars.end:
 # free named register s0
 
+#           noinline functions:
+#                  parse_input: 1 body, 2 calls, 4850 instructions
+#
 #   removed jumps to next code: 242
 #    removed unreachable jumps: 0
 # removed same target branches: 13

@@ -263,6 +263,9 @@ class program final {
 
         machine& x{tc.machine()};
 
+        x.begin_noinline_body(std::string{func.name()},
+                              func.body_label(array_lengths));
+
         x.comment({}, 0, "");
         func.source_def_comment_to(x, 0);
 
@@ -276,6 +279,8 @@ class program final {
         };
         x.define_constant(func.frame_size_label(array_lengths),
                           frame_size_bytes);
+
+        x.end_noinline_body();
     }
 
     // each noninline function has one body per kind of call, after 'main'

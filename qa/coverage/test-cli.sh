@@ -229,6 +229,26 @@ CLI_FPGA_MEMORY() {
     echo "ok (image $image_size B, vars up to $vars_fit B)"
 }
 
+CLI_NOINLINE_REPORT() {
+    echo -n "cli noinline report: "
+    local target
+    for target in x86_64 rv32i; do
+        # 768.baz: 'sum' has an instance per array length, 'length_of' a body
+        # for each of its two calls
+        "$BIN" --target=$target 768.baz >gen.s 2>err
+        [[ ! -s err ]]
+        grep -Eq '^[;#] +sum: 2 bodies, 3 calls, [0-9]+ instructions$' gen.s
+        grep -Eq '^[;#] +length_of: 2 bodies, 2 calls, [0-9]+ instructions, no reuse$' gen.s
+        [[ $(grep -Ec '^[[:space:]]*call func\.sum\.' gen.s) -eq 3 ]]
+        # the report comes before the optimization counts
+        [[ $(grep -n 'noinline functions:' gen.s | cut -d: -f1) -lt $(grep -n 'removed jumps to next code' gen.s | cut -d: -f1) ]]
+    done
+    # 770.baz: one call of 'box.total'
+    "$BIN" 770.baz >gen.s 2>err
+    grep -Eq '^; +box.total: 1 body, 1 call, [0-9]+ instructions, no reuse$' gen.s
+    echo ok
+}
+
 CLI_QEMU_STACK() {
     echo -n "cli rv32i-qemu stack size: "
     set +e
@@ -277,6 +297,7 @@ CLI_CHECKS_LIST
 CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
 CLI_QEMU_STACK
+CLI_NOINLINE_REPORT
 CLI_ADDRESS_RANGE
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

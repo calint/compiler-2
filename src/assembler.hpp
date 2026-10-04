@@ -12,6 +12,7 @@
 #include <optional>
 #include <ostream>
 #include <print>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -73,6 +74,8 @@ class assembler {
     struct line {
         std::string text;
         std::string label;
+        // the label a call line calls, empty for other lines
+        std::string call_target;
         std::unique_ptr<jump_info> jump;
         // in the target's unit, zero when the line emits no code
         size_t code_size{};
@@ -96,11 +99,31 @@ class assembler {
         size_t inverted_branches{};
     };
 
+    // the lines [first_line, end_line) are a body of noinline 'function'
+    struct body {
+        std::string function;
+        std::string label;
+        size_t first_line{};
+        size_t end_line{};
+    };
+
+    // the bodies of one noinline function, as 'add_body_report' lists them
+    struct function_summary {
+        std::string function;
+        size_t body_count{};
+        size_t call_count{};
+        size_t instruction_count{};
+    };
+
     std::vector<line> lines_;
     // versions being emitted by 'capture', innermost last
     std::vector<std::vector<line>> captures_;
     bool code_section_{true};
     optimization_counts optimizations_;
+    std::vector<body> bodies_;
+    // the comment lines reserved for 'add_body_report'
+    size_t body_report_first_line_{};
+    size_t body_report_line_count_{};
     std::ostream* direct_output_{};
 
   public:
@@ -128,12 +151,66 @@ class assembler {
     // class methods
     //
 
+    // writes the lines 'add_optimization_counts' reserved: a comment per
+    // noinline function with its bodies, calls and size, valid once jumps are
+    // optimized and resolved
+    auto add_body_report() -> void {
+        assert(captures_.empty());
+
+        std::unordered_map<std::string_view, size_t> calls;
+        for (const line& l : lines_) {
+            if (not l.removed and not l.call_target.empty()) {
+                ++calls[l.call_target];
+            }
+        }
+
+        std::vector<function_summary> summaries;
+        for (const body& b : bodies_) {
+            function_summary& summary{summary_of(summaries, b.function)};
+
+            ++summary.body_count;
+            summary.call_count += calls[b.label];
+
+            size_t size{};
+            for (const line& l : std::span<const line>{lines_}.subspan(
+                     b.first_line, b.end_line - b.first_line)) {
+
+                size += l.code_size;
+            }
+
+            summary.instruction_count += instructions_in(size);
+        }
+
+        if (body_report_line_count_ != 0) {
+            assert(body_report_line_count_ == summaries.size() + 1);
+
+            set_comment_text(body_report_first_line_,
+                             std::format("{:>28}:", "noinline functions"));
+
+            for (const auto [i, s] : std::views::enumerate(summaries)) {
+                set_comment_text(
+                    body_report_first_line_ + static_cast<size_t>(i) + 1,
+                    std::format(
+                        "{:>28}: {} {}, {} {}, {} instructions{}", s.function,
+                        s.body_count, s.body_count == 1 ? "body" : "bodies",
+                        s.call_count, s.call_count == 1 ? "call" : "calls",
+                        s.instruction_count,
+                        s.call_count <= s.body_count ? ", no reuse" : ""));
+            }
+        }
+
+        body_report_line_count_ = 0;
+        bodies_.clear();
+    }
+
     // adds the optimization counts as comments aligned with the usage
     // statistics that follow
     auto add_optimization_counts() -> void {
         const std::string_view prefix{comment_prefix()};
 
         add_text("");
+
+        reserve_body_report();
 
         add_text(std::format("{} {:>28}: {}", prefix,
                              "removed jumps to next code",
@@ -161,6 +238,19 @@ class assembler {
         std::ranges::move(lines, std::back_inserter(current_lines()));
     }
 
+    // the lines added up to 'end_body' are a body of noinline 'function'
+    // entered at 'label'
+    auto begin_body(std::string function, std::string label) -> void {
+        assert(captures_.empty());
+
+        bodies_.push_back({
+            .function{std::move(function)},
+            .label{std::move(label)},
+            .first_line{lines_.size()},
+            .end_line{},
+        });
+    }
+
     // lines added by 'emit' are kept apart so a version can be chosen
     [[nodiscard]] auto capture(const std::function_ref<void()> emit)
         -> std::vector<line> {
@@ -185,6 +275,13 @@ class assembler {
 
         direct_output_ = os;
         write(*os);
+    }
+
+    auto end_body() -> void {
+        assert(captures_.empty());
+        assert(not bodies_.empty());
+
+        bodies_.back().end_line = lines_.size();
     }
 
     [[nodiscard]] auto is_buffering() const -> bool {
@@ -252,6 +349,7 @@ class assembler {
         current_lines().push_back({
             .text{std::move(text)},
             .label{},
+            .call_target{},
             .jump{
                 std::make_unique<jump_info>(jump_info{
                     .mnemonic{std::string{mnemonic}},
@@ -275,6 +373,7 @@ class assembler {
         current_lines().push_back({
             .text{std::move(text)},
             .label{std::move(name)},
+            .call_target{},
             .jump{},
             .code_size{},
             .entry{code_section_},
@@ -294,6 +393,7 @@ class assembler {
         current_lines().push_back({
             .text{std::move(text)},
             .label{},
+            .call_target{},
             .jump{},
             .code_size{code_section_ ? code_size : 0},
             .entry{},
@@ -311,6 +411,7 @@ class assembler {
             current_lines().push_back({
                 .text{std::move(text)},
                 .label{},
+                .call_target{},
                 .jump{},
                 .code_size{},
                 .entry{},
@@ -329,6 +430,7 @@ class assembler {
         current_lines().push_back({
             .text{std::move(text)},
             .label{},
+            .call_target{},
             .jump{},
             .code_size{code_size},
             .entry{entry},
@@ -372,6 +474,15 @@ class assembler {
 
     [[nodiscard]] auto lines() const -> const std::vector<line>& {
         return lines_;
+    }
+
+    // the line just added calls the label 'target'
+    auto mark_call(const std::string_view target) -> void {
+        if (direct_output_ != nullptr) {
+            return;
+        }
+
+        current_lines().back().call_target = target;
     }
 
     // code sizes and entries only count in code
@@ -436,6 +547,10 @@ class assembler {
     // the jump instruction without indentation
     [[nodiscard]] virtual auto format_jump(const jump_info& jump) const
         -> std::string = 0;
+
+    // the code size in instructions
+    [[nodiscard]] virtual auto instructions_in(size_t code_size) const
+        -> size_t = 0;
 
     // the branch taken exactly when 'mnemonic' is not taken
     [[nodiscard]] virtual auto
@@ -619,6 +734,40 @@ class assembler {
         return referenced;
     }
 
+    // the sizes are known only after jumps are resolved, so the lines are
+    // written later: a title, a line per function and a separator
+    auto reserve_body_report() -> void {
+        assert(captures_.empty());
+
+        std::vector<std::string_view> functions;
+        for (const body& b : bodies_) {
+            if (not std::ranges::contains(functions,
+                                          std::string_view{b.function})) {
+
+                functions.push_back(b.function);
+            }
+        }
+
+        if (functions.empty()) {
+            return;
+        }
+
+        body_report_first_line_ = lines_.size();
+        body_report_line_count_ = functions.size() + 1;
+
+        for (size_t i{}; i < body_report_line_count_; ++i) {
+            add_text(std::string{comment_prefix()});
+        }
+
+        add_text(std::string{comment_prefix()});
+    }
+
+    auto set_comment_text(const size_t index, const std::string_view text)
+        -> void {
+
+        lines_.at(index).text = std::format("{} {}", comment_prefix(), text);
+    }
+
     [[nodiscard]] auto write_directly(const std::string_view text) const
         -> bool {
 
@@ -707,5 +856,23 @@ class assembler {
         l.jump.reset();
         l.code_size = 0;
         l.removed = true;
+    }
+
+    [[nodiscard]] static auto
+    summary_of(std::vector<function_summary>& summaries,
+               const std::string_view function) -> function_summary& {
+
+        for (function_summary& summary : summaries) {
+            if (summary.function == function) {
+                return summary;
+            }
+        }
+
+        return summaries.emplace_back(function_summary{
+            .function{std::string{function}},
+            .body_count{},
+            .call_count{},
+            .instruction_count{},
+        });
     }
 };

@@ -1518,6 +1518,7 @@ class machine_rv32i : public machine {
         // and added while still buffering so it ends the written lines
         assembler_.comment(0, std::format("{:>28}: {}", "instructions",
                                           assembler_.instruction_count()));
+        assembler_.add_body_report();
 
         assembler_.set_direct_output(&stream());
 

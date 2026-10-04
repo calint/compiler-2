@@ -423,6 +423,11 @@ class machine {
     // class methods
     //
 
+    // the code emitted up to 'end_noinline_body' is a body of 'function'
+    auto begin_noinline_body(std::string function, std::string label) -> void {
+        target_assembler().begin_body(std::move(function), std::move(label));
+    }
+
     // synthetic tokens and standalone backend calls have no source location
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void {
@@ -482,6 +487,8 @@ class machine {
         emit_data_array(element_size_bytes,
                         std::function_ref<bool(data_initializer&)>{next});
     }
+
+    auto end_noinline_body() -> void { target_assembler().end_body(); }
 
     auto free_named_registers(const token& src_loc_tk, const size_t indent,
                               const std::span<const operand> registers)

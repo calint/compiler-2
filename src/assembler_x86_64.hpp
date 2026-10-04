@@ -203,6 +203,7 @@ class assembler_x86_64 final : public assembler {
 
     auto call(const size_t indent, const std::string_view target) -> void {
         add_text(std::format("{}call {}", indentation(indent), target));
+        mark_call(target);
     }
 
     auto data(const size_t element_size_bytes,
@@ -422,6 +423,13 @@ class assembler_x86_64 final : public assembler {
         -> std::string override {
 
         return std::format("{} {}", jump.mnemonic, jump.target);
+    }
+
+    // every instruction counts as one
+    [[nodiscard]] auto instructions_in(const size_t code_size) const
+        -> size_t override {
+
+        return code_size;
     }
 
     [[nodiscard]] auto
