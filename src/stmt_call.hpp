@@ -446,6 +446,15 @@ class stmt_call : public expression {
 
         machine& x{tc.machine()};
 
+        const std::vector<size_t> array_lengths{
+            array_argument_lengths(tc, func),
+        };
+
+        // without array parameters the one body is emitted for all calls
+        if (func.has_array_param()) {
+            tc.add_noninline_instance(func, array_lengths);
+        }
+
         // the registers stay allocated until the callee frame is populated
         std::vector<operand> address_registers;
 
@@ -472,7 +481,8 @@ class stmt_call : public expression {
 
         x.check_frame_capacity(
             tok(), indent, frame_address,
-            operand::imm(func.frame_size_label(), tc.get_type_address()),
+            operand::imm(func.frame_size_label(array_lengths),
+                         tc.get_type_address()),
             "baz_frame_overflow", tc.is_frame_check());
 
         // write pointers into the callee frame: result (if any), then arguments
@@ -489,7 +499,8 @@ class stmt_call : public expression {
 
         x.free_scratch_registers(tok(), indent, address_registers);
 
-        x.call_function(tok(), indent, func.body_label(), frame_address);
+        x.call_function(tok(), indent, func.body_label(array_lengths),
+                        frame_address);
     }
 
     //
@@ -612,6 +623,11 @@ class stmt_call : public expression {
                 return std::nullopt;
             }
 
+            // the body can reject an index by the length of its array
+            if (info.is_array) {
+                signature += std::format(" array {}", info.array_len);
+            }
+
             // a temporary shares storage with nothing
             if (info.elem_path.empty()) {
                 signature += " temporary";
@@ -634,6 +650,22 @@ class stmt_call : public expression {
         }
 
         return signature;
+    }
+
+    // the body is compiled for the lengths of the array arguments
+    [[nodiscard]] auto array_argument_lengths(const toc& tc,
+                                              const stmt_def_func& func) const
+        -> std::vector<size_t> {
+
+        std::vector<size_t> lengths;
+
+        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
+            if (param.is_array()) {
+                lengths.push_back(tc.make_ident_info(arg).array_len);
+            }
+        }
+
+        return lengths;
     }
 
     // an argument reaches its parameter by reference, so a value that has no
@@ -1224,14 +1256,9 @@ class stmt_call : public expression {
             throw compiler_exception{arg.tok(), "argument must be a variable"};
         }
 
-        if (info.is_array) {
-            throw compiler_exception{arg.tok(),
-                                     "whole-array arguments are unsupported"};
-        }
-
-        // note: a non-array argument for an array parameter is rejected when
-        //       the call is parsed and an array argument just above
-        assert(not param.is_array());
+        // note: parsing the call rejects an array argument for a non-array
+        //       parameter and the reverse
+        assert(info.is_array == param.is_array());
 
         if (&info.type_ref() != &param.get_type()) {
             throw_parameter_type_mismatch(arg, param, info);

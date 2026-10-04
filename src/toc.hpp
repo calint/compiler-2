@@ -36,6 +36,13 @@ struct func_return_info {
     const type* type_ptr{}; // type
 };
 
+// a non-inline body compiled for the array lengths of one kind of call
+struct noninline_instance {
+    const stmt_def_func* func{};
+    // one per array parameter, in parameter order
+    std::vector<size_t> array_lengths;
+};
+
 struct alias_info {
     std::string from;
     std::string to;
@@ -305,6 +312,7 @@ class toc final {
     std::string_view source_;
     std::vector<frame> frames_;
     std::vector<const stmt_def_func*> func_defs_;
+    std::vector<noninline_instance> noninline_instances_;
     std::vector<const statement*> data_;
     std::vector<machine::string_constant> string_constants_;
     std::set<std::string> checked_noninline_calls_;
@@ -429,6 +437,25 @@ class toc final {
         if (func_def) {
             func_defs_.emplace_back(func_def);
         }
+    }
+
+    // a body is emitted once per distinct instance
+    auto add_noninline_instance(const stmt_def_func& func,
+                                std::vector<size_t> array_lengths) -> void {
+
+        const auto is_same_instance =
+            [&](const noninline_instance& known) -> bool {
+            return known.func == &func and known.array_lengths == array_lengths;
+        };
+
+        if (std::ranges::any_of(noninline_instances_, is_same_instance)) {
+            return;
+        }
+
+        noninline_instances_.push_back({
+            .func{&func},
+            .array_lengths{std::move(array_lengths)},
+        });
     }
 
     // identical strings share the label of the first one compiled
@@ -963,6 +990,17 @@ class toc final {
                             offset_from_base, get_type_address());
     }
 
+    // a copy, the list grows while the instances compile
+    [[nodiscard]] auto noninline_instance_at(const size_t index) const
+        -> noninline_instance {
+
+        return noninline_instances_.at(index);
+    }
+
+    [[nodiscard]] auto noninline_instance_count() const -> size_t {
+        return noninline_instances_.size();
+    }
+
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
         for (const frame& frm : frames_ | std::views::reverse) {
             if (not frm.storage_base_register().empty()) {
@@ -979,6 +1017,7 @@ class toc final {
 
         usage_max_frame_count_ = 0;
         usage_max_vars_size_bytes_ = 0;
+        noninline_instances_.clear();
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }

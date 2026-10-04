@@ -462,10 +462,10 @@ func tokenizer.is_empty() res bool {
     res = self.start == self.end
 }
 
-func tokenizer.to_name() dst name {
-    dst.len = self.len()
-    dst.array = {}
-    array_copy(self.str.array[self.start], dst.array, dst.len)
+func tokenizer.to_name() res name {
+    res.len = self.len()
+    res.array = {}
+    array_copy(self.str.array[self.start], res.array, res.len)
 }
 
 func tokenizer.to_str() res str {

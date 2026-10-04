@@ -1,0 +1,67 @@
+# two array parameters, recursion, methods, a dat array and an uncalled function
+
+type box {
+    vals i32[4],
+    n i32,
+}
+
+dat table = i32[3]{ 10, 20, 30 }
+
+func noinline pair(x i32[], y i32[]) res i32 {
+    res = i32(array_length(x)) * 10 + i32(array_length(y))
+}
+
+func noinline countdown(v mut i32[], k i32) {
+    if k <= 0 return
+    v[0] = v[0] + 1
+    var next = k
+    next = next - 1
+    countdown(v, next)
+}
+
+func noinline box.total() res i32 {
+    res = 0
+    foo self.vals {
+        res = res + e
+    }
+}
+
+func noinline box.take(v i32[]) res i32 {
+    res = v[0] + self.n
+}
+
+func noinline never_called(v i32[]) res i32 {
+    res = v[7]
+}
+
+func main() {
+    var a = i32[3]{ 1, 2, 3 }
+    var b = i32[5]{ 1, 2, 3, 4, 5 }
+    var r = i32(0)
+
+    r = pair(a, b)
+    if r != 35 exit(11)
+    r = pair(b, a)
+    if r != 53 exit(12)
+    r = pair(a, a)
+    if r != 33 exit(13)
+    r = pair(b, b)
+    if r != 55 exit(14)
+
+    var k = i32(4)
+    countdown(a, k)
+    if a[0] != 5 exit(15)
+    countdown(b, k)
+    if b[0] != 5 exit(16)
+
+    r = pair(table, a)
+    if r != 33 exit(17)
+
+    var bx = box{ { 1, 2, 3, 4 }, 100 }
+    r = bx.total()
+    if r != 10 exit(18)
+    r = bx.take(a)
+    if r != 105 exit(19)
+    r = bx.take(bx.vals)
+    if r != 101 exit(20)
+}

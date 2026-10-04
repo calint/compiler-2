@@ -1,0 +1,13 @@
+# a run-time index is checked against the length of each body
+
+func noinline at(v i32[], ix i32) res i32 {
+    res = v[ix]
+}
+
+func main() {
+    var a = i32[3]{ 1, 2, 3 }
+    var b = i32[5]{ 1, 2, 3, 4, 5 }
+    var ix = i32(4)
+    var r = at(b, ix)
+    r = at(a, ix)
+}

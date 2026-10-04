@@ -200,7 +200,9 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        if (not ii.has_lea() and not ident_.is_indexed()) {
+        if (not ii.has_lea() and not ii.is_pointer and
+            not ident_.is_indexed()) {
+
             x.address_of(tok(), indent, reg_iter, ii.operand);
             return;
         }

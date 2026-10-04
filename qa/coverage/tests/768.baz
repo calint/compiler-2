@@ -1,0 +1,81 @@
+# a non-inline function takes arrays of different lengths, one body each
+
+type holder {
+    vals i32[3],
+    len i32,
+}
+
+func assert(x bool) { if not x exit(1) }
+
+func noinline sum(values i32[]) res i32 {
+    res = 0
+    foo values {
+        res = res + e
+    }
+}
+
+func noinline length_of(values i32[]) res {
+    res = array_length(values)
+}
+
+func noinline fill(values mut i32[], v i32) {
+    foo values {
+        values[i] = v + i32(i)
+    }
+}
+
+func noinline same(lhs i32[], rhs i32[]) res i32 {
+    res = 0
+    if arrays_equal(lhs, rhs, array_length(lhs)) { res = 1 }
+}
+
+func noinline outer(values mut i32[]) {
+    var ten = i32(10)
+    fill(values, ten)
+}
+
+func noinline first_two(values i32[]) res i32 {
+    res = values[0] + values[1]
+}
+
+func main() {
+    var a = i32[3]{ 1, 2, 3 }
+    var b = i32[5]{ 1, 2, 3, 4, 5 }
+    var c = i32[3]{ 1, 2, 3 }
+
+    var r = sum(a)
+    assert(r == 6)
+    r = sum(b)
+    assert(r == 15)
+    var n = length_of(a)
+    assert(n == 3)
+    n = length_of(b)
+    assert(n == 5)
+
+    var hundred = i32(100)
+    fill(a, hundred)
+    assert(a[0] == 100 and a[1] == 101 and a[2] == 102)
+    var zero = i32(0)
+    fill(b, zero)
+    assert(b[4] == 4)
+
+    var d = i32[3]{ 1, 2, 3 }
+    var eq = same(c, d)
+    assert(eq == 1)
+    d[2] = 9
+    eq = same(c, d)
+    assert(eq == 0)
+
+    outer(b)
+    assert(b[0] == 10 and b[4] == 14)
+    outer(a)
+    assert(a[2] == 12)
+
+    var h = holder{ { 4, 5, 6 }, 3 }
+    r = sum(h.vals)
+    assert(r == 15)
+    r = first_two(h.vals)
+    assert(r == 9)
+    r = first_two(b)
+    assert(r == 21)
+}

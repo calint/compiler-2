@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: non-inline functions take array parameters, e.g. 'func noinline
+    f(values i8[])' called with 'f(items)'
+    => done (2026-10-04): the body is compiled once per distinct combination
+       of the lengths of the array arguments, since lengths are compile-time
+       constants ('array_length', bounds checks, 'foo', copies); the array
+       parameter is a pointer slot like the scalar ones with 'array_len' set
+       per instance
+    => 'toc::add_noninline_instance' lists the requested (function, lengths)
+       pairs, 'program::compile_noninline_functions' emits the functions
+       without array parameters as before and then the instances, which can
+       grow while they compile; labels 'func.NAME.len.4.8' and
+       'size.func.NAME.len.4.8' (call path 'len.4.8' keeps the inner labels
+       unique), output of other functions unchanged
+    => 'stmt_call::aliasing_signature' includes the array lengths, so the
+       inline dry run reports an index out of bounds of one length at that
+       call ('called from')
+    => 'stmt_builtin_foo' loaded the address of a pointer slot instead of the
+       array it points to; fixed
+    => tests 427 and 689 are run tests now, 768-773 new (lengths, forwarding,
+       inline callee, copies, runtime index, arrays of records, two array
+       parameters, recursion, methods, dat array, uncalled function, per
+       length bounds errors, element type mismatch, '--checks=frame')
+    => parity: outputs of all other tests identical on both targets in three
+       modes (/tmp/baz-arrnoinline/compare2.sh)
 [x] compiler_exception with line number 0 should be file level issues only.
     other exceptions should point to the cause in offending source to precise
     token that caused the exception. in encoded string make a position token at

@@ -1,6 +1,8 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <algorithm>
+#include <cassert>
 #include <optional>
 #include <ostream>
 #include <ranges>
@@ -86,7 +88,7 @@ class stmt_def_func final : public statement {
         // note: 'parse_returns' only creates a return with a name
         assert(not returns_ or not returns_->ident_tk.text().empty());
 
-        add_signature_vars(tc, 0, false);
+        add_signature_vars(tc, 0, false, {});
 
         code_ = {tc, tz, true};
 
@@ -112,31 +114,44 @@ class stmt_def_func final : public statement {
     // class methods
     //
 
+    [[nodiscard]] auto array_param_count() const -> size_t {
+        return static_cast<size_t>(
+            std::ranges::count_if(params_, &stmt_def_func_param::is_array));
+    }
+
     // 'func' is a keyword so no user name or internal label starts with 'func.'
-    [[nodiscard]] auto body_label() const -> std::string {
-        return std::format("func.{}", name());
+    // e.g. 'func.sum.len.4.8' for array lengths 4 and 8
+    [[nodiscard]] auto
+    body_label(const std::span<const size_t> array_lengths = {}) const
+        -> std::string {
+
+        if (array_lengths.empty()) {
+            return std::format("func.{}", name());
+        }
+
+        return std::format("func.{}.{}", name(), instance_path(array_lengths));
     }
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 
-    [[nodiscard]] auto compile_body(toc& tc, const size_t indent) const
-        -> size_t {
+    // the lengths are those of the array arguments, one per array parameter
+    [[nodiscard]] auto
+    compile_body(toc& tc, const size_t indent,
+                 const std::span<const size_t> array_lengths) const -> size_t {
 
         assert(not is_inlined());
-
-        for (const stmt_def_func_param& param : params_) {
-            if (param.is_array()) {
-                throw compiler_exception{
-                    param.tok(),
-                    "non-inline functions require non-array parameters"};
-            }
-        }
+        assert(array_lengths.size() == array_param_count());
 
         machine& x{tc.machine()};
 
         x.reserve_frame_base();
-        tc.enter_func(name(), {}, {}, false, x.frame_base_register());
-        add_signature_vars(tc, indent + 1, true);
+
+        // the path keeps the labels of the body unique per instance
+        tc.enter_func(name(),
+                      array_lengths.empty() ? std::string{}
+                                            : instance_path(array_lengths),
+                      {}, false, x.frame_base_register());
+        add_signature_vars(tc, indent + 1, true, array_lengths);
         code_.compile(tc, indent, ident_info::make_empty());
         x.return_function(indent + 1);
         const size_t frame_size_bytes{tc.peak_frame_size_bytes()};
@@ -148,8 +163,16 @@ class stmt_def_func final : public statement {
 
     // a suffix could collide with a method body, e.g. 'func.list.size' of
     // function 'list' and method 'list.size'
-    [[nodiscard]] auto frame_size_label() const -> std::string {
-        return std::format("size.{}", body_label());
+    [[nodiscard]] auto
+    frame_size_label(const std::span<const size_t> array_lengths = {}) const
+        -> std::string {
+
+        return std::format("size.{}", body_label(array_lengths));
+    }
+
+    // the body is compiled for the length of each array argument
+    [[nodiscard]] auto has_array_param() const -> bool {
+        return array_param_count() != 0;
     }
 
     // e.g. 'func point.at(x, y) self'
@@ -243,9 +266,16 @@ class stmt_def_func final : public statement {
     }
 
     // a non-inline body reaches the result and the arguments through pointer
-    // slots in its frame
-    auto add_signature_vars(toc& tc, const size_t indent,
-                            const bool is_pointer) const -> void {
+    // slots in its frame. the array lengths are those of the body instance,
+    // empty where the body is only parsed
+    auto add_signature_vars(toc& tc, const size_t indent, const bool is_pointer,
+                            const std::span<const size_t> array_lengths) const
+        -> void {
+
+        assert(array_lengths.empty() or
+               array_lengths.size() == array_param_count());
+
+        size_t next_array_length{};
 
         if (returns_) {
             tc.add_var(returns_->ident_tk, indent,
@@ -262,6 +292,12 @@ class stmt_def_func final : public statement {
         }
 
         for (const stmt_def_func_param& param : params_) {
+            const size_t array_len{
+                param.is_array() and not array_lengths.empty()
+                    ? array_lengths.at(next_array_length++)
+                    : size_t{},
+            };
+
             tc.add_var(param.tok(), indent,
                        {
                            .name{param.name()},
@@ -273,6 +309,7 @@ class stmt_def_func final : public statement {
                                param.is_read_only() ? read_only_cause::PARAM
                                                     : read_only_cause::NONE,
                            },
+                           .array_len{array_len},
                            .pointer_register{},
                            .base_register{},
                            .value_register{},
@@ -396,5 +433,22 @@ class stmt_def_func final : public statement {
 
         returns_.emplace(type_tk, self_tk, &tp);
         set_type(tp);
+    }
+
+    //
+    // statics
+    //
+
+    // e.g. 'len.4.8', unlike the 'L.C' pairs of inlined calls
+    [[nodiscard]] static auto
+    instance_path(const std::span<const size_t> array_lengths) -> std::string {
+
+        std::string path{"len"};
+
+        for (const size_t length : array_lengths) {
+            path += std::format(".{}", length);
+        }
+
+        return path;
     }
 };

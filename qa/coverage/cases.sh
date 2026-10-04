@@ -1265,8 +1265,8 @@ SRC=425 && COMPERR
 # non-inline argument cannot be a constant
 SRC=426 && COMPERR
 
-# non-inline argument cannot be a whole array
-SRC=427 && COMPERR
+# a whole array is passed to a non-inline array parameter
+SRC=427 && EXP=0 && RUN
 
 # non-inline argument must have the declared parameter type
 SRC=428 && COMPERR
@@ -2124,8 +2124,8 @@ SRC=687 && EXP=45 && RUN
 # equal arguments require the same type
 SRC=688 && COMPERR
 
-# non-inline functions do not take array parameters
-SRC=689 && COMPERR
+# a non-inline function reads an array parameter
+SRC=689 && EXP=0 && RUN
 
 # a method name follows the dot
 SRC=690 && COMPERR
@@ -2363,3 +2363,23 @@ SRC=766 && EXP=0 && RUN
 
 # a type name followed by an operator is not an initializer
 SRC=767 && COMPERR
+
+# a non-inline function takes arrays of different lengths, one body each
+SRC=768 && EXP=0 && RUN
+
+# a non-inline body uses its array parameter like an inline one
+SRC=769 && EXP=0 && RUN
+
+# two array parameters, recursion, methods, a dat array and an uncalled
+# function
+SRC=770 && EXP=0 && RUN
+SRC=770 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
+
+# a constant index out of bounds is found for the lengths of one call
+SRC=771 && COMPERR
+
+# a run-time index is checked against the length of each body
+SRC=772 && EXP=255 && RUN_ERR
+
+# an array argument must have the element type of the parameter
+SRC=773 && COMPERR

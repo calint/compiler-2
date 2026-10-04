@@ -7679,17 +7679,17 @@ func.parse_input:
                 # [581:9] name: name (20 B @ [s1 + 20])
                 # [581:9] name = tz.to_name()
                 # [581:19] tz.to_name()
-                # [465:6] tokenizer.to_name() dst name
+                # [465:6] tokenizer.to_name() res name
                 func.tokenizer.to_name.581.19.605.24.967.9:
-                    # [581:19] alias dst -> name
+                    # [581:19] alias res -> name
                     # [581:19] alias self -> tz
-                    # [466:5] dst.len = self.len()
-                    # [466:20] dst.len = self.len()
+                    # [466:5] res.len = self.len()
+                    # [466:20] res.len = self.len()
                     # [466:20] = expression
                     # [466:20] self.len()
                     # [443:6] tokenizer.len() res
                     func.tokenizer.len.466.20.581.19.605.24.967.9:
-                        # [466:20] alias res -> dst.len
+                        # [466:20] alias res -> res.len
                         # [466:20] alias self -> self
                         # [444:5] res = self.end - self.start
                         # [444:11] allocate scratch register -> t2
@@ -7704,19 +7704,19 @@ func.parse_input:
                         sw t2, 36(s1)
                         # [444:11] free scratch register t2
                     func.tokenizer.len.466.20.581.19.605.24.967.9.end:
-                    # [467:5] dst.array = {}
+                    # [467:5] res.array = {}
                     # [467:17] zero remaining elements: 16 * 1 B = 16 B
                     sw zero, 20(s1)
                     sw zero, 24(s1)
                     sw zero, 28(s1)
                     sw zero, 32(s1)
-                    # [468:5] array_copy(self.str.array[self.start], dst.array, dst.len)
+                    # [468:5] array_copy(self.str.array[self.start], res.array, res.len)
                     # [468:5] allocate scratch register -> t2
                     # [468:5] allocate scratch register -> t3
                     # [468:5] allocate scratch register -> t4
                     # [468:5] t2: source, t3: destination, t4: count
-                    # [468:55] dst.len
-                    # [468:55] dst.len
+                    # [468:55] res.len
+                    # [468:55] res.len
                     lw t4, 36(s1)
                     # [468:16] self.str.array[self.start]
                     # [468:31] allocate scratch register -> t5
@@ -7743,7 +7743,7 @@ func.parse_input:
                     # [468:31] bounds check end
                     add t2, t1, t5
                     # [468:5] free scratch register t5
-                    # [468:44] dst.array
+                    # [468:44] res.array
                     # [468:44] bounds check begin
                     # [468:44] lower bound
                     # [468:44] t4 lower bound covered by the unsigned upper bound
@@ -8320,17 +8320,17 @@ func.parse_input:
                 # [581:9] name: name (20 B @ [s1 + 24])
                 # [581:9] name = tz.to_name()
                 # [581:19] tz.to_name()
-                # [465:6] tokenizer.to_name() dst name
+                # [465:6] tokenizer.to_name() res name
                 func.tokenizer.to_name.581.19.614.29.967.9:
-                    # [581:19] alias dst -> name
+                    # [581:19] alias res -> name
                     # [581:19] alias self -> tz
-                    # [466:5] dst.len = self.len()
-                    # [466:20] dst.len = self.len()
+                    # [466:5] res.len = self.len()
+                    # [466:20] res.len = self.len()
                     # [466:20] = expression
                     # [466:20] self.len()
                     # [443:6] tokenizer.len() res
                     func.tokenizer.len.466.20.581.19.614.29.967.9:
-                        # [466:20] alias res -> dst.len
+                        # [466:20] alias res -> res.len
                         # [466:20] alias self -> self
                         # [444:5] res = self.end - self.start
                         # [444:11] allocate scratch register -> t2
@@ -8345,19 +8345,19 @@ func.parse_input:
                         sw t2, 40(s1)
                         # [444:11] free scratch register t2
                     func.tokenizer.len.466.20.581.19.614.29.967.9.end:
-                    # [467:5] dst.array = {}
+                    # [467:5] res.array = {}
                     # [467:17] zero remaining elements: 16 * 1 B = 16 B
                     sw zero, 24(s1)
                     sw zero, 28(s1)
                     sw zero, 32(s1)
                     sw zero, 36(s1)
-                    # [468:5] array_copy(self.str.array[self.start], dst.array, dst.len)
+                    # [468:5] array_copy(self.str.array[self.start], res.array, res.len)
                     # [468:5] allocate scratch register -> t2
                     # [468:5] allocate scratch register -> t3
                     # [468:5] allocate scratch register -> t4
                     # [468:5] t2: source, t3: destination, t4: count
-                    # [468:55] dst.len
-                    # [468:55] dst.len
+                    # [468:55] res.len
+                    # [468:55] res.len
                     lw t4, 40(s1)
                     # [468:16] self.str.array[self.start]
                     # [468:31] allocate scratch register -> t5
@@ -8384,7 +8384,7 @@ func.parse_input:
                     # [468:31] bounds check end
                     add t2, t1, t5
                     # [468:5] free scratch register t5
-                    # [468:44] dst.array
+                    # [468:44] res.array
                     # [468:44] bounds check begin
                     # [468:44] lower bound
                     # [468:44] t4 lower bound covered by the unsigned upper bound
@@ -10270,17 +10270,17 @@ func.parse_input:
             # [671:9] new_name: name (20 B @ [s1 + 8])
             # [671:9] new_name = tz.to_name()
             # [671:23] tz.to_name()
-            # [465:6] tokenizer.to_name() dst name
+            # [465:6] tokenizer.to_name() res name
             func.tokenizer.to_name.671.23.976.9:
-                # [671:23] alias dst -> new_name
+                # [671:23] alias res -> new_name
                 # [671:23] alias self -> tz
-                # [466:5] dst.len = self.len()
-                # [466:20] dst.len = self.len()
+                # [466:5] res.len = self.len()
+                # [466:20] res.len = self.len()
                 # [466:20] = expression
                 # [466:20] self.len()
                 # [443:6] tokenizer.len() res
                 func.tokenizer.len.466.20.671.23.976.9:
-                    # [466:20] alias res -> dst.len
+                    # [466:20] alias res -> res.len
                     # [466:20] alias self -> self
                     # [444:5] res = self.end - self.start
                     # [444:11] allocate scratch register -> t2
@@ -10295,19 +10295,19 @@ func.parse_input:
                     sw t2, 24(s1)
                     # [444:11] free scratch register t2
                 func.tokenizer.len.466.20.671.23.976.9.end:
-                # [467:5] dst.array = {}
+                # [467:5] res.array = {}
                 # [467:17] zero remaining elements: 16 * 1 B = 16 B
                 sw zero, 8(s1)
                 sw zero, 12(s1)
                 sw zero, 16(s1)
                 sw zero, 20(s1)
-                # [468:5] array_copy(self.str.array[self.start], dst.array, dst.len)
+                # [468:5] array_copy(self.str.array[self.start], res.array, res.len)
                 # [468:5] allocate scratch register -> t2
                 # [468:5] allocate scratch register -> t3
                 # [468:5] allocate scratch register -> t4
                 # [468:5] t2: source, t3: destination, t4: count
-                # [468:55] dst.len
-                # [468:55] dst.len
+                # [468:55] res.len
+                # [468:55] res.len
                 lw t4, 24(s1)
                 # [468:16] self.str.array[self.start]
                 # [468:31] allocate scratch register -> t5
@@ -10334,7 +10334,7 @@ func.parse_input:
                 # [468:31] bounds check end
                 add t2, t1, t5
                 # [468:5] free scratch register t5
-                # [468:44] dst.array
+                # [468:44] res.array
                 # [468:44] bounds check begin
                 # [468:44] lower bound
                 # [468:44] t4 lower bound covered by the unsigned upper bound
@@ -10935,17 +10935,17 @@ func.parse_input:
             # [687:9] name: name (20 B @ [s1 + 8])
             # [687:9] name = tz.to_name()
             # [687:19] tz.to_name()
-            # [465:6] tokenizer.to_name() dst name
+            # [465:6] tokenizer.to_name() res name
             func.tokenizer.to_name.687.19.979.9:
-                # [687:19] alias dst -> name
+                # [687:19] alias res -> name
                 # [687:19] alias self -> tz
-                # [466:5] dst.len = self.len()
-                # [466:20] dst.len = self.len()
+                # [466:5] res.len = self.len()
+                # [466:20] res.len = self.len()
                 # [466:20] = expression
                 # [466:20] self.len()
                 # [443:6] tokenizer.len() res
                 func.tokenizer.len.466.20.687.19.979.9:
-                    # [466:20] alias res -> dst.len
+                    # [466:20] alias res -> res.len
                     # [466:20] alias self -> self
                     # [444:5] res = self.end - self.start
                     # [444:11] allocate scratch register -> t2
@@ -10960,19 +10960,19 @@ func.parse_input:
                     sw t2, 24(s1)
                     # [444:11] free scratch register t2
                 func.tokenizer.len.466.20.687.19.979.9.end:
-                # [467:5] dst.array = {}
+                # [467:5] res.array = {}
                 # [467:17] zero remaining elements: 16 * 1 B = 16 B
                 sw zero, 8(s1)
                 sw zero, 12(s1)
                 sw zero, 16(s1)
                 sw zero, 20(s1)
-                # [468:5] array_copy(self.str.array[self.start], dst.array, dst.len)
+                # [468:5] array_copy(self.str.array[self.start], res.array, res.len)
                 # [468:5] allocate scratch register -> t2
                 # [468:5] allocate scratch register -> t3
                 # [468:5] allocate scratch register -> t4
                 # [468:5] t2: source, t3: destination, t4: count
-                # [468:55] dst.len
-                # [468:55] dst.len
+                # [468:55] res.len
+                # [468:55] res.len
                 lw t4, 24(s1)
                 # [468:16] self.str.array[self.start]
                 # [468:31] allocate scratch register -> t5
@@ -10999,7 +10999,7 @@ func.parse_input:
                 # [468:31] bounds check end
                 add t2, t1, t5
                 # [468:5] free scratch register t5
-                # [468:44] dst.array
+                # [468:44] res.array
                 # [468:44] bounds check begin
                 # [468:44] lower bound
                 # [468:44] t4 lower bound covered by the unsigned upper bound
@@ -11770,17 +11770,17 @@ func.parse_input:
             # [708:9] name: name (20 B @ [s1 + 8])
             # [708:9] name = tz.to_name()
             # [708:19] tz.to_name()
-            # [465:6] tokenizer.to_name() dst name
+            # [465:6] tokenizer.to_name() res name
             func.tokenizer.to_name.708.19.982.9:
-                # [708:19] alias dst -> name
+                # [708:19] alias res -> name
                 # [708:19] alias self -> tz
-                # [466:5] dst.len = self.len()
-                # [466:20] dst.len = self.len()
+                # [466:5] res.len = self.len()
+                # [466:20] res.len = self.len()
                 # [466:20] = expression
                 # [466:20] self.len()
                 # [443:6] tokenizer.len() res
                 func.tokenizer.len.466.20.708.19.982.9:
-                    # [466:20] alias res -> dst.len
+                    # [466:20] alias res -> res.len
                     # [466:20] alias self -> self
                     # [444:5] res = self.end - self.start
                     # [444:11] allocate scratch register -> t2
@@ -11795,19 +11795,19 @@ func.parse_input:
                     sw t2, 24(s1)
                     # [444:11] free scratch register t2
                 func.tokenizer.len.466.20.708.19.982.9.end:
-                # [467:5] dst.array = {}
+                # [467:5] res.array = {}
                 # [467:17] zero remaining elements: 16 * 1 B = 16 B
                 sw zero, 8(s1)
                 sw zero, 12(s1)
                 sw zero, 16(s1)
                 sw zero, 20(s1)
-                # [468:5] array_copy(self.str.array[self.start], dst.array, dst.len)
+                # [468:5] array_copy(self.str.array[self.start], res.array, res.len)
                 # [468:5] allocate scratch register -> t2
                 # [468:5] allocate scratch register -> t3
                 # [468:5] allocate scratch register -> t4
                 # [468:5] t2: source, t3: destination, t4: count
-                # [468:55] dst.len
-                # [468:55] dst.len
+                # [468:55] res.len
+                # [468:55] res.len
                 lw t4, 24(s1)
                 # [468:16] self.str.array[self.start]
                 # [468:31] allocate scratch register -> t5
@@ -11834,7 +11834,7 @@ func.parse_input:
                 # [468:31] bounds check end
                 add t2, t1, t5
                 # [468:5] free scratch register t5
-                # [468:44] dst.array
+                # [468:44] res.array
                 # [468:44] bounds check begin
                 # [468:44] lower bound
                 # [468:44] t4 lower bound covered by the unsigned upper bound

@@ -257,22 +257,46 @@ class program final {
         }
     }
 
-    // each noninline function has one body, after 'main'
-    static auto compile_noninline_functions(toc& tc, const size_t indent)
-        -> void {
+    static auto compile_noninline_body(
+        toc& tc, const size_t indent, const stmt_def_func& func,
+        const std::span<const size_t> array_lengths) -> void {
 
         machine& x{tc.machine()};
 
+        x.comment({}, 0, "");
+        func.source_def_comment_to(x, 0);
+
+        if (not array_lengths.empty()) {
+            x.comment({}, 0, "array parameter lengths: {:n}", array_lengths);
+        }
+
+        x.label(indent, func.body_label(array_lengths));
+        const size_t frame_size_bytes{
+            func.compile_body(tc, indent, array_lengths),
+        };
+        x.define_constant(func.frame_size_label(array_lengths),
+                          frame_size_bytes);
+    }
+
+    // each noninline function has one body per kind of call, after 'main'
+    static auto compile_noninline_functions(toc& tc, const size_t indent)
+        -> void {
+
         for (const stmt_def_func* f : tc.get_func_defs()) {
-            if (f->is_inlined()) {
+            if (f->is_inlined() or f->has_array_param()) {
                 continue;
             }
 
-            x.comment({}, 0, "");
-            f->source_def_comment_to(x, 0);
-            x.label(indent, f->body_label());
-            const size_t frame_size_bytes{f->compile_body(tc, indent)};
-            x.define_constant(f->frame_size_label(), frame_size_bytes);
+            compile_noninline_body(tc, indent, *f, {});
+        }
+
+        // note: the calls in a body can request more instances, so the count
+        //       is read on every pass
+        for (size_t i{}; i < tc.noninline_instance_count(); ++i) {
+            const noninline_instance instance{tc.noninline_instance_at(i)};
+
+            compile_noninline_body(tc, indent, *instance.func,
+                                   instance.array_lengths);
         }
     }
 

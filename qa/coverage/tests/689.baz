@@ -1,8 +1,11 @@
-# non-inline functions do not take array parameters
+# a non-inline function reads an array parameter
 
-func noinline first(values i8[]) result {
-    result = values[0]
+func noinline first(values i8[]) res i8 {
+    res = values[0]
 }
 
 func main() {
+    var items = i8[2]{ 7, 8 }
+    var r = first(items)
+    if r != 7 exit(1)
 }
