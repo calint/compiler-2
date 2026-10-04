@@ -1,0 +1,18 @@
+# an indexed argument may be the array element a non-inline body names
+
+var arr = i64[4]{}
+
+func swap_values(x mut, y mut) {
+    var tmp = x
+    x = y
+    y = tmp
+}
+
+func noinline outer(a mut) {
+    swap_values(a, arr[1])
+}
+
+func main() {
+    var i = 1
+    outer(arr[i])
+}

@@ -2349,3 +2349,6 @@ SRC=762 && COMPERR
 
 # a recursive non-inline call is checked once
 SRC=763 && EXP=0 && RUN
+
+# an indexed argument may be the array element a non-inline body names
+SRC=764 && COMPERR
