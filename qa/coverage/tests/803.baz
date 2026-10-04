@@ -1,0 +1,8 @@
+# the type argument of a call is not a constant
+
+func make<T type>(n) res T {
+}
+
+func main() {
+    var m = make<1>(2)
+}

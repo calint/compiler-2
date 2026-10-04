@@ -1,0 +1,8 @@
+# a generic function is not a value
+
+func make<T type>(n) res T {
+}
+
+func main() {
+    var x = make
+}

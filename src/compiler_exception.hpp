@@ -14,11 +14,13 @@ class tokenizer;
 
 class compiler_exception final : public std::exception {
   public:
-    // an inlined call the error was found in
+    // a place the error was found through: an inlined call or the instance of
+    // a generic definition
     struct call_frame {
         size_t line{};
         size_t start_index{};
         std::string text;
+        std::string reason;
     };
 
     compiler_exception(const token& src_loc_tk, std::string message)
@@ -40,11 +42,14 @@ class compiler_exception final : public std::exception {
     // innermost call first, each call inlined the one before it
     std::vector<call_frame> call_frames;
 
-    auto add_call_frame(const token& call_tk, std::string text) -> void {
+    auto add_call_frame(const token& call_tk, std::string text,
+                        std::string reason = "called from") -> void {
+
         call_frames.push_back({
             .line{call_tk.at_line()},
             .start_index{call_tk.start_index()},
             .text{std::move(text)},
+            .reason{std::move(reason)},
         });
     }
 

@@ -1,0 +1,12 @@
+# a generic type is not a type until an alias names an instance
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+func show(t text) {
+}
+
+func main() {
+}

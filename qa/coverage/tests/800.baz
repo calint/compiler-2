@@ -1,0 +1,11 @@
+# an alias does not take the name of a generic type
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type text = text<8>
+
+func main() {
+}

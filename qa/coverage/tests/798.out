@@ -1,0 +1,2 @@
+
+798.baz:9:13: generic type 'text' is not a value, name an instance first, e.g. 'type str = text<...>'

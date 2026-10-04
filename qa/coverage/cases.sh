@@ -2438,3 +2438,39 @@ SRC=790 && COMPERR
 
 # the arguments of an alias are not empty
 SRC=791 && COMPERR
+
+# an error in a method of a generic type names the alias that needs it
+SRC=792 && COMPERR
+
+# also for a method defined after the alias
+SRC=793 && COMPERR
+
+# an error in the fields of a generic type names the alias that needs it
+SRC=794 && COMPERR
+
+# a generic parameter is declared once
+SRC=795 && COMPERR
+
+# a generic parameter does not hide a type
+SRC=796 && COMPERR
+
+# a generic type is not a type until an alias names an instance
+SRC=797 && COMPERR
+
+# a generic type is not a value
+SRC=798 && COMPERR
+
+# a generic function is not a value
+SRC=799 && COMPERR
+
+# an alias does not take the name of a generic type
+SRC=800 && COMPERR
+
+# the argument of a type parameter is not a constant
+SRC=801 && COMPERR
+
+# the argument of a constant parameter is not a type
+SRC=802 && COMPERR
+
+# the type argument of a call is not a constant
+SRC=803 && COMPERR

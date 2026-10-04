@@ -135,22 +135,7 @@ class stmt_def_type final : public statement {
     }
 
   private:
-    // the methods of the generic type see the arguments of the alias
-    auto add_instance(toc& tc, const token& generic_tk,
-                      std::vector<generic_binding> bindings) -> void {
-
-        const generic_type_instance instance{
-            .generic_name{generic_tk.text()},
-            .type_ptr{&type_},
-            .bindings{std::move(bindings)},
-        };
-
-        tc.generics().add_type_instance(instance);
-
-        instantiate_generic_methods(tc, instance);
-    }
-
-    auto add_type(toc& tc) -> void {
+    auto add_fields(toc& tc) -> void {
         // initialize the type definition
         type_.set_name(name_tk_.text());
 
@@ -168,6 +153,26 @@ class stmt_def_type final : public statement {
             type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
                             fld.array_count());
         }
+    }
+
+    // the methods of the generic type see the arguments of the alias
+    auto add_instance(toc& tc, const token& generic_tk,
+                      std::vector<generic_binding> bindings) -> void {
+
+        const generic_type_instance instance{
+            .src_loc_tk{name_tk_},
+            .generic_name{generic_tk.text()},
+            .type_ptr{&type_},
+            .bindings{std::move(bindings)},
+        };
+
+        tc.generics().add_type_instance(instance);
+
+        instantiate_generic_methods(tc, instance);
+    }
+
+    auto add_type(toc& tc) -> void {
+        add_fields(tc);
 
         tc.add_type(name_tk_, type_);
     }
@@ -175,8 +180,14 @@ class stmt_def_type final : public statement {
     // the text after 'type' is kept for 'source_to' and for the aliases, errors
     // in it are found when an alias parses it
     auto define_generic(toc& tc, const token& type_tk, tokenizer& tz) -> void {
+        std::vector<generic_param> params{generic_param::parse(tz)};
+
+        for (const generic_param& param : params) {
+            tc.assert_generic_param_free(param.name_tk, param.name_tk.text());
+        }
+
         tc.add_generic_type(name_tk_, name_tk_.text(), start_tk_,
-                            generic_param::parse(tz));
+                            std::move(params));
 
         generic_text_ = tz.skip_braced_block_after(type_tk);
     }
@@ -194,7 +205,8 @@ class stmt_def_type final : public statement {
 
         assert_arg_count(generic_tk, generic, arg_tks);
 
-        add_instance(tc, generic_tk, parse_instance(tc, generic, arg_tks));
+        add_instance(tc, generic_tk,
+                     parse_instance(tc, generic_tk, generic, arg_tks));
     }
 
     // appends the tokens after the name to 'alias_tks_' and returns the
@@ -271,8 +283,10 @@ class stmt_def_type final : public statement {
     }
 
     // adds this type with the fields of the generic definition for the
-    // arguments, the constant arguments live in a block of their own
-    auto parse_instance(toc& tc, const generic_type_info& generic,
+    // arguments, the constant arguments live in a block of their own. an error
+    // in the fields is in the generic definition, the frame names the alias
+    auto parse_instance(toc& tc, const token& generic_tk,
+                        const generic_type_info& generic,
                         const std::span<const token> arg_tks)
         -> std::vector<generic_binding> {
 
@@ -281,12 +295,22 @@ class stmt_def_type final : public statement {
         type_alias_scope aliases{tc};
 
         std::vector<generic_binding> bindings{
-            bind_args(tc, aliases, generic.params, arg_tks),
+            bind_args(tc, aliases, generic_tk.text(), generic.params, arg_tks),
         };
 
-        parse_generic_fields(tc, generic);
+        try {
+            parse_generic_fields(tc, generic);
 
-        add_type(tc);
+            add_fields(tc);
+        } catch (compiler_exception& e) {
+            e.add_call_frame(name_tk_,
+                             generic_type_instance::alias_text(
+                                 name_tk_.text(), generic_tk.text(), bindings),
+                             "instantiated by");
+            throw;
+        }
+
+        tc.add_type(name_tk_, type_);
 
         tc.exit_block();
 
@@ -314,18 +338,26 @@ class stmt_def_type final : public statement {
 
     // a type parameter names its argument, a constant parameter is a constant
     // of the current block
-    [[nodiscard]] static auto
-    bind_args(toc& tc, type_alias_scope& aliases,
-              const std::span<const generic_param> params,
-              const std::span<const token> arg_tks)
-        -> std::vector<generic_binding> {
+    [[nodiscard]] static auto bind_args(
+        toc& tc, type_alias_scope& aliases, const std::string_view generic_name,
+        const std::span<const generic_param> params,
+        const std::span<const token> arg_tks) -> std::vector<generic_binding> {
 
         std::vector<generic_binding> bindings;
 
         for (const auto [param, arg_tk] : std::views::zip(params, arg_tks)) {
             const std::string_view name{param.name_tk.text()};
+            const std::optional<int64_t> value{tc.constant_value_of(arg_tk)};
 
             if (param.is_type) {
+                if (value) {
+                    throw compiler_exception{
+                        arg_tk,
+                        std::format("generic parameter '{}' of '{}' needs a "
+                                    "type, got the constant '{}'",
+                                    name, generic_name, arg_tk.text())};
+                }
+
                 const type& type_arg{
                     tc.get_type_or_throw(arg_tk, arg_tk.text()),
                 };
@@ -336,33 +368,20 @@ class stmt_def_type final : public statement {
                 continue;
             }
 
-            const int64_t value{constant_value(tc, arg_tk)};
+            if (not value) {
+                throw compiler_exception{
+                    arg_tk,
+                    std::format("generic parameter '{}' of '{}' needs a "
+                                "constant, got {}'{}'",
+                                name, generic_name,
+                                tc.has_type(arg_tk.text()) ? "the type " : "",
+                                arg_tk.text())};
+            }
 
-            tc.add_const(arg_tk, 0, name, value);
-            bindings.push_back({.name{name}, .value{value}});
+            tc.add_const(arg_tk, 0, name, *value);
+            bindings.push_back({.name{name}, .value{*value}});
         }
 
         return bindings;
-    }
-
-    // a number or a constant
-    [[nodiscard]] static auto constant_value(const toc& tc, const token& arg_tk)
-        -> int64_t {
-
-        const std::optional<int64_t> value{
-            toc::parse_constant(arg_tk, arg_tk.text()),
-        };
-
-        if (value) {
-            return *value;
-        }
-
-        if (tc.has_const(arg_tk.text())) {
-            return tc.get_const(arg_tk.text());
-        }
-
-        throw compiler_exception{
-            arg_tk,
-            std::format("expected a constant, got '{}'", arg_tk.text())};
     }
 };

@@ -1,0 +1,15 @@
+# an error in a method of a generic type names the alias that needs it
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+func mut text.clear() {
+    self.len = nothing
+}
+
+type str = text<8>
+
+func main() {
+}

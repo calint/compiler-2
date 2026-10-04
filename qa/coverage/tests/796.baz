@@ -1,0 +1,11 @@
+# a generic parameter does not hide a type
+
+type name {
+    x,
+}
+
+func f<name type>(x name) {
+}
+
+func main() {
+}

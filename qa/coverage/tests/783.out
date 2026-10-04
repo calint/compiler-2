@@ -1,2 +1,2 @@
 
-783.baz:8:17: expected a constant, got 'unknown'
+783.baz:8:17: generic parameter 'capacity' of 'text' needs a constant, got 'unknown'

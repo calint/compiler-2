@@ -381,6 +381,8 @@ class stmt_def_func final : public statement {
 
         std::vector<std::string> param_names;
         for (const token& param_tk : param_tks) {
+            tc.assert_generic_param_free(param_tk, param_tk.text());
+
             param_names.emplace_back(param_tk.text());
         }
 

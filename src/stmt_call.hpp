@@ -1225,10 +1225,26 @@ class stmt_call : public expression {
 
         generic_tks_.append_range(args.list_tks);
 
+        const std::span<const std::string> param_names{
+            tc.generics().get_func(func_name_).param_names,
+        };
+
         std::vector<const type*> type_args;
         type_args.reserve(args.arg_tks.size());
 
-        for (const token& type_tk : args.arg_tks) {
+        for (const auto [ix, type_tk] : std::views::enumerate(args.arg_tks)) {
+            // a surplus argument is reported with the count
+            if (std::cmp_less(ix, param_names.size()) and
+                tc.constant_value_of(type_tk)) {
+
+                throw compiler_exception{
+                    type_tk,
+                    std::format("generic parameter '{}' of '{}' needs a type, "
+                                "got the constant '{}'",
+                                param_names.at(static_cast<size_t>(ix)),
+                                func_name_, type_tk.text())};
+            }
+
             type_args.emplace_back(
                 &tc.get_type_or_throw(type_tk, type_tk.text()));
         }

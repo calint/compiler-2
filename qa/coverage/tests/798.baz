@@ -1,0 +1,10 @@
+# a generic type is not a value
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+func main() {
+    var t = text
+}

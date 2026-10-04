@@ -1,0 +1,7 @@
+# a generic parameter is declared once
+
+func f<T type, T type>(x T) {
+}
+
+func main() {
+}

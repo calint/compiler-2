@@ -1,0 +1,15 @@
+# the argument of a constant parameter is not a type
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type name {
+    x,
+}
+
+type str = text<name>
+
+func main() {
+}

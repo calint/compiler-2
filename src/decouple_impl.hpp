@@ -106,12 +106,12 @@ static auto add_generic_instance(toc& tc, const token& func_tk,
 
     tokenizer tz{tc.source(), start_tk};
 
-    tc.enter_generic_instance();
+    tc.types().hide_aliases();
 
     tc.add_func_instance(
         std::make_shared<stmt_def_func>(tc, func_tk, tz, type_args, receiver));
 
-    tc.exit_generic_instance();
+    tc.types().restore_aliases();
 }
 
 // declared in 'decouple.hpp'
@@ -157,7 +157,14 @@ auto instantiate_generic_method(toc& tc, const token& func_tk,
                                 const token& start_tk,
                                 const generic_type_instance& instance) -> void {
 
-    add_generic_instance(tc, func_tk, start_tk, {}, &instance);
+    // an error in the method is in the generic code, the frame names the alias
+    try {
+        add_generic_instance(tc, func_tk, start_tk, {}, &instance);
+    } catch (compiler_exception& e) {
+        e.add_call_frame(instance.src_loc_tk, instance.alias_text(),
+                         "instantiated by");
+        throw;
+    }
 }
 
 // declared in 'decouple.hpp'

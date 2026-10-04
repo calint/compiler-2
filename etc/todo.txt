@@ -247,14 +247,32 @@ other, hard, easiest first
        test in the repository yet
     => cleanup (2026-10-04): 'generics.hpp' holds the generic structs,
        'generic_param', 'generic_arguments' and 'generic_registry' ('toc'
-       owns one, 'tc.generics()'); 'type_alias_scope' (in 'toc.hpp') binds
-       type names and unbinds them itself; 'tokenizer::
+       owns one, 'tc.generics()'); 'type_table' (in 'toc.hpp', 'tc.types()')
+       holds the types and the aliases of the type parameters of an
+       instance; 'type_alias_scope' (in 'toc.hpp') binds aliases and unbinds
+       them itself; 'tokenizer::
        skip_braced_block_after' keeps the text of a generic definition;
        tests 788-791 cover the errors of the '<...>' argument lists
-    => left: constants as parameters of functions ('func f<n>()'); generic
-       constructors; a call frame that names the
-       instantiating alias for errors in methods of generic types;
-       documentation in etc/readme
+    => errors (2026-10-04): an error in a method or in the fields of a generic
+       type has the frame 'instantiated by 'type str = text<8>'' (compiler_
+       exception::call_frame has a reason); parameters are checked where the
+       generic is defined (declared twice, hides a type); a generic type or
+       function used as a plain type or value says what to do; a type
+       argument that is a constant and a constant argument that is a type
+       name the parameter; an alias cannot take the name of a generic type;
+       tests 783 and 792-803
+    => left: the 'generics:' items below
+[ ] medium: low priority: generics: constants as parameters of functions
+    ('func f<n>()'), like the constants of generic types
+[ ] medium: low priority: generics: constructors of generic types
+[ ] medium: low priority: generics: a generic that is never instantiated is
+    not checked, so an error in its body is silent until the first use;
+    parse it once with placeholder types where it is defined
+[ ] medium: low priority: generics: document them in etc/readme (syntax,
+    '<' after a known generic name, an instance is the definition parsed
+    again, errors appear at the first instantiation, aliases are top level)
+[ ] medium: low priority: generics: a regression test for the nvim plugin
+    (baz-lsp.lua, highlights.scm, baz-globals.lua) over a generics file
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
     bodies do not count as assigning

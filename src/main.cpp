@@ -504,8 +504,8 @@ auto print_call_frames(
             line_and_col_num_for_char_index(frame.line, frame.start_index, src),
         };
 
-        std::println(stderr, "{}:{}:{}: called from '{}'", src_file_name,
-                     line_num, col, frame.text);
+        std::println(stderr, "{}:{}:{}: {} '{}'", src_file_name, line_num, col,
+                     frame.reason, frame.text);
     }
 }
 

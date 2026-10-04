@@ -1,0 +1,3 @@
+
+794.baz:4:11: type 'nope' not found
+794.baz:8:6: instantiated by 'type str = text<8>'

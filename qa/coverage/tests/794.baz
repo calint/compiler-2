@@ -1,0 +1,11 @@
+# an error in the fields of a generic type names the alias that needs it
+
+type text<capacity> {
+    array nope[capacity],
+    len,
+}
+
+type str = text<8>
+
+func main() {
+}

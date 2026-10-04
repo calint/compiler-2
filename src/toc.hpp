@@ -297,12 +297,86 @@ class ident_path final {
     }
 };
 
-class toc final {
-    struct type_info {
+// the types by name. a generic instance also names the arguments of its type
+// parameters while it is parsed, those names are aliases
+class type_table final {
+    struct entry {
         token src_loc_tk;
         const type* type_ptr;
     };
 
+    using alias_list = std::vector<std::pair<std::string, entry>>;
+
+    lut<entry> entries_;
+    alias_list aliases_;
+    // the aliases of the callers of the instance being parsed
+    std::vector<alias_list> hidden_aliases_;
+
+  public:
+    auto add(const token& src_loc_tk, const type& tpe) -> void {
+        entries_.put(std::string{tpe.name()}, {
+                                                  .src_loc_tk{src_loc_tk},
+                                                  .type_ptr{&tpe},
+                                              });
+    }
+
+    // a type parameter names its argument until 'unbind', the name is free
+    auto bind(const token& src_loc_tk, const std::string_view name,
+              const type& tpe) -> void {
+
+        assert(not has(name));
+
+        entries_.put(std::string{name}, {
+                                            .src_loc_tk{src_loc_tk},
+                                            .type_ptr{&tpe},
+                                        });
+        aliases_.emplace_back(std::string{name}, entries_.get_const_ref(name));
+    }
+
+    [[nodiscard]] auto get(const std::string_view name) const -> const type& {
+        return *entries_.get_const_ref(name).type_ptr;
+    }
+
+    [[nodiscard]] auto has(const std::string_view name) const -> bool {
+        return entries_.has(name);
+    }
+
+    // an instance sees the types, not the type parameters of its callers
+    auto hide_aliases() -> void {
+        for (const auto& [name, entry] : aliases_) {
+            entries_.erase(name);
+        }
+
+        hidden_aliases_.push_back(std::move(aliases_));
+        aliases_.clear();
+    }
+
+    auto restore_aliases() -> void {
+        assert(aliases_.empty());
+
+        aliases_ = std::move(hidden_aliases_.back());
+        hidden_aliases_.pop_back();
+
+        for (const auto& [name, entry] : aliases_) {
+            entries_.put(name, entry);
+        }
+    }
+
+    [[nodiscard]] auto src_loc_tk_of(const std::string_view name) const
+        -> const token& {
+
+        return entries_.get_const_ref(name).src_loc_tk;
+    }
+
+    auto unbind(const std::string_view name) -> void {
+        entries_.erase(name);
+        std::erase_if(aliases_, [name](const auto& alias) -> bool {
+            return alias.first == name;
+        });
+    }
+};
+
+class toc final {
     // where a variable is placed, 'storage_frame' is null at the variables base
     struct storage_location {
         frame* storage_frame;
@@ -320,12 +394,7 @@ class toc final {
     std::set<std::string> checked_noninline_calls_;
     lut<func_info> funcs_;
     generic_registry generics_;
-    lut<type_info> types_;
-    // the type parameters bound while an instance is parsed
-    std::vector<std::pair<std::string, type_info>> type_aliases_;
-    // the bound type parameters of the callers of the instance being parsed
-    std::vector<std::vector<std::pair<std::string, type_info>>>
-        hidden_type_aliases_;
+    type_table types_;
     const type* type_void_{};
     const type* type_bool_{};
     size_t usage_max_frame_count_{};
@@ -464,10 +533,7 @@ class toc final {
                           const token& start_tk,
                           std::vector<generic_param> params) -> void {
 
-        if (types_.has(name) or generics_.has_type(name)) {
-            throw compiler_exception{
-                src_loc_tk, std::format("type '{}' already defined", name)};
-        }
+        assert_type_not_defined(src_loc_tk, name);
 
         generics_.add_type(src_loc_tk, name, start_tk, std::move(params));
     }
@@ -500,18 +566,9 @@ class toc final {
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
-        if (types_.has(tpe.name())) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("type '{}' already defined at {}", tpe.name(),
-                            source_location_hr(
-                                types_.get_const_ref(tpe.name()).src_loc_tk))};
-        }
+        assert_type_not_defined(src_loc_tk, tpe.name());
 
-        types_.put(tpe.name(), {
-                                   .src_loc_tk{src_loc_tk},
-                                   .type_ptr{&tpe},
-                               });
+        types_.add(src_loc_tk, tpe);
     }
 
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
@@ -590,23 +647,21 @@ class toc final {
         comment_var(src_loc_tk, indent, var);
     }
 
-    // a type parameter names its argument while an instance is parsed
-    auto bind_type_alias(const token& src_loc_tk, const std::string_view name,
-                         const type& tpe) -> void {
+    // a generic parameter names its argument, so it cannot be the name of a
+    // type
+    auto assert_generic_param_free(const token& src_loc_tk,
+                                   const std::string_view name) const -> void {
 
-        if (types_.has(name)) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("type parameter '{}' hides the type '{}'", name,
-                            name)};
+        if (not types_.has(name)) {
+            return;
         }
 
-        types_.put(std::string{name}, {
-                                          .src_loc_tk{src_loc_tk},
-                                          .type_ptr{&tpe},
-                                      });
-        type_aliases_.emplace_back(std::string{name},
-                                   types_.get_const_ref(name));
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("generic parameter '{}' hides the type '{}' defined "
+                        "at {}, use another name",
+                        name, name,
+                        source_location_hr(types_.src_loc_tk_of(name)))};
     }
 
     [[nodiscard]] auto bounds_check_options() const
@@ -645,6 +700,23 @@ class toc final {
             storage_frame->restore_peak_storage_size_bytes(
                 peak_storage_size_bytes);
         }
+    }
+
+    // a number or a constant
+    [[nodiscard]] auto constant_value_of(const token& tk) const
+        -> std::optional<int64_t> {
+
+        if (const std::optional<int64_t> value{parse_constant(tk, tk.text())};
+            value) {
+
+            return value;
+        }
+
+        if (has_const(tk.text())) {
+            return get_const(tk.text());
+        }
+
+        return std::nullopt;
     }
 
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
@@ -687,16 +759,6 @@ class toc final {
         refresh_usage();
     }
 
-    // an instance sees the types, not the type parameters of its callers
-    auto enter_generic_instance() -> void {
-        for (const auto& [name, info] : type_aliases_) {
-            types_.erase(name);
-        }
-
-        hidden_type_aliases_.push_back(std::move(type_aliases_));
-        type_aliases_.clear();
-    }
-
     auto enter_loop(const std::string_view name) -> void {
         frames_.emplace_back(name, frame::frame_type::LOOP);
         refresh_usage();
@@ -718,17 +780,6 @@ class toc final {
         assert(frames_.back().is_func() and frames_.back().is_name(name));
 
         pop_frame();
-    }
-
-    auto exit_generic_instance() -> void {
-        assert(type_aliases_.empty());
-
-        type_aliases_ = std::move(hidden_type_aliases_.back());
-        hidden_type_aliases_.pop_back();
-
-        for (const auto& [name, info] : type_aliases_) {
-            types_.put(name, info);
-        }
     }
 
     auto exit_loop([[maybe_unused]] const std::string_view name) -> void {
@@ -870,11 +921,19 @@ class toc final {
         -> const type& {
 
         if (not types_.has(name)) {
+            if (generics_.has_type(name)) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("generic type '{}' is not a type, name an "
+                                "instance first, e.g. 'type str = {}<...>'",
+                                name, name)};
+            }
+
             throw compiler_exception{src_loc_tk,
                                      std::format("type '{}' not found", name)};
         }
 
-        return *types_.get_const_ref(name).type_ptr;
+        return types_.get(name);
     }
 
     [[nodiscard]] auto get_type_void() const -> const type& {
@@ -1129,12 +1188,7 @@ class toc final {
         return std::format("{}:{}", line, col);
     }
 
-    auto unbind_type_alias(const std::string_view name) -> void {
-        types_.erase(name);
-        std::erase_if(type_aliases_, [name](const auto& alias) -> bool {
-            return alias.first == name;
-        });
-    }
+    [[nodiscard]] auto types() -> type_table& { return types_; }
 
     //
     // statics
@@ -1315,6 +1369,26 @@ class toc final {
             src_loc_tk,
             std::format("variable '{}' already declared at {}", name,
                         source_location_hr(decl_var.src_loc_tk))};
+    }
+
+    // a generic type and a type share the namespace of types
+    auto assert_type_not_defined(const token& src_loc_tk,
+                                 const std::string_view name) const -> void {
+
+        if (types_.has(name)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("type '{}' already defined at {}", name,
+                            source_location_hr(types_.src_loc_tk_of(name)))};
+        }
+
+        if (generics_.has_type(name)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format(
+                    "type '{}' already defined as a generic type at {}", name,
+                    source_location_hr(generics_.get_type(name).src_loc_tk))};
+        }
     }
 
     auto assert_vars_capacity(const token& src_loc_tk,
@@ -1627,6 +1701,22 @@ class toc final {
             return id_info;
         }
 
+        if (generics_.has_type(ident)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("generic type '{}' is not a value, name an "
+                            "instance first, e.g. 'type str = {}<...>'",
+                            ident, ident)};
+        }
+
+        if (generics_.has_func(ident)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("generic function '{}' needs type arguments, "
+                            "e.g. '{}<...>'",
+                            ident, ident)};
+        }
+
         throw compiler_exception{
             src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
     }
@@ -1808,14 +1898,15 @@ class type_alias_scope final {
 
     ~type_alias_scope() {
         for (const std::string& name : names_) {
-            tc_.unbind_type_alias(name);
+            tc_.types().unbind(name);
         }
     }
 
     auto bind(const token& src_loc_tk, const std::string_view name,
               const type& tpe) -> void {
 
-        tc_.bind_type_alias(src_loc_tk, name, tpe);
+        tc_.assert_generic_param_free(src_loc_tk, name);
+        tc_.types().bind(src_loc_tk, name, tpe);
         names_.emplace_back(name);
     }
 

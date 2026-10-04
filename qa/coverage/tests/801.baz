@@ -1,0 +1,11 @@
+# the argument of a type parameter is not a constant
+
+type pair<first type, second type> {
+    a first,
+    b second,
+}
+
+type p = pair<1, 2>
+
+func main() {
+}

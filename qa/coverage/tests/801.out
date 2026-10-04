@@ -1,0 +1,2 @@
+
+801.baz:8:15: generic parameter 'first' of 'pair' needs a type, got the constant '1'

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <format>
@@ -40,6 +41,18 @@ struct generic_param {
             if (name_tk.text().empty()) {
                 throw compiler_exception{
                     tz, "expected a name for the generic parameter"};
+            }
+
+            const auto is_same_name{
+                [&](const generic_param& param) -> bool {
+                    return param.name_tk.text() == name_tk.text();
+                },
+            };
+            if (std::ranges::any_of(params, is_same_name)) {
+                throw compiler_exception{
+                    name_tk, std::format("generic parameter '{}' is declared "
+                                         "twice",
+                                         name_tk.text())};
             }
 
             const char next{tz.peek_char_after_whitespace()};
@@ -122,9 +135,44 @@ struct generic_binding {
 
 // the methods of a generic type see the arguments of their instance
 struct generic_type_instance {
+    // the name of the alias
+    token src_loc_tk;
     std::string generic_name;
     const type* type_ptr{};
     std::vector<generic_binding> bindings;
+
+    [[nodiscard]] auto alias_text() const -> std::string {
+        return alias_text(type_ptr->name(), generic_name, bindings);
+    }
+
+    //
+    // statics
+    //
+
+    // e.g. 'type str = text<8>', for the errors found in the instance
+    [[nodiscard]] static auto
+    alias_text(const std::string_view alias_name,
+               const std::string_view generic_name,
+               const std::span<const generic_binding> bindings) -> std::string {
+
+        std::string text{
+            std::format("type {} = {}<", alias_name, generic_name),
+        };
+
+        for (const generic_binding& binding : bindings) {
+            if (text.back() != '<') {
+                text += ", ";
+            }
+
+            text += binding.type_ptr != nullptr
+                        ? std::string{binding.type_ptr->name()}
+                        : std::format("{}", binding.value);
+        }
+
+        text += '>';
+
+        return text;
+    }
 };
 
 // a function with type parameters, e.g. 'func tokenizer.to<T type>()'. every

@@ -1,0 +1,3 @@
+
+792.baz:9:16: cannot resolve identifier 'nothing'
+792.baz:12:6: instantiated by 'type str = text<8>'
