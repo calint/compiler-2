@@ -4716,52 +4716,52 @@ func.parse_input:
             bge zero, t3, foo.503.5.954.9.end
             foo.503.5.954.9:
                 if.504.12.954.9:
-                # [504:12] ? tz.is_name(link_names.array[e.link_name_id])
-                # [504:12] ? shorthand: tz.is_name(link_names.array[e.link_name_id])
+                # [504:12] ? tz.is<name>(link_names.array[e.link_name_id])
+                # [504:12] ? shorthand: tz.is<name>(link_names.array[e.link_name_id])
                 cmp.504.12.954.9:
                 # [504:12] allocate scratch register -> t5
-                    # [504:15] t5 = tz.is_name(link_names.array[e.link_name_id])
+                    # [504:15] t5 = tz.is<name>(link_names.array[e.link_name_id])
                     # [504:15] = expression
-                    # [504:15] tz.is_name(link_names.array[e.link_name_id])
-                    # [504:40] allocate scratch register -> t6
-                    # [504:40] set array index
-                    # [504:40] e.link_name_id
+                    # [504:15] tz.is<name>(link_names.array[e.link_name_id])
+                    # [504:41] allocate scratch register -> t6
+                    # [504:41] set array index
+                    # [504:41] e.link_name_id
                     lw t6, 0(t2)
-                    # [504:40] bounds check begin
-                    # [504:40] lower bound
-                    # [504:40] t6 lower bound covered by the unsigned upper bound
-                    # [504:40] upper bound
-                    # [504:40] allocate scratch register -> s2
+                    # [504:41] bounds check begin
+                    # [504:41] lower bound
+                    # [504:41] t6 lower bound covered by the unsigned upper bound
+                    # [504:41] upper bound
+                    # [504:41] allocate scratch register -> s2
                     li s2, 1024
                     bltu t6, s2, 2f
                     1:
-                    # [504:40] source line
+                    # [504:41] source line
                     li a0, 504
                     j baz_bounds_panic
                     2:
-                    # [504:40] free scratch register s2
-                    # [504:40] bounds check end
-                    # [504:40] allocate scratch register -> s2
+                    # [504:41] free scratch register s2
+                    # [504:41] bounds check end
+                    # [504:41] allocate scratch register -> s2
                     slli s2, t6, 2
                     add t6, s2, t6
                     slli t6, t6, 2
-                    # [504:40] free scratch register s2
+                    # [504:41] free scratch register s2
                     # [504:15] allocate scratch register -> s2
-                    # [504:15] address of parameter 'nm'
+                    # [504:15] address of parameter 's'
                     add s2, s0, t6
                     # [504:15] allocate scratch register -> s3
                     lui s3, 1048546
                     add s2, s2, s3
                     # [504:15] free scratch register s3
                     addi s2, s2, 148
-                    # [452:6] tokenizer.is_name(nm name) res bool
-                    func.tokenizer.is_name.504.15.954.9:
+                    # [452:6] tokenizer.is(s T) res bool
+                    func.tokenizer.is.name.504.15.954.9:
                         # [504:15] alias res -> t5
                         # [504:15] alias self -> tz
-                        # [504:15] alias nm -> link_names.array
-                        # [453:5] res = self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len
+                        # [504:15] alias s -> link_names.array
+                        # [453:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len
                         cmp.453.11.504.15.954.9:
                         # [453:11] allocate scratch register -> s3
                             # [453:16] s3 = self.len()
@@ -4786,17 +4786,17 @@ func.parse_input:
                         sltiu t5, t5, 1
                         beq t5, zero, bool.453.11.504.15.954.9.end
                         # [453:11] free scratch register s3
-                        # [454:11] ? shorthand: arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                        # [454:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
                         cmp.454.11.504.15.954.9:
-                            # [454:11] arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                            # [454:11] arrays_equal(s.array, self.str.array[self.start], s.len)
                             # [454:11] allocate scratch register -> s3
                             # [454:11] allocate scratch register -> s4
                             # [454:11] allocate scratch register -> s5
                             # [454:11] s3: source, s4: destination, s5: count
-                            # [454:62] nm.len
-                            # [454:62] nm.len
+                            # [454:61] s.len
+                            # [454:61] s.len
                             lw s5, 16(s2)
-                            # [454:24] nm.array
+                            # [454:24] s.array
                             # [454:24] bounds check begin
                             # [454:24] lower bound
                             # [454:24] s5 lower bound covered by the unsigned upper bound
@@ -4812,29 +4812,29 @@ func.parse_input:
                             # [454:24] free scratch register s6
                             # [454:24] bounds check end
                             addi s3, s2, 0
-                            # [454:34] self.str.array[self.start]
-                            # [454:49] allocate scratch register -> s6
-                            # [454:49] set array index
-                            # [454:49] self.start
+                            # [454:33] self.str.array[self.start]
+                            # [454:48] allocate scratch register -> s6
+                            # [454:48] set array index
+                            # [454:48] self.start
                             lw s6, 132(t1)
-                            # [454:49] bounds check begin
-                            # [454:49] lower bound
-                            # [454:49] count s5 lower bound already checked
+                            # [454:48] bounds check begin
+                            # [454:48] lower bound
+                            # [454:48] count s5 lower bound already checked
                             bltz s6, 1f
-                            # [454:49] upper bound
-                            # [454:49] allocate scratch register -> s7
-                            # [454:49] allocate scratch register -> s8
+                            # [454:48] upper bound
+                            # [454:48] allocate scratch register -> s7
+                            # [454:48] allocate scratch register -> s8
                             add s8, s6, s5
                             li s7, 127
                             bgeu s7, s8, 2f
                             1:
-                            # [454:49] source line
+                            # [454:48] source line
                             li a0, 454
                             j baz_bounds_panic
                             2:
-                            # [454:49] free scratch register s8
-                            # [454:49] free scratch register s7
-                            # [454:49] bounds check end
+                            # [454:48] free scratch register s8
+                            # [454:48] free scratch register s7
+                            # [454:48] bounds check end
                             add s4, t1, s6
                             # [454:11] free scratch register s6
                             # [454:11] s5: elements to bytes (1 bytes/element)
@@ -4866,7 +4866,7 @@ func.parse_input:
                             # [454:11] free scratch register s3
                         bool.453.11.504.15.954.9.end:
                         # [504:15] free scratch register s2
-                    func.tokenizer.is_name.504.15.954.9.end:
+                    func.tokenizer.is.name.504.15.954.9.end:
                         # [504:15] free scratch register t6
                 beq t5, zero, if.504.9.954.9.end
                 # [504:12] free scratch register t5
@@ -7536,21 +7536,21 @@ func.parse_input:
                 bge zero, t3, foo.562.5.595.24.957.9.end
                 foo.562.5.595.24.957.9:
                     if.563.12.595.24.957.9:
-                    # [563:12] ? tz.is_name(e)
-                    # [563:12] ? shorthand: tz.is_name(e)
+                    # [563:12] ? tz.is<name>(e)
+                    # [563:12] ? shorthand: tz.is<name>(e)
                     cmp.563.12.595.24.957.9:
                     # [563:12] allocate scratch register -> t5
-                        # [563:15] t5 = tz.is_name(e)
+                        # [563:15] t5 = tz.is<name>(e)
                         # [563:15] = expression
-                        # [563:15] tz.is_name(e)
-                        # [452:6] tokenizer.is_name(nm name) res bool
-                        func.tokenizer.is_name.563.15.595.24.957.9:
+                        # [563:15] tz.is<name>(e)
+                        # [452:6] tokenizer.is(s T) res bool
+                        func.tokenizer.is.name.563.15.595.24.957.9:
                             # [563:15] alias res -> t5
                             # [563:15] alias self -> tz
-                            # [563:15] alias nm -> e
-                            # [453:5] res = self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                            # [453:11] ? self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                            # [453:11] ? self.len() == nm.len
+                            # [563:15] alias s -> e
+                            # [453:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                            # [453:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                            # [453:11] ? self.len() == s.len
                             cmp.453.11.563.15.595.24.957.9:
                             # [453:11] allocate scratch register -> t6
                                 # [453:16] t6 = self.len()
@@ -7575,17 +7575,17 @@ func.parse_input:
                             sltiu t5, t5, 1
                             beq t5, zero, bool.453.11.563.15.595.24.957.9.end
                             # [453:11] free scratch register t6
-                            # [454:11] ? shorthand: arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                            # [454:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
                             cmp.454.11.563.15.595.24.957.9:
-                                # [454:11] arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                                # [454:11] arrays_equal(s.array, self.str.array[self.start], s.len)
                                 # [454:11] allocate scratch register -> t6
                                 # [454:11] allocate scratch register -> s2
                                 # [454:11] allocate scratch register -> s3
                                 # [454:11] t6: source, s2: destination, s3: count
-                                # [454:62] nm.len
-                                # [454:62] nm.len
+                                # [454:61] s.len
+                                # [454:61] s.len
                                 lw s3, 16(t2)
-                                # [454:24] nm.array
+                                # [454:24] s.array
                                 # [454:24] bounds check begin
                                 # [454:24] lower bound
                                 # [454:24] s3 lower bound covered by the unsigned upper bound
@@ -7601,29 +7601,29 @@ func.parse_input:
                                 # [454:24] free scratch register s4
                                 # [454:24] bounds check end
                                 addi t6, t2, 0
-                                # [454:34] self.str.array[self.start]
-                                # [454:49] allocate scratch register -> s4
-                                # [454:49] set array index
-                                # [454:49] self.start
+                                # [454:33] self.str.array[self.start]
+                                # [454:48] allocate scratch register -> s4
+                                # [454:48] set array index
+                                # [454:48] self.start
                                 lw s4, 132(t1)
-                                # [454:49] bounds check begin
-                                # [454:49] lower bound
-                                # [454:49] count s3 lower bound already checked
+                                # [454:48] bounds check begin
+                                # [454:48] lower bound
+                                # [454:48] count s3 lower bound already checked
                                 bltz s4, 1f
-                                # [454:49] upper bound
-                                # [454:49] allocate scratch register -> s5
-                                # [454:49] allocate scratch register -> s6
+                                # [454:48] upper bound
+                                # [454:48] allocate scratch register -> s5
+                                # [454:48] allocate scratch register -> s6
                                 add s6, s4, s3
                                 li s5, 127
                                 bgeu s5, s6, 2f
                                 1:
-                                # [454:49] source line
+                                # [454:48] source line
                                 li a0, 454
                                 j baz_bounds_panic
                                 2:
-                                # [454:49] free scratch register s6
-                                # [454:49] free scratch register s5
-                                # [454:49] bounds check end
+                                # [454:48] free scratch register s6
+                                # [454:48] free scratch register s5
+                                # [454:48] bounds check end
                                 add s2, t1, s4
                                 # [454:11] free scratch register s4
                                 # [454:11] s3: elements to bytes (1 bytes/element)
@@ -7654,7 +7654,7 @@ func.parse_input:
                                 # [454:11] free scratch register s2
                                 # [454:11] free scratch register t6
                             bool.453.11.563.15.595.24.957.9.end:
-                        func.tokenizer.is_name.563.15.595.24.957.9.end:
+                        func.tokenizer.is.name.563.15.595.24.957.9.end:
                     beq t5, zero, if.563.9.595.24.957.9.end
                     # [563:12] free scratch register t5
                     if.563.12.595.24.957.9.code:
@@ -8177,21 +8177,21 @@ func.parse_input:
                 bge zero, t3, foo.562.5.604.29.957.9.end
                 foo.562.5.604.29.957.9:
                     if.563.12.604.29.957.9:
-                    # [563:12] ? tz.is_name(e)
-                    # [563:12] ? shorthand: tz.is_name(e)
+                    # [563:12] ? tz.is<name>(e)
+                    # [563:12] ? shorthand: tz.is<name>(e)
                     cmp.563.12.604.29.957.9:
                     # [563:12] allocate scratch register -> t5
-                        # [563:15] t5 = tz.is_name(e)
+                        # [563:15] t5 = tz.is<name>(e)
                         # [563:15] = expression
-                        # [563:15] tz.is_name(e)
-                        # [452:6] tokenizer.is_name(nm name) res bool
-                        func.tokenizer.is_name.563.15.604.29.957.9:
+                        # [563:15] tz.is<name>(e)
+                        # [452:6] tokenizer.is(s T) res bool
+                        func.tokenizer.is.name.563.15.604.29.957.9:
                             # [563:15] alias res -> t5
                             # [563:15] alias self -> tz
-                            # [563:15] alias nm -> e
-                            # [453:5] res = self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                            # [453:11] ? self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                            # [453:11] ? self.len() == nm.len
+                            # [563:15] alias s -> e
+                            # [453:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                            # [453:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                            # [453:11] ? self.len() == s.len
                             cmp.453.11.563.15.604.29.957.9:
                             # [453:11] allocate scratch register -> t6
                                 # [453:16] t6 = self.len()
@@ -8216,17 +8216,17 @@ func.parse_input:
                             sltiu t5, t5, 1
                             beq t5, zero, bool.453.11.563.15.604.29.957.9.end
                             # [453:11] free scratch register t6
-                            # [454:11] ? shorthand: arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                            # [454:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
                             cmp.454.11.563.15.604.29.957.9:
-                                # [454:11] arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                                # [454:11] arrays_equal(s.array, self.str.array[self.start], s.len)
                                 # [454:11] allocate scratch register -> t6
                                 # [454:11] allocate scratch register -> s2
                                 # [454:11] allocate scratch register -> s3
                                 # [454:11] t6: source, s2: destination, s3: count
-                                # [454:62] nm.len
-                                # [454:62] nm.len
+                                # [454:61] s.len
+                                # [454:61] s.len
                                 lw s3, 16(t2)
-                                # [454:24] nm.array
+                                # [454:24] s.array
                                 # [454:24] bounds check begin
                                 # [454:24] lower bound
                                 # [454:24] s3 lower bound covered by the unsigned upper bound
@@ -8242,29 +8242,29 @@ func.parse_input:
                                 # [454:24] free scratch register s4
                                 # [454:24] bounds check end
                                 addi t6, t2, 0
-                                # [454:34] self.str.array[self.start]
-                                # [454:49] allocate scratch register -> s4
-                                # [454:49] set array index
-                                # [454:49] self.start
+                                # [454:33] self.str.array[self.start]
+                                # [454:48] allocate scratch register -> s4
+                                # [454:48] set array index
+                                # [454:48] self.start
                                 lw s4, 132(t1)
-                                # [454:49] bounds check begin
-                                # [454:49] lower bound
-                                # [454:49] count s3 lower bound already checked
+                                # [454:48] bounds check begin
+                                # [454:48] lower bound
+                                # [454:48] count s3 lower bound already checked
                                 bltz s4, 1f
-                                # [454:49] upper bound
-                                # [454:49] allocate scratch register -> s5
-                                # [454:49] allocate scratch register -> s6
+                                # [454:48] upper bound
+                                # [454:48] allocate scratch register -> s5
+                                # [454:48] allocate scratch register -> s6
                                 add s6, s4, s3
                                 li s5, 127
                                 bgeu s5, s6, 2f
                                 1:
-                                # [454:49] source line
+                                # [454:48] source line
                                 li a0, 454
                                 j baz_bounds_panic
                                 2:
-                                # [454:49] free scratch register s6
-                                # [454:49] free scratch register s5
-                                # [454:49] bounds check end
+                                # [454:48] free scratch register s6
+                                # [454:48] free scratch register s5
+                                # [454:48] bounds check end
                                 add s2, t1, s4
                                 # [454:11] free scratch register s4
                                 # [454:11] s3: elements to bytes (1 bytes/element)
@@ -8295,7 +8295,7 @@ func.parse_input:
                                 # [454:11] free scratch register s2
                                 # [454:11] free scratch register t6
                             bool.453.11.563.15.604.29.957.9.end:
-                        func.tokenizer.is_name.563.15.604.29.957.9.end:
+                        func.tokenizer.is.name.563.15.604.29.957.9.end:
                     beq t5, zero, if.563.9.604.29.957.9.end
                     # [563:12] free scratch register t5
                     if.563.12.604.29.957.9.code:
@@ -13342,52 +13342,52 @@ func.parse_input:
             bge zero, t3, foo.749.5.978.9.end
             foo.749.5.978.9:
                 if.750.12.978.9:
-                # [750:12] ? tz.is_name(objects.array[e].name)
-                # [750:12] ? shorthand: tz.is_name(objects.array[e].name)
+                # [750:12] ? tz.is<name>(objects.array[e].name)
+                # [750:12] ? shorthand: tz.is<name>(objects.array[e].name)
                 cmp.750.12.978.9:
                 # [750:12] allocate scratch register -> t5
-                    # [750:15] t5 = tz.is_name(objects.array[e].name)
+                    # [750:15] t5 = tz.is<name>(objects.array[e].name)
                     # [750:15] = expression
-                    # [750:15] tz.is_name(objects.array[e].name)
-                    # [750:37] allocate scratch register -> t6
-                    # [750:37] set array index
-                    # [750:37] e
+                    # [750:15] tz.is<name>(objects.array[e].name)
+                    # [750:38] allocate scratch register -> t6
+                    # [750:38] set array index
+                    # [750:38] e
                     lw t6, 0(t2)
-                    # [750:37] bounds check begin
-                    # [750:37] lower bound
-                    # [750:37] t6 lower bound covered by the unsigned upper bound
-                    # [750:37] upper bound
-                    # [750:37] allocate scratch register -> s2
+                    # [750:38] bounds check begin
+                    # [750:38] lower bound
+                    # [750:38] t6 lower bound covered by the unsigned upper bound
+                    # [750:38] upper bound
+                    # [750:38] allocate scratch register -> s2
                     li s2, 1024
                     bltu t6, s2, 2f
                     1:
-                    # [750:37] source line
+                    # [750:38] source line
                     li a0, 750
                     j baz_bounds_panic
                     2:
-                    # [750:37] free scratch register s2
-                    # [750:37] bounds check end
-                    # [750:37] allocate scratch register -> s2
+                    # [750:38] free scratch register s2
+                    # [750:38] bounds check end
+                    # [750:38] allocate scratch register -> s2
                     slli s2, t6, 2
                     add t6, s2, t6
                     slli t6, t6, 2
-                    # [750:37] free scratch register s2
+                    # [750:38] free scratch register s2
                     # [750:15] allocate scratch register -> s2
-                    # [750:15] address of parameter 'nm'
+                    # [750:15] address of parameter 's'
                     add s2, s0, t6
                     # [750:15] allocate scratch register -> s3
                     lui s3, 1048551
                     add s2, s2, s3
                     # [750:15] free scratch register s3
                     addi s2, s2, 152
-                    # [452:6] tokenizer.is_name(nm name) res bool
-                    func.tokenizer.is_name.750.15.978.9:
+                    # [452:6] tokenizer.is(s T) res bool
+                    func.tokenizer.is.name.750.15.978.9:
                         # [750:15] alias res -> t5
                         # [750:15] alias self -> tz
-                        # [750:15] alias nm -> objects.array.name
-                        # [453:5] res = self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len
+                        # [750:15] alias s -> objects.array.name
+                        # [453:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len
                         cmp.453.11.750.15.978.9:
                         # [453:11] allocate scratch register -> s3
                             # [453:16] s3 = self.len()
@@ -13412,17 +13412,17 @@ func.parse_input:
                         sltiu t5, t5, 1
                         beq t5, zero, bool.453.11.750.15.978.9.end
                         # [453:11] free scratch register s3
-                        # [454:11] ? shorthand: arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                        # [454:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
                         cmp.454.11.750.15.978.9:
-                            # [454:11] arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                            # [454:11] arrays_equal(s.array, self.str.array[self.start], s.len)
                             # [454:11] allocate scratch register -> s3
                             # [454:11] allocate scratch register -> s4
                             # [454:11] allocate scratch register -> s5
                             # [454:11] s3: source, s4: destination, s5: count
-                            # [454:62] nm.len
-                            # [454:62] nm.len
+                            # [454:61] s.len
+                            # [454:61] s.len
                             lw s5, 16(s2)
-                            # [454:24] nm.array
+                            # [454:24] s.array
                             # [454:24] bounds check begin
                             # [454:24] lower bound
                             # [454:24] s5 lower bound covered by the unsigned upper bound
@@ -13438,29 +13438,29 @@ func.parse_input:
                             # [454:24] free scratch register s6
                             # [454:24] bounds check end
                             addi s3, s2, 0
-                            # [454:34] self.str.array[self.start]
-                            # [454:49] allocate scratch register -> s6
-                            # [454:49] set array index
-                            # [454:49] self.start
+                            # [454:33] self.str.array[self.start]
+                            # [454:48] allocate scratch register -> s6
+                            # [454:48] set array index
+                            # [454:48] self.start
                             lw s6, 132(t1)
-                            # [454:49] bounds check begin
-                            # [454:49] lower bound
-                            # [454:49] count s5 lower bound already checked
+                            # [454:48] bounds check begin
+                            # [454:48] lower bound
+                            # [454:48] count s5 lower bound already checked
                             bltz s6, 1f
-                            # [454:49] upper bound
-                            # [454:49] allocate scratch register -> s7
-                            # [454:49] allocate scratch register -> s8
+                            # [454:48] upper bound
+                            # [454:48] allocate scratch register -> s7
+                            # [454:48] allocate scratch register -> s8
                             add s8, s6, s5
                             li s7, 127
                             bgeu s7, s8, 2f
                             1:
-                            # [454:49] source line
+                            # [454:48] source line
                             li a0, 454
                             j baz_bounds_panic
                             2:
-                            # [454:49] free scratch register s8
-                            # [454:49] free scratch register s7
-                            # [454:49] bounds check end
+                            # [454:48] free scratch register s8
+                            # [454:48] free scratch register s7
+                            # [454:48] bounds check end
                             add s4, t1, s6
                             # [454:11] free scratch register s6
                             # [454:11] s5: elements to bytes (1 bytes/element)
@@ -13492,7 +13492,7 @@ func.parse_input:
                             # [454:11] free scratch register s3
                         bool.453.11.750.15.978.9.end:
                         # [750:15] free scratch register s2
-                    func.tokenizer.is_name.750.15.978.9.end:
+                    func.tokenizer.is.name.750.15.978.9.end:
                         # [750:15] free scratch register t6
                 beq t5, zero, if.750.9.978.9.end
                 # [750:12] free scratch register t5
@@ -14711,52 +14711,52 @@ func.parse_input:
             bge zero, t3, foo.789.5.981.9.end
             foo.789.5.981.9:
                 if.790.12.981.9:
-                # [790:12] ? tz.is_name(objects.array[e].name)
-                # [790:12] ? shorthand: tz.is_name(objects.array[e].name)
+                # [790:12] ? tz.is<name>(objects.array[e].name)
+                # [790:12] ? shorthand: tz.is<name>(objects.array[e].name)
                 cmp.790.12.981.9:
                 # [790:12] allocate scratch register -> t5
-                    # [790:15] t5 = tz.is_name(objects.array[e].name)
+                    # [790:15] t5 = tz.is<name>(objects.array[e].name)
                     # [790:15] = expression
-                    # [790:15] tz.is_name(objects.array[e].name)
-                    # [790:37] allocate scratch register -> t6
-                    # [790:37] set array index
-                    # [790:37] e
+                    # [790:15] tz.is<name>(objects.array[e].name)
+                    # [790:38] allocate scratch register -> t6
+                    # [790:38] set array index
+                    # [790:38] e
                     lw t6, 0(t2)
-                    # [790:37] bounds check begin
-                    # [790:37] lower bound
-                    # [790:37] t6 lower bound covered by the unsigned upper bound
-                    # [790:37] upper bound
-                    # [790:37] allocate scratch register -> s2
+                    # [790:38] bounds check begin
+                    # [790:38] lower bound
+                    # [790:38] t6 lower bound covered by the unsigned upper bound
+                    # [790:38] upper bound
+                    # [790:38] allocate scratch register -> s2
                     li s2, 1024
                     bltu t6, s2, 2f
                     1:
-                    # [790:37] source line
+                    # [790:38] source line
                     li a0, 790
                     j baz_bounds_panic
                     2:
-                    # [790:37] free scratch register s2
-                    # [790:37] bounds check end
-                    # [790:37] allocate scratch register -> s2
+                    # [790:38] free scratch register s2
+                    # [790:38] bounds check end
+                    # [790:38] allocate scratch register -> s2
                     slli s2, t6, 2
                     add t6, s2, t6
                     slli t6, t6, 2
-                    # [790:37] free scratch register s2
+                    # [790:38] free scratch register s2
                     # [790:15] allocate scratch register -> s2
-                    # [790:15] address of parameter 'nm'
+                    # [790:15] address of parameter 's'
                     add s2, s0, t6
                     # [790:15] allocate scratch register -> s3
                     lui s3, 1048551
                     add s2, s2, s3
                     # [790:15] free scratch register s3
                     addi s2, s2, 152
-                    # [452:6] tokenizer.is_name(nm name) res bool
-                    func.tokenizer.is_name.790.15.981.9:
+                    # [452:6] tokenizer.is(s T) res bool
+                    func.tokenizer.is.name.790.15.981.9:
                         # [790:15] alias res -> t5
                         # [790:15] alias self -> tz
-                        # [790:15] alias nm -> objects.array.name
-                        # [453:5] res = self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len
+                        # [790:15] alias s -> objects.array.name
+                        # [453:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len
                         cmp.453.11.790.15.981.9:
                         # [453:11] allocate scratch register -> s3
                             # [453:16] s3 = self.len()
@@ -14781,17 +14781,17 @@ func.parse_input:
                         sltiu t5, t5, 1
                         beq t5, zero, bool.453.11.790.15.981.9.end
                         # [453:11] free scratch register s3
-                        # [454:11] ? shorthand: arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                        # [454:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
                         cmp.454.11.790.15.981.9:
-                            # [454:11] arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                            # [454:11] arrays_equal(s.array, self.str.array[self.start], s.len)
                             # [454:11] allocate scratch register -> s3
                             # [454:11] allocate scratch register -> s4
                             # [454:11] allocate scratch register -> s5
                             # [454:11] s3: source, s4: destination, s5: count
-                            # [454:62] nm.len
-                            # [454:62] nm.len
+                            # [454:61] s.len
+                            # [454:61] s.len
                             lw s5, 16(s2)
-                            # [454:24] nm.array
+                            # [454:24] s.array
                             # [454:24] bounds check begin
                             # [454:24] lower bound
                             # [454:24] s5 lower bound covered by the unsigned upper bound
@@ -14807,29 +14807,29 @@ func.parse_input:
                             # [454:24] free scratch register s6
                             # [454:24] bounds check end
                             addi s3, s2, 0
-                            # [454:34] self.str.array[self.start]
-                            # [454:49] allocate scratch register -> s6
-                            # [454:49] set array index
-                            # [454:49] self.start
+                            # [454:33] self.str.array[self.start]
+                            # [454:48] allocate scratch register -> s6
+                            # [454:48] set array index
+                            # [454:48] self.start
                             lw s6, 132(t1)
-                            # [454:49] bounds check begin
-                            # [454:49] lower bound
-                            # [454:49] count s5 lower bound already checked
+                            # [454:48] bounds check begin
+                            # [454:48] lower bound
+                            # [454:48] count s5 lower bound already checked
                             bltz s6, 1f
-                            # [454:49] upper bound
-                            # [454:49] allocate scratch register -> s7
-                            # [454:49] allocate scratch register -> s8
+                            # [454:48] upper bound
+                            # [454:48] allocate scratch register -> s7
+                            # [454:48] allocate scratch register -> s8
                             add s8, s6, s5
                             li s7, 127
                             bgeu s7, s8, 2f
                             1:
-                            # [454:49] source line
+                            # [454:48] source line
                             li a0, 454
                             j baz_bounds_panic
                             2:
-                            # [454:49] free scratch register s8
-                            # [454:49] free scratch register s7
-                            # [454:49] bounds check end
+                            # [454:48] free scratch register s8
+                            # [454:48] free scratch register s7
+                            # [454:48] bounds check end
                             add s4, t1, s6
                             # [454:11] free scratch register s6
                             # [454:11] s5: elements to bytes (1 bytes/element)
@@ -14861,7 +14861,7 @@ func.parse_input:
                             # [454:11] free scratch register s3
                         bool.453.11.790.15.981.9.end:
                         # [790:15] free scratch register s2
-                    func.tokenizer.is_name.790.15.981.9.end:
+                    func.tokenizer.is.name.790.15.981.9.end:
                         # [790:15] free scratch register t6
                 beq t5, zero, if.790.9.981.9.end
                 # [790:12] free scratch register t5
@@ -15512,32 +15512,32 @@ func.parse_input:
                     # [816:21] continue
                 if.816.9.981.9.end:
                 if.817.12.981.9:
-                # [817:12] ? tz.is_name(entities.array[e].name)
-                # [817:12] ? shorthand: tz.is_name(entities.array[e].name)
+                # [817:12] ? tz.is<name>(entities.array[e].name)
+                # [817:12] ? shorthand: tz.is<name>(entities.array[e].name)
                 cmp.817.12.981.9:
                 # [817:12] allocate scratch register -> t5
-                    # [817:15] t5 = tz.is_name(entities.array[e].name)
+                    # [817:15] t5 = tz.is<name>(entities.array[e].name)
                     # [817:15] = expression
-                    # [817:15] tz.is_name(entities.array[e].name)
-                    # [817:38] allocate scratch register -> t6
-                    # [817:38] set array index
-                    # [817:38] e
+                    # [817:15] tz.is<name>(entities.array[e].name)
+                    # [817:39] allocate scratch register -> t6
+                    # [817:39] set array index
+                    # [817:39] e
                     lw t6, 0(t2)
-                    # [817:38] bounds check begin
-                    # [817:38] lower bound
-                    # [817:38] t6 lower bound covered by the unsigned upper bound
-                    # [817:38] upper bound
-                    # [817:38] allocate scratch register -> s2
+                    # [817:39] bounds check begin
+                    # [817:39] lower bound
+                    # [817:39] t6 lower bound covered by the unsigned upper bound
+                    # [817:39] upper bound
+                    # [817:39] allocate scratch register -> s2
                     li s2, 32
                     bltu t6, s2, 2f
                     1:
-                    # [817:38] source line
+                    # [817:39] source line
                     li a0, 817
                     j baz_bounds_panic
                     2:
-                    # [817:38] free scratch register s2
-                    # [817:38] bounds check end
-                    # [817:38] allocate scratch register -> s2
+                    # [817:39] free scratch register s2
+                    # [817:39] bounds check end
+                    # [817:39] allocate scratch register -> s2
                     slli s2, t6, 2
                     add s2, s2, t6
                     slli s2, s2, 2
@@ -15545,23 +15545,23 @@ func.parse_input:
                     slli s2, s2, 2
                     sub t6, s2, t6
                     slli t6, t6, 5
-                    # [817:38] free scratch register s2
+                    # [817:39] free scratch register s2
                     # [817:15] allocate scratch register -> s2
-                    # [817:15] address of parameter 'nm'
+                    # [817:15] address of parameter 's'
                     add s2, s0, t6
                     # [817:15] allocate scratch register -> s3
                     lui s3, 1048527
                     add s2, s2, s3
                     # [817:15] free scratch register s3
                     addi s2, s2, 1168
-                    # [452:6] tokenizer.is_name(nm name) res bool
-                    func.tokenizer.is_name.817.15.981.9:
+                    # [452:6] tokenizer.is(s T) res bool
+                    func.tokenizer.is.name.817.15.981.9:
                         # [817:15] alias res -> t5
                         # [817:15] alias self -> tz
-                        # [817:15] alias nm -> entities.array.name
-                        # [453:5] res = self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len
+                        # [817:15] alias s -> entities.array.name
+                        # [453:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len
                         cmp.453.11.817.15.981.9:
                         # [453:11] allocate scratch register -> s3
                             # [453:16] s3 = self.len()
@@ -15586,17 +15586,17 @@ func.parse_input:
                         sltiu t5, t5, 1
                         beq t5, zero, bool.453.11.817.15.981.9.end
                         # [453:11] free scratch register s3
-                        # [454:11] ? shorthand: arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                        # [454:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
                         cmp.454.11.817.15.981.9:
-                            # [454:11] arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                            # [454:11] arrays_equal(s.array, self.str.array[self.start], s.len)
                             # [454:11] allocate scratch register -> s3
                             # [454:11] allocate scratch register -> s4
                             # [454:11] allocate scratch register -> s5
                             # [454:11] s3: source, s4: destination, s5: count
-                            # [454:62] nm.len
-                            # [454:62] nm.len
+                            # [454:61] s.len
+                            # [454:61] s.len
                             lw s5, 16(s2)
-                            # [454:24] nm.array
+                            # [454:24] s.array
                             # [454:24] bounds check begin
                             # [454:24] lower bound
                             # [454:24] s5 lower bound covered by the unsigned upper bound
@@ -15612,29 +15612,29 @@ func.parse_input:
                             # [454:24] free scratch register s6
                             # [454:24] bounds check end
                             addi s3, s2, 0
-                            # [454:34] self.str.array[self.start]
-                            # [454:49] allocate scratch register -> s6
-                            # [454:49] set array index
-                            # [454:49] self.start
+                            # [454:33] self.str.array[self.start]
+                            # [454:48] allocate scratch register -> s6
+                            # [454:48] set array index
+                            # [454:48] self.start
                             lw s6, 132(t1)
-                            # [454:49] bounds check begin
-                            # [454:49] lower bound
-                            # [454:49] count s5 lower bound already checked
+                            # [454:48] bounds check begin
+                            # [454:48] lower bound
+                            # [454:48] count s5 lower bound already checked
                             bltz s6, 1f
-                            # [454:49] upper bound
-                            # [454:49] allocate scratch register -> s7
-                            # [454:49] allocate scratch register -> s8
+                            # [454:48] upper bound
+                            # [454:48] allocate scratch register -> s7
+                            # [454:48] allocate scratch register -> s8
                             add s8, s6, s5
                             li s7, 127
                             bgeu s7, s8, 2f
                             1:
-                            # [454:49] source line
+                            # [454:48] source line
                             li a0, 454
                             j baz_bounds_panic
                             2:
-                            # [454:49] free scratch register s8
-                            # [454:49] free scratch register s7
-                            # [454:49] bounds check end
+                            # [454:48] free scratch register s8
+                            # [454:48] free scratch register s7
+                            # [454:48] bounds check end
                             add s4, t1, s6
                             # [454:11] free scratch register s6
                             # [454:11] s5: elements to bytes (1 bytes/element)
@@ -15666,7 +15666,7 @@ func.parse_input:
                             # [454:11] free scratch register s3
                         bool.453.11.817.15.981.9.end:
                         # [817:15] free scratch register s2
-                    func.tokenizer.is_name.817.15.981.9.end:
+                    func.tokenizer.is.name.817.15.981.9.end:
                         # [817:15] free scratch register t6
                 beq t5, zero, if.817.9.981.9.end
                 # [817:12] free scratch register t5
@@ -17656,21 +17656,21 @@ func.parse_input:
             bge zero, t3, foo.863.5.984.9.end
             foo.863.5.984.9:
                 if.864.12.984.9:
-                # [864:12] ? tz.is_name(e.name)
-                # [864:12] ? shorthand: tz.is_name(e.name)
+                # [864:12] ? tz.is<name>(e.name)
+                # [864:12] ? shorthand: tz.is<name>(e.name)
                 cmp.864.12.984.9:
                 # [864:12] allocate scratch register -> t5
-                    # [864:15] t5 = tz.is_name(e.name)
+                    # [864:15] t5 = tz.is<name>(e.name)
                     # [864:15] = expression
-                    # [864:15] tz.is_name(e.name)
-                    # [452:6] tokenizer.is_name(nm name) res bool
-                    func.tokenizer.is_name.864.15.984.9:
+                    # [864:15] tz.is<name>(e.name)
+                    # [452:6] tokenizer.is(s T) res bool
+                    func.tokenizer.is.name.864.15.984.9:
                         # [864:15] alias res -> t5
                         # [864:15] alias self -> tz
-                        # [864:15] alias nm -> e.name
-                        # [453:5] res = self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len and arrays_equal(nm.array, self.str.array[self.start], nm.len)
-                        # [453:11] ? self.len() == nm.len
+                        # [864:15] alias s -> e.name
+                        # [453:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                        # [453:11] ? self.len() == s.len
                         cmp.453.11.864.15.984.9:
                         # [453:11] allocate scratch register -> t6
                             # [453:16] t6 = self.len()
@@ -17695,17 +17695,17 @@ func.parse_input:
                         sltiu t5, t5, 1
                         beq t5, zero, bool.453.11.864.15.984.9.end
                         # [453:11] free scratch register t6
-                        # [454:11] ? shorthand: arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                        # [454:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
                         cmp.454.11.864.15.984.9:
-                            # [454:11] arrays_equal(nm.array, self.str.array[self.start], nm.len)
+                            # [454:11] arrays_equal(s.array, self.str.array[self.start], s.len)
                             # [454:11] allocate scratch register -> t6
                             # [454:11] allocate scratch register -> s2
                             # [454:11] allocate scratch register -> s3
                             # [454:11] t6: source, s2: destination, s3: count
-                            # [454:62] nm.len
-                            # [454:62] nm.len
+                            # [454:61] s.len
+                            # [454:61] s.len
                             lw s3, 16(t2)
-                            # [454:24] nm.array
+                            # [454:24] s.array
                             # [454:24] bounds check begin
                             # [454:24] lower bound
                             # [454:24] s3 lower bound covered by the unsigned upper bound
@@ -17721,29 +17721,29 @@ func.parse_input:
                             # [454:24] free scratch register s4
                             # [454:24] bounds check end
                             addi t6, t2, 0
-                            # [454:34] self.str.array[self.start]
-                            # [454:49] allocate scratch register -> s4
-                            # [454:49] set array index
-                            # [454:49] self.start
+                            # [454:33] self.str.array[self.start]
+                            # [454:48] allocate scratch register -> s4
+                            # [454:48] set array index
+                            # [454:48] self.start
                             lw s4, 132(t1)
-                            # [454:49] bounds check begin
-                            # [454:49] lower bound
-                            # [454:49] count s3 lower bound already checked
+                            # [454:48] bounds check begin
+                            # [454:48] lower bound
+                            # [454:48] count s3 lower bound already checked
                             bltz s4, 1f
-                            # [454:49] upper bound
-                            # [454:49] allocate scratch register -> s5
-                            # [454:49] allocate scratch register -> s6
+                            # [454:48] upper bound
+                            # [454:48] allocate scratch register -> s5
+                            # [454:48] allocate scratch register -> s6
                             add s6, s4, s3
                             li s5, 127
                             bgeu s5, s6, 2f
                             1:
-                            # [454:49] source line
+                            # [454:48] source line
                             li a0, 454
                             j baz_bounds_panic
                             2:
-                            # [454:49] free scratch register s6
-                            # [454:49] free scratch register s5
-                            # [454:49] bounds check end
+                            # [454:48] free scratch register s6
+                            # [454:48] free scratch register s5
+                            # [454:48] bounds check end
                             add s2, t1, s4
                             # [454:11] free scratch register s4
                             # [454:11] s3: elements to bytes (1 bytes/element)
@@ -17774,7 +17774,7 @@ func.parse_input:
                             # [454:11] free scratch register s2
                             # [454:11] free scratch register t6
                         bool.453.11.864.15.984.9.end:
-                    func.tokenizer.is_name.864.15.984.9.end:
+                    func.tokenizer.is.name.864.15.984.9.end:
                 beq t5, zero, if.864.9.984.9.end
                 # [864:12] free scratch register t5
                 if.864.12.984.9.code:

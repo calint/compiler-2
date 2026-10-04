@@ -449,9 +449,9 @@ func tokenizer.is_str(str i8[]) res bool {
           arrays_equal(str, self.str.array[self.start], array_length(str))
 }
 
-func tokenizer.is_name(nm name) res bool {
-    res = self.len() == nm.len and
-          arrays_equal(nm.array, self.str.array[self.start], nm.len)
+func tokenizer.is<T type>(s T) res bool {
+    res = self.len() == s.len and
+          arrays_equal(s.array, self.str.array[self.start], s.len)
 }
 
 func tokenizer.is_empty() res bool {
@@ -501,7 +501,7 @@ func action_go(eid, tz mut tokenizer) {
     let links_len = rooms.array[cur_room_id].links_len
     var found_ix = links_len
     foo rooms.array[cur_room_id].links, links_len {
-        if tz.is_name(link_names.array[e.link_name_id]) {
+        if tz.is<name>(link_names.array[e.link_name_id]) {
             found_ix = i
             break
         }
@@ -560,7 +560,7 @@ func action_go(eid, tz mut tokenizer) {
 func find_link_name_or_make(tz tokenizer) res {
     res = link_names.len
     foo link_names.array, link_names.len {
-        if tz.is_name(e) {
+        if tz.is<name>(e) {
             res = i
             break
         }
@@ -747,7 +747,7 @@ func action_drop(eid, tz mut tokenizer) {
     let len = entities.array[eid].objects.len
     var found_ix = len
     foo entities.array[eid].objects.array, len {
-        if tz.is_name(objects.array[e].name) {
+        if tz.is<name>(objects.array[e].name) {
             found_ix = i
             break
         }
@@ -787,7 +787,7 @@ func action_give(eid, tz mut tokenizer) {
     let len = entities.array[eid].objects.len
     var found_ix = len
     foo entities.array[eid].objects.array, len {
-        if tz.is_name(objects.array[e].name) {
+        if tz.is<name>(objects.array[e].name) {
             found_ix = i
             break
         }
@@ -814,7 +814,7 @@ func action_give(eid, tz mut tokenizer) {
     var to_entity = room_entities_len
     foo rooms.array[room_id].entities.array, room_entities_len {
         if e == eid continue
-        if tz.is_name(entities.array[e].name) {
+        if tz.is<name>(entities.array[e].name) {
             to_entity = e
             break
         }
@@ -861,7 +861,7 @@ func action_tell(eid, tz mut tokenizer) {
     # find entity anywhere
     var to_entity = entities.len
     foo entities.array, entities.len {
-        if tz.is_name(e.name) {
+        if tz.is<name>(e.name) {
             to_entity = i
             break
         }
