@@ -11,7 +11,7 @@ compiler writes the binary image itself.
 * gain experience writing compilers
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
-* support for non-inlined functions
+* support for reentrant non-inlined functions
 * opt-in checks that makes the language ub-free
 * basic support for generics
 
