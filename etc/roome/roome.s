@@ -42,7 +42,7 @@ lui sp, 2048
 # [48:1]       name :  offset :    size :  array? : array size
 # [48:1]   silenced :       0 :       1 :      no :           
 #
-# [52:1] dat out = printer{}
+# [52:1] dat out = printer
 # [52:5] out: printer (1 B @ [s0 - 199553])
 # [81:1] str : 132 B    fields:
 # [81:1]       name :  offset :    size :  array? : array size
@@ -108,7 +108,7 @@ lui sp, 2048
 # [263:1]      array :       0 :   20480 :     yes :       1024
 # [263:1]        len :   20480 :       4 :      no :           
 #
-# [268:1] dat link_names = link_names{}
+# [268:1] dat link_names = link_names
 # [268:5] link_names: link_names (20484 B @ [s0 - 122732])
 # [270:1] link : 8 B    fields:
 # [270:1]       name :  offset :    size :  array? : array size
@@ -124,7 +124,7 @@ lui sp, 2048
 # [279:1]      array :       0 :   20480 :     yes :       1024
 # [279:1]        len :   20480 :       4 :      no :           
 #
-# [290:1] dat objects = objects{}
+# [290:1] dat objects = objects
 # [290:5] objects: objects (20484 B @ [s0 - 102248])
 # [292:1] room : 616 B    fields:
 # [292:1]       name :  offset :    size :  array? : array size
@@ -241,9 +241,9 @@ lui sp, 2048
 # [1007:5] str_creation_script: i8[81] (81 B @ [s0 - 2118])
 #
 main:
-    # [1030:5] var tz = tokenizer{}
+    # [1030:5] var tz = tokenizer
     # [1030:9] tz: tokenizer (140 B @ [s0 - 2032])
-    # [1030:9] tz = tokenizer{}
+    # [1030:9] tz = tokenizer
     # [1030:14] zero remaining fields: 140 B
     # [1030:14] zero loop of 4-byte accesses: start word aligned
     # [1030:14] allocate scratch register -> t0
@@ -5642,9 +5642,9 @@ func.parse_input:
                     func.printer.print.69.10.73.10.534.9.964.9.end:
                 func.printer.print_all.73.10.534.9.964.9.end:
             func.printer.println.534.9.964.9.end:
-            # [537:5] var went_text = str{}
+            # [537:5] var went_text = str
             # [537:9] went_text: str (132 B @ [s1 + 28])
-            # [537:9] went_text = str{}
+            # [537:9] went_text = str
             # [537:21] zero remaining fields: 132 B
             # [537:21] zero loop of 4-byte accesses: start word aligned
             # [537:21] allocate scratch register -> t2
@@ -6392,9 +6392,9 @@ func.parse_input:
                 if.44.30.557.5.964.9.end:
                 # [557:5] free scratch register t2
             func.assert.557.5.964.9.end:
-            # [559:5] var arrived_text = str{}
+            # [559:5] var arrived_text = str
             # [559:9] arrived_text: str (132 B @ [s1 + 168])
-            # [559:9] arrived_text = str{}
+            # [559:9] arrived_text = str
             # [559:24] zero remaining fields: 132 B
             # [559:24] zero loop of 4-byte accesses: start word aligned
             # [559:24] allocate scratch register -> t2
@@ -16505,9 +16505,9 @@ func.parse_input:
                     func.printer.print.69.10.73.10.847.9.991.9.end:
                 func.printer.print_all.73.10.847.9.991.9.end:
             func.printer.println.847.9.991.9.end:
-            # [849:5] var gave_text = str{}
+            # [849:5] var gave_text = str
             # [849:9] gave_text: str (132 B @ [s1 + 56])
-            # [849:9] gave_text = str{}
+            # [849:9] gave_text = str
             # [849:21] zero remaining fields: 132 B
             # [849:21] zero loop of 4-byte accesses: start word aligned
             # [849:21] allocate scratch register -> t2
@@ -19839,7 +19839,7 @@ dat:
 # [42:12] i8[8]
 .ascii "\n\nFLAG\n\n"
 # [52:5] out
-# [52:18] zero remaining fields: 1 B
+# [52:11] zero remaining fields: 1 B
 .zero 1
 # [186:5] str_told_u
 # [186:18] i8[8]
@@ -19878,10 +19878,10 @@ dat:
 .word 1
 .endr
 # [268:5] link_names
-# [268:28] zero remaining fields: 20484 B
+# [268:18] zero remaining fields: 20484 B
 .zero 20484
 # [290:5] objects
-# [290:22] zero remaining fields: 20484 B
+# [290:15] zero remaining fields: 20484 B
 .zero 20484
 # [302:5] str_u_r_in
 # [302:18] i8[7]

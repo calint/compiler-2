@@ -43,8 +43,11 @@ class expr_any final : public statement {
     bool is_unsized_destination_{};
 
   public:
+    // an initializer may be a type or array without '{}', e.g. 'var p = point'
+    // and 'var a = i8[4]'
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             const bool is_array, const size_t array_count)
+             const bool is_array, const size_t array_count,
+             const bool is_initializer = false)
         : statement{tz.next_whitespace_token()}, array_count_{array_count},
           is_array_{is_array} {
 
@@ -52,7 +55,8 @@ class expr_any final : public statement {
 
         // the basic case
         if (not is_array) {
-            vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
+            vars_.emplace_back(
+                parse_variant(tc, tz, tp, in_args, is_initializer));
             return;
         }
 
@@ -74,6 +78,11 @@ class expr_any final : public statement {
 
         open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty() and not open_bracket_tk_.is_empty()) {
+            // e.g. 'var a = i8[4]' is 'i8[4]{}'
+            if (is_initializer) {
+                return;
+            }
+
             throw compiler_exception{tz,
                                      std::format("expected '{{' after '{}[]'",
                                                  element_type_tk_.text())};
@@ -720,13 +729,14 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
-                                            const type& tp, const bool in_args)
+                                            const type& tp, const bool in_args,
+                                            const bool is_initializer = false)
         -> expr_variant {
 
         if (not tp.is_builtin()) {
             // destination is not a built-in (register) value
             // assume assign type value
-            return expr_type{tc, tz, tp, false};
+            return expr_type{tc, tz, tp, false, is_initializer};
         }
 
         if (tp.name() == tc.get_type_bool().name()) {

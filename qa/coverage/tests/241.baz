@@ -1,4 +1,6 @@
-# user-type arrays require structured initializers
+# a data array initializer is complete without '{}', a value after it is
+# unexpected
 
 type p { x }
-func main() { dat x = p[2] 1 }
+dat x = p[2] 1
+func main() { }

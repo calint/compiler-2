@@ -1,0 +1,44 @@
+# a type or array initializer without '{}' is the same as with an empty '{}'
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type point {
+    x,
+    y
+}
+
+type line {
+    a point,
+    n i8
+}
+
+dat dp = point
+dat dl = line
+dat da = i8[4]
+dat dd = [3]
+dat dr = point[2]
+
+func main() {
+    var p = point
+    var l = line
+    var a = i8[4]
+    var d = [3]
+    var r = point[2]
+    var q = point{}
+
+    assert(1, p.x == 0 and p.y == 0)
+    assert(2, l.a.x == 0 and l.a.y == 0 and l.n == 0)
+    assert(3, a[0] == 0 and a[3] == 0)
+    assert(4, d[0] == 0 and d[2] == 0)
+    assert(5, r[0].x == 0 and r[1].y == 0)
+    assert(6, q.x == 0 and q.y == 0)
+
+    assert(7, dp.x == 0 and dp.y == 0)
+    assert(8, dl.a.y == 0 and dl.n == 0)
+    assert(9, da[0] == 0 and da[3] == 0)
+    assert(10, dd[0] == 0 and dd[2] == 0)
+    assert(11, dr[0].x == 0 and dr[1].y == 0)
+
+    p.x = 3
+    assert(12, p.x == 3)
+}

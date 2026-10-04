@@ -1,14 +1,14 @@
 # an indexed argument may be the array element a non-inline body names
 
-var arr = i64[4]{}
+var arr = i32[4]{}
 
-func swap_values(x mut, y mut) {
+func swap_values(x mut i32, y mut i32) {
     var tmp = x
     x = y
     y = tmp
 }
 
-func noinline outer(a mut) {
+func noinline outer(a mut i32) {
     swap_values(a, arr[1])
 }
 

@@ -135,6 +135,25 @@ auto is_record_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
 }
 
 // declared in 'decouple.hpp'
+// e.g. 'point' in 'var p = point' is 'point{}', a record type name not followed
+// by '{', '[' or '.' has no other meaning
+auto is_bare_record_type(const toc& tc, const token& tk, tokenizer& tz)
+    -> bool {
+
+    if (not tc.has_type(tk.text()) or tc.is_var_or_alias(tk.text())) {
+        return false;
+    }
+
+    if (tc.get_type_or_throw(tk, tk.text()).is_builtin()) {
+        return false;
+    }
+
+    const char next{tz.peek_char_after_whitespace()};
+
+    return next != '{' and next != '[' and next != '.';
+}
+
+// declared in 'decouple.hpp'
 // called from 'expr_arith' to solve circular dependencies with function
 // calls
 auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
@@ -202,18 +221,25 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 //       it needs the 'expr_any' definition, which would otherwise create a
 //       circular include between 'expr_type.hpp' and 'expr_any.hpp'
 expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
-                     const bool is_array_destination)
+                     const bool is_array_destination, const bool is_initializer)
     : statement{tz.next_token()}, is_array_destination_{is_array_destination} {
 
     set_type(tp);
 
+    const bool is_bare{is_initializer and is_bare_record_type(tc, tok(), tz)};
+
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
-    const bool is_typed_literal{is_record_literal(tc, tok(), tz)};
+    const bool is_typed_literal{is_record_literal(tc, tok(), tz) or is_bare};
     if (is_typed_literal and not tok().is_text(tp.name())) {
         throw compiler_exception{tok(),
                                  std::format("expected type '{}', got '{}'",
                                              tp.name(), tok().text())};
+    }
+
+    // e.g. 'var p = point', no fields are listed
+    if (is_bare) {
+        return;
     }
 
     // e.g. 'p = pt', the token is empty at '{x, y}'

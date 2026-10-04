@@ -198,10 +198,10 @@ func scopes() {
 #
 
 func arrays() {
-    var zeros = i32[4]{}
+    var zeros = i32[4]
     assert(zeros[3] == 0)
-    # an array literal names the element type and size, missing elements are
-    # zeroed
+    # an array names the element type and size, elements start zeroed
+    # 'i32[4]{}' is the same
 
     var primes = []{2, 3, 5, 7}
     assert(array_length(primes) == 4)
@@ -285,7 +285,7 @@ func strings() {
 }
 
 func reading() {
-    var line = i8[16]{}
+    var line = i8[16]
     var got = read(0, line, 16)
     write(1, line, got)
     # 'read' fills an array from a file descriptor, here 0 is standard input
@@ -388,9 +388,10 @@ func user_types() {
     assert(p.x == 1 and p.y == 2)
     # a record literal names the type and lists the fields in order
 
-    var origin = point{}
+    var origin = point
     assert(origin.x == 0 and origin.y == 0)
-    # missing fields are zeroed
+    # without a literal all fields are zeroed, 'point{}' is the same, and
+    # missing fields of a literal are zeroed too
 
     var px = pixel{{3, 4}, 0xff0000}
     px.pos.x = 5
@@ -457,7 +458,7 @@ func constructors() {
     assert(p.x == -1 and p.y == -2)
     # the variable gets the type of the constructor
 
-    var pts = point[2]{}
+    var pts = point[2]
     pts[1] = point.at(3, 4)
     assert(pts[1].y == 4)
     # the constructor builds its result in the destination
@@ -589,7 +590,7 @@ func add_to_zero(v) res {
 }
 
 func checks() {
-    var arr = [4]{}
+    var arr = [4]
     var ix = 3
     arr[ix] = 1
     assert(arr[3] == 1)

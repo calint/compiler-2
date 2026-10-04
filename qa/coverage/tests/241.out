@@ -1,2 +1,2 @@
 
-241.baz:4:28: expected '{' to open array initializer for 'p'
+241.baz:5:14: unexpected keyword '1'

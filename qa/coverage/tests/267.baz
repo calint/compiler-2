@@ -1,3 +1,5 @@
-# scalar initializer cannot initialize a data array
+# a data array initializer is complete without '{}', a scalar after it is
+# unexpected
 
-func main() { dat x = i8[2] 1 }
+dat x = i8[2] 1
+func main() { }

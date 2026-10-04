@@ -2,6 +2,8 @@
 --   '#baz-global?' true when the identifier refers to a file level 'dat', 'var' or 'let'
 --   '#baz-parameter?' true when the identifier refers to a function parameter
 --   or the named return value
+--   '#baz-type?' true when the identifier names a 'type' of the file, e.g. the
+--   initializer of 'var tz = tokenizer'
 -- directive for queries/aerial.scm:
 --   '#baz-qualified-name! @receiver @name' sets the text of @name to
 --   'receiver.name', or leaves it alone when there is no receiver
@@ -109,8 +111,17 @@ local function is_global(program, name, source)
   return false
 end
 
+local function is_type(program, name, source)
+  for c in program:iter_children() do
+    if c:type() == "type_definition" and name_is(c:field("name")[1], name, source) then
+      return true
+    end
+  end
+  return false
+end
+
 -- walks outwards through blocks and functions so that the innermost
--- declaration wins: returns "local", "parameter", "global" or nil
+-- declaration wins: returns "local", "parameter", "global", "type" or nil
 local function declaration_kind(node, source)
   local name = vim.treesitter.get_node_text(node, source)
   local child = node
@@ -120,6 +131,9 @@ local function declaration_kind(node, source)
     if t == "program" then
       if is_global(scope, name, source) then
         return "global"
+      end
+      if is_type(scope, name, source) then
+        return "type"
       end
       return nil
     end
@@ -148,6 +162,7 @@ end
 
 add_kind_predicate("baz-global?", "global")
 add_kind_predicate("baz-parameter?", "parameter")
+add_kind_predicate("baz-type?", "type")
 
 vim.treesitter.query.add_directive("baz-qualified-name!", function(match, _, source, predicate, metadata)
   local receiver = (match[predicate[2]] or {})[1]

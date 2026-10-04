@@ -24,7 +24,7 @@
 class stmt_def_dat final : public statement {
     struct elem {
         unary_ops uops;
-        token tk;
+        token src_loc_tk;
         int64_t value{};
         token open_brace_tk_;
         token close_brace_tk_;
@@ -35,7 +35,7 @@ class stmt_def_dat final : public statement {
 
         auto source_to(std::ostream& os) const -> void {
             uops.source_to(os);
-            tk.source_to(os);
+            src_loc_tk.source_to(os);
         }
     };
 
@@ -139,7 +139,13 @@ class stmt_def_dat final : public statement {
         const token src_loc_tk{type_tk_.is_empty() ? open_bracket_tk_
                                                    : type_tk_};
 
-        elem el{parse_array(tc, tz, src_loc_tk, get_type(), array_count)};
+        // e.g. 'dat a = i8[4]' is 'i8[4]{}'
+        const bool is_bare{tz.peek_char_after_whitespace() != '{'};
+
+        elem el{
+            is_bare ? make_empty_array(src_loc_tk, array_count)
+                    : parse_array(tc, tz, src_loc_tk, get_type(), array_count),
+        };
         if (el.array_count == 0) {
             throw compiler_exception{open_bracket_tk_,
                                      "empty arrays require a specified size"};
@@ -193,7 +199,7 @@ class stmt_def_dat final : public statement {
 
             elem el{};
             el.is_array = true;
-            el.tk = string_tk;
+            el.src_loc_tk = string_tk;
             el.array_count = string_array_count(string_tk, get_type(), 0);
 
             return el;
@@ -219,6 +225,17 @@ class stmt_def_dat final : public statement {
             set_type(tc.get_type_or_throw(tk, tk.text()));
 
             return parse_array_literal(tc, tz);
+        }
+
+        if (is_bare_record_type(tc, tk, tz)) {
+            type_tk_ = tk;
+            set_type(tc.get_type_or_throw(tk, tk.text()));
+
+            // e.g. 'dat p = point' is 'point{}'
+            elem el{};
+            el.src_loc_tk = tk;
+
+            return el;
         }
 
         if (is_record_literal(tc, tk, tz)) {
@@ -255,10 +272,10 @@ class stmt_def_dat final : public statement {
 
         machine& x{tc.machine()};
 
-        x.validate_data_element_size(elroot.tk, tp.size_bytes());
+        x.validate_data_element_size(elroot.src_loc_tk, tp.size_bytes());
 
         if (not elroot.is_array) {
-            x.comment(elroot.tk, 0, "{}", tp.name());
+            x.comment(elroot.src_loc_tk, 0, "{}", tp.name());
             x.emit_data(tp.size_bytes(), {
                                              .value{elroot.value},
                                              .uops{elroot.uops.to_string()},
@@ -269,19 +286,20 @@ class stmt_def_dat final : public statement {
 
         // array of built-ins
 
-        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_count);
+        x.comment(elroot.src_loc_tk, 0, "{}[{}]", tp.name(),
+                  elroot.array_count);
 
         // special case for string
         // note: only i8[] can be initialized with string token
 
-        if (elroot.tk.is_string()) {
-            x.emit_string_data(elroot.tk.string_text());
-            const size_t size_bytes{elroot.tk.string_size_bytes()};
+        if (elroot.src_loc_tk.is_string()) {
+            x.emit_string_data(elroot.src_loc_tk.string_text());
+            const size_t size_bytes{elroot.src_loc_tk.string_size_bytes()};
             // pad remaining array with 0
             assert(elroot.array_count != 0);
 
             if (size_bytes < elroot.array_count) {
-                x.comment(elroot.tk, 0, "zero remaining array");
+                x.comment(elroot.src_loc_tk, 0, "zero remaining array");
                 x.emit_repeated_data(tp.size_bytes(),
                                      elroot.array_count - size_bytes, {});
             }
@@ -331,7 +349,7 @@ class stmt_def_dat final : public statement {
         for (const auto [e, f] : std::views::zip(elroot.elems, flds)) {
             const size_t padding_bytes{f.offset - written_bytes};
             if (padding_bytes != 0) {
-                x.comment(e.tk, 0, "padding {} B", padding_bytes);
+                x.comment(e.src_loc_tk, 0, "padding {} B", padding_bytes);
                 x.emit_zero_data(padding_bytes);
             }
 
@@ -356,7 +374,7 @@ class stmt_def_dat final : public statement {
                                         ? "padding"
                                         : "remaining fields"};
 
-        x.comment(elroot.tk, 0, "zero {}: {} B", what, size_bytes);
+        x.comment(elroot.src_loc_tk, 0, "zero {}: {} B", what, size_bytes);
         x.emit_zero_data(size_bytes);
     }
 
@@ -373,7 +391,7 @@ class stmt_def_dat final : public statement {
         // special case for a string
         // note: only i8[] can be initialized with a string token
 
-        if (elroot.tk.is_string()) {
+        if (elroot.src_loc_tk.is_string()) {
             compile_data_builtin(tc, tp, elroot);
             return;
         }
@@ -382,10 +400,11 @@ class stmt_def_dat final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_count);
+        x.comment(elroot.src_loc_tk, 0, "{}[{}]", tp.name(),
+                  elroot.array_count);
 
         for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
-            x.comment(e.tk, 0, "[{}]", i);
+            x.comment(e.src_loc_tk, 0, "[{}]", i);
             compile_data_elem(tc, tp, e);
         }
 
@@ -397,11 +416,25 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        x.comment(elroot.tk, 0, "pad {} '{}' of size {}", remaining_count,
-                  tp.name(), tp.size_bytes());
+        x.comment(elroot.src_loc_tk, 0, "pad {} '{}' of size {}",
+                  remaining_count, tp.name(), tp.size_bytes());
 
-        x.emit_zero_data(
-            multiply_storage_size(elroot.tk, tp.size_bytes(), remaining_count));
+        x.emit_zero_data(multiply_storage_size(
+            elroot.src_loc_tk, tp.size_bytes(), remaining_count));
+    }
+
+    // an array without elements, the elements are parsed into it
+    [[nodiscard]] static auto make_empty_array(const token src_loc_tk,
+                                               const size_t array_count)
+        -> elem {
+
+        elem el{};
+        el.is_array = true;
+        el.array_count = array_count;
+
+        el.src_loc_tk = src_loc_tk;
+
+        return el;
     }
 
     // '{' elements '}', empty zeroes a sized array
@@ -410,13 +443,7 @@ class stmt_def_dat final : public statement {
                                           const type& tp,
                                           const size_t array_count) -> elem {
 
-        elem el{};
-        el.is_array = true;
-        el.array_count = array_count;
-
-        el.tk = src_loc_tk;
-        // note: 'el.tk' is not part of data but is used for source location
-        //       at compile
+        elem el{make_empty_array(src_loc_tk, array_count)};
 
         el.open_brace_tk_ = tz.is_next_char_token('{');
         if (el.open_brace_tk_.is_empty()) {
@@ -493,23 +520,27 @@ class stmt_def_dat final : public statement {
 
         elem el{};
         el.uops = unary_ops{tz};
-        el.tk = tz.next_token();
+        el.src_loc_tk = tz.next_token();
 
         // e.g. '{ 1 }' or a trailing ',' where a single value is expected
-        if (el.tk.is_empty()) {
+        if (el.src_loc_tk.is_empty()) {
             throw compiler_exception{
-                el.tk, std::format("expected a constant for '{}'", tp.name())};
+                el.src_loc_tk,
+                std::format("expected a constant for '{}'", tp.name())};
         }
 
         if (&tp == &tc.get_type_bool()) {
-            el.value = parse_bool_value(el.tk, tp);
+            el.value = parse_bool_value(el.src_loc_tk, tp);
             return el;
         }
 
-        const ident_info ii{tc.make_ident_info(el.tk, el.tk.text())};
+        const ident_info ii{
+            tc.make_ident_info(el.src_loc_tk, el.src_loc_tk.text()),
+        };
         if (not ii.is_const()) {
             throw compiler_exception{
-                el.tk, std::format("'{}' must be a constant", el.tk.text())};
+                el.src_loc_tk,
+                std::format("'{}' must be a constant", el.src_loc_tk.text())};
         }
         el.value = ii.const_value;
 
@@ -520,8 +551,9 @@ class stmt_def_dat final : public statement {
         }
 
         throw compiler_exception{
-            el.tk, std::format("constant '{}{}' does not fit '{}'",
-                               el.uops.to_string(), el.tk.text(), tp.name())};
+            el.src_loc_tk,
+            std::format("constant '{}{}' does not fit '{}'",
+                        el.uops.to_string(), el.src_loc_tk.text(), tp.name())};
     }
 
     [[nodiscard]] static auto parse_elem(const toc& tc, tokenizer& tz,
@@ -551,7 +583,7 @@ class stmt_def_dat final : public statement {
 
         elem el{};
         el.is_array = true;
-        el.tk = tk;
+        el.src_loc_tk = tk;
         el.array_count = string_array_count(tk, tp, array_count);
         return el;
     }
@@ -560,7 +592,7 @@ class stmt_def_dat final : public statement {
                                          const type& tp) -> elem {
 
         elem el{};
-        el.tk = tz.cur_position_token();
+        el.src_loc_tk = tz.cur_position_token();
         el.open_brace_tk_ = tz.is_next_char_token('{');
         if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception{
@@ -635,8 +667,8 @@ class stmt_def_dat final : public statement {
         }
 
         // special case for string
-        if (elroot.tk.is_string()) {
-            elroot.tk.source_to(os);
+        if (elroot.src_loc_tk.is_string()) {
+            elroot.src_loc_tk.source_to(os);
             return;
         }
 

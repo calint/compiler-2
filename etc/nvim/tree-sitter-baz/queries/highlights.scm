@@ -103,6 +103,11 @@
 ((identifier) @variable.parameter
   (#baz-parameter? @variable.parameter))
 
+; a type name used as a value, e.g. 'var tz = tokenizer', predicate in
+; plugin/baz-globals.lua
+((identifier) @type
+  (#baz-type? @type))
+
 (function_definition name: (identifier) @function)
 (type_definition name: (identifier) @type.definition)
 

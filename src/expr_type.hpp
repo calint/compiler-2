@@ -41,9 +41,11 @@ class expr_type final : public statement {
     };
 
     // out-of-line: parses 'expr_any' items and creates the 'stmt_call' or
-    // 'stmt_identifier'
+    // 'stmt_identifier'; an initializer may be the type name alone, e.g.
+    // 'var p = point' is 'point{}'
     expr_type(toc& tc, tokenizer& tz, const type& tp,
-              const bool is_array_destination);
+              const bool is_array_destination,
+              const bool is_initializer = false);
 
     // out-of-line: a method receiver that has already been parsed
     explicit expr_type(std::shared_ptr<stmt_identifier> receiver);

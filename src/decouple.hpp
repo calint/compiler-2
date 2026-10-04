@@ -513,3 +513,6 @@ struct ident_info {
 
 [[nodiscard]] auto is_record_literal(const toc& tc, const token& tk,
                                      tokenizer& tz) -> bool;
+
+[[nodiscard]] auto is_bare_record_type(const toc& tc, const token& tk,
+                                       tokenizer& tz) -> bool;

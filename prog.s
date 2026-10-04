@@ -633,9 +633,9 @@ main:
         if.38.24.234.5.end:
 ;       [234:5] free scratch register r15
     func.assert.234.5.end:
-;   [237:5] var arr = i32[4]{}
+;   [237:5] var arr = i32[4]
 ;   [237:9] arr: i32[4] (16 B @ [rbp + 424])
-;   [237:9] arr = i32[4]{}
+;   [237:9] arr = i32[4]
 ;   [237:15] zero remaining elements: 4 * 4 B = 16 B
 ;   [237:15] size <= 32 B, use mov
     mov qword [rbp + 424], 0
@@ -815,9 +815,9 @@ main:
         if.38.24.246.5.end:
 ;       [246:5] free scratch register r15
     func.assert.246.5.end:
-;   [249:5] var arr1 = i32[8]{}
+;   [249:5] var arr1 = i32[8]
 ;   [249:9] arr1: i32[8] (32 B @ [rbp + 448])
-;   [249:9] arr1 = i32[8]{}
+;   [249:9] arr1 = i32[8]
 ;   [249:16] zero remaining elements: 8 * 4 B = 32 B
 ;   [249:16] size <= 32 B, use mov
     mov qword [rbp + 448], 0
@@ -1280,9 +1280,9 @@ main:
         if.38.24.280.5.end:
 ;       [280:5] free scratch register r15
     func.assert.280.5.end:
-;   [286:5] var p = point{}
+;   [286:5] var p = point
 ;   [286:9] p: point (16 B @ [rbp + 520])
-;   [286:9] p = point{}
+;   [286:9] p = point
 ;   [286:13] zero remaining fields: 16 B
 ;   [286:13] size <= 32 B, use mov
     mov qword [rbp + 520], 0
@@ -2286,9 +2286,9 @@ main:
         if.38.24.358.5.end:
 ;       [358:5] free scratch register r15
     func.assert.358.5.end:
-;   [365:5] var o3 = object[2]{}
+;   [365:5] var o3 = object[2]
 ;   [365:9] o3: object[2] (48 B @ [rbp + 704])
-;   [365:9] o3 = object[2]{}
+;   [365:9] o3 = object[2]
 ;   [365:14] zero remaining elements: 2 * 24 B = 48 B
 ;   [365:14] allocate named register rax
 ;   [365:14] allocate named register rdi
@@ -2443,9 +2443,9 @@ main:
         if.38.24.373.5.end:
 ;       [373:5] free scratch register r15
     func.assert.373.5.end:
-;   [376:5] var worlds = world[8]{}
+;   [376:5] var worlds = world[8]
 ;   [376:9] worlds: world[8] (512 B @ [rbp + 752])
-;   [376:9] worlds = world[8]{}
+;   [376:9] worlds = world[8]
 ;   [376:18] zero remaining elements: 8 * 64 B = 512 B
 ;   [376:18] allocate named register rax
 ;   [376:18] allocate named register rdi
@@ -2686,9 +2686,9 @@ main:
 ;   [399:9] counter = 0
 ;   [399:19] 0
     mov qword [rbp + 1280], 0
-;   [400:5] var nm = str{}
+;   [400:5] var nm = str
 ;   [400:9] nm: str (128 B @ [rbp + 1288])
-;   [400:9] nm = str{}
+;   [400:9] nm = str
 ;   [400:14] zero remaining fields: 128 B
 ;   [400:14] allocate named register rax
 ;   [400:14] allocate named register rdi
@@ -3114,9 +3114,9 @@ main:
 func.print_num:
 ;   [133:25] num: i64 (8 B @ [rbx])
 ;   [135:9] const buf_count = 20
-;   [137:5] var buf = i8[buf_count]{}
+;   [137:5] var buf = i8[buf_count]
 ;   [137:9] buf: i8[20] (20 B @ [rbx + 8])
-;   [137:9] buf = i8[buf_count]{}
+;   [137:9] buf = i8[buf_count]
 ;   [137:15] zero remaining elements: 20 * 1 B = 20 B
 ;   [137:15] size <= 32 B, use mov
     mov qword [rbx + 8], 0

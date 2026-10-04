@@ -693,7 +693,8 @@ SRC=239 && COMPERR
 # a string cannot exceed the size of its data field
 SRC=240 && COMPERR
 
-# user-type arrays require structured initializers
+# a data array initializer is complete without '{}', a value after it is
+# unexpected
 SRC=241 && COMPERR
 
 # user-type array initializers cannot exceed their size
@@ -771,7 +772,8 @@ SRC=265 && EXP=0 && RUN
 # array_length requires an array
 SRC=266 && COMPERR
 
-# scalar initializer cannot initialize a data array
+# a data array initializer is complete without '{}', a scalar after it is
+# unexpected
 SRC=267 && COMPERR
 
 # scalar source cannot be assigned to an array
@@ -1863,7 +1865,7 @@ SRC=612 && COMPERR
 # an array size in both the destination and the literal must agree
 SRC=613 && COMPERR
 
-# the element type of an array literal is followed by its elements
+# an array literal without elements and without a size has no size
 SRC=614 && COMPERR
 
 # an array literal with a size holds at most that many elements
@@ -2352,3 +2354,6 @@ SRC=763 && EXP=0 && RUN
 
 # an indexed argument may be the array element a non-inline body names
 SRC=764 && COMPERR
+
+# a type or array initializer without '{}' is the same as with an empty '{}'
+SRC=765 && EXP=0 && RUN

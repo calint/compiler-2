@@ -49,7 +49,7 @@ type printer {
     silenced bool,
 }
 
-dat out = printer{}
+dat out = printer
 
 func mut printer.set_silenced(silenced bool) {
     self.silenced = silenced
@@ -265,7 +265,7 @@ type link_names {
     len
 }
 
-dat link_names = link_names{}
+dat link_names = link_names
 
 type link {
     link_name_id,
@@ -287,7 +287,7 @@ func mut objects.add(name name) object_id {
     self.len = self.len + 1
 }
 
-dat objects = objects{}
+dat objects = objects
 
 type room {
     name name,
@@ -534,7 +534,7 @@ func action_go(eid, tz mut tokenizer) {
     out.println()
 
     # the ones left behind see it
-    var went_text = str{}
+    var went_text = str
     went_text.add(str_went_to)
     went_text.add_name(
         link_names.array[
@@ -556,7 +556,7 @@ func action_go(eid, tz mut tokenizer) {
     # missing link back is program error
     assert(2, to_found_ix != to_links_len)
 
-    var arrived_text = str{}
+    var arrived_text = str
     arrived_text.add(str_arrived_from)
     arrived_text.add_name(
         link_names.array[
@@ -846,7 +846,7 @@ func action_give(eid, tz mut tokenizer) {
     entities.array[to_entity].name.print()
     out.println()
 
-    var gave_text = str{}
+    var gave_text = str
     gave_text.add(str_gave)
     gave_text.add_name(entities.array[to_entity].name)
     gave_text.add(str_space)
@@ -1027,7 +1027,7 @@ func run_creation_script(tz mut tokenizer) {
 }
 
 func main() {
-    var tz = tokenizer{}
+    var tz = tokenizer
 
     out.set_silenced(true)
     run_creation_script(tz)
