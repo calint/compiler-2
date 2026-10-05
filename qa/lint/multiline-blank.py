@@ -7,7 +7,7 @@ import clang.cindex as ci
 # except next to the braces of its block, and a comment above it stays with it
 # a multiline 'for', 'while', 'do', 'switch' or 'try' only needs the blank line
 # after it, a multiline 'if' also needs one before it
-# usage (from the workspace root): python3 multiline-blank.py [apply]
+# usage (from the workspace root): python3 qa/lint/multiline-blank.py [apply]
 
 sys.path.insert(0, "qa/lint")
 from libclang_tu import is_in, parse  # noqa: E402

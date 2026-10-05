@@ -546,7 +546,6 @@ auto expr_type::source_to(std::ostream& os) const -> void {
 
     statement::source_to(os);
 
-    // not an identifier
     open_brace_tk_.source_to(os);
 
     if (not exprs_.empty()) {

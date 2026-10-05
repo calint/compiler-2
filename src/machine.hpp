@@ -45,12 +45,26 @@ class machine {
     // receives an address while the registers that built it are allocated
     using address_use = std::function_ref<void(const operand& address)>;
 
+    // 'source' locates the tokens of comments, backend tests may leave it empty
+    machine(std::ostream& os, const std::string_view source,
+            const jump_mode jumps)
+        : os_{os}, source_{source}, jump_mode_{jumps} {}
+
+    machine(const machine&) = delete;
+    machine(machine&&) = delete;
+    auto operator=(const machine&) -> machine& = delete;
+    auto operator=(machine&&) -> machine& = delete;
+
+    virtual ~machine() = default;
+
+  protected:
     // emits one address of a bulk operation: 'count' is the register of the
     // element count, empty for a known size, 'preferred' a register the address
     // may be built in, empty when the backend has none to offer
     using address_emitter = std::function_ref<void(
         const operand& count, const operand& preferred, address_use use)>;
 
+  public:
     // what a comparison asks, e.g. 'a <= b' is 'less_equal'
     enum class comparison_operator : uint8_t {
         equal,
@@ -110,18 +124,6 @@ class machine {
         // result register name, empty for 'exit'
         std::string_view result;
     };
-
-    // 'source' locates the tokens of comments, backend tests may leave it empty
-    machine(std::ostream& os, const std::string_view source,
-            const jump_mode jumps)
-        : os_{os}, source_{source}, jump_mode_{jumps} {}
-
-    machine(const machine&) = delete;
-    machine(machine&&) = delete;
-    auto operator=(const machine&) -> machine& = delete;
-    auto operator=(machine&&) -> machine& = delete;
-
-    virtual ~machine() = default;
 
     // a failed check prints its message to this descriptor and exits with this
     // code

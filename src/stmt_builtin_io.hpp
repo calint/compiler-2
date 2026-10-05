@@ -138,25 +138,23 @@ class stmt_builtin_io final : public stmt_call {
 
         compile_count(tc, indent, count, buffer_info);
 
-        const bool has_count{argument_count() >= 3};
-        const bool has_start{argument_count() == 4};
-
         operand start;
 
-        if (has_start) {
+        if (has_start()) {
             start = compile_start(tc, indent, count, buffer_info);
         }
 
         // a start is checked with the start, a bare count by 'compile_lea'
         compile_buffer_address(tc, indent, buffer_reg, buffer_info,
-                               has_count and not has_start ? count : operand{});
+                               has_count() and not has_start() ? count
+                                                               : operand{});
 
         const operand element_size_bytes{
             operand::imm(std::format("{}", buffer_info.type_ref().size_bytes()),
                          type_default),
         };
 
-        if (has_start) {
+        if (has_start()) {
             x.multiply(tok(), indent, start, element_size_bytes);
             x.add_subtract(tok(), indent, '+', buffer_reg, start);
             x.free_scratch_register(tok(), indent, start);
@@ -194,7 +192,7 @@ class stmt_builtin_io final : public stmt_call {
     auto compile_count(toc& tc, const size_t indent, const operand& count,
                        const ident_info& buffer_info) const -> void {
 
-        if (argument_count() >= 3) {
+        if (has_count()) {
             argument(2).compile(tc, indent,
                                 toc::make_ident_info_from_register(count));
 
@@ -241,5 +239,14 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
+    }
+
+    // 'read(fd, buf, count, start)': the count and the start are optional
+    [[nodiscard]] auto has_count() const -> bool {
+        return argument_count() >= 3;
+    }
+
+    [[nodiscard]] auto has_start() const -> bool {
+        return argument_count() == 4;
     }
 };

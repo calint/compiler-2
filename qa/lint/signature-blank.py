@@ -4,7 +4,7 @@ import sys
 
 # a function whose declaration spans several lines gets a blank line after
 # its opening brace, unless the body is empty ('}' follows)
-# usage (from the workspace root): python3 signature-blank.py [apply]
+# usage (from the workspace root): python3 qa/lint/signature-blank.py [apply]
 
 apply = len(sys.argv) > 1 and sys.argv[1] == "apply"
 counts = {}

@@ -3790,7 +3790,6 @@ class machine_rv32i : public machine {
         // without a known alignment every access is a byte
         if (start.width == 1) {
             walk_runtime_bytes(walk);
-
             return;
         }
 

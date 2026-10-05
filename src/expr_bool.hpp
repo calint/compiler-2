@@ -375,7 +375,6 @@ class expr_bool_op final : public statement {
         // a negated expression is an expression
         if (is_not_) {
             is_expression_ = true;
-
             return;
         }
 
@@ -384,7 +383,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        // shorthand expressions
+        // a shorthand condition on an expression
         if (lhs_.is_expression()) {
             is_expression_ = true;
             return;
@@ -397,7 +396,6 @@ class expr_bool_op final : public statement {
         // a boolean value is not an expression
         if (id == "true" or id == "false") {
             is_expression_ = false;
-
             return;
         }
 
@@ -673,7 +671,6 @@ class expr_bool final : public statement {
 
         token prv_op{};
 
-        // parse
         while (true) {
             // a caller might have supplied the first operand it already parsed
             if (first_expression) {

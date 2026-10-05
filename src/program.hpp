@@ -91,7 +91,7 @@ class program final {
         tc_.add_type(src_loc_tk, type_bool);
         tc_.add_type(src_loc_tk, type_void);
 
-        // set defaults
+        // the types the front end needs by role
         tc_.set_type_void(type_void);
         tc_.set_type_bool(type_bool);
 

@@ -284,6 +284,7 @@ class stmt_def_func final : public statement {
             for (const auto [d, e] :
                  std::views::zip(param_delims_tk_,
                                  params_ | std::views::drop(first_param + 1))) {
+
                 // note: +1 because the first parameter is printed above
 
                 d.source_to(os);

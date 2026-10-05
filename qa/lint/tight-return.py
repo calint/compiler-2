@@ -5,7 +5,7 @@ import sys
 # blank line before a single-line 'return':
 # - removed when the block holds only one single-line statement before it
 # - added when the statement before it spans several lines
-# usage (from the workspace root): python3 tight-return.py [apply]
+# usage (from the workspace root): python3 qa/lint/tight-return.py [apply]
 
 apply = len(sys.argv) > 1 and sys.argv[1] == "apply"
 counts = {}

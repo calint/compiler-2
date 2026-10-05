@@ -6,7 +6,7 @@ import sys
 # separated by a blank line before and after it, except at the top of a
 # block (before) and at its end (after, clang-format removes those)
 # comment lines directly above a group belong to it
-# usage (from the workspace root): python3 assert-groups.py [apply]
+# usage (from the workspace root): python3 qa/lint/assert-groups.py [apply]
 
 apply = len(sys.argv) > 1 and sys.argv[1] == "apply"
 assert_re = re.compile(r"\s*assert\(")

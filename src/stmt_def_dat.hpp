@@ -230,7 +230,6 @@ class stmt_def_dat final : public statement {
 
         if (is_array_literal(tc, tk, tz)) {
             set_named_type(tc, tk);
-
             return parse_array_literal(tc, tz);
         }
 
@@ -246,7 +245,6 @@ class stmt_def_dat final : public statement {
 
         if (is_record_literal(tc, tk, tz)) {
             set_named_type(tc, tk);
-
             return parse_type(tc, tz, get_type());
         }
 
@@ -306,14 +304,10 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // array of built-ins
-
         x.comment(elroot.src_loc_tk, 0, "{}[{}]", tp.name(),
                   elroot.array_count);
 
-        // special case for string
-        // note: only i8[] can be initialized with string token
-
+        // only 'i8[]' can be initialized with a string token
         if (elroot.src_loc_tk.is_string()) {
             x.emit_string_data(elroot.src_loc_tk.string_text());
             const size_t size_bytes{elroot.src_loc_tk.string_size_bytes()};
@@ -331,9 +325,6 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // normal case
-
-        // initializer
         const auto values{
             elroot.elems |
                 std::views::transform(
