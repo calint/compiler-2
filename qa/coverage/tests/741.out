@@ -1,4 +1,4 @@
 
-741.baz:4:13: address offset exceeds RV32I address range
+741.baz:4:9: data and variables of 5000000000 B exceed the 4294967296 B that the target addresses
     var a = i8[5000000000]{}
-            ^
+        ^

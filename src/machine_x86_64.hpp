@@ -1005,6 +1005,10 @@ class machine_x86_64 final : public machine {
                             value_type);
     }
 
+    [[nodiscard]] auto max_storage_bytes() const -> size_t override {
+        return storage_limits::max_size_bytes;
+    }
+
     auto memory_equal(const token& src_loc_tk, const size_t indent,
                       const size_t size_bytes,
                       [[maybe_unused]] const size_t alignment,

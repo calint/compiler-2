@@ -1,0 +1,4 @@
+
+gen-range.baz:1:5: data and variables of 5000000000 B exceed the 4294967296 B that the target addresses
+dat big = i8[5000000000]{}
+    ^~~

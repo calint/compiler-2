@@ -1,0 +1,7 @@
+# data larger than the address range of rv32i is rejected at its declaration
+
+dat big = i8[5000000000]
+
+func main() {
+    exit(0)
+}

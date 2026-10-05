@@ -330,6 +330,9 @@ class machine {
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
 
+    // the most bytes of data and variables the target can address
+    [[nodiscard]] virtual auto max_storage_bytes() const -> size_t = 0;
+
     // compares 'size_bytes' of two arrays and puts 1 into 'dst' when they are
     // equal, 'alignment' is the alignment known for both addresses
     virtual auto memory_equal(const token& src_loc_tk, const size_t indent,

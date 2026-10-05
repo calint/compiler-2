@@ -1209,6 +1209,10 @@ class machine_rv32i : public machine {
         return operand::reg(register_names_.at(index), value_type);
     }
 
+    [[nodiscard]] auto max_storage_bytes() const -> size_t override {
+        return address_space_bytes_;
+    }
+
     // every known size is compared from the address operands, small ones
     // unrolled and larger ones in a loop, both addresses stay in their
     // registers until it has compared

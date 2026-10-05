@@ -2301,8 +2301,9 @@ SRC=745 && COMPERR
 # record fields whose sizes together exceed the signed 64-bit range
 SRC=746 && COMPERR
 
-# data arrays whose sizes together exceed the signed 64-bit range
-SRC=747 && COMPERR
+# data arrays whose sizes together exceed the signed 64-bit range, rv32i
+# rejects the first one as beyond its address range
+if [[ $MACHINE == x86_64 ]]; then SRC=747 && COMPERR; fi
 
 # x86: a copy whose byte count exceeds the signed 64-bit range
 if [[ $MACHINE == x86_64 ]]; then SRC=748 && COMPERR; fi
@@ -2572,3 +2573,6 @@ SRC=834 && COMPERR
 
 # the type arguments of a call are deduced from the type it is assigned to
 SRC=835 && EXP=0 && RUN
+
+# data larger than the address range of rv32i is rejected at its declaration
+if [[ $MACHINE != x86_64 ]]; then SRC=836 && COMPERR; fi

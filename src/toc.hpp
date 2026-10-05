@@ -998,6 +998,8 @@ class toc final {
         vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
                                             allocated_size_bytes);
 
+        assert_storage_fits_target(src_loc_tk);
+
         frames_.back().add_var(var, allocated_size_bytes, kind);
 
         // stats
@@ -1700,6 +1702,22 @@ class toc final {
             src_loc_tk,
             std::format("variable '{}' already declared at {}", name,
                         source_location_hr(decl_var.src_loc_tk))};
+    }
+
+    // the declaration that takes the data and variables past what the target
+    // addresses is the error, not the end of the build
+    auto assert_storage_fits_target(const token& src_loc_tk) const -> void {
+        const size_t max_bytes{machine_.get().max_storage_bytes()};
+
+        if (vars_size_bytes_ <= max_bytes) {
+            return;
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("data and variables of {} B exceed the {} B that the "
+                        "target addresses",
+                        vars_size_bytes_, max_bytes)};
     }
 
     // a generic type and a type share the namespace of types
