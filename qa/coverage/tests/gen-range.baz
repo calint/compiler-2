@@ -1,4 +1,0 @@
-dat big = i8[5000000000]{}
-func main(){
-    exit(0)
-}

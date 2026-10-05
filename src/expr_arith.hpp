@@ -34,8 +34,11 @@
 // note: a bit quirky parsing but compilation is trivial and register efficient
 //
 class expr_arith final : public expression {
+    using arithmetic_operator = machine::arithmetic_operator;
+
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
-    std::vector<char> ops_; // operators between elements in the vector
+    // operators between elements in the vector
+    std::vector<arithmetic_operator> ops_;
     std::vector<token> ws_before_ops_; // whitespace before each of 'ops_'
     unary_ops uops_;                   // unary ops for all result e.g. ~(a+b)
     token open_paren_tk_;              // when 'enclosed' the '(' token
@@ -49,18 +52,18 @@ class expr_arith final : public expression {
     // an operation of the list being folded: an element, or merged constants
     // when 'element' is null
     struct step {
-        char op{};
+        arithmetic_operator op{arithmetic_operator::assign};
         const statement* element{};
         std::optional<int64_t> value; // set when the step is a constant
         std::string folded_source;    // e.g. '* 3 * 2' for the comment
     };
 
-    static constexpr char precedence_additive{1};
-    static constexpr char precedence_multiplicative{2};
-    static constexpr char precedence_bitwise_or{3};
-    static constexpr char precedence_bitwise_and{4};
-    static constexpr char precedence_bitwise_xor{5};
-    static constexpr char precedence_shift{6};
+    static constexpr uint8_t precedence_additive{1};
+    static constexpr uint8_t precedence_multiplicative{2};
+    static constexpr uint8_t precedence_bitwise_or{3};
+    static constexpr uint8_t precedence_bitwise_and{4};
+    static constexpr uint8_t precedence_bitwise_xor{5};
+    static constexpr uint8_t precedence_shift{6};
 
   public:
     expr_arith(toc& tc, tokenizer& tz, const bool in_args = false,
@@ -103,7 +106,7 @@ class expr_arith final : public expression {
             const token ws_before_op_tk{tz.next_whitespace_token()};
 
             // no operator also ends a list in function arguments at ',' or ')'
-            const std::optional<char> next_op{peek_operator(tz)};
+            const std::optional<arithmetic_operator> next_op{peek_operator(tz)};
 
             if (not next_op) {
                 end_list(tc, tz, ws_before_op_tk);
@@ -152,7 +155,7 @@ class expr_arith final : public expression {
     expr_arith() = default;
 
     // higher than the highest precedence
-    static constexpr char initial_precedence{7};
+    static constexpr uint8_t initial_precedence{7};
 
     //
     // overridden methods
@@ -171,12 +174,7 @@ class expr_arith final : public expression {
                  ws_before_ops_, ops_, exprs_ | std::views::drop(1))) {
 
             ws.source_to(os);
-            std::print(os, "{}", o);
-
-            if (o == '<' or o == '>') {
-                // handle case << and >>
-                std::print(os, "{}", o);
-            }
+            std::print(os, "{}", machine::source_text(o));
 
             e->source_to(os);
         }
@@ -243,7 +241,9 @@ class expr_arith final : public expression {
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
 
             // a shift count is not stored in the destination
-            if (o == '<' or o == '>') {
+            if (o == arithmetic_operator::shift_left or
+                o == arithmetic_operator::shift_right) {
+
                 continue;
             }
 
@@ -355,8 +355,11 @@ class expr_arith final : public expression {
 
     // '/', '%' and '>>' read the high bits of their operands
     [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
-        for (const char o : ops_) {
-            if (o == '/' or o == '%' or o == '>') {
+        for (const arithmetic_operator o : ops_) {
+            if (o == arithmetic_operator::divide or
+                o == arithmetic_operator::remainder or
+                o == arithmetic_operator::shift_right) {
+
                 return false;
             }
         }
@@ -405,7 +408,8 @@ class expr_arith final : public expression {
 
         const step& last{steps.back()};
 
-        if (steps.size() < 2 or last.element != nullptr or last.op != '+') {
+        if (steps.size() < 2 or last.element != nullptr or
+            last.op != arithmetic_operator::add) {
             return std::nullopt;
         }
 
@@ -468,7 +472,8 @@ class expr_arith final : public expression {
 
   private:
     // e.g. 'b + 1 - 1' or 'b / 1 / 1' apply nothing
-    auto apply_merged_constant(toc& tc, const size_t indent, const char op,
+    auto apply_merged_constant(toc& tc, const size_t indent,
+                               const arithmetic_operator op,
                                const ident_info& dst_info, const int64_t value,
                                const std::string_view folded_source) const
         -> void {
@@ -486,49 +491,49 @@ class expr_arith final : public expression {
         asm_op_constant(tc, indent, op, dst_info, value, folded_source);
     }
 
-    auto asm_op_constant(toc& tc, const size_t indent, const char op,
+    auto asm_op_constant(toc& tc, const size_t indent,
+                         const arithmetic_operator op,
                          const ident_info& dst_info, const int64_t value,
                          const std::string_view folded_source) const -> void {
 
         // 'b - 3' rather than 'b + -3', the most negative value has no
         // positive counterpart in the width
-        if (op == '+' and value < 0 and
+        if (op == arithmetic_operator::add and value < 0 and
             value != width_min(dst_info.type_ref())) {
 
-            asm_op_constant(tc, indent, '-', dst_info, -value, folded_source);
+            asm_op_constant(tc, indent, arithmetic_operator::subtract, dst_info,
+                            -value, folded_source);
+
             return;
         }
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, "{} {} {}", dst_info.id, op, value);
+        x.comment(tok(), indent, "{} {} {}", dst_info.id,
+                  machine::source_text(op), value);
+
         x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
 
         const operand constant{constant_operand(tc, value)};
 
-        switch (op) {
-        case '+':
-        case '-':
+        if (op == arithmetic_operator::add or
+            op == arithmetic_operator::subtract) {
+
             x.add_subtract(tok(), indent, op, dst_info.operand, constant);
             return;
+        }
 
-        case '*':
+        if (op == arithmetic_operator::multiply) {
             x.multiply(tok(), indent, dst_info.operand, constant);
             return;
+        }
 
-        case '/':
+        if (op == arithmetic_operator::divide) {
             x.divide(tok(), indent, op, dst_info.operand, constant);
             return;
-
-        case '&':
-        case '|':
-        case '^':
-            x.bitwise(tok(), indent, op, dst_info.operand, constant);
-            return;
-
-        default:
-            std::unreachable();
         }
+
+        x.bitwise(tok(), indent, op, dst_info.operand, constant);
     }
 
     // a narrow memory destination truncates when stored, which gives the same
@@ -596,10 +601,11 @@ class expr_arith final : public expression {
         compile_first_element(tc, indent, dst_info, *first.element);
 
         // only a zero constant leaves a subtracted element first: '2 - b - 2'
-        if (first.op == '-') {
+        if (first.op == arithmetic_operator::subtract) {
             machine& x{tc.machine()};
 
-            x.unary(tok(), indent, '-', dst_info.operand);
+            x.unary(tok(), indent, machine::arithmetic_operator::negate,
+                    dst_info.operand);
         }
     }
 
@@ -679,18 +685,18 @@ class expr_arith final : public expression {
     // the first element is added in an additive list and a factor in a list
     // led by '*' or a bitwise operation, otherwise it is the dividend or the
     // shifted value
-    [[nodiscard]] auto first_op() const -> char {
+    [[nodiscard]] auto first_op() const -> arithmetic_operator {
         if (ops_.empty()) {
-            return '=';
+            return arithmetic_operator::assign;
         }
 
-        const char first{ops_.front()};
+        const arithmetic_operator first{ops_.front()};
 
-        if (first == '-') {
-            return '+';
+        if (first == arithmetic_operator::subtract) {
+            return arithmetic_operator::add;
         }
 
-        return is_commutative(first) ? first : '=';
+        return is_commutative(first) ? first : arithmetic_operator::assign;
     }
 
     // a sub-expression is enclosed in parentheses
@@ -743,7 +749,7 @@ class expr_arith final : public expression {
         std::vector<step> steps;
 
         for (size_t i{}; i < exprs_.size(); ++i) {
-            const char op{i == 0 ? first_op() : ops_.at(i - 1)};
+            const arithmetic_operator op{i == 0 ? first_op() : ops_.at(i - 1)};
             // note: -1 because the first expression has no operator before it
 
             const statement& e{*exprs_.at(i)};
@@ -753,7 +759,8 @@ class expr_arith final : public expression {
                 .element{&e},
                 .value{element_constant(tc, e, width_type)},
                 .folded_source{
-                    std::format("{} {}", op, statement::trimmed_source(e)),
+                    std::format("{} {}", machine::source_text(op),
+                                statement::trimmed_source(e)),
                 },
             });
         }
@@ -848,22 +855,26 @@ class expr_arith final : public expression {
     // empty when the targets differ at run time: a zero divisor traps, the
     // most negative value divided by -1 traps or wraps and shift counts
     // outside the width are masked differently
-    [[nodiscard]] static auto apply_operation(const int64_t lhs, const char op,
-                                              const int64_t rhs,
-                                              const type& width_type)
+    [[nodiscard]] static auto
+    apply_operation(const int64_t lhs, const arithmetic_operator op,
+                    const int64_t rhs, const type& width_type)
         -> std::optional<int64_t> {
 
-        switch (op) {
-        case '/':
-        case '%':
+        if (op == arithmetic_operator::divide or
+            op == arithmetic_operator::remainder) {
+
             if (rhs == 0 or (rhs == -1 and lhs == width_min(width_type))) {
                 return std::nullopt;
             }
 
-            return wrap_to_width(op == '/' ? lhs / rhs : lhs % rhs, width_type);
+            return wrap_to_width(op == arithmetic_operator::divide ? lhs / rhs
+                                                                   : lhs % rhs,
+                                 width_type);
+        }
 
-        case '<':
-        case '>':
+        if (op == arithmetic_operator::shift_left or
+            op == arithmetic_operator::shift_right) {
+
             if (rhs < 0 or
                 std::cmp_greater_equal(rhs, width_type.size_bits())) {
                 return std::nullopt;
@@ -871,63 +882,57 @@ class expr_arith final : public expression {
 
             return shift_constant(lhs, op, static_cast<uint64_t>(rhs),
                                   width_type);
-
-        default:
-            return combine(lhs, op, rhs, width_type);
         }
+
+        return combine(lhs, op, rhs, width_type);
     }
 
-    static auto asm_op(toc& tc, const size_t indent, const char op,
-                       const ident_info& dst, const statement& src) -> void {
-
-        // shifts are stored as one character but written as two
-        std::string op_str{op};
-
-        if (op == '<' or op == '>') {
-            op_str.push_back(op);
-        }
+    static auto asm_op(toc& tc, const size_t indent,
+                       const arithmetic_operator op, const ident_info& dst,
+                       const statement& src) -> void {
 
         machine& x{tc.machine()};
 
-        x.comment(src.tok(), indent,
-                  statement::trimmed_source(src, dst.id, op_str));
+        x.comment(
+            src.tok(), indent,
+            statement::trimmed_source(src, dst.id, machine::source_text(op)));
 
-        switch (op) {
-        case '=':
+        if (op == arithmetic_operator::assign) {
             asm_op_mov(tc, indent, dst, src);
             return;
+        }
 
-        case '+':
-        case '-':
+        if (op == arithmetic_operator::add or
+            op == arithmetic_operator::subtract) {
+
             asm_op_add_sub(tc, indent, op, dst, src);
             return;
+        }
 
-        case '*':
+        if (op == arithmetic_operator::multiply) {
             asm_op_mul(tc, indent, dst, src);
             return;
+        }
 
-        case '/':
-        case '%':
+        if (op == arithmetic_operator::divide or
+            op == arithmetic_operator::remainder) {
+
             asm_op_div(tc, indent, op, dst, src);
             return;
+        }
 
-        case '&':
-        case '|':
-        case '^':
-            asm_op_bitwise(tc, indent, op, dst, src);
-            return;
+        if (op == arithmetic_operator::shift_left or
+            op == arithmetic_operator::shift_right) {
 
-        case '<':
-        case '>':
             asm_op_shift(tc, indent, op, dst, src);
             return;
-
-        default:
-            std::unreachable();
         }
+
+        asm_op_bitwise(tc, indent, op, dst, src);
     }
 
-    static auto asm_op_add_sub(toc& tc, const size_t indent, const char op,
+    static auto asm_op_add_sub(toc& tc, const size_t indent,
+                               const arithmetic_operator op,
                                const ident_info& dst_info, const statement& src)
         -> void {
 
@@ -943,7 +948,10 @@ class expr_arith final : public expression {
                 tc.get_lea_operand(indent, src, src_info, lea_registers),
             };
 
-            x.add_subtract(src.tok(), indent, op == '+' ? '-' : '+',
+            x.add_subtract(src.tok(), indent,
+                           op == arithmetic_operator::add
+                               ? arithmetic_operator::subtract
+                               : arithmetic_operator::add,
                            dst_info.operand, src_operand);
 
             x.free_scratch_registers(src.tok(), indent, lea_registers);
@@ -958,7 +966,8 @@ class expr_arith final : public expression {
             });
     }
 
-    static auto asm_op_bitwise(toc& tc, const size_t indent, const char op,
+    static auto asm_op_bitwise(toc& tc, const size_t indent,
+                               const arithmetic_operator op,
                                const ident_info& dst_info, const statement& src)
         -> void {
 
@@ -971,7 +980,8 @@ class expr_arith final : public expression {
             });
     }
 
-    static auto asm_op_div(toc& tc, const size_t indent, const char op,
+    static auto asm_op_div(toc& tc, const size_t indent,
+                           const arithmetic_operator op,
                            const ident_info& dst_info, const statement& src)
         -> void {
 
@@ -1019,7 +1029,8 @@ class expr_arith final : public expression {
             });
     }
 
-    static auto asm_op_shift(toc& tc, const size_t indent, const char op,
+    static auto asm_op_shift(toc& tc, const size_t indent,
+                             const arithmetic_operator op,
                              const ident_info& dst_info, const statement& src)
         -> void {
 
@@ -1039,7 +1050,8 @@ class expr_arith final : public expression {
     }
 
     // operations whose low bits do not depend on higher bits
-    [[nodiscard]] static auto combine(const int64_t lhs, const char op,
+    [[nodiscard]] static auto combine(const int64_t lhs,
+                                      const arithmetic_operator op,
                                       const int64_t rhs, const type& width_type)
         -> int64_t {
 
@@ -1047,28 +1059,29 @@ class expr_arith final : public expression {
         const uint64_t l{static_cast<uint64_t>(lhs)};
         const uint64_t r{static_cast<uint64_t>(rhs)};
 
-        switch (op) {
-        case '+':
+        if (op == arithmetic_operator::add) {
             return wrap_to_width(static_cast<int64_t>(l + r), width_type);
-
-        case '-':
-            return wrap_to_width(static_cast<int64_t>(l - r), width_type);
-
-        case '*':
-            return wrap_to_width(static_cast<int64_t>(l * r), width_type);
-
-        case '&':
-            return static_cast<int64_t>(l & r);
-
-        case '|':
-            return static_cast<int64_t>(l | r);
-
-        case '^':
-            return static_cast<int64_t>(l ^ r);
-
-        default:
-            std::unreachable();
         }
+
+        if (op == arithmetic_operator::subtract) {
+            return wrap_to_width(static_cast<int64_t>(l - r), width_type);
+        }
+
+        if (op == arithmetic_operator::multiply) {
+            return wrap_to_width(static_cast<int64_t>(l * r), width_type);
+        }
+
+        if (op == arithmetic_operator::bit_and) {
+            return static_cast<int64_t>(l & r);
+        }
+
+        if (op == arithmetic_operator::bit_or) {
+            return static_cast<int64_t>(l | r);
+        }
+
+        assert(op == arithmetic_operator::bit_xor);
+
+        return static_cast<int64_t>(l ^ r);
     }
 
     // an identifier copies itself, anything else is assigned with '='
@@ -1081,7 +1094,7 @@ class expr_arith final : public expression {
             return;
         }
 
-        asm_op(tc, indent, '=', dst_info, first);
+        asm_op(tc, indent, arithmetic_operator::assign, dst_info, first);
     }
 
     [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
@@ -1198,28 +1211,36 @@ class expr_arith final : public expression {
     }
 
     // the constant that leaves a value unchanged
-    [[nodiscard]] static auto identity_of(const char op) -> int64_t {
-        switch (op) {
-        case '+':
-        case '|':
-        case '^':
+    [[nodiscard]] static auto identity_of(const arithmetic_operator op)
+        -> int64_t {
+
+        if (op == arithmetic_operator::add or
+            op == arithmetic_operator::bit_or or
+            op == arithmetic_operator::bit_xor) {
+
             return 0;
-
-        case '*':
-        case '/':
-            return 1;
-
-        case '&':
-            return -1;
-
-        default:
-            std::unreachable();
         }
+
+        if (op == arithmetic_operator::multiply or
+            op == arithmetic_operator::divide) {
+
+            return 1;
+        }
+
+        assert(op == arithmetic_operator::bit_and);
+
+        return -1;
     }
 
-    [[nodiscard]] static auto is_commutative(const char op) -> bool {
-        return op == '+' or op == '-' or op == '*' or op == '&' or op == '|' or
-               op == '^';
+    [[nodiscard]] static auto is_commutative(const arithmetic_operator op)
+        -> bool {
+
+        return op == arithmetic_operator::add or
+               op == arithmetic_operator::subtract or
+               op == arithmetic_operator::multiply or
+               op == arithmetic_operator::bit_and or
+               op == arithmetic_operator::bit_or or
+               op == arithmetic_operator::bit_xor;
     }
 
     // a lone negation folds into add/sub: 'a - -b' is 'a + b'
@@ -1251,16 +1272,18 @@ class expr_arith final : public expression {
         const step& last{steps.back()};
 
         // only a merged constant has no element
-        if (last.element != nullptr or last.op != '+' or last.value == 0) {
+        if (last.element != nullptr or last.op != arithmetic_operator::add or
+            last.value == 0) {
             return;
         }
 
         const bool is_negated{
-            first.op == '+' and first.element != nullptr and
+            first.op == arithmetic_operator::add and
+                first.element != nullptr and
                 is_negated_operand(tc, *first.element),
         };
 
-        if (first.op != '-' and not is_negated) {
+        if (first.op != arithmetic_operator::subtract and not is_negated) {
             return;
         }
 
@@ -1336,7 +1359,11 @@ class expr_arith final : public expression {
                           const type& width_type) -> void {
 
         // subtracted constants are subtracted from an added constant
-        const char op{run.front().op == '-' ? '+' : run.front().op};
+        const arithmetic_operator op{
+            run.front().op == arithmetic_operator::subtract
+                ? arithmetic_operator::add
+                : run.front().op,
+        };
 
         if (not is_commutative(op)) {
             merged.append_range(run);
@@ -1374,7 +1401,8 @@ class expr_arith final : public expression {
     [[nodiscard]] static auto mergeable_divisor(const step& s)
         -> std::optional<int64_t> {
 
-        if (s.op != '/' or not s.value or *s.value == 0 or *s.value == -1) {
+        if (s.op != arithmetic_operator::divide or not s.value or
+            *s.value == 0 or *s.value == -1) {
             return std::nullopt;
         }
 
@@ -1394,7 +1422,9 @@ class expr_arith final : public expression {
             return std::nullopt;
         }
 
-        const int64_t product{combine(*m, '*', *n, width_type)};
+        const int64_t product{
+            combine(*m, arithmetic_operator::multiply, *n, width_type),
+        };
 
         // a wrapped product divided back differs from the divisor
         if (product / *n != *m) {
@@ -1426,67 +1456,95 @@ class expr_arith final : public expression {
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
     // the operator at the next character, not consumed
     [[nodiscard]] static auto peek_operator(tokenizer& tz)
-        -> std::optional<char> {
+        -> std::optional<arithmetic_operator> {
 
-        constexpr std::string_view single_char_operators{"+-*/%&|^"};
+        if (tz.is_peek_char('+')) {
+            return arithmetic_operator::add;
+        }
 
-        for (const char op : single_char_operators) {
-            if (tz.is_peek_char(op)) {
-                return op;
-            }
+        if (tz.is_peek_char('-')) {
+            return arithmetic_operator::subtract;
+        }
+
+        if (tz.is_peek_char('*')) {
+            return arithmetic_operator::multiply;
+        }
+
+        if (tz.is_peek_char('/')) {
+            return arithmetic_operator::divide;
+        }
+
+        if (tz.is_peek_char('%')) {
+            return arithmetic_operator::remainder;
+        }
+
+        if (tz.is_peek_char('&')) {
+            return arithmetic_operator::bit_and;
+        }
+
+        if (tz.is_peek_char('|')) {
+            return arithmetic_operator::bit_or;
+        }
+
+        if (tz.is_peek_char('^')) {
+            return arithmetic_operator::bit_xor;
         }
 
         // shifts are two characters stored as one
         if (tz.is_peek_char('<') and tz.is_peek_char2('<')) {
-            return '<';
+            return arithmetic_operator::shift_left;
         }
 
         if (tz.is_peek_char('>') and tz.is_peek_char2('>')) {
-            return '>';
+            return arithmetic_operator::shift_right;
         }
 
         return std::nullopt;
     }
 
     // higher value higher precedence
-    [[nodiscard]] static auto precedence_for_op(const char ch) -> uint8_t {
-        switch (ch) {
-        case '+':
-        case '-':
+    [[nodiscard]] static auto precedence_for_op(const arithmetic_operator op)
+        -> uint8_t {
+
+        if (op == arithmetic_operator::add or
+            op == arithmetic_operator::subtract) {
+
             return precedence_additive;
-
-        case '*':
-        case '/':
-        case '%':
-            return precedence_multiplicative;
-
-        case '|':
-            return precedence_bitwise_or;
-
-        case '&':
-            return precedence_bitwise_and;
-
-        case '^':
-            return precedence_bitwise_xor;
-
-        case '<': // shift left
-        case '>': // shift right
-            return precedence_shift;
-
-        default:
-            std::unreachable();
         }
+
+        if (op == arithmetic_operator::multiply or
+            op == arithmetic_operator::divide or
+            op == arithmetic_operator::remainder) {
+
+            return precedence_multiplicative;
+        }
+
+        if (op == arithmetic_operator::bit_or) {
+            return precedence_bitwise_or;
+        }
+
+        if (op == arithmetic_operator::bit_and) {
+            return precedence_bitwise_and;
+        }
+
+        if (op == arithmetic_operator::bit_xor) {
+            return precedence_bitwise_xor;
+        }
+
+        assert(op == arithmetic_operator::shift_left or
+               op == arithmetic_operator::shift_right);
+
+        return precedence_shift;
     }
 
     // a count within the width shifts the same on both targets
-    [[nodiscard]] static auto shift_constant(const int64_t lhs, const char op,
-                                             const uint64_t count,
-                                             const type& width_type)
-        -> int64_t {
+    [[nodiscard]] static auto
+    shift_constant(const int64_t lhs, const arithmetic_operator op,
+                   const uint64_t count, const type& width_type) -> int64_t {
 
         const uint64_t bits{static_cast<uint64_t>(lhs)};
 
-        if (op == '<') {
+        if (op == arithmetic_operator::shift_left) {
             return wrap_to_width(static_cast<int64_t>(bits << count),
                                  width_type);
         }

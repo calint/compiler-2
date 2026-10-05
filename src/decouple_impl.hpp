@@ -969,7 +969,10 @@ auto unary_ops::compile(toc& tc, const size_t indent, const token& src_loc_tk,
     machine& x{tc.machine()};
 
     for (const char o : ops_ | std::views::reverse) {
-        x.unary(src_loc_tk, indent, o, dst_info);
+        x.unary(src_loc_tk, indent,
+                o == '-' ? machine::arithmetic_operator::negate
+                         : machine::arithmetic_operator::complement,
+                dst_info);
     }
 }
 

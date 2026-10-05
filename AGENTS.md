@@ -105,7 +105,8 @@ Working agreements for AI sessions in this repository.
   - focused tests run;
   - linter clean;
   - formatter applied (keep its output).
-- Commit message is always `.` (no body, no trailer).
+- Never commit; the user commits. Only when told to commit, the message is
+  always `.` (no body, no trailer).
 - Live test output: no redirection or piping through `grep`/`tail`/`head`.
 - Shell scripts `cd` to their own directory and use relative paths.
 

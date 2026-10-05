@@ -156,7 +156,10 @@ class stmt_builtin_io final : public stmt_call {
 
         if (has_start()) {
             x.multiply(tok(), indent, start, element_size_bytes);
-            x.add_subtract(tok(), indent, '+', buffer_reg, start);
+
+            x.add_subtract(tok(), indent, machine::arithmetic_operator::add,
+                           buffer_reg, start);
+
             x.free_scratch_register(tok(), indent, start);
         }
 

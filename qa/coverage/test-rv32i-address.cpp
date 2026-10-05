@@ -71,6 +71,45 @@ namespace {
 // shared fixtures
 // ----------------------------------------------------------------------------
 
+// the operator of the machine for an operator written as a character
+auto op_of(const char op) -> machine::arithmetic_operator {
+    using arithmetic_operator = machine::arithmetic_operator;
+
+    if (op == '+') {
+        return arithmetic_operator::add;
+    }
+    if (op == '-') {
+        return arithmetic_operator::subtract;
+    }
+    if (op == '&') {
+        return arithmetic_operator::bit_and;
+    }
+    if (op == '|') {
+        return arithmetic_operator::bit_or;
+    }
+    if (op == '^') {
+        return arithmetic_operator::bit_xor;
+    }
+    if (op == '/') {
+        return arithmetic_operator::divide;
+    }
+    if (op == '%') {
+        return arithmetic_operator::remainder;
+    }
+    if (op == '<') {
+        return arithmetic_operator::shift_left;
+    }
+
+    assert(op == '>');
+
+    return arithmetic_operator::shift_right;
+}
+
+auto unary_of(const char op) -> machine::arithmetic_operator {
+    return op == '-' ? machine::arithmetic_operator::negate
+                     : machine::arithmetic_operator::complement;
+}
+
 const type integer64{"i64", 8, type_kind::builtin};
 const type integer{"i32", 4, type_kind::builtin};
 const type half{"i16", 2, type_kind::builtin};
@@ -704,7 +743,7 @@ auto check_comments_with_source_positions() -> void {
                              "    # [2:5] free named register a0\n"
                              "    # [2:5] free scratch register t0\n");
     comments.str({});
-    located.add_subtract(location, 1, '+',
+    located.add_subtract(location, 1, op_of('+'),
                          operand::mem("a0", {}, 1, 0, integer),
                          operand::imm("1", integer));
     assert(comments.str() ==
@@ -1207,7 +1246,7 @@ auto check_shifts() -> void {
     for (const char operation : {'<', '>'}) {
         output.str({});
 
-        backend.shift(token{}, 0, operation, operand::reg("a0", integer),
+        backend.shift(token{}, 0, op_of(operation), operand::reg("a0", integer),
                       operand::reg("a1", integer));
 
         assert(output.str() ==
@@ -1216,7 +1255,8 @@ auto check_shifts() -> void {
 
         for (const unsigned count : {0U, 2U, 31U}) {
             output.str({});
-            backend.shift(token{}, 0, operation, operand::reg("a0", integer),
+            backend.shift(token{}, 0, op_of(operation),
+                          operand::reg("a0", integer),
                           operand::imm(std::format("{}", count), integer));
             assert(output.str() ==
                    (count == 0 ? std::string{}
@@ -1228,7 +1268,7 @@ auto check_shifts() -> void {
             output.str({});
             assert(rejected_with(
                 [&] {
-                    backend.shift(source_tk, 0, operation,
+                    backend.shift(source_tk, 0, op_of(operation),
                                   operand::reg("a0", integer),
                                   operand::imm(std::string{count}, integer));
                 },
@@ -1254,7 +1294,7 @@ auto check_add_subtract_bitwise() -> void {
         if (operation == '+' or operation == '-') {
             instruction = operation == '+' ? "add" : "sub";
 
-            backend.add_subtract(token{}, 0, operation,
+            backend.add_subtract(token{}, 0, op_of(operation),
                                  operand::reg("a0", integer),
                                  operand::reg("a1", integer));
 
@@ -1263,7 +1303,8 @@ auto check_add_subtract_bitwise() -> void {
                           : operation == '|' ? "or"
                                              : "xor";
 
-            backend.bitwise(token{}, 0, operation, operand::reg("a0", integer),
+            backend.bitwise(token{}, 0, op_of(operation),
+                            operand::reg("a0", integer),
                             operand::reg("a1", integer));
         }
         assert(output.str() == std::format("{} a0, a0, a1\n", instruction));
@@ -1274,10 +1315,10 @@ auto check_add_subtract_bitwise() -> void {
             const operand source{operand::imm(std::string{constant}, integer)};
 
             if (operation == '+' or operation == '-') {
-                backend.add_subtract(token{}, 0, operation,
+                backend.add_subtract(token{}, 0, op_of(operation),
                                      operand::reg("a0", integer), source);
             } else {
-                backend.bitwise(token{}, 0, operation,
+                backend.bitwise(token{}, 0, op_of(operation),
                                 operand::reg("a0", integer), source);
             }
             int expected{7};
@@ -1318,13 +1359,13 @@ auto check_zero_operations_and_zero_shifts() -> void {
                                    : operand::reg("a0", *value_type)};
 
             output.str({});
-            backend.shift(token{}, 0, '<', destination,
+            backend.shift(token{}, 0, op_of('<'), destination,
                           operand::imm("0", integer));
-            backend.shift(token{}, 0, '>', destination,
+            backend.shift(token{}, 0, op_of('>'), destination,
                           operand::imm("0", integer));
             assert(output.str().empty());
             output.str({});
-            backend.bitwise(token{}, 0, '&', destination,
+            backend.bitwise(token{}, 0, op_of('&'), destination,
                             operand::imm("0", integer));
 
             const std::string_view store{value_type == &integer ? "sw"
@@ -1337,11 +1378,12 @@ auto check_zero_operations_and_zero_shifts() -> void {
             assert(output.str() == zero_result);
         }
         output.str({});
-        backend.unary(token{}, 0, '~', operand::reg("a0", *value_type));
+        backend.unary(token{}, 0, unary_of('~'),
+                      operand::reg("a0", *value_type));
         assert(output.str() == "xori a0, a0, -1\n");
     }
     output.str({});
-    backend.unary(token{}, 0, '-', operand::reg("a0", integer));
+    backend.unary(token{}, 0, unary_of('-'), operand::reg("a0", integer));
     assert(output.str() == "sub a0, zero, a0\n");
     backend.free_scratch_registers(token{}, 0, shift_registers);
     backend.finish();
@@ -1356,11 +1398,11 @@ auto check_narrow_values_and_large_constants() -> void {
 
     std::vector<operand> shift_registers{
         hold_scratch_registers(backend, 30, integer)};
-    backend.bitwise(token{}, 0, '|', operand::reg("a0", byte),
+    backend.bitwise(token{}, 0, op_of('|'), operand::reg("a0", byte),
                     operand::imm("255", integer));
     assert(output.str() == "li a0, -1\n");
     output.str({});
-    backend.shift(token{}, 0, '<', operand::reg("a0", byte),
+    backend.shift(token{}, 0, op_of('<'), operand::reg("a0", byte),
                   operand::imm("7", integer));
     assert(output.str() == "slli a0, a0, 31\nsrai a0, a0, 24\n");
     output.str({});
@@ -1368,22 +1410,23 @@ auto check_narrow_values_and_large_constants() -> void {
         const size_t bits{narrow->size_bytes() * 8};
         assert(rejected_with(
             [&] {
-                backend.shift(source_tk, 0, '<', operand::reg("a0", *narrow),
+                backend.shift(source_tk, 0, op_of('<'),
+                              operand::reg("a0", *narrow),
                               operand::imm(std::format("{}", bits), integer));
             },
             std::format("RV32I shift count must be 0 to {} for {}-bit values",
                         bits - 1, bits)));
         assert(output.str().empty());
     }
-    backend.shift(token{}, 0, '<', operand::reg("a0", byte),
+    backend.shift(token{}, 0, op_of('<'), operand::reg("a0", byte),
                   operand::imm("1", integer));
     assert(output.str() == "slli a0, a0, 25\nsrai a0, a0, 24\n");
     output.str({});
-    backend.add_subtract(token{}, 0, '+', operand::reg("a0", integer),
+    backend.add_subtract(token{}, 0, op_of('+'), operand::reg("a0", integer),
                          operand::imm("2048", integer));
     assert(output.str() == "addi a0, a0, 2047\naddi a0, a0, 1\n");
     output.str({});
-    backend.add_subtract(token{}, 0, '-', operand::reg("a0", integer),
+    backend.add_subtract(token{}, 0, op_of('-'), operand::reg("a0", integer),
                          operand::imm("2049", integer));
     assert(output.str() == "addi a0, a0, -2048\naddi a0, a0, -1\n");
     backend.free_scratch_registers(token{}, 0, shift_registers);
@@ -1439,7 +1482,7 @@ auto check_byte_bitwise() -> void {
     for (const char operation : {'&', '|', '^'}) {
         output.str({});
 
-        backend.bitwise(token{}, 0, operation, operand::reg("a0", byte),
+        backend.bitwise(token{}, 0, op_of(operation), operand::reg("a0", byte),
                         operand::reg("a1", byte));
 
         assert(std::ranges::count(output.str(), '\n') == 1);
@@ -1919,7 +1962,7 @@ auto check_multiply_divide_routines() -> void {
                                             operand::reg("s2", integer),
                                             operand::reg("s3", integer));
                 } else {
-                    helper_backend.divide(token{}, 0, operation,
+                    helper_backend.divide(token{}, 0, op_of(operation),
                                           operand::reg("s2", integer),
                                           operand::reg("s3", integer));
                 }
@@ -1947,7 +1990,7 @@ auto check_multiply_divide_routines() -> void {
                                             ? operand::imm("3", integer)
                                             : operand::reg("a1", integer));
             } else {
-                helper_backend.divide(token{}, 0, operation,
+                helper_backend.divide(token{}, 0, op_of(operation),
                                       operand::reg("a0", integer),
                                       operand::reg("a1", integer));
             }
@@ -2147,7 +2190,8 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
     // register nothing reads
     const auto padding = [&](const size_t count) -> void {
         for (size_t i{}; i < count; ++i) {
-            backend.unary(token{}, 1, '~', operand::reg("s4", integer));
+            backend.unary(token{}, 1, unary_of('~'),
+                          operand::reg("s4", integer));
         }
     };
 
@@ -2156,7 +2200,8 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
     const operand counter{operand::mem("sp", {}, 1, 0, integer)};
 
     // 8 KiB needs 'j' and 1.08 MiB needs 'jump' in every direction
-    backend.add_subtract(token{}, 1, '-', stack, operand::imm("16", integer));
+    backend.add_subtract(token{}, 1, op_of('-'), stack,
+                         operand::imm("16", integer));
 
     for (const size_t count : {2048U, 270000U}) {
         const std::string loop_label{std::format("far_loop_{}", count)};
@@ -2165,7 +2210,7 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
 
         backend.label(0, loop_label);
         padding(count);
-        backend.add_subtract(token{}, 1, '+', iterator,
+        backend.add_subtract(token{}, 1, op_of('+'), iterator,
                              operand::imm("1", integer));
 
         backend.advance_array_iteration(token{}, 1, iterator, counter, 4,
@@ -2202,7 +2247,8 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
         backend.exit(token{}, 1, operand::imm("3", integer));
         backend.label(0, skipped_label);
     }
-    backend.add_subtract(token{}, 1, '+', stack, operand::imm("16", integer));
+    backend.add_subtract(token{}, 1, op_of('+'), stack,
+                         operand::imm("16", integer));
 
     backend.end_main();
     padding(270000);
@@ -2556,8 +2602,8 @@ auto emit_division_tests(machine_rv32i& backend) -> void {
                                 token{}, 1, destination,
                                 operand::imm(std::format("{}", initial),
                                              integer));
-                            backend.divide(token{}, 1, operation, destination,
-                                           source);
+                            backend.divide(token{}, 1, op_of(operation),
+                                           destination, source);
                             backend.copy_value(token{}, 1,
                                                operand::reg("a0", integer),
                                                destination);
@@ -2596,7 +2642,7 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
         if (operation == '*') {
             backend.multiply(token{}, 1, destination, source);
         } else {
-            backend.divide(token{}, 1, operation, destination, source);
+            backend.divide(token{}, 1, op_of(operation), destination, source);
         }
         for (const auto [index, reg] : std::views::enumerate(live)) {
             emit_expect(reg.base_register(), 101 + index, "a2");
@@ -2616,7 +2662,7 @@ auto emit_division_same_address(machine_rv32i& backend) -> void {
     for (const char operation : {'/', '%'}) {
         std::println("    la t0, buffer\n    li a0, -17\n    sw a0, 0(t0)");
         const operand address{operand::mem("t0", {}, 1, 0, integer)};
-        backend.divide(token{}, 1, operation, address, address);
+        backend.divide(token{}, 1, op_of(operation), address, address);
         std::println("    lw a0, 0(t0)");
         emit_expect("a0", operation == '/' ? 1 : 0);
         backend.finish();
@@ -2875,7 +2921,7 @@ auto emit_unary_tests(machine_rv32i& backend) -> void {
                     backend.copy_value(
                         token{}, 1, destination,
                         operand::imm(std::format("{}", initial), integer));
-                    backend.unary(token{}, 1, operation, destination);
+                    backend.unary(token{}, 1, unary_of(operation), destination);
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
                                        destination);
                     const uint32_t bits{static_cast<uint32_t>(initial)};
@@ -2940,13 +2986,13 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
                         uint32_t expected{127};
                         const uint32_t rhs{static_cast<uint32_t>(source_value)};
                         if (operation == '+' or operation == '-') {
-                            backend.add_subtract(token{}, 1, operation,
+                            backend.add_subtract(token{}, 1, op_of(operation),
                                                  destination, source);
                             expected = operation == '+' ? expected + rhs
                                                         : expected - rhs;
                         } else {
-                            backend.bitwise(token{}, 1, operation, destination,
-                                            source);
+                            backend.bitwise(token{}, 1, op_of(operation),
+                                            destination, source);
                             if (operation == '&') {
                                 expected &= rhs;
                             } else if (operation == '|') {
@@ -2998,7 +3044,8 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
 
                     backend.copy_value(token{}, 1, destination,
                                        operand::imm("-16", integer));
-                    backend.shift(token{}, 1, operation, destination, count);
+                    backend.shift(token{}, 1, op_of(operation), destination,
+                                  count);
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
                                        destination);
 
@@ -3014,7 +3061,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
 
     // the count is the shifted register itself
     std::println("    li a0, 3");
-    backend.shift(token{}, 1, '<', operand::reg("a0", integer),
+    backend.shift(token{}, 1, op_of('<'), operand::reg("a0", integer),
                   operand::reg("a0", integer));
     emit_expect("a0", 24);
     backend.finish();
@@ -3201,7 +3248,7 @@ auto generate_runtime_program() -> void {
     // 'test-rv32i.sh' as separate programs
     backend.end_main();
     std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
-    backend.divide(token{}, 1, '/', operand::reg("a0", integer),
+    backend.divide(token{}, 1, op_of('/'), operand::reg("a0", integer),
                    operand::imm("0", integer));
     backend.exit(token{}, 1, operand::imm("0", integer));
     for (const uint32_t line : {0U, 9U, 123U, UINT32_MAX}) {

@@ -109,11 +109,12 @@ better assembler code, medium, largest gain first
     1. [x] done (2026-10-05): 'machine::max_storage_bytes' and
        'toc::assert_storage_fits_target' reject data and variables beyond what
        the target addresses at the declaration (tests 741, 836)
-    2. 'qa/lint/format-source.py' attaches the comment lines above a member to
-       it, two stacked comments (a doc comment and an older note) can be
-       separated when members move
-    3. the arithmetic operators passed as 'char' ('+', '-', '*', '&', '<', '>')
-       through 'machine' (the comparison is an enum now)
+    2. [x] checked (2026-10-05): the layout step keeps the comment lines
+       directly above a member with it; the displaced comments found were an
+       insertion of mine and a note below a member, which now stays with it
+    3. [x] done (2026-10-05): 'machine::arithmetic_operator' replaces the
+       'char' operators of 'machine' and of 'expr_arith' ('ops_', the steps,
+       the merge passes); the source characters stay in the parser
     4. long parameter lists, 'type::accessor' building operands and the 'statement'
        virtuals (see the items above)
 [ ] easy: low priority: missing direct includes (153 of misc-include-cleaner,

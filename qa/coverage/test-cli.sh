@@ -187,7 +187,7 @@ CLI_ADDRESS_RANGE() {
         else
             [[ $exit_code -eq 0 ]]
         fi
-        printf 'dat big = i8[5000000000]{}\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
+        printf 'dat big = i8[4294967000]{}\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
         rm -f gen-rv32i.bin
         set +e
         "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err

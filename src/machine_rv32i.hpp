@@ -357,13 +357,16 @@ class machine_rv32i : public machine {
     //
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
-                      const char operation, const operand& dst,
+                      const arithmetic_operator operation, const operand& dst,
                       const operand& src) -> void override {
 
-        assert(operation == '+' or operation == '-');
+        assert(operation == arithmetic_operator::add or
+               operation == arithmetic_operator::subtract);
 
         binary_operation(src_loc_tk, indent,
-                         operation == '+' ? op::add : op::sub, dst, src);
+                         operation == arithmetic_operator::add ? op::add
+                                                               : op::sub,
+                         dst, src);
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
@@ -411,11 +414,11 @@ class machine_rv32i : public machine {
 
         const address_scope scope{*this, iterator, counter};
 
-        add_subtract(src_loc_tk, indent, '+', iterator,
+        add_subtract(src_loc_tk, indent, arithmetic_operator::add, iterator,
                      operand::imm(std::format("{}", element_size_bytes),
                                   default_type()));
 
-        add_subtract(src_loc_tk, indent, '+', counter,
+        add_subtract(src_loc_tk, indent, arithmetic_operator::add, counter,
                      operand::imm("1", default_type()));
 
         emit_comparison(src_loc_tk, indent, counter, limit,
@@ -539,16 +542,18 @@ class machine_rv32i : public machine {
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
-                 const char operation, const operand& dst, const operand& src)
-        -> void override {
+                 const arithmetic_operator operation, const operand& dst,
+                 const operand& src) -> void override {
 
-        assert(operation == '&' or operation == '|' or operation == '^');
+        assert(operation == arithmetic_operator::bit_and or
+               operation == arithmetic_operator::bit_or or
+               operation == arithmetic_operator::bit_xor);
 
         op instruction{op::xor_op};
 
-        if (operation == '&') {
+        if (operation == arithmetic_operator::bit_and) {
             instruction = op::and_op;
-        } else if (operation == '|') {
+        } else if (operation == arithmetic_operator::bit_or) {
             instruction = op::or_op;
         }
 
@@ -948,10 +953,11 @@ class machine_rv32i : public machine {
     }
 
     auto divide(const token& src_loc_tk, const size_t indent,
-                const char operation, const operand& dst,
+                const arithmetic_operator operation, const operand& dst,
                 const operand& divisor) -> void override {
 
-        assert(operation == '/' or operation == '%');
+        assert(operation == arithmetic_operator::divide or
+               operation == arithmetic_operator::remainder);
 
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_division_operand(src_loc_tk, divisor);
@@ -961,7 +967,7 @@ class machine_rv32i : public machine {
         divide_helper_used_ = true;
 
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor, true,
-                               operation == '%');
+                               operation == arithmetic_operator::remainder);
     }
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
@@ -1376,10 +1382,11 @@ class machine_rv32i : public machine {
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
-               const char operation, const operand& dst, const operand& count)
-        -> void override {
+               const arithmetic_operator operation, const operand& dst,
+               const operand& count) -> void override {
 
-        assert(operation == '<' or operation == '>');
+        assert(operation == arithmetic_operator::shift_left or
+               operation == arithmetic_operator::shift_right);
 
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_shift_operand(src_loc_tk, count);
@@ -1457,10 +1464,11 @@ class machine_rv32i : public machine {
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
-               const char operation, const operand& destination)
+               const arithmetic_operator operation, const operand& destination)
         -> void override {
 
-        assert(operation == '-' or operation == '~');
+        assert(operation == arithmetic_operator::negate or
+               operation == arithmetic_operator::complement);
 
         validate_scalar(src_loc_tk, destination.type_ref());
 
@@ -1472,7 +1480,7 @@ class machine_rv32i : public machine {
             load_destination(src_loc_tk, indent, destination),
         };
 
-        if (operation == '-') {
+        if (operation == arithmetic_operator::negate) {
             assembler_.sub(indent, loaded.value.base_register(), "zero",
                            loaded.value.base_register());
 
@@ -3264,13 +3272,13 @@ class machine_rv32i : public machine {
 
         // all low bits set is multiplication by minus one at this width
         if (multiplier == mask) {
-            unary(src_loc_tk, indent, '-', product);
+            unary(src_loc_tk, indent, arithmetic_operator::negate, product);
             return;
         }
 
         // a power of two requires only a shift
         if (std::has_single_bit(multiplier)) {
-            shift(src_loc_tk, indent, '<', product,
+            shift(src_loc_tk, indent, arithmetic_operator::shift_left, product,
                   operand::imm(std::format("{}", std::countr_zero(multiplier)),
                                default_type()));
 
@@ -3452,12 +3460,14 @@ class machine_rv32i : public machine {
     }
 
     // a narrow register shifts to the top and back, extending in one pair
-    auto shift_by_constant(const size_t indent, const char operation,
+    auto shift_by_constant(const size_t indent,
+                           const arithmetic_operator operation,
                            const operand& dst, const loaded_destination& loaded,
                            const uint32_t shift_count, const size_t bits)
         -> void {
 
-        if (operation == '<' and bits < register_bits_ and dst.is_register()) {
+        if (operation == arithmetic_operator::shift_left and
+            bits < register_bits_ and dst.is_register()) {
             assembler_.slli(indent, loaded.value.base_register(),
                             loaded.value.base_register(),
                             register_bits_ - bits + shift_count);
@@ -3474,30 +3484,33 @@ class machine_rv32i : public machine {
         }
 
         // known counts are below the width of the value
-        assembler_.immediate_op(indent, operation == '<' ? op::slli : op::srai,
+        const bool is_left{operation == arithmetic_operator::shift_left};
+
+        assembler_.immediate_op(indent, is_left ? op::slli : op::srai,
                                 loaded.value.base_register(),
                                 loaded.value.base_register(), shift_count);
 
         store_operation_result(indent, dst, loaded.address, loaded.value,
-                               operation == '<');
+                               is_left);
     }
 
     auto shift_by_register(const token& src_loc_tk, const size_t indent,
-                           const char operation, const operand& dst,
-                           const operand& count,
+                           const arithmetic_operator operation,
+                           const operand& dst, const operand& count,
                            const loaded_destination& loaded) -> void {
 
         const operand amount{
             source_register(src_loc_tk, indent, dst, count, std::nullopt),
         };
 
-        assembler_.register_op(indent, operation == '<' ? op::sll : op::sra,
-                               loaded.value.base_register(),
-                               loaded.value.base_register(),
-                               amount.base_register());
+        const bool is_left{operation == arithmetic_operator::shift_left};
+
+        assembler_.register_op(
+            indent, is_left ? op::sll : op::sra, loaded.value.base_register(),
+            loaded.value.base_register(), amount.base_register());
 
         store_operation_result(indent, dst, loaded.address, loaded.value,
-                               operation == '<');
+                               is_left);
     }
 
     auto source_register(const token& src_loc_tk, const size_t indent,

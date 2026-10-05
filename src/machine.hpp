@@ -65,6 +65,25 @@ class machine {
         const operand& count, const operand& preferred, address_use use)>;
 
   public:
+    // what the methods 'add_subtract', 'bitwise', 'divide', 'shift' and
+    // 'unary' take, each one a part of it
+    enum class arithmetic_operator : uint8_t {
+        add,
+        subtract,
+        multiply,
+        divide,
+        remainder,
+        bit_and,
+        bit_or,
+        bit_xor,
+        shift_left,
+        shift_right,
+        // the first element of a list that is neither added nor multiplied
+        assign,
+        negate,
+        complement,
+    };
+
     // what a comparison asks, e.g. 'a <= b' is 'less_equal'
     enum class comparison_operator : uint8_t {
         equal,
@@ -155,8 +174,9 @@ class machine {
     //
 
     virtual auto add_subtract(const token& src_loc_tk, const size_t indent,
-                              const char operation, const operand& dst,
-                              const operand& src) -> void = 0;
+                              const arithmetic_operator operation,
+                              const operand& dst, const operand& src)
+        -> void = 0;
 
     virtual auto address_of(const token& src_loc_tk, const size_t indent,
                             const operand& dst, const operand& address)
@@ -194,8 +214,8 @@ class machine {
     virtual auto begin_data(const size_t alignment) -> void = 0;
 
     virtual auto bitwise(const token& src_loc_tk, const size_t indent,
-                         const char operation, const operand& dst,
-                         const operand& src) -> void = 0;
+                         const arithmetic_operator operation,
+                         const operand& dst, const operand& src) -> void = 0;
 
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
@@ -268,7 +288,7 @@ class machine {
                                  const size_t value) -> void = 0;
 
     virtual auto divide(const token& src_loc_tk, const size_t indent,
-                        const char operation, const operand& dst,
+                        const arithmetic_operator operation, const operand& dst,
                         const operand& divisor) -> void = 0;
 
     virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
@@ -372,7 +392,7 @@ class machine {
                              const size_t element_size_bytes) -> void = 0;
 
     virtual auto shift(const token& src_loc_tk, const size_t indent,
-                       const char operation, const operand& dst,
+                       const arithmetic_operator operation, const operand& dst,
                        const operand& count) -> void = 0;
 
     virtual auto start() -> void = 0;
@@ -382,7 +402,8 @@ class machine {
         -> void = 0;
 
     virtual auto unary(const token& src_loc_tk, const size_t indent,
-                       const char operation, const operand& dst) -> void = 0;
+                       const arithmetic_operator operation, const operand& dst)
+        -> void = 0;
 
     virtual auto
     validate_data_element_size(const token& src_loc_tk,
@@ -568,6 +589,60 @@ class machine {
         }
 
         return op;
+    }
+
+    // the operator as written in the source, 'assign' as the '=' of a copy
+    [[nodiscard]] static auto source_text(const arithmetic_operator op)
+        -> std::string_view {
+
+        if (op == arithmetic_operator::add) {
+            return "+";
+        }
+
+        if (op == arithmetic_operator::subtract or
+            op == arithmetic_operator::negate) {
+            return "-";
+        }
+
+        if (op == arithmetic_operator::multiply) {
+            return "*";
+        }
+
+        if (op == arithmetic_operator::divide) {
+            return "/";
+        }
+
+        if (op == arithmetic_operator::remainder) {
+            return "%";
+        }
+
+        if (op == arithmetic_operator::bit_and) {
+            return "&";
+        }
+
+        if (op == arithmetic_operator::bit_or) {
+            return "|";
+        }
+
+        if (op == arithmetic_operator::bit_xor) {
+            return "^";
+        }
+
+        if (op == arithmetic_operator::shift_left) {
+            return "<<";
+        }
+
+        if (op == arithmetic_operator::shift_right) {
+            return ">>";
+        }
+
+        if (op == arithmetic_operator::assign) {
+            return "=";
+        }
+
+        assert(op == arithmetic_operator::complement);
+
+        return "~";
     }
 
     // the operator as written in the source

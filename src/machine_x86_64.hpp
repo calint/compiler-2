@@ -215,12 +215,14 @@ class machine_x86_64 final : public machine {
     //
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
-                      const char operation, const operand& dst,
+                      const arithmetic_operator operation, const operand& dst,
                       const operand& src) -> void override {
 
-        assert(operation == '+' or operation == '-');
+        assert(operation == arithmetic_operator::add or
+               operation == arithmetic_operator::subtract);
 
-        emit_op(src_loc_tk, indent, operation == '+' ? op::add : op::sub, dst,
+        emit_op(src_loc_tk, indent,
+                operation == arithmetic_operator::add ? op::add : op::sub, dst,
                 src);
     }
 
@@ -329,25 +331,22 @@ class machine_x86_64 final : public machine {
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
-                 const char operation, const operand& dst, const operand& src)
-        -> void override {
+                 const arithmetic_operator operation, const operand& dst,
+                 const operand& src) -> void override {
 
-        switch (operation) {
-        case '&':
+        if (operation == arithmetic_operator::bit_and) {
             emit_op(src_loc_tk, indent, op::and_op, dst, src);
             return;
+        }
 
-        case '|':
+        if (operation == arithmetic_operator::bit_or) {
             emit_op(src_loc_tk, indent, op::or_op, dst, src);
             return;
-
-        case '^':
-            emit_op(src_loc_tk, indent, op::xor_op, dst, src);
-            return;
-
-        default:
-            std::unreachable();
         }
+
+        assert(operation == arithmetic_operator::bit_xor);
+
+        emit_op(src_loc_tk, indent, op::xor_op, dst, src);
     }
 
     auto branch(const size_t indent, const std::string_view target)
@@ -725,10 +724,11 @@ class machine_x86_64 final : public machine {
     }
 
     auto divide(const token& src_loc_tk, const size_t indent,
-                const char operation, const operand& dst,
+                const arithmetic_operator operation, const operand& dst,
                 const operand& divisor) -> void override {
 
-        assert(operation == '/' or operation == '%');
+        assert(operation == arithmetic_operator::divide or
+               operation == arithmetic_operator::remainder);
 
         reserve_named_register(src_loc_tk, indent, "rax", default_type());
         mov(src_loc_tk, indent, qword_register("rax"), dst);
@@ -739,7 +739,8 @@ class machine_x86_64 final : public machine {
         emit_signed_divide(src_loc_tk, indent, divisor);
 
         mov(src_loc_tk, indent, dst,
-            qword_register(operation == '/' ? "rax" : "rdx"));
+            qword_register(operation == arithmetic_operator::divide ? "rax"
+                                                                    : "rdx"));
 
         release_named_register(src_loc_tk, indent, "rdx");
         release_named_register(src_loc_tk, indent, "rax");
@@ -1202,12 +1203,15 @@ class machine_x86_64 final : public machine {
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
-               const char operation, const operand& dst, const operand& count)
-        -> void override {
+               const arithmetic_operator operation, const operand& dst,
+               const operand& count) -> void override {
 
-        assert(operation == '<' or operation == '>');
+        assert(operation == arithmetic_operator::shift_left or
+               operation == arithmetic_operator::shift_right);
 
-        const op code{operation == '<' ? op::sal : op::sar};
+        const op code{
+            operation == arithmetic_operator::shift_left ? op::sal : op::sar,
+        };
 
         if (count.is_immediate()) {
             emit_op(src_loc_tk, indent, code, dst,
@@ -1254,20 +1258,17 @@ class machine_x86_64 final : public machine {
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
-               const char operation, const operand& dst) -> void override {
+               const arithmetic_operator operation, const operand& dst)
+        -> void override {
 
-        switch (operation) {
-        case '~':
+        if (operation == arithmetic_operator::complement) {
             not_op(src_loc_tk, indent, dst);
             return;
-
-        case '-':
-            neg(src_loc_tk, indent, dst);
-            return;
-
-        default:
-            std::unreachable();
         }
+
+        assert(operation == arithmetic_operator::negate);
+
+        neg(src_loc_tk, indent, dst);
     }
 
     auto validate_data_element_size(
