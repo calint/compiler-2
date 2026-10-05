@@ -54,15 +54,19 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
     if (tk.is_text("loop")) {
         return std::make_unique<stmt_loop>(tc, tk, tz);
     }
+
     if (tk.is_text("if")) {
         return std::make_unique<stmt_if>(tc, tk, tz);
     }
+
     if (tk.is_text("exit")) {
         return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
     }
+
     if (tk.is_text("read") or tk.is_text("write")) {
         return std::make_unique<stmt_builtin_io>(tc, unary_ops{}, tk, tz);
     }
+
     if (tk.is_text("foo")) {
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
     }
@@ -293,30 +297,37 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     // note: no 'std::move' on 'tk' because it is trivially copyable
     unary_ops uops{tz};
     const token tk{tz.next_token()};
+
     // array destinations parse strings in 'expr_any'
     if (tk.is_string()) {
         throw compiler_exception{
             tk, "a string can only be assigned to an array of type 'i8'"};
     }
+
     if (tk.text().empty()) {
         throw compiler_exception{
             tk, "expected constant, identifier, or function call"};
     }
+
     if (tk.is_text("read") or tk.is_text("write")) {
         return std::make_unique<stmt_builtin_io>(tc, std::move(uops), tk, tz);
     }
+
     if (tk.is_text("array_length")) {
         return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
                                                            tk, tz);
     }
+
     if (tk.is_text("arrays_equal")) {
         return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
                                                            tk, tz);
     }
+
     if (tk.is_text("equal")) {
         return std::make_unique<stmt_builtin_equal>(tc, std::move(uops), tk,
                                                     tz);
     }
+
     if (tc.is_integer_type_name(tk.text()) and
         tz.peek_char_after_whitespace() == '(') {
 
@@ -370,6 +381,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
     const bool is_typed_literal{is_record_literal(tc, tok(), tz) or is_bare};
+
     // note: compared by type, a type parameter names the type of its argument
     if (is_typed_literal and
         not tc.get_type_or_throw(tok(), tok().text()).is_same(tp)) {
@@ -392,6 +404,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. obj.pos = {x, y}
     open_brace_tk_ = tz.is_next_char_token('{');
+
     if (open_brace_tk_.is_empty()) {
         throw compiler_exception{
             tz, std::format("expected '{{' to begin a value of type '{}'",
@@ -403,6 +416,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     size_t counter{};
     while (true) {
         close_brace_tk_ = tz.is_next_char_token('}');
+
         if (not close_brace_tk_.is_empty()) {
             break;
         }
@@ -415,9 +429,12 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                 tz, std::format("too many fields specified for type '{}'",
                                 tp.name())};
         }
+
         const type_field& tf{flds.at(counter)};
+
         if (counter++) {
             const token t{tz.is_next_char_token(',')};
+
             if (t.is_empty()) {
                 throw compiler_exception{
                     tz, std::format(
@@ -426,6 +443,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                             flds.at(counter - 1).name, tp.name())};
                 // note: -1 names the previous field
             }
+
             expr_delims_tk_.emplace_back(t);
         }
 
@@ -530,6 +548,7 @@ auto expr_type::source_to(std::ostream& os) const -> void {
 
     // not an identifier
     open_brace_tk_.source_to(os);
+
     if (not exprs_.empty()) {
         exprs_.front()->source_to(os);
         for (const auto [d, e] :
@@ -539,6 +558,7 @@ auto expr_type::source_to(std::ostream& os) const -> void {
             e->source_to(os);
         }
     }
+
     close_brace_tk_.source_to(os);
 }
 

@@ -31,6 +31,7 @@ class stmt_def_const final : public statement {
         toc::assert_name_not_reserved(name_tk_);
 
         equals_tk_ = tz.is_next_char_token('=');
+
         if (equals_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '=' followed by a constant value"};
@@ -92,6 +93,7 @@ class stmt_def_const final : public statement {
                                                        tokenizer& tz) -> bool {
 
         const token name_tk{tz.next_token()};
+
         if (name_tk.is_empty() or tz.is_next_char_token('=').is_empty()) {
             return true;
         }
@@ -104,6 +106,7 @@ class stmt_def_const final : public statement {
         const unary_ops uops{tz};
         const token literal_tk{tz.next_token()};
         const std::string_view text{literal_tk.text()};
+
         if (text.empty()) {
             return true;
         }

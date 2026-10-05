@@ -104,6 +104,7 @@ class expr_arith final : public expression {
 
             // no operator also ends a list in function arguments at ',' or ')'
             const std::optional<char> next_op{peek_operator(tz)};
+
             if (not next_op) {
                 end_list(tc, tz, ws_before_op_tk);
                 return;
@@ -159,9 +160,11 @@ class expr_arith final : public expression {
 
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);
+
         if (enclosed_) {
             open_paren_tk_.source_to(os);
         }
+
         expression::source_to(os); // whitespace
         exprs_.at(0)->source_to(os);
         for (const auto [ws, o, e] : std::views::zip(
@@ -169,10 +172,12 @@ class expr_arith final : public expression {
 
             ws.source_to(os);
             std::print(os, "{}", o);
+
             if (o == '<' or o == '>') {
                 // handle case << and >>
                 std::print(os, "{}", o);
             }
+
             e->source_to(os);
         }
 
@@ -680,6 +685,7 @@ class expr_arith final : public expression {
         }
 
         const char first{ops_.front()};
+
         if (first == '-') {
             return '+';
         }
@@ -721,6 +727,7 @@ class expr_arith final : public expression {
         }
 
         const statement& e{*exprs_.front()};
+
         if (not e.is_identifier()) {
             return true;
         }
@@ -875,6 +882,7 @@ class expr_arith final : public expression {
 
         // shifts are stored as one character but written as two
         std::string op_str{op};
+
         if (op == '<' or op == '>') {
             op_str.push_back(op);
         }
@@ -1109,6 +1117,7 @@ class expr_arith final : public expression {
         }
 
         const ident_info info{tc.make_ident_info(e)};
+
         if (not info.is_const()) {
             return std::nullopt;
         }
@@ -1155,6 +1164,7 @@ class expr_arith final : public expression {
         }
 
         const ident_info src_info{tc.make_scalar_ident_info(src)};
+
         if (src_info.is_const()) {
             x.comment(src.tok(), indent, "src: constant");
             emit(src.make_constant_operand(src_info), false);
@@ -1501,6 +1511,7 @@ class expr_arith final : public expression {
                                             const type& width_type) -> int64_t {
 
         const size_t bits{width_type.size_bits()};
+
         if (bits >= std::numeric_limits<uint64_t>::digits) {
             return value;
         }

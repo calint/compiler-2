@@ -38,13 +38,16 @@ class expr_bool_op final : public statement {
         // e.g. if not a == 3 ...
         while (not first_expression) {
             const token t{tz.next_token()};
+
             if (not t.is_text("not")) {
                 tz.put_back_token(t);
                 break;
             }
+
             is_not = not is_not;
             nots_.emplace_back(t);
         }
+
         is_not_ = is_not;
 
         lhs_ = {tc,
@@ -90,11 +93,14 @@ class expr_bool_op final : public statement {
         for (const token& e : nots_) {
             e.source_to(os);
         }
+
         lhs_.source_to(os);
         ws_pre_op_.source_to(os);
+
         if (is_shorthand_) {
             return;
         }
+
         std::print(os, "{}", machine::source_text(op_));
         ws_post_op_.source_to(os);
         rhs_.source_to(os);
@@ -171,6 +177,7 @@ class expr_bool_op final : public statement {
         -> std::optional<bool> {
 
         const std::optional<int64_t> lhs_value{side_constant(tc, lhs_)};
+
         if (not lhs_value) {
             return std::nullopt;
         }
@@ -180,6 +187,7 @@ class expr_bool_op final : public statement {
         }
 
         const std::optional<int64_t> rhs_value{side_constant(tc, rhs_)};
+
         if (not rhs_value) {
             return std::nullopt;
         }
@@ -201,9 +209,11 @@ class expr_bool_op final : public statement {
         if (inverted and is_shorthand_) {
             return std::format(" '{}' inverted shorthand: ", list_op);
         }
+
         if (inverted) {
             return std::format(" '{}' inverted: ", list_op);
         }
+
         if (is_shorthand_) {
             return " shorthand: ";
         }
@@ -245,6 +255,7 @@ class expr_bool_op final : public statement {
         x.label(indent, create_cmp_bgn_label(tc));
 
         const std::optional<bool> constant{constant_value(tc)};
+
         if (constant) {
             return compile_constant(tc, indent, *constant != inverted, action);
         }
@@ -382,6 +393,7 @@ class expr_bool_op final : public statement {
         // if not expression, then it is a single statement and identifier is
         // valid
         const std::string_view id{lhs_.identifier()};
+
         // a boolean value is not an expression
         if (id == "true" or id == "false") {
             is_expression_ = false;
@@ -408,6 +420,7 @@ class expr_bool_op final : public statement {
 
         if (not rhs_op.is_immediate()) {
             const type& rhs_type{rhs_op.type_ref()};
+
             if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
                 return;
             }
@@ -428,6 +441,7 @@ class expr_bool_op final : public statement {
         assert(constant);
 
         const int64_t value{*constant};
+
         if (fits_size_bytes(value, lhs_type.size_bytes())) {
             return;
         }
@@ -461,15 +475,19 @@ class expr_bool_op final : public statement {
         if (op == machine::comparison_operator::equal) {
             return lh == rh;
         }
+
         if (op == machine::comparison_operator::not_equal) {
             return lh != rh;
         }
+
         if (op == machine::comparison_operator::less) {
             return lh < rh;
         }
+
         if (op == machine::comparison_operator::less_equal) {
             return lh <= rh;
         }
+
         if (op == machine::comparison_operator::greater) {
             return lh > rh;
         }
@@ -549,6 +567,7 @@ class expr_bool_op final : public statement {
 
         if (expr.is_expression()) {
             const std::optional<int64_t> value{side_constant(tc, expr)};
+
             if (not value) {
                 return compile_to_scratch(tc, indent, expr,
                                           allocated_registers);
@@ -602,6 +621,7 @@ class expr_bool_op final : public statement {
         }
 
         const ident_info info{tc.make_ident_info(side)};
+
         if (not info.is_const()) {
             return std::nullopt;
         }
@@ -666,6 +686,7 @@ class expr_bool final : public statement {
             // the ')' ends an enclosed expression
             if (enclosed_) {
                 close_paren_tk_ = tz.is_next_char_token(')');
+
                 if (not close_paren_tk_.is_empty()) {
                     return;
                 }
@@ -673,6 +694,7 @@ class expr_bool final : public statement {
 
             // read 'and' or 'or'
             const token op_tk{tz.next_token()};
+
             if (not op_tk.is_text("or") and not op_tk.is_text("and")) {
                 // anything else ends the expression, an enclosed one needs
                 // its ')' first
@@ -708,9 +730,11 @@ class expr_bool final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         not_tk_.source_to(os);
+
         if (enclosed_) {
             open_paren_tk_.source_to(os);
         }
+
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; ++i) {
             bools_.at(i).visit(
@@ -722,6 +746,7 @@ class expr_bool final : public statement {
                 ops_.at(i).source_to(os);
             }
         }
+
         if (enclosed_) {
             close_paren_tk_.source_to(os);
         }
@@ -998,6 +1023,7 @@ class expr_bool final : public statement {
 
         // a token that is not 'not' is put back and becomes the whitespace
         token maybe_not_tk{tz.next_token()};
+
         if (not maybe_not_tk.is_text("not")) {
             tz.put_back_token(maybe_not_tk);
             maybe_not_tk = tz.next_whitespace_token();

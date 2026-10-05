@@ -90,12 +90,14 @@ better assembler code, medium, largest gain first
         does not flag a negative index (x86_64 compares signed, rv32i skips a
         negative index with 'bltz'), the rv32i limit is 2^31, the x86_64 limit
         follows the register width
-    [ ] questionable: 'machine' has two protocols for the same operation
-        chosen by 'compares_directly' ('compare_memory' or 'begin_memory_equal'
-        / 'set_memory_equal_left' / 'set_memory_equal_right' /
-        'end_memory_equal'), and 'begin_array_copy' / 'set_array_copy_source'
-        / 'set_array_copy_destination' / 'end_array_copy' next to 'copy': the
-        x86_64 register protocol leaks into the interface the front end sees
+    [x] 'machine' had two protocols for the same operation ('compares_directly',
+        begin/set/end for array copy and memory equal)
+        => done (2026-10-05): 'copy_elements', 'arrays_equal' and
+           'memory_equal' take emitters ('address_emitter') of the front end;
+           each backend orders them (x86_64 and the rv32i run-time counts one
+           after the other, the rv32i known size nested so both addresses stay
+           in their registers) and hands out its pointer registers as the
+           preferred ones, so no register is allocated that was not before
     [ ] questionable: 'type::accessor' builds an 'ident_info' with an operand,
         a type knows about storage and registers; 'toc' or 'ident_builder'
         would hold that

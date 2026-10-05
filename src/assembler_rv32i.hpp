@@ -948,6 +948,7 @@ class assembler_rv32i final : public assembler {
 
         const uint32_t bits{static_cast<uint32_t>(value)};
         const int32_t number{std::bit_cast<int32_t>(bits)};
+
         if ((number >= immediate_min and number <= immediate_max) or
             (bits & low_mask) == 0) {
 
@@ -1088,6 +1089,7 @@ class assembler_rv32i final : public assembler {
             const line& l{lines().at(index)};
 
             const constant* const defined{std::get_if<constant>(record_of(l))};
+
             if (defined != nullptr) {
                 symbols.values.emplace(defined->name, defined->value);
             }
@@ -1124,6 +1126,7 @@ class assembler_rv32i final : public assembler {
         const jump_info& jump{*l.jump};
         const int64_t target{symbol_value(symbols, jump.target, line_index)};
         const jump_reach reach_form{reach(l)};
+
         if (not is_conditional(jump)) {
             return long_jump(reach_form, jump, target - address);
         }
@@ -1207,6 +1210,7 @@ class assembler_rv32i final : public assembler {
         bool grown{};
         for (size_t index{}; index < lines().size(); ++index) {
             line& l{lines().at(index)};
+
             if (not l.jump) {
                 continue;
             }
@@ -1229,6 +1233,7 @@ class assembler_rv32i final : public assembler {
 
     [[nodiscard]] auto image_size_bytes(const line& l) const -> size_t {
         const data_values* const data{std::get_if<data_values>(record_of(l))};
+
         if (data == nullptr) {
             return l.code_size;
         }
@@ -1259,6 +1264,7 @@ class assembler_rv32i final : public assembler {
             size_t& offset{image.sizes.at(index)};
 
             const alignment* const align{std::get_if<alignment>(structured)};
+
             if (align != nullptr) {
                 offset = align_up(offset, align->size_bytes);
 
@@ -1308,6 +1314,7 @@ class assembler_rv32i final : public assembler {
     // the form a jump has grown to follows from its size
     [[nodiscard]] auto reach(const line& l) const -> jump_reach {
         const bool conditional{is_conditional(*l.jump)};
+
         if (conditional and l.code_size == one_instruction_bytes) {
             return jump_reach::branch;
         }
@@ -1315,6 +1322,7 @@ class assembler_rv32i final : public assembler {
         // grown conditional forms start with an inverted branch around the
         // jump
         const size_t skip_bytes{conditional ? one_instruction_bytes : 0};
+
         if (l.code_size == skip_bytes + one_instruction_bytes) {
             return jump_reach::jal;
         }
@@ -1332,6 +1340,7 @@ class assembler_rv32i final : public assembler {
         };
 
         const jump_reach form{reach(l)};
+
         if (form == jump_reach::branch) {
             return distance >= branch_min and distance <= branch_max;
         }
@@ -1427,6 +1436,7 @@ class assembler_rv32i final : public assembler {
         }
 
         const std::string_view indent{leading_whitespace(l.text)};
+
         if (not is_conditional(*l.jump)) {
             write_long_jump(os, indent, l);
             return;
@@ -1466,6 +1476,7 @@ class assembler_rv32i final : public assembler {
         const size_t base{image.bases.at(section_index(which))};
         for (size_t index{}; index < lines().size(); ++index) {
             const line_position& position{image.positions.at(index)};
+
             if (position.which != which) {
                 continue;
             }
@@ -1563,6 +1574,7 @@ class assembler_rv32i final : public assembler {
                                           const int64_t offset) -> uint32_t {
 
         const op_info& details{info(code)};
+
         if (details.swapped) {
             return encode_branch(details.encoding, second, first, offset);
         }
@@ -1742,6 +1754,7 @@ class assembler_rv32i final : public assembler {
         -> size_t {
 
         const form operands{info(ins.code).operands};
+
         if (operands == form::load_immediate) {
             assert(ins.value.symbol.empty());
 
@@ -1778,6 +1791,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto find_op(const std::string_view mnemonic) -> op {
         for (size_t index{}; index < op_count; ++index) {
             const op code{static_cast<op>(index)};
+
             if (info(code).mnemonic == mnemonic) {
                 return code;
             }
@@ -2167,6 +2181,7 @@ class assembler_rv32i final : public assembler {
 
         const uint32_t upper{encode_upper(lui_encoding, rd, upper_part(value))};
         const int32_t lower{lower_part(value)};
+
         if (lower == 0) {
             return {upper};
         }
@@ -2264,6 +2279,7 @@ class assembler_rv32i final : public assembler {
                                            const size_t line_index) -> int64_t {
 
         const auto found{symbols.values.find(name)};
+
         if (found != symbols.values.end()) {
             return found->second;
         }

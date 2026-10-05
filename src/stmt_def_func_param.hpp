@@ -39,6 +39,7 @@ class stmt_def_func_param final : public statement {
         // an explicit one, brackets follow the type
         [[nodiscard]] static auto read(tokenizer& tz) -> syntax {
             const token name_tk{tz.next_token()};
+
             if (name_tk.text().empty()) {
                 throw compiler_exception{tz, "expected a parameter name"};
             }
@@ -87,6 +88,7 @@ class stmt_def_func_param final : public statement {
 
             if (not is_end_of_type(tz.peek_char_after_whitespace())) {
                 const token tk{tz.next_token()};
+
                 if (tk.is_text("mut")) {
                     mut_tk = tk;
                 } else {
@@ -116,9 +118,11 @@ class stmt_def_func_param final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         mut_tk_.source_to(os);
+
         if (not type_tk_.is_empty()) {
             type_tk_.source_to(os);
         }
+
         if (is_array_) {
             open_bracket_tk_.source_to(os);
             close_bracket_tk_.source_to(os);

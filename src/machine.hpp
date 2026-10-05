@@ -42,6 +42,15 @@ class machine {
   public:
     enum class builtin_function : uint8_t { read, write, exit };
 
+    // receives an address while the registers that built it are allocated
+    using address_use = std::function_ref<void(const operand& address)>;
+
+    // emits one address of a bulk operation: 'count' is the register of the
+    // element count, empty for a known size, 'preferred' a register the address
+    // may be built in, empty when the backend has none to offer
+    using address_emitter = std::function_ref<void(
+        const operand& count, const operand& preferred, address_use use)>;
+
     // what a comparison asks, e.g. 'a <= b' is 'less_equal'
     enum class comparison_operator : uint8_t {
         equal,
@@ -164,25 +173,18 @@ class machine {
                                                       const type& type_ref)
         -> operand = 0;
 
-    [[nodiscard]] virtual auto array_copy_destination_register() const
-        -> operand {
-
-        return {};
-    }
-
-    // an empty operand keeps address preparation independent of backend setup
-    [[nodiscard]] virtual auto array_copy_source_register() const -> operand {
-        return {};
-    }
-
-    [[nodiscard]] virtual auto begin_array_copy(const token& src_loc_tk,
-                                                const size_t indent)
-        -> operand = 0;
+    // 'emit_count' compiles the element count into the register it is given,
+    // the elements of both arrays are compared at the width 'alignment' allows
+    // and the result, 1 when they are equal, goes to 'dst'
+    virtual auto
+    arrays_equal(const token& src_loc_tk, const size_t indent,
+                 const size_t element_size_bytes, const size_t alignment,
+                 const std::function_ref<void(const operand&)> emit_count,
+                 const address_emitter emit_left,
+                 const address_emitter emit_right, const operand& dst,
+                 const bool inverted) -> void = 0;
 
     virtual auto begin_data(const size_t alignment) -> void = 0;
-
-    virtual auto begin_memory_equal(const token& src_loc_tk,
-                                    const size_t indent) -> operand = 0;
 
     virtual auto bitwise(const token& src_loc_tk, const size_t indent,
                          const char operation, const operand& dst,
@@ -225,28 +227,6 @@ class machine {
         const operand& rhs, const comparison_action& action,
         const std::span<const operand> scratch_registers_to_free) -> void = 0;
 
-    // compares 'size_bytes' at two addresses held in operands, only when
-    // 'compares_directly'; 'alignment' is the alignment known for both
-    // addresses
-    virtual auto compare_memory([[maybe_unused]] const token& src_loc_tk,
-                                [[maybe_unused]] const size_t indent,
-                                [[maybe_unused]] const operand& left,
-                                [[maybe_unused]] const operand& right,
-                                [[maybe_unused]] const size_t size_bytes,
-                                [[maybe_unused]] const size_t alignment,
-                                [[maybe_unused]] const operand& dst,
-                                [[maybe_unused]] const bool inverted = false)
-        -> void {
-
-        std::unreachable();
-    }
-
-    // whether 'equal' uses 'compare_memory' instead of 'begin_memory_equal',
-    // 'set_memory_equal_left', 'set_memory_equal_right' and 'end_memory_equal'
-    [[nodiscard]] virtual auto compares_directly() const -> bool {
-        return false;
-    }
-
     // 'alignment' is the alignment known for both addresses
     virtual auto copy(const token& src_loc_tk, const size_t indent,
                       const operand& src, const operand& dst,
@@ -260,6 +240,15 @@ class machine {
                             const size_t alignment,
                             const std::function_ref<std::string()> add_constant)
         -> void = 0;
+
+    // copies the count of elements 'emit_count' compiles, 'emit_source' and
+    // 'emit_destination' emit the addresses
+    virtual auto
+    copy_elements(const token& src_loc_tk, const size_t indent,
+                  const size_t element_size_bytes, const size_t alignment,
+                  const std::function_ref<void(const operand&)> emit_count,
+                  const address_emitter emit_source,
+                  const address_emitter emit_destination) -> void = 0;
 
     virtual auto copy_value(const token& src_loc_tk, const size_t indent,
                             const operand& dst, const operand& src) -> void = 0;
@@ -309,28 +298,7 @@ class machine {
 
     virtual auto emit_zero_data(const size_t size_bytes) const -> void = 0;
 
-    virtual auto end_array_copy(const token& src_loc_tk, const size_t indent,
-                                const size_t element_size_bytes,
-                                const size_t alignment) -> void = 0;
-
-    virtual auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
-                                  const size_t element_size_bytes,
-                                  const size_t alignment, const operand& dst,
-                                  const bool inverted = false) -> void = 0;
-
     virtual auto end_main() -> void = 0;
-
-    // only for a backend whose 'compares_directly' is false
-    virtual auto end_memory_equal([[maybe_unused]] const token& src_loc_tk,
-                                  [[maybe_unused]] const size_t indent,
-                                  [[maybe_unused]] const size_t size_bytes,
-                                  [[maybe_unused]] const size_t alignment,
-                                  [[maybe_unused]] const operand& dst,
-                                  [[maybe_unused]] const bool inverted = false)
-        -> void {
-
-        std::unreachable();
-    }
 
     virtual auto exit(const token& src_loc_tk, const size_t indent,
                       const operand& exit_code) -> void = 0;
@@ -355,13 +323,14 @@ class machine {
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
 
-    [[nodiscard]] virtual auto memory_equal_left_register() const -> operand {
-        return {};
-    }
-
-    [[nodiscard]] virtual auto memory_equal_right_register() const -> operand {
-        return {};
-    }
+    // compares 'size_bytes' of two arrays and puts 1 into 'dst' when they are
+    // equal, 'alignment' is the alignment known for both addresses
+    virtual auto memory_equal(const token& src_loc_tk, const size_t indent,
+                              const size_t size_bytes, const size_t alignment,
+                              const address_emitter emit_left,
+                              const address_emitter emit_right,
+                              const operand& dst, const bool inverted)
+        -> void = 0;
 
     virtual auto multiply(const token& src_loc_tk, const size_t indent,
                           const operand& product, const operand& factor,
@@ -391,22 +360,6 @@ class machine {
     virtual auto scale_index(const token& src_loc_tk, const size_t indent,
                              const operand& index,
                              const size_t element_size_bytes) -> void = 0;
-
-    virtual auto set_array_copy_destination(const token& src_loc_tk,
-                                            const size_t indent,
-                                            const operand& address) -> void = 0;
-
-    virtual auto set_array_copy_source(const token& src_loc_tk,
-                                       const size_t indent,
-                                       const operand& address) -> void = 0;
-
-    virtual auto set_memory_equal_left(const token& src_loc_tk,
-                                       const size_t indent,
-                                       const operand& address) -> void = 0;
-
-    virtual auto set_memory_equal_right(const token& src_loc_tk,
-                                        const size_t indent,
-                                        const operand& address) -> void = 0;
 
     virtual auto shift(const token& src_loc_tk, const size_t indent,
                        const char operation, const operand& dst,
@@ -516,6 +469,7 @@ class machine {
                 if (current == end) {
                     return false;
                 }
+
                 value = *current;
                 ++current;
 
@@ -590,12 +544,15 @@ class machine {
         if (op == comparison_operator::less) {
             return comparison_operator::greater;
         }
+
         if (op == comparison_operator::less_equal) {
             return comparison_operator::greater_equal;
         }
+
         if (op == comparison_operator::greater) {
             return comparison_operator::less;
         }
+
         if (op == comparison_operator::greater_equal) {
             return comparison_operator::less_equal;
         }
@@ -610,15 +567,19 @@ class machine {
         if (op == comparison_operator::equal) {
             return "==";
         }
+
         if (op == comparison_operator::not_equal) {
             return "!=";
         }
+
         if (op == comparison_operator::less) {
             return "<";
         }
+
         if (op == comparison_operator::less_equal) {
             return "<=";
         }
+
         if (op == comparison_operator::greater) {
             return ">";
         }

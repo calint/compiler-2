@@ -40,6 +40,7 @@ class stmt_block final : public statement {
             if (braces_required) {
                 throw compiler_exception{tz, "expected '{' to begin block"};
             }
+
             is_one_statement_ = true;
         }
 
@@ -47,6 +48,7 @@ class stmt_block final : public statement {
         while (true) {
             // the '}' ends the block
             close_brace_tk_ = tz.is_next_char_token('}');
+
             if (not close_brace_tk_.is_empty() and is_one_statement_) {
                 throw compiler_exception{
                     close_brace_tk_,
@@ -81,6 +83,7 @@ class stmt_block final : public statement {
                 break;
             }
         }
+
         tc.exit_block();
     }
 
@@ -94,9 +97,11 @@ class stmt_block final : public statement {
         if (not is_one_statement_) {
             open_brace_tk_.source_to(os);
         }
+
         for (const std::unique_ptr<statement>& s : statements_) {
             s->source_to(os);
         }
+
         if (not is_one_statement_) {
             close_brace_tk_.source_to(os);
         }
@@ -109,6 +114,7 @@ class stmt_block final : public statement {
         for (const std::unique_ptr<statement>& s : statements_) {
             s->compile(tc, indent + 1, dst_info);
         }
+
         tc.exit_block();
     }
 
@@ -205,21 +211,27 @@ class stmt_block final : public statement {
         if (tk.is_text("var")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
+
         if (tk.is_text("let")) {
             return stmt_def_const::parse_let(tc, tz, tk);
         }
+
         if (tk.is_text("dat")) {
             return std::make_unique<stmt_def_dat>(tc, tk, tz);
         }
+
         if (tk.is_text("break")) {
             return std::make_unique<stmt_break>(tc, tk);
         }
+
         if (tk.is_text("continue")) {
             return std::make_unique<stmt_continue>(tc, tk);
         }
+
         if (tk.is_text("return")) {
             return std::make_unique<stmt_return>(tc, tk);
         }
+
         if (tk.is_text("array_copy")) {
             return std::make_unique<stmt_builtin_array_copy>(tc, tk, tz);
         }

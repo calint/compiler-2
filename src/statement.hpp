@@ -327,6 +327,7 @@ class statement {
         -> token {
 
         const token equals_tk{tz.is_next_char_token('=')};
+
         if (equals_tk.is_empty()) {
             throw compiler_exception{
                 tz, std::format("expected '=' followed by an initializer, "
@@ -477,6 +478,7 @@ class statement {
                                           const size_t begin) -> size_t {
 
         const size_t newline{text.find('\n', begin)};
+
         if (newline == std::string_view::npos) {
             return text.size();
         }

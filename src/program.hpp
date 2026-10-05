@@ -108,6 +108,7 @@ class program final {
         tokenizer tz{source};
         while (true) {
             const token tk{tz.next_token()};
+
             if (tk.is_empty()) {
                 // note: every character makes a token, only the end of the
                 //       source gives an empty one
@@ -170,6 +171,7 @@ class program final {
 
         for (const stmt_def_func* f : funcs) {
             const std::optional<func_return_info> ret_info{f->returns()};
+
             if (not ret_info) {
                 continue;
             }
@@ -214,15 +216,19 @@ class program final {
         if (tk.is_text("func")) {
             return std::make_unique<stmt_def_func>(tc, tk, tz);
         }
+
         if (tk.is_text("type")) {
             return std::make_unique<stmt_def_type>(tc, tk, tz);
         }
+
         if (tk.is_text("let")) {
             return stmt_def_const::parse_let(tc, tz, tk);
         }
+
         if (tk.is_text("dat")) {
             return std::make_unique<stmt_def_dat>(tc, tk, tz);
         }
+
         if (tk.is_text("var")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);
         }

@@ -402,6 +402,7 @@ class ident_builder final {
         };
 
         ii.operand = operand::mem(lea, ii.type_ref());
+
         if (offset != 0) {
             ii.operand.increment_offset(address_offset(offset));
         }
@@ -546,6 +547,7 @@ class constant_parser final {
         }
 
         const std::optional<char> decoded{token::decode_escape(body.substr(1))};
+
         if (not decoded) {
             const size_t backslash_index{src_loc_tk.start_index() + 1};
 
@@ -578,6 +580,7 @@ class constant_parser final {
 
         int base{base_decimal};
         std::string_view digits{str};
+
         if (str.starts_with("0x") or str.starts_with("0X")) {
             base = base_hex;
             digits.remove_prefix(2);
@@ -865,6 +868,7 @@ class toc final {
             throw compiler_exception{stmt->tok(),
                                      "'dat' can only be added in global scope"};
         }
+
         if (frames_.front().has_non_dat_var_been_added()) {
             throw compiler_exception{
                 stmt->tok(), "'dat' can only be added before any 'var'"};
@@ -1238,6 +1242,7 @@ class toc final {
             if (frm.is_loop() or frm.is_foo()) {
                 return frm.name();
             }
+
             if (frm.is_func()) {
                 throw compiler_exception{src_loc_tk, "not in a loop"};
             }
@@ -1332,9 +1337,11 @@ class toc final {
             }
 
             const alias_info& alias{frm.get_alias(id_base)};
+
             if (not alias.lea.is_empty()) {
                 return true;
             }
+
             if (alias.register_operand.is_register()) {
                 return false;
             }
@@ -1388,6 +1395,7 @@ class toc final {
             if (frm.is_foo()) {
                 return false;
             }
+
             if (frm.is_loop()) {
                 return true;
             }
@@ -1418,6 +1426,7 @@ class toc final {
             if (frm.has_var(name)) {
                 return true;
             }
+
             if (frm.is_func()) {
                 return frm.has_alias(name) or frames_.front().has_var(name);
             }
@@ -1798,6 +1807,7 @@ class toc final {
             if (f.has_const(name)) {
                 return &f.get_const(name);
             }
+
             if (f.is_func()) {
                 break;
             }
@@ -2059,6 +2069,7 @@ class toc final {
     auto pop_frame() -> void {
         vars_size_bytes_ -= frames_.back().allocated_stack_size_bytes();
         frames_.pop_back();
+
         if (not frames_.empty()) {
             return;
         }

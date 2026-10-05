@@ -21,6 +21,7 @@ class stmt_builtin_io final : public stmt_call {
 
         // 'read' fills the buffer, the second argument
         const statement& buffer{argument(1)};
+
         if (tok().is_text("read") and buffer.is_identifier()) {
             const ident_info info{tc.make_ident_info(buffer)};
 
@@ -70,12 +71,15 @@ class stmt_builtin_io final : public stmt_call {
         emit_call(x, indent, result, args);
 
         get_unary_ops().compile(tc, indent, tok(), result);
+
         if (not dst_info.is_empty()) {
             x.copy_value(tok(), indent, dst_info.operand, result);
         }
+
         if (not result_is_argument) {
             x.free_named_register(tok(), indent, result);
         }
+
         x.free_named_registers(tok(), indent, args);
     }
 
@@ -95,6 +99,7 @@ class stmt_builtin_io final : public stmt_call {
 
         if (buffer.is_identifier()) {
             const ident_info info{tc.make_ident_info(buffer)};
+
             if (info.is_var() and info.is_array) {
                 return;
             }
@@ -137,6 +142,7 @@ class stmt_builtin_io final : public stmt_call {
         const bool has_start{argument_count() == 4};
 
         operand start;
+
         if (has_start) {
             start = compile_start(tc, indent, count, buffer_info);
         }

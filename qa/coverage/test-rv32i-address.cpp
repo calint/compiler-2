@@ -721,13 +721,15 @@ auto check_comments_with_source_positions() -> void {
     }
     located.free_scratch_registers(location, 1, ordered);
     comments.str({});
-    const operand count{located.begin_array_copy(location, 1)};
-    located.copy_value(location, 1, count, operand::imm("2", integer));
-    located.set_array_copy_source(location, 1,
-                                  operand::mem("s0", {}, 1, 216, integer));
-    located.set_array_copy_destination(location, 1,
-                                       operand::mem("s0", {}, 1, 208, integer));
-    located.end_array_copy(location, 1, 4, 4);
+    located.copy_elements(
+        location, 1, 4, 4,
+        [&](const operand& count) -> void {
+            located.copy_value(location, 1, count, operand::imm("2", integer));
+        },
+        [&](const operand&, const operand&, const machine::address_use use)
+            -> void { use(operand::mem("s0", {}, 1, 216, integer)); },
+        [&](const operand&, const operand&, const machine::address_use use)
+            -> void { use(operand::mem("s0", {}, 1, 208, integer)); });
     for (const std::string_view text :
          {"t0: source, t1: destination, t2: count",
           "t2: elements to bytes (4 bytes/element)",
@@ -1063,21 +1065,38 @@ auto check_memory_comparison_tail() -> void {
         }
         const operand result{held.front()};
         if (counted) {
-            const operand count{backend.begin_memory_equal(token{}, 0)};
-            backend.copy_value(token{}, 0, count, operand::imm("7", integer));
-            std::println(output, "la {}, buffer", held.back().base_register());
-            backend.set_memory_equal_left(token{}, 0,
-                                          operand::mem(held.back(), byte));
-            backend.set_memory_equal_right(token{}, 0,
-                                           operand::mem(held.back(), byte));
-            output.str({});
-            backend.end_arrays_equal(token{}, 0, 1, 4, result);
+            backend.arrays_equal(
+                token{}, 0, 1, 4,
+                [&](const operand& count) -> void {
+                    backend.copy_value(token{}, 0, count,
+                                       operand::imm("7", integer));
+                    std::println(output, "la {}, buffer",
+                                 held.back().base_register());
+                },
+                [&](const operand&, const operand&,
+                    const machine::address_use use) -> void {
+                    use(operand::mem(held.back(), byte));
+                },
+                [&](const operand&, const operand&,
+                    const machine::address_use use) -> void {
+                    use(operand::mem(held.back(), byte));
+                    output.str({});
+                },
+                result, false);
         } else {
             std::println(output, "la {}, buffer", held.back().base_register());
             output.str({});
-            backend.compare_memory(token{}, 0, operand::mem(held.back(), byte),
-                                   operand::mem(held.back(), byte), 7, 4,
-                                   result);
+            backend.memory_equal(
+                token{}, 0, 7, 4,
+                [&](const operand&, const operand&,
+                    const machine::address_use use) -> void {
+                    use(operand::mem(held.back(), byte));
+                },
+                [&](const operand&, const operand&,
+                    const machine::address_use use) -> void {
+                    use(operand::mem(held.back(), byte));
+                },
+                result, false);
         }
         const std::string assembly{output.str()};
         // a known size takes its tail at offsets, a run-time count advances
@@ -2449,15 +2468,22 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                 // both addresses are 'alignment' bytes past a word boundary
                 const size_t known_alignment{offset_alignment(alignment, 4)};
                 if (counted) {
-                    const operand count{backend.begin_array_copy(token{}, 1)};
-                    backend.copy_value(
-                        token{}, 1, count,
-                        operand::imm(std::format("{}", size_bytes), integer));
-                    backend.set_array_copy_source(
-                        token{}, 1, operand::mem("a0", {}, 1, 0, byte));
-                    backend.set_array_copy_destination(
-                        token{}, 1, operand::mem("a1", {}, 1, 0, byte));
-                    backend.end_array_copy(token{}, 1, 1, known_alignment);
+                    backend.copy_elements(
+                        token{}, 1, 1, known_alignment,
+                        [&](const operand& count) -> void {
+                            backend.copy_value(
+                                token{}, 1, count,
+                                operand::imm(std::format("{}", size_bytes),
+                                             integer));
+                        },
+                        [&](const operand&, const operand&,
+                            const machine::address_use use) -> void {
+                            use(operand::mem("a0", {}, 1, 0, byte));
+                        },
+                        [&](const operand&, const operand&,
+                            const machine::address_use use) -> void {
+                            use(operand::mem("a1", {}, 1, 0, byte));
+                        });
                 } else {
                     std::println(
                         "    li a2, {}\n    sub a0, a0, a2\n    sub a1, a1, a2",

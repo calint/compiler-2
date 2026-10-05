@@ -83,11 +83,13 @@ class stmt_def_dat final : public statement {
         name_tk_.source_to(os);
         equals_tk_.source_to(os);
         type_tk_.source_to(os);
+
         if (not open_bracket_tk_.is_empty()) {
             open_bracket_tk_.source_to(os);
             array_count_const_.source_to(os);
             close_bracket_tk_.source_to(os);
         }
+
         open_paren_tk_.source_to(os);
         print_source_elem(os, get_type(), elroot_);
         close_paren_tk_.source_to(os);
@@ -169,6 +171,7 @@ class stmt_def_dat final : public statement {
         }
 
         close_bracket_tk_ = tz.is_next_char_token(']');
+
         if (close_bracket_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ']' after array size"};
         }
@@ -183,6 +186,7 @@ class stmt_def_dat final : public statement {
         elem el{parse_builtin(tc, tz, get_type())};
 
         close_paren_tk_ = tz.is_next_char_token(')');
+
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ')' after the argument"};
         }
@@ -368,6 +372,7 @@ class stmt_def_dat final : public statement {
         const std::span<const type_field> flds{tp.fields()};
         for (const auto [e, f] : std::views::zip(elroot.elems, flds)) {
             const size_t padding_bytes{f.offset - written_bytes};
+
             if (padding_bytes != 0) {
                 x.comment(e.src_loc_tk, 0, "padding {} B", padding_bytes);
                 x.emit_zero_data(padding_bytes);
@@ -386,6 +391,7 @@ class stmt_def_dat final : public statement {
         // zero out remaining fields and the padding after the last field
 
         const size_t size_bytes{tp.size_bytes() - written_bytes};
+
         if (size_bytes == 0) {
             return;
         }
@@ -466,6 +472,7 @@ class stmt_def_dat final : public statement {
         elem el{make_empty_array(src_loc_tk, array_count)};
 
         el.open_brace_tk_ = tz.is_next_char_token('{');
+
         if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception{
                 tz,
@@ -474,6 +481,7 @@ class stmt_def_dat final : public statement {
         }
 
         el.close_brace_tk_ = tz.is_next_char_token('}');
+
         if (el.close_brace_tk_.is_empty()) {
             parse_array_elements(tc, tz, tp, el);
             el.close_brace_tk_ = tz.is_next_char_token('}');
@@ -502,11 +510,13 @@ class stmt_def_dat final : public statement {
                                                   : parse_type(tc, tz, tp));
 
             const token delim_tk{tz.is_next_char_token(',')};
+
             if (delim_tk.is_empty()) {
                 return;
             }
 
             const size_t count{el.elems.size()};
+
             if (el.array_count != 0 and count == el.array_count) {
                 throw compiler_exception{
                     delim_tk,
@@ -563,10 +573,12 @@ class stmt_def_dat final : public statement {
                 el.src_loc_tk,
                 std::format("'{}' must be a constant", el.src_loc_tk.text())};
         }
+
         el.value = ii.const_value;
 
         // the assembler would truncate the value or warn about it
         const int64_t value{el.uops.evaluate_constant(el.value)};
+
         if (fits_size_bytes(value, tp.size_bytes())) {
             return el;
         }
@@ -597,6 +609,7 @@ class stmt_def_dat final : public statement {
         }
 
         const token tk{tz.next_token()};
+
         if (not tk.is_string()) {
             tz.put_back_token(tk);
             return parse_array(tc, tz, src_loc_tk, tp, array_count);
@@ -618,6 +631,7 @@ class stmt_def_dat final : public statement {
         elem el{};
         el.src_loc_tk = tz.cur_position_token();
         el.open_brace_tk_ = tz.is_next_char_token('{');
+
         if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception{
                 tz,
@@ -629,6 +643,7 @@ class stmt_def_dat final : public statement {
         size_t counter{};
         while (true) {
             el.close_brace_tk_ = tz.is_next_char_token('}');
+
             if (not el.close_brace_tk_.is_empty()) {
                 break;
             }
@@ -646,6 +661,7 @@ class stmt_def_dat final : public statement {
 
             if (counter++) {
                 const token tk{tz.is_next_char_token(',')};
+
                 if (tk.is_empty()) {
                     throw compiler_exception{
                         tz, std::format(
@@ -654,6 +670,7 @@ class stmt_def_dat final : public statement {
                                 tf.name, tf.type().name(),
                                 tf.is_array ? "[]" : "", tp.name())};
                 }
+
                 el.elem_delims_tk_.emplace_back(tk);
             }
 
@@ -676,8 +693,10 @@ class stmt_def_dat final : public statement {
                 elroot.elem_delims_tk_.at(i - 1).source_to(os);
                 // note: -1 because there is one delimiter fewer than elements
             }
+
             print_item(i, elroot.elems.at(i));
         }
+
         elroot.close_brace_tk_.source_to(os);
     }
 

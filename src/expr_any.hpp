@@ -78,6 +78,7 @@ class expr_any final : public statement {
         parse_element_type(tc, tz, tp);
 
         open_brace_tk_ = tz.is_next_char_token('{');
+
         if (open_brace_tk_.is_empty() and not open_bracket_tk_.is_empty()) {
             // e.g. 'var a = i8[4]' is 'i8[4]{}'
             if (not literal_count_const_.has_value()) {
@@ -118,13 +119,16 @@ class expr_any final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         string_tk_.source_to(os);
+
         if (not open_bracket_tk_.is_empty()) {
             element_type_tk_.source_to(os);
             open_bracket_tk_.source_to(os);
             literal_count_const_.source_to(os);
             close_bracket_tk_.source_to(os);
         }
+
         open_brace_tk_.source_to(os);
+
         if (not vars_.empty()) {
             vars_.front().visit([&os](const auto& expression) -> void {
                 expression.source_to(os);
@@ -140,6 +144,7 @@ class expr_any final : public statement {
                 });
             }
         }
+
         close_brace_tk_.source_to(os);
     }
 
@@ -148,6 +153,7 @@ class expr_any final : public statement {
 
         if (is_array_identifier()) {
             const ident_info src_info{tc.make_ident_info(*this)};
+
             if (not src_info.is_array) {
                 throw compiler_exception{tok(), "source must be an array"};
             }
@@ -367,8 +373,10 @@ class expr_any final : public statement {
 
         // e.g. 'maybe == 33' with 'maybe' a constant
         const expr_bool* const bol{std::get_if<expr_bool>(&e)};
+
         if (bol != nullptr) {
             const std::optional<bool> value{bol->constant_value(tc)};
+
             if (not value) {
                 return std::nullopt;
             }
@@ -478,6 +486,7 @@ class expr_any final : public statement {
         }
 
         const size_t remaining_size_bytes{array_count - size_bytes};
+
         if (remaining_size_bytes == 0) {
             return;
         }
@@ -504,6 +513,7 @@ class expr_any final : public statement {
         std::string bytes;
         for (const expr_variant& e : vars_) {
             const std::optional<int64_t> value{constant_element_value(tc, e)};
+
             if (not value) {
                 return std::nullopt;
             }
@@ -557,6 +567,7 @@ class expr_any final : public statement {
 
     auto parse_element_delimiter(tokenizer& tz, const type& tp) -> void {
         const token t{tz.is_next_char_token(',')};
+
         if (t.is_empty()) {
             throw compiler_exception{
                 tz, std::format("expected ',' followed by initializer "
@@ -573,6 +584,7 @@ class expr_any final : public statement {
     auto parse_element_type(toc& tc, tokenizer& tz, const type& tp) -> void {
         const token tk{tz.next_token()};
         const bool is_typed{is_array_literal(tc, tk, tz)};
+
         if (not is_typed) {
             tz.put_back_token(tk);
         }
@@ -602,6 +614,7 @@ class expr_any final : public statement {
         literal_count_const_ = {tc, tz, 0};
 
         close_bracket_tk_ = tz.is_next_char_token(']');
+
         if (close_bracket_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ']' after array size"};
         }
@@ -720,6 +733,7 @@ class expr_any final : public statement {
         -> std::optional<int64_t> {
 
         const expr_arith* const arith{std::get_if<expr_arith>(&e)};
+
         if (arith == nullptr) {
             return std::nullopt;
         }
@@ -730,6 +744,7 @@ class expr_any final : public statement {
         }
 
         const ident_info info{tc.make_ident_info(*arith)};
+
         if (not info.is_const()) {
             return std::nullopt;
         }
@@ -753,6 +768,7 @@ class expr_any final : public statement {
             // e.g. 'var b = bool' is 'var b = false'
             const token pos_tk{tz.cur_position_token()};
             const token tk{tz.next_token()};
+
             if (is_bare_builtin_type(tc, tk, tz)) {
                 return expr_bool{
                     tc,
@@ -776,6 +792,7 @@ class expr_any final : public statement {
         // e.g. 'var x = i8' is 'var x = i8(0)'
         const token pos_tk{tz.cur_position_token()};
         const token tk{tz.next_token()};
+
         if (is_bare_builtin_type(tc, tk, tz)) {
             return expr_arith{
                 tc,

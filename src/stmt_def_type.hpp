@@ -140,6 +140,7 @@ class stmt_def_type final : public statement {
                       f.name, f.offset, f.size_bytes, f.is_array ? "yes" : "no",
                       f.is_array ? std::format("{}", f.array_count) : "");
         }
+
         x.comment({}, 0, "");
     }
 
@@ -224,6 +225,7 @@ class stmt_def_type final : public statement {
     // arguments
     auto parse_alias_args(tokenizer& tz) -> std::vector<token> {
         const token open_tk{tz.is_next_char_token('<')};
+
         if (open_tk.is_empty()) {
             throw compiler_exception{
                 alias_tks_.back(),
@@ -266,20 +268,25 @@ class stmt_def_type final : public statement {
             // read field definition with the next token being the name
             fields_.emplace_back(tc, tz.next_token(), tz);
             close_brace_tk_ = tz.is_next_char_token('}');
+
             if (not close_brace_tk_.is_empty()) {
                 break;
             }
+
             const token t{tz.is_next_char_token(',')};
+
             if (t.is_empty()) {
                 throw compiler_exception{
                     tz, std::format("expected ',' followed by another field "
                                     "in type '{}'",
                                     name_tk_.text())};
             }
+
             field_delims_tk_.emplace_back(t);
 
             // a trailing ',' lets each field end its line the same way
             close_brace_tk_ = tz.is_next_char_token('}');
+
             if (not close_brace_tk_.is_empty()) {
                 break;
             }

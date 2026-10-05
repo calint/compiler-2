@@ -37,6 +37,7 @@ class stmt_builtin_array_copy final : public statement {
         src_ = {tc, {}, tz.next_token(), tz};
 
         src_delim_tk_ = tz.is_next_char_token(',');
+
         if (src_delim_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected ',' followed by 'to' and 'count'"};
@@ -48,6 +49,7 @@ class stmt_builtin_array_copy final : public statement {
                              tc.make_ident_info(dst_));
 
         dst_delim_tk_ = tz.is_next_char_token(',');
+
         if (dst_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' followed by 'count'"};
         }
@@ -55,6 +57,7 @@ class stmt_builtin_array_copy final : public statement {
         count_ = {tc, tz, tc.get_type_default(), true, false, 0};
 
         close_paren_tk_ = tz.is_next_char_token(')');
+
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ')' after the arguments"};
         }
@@ -108,29 +111,27 @@ class stmt_builtin_array_copy final : public statement {
             return;
         }
 
-        const operand count_register{x.begin_array_copy(tok(), indent)};
+        x.copy_elements(
+            tok(), indent, array_src_info.type_ref().size_bytes(),
+            array_src_info.type_ref().alignment(),
+            [&](const operand& count_register) -> void {
+                x.comment(count_.tok(), indent,
+                          statement::trimmed_source(count_));
 
-        x.comment(count_.tok(), indent, statement::trimmed_source(count_));
-
-        count_.compile(tc, indent,
-                       toc::make_ident_info_from_register(count_register));
-
-        src_.compile_address(tc, indent, tok(), array_src_info.lea_path,
-                             count_register, x.array_copy_source_register(),
-                             [&](const operand& address) -> void {
-                                 x.set_array_copy_source(tok(), indent,
-                                                         address);
-                             });
-
-        dst_.compile_address(
-            tc, indent, tok(), array_dst_info.lea_path, count_register,
-            x.array_copy_destination_register(),
-            [&](const operand& address) -> void {
-                x.set_array_copy_destination(tok(), indent, address);
+                count_.compile(
+                    tc, indent,
+                    toc::make_ident_info_from_register(count_register));
+            },
+            [&](const operand& reg_count, const operand& address_register,
+                const machine::address_use use) -> void {
+                src_.compile_address(tc, indent, tok(), array_src_info.lea_path,
+                                     reg_count, address_register, use);
+            },
+            [&](const operand& reg_count, const operand& address_register,
+                const machine::address_use use) -> void {
+                dst_.compile_address(tc, indent, tok(), array_dst_info.lea_path,
+                                     reg_count, address_register, use);
             });
-
-        x.end_array_copy(tok(), indent, array_src_info.type_ref().size_bytes(),
-                         array_src_info.type_ref().alignment());
     }
 
     // the copied elements are not tracked, so the destination stays unassigned
@@ -156,6 +157,7 @@ class stmt_builtin_array_copy final : public statement {
 
         // the range checks compare 'start + count' in registers
         operand count_register;
+
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
             count_register =
                 x.alloc_scratch_register(tok(), indent, tc.get_type_default());

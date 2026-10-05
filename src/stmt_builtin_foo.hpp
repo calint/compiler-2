@@ -28,12 +28,14 @@ class stmt_builtin_foo final : public statement {
         set_type(tc.get_type_void());
 
         ident_ = {tc, unary_ops{}, tz.next_token(), tz};
+
         if (not ident_.is_array()) {
             throw compiler_exception{ident_.tok(), "expected an array"};
         }
 
         // e.g. 'foo arr, len' visits the first 'len' elements
         count_delim_tk_ = tz.is_next_char_token(',');
+
         if (has_count()) {
             count_ = {tc, tz, tc.get_type_default(), false, false, 0};
         }
@@ -58,10 +60,12 @@ class stmt_builtin_foo final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         ident_.source_to(os);
+
         if (has_count()) {
             count_delim_tk_.source_to(os);
             count_.source_to(os);
         }
+
         code_.source_to(os);
     }
 
@@ -73,6 +77,7 @@ class stmt_builtin_foo final : public statement {
 
         // a one-line comment for the definition
         std::string header{statement::trimmed_source(ident_)};
+
         if (has_count()) {
             header += ", " + statement::trimmed_source(count_);
         }
@@ -151,9 +156,11 @@ class stmt_builtin_foo final : public statement {
     // the body may run zero times so its assignments do not count
     auto trace_assignment(assignment_flow& flow) const -> void override {
         ident_.assert_var_not_used(flow.var, flow.assigned);
+
         if (has_count()) {
             count_.assert_var_not_used(flow.var, flow.assigned);
         }
+
         std::ignore = code_.trace_loop_body(flow);
     }
 

@@ -71,13 +71,16 @@ class stmt_if_branch final : public statement {
         if (const_eval == false) {
             return false;
         }
+
         // the label where to jump if evaluation of the condition is true
         x.label(indent, jmp_to_if_true_label);
         // the code of the branch
         code_.compile(tc, indent, ident_info::make_empty());
+
         if (const_eval == true) {
             return true;
         }
+
         // after the branch code executes, jump to the end of the
         // 'if ... else if ... else ...' block
         // if the jump label is not provided, then there is no 'else' and this

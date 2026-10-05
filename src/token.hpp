@@ -153,6 +153,7 @@ class token final {
             }
 
             const size_t escape_size{escape_length(escape)};
+
             if (not decode_escape(escape.substr(0, escape_size))) {
                 const size_t backslash_index{start_ix_ + 1 + i};
                 // note: +1 because the text starts after the opening quote

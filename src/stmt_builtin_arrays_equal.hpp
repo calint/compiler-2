@@ -38,6 +38,7 @@ class stmt_builtin_arrays_equal final : public expression {
         lhs_ = {tc, {}, tz.next_token(), tz};
 
         lhs_delim_tk_ = tz.is_next_char_token(',');
+
         if (lhs_delim_tk_.is_empty()) {
             throw compiler_exception{tz,
                                      "expected ',' then 'compare' and 'count'"};
@@ -46,6 +47,7 @@ class stmt_builtin_arrays_equal final : public expression {
         rhs_ = {tc, {}, tz.next_token(), tz};
 
         rhs_delim_tk_ = tz.is_next_char_token(',');
+
         if (rhs_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' followed by 'count'"};
         }
@@ -53,6 +55,7 @@ class stmt_builtin_arrays_equal final : public expression {
         count_ = {tc, tz, tc.get_type_default(), true, false, 0};
 
         close_paren_tk_ = tz.is_next_char_token(')');
+
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ')' after the arguments"};
         }
@@ -105,29 +108,28 @@ class stmt_builtin_arrays_equal final : public expression {
 
         assert_destination_type(dst.type_ref(), tok());
 
-        const operand count_register{x.begin_memory_equal(tok(), indent)};
+        x.arrays_equal(
+            tok(), indent, lhs_info.type_ref().size_bytes(),
+            lhs_info.type_ref().alignment(),
+            [&](const operand& count_register) -> void {
+                x.comment(count_.tok(), indent,
+                          statement::trimmed_source(count_));
 
-        x.comment(count_.tok(), indent, statement::trimmed_source(count_));
-
-        count_.compile(tc, indent,
-                       toc::make_ident_info_from_register(count_register));
-
-        lhs_.compile_address(tc, indent, tok(), lhs_info.lea_path,
-                             count_register, x.memory_equal_left_register(),
-                             [&](const operand& address) -> void {
-                                 x.set_memory_equal_left(tok(), indent,
-                                                         address);
-                             });
-
-        rhs_.compile_address(tc, indent, tok(), rhs_info.lea_path,
-                             count_register, x.memory_equal_right_register(),
-                             [&](const operand& address) -> void {
-                                 x.set_memory_equal_right(tok(), indent,
-                                                          address);
-                             });
-
-        x.end_arrays_equal(tok(), indent, lhs_info.type_ref().size_bytes(),
-                           lhs_info.type_ref().alignment(), dst, inverted);
+                count_.compile(
+                    tc, indent,
+                    toc::make_ident_info_from_register(count_register));
+            },
+            [&](const operand& reg_count, const operand& address_register,
+                const machine::address_use use) -> void {
+                lhs_.compile_address(tc, indent, tok(), lhs_info.lea_path,
+                                     reg_count, address_register, use);
+            },
+            [&](const operand& reg_count, const operand& address_register,
+                const machine::address_use use) -> void {
+                rhs_.compile_address(tc, indent, tok(), rhs_info.lea_path,
+                                     reg_count, address_register, use);
+            },
+            dst, inverted);
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {

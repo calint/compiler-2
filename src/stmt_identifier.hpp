@@ -32,6 +32,7 @@ class stmt_identifier : public statement {
 
         auto source_to(std::ostream& os) const -> void {
             name_tk.source_to(os);
+
             if (array_index_expr) {
                 open_bracket_tk.source_to(os);
                 array_index_expr->source_to(os);
@@ -456,11 +457,13 @@ class stmt_identifier : public statement {
                                     token& src_loc_tk) -> bool {
 
         const token dot_tk{tz.is_next_char_token('.')};
+
         if (dot_tk.is_empty()) {
             return false;
         }
 
         const token next_tk{tz.next_token()};
+
         if (is_method_name(tc, tz, tk, next_tk)) {
             // the path so far is resolved as the receiver
             method_dot_tk_ = dot_tk;
@@ -565,6 +568,7 @@ class stmt_identifier : public statement {
     // a path element with an optional '[index]'
     auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void {
         const token open_bracket_tk{tz.is_next_char_token('[')};
+
         if (open_bracket_tk.is_empty()) {
             elems_.emplace_back(tk, token{}, nullptr, token{});
             return;
@@ -578,6 +582,7 @@ class stmt_identifier : public statement {
                             token{});
 
         const token close_bracket_tk{tz.is_next_char_token(']')};
+
         if (close_bracket_tk.is_empty()) {
             throw compiler_exception{
                 tz, "expected ']' to close array index expression"};
@@ -599,9 +604,11 @@ class stmt_identifier : public statement {
 
         for (const ident_elem& elem : elems_) {
             const bool is_root{path.empty()};
+
             if (not is_root) {
                 path.push_back('.');
             }
+
             path += elem.name_tk.text();
 
             const ident_info info{tc.make_ident_info(elem.name_tk, path)};
@@ -681,6 +688,7 @@ class stmt_identifier : public statement {
         // a scale the addressing mode cannot encode is applied to the index
         // register instead, leaving scale 1 in the operand
         const bool is_encodable_scale{x.can_lower_index_scale(type_size)};
+
         if (not is_encodable_scale) {
             x.scale_index(src_loc_tk, indent, index_register, type_size);
         }
@@ -820,6 +828,7 @@ class stmt_identifier : public statement {
 
         // an operand holds one index, so an earlier one is folded first
         operand base{address};
+
         if (not address.index_register().empty()) {
             base = operand::mem(
                 fold_indexed_address(tc, indent, src_loc_tk,
@@ -840,6 +849,7 @@ class stmt_identifier : public statement {
         size_t index{known_addresses.size()};
         while (index != 0) {
             --index;
+
             if (not known_addresses.at(index).is_empty()) {
                 return index;
             }
@@ -921,6 +931,7 @@ class stmt_identifier : public statement {
         -> std::optional<size_t> {
 
         const std::optional<int64_t> index{index_expr.constant_value(tc)};
+
         if (not index or *index < 0 or
             std::cmp_greater_equal(*index, array_info.array_len)) {
 

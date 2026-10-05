@@ -56,6 +56,7 @@ class stmt_if final : public statement {
             t.if_tk.source_to(os);
             b.source_to(os);
         }
+
         // the 'else' code
         if (not else_code_.is_empty()) {
             else_tk_.source_to(os);
@@ -144,12 +145,14 @@ class stmt_if final : public statement {
     // it with the else code, anything else is a new statement
     auto parse_else(toc& tc, tokenizer& tz) -> bool {
         const token else_tk{tz.next_token()};
+
         if (not else_tk.is_text("else")) {
             tz.put_back_token(else_tk);
             return false;
         }
 
         const token if_tk{tz.next_token()};
+
         if (if_tk.is_text("if")) {
             else_if_tokens_.push_back({
                 .else_tk{else_tk},

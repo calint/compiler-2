@@ -112,6 +112,7 @@ class machine_rv32i : public machine {
                     backend_.unavailable_registers_ |=
                         register_mask(value->base_register());
                 }
+
                 if (value->is_memory()) {
                     backend_.unavailable_registers_ |=
                         register_mask(value->index_register());
@@ -141,6 +142,7 @@ class machine_rv32i : public machine {
 
                 backend_.allocations_.pop_back();
             }
+
             backend_.unavailable_registers_ = saved_mask_;
         }
     };
@@ -385,6 +387,7 @@ class machine_rv32i : public machine {
             assembler_.addi(indent, value.base_register(),
                             lowered.base_register(), lowered.displacement());
         }
+
         if (dst.is_memory()) {
             copy_value(src_loc_tk, indent, dst, value);
         }
@@ -443,6 +446,7 @@ class machine_rv32i : public machine {
                 src_loc_tk,
                 std::format("cannot allocate register {}", register_name)};
         }
+
         operand result{make_register_operand(register_name, type_ref)};
         result.set_allocation_register(register_names_.at(index));
         record_allocation(src_loc_tk, indent, index, true);
@@ -483,29 +487,47 @@ class machine_rv32i : public machine {
         throw compiler_exception{src_loc_tk, "out of RV32I scratch registers"};
     }
 
-    [[nodiscard]] auto array_copy_destination_register() const
-        -> operand override {
+    auto arrays_equal(const token& src_loc_tk, const size_t indent,
+                      const size_t element_size_bytes, const size_t alignment,
+                      const std::function_ref<void(const operand&)> emit_count,
+                      const address_emitter emit_left,
+                      const address_emitter emit_right, const operand& dst,
+                      const bool inverted) -> void override {
 
-        return bulk_registers_.back().at(1);
-    }
+        const operand count{begin_array_operation(src_loc_tk, indent)};
 
-    [[nodiscard]] auto array_copy_source_register() const -> operand override {
-        return bulk_registers_.back().at(0);
-    }
+        emit_count(count);
 
-    [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
-                                        const size_t indent)
-        -> operand override {
+        // borrowed pointers avoid a temporary address and final move for
+        // indexing
+        emit_left(count, bulk_registers_.back().at(0),
+                  [&](const operand& address) -> void {
+                      set_bulk_address(src_loc_tk, indent, 0, address);
+                  });
 
-        const operand count{begin_bulk(src_loc_tk, indent)};
+        emit_right(count, bulk_registers_.back().at(1),
+                   [&](const operand& address) -> void {
+                       set_bulk_address(src_loc_tk, indent, 1, address);
+                   });
 
         const std::array<operand, 3>& registers{bulk_registers_.back()};
+        {
+            // scaling the count must not pick the result registers
+            const address_scope scope{*this, dst, operand{}};
 
-        comment(src_loc_tk, indent, "{}: source, {}: destination, {}: count",
-                registers.at(0).base_register(),
-                registers.at(1).base_register(), count.base_register());
+            comment(src_loc_tk, indent,
+                    "{}: elements to bytes ({} bytes/element)",
+                    registers.at(2).base_register(), element_size_bytes);
 
-        return count;
+            scale_index(src_loc_tk, indent, registers.at(2),
+                        element_size_bytes);
+        }
+
+        compare_runtime_count(src_loc_tk, indent, registers.at(0),
+                              registers.at(1), registers.at(2), bulk_starts(),
+                              alignment, dst, inverted);
+
+        release_bulk(src_loc_tk, indent);
     }
 
     auto begin_data(const size_t alignment) -> void override {
@@ -515,12 +537,6 @@ class machine_rv32i : public machine {
         label(0, data_label);
     }
 
-    auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
-        -> operand override {
-
-        return begin_array_copy(src_loc_tk, indent);
-    }
-
     auto bitwise(const token& src_loc_tk, const size_t indent,
                  const char operation, const operand& dst, const operand& src)
         -> void override {
@@ -528,11 +544,13 @@ class machine_rv32i : public machine {
         assert(operation == '&' or operation == '|' or operation == '^');
 
         op instruction{op::xor_op};
+
         if (operation == '&') {
             instruction = op::and_op;
         } else if (operation == '|') {
             instruction = op::or_op;
         }
+
         binary_operation(src_loc_tk, indent, instruction, dst, src);
     }
 
@@ -579,6 +597,7 @@ class machine_rv32i : public machine {
                    frame_address);
 
         assembler_.call(indent, label);
+
         if (stack_bytes != 0) {
             comment(src_loc_tk, indent, "after call: restore saved registers");
         }
@@ -648,6 +667,7 @@ class machine_rv32i : public machine {
         };
 
         address_of(src_loc_tk, indent, start, frame_address);
+
         if (register_mask(frame_address.base_register()) != 0 and
             frame_address.displacement() != 0) {
             assembler_.branch(
@@ -655,6 +675,7 @@ class machine_rv32i : public machine {
                 start.base_register(), frame_address.base_register(),
                 overflow.reference);
         }
+
         assembler_.la(indent, remaining.base_register(), variables_label);
 
         assembler_.bltu(indent, start.base_register(),
@@ -717,31 +738,6 @@ class machine_rv32i : public machine {
         free_scratch_registers(src_loc_tk, indent, scratch_registers_to_free);
     }
 
-    auto compare_memory(const token& src_loc_tk, const size_t indent,
-                        const operand& left, const operand& right,
-                        const size_t size_bytes, const size_t alignment,
-                        const operand& dst, const bool inverted = false)
-        -> void override {
-
-        // compared sizes are limited by the variables that hold the data
-        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
-
-        // unrolled accesses can follow where each address is within its word
-        const std::array<access_start, 2> starts{
-            start_of(left, alignment),
-            start_of(right, alignment),
-        };
-
-        compare_known_size(src_loc_tk, indent, left, right, size_bytes, starts,
-                           dst, inverted);
-    }
-
-    // every known size is compared from the address operands, small ones
-    // unrolled and larger ones in a loop
-    [[nodiscard]] auto compares_directly() const -> bool override {
-        return true;
-    }
-
     auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
               const operand& dst, const size_t size_bytes,
               const size_t alignment) -> void override {
@@ -749,6 +745,7 @@ class machine_rv32i : public machine {
         if (size_bytes == 0) {
             return;
         }
+
         if (size_bytes > std::numeric_limits<uint32_t>::max()) {
             throw compiler_exception{src_loc_tk,
                                      "copy size exceeds RV32I address range"};
@@ -815,6 +812,42 @@ class machine_rv32i : public machine {
              dst, bytes.size(), width);
     }
 
+    auto copy_elements(const token& src_loc_tk, const size_t indent,
+                       const size_t element_size_bytes, const size_t alignment,
+                       const std::function_ref<void(const operand&)> emit_count,
+                       const address_emitter emit_source,
+                       const address_emitter emit_destination)
+        -> void override {
+
+        const operand count{begin_array_operation(src_loc_tk, indent)};
+
+        emit_count(count);
+
+        // borrowed pointers avoid a temporary address and final move for
+        // indexing
+        emit_source(count, bulk_registers_.back().at(0),
+                    [&](const operand& address) -> void {
+                        set_bulk_address(src_loc_tk, indent, 0, address);
+                    });
+
+        emit_destination(count, bulk_registers_.back().at(1),
+                         [&](const operand& address) -> void {
+                             set_bulk_address(src_loc_tk, indent, 1, address);
+                         });
+
+        const std::array<operand, 3>& registers{bulk_registers_.back()};
+
+        comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
+                registers.at(2).base_register(), element_size_bytes);
+
+        scale_index(src_loc_tk, indent, registers.at(2), element_size_bytes);
+
+        copy_runtime_count(src_loc_tk, indent, registers.at(0), registers.at(1),
+                           registers.at(2), bulk_starts(), alignment);
+
+        release_bulk(src_loc_tk, indent);
+    }
+
     auto copy_value(const token& src_loc_tk, const size_t indent,
                     const operand& dst, const operand& src) -> void override {
 
@@ -861,6 +894,7 @@ class machine_rv32i : public machine {
         }
 
         operand value{dst};
+
         if (not dst.is_register()) {
             value = src.is_register() ? src
                                       : alloc_scratch_register(
@@ -937,6 +971,7 @@ class machine_rv32i : public machine {
         constexpr int newline{'\n'};
 
         label(0, bounds_failure_handler_label);
+
         if (with_line) {
             assembler_.mv(1, "s2", "a0");
             assembler_.li(1, "a0", stderr_descriptor);
@@ -1070,6 +1105,7 @@ class machine_rv32i : public machine {
             assembler_.label(0, s.label);
             emit_string_data(s.text);
         }
+
         // the arithmetic helpers follow and must stay in the code section
         assembler_.switch_section(section::text);
     }
@@ -1080,48 +1116,6 @@ class machine_rv32i : public machine {
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {
         assembler_.zero(size_bytes);
-    }
-
-    auto end_array_copy(const token& src_loc_tk, const size_t indent,
-                        const size_t element_size_bytes, const size_t alignment)
-        -> void override {
-
-        const std::array<operand, 3>& registers{bulk_registers_.back()};
-
-        comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
-                registers.at(2).base_register(), element_size_bytes);
-
-        scale_index(src_loc_tk, indent, registers.at(2), element_size_bytes);
-
-        copy_runtime_count(src_loc_tk, indent, registers.at(0), registers.at(1),
-                           registers.at(2), bulk_starts(), alignment);
-
-        release_bulk(src_loc_tk, indent);
-    }
-
-    auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t element_size_bytes,
-                          const size_t alignment, const operand& dst,
-                          const bool inverted = false) -> void override {
-
-        const std::array<operand, 3>& registers{bulk_registers_.back()};
-        {
-            // scaling the count must not pick the result registers
-            const address_scope scope{*this, dst, operand{}};
-
-            comment(src_loc_tk, indent,
-                    "{}: elements to bytes ({} bytes/element)",
-                    registers.at(2).base_register(), element_size_bytes);
-
-            scale_index(src_loc_tk, indent, registers.at(2),
-                        element_size_bytes);
-        }
-
-        compare_runtime_count(src_loc_tk, indent, registers.at(0),
-                              registers.at(1), registers.at(2), bulk_starts(),
-                              alignment, dst, inverted);
-
-        release_bulk(src_loc_tk, indent);
     }
 
     auto end_main() -> void override {
@@ -1214,13 +1208,21 @@ class machine_rv32i : public machine {
         return operand::reg(register_names_.at(index), value_type);
     }
 
-    // borrowed pointers avoid a temporary address and final move for indexing
-    [[nodiscard]] auto memory_equal_left_register() const -> operand override {
-        return bulk_registers_.back().at(0);
-    }
+    // every known size is compared from the address operands, small ones
+    // unrolled and larger ones in a loop, both addresses stay in their
+    // registers until it has compared
+    auto memory_equal(const token& src_loc_tk, const size_t indent,
+                      const size_t size_bytes, const size_t alignment,
+                      const address_emitter emit_left,
+                      const address_emitter emit_right, const operand& dst,
+                      const bool inverted) -> void override {
 
-    [[nodiscard]] auto memory_equal_right_register() const -> operand override {
-        return bulk_registers_.back().at(1);
+        emit_left({}, {}, [&](const operand& left) -> void {
+            emit_right({}, {}, [&](const operand& right) -> void {
+                compare_memory(src_loc_tk, indent, left, right, size_bytes,
+                               alignment, dst, inverted);
+            });
+        });
     }
 
     auto multiply(const token& src_loc_tk, const size_t indent,
@@ -1366,33 +1368,6 @@ class machine_rv32i : public machine {
         multiply(src_loc_tk, indent, index,
                  operand::imm(std::format("{}", element_size_bytes),
                               default_type()));
-    }
-
-    auto set_array_copy_destination(const token& src_loc_tk,
-                                    const size_t indent, const operand& address)
-        -> void override {
-
-        record_bulk_address_start(address);
-        address_of(src_loc_tk, indent, bulk_registers_.back().at(1), address);
-    }
-
-    auto set_array_copy_source(const token& src_loc_tk, const size_t indent,
-                               const operand& address) -> void override {
-
-        record_bulk_address_start(address);
-        address_of(src_loc_tk, indent, bulk_registers_.back().at(0), address);
-    }
-
-    auto set_memory_equal_left(const token& src_loc_tk, const size_t indent,
-                               const operand& address) -> void override {
-
-        set_array_copy_source(src_loc_tk, indent, address);
-    }
-
-    auto set_memory_equal_right(const token& src_loc_tk, const size_t indent,
-                                const operand& address) -> void override {
-
-        set_array_copy_destination(src_loc_tk, indent, address);
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -1579,6 +1554,7 @@ class machine_rv32i : public machine {
         }
 
         std::ofstream binary{binary_file_name_, std::ios::binary};
+
         if (not binary) {
             throw panic_exception{
                 std::format("cannot write '{}'", binary_file_name_)};
@@ -1667,6 +1643,21 @@ class machine_rv32i : public machine {
         };
     }
 
+    // the bulk registers of an array copy or comparison
+    auto begin_array_operation(const token& src_loc_tk, const size_t indent)
+        -> operand {
+
+        const operand count{begin_bulk(src_loc_tk, indent)};
+
+        const std::array<operand, 3>& registers{bulk_registers_.back()};
+
+        comment(src_loc_tk, indent, "{}: source, {}: destination, {}: count",
+                registers.at(0).base_register(),
+                registers.at(1).base_register(), count.base_register());
+
+        return count;
+    }
+
     auto begin_bulk(const token& src_loc_tk, const size_t indent) -> operand {
         // argument-order allocation keeps pointer and count names easy to
         // follow
@@ -1674,6 +1665,7 @@ class machine_rv32i : public machine {
         for (operand& reg : registers) {
             reg = alloc_scratch_register(src_loc_tk, indent, default_type());
         }
+
         bulk_registers_.push_back(registers);
         bulk_addresses_.emplace_back();
 
@@ -1692,6 +1684,7 @@ class machine_rv32i : public machine {
         if (destination.is_memory()) {
             validate_address(src_loc_tk, destination);
         }
+
         if (src.is_memory()) {
             validate_address(src_loc_tk, src);
         }
@@ -1857,6 +1850,7 @@ class machine_rv32i : public machine {
         };
 
         assembler_.li(indent, limit.base_register(), array_count);
+
         if (allow_end) {
             assembler_.bgeu(indent, limit.base_register(), top,
                             bounds_pass.reference);
@@ -2094,6 +2088,24 @@ class machine_rv32i : public machine {
         compare_parts(indent, registers, loop.tail_size_bytes,
                       std::span{&boundary, 1}, memory_at(left_pointer),
                       memory_at(right_pointer));
+    }
+
+    auto compare_memory(const token& src_loc_tk, const size_t indent,
+                        const operand& left, const operand& right,
+                        const size_t size_bytes, const size_t alignment,
+                        const operand& dst, const bool inverted) -> void {
+
+        // compared sizes are limited by the variables that hold the data
+        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
+
+        // unrolled accesses can follow where each address is within its word
+        const std::array<access_start, 2> starts{
+            start_of(left, alignment),
+            start_of(right, alignment),
+        };
+
+        compare_known_size(src_loc_tk, indent, left, right, size_bytes, starts,
+                           dst, inverted);
     }
 
     auto compare_parts(const size_t indent, const compare_registers& registers,
@@ -2518,6 +2530,7 @@ class machine_rv32i : public machine {
             assembler_.label(0, "3");
             assembler_.ret(1);
         }
+
         // divide and remainder share magnitude division and sign restoration
         if (divide_helper_used_) {
             // one quotient bit per step
@@ -2703,10 +2716,12 @@ class machine_rv32i : public machine {
         }
 
         assembler_.label(indent, bounds_fail.name);
+
         if (options.with_line) {
             comment(src_loc_tk, indent, "source line");
             assembler_.li(indent, "a0", src_loc_tk.at_line());
         }
+
         branch(indent, bounds_failure_handler_label);
         assembler_.label(indent, bounds_pass.name);
     }
@@ -3336,6 +3351,7 @@ class machine_rv32i : public machine {
              bulk_registers_.back() | std::views::reverse) {
             free_scratch_register(src_loc_tk, indent, reg);
         }
+
         bulk_registers_.pop_back();
         bulk_addresses_.pop_back();
     }
@@ -3407,6 +3423,17 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto scratch_count() const -> size_t {
         return static_cast<size_t>(
             std::ranges::count(allocations_, false, &allocation::named));
+    }
+
+    // the pointer of 'slot', 0 the first address and 1 the second, holds the
+    // address, its start decides the width of the loop
+    auto set_bulk_address(const token& src_loc_tk, const size_t indent,
+                          const size_t slot, const operand& address) -> void {
+
+        record_bulk_address_start(address);
+
+        address_of(src_loc_tk, indent, bulk_registers_.back().at(slot),
+                   address);
     }
 
     // the loop ends when its pointer reaches 'end', replacing a counter that
@@ -3588,6 +3615,7 @@ class machine_rv32i : public machine {
                                 const bool normalize) const -> void {
 
         const size_t width{destination.type_ref().size_bytes()};
+
         if (destination.is_memory()) {
             assembler_.store(indent, store_op(width), value.base_register(),
                              address.displacement(), address.base_register());
@@ -4077,6 +4105,7 @@ class machine_rv32i : public machine {
         size_t immediates_size_bytes{};
         for (const byte_part& p : parts) {
             immediates_size_bytes += assembler_rv32i::one_instruction_bytes;
+
             if (p.needs_load) {
                 immediates_size_bytes +=
                     assembler_rv32i::li_value_size_bytes(p.value);
@@ -4285,6 +4314,7 @@ class machine_rv32i : public machine {
         -> std::optional<int32_t> {
 
         const std::optional<uint64_t> bits{immediate_bits(value)};
+
         if (not bits) {
             return std::nullopt;
         }
@@ -4352,6 +4382,7 @@ class machine_rv32i : public machine {
         // a digit at the product width vanishes modulo the width, leaving a
         // negative multiplier that is cheaper to build positive then negate
         const bool negate{digits.at(bits) != 0};
+
         if (negate) {
             digits.at(bits) = 0;
             for (int& digit : digits) {
@@ -4435,6 +4466,7 @@ class machine_rv32i : public machine {
         -> std::optional<int32_t> {
 
         const std::optional<int32_t> constant{immediate_value(value)};
+
         if (not constant.has_value()) {
             return std::nullopt;
         }
@@ -4654,6 +4686,7 @@ class machine_rv32i : public machine {
             };
 
             const bool needs_load{value != 0 and value != loaded_value};
+
             if (needs_load) {
                 loaded_value = value;
             }
@@ -4743,6 +4776,7 @@ class machine_rv32i : public machine {
                address.scale() <= UINT32_MAX);
 
         constexpr int64_t limit{std::numeric_limits<uint32_t>::max()};
+
         if (address.displacement() < -limit or address.displacement() > limit) {
             throw compiler_exception{
                 src_loc_tk, "address offset exceeds RV32I address range"};

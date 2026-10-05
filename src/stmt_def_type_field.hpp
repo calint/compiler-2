@@ -33,6 +33,7 @@ class stmt_def_type_field final : public statement {
         }
 
         open_bracket_tk_ = tz.is_next_char_token('[');
+
         if (open_bracket_tk_.is_empty()) {
             return;
         }
@@ -52,6 +53,7 @@ class stmt_def_type_field final : public statement {
         array_count_ = static_cast<size_t>(array_count_const_.value());
 
         close_bracket_tk_ = tz.is_next_char_token(']');
+
         if (close_bracket_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ']' after array size"};
         }
@@ -65,9 +67,11 @@ class stmt_def_type_field final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
+
         if (not type_tk_.is_empty()) {
             type_tk_.source_to(os);
         }
+
         if (is_array_) {
             open_bracket_tk_.source_to(os);
             array_count_const_.source_to(os);

@@ -31,9 +31,11 @@
     size_t at_col{};
     while (src.at(char_index_in_source) != '\n') {
         ++at_col;
+
         if (char_index_in_source == 0) {
             break;
         }
+
         --char_index_in_source;
     }
 

@@ -103,6 +103,7 @@ class stmt_def_func final : public statement {
 
         // e.g. 'func tokenizer.to<T type>()' is kept for its instances
         const std::vector<token> param_tks{parse_type_params(tz)};
+
         if (type_args.empty()) {
             define_generic(tc, tk, tz, param_tks, generic_instance);
             return;
@@ -267,14 +268,17 @@ class stmt_def_func final : public statement {
         noinline_tk_.source_to(os);
         mut_tk_.source_to(os);
         name_tk_.source_to(os);
+
         if (not method_dot_tk_.is_empty()) {
             method_dot_tk_.source_to(os);
             method_name_tk_.source_to(os);
         }
+
         open_paren_tk_.source_to(os);
 
         // the implicit 'self' has no source and no delimiter after it
         const size_t first_param{is_method() ? size_t{1} : size_t{0}};
+
         if (params_.size() > first_param) {
             params_.at(first_param).source_to(os);
             for (const auto [d, e] :
@@ -286,10 +290,12 @@ class stmt_def_func final : public statement {
                 e.source_to(os);
             }
         }
+
         close_paren_tk_.source_to(os);
 
         if (returns_) {
             returns_->ident_tk.source_to(os);
+
             if (not returns_->type_tk.is_empty()) {
                 returns_->type_tk.source_to(os);
             }
@@ -524,6 +530,7 @@ class stmt_def_func final : public statement {
         }
 
         method_name_tk_ = tz.next_token();
+
         if (method_name_tk_.text().empty()) {
             throw compiler_exception{tz, "expected method name after '.'"};
         }
@@ -554,6 +561,7 @@ class stmt_def_func final : public statement {
 
     auto parse_param_delimiter(tokenizer& tz) -> void {
         const token t{tz.is_next_char_token(',')};
+
         if (t.is_empty()) {
             throw compiler_exception{
                 tz, std::format("expected ',' or ')' after parameter '{}'",
@@ -585,6 +593,7 @@ class stmt_def_func final : public statement {
         }
 
         method_dot_tk_ = tz.is_next_char_token('.');
+
         if (method_dot_tk_.is_empty()) {
             return;
         }
@@ -596,6 +605,7 @@ class stmt_def_func final : public statement {
     // 'name [type]' of the returned value, without a name the type is void
     auto parse_returns(toc& tc, tokenizer& tz) -> void {
         const token ident_tk{tz.next_token()};
+
         if (ident_tk.text().empty()) {
             tz.put_back_token(ident_tk);
             set_type(tc.get_type_void());
@@ -604,6 +614,7 @@ class stmt_def_func final : public statement {
         }
 
         token type_tk{tz.next_token()};
+
         if (not tc.has_type(type_tk.text())) {
             tz.put_back_token(type_tk);
             type_tk = {};
@@ -790,6 +801,7 @@ class stmt_def_func final : public statement {
     // the type of 'name [type]' after the parameters, empty without one
     [[nodiscard]] static auto result_type_text(tokenizer& tz) -> std::string {
         const token name_tk{tz.next_token()};
+
         if (name_tk.text().empty() or tz.peek_char_after_whitespace() == '{') {
             return {};
         }

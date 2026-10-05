@@ -189,6 +189,7 @@ class assembler {
         std::ostream* const os{direct_output_};
         direct_output_ = nullptr;
         emit();
+
         if (os == nullptr) {
             return;
         }
@@ -288,6 +289,7 @@ class assembler {
                 std::println(os, "{}", l.text);
             }
         }
+
         lines_.clear();
     }
 
@@ -475,6 +477,7 @@ class assembler {
             if (mnemonic == first) {
                 return second;
             }
+
             if (mnemonic == second) {
                 return first;
             }
@@ -488,6 +491,7 @@ class assembler {
         -> std::string_view {
 
         const size_t first{text.find_first_not_of(" \t\r")};
+
         if (first == std::string_view::npos) {
             return {};
         }
@@ -545,6 +549,7 @@ class assembler {
             // note: +1 because the search starts after 'index'
 
             const line& l{lines_.at(next)};
+
             if (is_enterable(l, referenced)) {
                 return std::nullopt;
             }
@@ -614,6 +619,7 @@ class assembler {
         -> bool {
 
         line& branch{lines_.at(index)};
+
         if (not branch.jump) {
             return false;
         }
@@ -690,6 +696,7 @@ class assembler {
             }
 
             const auto found{labels.find(l.jump->target)};
+
             if (found != labels.end()) {
                 referenced.insert(found->first);
             }
@@ -734,6 +741,7 @@ class assembler {
 
             // the key views the label line, which outlives the optimization
             const auto found{labels.find(text.substr(begin, end - begin))};
+
             if (found != labels.end()) {
                 named.insert(found->first);
             }

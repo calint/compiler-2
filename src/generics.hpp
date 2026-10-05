@@ -41,6 +41,7 @@ struct generic_param {
 
         while (true) {
             const token name_tk{tz.next_token()};
+
             if (name_tk.text().empty()) {
                 throw compiler_exception{
                     tz, "expected a name for the generic parameter"};
@@ -64,6 +65,7 @@ struct generic_param {
 
             if (is_type) {
                 const token kind_tk{tz.next_token()};
+
                 if (not kind_tk.is_text("type")) {
                     throw compiler_exception{
                         kind_tk,
@@ -108,6 +110,7 @@ struct generic_arguments {
 
         while (true) {
             const token arg_tk{tz.next_token()};
+
             if (arg_tk.text().empty()) {
                 throw compiler_exception{tz, "expected a generic argument"};
             }
@@ -116,12 +119,14 @@ struct generic_arguments {
             args.list_tks.emplace_back(arg_tk);
 
             const token close_tk{tz.is_next_char_token('>')};
+
             if (not close_tk.is_empty()) {
                 args.list_tks.emplace_back(close_tk);
                 return args;
             }
 
             const token delim_tk{tz.is_next_char_token(',')};
+
             if (delim_tk.is_empty()) {
                 throw compiler_exception{
                     tz, "expected ',' or '>' after generic argument"};
@@ -370,6 +375,7 @@ class generic_registry {
             if (name.back() != '<') {
                 name += ',';
             }
+
             name += type_arg->name();
         }
 

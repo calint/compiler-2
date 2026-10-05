@@ -33,6 +33,7 @@ class stmt_builtin_convert final : public expression {
         arg_ = {tc, tz, true};
 
         close_paren_tk_ = tz.is_next_char_token(')');
+
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ')' after the argument"};
         }
@@ -217,6 +218,7 @@ class stmt_builtin_convert final : public expression {
         }
 
         const ident_info info{tc.make_ident_info(arg_)};
+
         if (not info.is_const()) {
             return std::nullopt;
         }

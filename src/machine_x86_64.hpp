@@ -292,11 +292,33 @@ class machine_x86_64 final : public machine {
                                  "expression complexity"};
     }
 
-    [[nodiscard]] auto begin_array_copy(const token& src_loc_tk,
-                                        const size_t indent)
-        -> operand override {
+    auto arrays_equal(const token& src_loc_tk, const size_t indent,
+                      const size_t element_size_bytes,
+                      [[maybe_unused]] const size_t alignment,
+                      const std::function_ref<void(const operand&)> emit_count,
+                      const address_emitter emit_left,
+                      const address_emitter emit_right, const operand& dst,
+                      const bool inverted) -> void override {
 
-        return alloc_bulk_registers(src_loc_tk, indent);
+        const operand count{alloc_bulk_registers(src_loc_tk, indent)};
+
+        emit_count(count);
+
+        emit_left(count, {}, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rsi"), address);
+        });
+
+        emit_right(count, {}, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rdi"), address);
+        });
+
+        scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
+                                    element_size_bytes);
+
+        test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
+        assembler_.instruction(indent, op::repe_cmpsb);
+        release_bulk_registers(src_loc_tk, indent);
+        store_equal_result(src_loc_tk, indent, dst, inverted);
     }
 
     auto begin_data(const size_t alignment) -> void override {
@@ -304,12 +326,6 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::data);
         assembler_.align(alignment);
         assembler_.label(0, data_label);
-    }
-
-    auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
-        -> operand override {
-
-        return alloc_bulk_registers(src_loc_tk, indent);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -375,6 +391,7 @@ class machine_x86_64 final : public machine {
             frame_address, true);
 
         assembler_.call(indent, label);
+
         if (not saved.empty()) {
             comment(src_loc_tk, indent, "after call: restore saved registers");
         }
@@ -418,6 +435,7 @@ class machine_x86_64 final : public machine {
         };
 
         condition out_of_bounds{allow_end ? condition::g : condition::ge};
+
         if (upper_covers_lower) {
             out_of_bounds = allow_end ? condition::a : condition::ae;
         }
@@ -657,6 +675,33 @@ class machine_x86_64 final : public machine {
             });
     }
 
+    auto copy_elements(const token& src_loc_tk, const size_t indent,
+                       const size_t element_size_bytes,
+                       [[maybe_unused]] const size_t alignment,
+                       const std::function_ref<void(const operand&)> emit_count,
+                       const address_emitter emit_source,
+                       const address_emitter emit_destination)
+        -> void override {
+
+        const operand count{alloc_bulk_registers(src_loc_tk, indent)};
+
+        emit_count(count);
+
+        emit_source(count, {}, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rsi"), address);
+        });
+
+        emit_destination(count, {}, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rdi"), address);
+        });
+
+        scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
+                                    element_size_bytes);
+
+        assembler_.instruction(indent, op::rep_movsb);
+        release_bulk_registers(src_loc_tk, indent);
+    }
+
     auto copy_value(const token& src_loc_tk, const size_t indent,
                     const operand& dst, const operand& src) -> void override {
 
@@ -868,6 +913,7 @@ class machine_x86_64 final : public machine {
             assembler_.label(0, s.label);
             assembler_.string_data(s.text);
         }
+
         assembler_.switch_section(section::text);
     }
 
@@ -880,72 +926,9 @@ class machine_x86_64 final : public machine {
         emit_repeated_data(size_byte, count, {});
     }
 
-    auto end_array_copy(const token& src_loc_tk, const size_t indent,
-                        const size_t element_size_bytes,
-                        [[maybe_unused]] const size_t alignment)
-        -> void override {
-
-        scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
-                                    element_size_bytes);
-
-        assembler_.instruction(indent, op::rep_movsb);
-        release_bulk_registers(src_loc_tk, indent);
-    }
-
-    auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t element_size_bytes,
-                          [[maybe_unused]] const size_t alignment,
-                          const operand& dst, const bool inverted = false)
-        -> void override {
-
-        scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
-                                    element_size_bytes);
-
-        test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
-        assembler_.instruction(indent, op::repe_cmpsb);
-        release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(src_loc_tk, indent, dst, inverted);
-    }
-
     auto end_main() -> void override {
         exit(token{}, 1, immediate(0));
         assembler_.add_separator_newline();
-    }
-
-    auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                          const size_t size_bytes,
-                          [[maybe_unused]] const size_t alignment,
-                          const operand& dst, const bool inverted = false)
-        -> void override {
-
-        const std::vector<op> compares{memory_equal_compares(size_bytes)};
-
-        assert(not compares.empty());
-
-        if (compares.front() == op::repe_cmpsq) {
-            mov(src_loc_tk, indent, qword_register("rcx"),
-                immediate(size_bytes / size_qword));
-        }
-
-        // a part that differs decides the result, so the rest is skipped
-        std::string end_label;
-        if (compares.size() > 1) {
-            end_label = std::format(".Lbaz_equal.{}", equal_label_count_++);
-        }
-
-        for (const auto [i, compare] : std::views::enumerate(compares)) {
-            if (i != 0) {
-                assembler_.jcc(indent, condition::ne, end_label);
-            }
-            assembler_.instruction(indent, compare);
-        }
-
-        if (not end_label.empty()) {
-            assembler_.label(indent, end_label);
-        }
-
-        release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(src_loc_tk, indent, dst, inverted);
     }
 
     auto exit(const token& src_loc_tk, const size_t indent,
@@ -1020,6 +1003,55 @@ class machine_x86_64 final : public machine {
 
         return operand::reg(sized_register_name(name, value_type.size_bytes()),
                             value_type);
+    }
+
+    auto memory_equal(const token& src_loc_tk, const size_t indent,
+                      const size_t size_bytes,
+                      [[maybe_unused]] const size_t alignment,
+                      const address_emitter emit_left,
+                      const address_emitter emit_right, const operand& dst,
+                      const bool inverted) -> void override {
+
+        std::ignore = alloc_bulk_registers(src_loc_tk, indent);
+
+        emit_left({}, {}, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rsi"), address);
+        });
+
+        emit_right({}, {}, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rdi"), address);
+        });
+
+        const std::vector<op> compares{memory_equal_compares(size_bytes)};
+
+        assert(not compares.empty());
+
+        if (compares.front() == op::repe_cmpsq) {
+            mov(src_loc_tk, indent, qword_register("rcx"),
+                immediate(size_bytes / size_qword));
+        }
+
+        // a part that differs decides the result, so the rest is skipped
+        std::string end_label;
+
+        if (compares.size() > 1) {
+            end_label = std::format(".Lbaz_equal.{}", equal_label_count_++);
+        }
+
+        for (const auto [i, compare] : std::views::enumerate(compares)) {
+            if (i != 0) {
+                assembler_.jcc(indent, condition::ne, end_label);
+            }
+
+            assembler_.instruction(indent, compare);
+        }
+
+        if (not end_label.empty()) {
+            assembler_.label(indent, end_label);
+        }
+
+        release_bulk_registers(src_loc_tk, indent);
+        store_equal_result(src_loc_tk, indent, dst, inverted);
     }
 
     auto multiply(const token& src_loc_tk, const size_t indent,
@@ -1163,31 +1195,6 @@ class machine_x86_64 final : public machine {
 
         scale_by_element_size_bytes(src_loc_tk, indent, index,
                                     element_size_bytes);
-    }
-
-    auto set_array_copy_destination(const token& src_loc_tk,
-                                    const size_t indent, const operand& address)
-        -> void override {
-
-        lea(src_loc_tk, indent, qword_register("rdi"), address);
-    }
-
-    auto set_array_copy_source(const token& src_loc_tk, const size_t indent,
-                               const operand& address) -> void override {
-
-        lea(src_loc_tk, indent, qword_register("rsi"), address);
-    }
-
-    auto set_memory_equal_left(const token& src_loc_tk, const size_t indent,
-                               const operand& address) -> void override {
-
-        lea(src_loc_tk, indent, qword_register("rsi"), address);
-    }
-
-    auto set_memory_equal_right(const token& src_loc_tk, const size_t indent,
-                                const operand& address) -> void override {
-
-        lea(src_loc_tk, indent, qword_register("rdi"), address);
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -1381,6 +1388,7 @@ class machine_x86_64 final : public machine {
                 push(indent, saved.back());
             }
         }
+
         syscall(indent);
         for (const operand& reg : saved | std::views::reverse) {
             pop(indent, reg);
@@ -1399,12 +1407,15 @@ class machine_x86_64 final : public machine {
             if (name == names.qword) {
                 return size_qword;
             }
+
             if (name == names.dword) {
                 return size_dword;
             }
+
             if (name == names.word) {
                 return size_word;
             }
+
             if (name == names.byte) {
                 return size_byte;
             }
@@ -1926,6 +1937,7 @@ class machine_x86_64 final : public machine {
                                             const operand& factor) -> bool {
 
         const std::optional<uint64_t> bits{immediate_bits(factor)};
+
         if (not bits) {
             return false;
         }
@@ -2184,10 +2196,12 @@ class machine_x86_64 final : public machine {
                             const operand& dst, const bool inverted) -> void {
 
         const condition cc{inverted ? condition::ne : condition::e};
+
         if (dst.is_register()) {
             setcc(src_loc_tk, indent, cc, sized_register(dst, size_byte));
             return;
         }
+
         setcc(src_loc_tk, indent, cc, sized_memory(dst, size_byte));
     }
 
@@ -2258,6 +2272,7 @@ class machine_x86_64 final : public machine {
             if (value->is_register() or value->is_memory()) {
                 unavailable_registers_ |= register_bit(value->base_register());
             }
+
             if (value->is_memory()) {
                 unavailable_registers_ |= register_bit(value->index_register());
             }
@@ -2301,15 +2316,19 @@ class machine_x86_64 final : public machine {
         if (comparison == comparison_operator::equal) {
             return inverted ? condition::ne : condition::e;
         }
+
         if (comparison == comparison_operator::not_equal) {
             return inverted ? condition::e : condition::ne;
         }
+
         if (comparison == comparison_operator::less) {
             return inverted ? condition::ge : condition::l;
         }
+
         if (comparison == comparison_operator::less_equal) {
             return inverted ? condition::g : condition::le;
         }
+
         if (comparison == comparison_operator::greater) {
             return inverted ? condition::le : condition::g;
         }
@@ -2325,6 +2344,7 @@ class machine_x86_64 final : public machine {
 
         std::vector<op> compares;
         size_t remaining_bytes{size_bytes};
+
         if (size_bytes / size_qword > threshold_for_repe_cmpsq_count) {
             compares.push_back(op::repe_cmpsq);
             remaining_bytes %= size_qword;
@@ -2481,6 +2501,7 @@ class machine_x86_64 final : public machine {
                 name != names.word and name != names.byte) {
                 continue;
             }
+
             switch (size_bytes) {
             case size_qword:
                 return std::string{names.qword};

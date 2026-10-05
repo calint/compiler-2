@@ -55,6 +55,7 @@ class tokenizer final {
 
     [[nodiscard]] auto is_next_char_token(const char ch) -> token {
         const std::string_view ws_before{next_whitespace()};
+
         if (not is_peek_char(ch)) {
             move_back(ws_before.size());
             return {};
@@ -84,9 +85,11 @@ class tokenizer final {
 
         const char ch{src_.at(char_ix_)};
         ++char_ix_;
+
         if (ch == '\n') {
             ++at_line_;
         }
+
         return ch;
     }
 
@@ -195,6 +198,7 @@ class tokenizer final {
                 if (--depth == 0) {
                     return;
                 }
+
                 continue;
             }
 
@@ -237,6 +241,7 @@ class tokenizer final {
             }
 
             const char ch{next_char()};
+
             if (ch == '\'') {
                 break;
             }
@@ -271,6 +276,7 @@ class tokenizer final {
                     throw compiler_exception{open_quote_tk,
                                              "unterminated string"};
                 }
+
                 skip_char();
                 continue;
             }
@@ -282,6 +288,7 @@ class tokenizer final {
             if (is_eos()) {
                 throw compiler_exception{open_quote_tk, "unterminated string"};
             }
+
             skip_char();
         }
 
@@ -316,6 +323,7 @@ class tokenizer final {
 
         while (nchars--) {
             --char_ix_;
+
             if (src_.at(char_ix_) == '\n') {
                 --at_line_;
             }
@@ -344,6 +352,7 @@ class tokenizer final {
         const size_t bgn_ix{char_ix_};
         const size_t len{next_whitespace().size()};
         const size_t newline{src_.substr(bgn_ix, len).find('\n')};
+
         if (is_eos() or newline == std::string_view::npos) {
             return src_.substr(bgn_ix, len);
         }
@@ -360,21 +369,27 @@ class tokenizer final {
         if (is_eos()) {
             return "";
         }
+
         const size_t bgn_ix{char_ix_};
         while (not is_eos()) {
             const char ch{src_.at(char_ix_)};
+
             if (ch == '#') {
                 skip_to_end_of_line();
                 continue;
             }
+
             if (not std::string_view{" \t\r\n"}.contains(ch)) {
                 break;
             }
+
             if (ch == '\n') {
                 ++at_line_;
             }
+
             ++char_ix_;
         }
+
         const size_t len{char_ix_ - bgn_ix};
 
         return src_.substr(bgn_ix, len);

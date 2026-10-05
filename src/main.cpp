@@ -218,6 +218,7 @@ template <typename T>
         }) {
 
         const std::optional<target> found{find_target(*value)};
+
         if (not found) {
             print_usage_error(
                 std::format("Invalid target: '{}'. Supported targets are: {}.",
@@ -243,6 +244,7 @@ template <typename T>
         }) {
 
         opts.binary_file_name = *value;
+
         if (opts.binary_file_name.empty()) {
             print_usage_error("Invalid --bin: empty file name");
             return false;
@@ -351,6 +353,7 @@ examples:
             std::ofstream reproduced_source{"diff.baz"};
             prg.source_to(reproduced_source);
             reproduced_source.close();
+
             if (src != read_file_to_string("diff.baz")) {
                 throw panic_exception{
                     std::format("generated source differs. diff {} diff.baz",
@@ -441,6 +444,7 @@ examples:
 
     for (const auto part : checks | std::views::split(',')) {
         const std::string_view option{part};
+
         if (option == "upper") {
             parsed.bounds_upper = true;
         } else if (option == "lower") {
@@ -626,6 +630,7 @@ auto print_source_line(const std::string_view src, const size_t start_index,
     const size_t line_end{std::min(src.find('\n', start_index), src.size())};
 
     std::string_view line{src.substr(line_bgn, line_end - line_bgn)};
+
     if (line.ends_with('\r')) {
         line.remove_suffix(1);
         // note: 1 for the carriage return of a crlf line end

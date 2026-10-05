@@ -335,6 +335,7 @@ class assembler_x86_64 final : public assembler {
 
             line += std::string_view{part};
         }
+
         line += '`';
 
         add_text(std::move(line));
@@ -368,7 +369,9 @@ class assembler_x86_64 final : public assembler {
             if (not s.empty()) {
                 s += " + ";
             }
+
             s += address.index;
+
             if (address.scale > 1) {
                 s += std::format(" * {}", address.scale);
             }
@@ -455,6 +458,7 @@ class assembler_x86_64 final : public assembler {
         -> size_t override {
 
         const std::string_view code{code_before(text, ";")};
+
         if (code.empty() or code.back() == ':' or is_directive(code)) {
             return 0;
         }
@@ -491,6 +495,7 @@ class assembler_x86_64 final : public assembler {
         }
 
         const memory& address{std::get<memory>(value)};
+
         if (address.size_bytes == 0) {
             return std::format("[{}]", address_text(address));
         }
@@ -504,9 +509,11 @@ class assembler_x86_64 final : public assembler {
         -> std::string {
 
         std::string text{";"};
+
         if (indent != 0) {
             text += "   ";
         }
+
         for (size_t i{1}; i < indent; ++i) {
             text += "    ";
         }

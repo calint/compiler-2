@@ -108,6 +108,7 @@ class stmt_def_var final : public statement {
     // 'var s = "hi"' an 'i8' array of 2
     auto deduce_declaration(toc& tc, tokenizer& tz) -> void {
         const bool is_string{tz.peek_char_after_whitespace() == '"'};
+
         if (not is_string and not starts_array_literal(tc, tz)) {
             set_type(tc.get_type_default());
 
@@ -145,6 +146,7 @@ class stmt_def_var final : public statement {
     auto deduce_from_initializer(toc& tc, tokenizer& tz) -> void {
         // 'expr_arith' cannot parse the '{' of a record literal
         const token tk{tz.next_token()};
+
         if (is_record_literal(tc, tk, tz) or is_bare_record_type(tc, tk, tz)) {
             set_type(tc.get_type_or_throw(tk, tk.text()));
             return;
@@ -163,6 +165,7 @@ class stmt_def_var final : public statement {
 
         // a comparison, 'not', 'and' or 'or'
         const expr_arith* const arith{condition.arithmetic()};
+
         if (arith == nullptr) {
             set_type(tc.get_type_bool());
             return;
@@ -184,6 +187,7 @@ class stmt_def_var final : public statement {
 
         // e.g. 'var c = a' copies the whole array 'a'
         const ident_info info{tc.make_ident_info(*arith)};
+
         if (not info.is_array) {
             return;
         }

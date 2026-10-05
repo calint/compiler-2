@@ -5,7 +5,8 @@ import clang.cindex as ci
 
 # a statement that spans several lines has a blank line before and after,
 # except next to the braces of its block, and a comment above it stays with it
-# control statements are not checked, only declarations and expressions
+# a multiline 'for', 'while', 'do', 'switch' or 'try' only needs the blank line
+# after it, a multiline 'if' also needs one before it
 # usage (from the workspace root): python3 multiline-blank.py [apply]
 
 sys.path.insert(0, "qa/lint")
@@ -22,8 +23,10 @@ CONTROL = {
     K.WHILE_STMT,
     K.DO_STMT,
     K.SWITCH_STMT,
-    K.COMPOUND_STMT,
     K.CXX_TRY_STMT,
+}
+SKIPPED = {
+    K.COMPOUND_STMT,
     K.CASE_STMT,
     K.DEFAULT_STMT,
     K.NULL_STMT,
@@ -97,7 +100,7 @@ for cursor in parse().cursor.walk_preorder():
         continue
 
     for child in cursor.get_children():
-        if child.kind in CONTROL:
+        if child.kind in SKIPPED:
             continue
 
         start = child.extent.start
@@ -111,7 +114,11 @@ for cursor in parse().cursor.walk_preorder():
         seen.add(key)
 
         lines = lines_of(start.file.name)
-        before = needs_blank_before(lines, start.line - 1)
+        before = (
+            None
+            if child.kind in CONTROL and child.kind != K.IF_STMT
+            else needs_blank_before(lines, start.line - 1)
+        )
         after = needs_blank_after(lines, end.line - 1)
         for at in (before, after):
             if at is not None:

@@ -160,6 +160,7 @@ class stmt_call : public expression {
         set_type(func.get_type());
 
         open_paren_tk_ = tz.is_next_char_token('(');
+
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected '(' after constructor name"};
         }
@@ -179,6 +180,7 @@ class stmt_call : public expression {
 
         // the receiver is written before the name
         const size_t first{first_argument_index()};
+
         if (args_.size() > first) {
             args_.at(first).source_to(os);
             for (const auto [d, e] : std::views::zip(
@@ -189,6 +191,7 @@ class stmt_call : public expression {
                 e.source_to(os);
             }
         }
+
         close_paren_tk_.source_to(os);
     }
 
@@ -1102,6 +1105,7 @@ class stmt_call : public expression {
         const generic_func_info& generic{tc.generics().get_func(func_name_)};
 
         tokenizer scan{tz};
+
         if (not is_paren_read and scan.is_next_char_token('(').is_empty()) {
             throw compiler_exception{
                 tok(), std::format("generic function '{}' needs type "
@@ -1250,9 +1254,11 @@ class stmt_call : public expression {
 
             if (i != first) {
                 const token t{tz.is_next_char_token(',')};
+
                 if (t.is_empty()) {
                     throw_missing_argument(tz, params.at(i), i);
                 }
+
                 arg_delims_tk_.emplace_back(t);
             }
 
@@ -1260,6 +1266,7 @@ class stmt_call : public expression {
         }
 
         close_paren_tk_ = tz.is_next_char_token(')');
+
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ')' after arguments"};
         }
@@ -1276,6 +1283,7 @@ class stmt_call : public expression {
         bool expect_arg{};
         while (true) {
             close_paren_tk_ = tz.is_next_char_token(')');
+
             if (not close_paren_tk_.is_empty()) {
                 if (expect_arg) {
                     throw compiler_exception{close_paren_tk_,
@@ -1289,6 +1297,7 @@ class stmt_call : public expression {
 
             const token delim_tk{tz.is_next_char_token(',')};
             expect_arg = not delim_tk.is_empty();
+
             if (expect_arg) {
                 arg_delims_tk_.emplace_back(delim_tk);
             }
@@ -1304,6 +1313,7 @@ class stmt_call : public expression {
         -> std::string {
 
         const token open_tk{tz.is_next_char_token('<')};
+
         if (open_tk.is_empty()) {
             return deduce_generic_arguments(tc, tz, is_paren_read,
                                             expected_type);
@@ -1408,12 +1418,14 @@ class stmt_call : public expression {
 
         for (size_t i{}; i < index; ++i) {
             tz.skip_argument();
+
             if (tz.is_next_char_token(',').is_empty()) {
                 return nullptr;
             }
         }
 
         const token tk{tz.next_token()};
+
         if (not tc.is_var_or_alias(tk.text())) {
             return nullptr;
         }
@@ -1421,6 +1433,7 @@ class stmt_call : public expression {
         const stmt_identifier si{tc, {}, tk, tz};
 
         const char next{tz.peek_char_after_whitespace()};
+
         if (si.is_method_receiver() or (next != ',' and next != ')')) {
             return nullptr;
         }
@@ -1550,6 +1563,7 @@ class stmt_call : public expression {
         -> alias_info {
 
         const std::optional<int64_t> value{arg.constant_value(tc)};
+
         if (value) {
             return make_value_alias(param, std::format("{}", *value));
         }

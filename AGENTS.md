@@ -48,6 +48,9 @@ Working agreements for AI sessions in this repository.
   in all source; a comment above or a note below stays with its statement.
   `python3 etc/ai/style-scripts/multiline-blank.py [apply]` finds and adds
   them.
+- Before and after a multiline `if`, after a multiline `for`, `while`,
+  `switch` or `try`, so statements have some space between them (the script
+  covers it).
 - After the `{` of a multiline signature.
 - Before a return, except for return-only bodies or one single-line statement
   plus a single-line return.
@@ -101,6 +104,7 @@ Working agreements for AI sessions in this repository.
   - focused tests run;
   - linter clean;
   - formatter applied (keep its output).
+- Commit message is always `.` (no body, no trailer).
 - Live test output: no redirection or piping through `grep`/`tail`/`head`.
 - Shell scripts `cd` to their own directory and use relative paths.
 
