@@ -571,6 +571,7 @@ class stmt_identifier : public statement {
         }
 
         is_indexed_ = true;
+
         elems_.emplace_back(tk, token{},
                             std::make_unique<expr_any>(
                                 tc, tz, tc.get_type_default(), false, false, 0),
@@ -809,6 +810,7 @@ class stmt_identifier : public statement {
         // with a range count the run-time check covers 'index + count'
         if (constant_index and range_count.is_empty()) {
             operand folded{address};
+
             folded.increment_offset(
                 address_offset(static_cast<size_t>(*constant_index) *
                                cur_info.type_ref().size_bytes()));

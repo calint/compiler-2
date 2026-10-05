@@ -13,13 +13,6 @@
 // stack setup, the uart access and how the program ends
 
 class machine_rv32i_bare_metal : public machine_rv32i {
-  protected:
-    // the routines a program calls, the target defines the exit one
-    static constexpr std::string_view exit_label_{".Lbaz_exit"};
-    static constexpr std::string_view read_label_{".Lbaz_read"};
-    static constexpr std::string_view write_label_{".Lbaz_write"};
-
-  private:
     static constexpr int newline_{'\n'};
     static constexpr int carriage_return_{'\r'};
     // ctrl-d
@@ -41,6 +34,12 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     bool read_used_{};
     bool write_used_{};
     bool exit_used_{};
+
+  protected:
+    // the routines a program calls, the target defines the exit one
+    static constexpr std::string_view exit_label_{".Lbaz_exit"};
+    static constexpr std::string_view read_label_{".Lbaz_read"};
+    static constexpr std::string_view write_label_{".Lbaz_write"};
 
   public:
     machine_rv32i_bare_metal(std::ostream& os_ref,

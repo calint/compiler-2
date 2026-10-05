@@ -217,10 +217,12 @@ class assembler_x86_64 final : public assembler {
         std::string text{
             std::format("{} ", data_directive(element_size_bytes)),
         };
+
         std::string_view separator;
         for (const data_value& value : values) {
             text += std::format("{}{}{}", separator, value.unary_operations,
                                 value.value);
+
             separator = ", ";
         }
 

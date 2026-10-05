@@ -90,9 +90,6 @@ class tokenizer final {
         return ch;
     }
 
-    // reads a character the caller has no use for
-    auto skip_char() -> void { std::ignore = next_char(); }
-
     [[nodiscard]] auto next_token() -> token {
         const std::string_view ws_before{next_whitespace()};
         const size_t at_line{at_line_};
@@ -220,6 +217,9 @@ class tokenizer final {
         return src_.substr(begin_ix, char_ix_ - begin_ix);
     }
 
+    // reads a character the caller has no use for
+    auto skip_char() -> void { std::ignore = next_char(); }
+
   private:
     // the opening quote has been read, the text keeps both quotes so it
     // resolves like a numeric constant, e.g. 'a' or '\n'
@@ -329,8 +329,10 @@ class tokenizer final {
 
         const size_t bgn_ix{char_ix_};
         const size_t delimiter{src_.find_first_of(delimiters_, char_ix_)};
+
         char_ix_ =
             delimiter == std::string_view::npos ? src_.size() : delimiter;
+
         const size_t len{char_ix_ - bgn_ix};
 
         return src_.substr(bgn_ix, len);

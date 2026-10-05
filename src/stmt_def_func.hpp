@@ -194,6 +194,7 @@ class stmt_def_func final : public statement {
                                     ? std::string{}
                                     : instance_path(array_lengths),
                                 x.frame_base_register());
+
         add_constants(tc, indent + 1);
         add_signature_vars(tc, indent + 1, true, array_lengths);
         code_.compile(tc, indent, ident_info::make_empty());

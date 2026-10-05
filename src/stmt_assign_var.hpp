@@ -90,11 +90,14 @@ class stmt_assign_var final : public statement {
         }
 
         std::vector<operand> lea_registers;
+
         var_dst_info.use_operand = array_count_ > 0 or
                                    stmt_ident_.is_indexed() or
                                    var_dst_info.is_pointer;
+
         var_dst_info.operand = tc.get_lea_operand(indent, stmt_ident_,
                                                   var_dst_info, lea_registers);
+
         var_dst_info.is_pointer = false;
 
         expr_.compile(tc, indent, var_dst_info);

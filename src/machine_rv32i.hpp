@@ -87,6 +87,9 @@ class machine_rv32i : public machine {
         size_t count{};
     };
 
+    uint32_t unavailable_registers_{};
+    std::vector<allocation> allocations_;
+
     // keeps the registers of its operands, and the base and index registers
     // of memory operands, from being picked for scratch while an operation is
     // lowered. on exit, also while an exception unwinds, it frees the
@@ -264,7 +267,6 @@ class machine_rv32i : public machine {
     std::string binary_file_name_;
     // buffering output is no more logical state than writing to the stream
     mutable assembler_rv32i assembler_;
-    uint32_t unavailable_registers_{};
     // registers a lower bounds check found non-negative, allocating a register
     // forgets it since the new owner writes its own value
     uint32_t lower_checked_registers_{};
@@ -272,7 +274,6 @@ class machine_rv32i : public machine {
     bool frame_base_reserved_{};
     bool multiply_helper_used_{};
     bool divide_helper_used_{};
-    std::vector<allocation> allocations_;
     std::vector<std::array<operand, 3>> bulk_registers_;
     std::vector<bulk_addresses> bulk_addresses_;
 
@@ -375,6 +376,7 @@ class machine_rv32i : public machine {
         const operand lowered{
             lower_address(src_loc_tk, indent, address, value),
         };
+
         // a distinct base or nonzero residual offset still needs an add
         if (register_index(value.base_register()) !=
                 register_index(lowered.base_register()) or
@@ -414,7 +416,7 @@ class machine_rv32i : public machine {
 
         emit_comparison(src_loc_tk, indent, counter, limit,
                         {
-                            .operation{"!="},
+                            .operation{comparison_operator::not_equal},
                             .inverted{},
                             .destination{},
                             .target{loop_label},
@@ -546,6 +548,7 @@ class machine_rv32i : public machine {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
+
         assert(register_index(frame_address.base_register()) !=
                register_index("sp"));
 
@@ -570,6 +573,7 @@ class machine_rv32i : public machine {
         const size_t stack_bytes{save_registers(indent, saved)};
 
         comment(src_loc_tk, indent, "set function frame base");
+
         address_of(src_loc_tk, indent,
                    make_register_operand(frame_base_register(), default_type()),
                    frame_address);
@@ -602,8 +606,10 @@ class machine_rv32i : public machine {
                src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
 
         comment(src_loc_tk, indent, "bounds check begin");
+
         emit_bounds_check(src_loc_tk, indent, reg_to_check, array_count,
                           allow_end, reg_count, options);
+
         comment(src_loc_tk, indent, "bounds check end");
     }
 
@@ -628,6 +634,7 @@ class machine_rv32i : public machine {
         constexpr local_label fits{.name{"2"}, .reference{"2f"}};
 
         comment(src_loc_tk, indent, "frame capacity check begin");
+
         comment(src_loc_tk, indent,
                 "callee storage starts after the caller's storage ({})",
                 format_address(frame_address));
@@ -649,23 +656,31 @@ class machine_rv32i : public machine {
                 overflow.reference);
         }
         assembler_.la(indent, remaining.base_register(), variables_label);
+
         assembler_.bltu(indent, start.base_register(),
                         remaining.base_register(), overflow.reference);
+
         assembler_.la(indent, remaining.base_register(), variables_end_label);
+
         assembler_.bltu(indent, remaining.base_register(),
                         start.base_register(), overflow.reference);
+
         assembler_.sub(indent, remaining.base_register(),
                        remaining.base_register(), start.base_register());
+
         assembler_.lui(indent, start.base_register(),
                        assembler_rv32i::immediate::of_symbol(
                            frame_size_bytes.immediate(),
                            assembler_rv32i::immediate::part::high));
+
         assembler_.addi(indent, start.base_register(), start.base_register(),
                         assembler_rv32i::immediate::of_symbol(
                             frame_size_bytes.immediate(),
                             assembler_rv32i::immediate::part::low));
+
         assembler_.bgeu(indent, remaining.base_register(),
                         start.base_register(), fits.reference);
+
         assembler_.label(indent, overflow.name);
         branch(indent, frame_overflow_handler_label);
         assembler_.label(indent, fits.name);
@@ -909,6 +924,7 @@ class machine_rv32i : public machine {
         assert(dst.is_register() or dst.is_memory());
 
         divide_helper_used_ = true;
+
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor, true,
                                operation == '%');
     }
@@ -960,8 +976,10 @@ class machine_rv32i : public machine {
             assembler_.li(1, "a0", stderr_descriptor);
             emit_write_call(1);
         }
+
         exit(token{}, 1,
              operand::imm(std::format("{}", panic_exit_code), default_type()));
+
         if (with_line) {
             constexpr std::array<int64_t, 10> decimal_places{
                 1000000000, 100000000, 10000000, 1000000, 100000,
@@ -1004,8 +1022,10 @@ class machine_rv32i : public machine {
         // the newline follows the message text
         assembler_.li(1, "a2", message.size() + 1);
         emit_write_call(1);
+
         exit(token{}, 1,
              operand::imm(std::format("{}", panic_exit_code), default_type()));
+
         assembler_.switch_section(section::rodata);
         assembler_.label(0, ".Lbaz_frame_message");
         assembler_.ascii(message);
@@ -1067,8 +1087,10 @@ class machine_rv32i : public machine {
         -> void override {
 
         const std::array<operand, 3>& registers{bulk_registers_.back()};
+
         comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
                 registers.at(2).base_register(), element_size_bytes);
+
         scale_index(src_loc_tk, indent, registers.at(2), element_size_bytes);
 
         copy_runtime_count(src_loc_tk, indent, registers.at(0), registers.at(1),
@@ -1086,9 +1108,11 @@ class machine_rv32i : public machine {
         {
             // scaling the count must not pick the result registers
             const address_scope scope{*this, dst, operand{}};
+
             comment(src_loc_tk, indent,
                     "{}: elements to bytes ({} bytes/element)",
                     registers.at(2).base_register(), element_size_bytes);
+
             scale_index(src_loc_tk, indent, registers.at(2),
                         element_size_bytes);
         }
@@ -1109,6 +1133,7 @@ class machine_rv32i : public machine {
 
         copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
                    exit_code);
+
         assembler_.li(indent, "a7", syscall_exit_);
         assembler_.ecall(indent);
     }
@@ -1164,6 +1189,7 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "free {} register {}",
                 allocations_.back().named ? "named" : "scratch",
                 register_names_.at(index));
+
         unavailable_registers_ &= ~(uint32_t{1} << index);
         allocations_.pop_back();
     }
@@ -1436,8 +1462,10 @@ class machine_rv32i : public machine {
         assembler_.add_separator_newline();
         reserve_variables_base();
         assembler_.la(0, variables_base_register_, variables_label);
+
         assembler_.addi(0, variables_base_register_, variables_base_register_,
                         static_cast<int64_t>(variables_base_past_vars_bytes_));
+
         assembler_.add_separator_newline();
     }
 
@@ -1687,6 +1715,7 @@ class machine_rv32i : public machine {
 
         // folding removes the operations of a location with itself
         assert(not same_memory(destination, src));
+
         assert(not destination.is_register() or not src.is_register() or
                register_index(destination.base_register()) !=
                    register_index(src.base_register()));
@@ -1735,6 +1764,7 @@ class machine_rv32i : public machine {
         const size_t clobber_count{
             division ? clobbers.size() : multiply_clobber_count,
         };
+
         std::vector<std::string_view> saved;
         for (const std::string_view name :
              std::span{clobbers}.first(clobber_count)) {
@@ -1830,6 +1860,7 @@ class machine_rv32i : public machine {
         if (allow_end) {
             assembler_.bgeu(indent, limit.base_register(), top,
                             bounds_pass.reference);
+
             return;
         }
 
@@ -2044,6 +2075,7 @@ class machine_rv32i : public machine {
 
         advance(indent, left_pointer, loop.width);
         advance(indent, right_pointer, loop.width);
+
         assembler_.bne(indent, left_pointer.base_register(),
                        end.base_register(), chunk_loop.reference);
 
@@ -2361,6 +2393,7 @@ class machine_rv32i : public machine {
 
         advance(indent, src_pointer, loop.width);
         advance(indent, dst_pointer, loop.width);
+
         assembler_.bne(indent, src_pointer.base_register(), end.base_register(),
                        chunk_loop.reference);
 
@@ -2573,15 +2606,17 @@ class machine_rv32i : public machine {
 
     // sets 'result' to 1 when the comparison holds and to 0 otherwise
     auto emit_boolean_result(const size_t indent,
-                             const std::string_view operation,
+                             const comparison_operator operation,
                              const std::string_view result, const operand& left,
                              const operand& right,
                              const std::optional<int64_t> immediate,
                              const bool inverted) -> void {
 
-        if (operation == "==" or operation == "!=") {
-            emit_equality_result(indent, result, left, right, immediate,
-                                 inverted != (operation == "!="));
+        if (operation == comparison_operator::equal or
+            operation == comparison_operator::not_equal) {
+            emit_equality_result(
+                indent, result, left, right, immediate,
+                inverted != (operation == comparison_operator::not_equal));
 
             return;
         }
@@ -2591,8 +2626,11 @@ class machine_rv32i : public machine {
         // 'slt' answers '<', against a threshold '>' and '>=' are its
         // complement, with swapped registers '>=' and '<=' are
         const bool complement{
-            immediate.has_value() ? (operation == ">=" or operation == ">")
-                                  : (operation == ">=" or operation == "<="),
+            immediate.has_value()
+                ? (operation == comparison_operator::greater_equal or
+                   operation == comparison_operator::greater)
+                : (operation == comparison_operator::greater_equal or
+                   operation == comparison_operator::less_equal),
         };
 
         if (inverted != complement) {
@@ -2659,6 +2697,7 @@ class machine_rv32i : public machine {
 
         if (options.upper) {
             comment(src_loc_tk, indent, "upper bound");
+
             check_upper_bound(src_loc_tk, indent, index, array_count, allow_end,
                               reg_count, options.lower);
         }
@@ -2685,14 +2724,15 @@ class machine_rv32i : public machine {
         validate_scalar(src_loc_tk, lhs.type_ref());
         validate_scalar(src_loc_tk, rhs.type_ref());
 
-        const std::string_view operation{action.operation};
+        const comparison_operator operation{action.operation};
 
         const std::optional<int32_t> constant{
             narrowed_immediate(rhs, lhs.type_ref()),
         };
 
         // x > c and x <= c use the signed threshold c + 1
-        const bool inclusive_threshold{operation == ">" or operation == "<="};
+        const bool inclusive_threshold{swaps_operands(operation)};
+
         const int64_t threshold{
             int64_t{constant.value_or(0)} + (inclusive_threshold ? 1 : 0),
         };
@@ -2744,7 +2784,7 @@ class machine_rv32i : public machine {
     }
 
     auto emit_comparison_branch(const size_t indent,
-                                const std::string_view operation,
+                                const comparison_operator operation,
                                 const operand& left, const operand& right,
                                 const comparison_action& action) -> void {
 
@@ -2754,8 +2794,11 @@ class machine_rv32i : public machine {
         const bool inverted{action.inverted != not action.branch_on_true};
 
         // equality and inequality share one branch pair
-        if (operation == "==" or operation == "!=") {
-            const bool branch_on_unequal{inverted != (operation == "!=")};
+        if (operation == comparison_operator::equal or
+            operation == comparison_operator::not_equal) {
+            const bool branch_on_unequal{
+                inverted != (operation == comparison_operator::not_equal),
+            };
 
             emit_jump(indent, branch_on_unequal ? op::bne : op::beq,
                       left.base_register(), right.base_register(),
@@ -2765,9 +2808,11 @@ class machine_rv32i : public machine {
         }
 
         // ordered comparisons use signed blt/bge, swapping for > and <=
-        const bool swapped{operation == ">" or operation == "<="};
+        const bool swapped{swaps_operands(operation)};
+
         const bool branch_on_greater_equal{
-            inverted != (operation == ">=" or operation == "<="),
+            inverted != (operation == comparison_operator::greater_equal or
+                         operation == comparison_operator::less_equal),
         };
 
         emit_jump(indent, branch_on_greater_equal ? op::bge : op::blt,
@@ -2809,7 +2854,8 @@ class machine_rv32i : public machine {
                                    far_jump_register());
     }
 
-    auto emit_less_than(const size_t indent, const std::string_view operation,
+    auto emit_less_than(const size_t indent,
+                        const comparison_operator operation,
                         const std::string_view result, const operand& left,
                         const operand& right,
                         const std::optional<int64_t> immediate) -> void {
@@ -2821,7 +2867,7 @@ class machine_rv32i : public machine {
         }
 
         // 'x > y' is 'y < x' and 'x <= y' is the complement of 'y < x'
-        const bool swapped{operation == ">" or operation == "<="};
+        const bool swapped{swaps_operands(operation)};
 
         assembler_.slt(indent, result,
                        swapped ? right.base_register() : left.base_register(),
@@ -3269,6 +3315,7 @@ class machine_rv32i : public machine {
 
         unavailable_registers_ |= uint32_t{1} << index;
         lower_checked_registers_ &= ~(uint32_t{1} << index);
+
         allocations_.push_back({
             .register_index{index},
             .source_location{src_loc_tk},
@@ -3305,8 +3352,10 @@ class machine_rv32i : public machine {
         }
 
         assert(register_index(dst.base_register()) == register_index("a0"));
+
         assert(register_index(descriptor.base_register()) ==
                register_index("a0"));
+
         assert(register_index(address.base_register()) == register_index("a1"));
         assert(register_index(count.base_register()) == register_index("a2"));
 
@@ -3336,6 +3385,7 @@ class machine_rv32i : public machine {
         -> size_t {
 
         constexpr size_t stack_alignment{16};
+
         const size_t stack_bytes{
             align_storage_size(saved.size() * word_size_bytes_,
                                stack_alignment),
@@ -3493,6 +3543,7 @@ class machine_rv32i : public machine {
             if (p.value == 0) {
                 assembler_.store(indent, store_op(p.size_bytes), "zero",
                                  displacement, address.base_register());
+
                 continue;
             }
 
@@ -3617,18 +3668,78 @@ class machine_rv32i : public machine {
         };
 
         assembler_.srai(indent, high.base_register(), index, sign_shift_);
+
         assembler_.srai(indent, limit.base_register(),
                         reg_count.base_register(), sign_shift_);
+
         assembler_.add(indent, high.base_register(), high.base_register(),
                        limit.base_register());
+
         assembler_.add(indent, top, index, reg_count.base_register());
         assembler_.sltu(indent, limit.base_register(), top, index);
+
         assembler_.add(indent, high.base_register(), high.base_register(),
                        limit.base_register());
+
         assembler_.bltz(indent, high.base_register(), bounds_pass.reference);
         assembler_.bgtz(indent, high.base_register(), bounds_fail.reference);
 
         return top;
+    }
+
+    auto walk_runtime_bytes(const runtime_walk& walk) -> void {
+        const std::string_view count{walk.count.base_register()};
+
+        comment(walk.src_loc_tk, walk.indent, "{}; skip if none",
+                describe_loop(walk.verb, 1));
+
+        assembler_.beqz(walk.indent, count, walk_end.reference);
+
+        // 'count' becomes the end of the walk, which saves a decrement in
+        // every iteration
+        assembler_.add(walk.indent, count, count, walk.src.base_register());
+
+        assembler_.label(walk.indent, chunk_loop.name);
+        walk_runtime_step(walk, 1);
+
+        assembler_.bne(walk.indent, walk.src.base_register(), count,
+                       chunk_loop.reference);
+
+        assembler_.label(walk.indent, walk_end.name);
+    }
+
+    // the loop takes 'count' rounded down to whole chunks and ends when 'src'
+    // reaches their end, 'count' keeps the tail bytes
+    auto walk_runtime_chunks(const runtime_walk& walk, const operand& chunks,
+                             const size_t width) -> void {
+
+        const std::string_view count{walk.count.base_register()};
+
+        comment(walk.src_loc_tk, walk.indent,
+                "split bytes into chunks and tail; skip loop if none");
+
+        assembler_.andi(walk.indent, chunks.base_register(), count,
+                        -static_cast<int64_t>(width));
+
+        assembler_.andi(walk.indent, count, count, width - 1);
+        // note: -1 turns the power of two 'width' into a mask of the tail bytes
+
+        assembler_.beqz(walk.indent, chunks.base_register(),
+                        after_chunks.reference);
+
+        assembler_.add(walk.indent, chunks.base_register(),
+                       chunks.base_register(), walk.src.base_register());
+
+        comment(walk.src_loc_tk, walk.indent, "{}",
+                describe_loop(walk.verb, width));
+
+        assembler_.label(walk.indent, chunk_loop.name);
+        walk_runtime_step(walk, width);
+
+        assembler_.bne(walk.indent, walk.src.base_register(),
+                       chunks.base_register(), chunk_loop.reference);
+
+        assembler_.label(walk.indent, after_chunks.name);
     }
 
     // a head up to the first aligned chunk, whole chunks, then a tail
@@ -3675,35 +3786,6 @@ class machine_rv32i : public machine {
         walk_runtime_tail(walk, chunks, start.width);
     }
 
-    // one access at the current pointers, then both move past it
-    auto walk_runtime_step(const runtime_walk& walk, const size_t width)
-        -> void {
-
-        walk.access(width);
-        advance(walk.indent, walk.src, width);
-        advance(walk.indent, walk.dst, width);
-    }
-
-    auto walk_runtime_bytes(const runtime_walk& walk) -> void {
-        const std::string_view count{walk.count.base_register()};
-
-        comment(walk.src_loc_tk, walk.indent, "{}; skip if none",
-                describe_loop(walk.verb, 1));
-
-        assembler_.beqz(walk.indent, count, walk_end.reference);
-
-        // 'count' becomes the end of the walk, which saves a decrement in
-        // every iteration
-        assembler_.add(walk.indent, count, count, walk.src.base_register());
-
-        assembler_.label(walk.indent, chunk_loop.name);
-        walk_runtime_step(walk, 1);
-        assembler_.bne(walk.indent, walk.src.base_register(), count,
-                       chunk_loop.reference);
-
-        assembler_.label(walk.indent, walk_end.name);
-    }
-
     // each head access first checks that the count still covers it, otherwise
     // the fewer bytes are left to the tail, which needs no more than the
     // current pointer alignment
@@ -3735,37 +3817,13 @@ class machine_rv32i : public machine {
         assembler_.label(walk.indent, after_head.name);
     }
 
-    // the loop takes 'count' rounded down to whole chunks and ends when 'src'
-    // reaches their end, 'count' keeps the tail bytes
-    auto walk_runtime_chunks(const runtime_walk& walk, const operand& chunks,
-                             const size_t width) -> void {
+    // one access at the current pointers, then both move past it
+    auto walk_runtime_step(const runtime_walk& walk, const size_t width)
+        -> void {
 
-        const std::string_view count{walk.count.base_register()};
-
-        comment(walk.src_loc_tk, walk.indent,
-                "split bytes into chunks and tail; skip loop if none");
-
-        assembler_.andi(walk.indent, chunks.base_register(), count,
-                        -static_cast<int64_t>(width));
-
-        assembler_.andi(walk.indent, count, count, width - 1);
-        // note: -1 turns the power of two 'width' into a mask of the tail bytes
-
-        assembler_.beqz(walk.indent, chunks.base_register(),
-                        after_chunks.reference);
-
-        assembler_.add(walk.indent, chunks.base_register(),
-                       chunks.base_register(), walk.src.base_register());
-
-        comment(walk.src_loc_tk, walk.indent, "{}",
-                describe_loop(walk.verb, width));
-
-        assembler_.label(walk.indent, chunk_loop.name);
-        walk_runtime_step(walk, width);
-        assembler_.bne(walk.indent, walk.src.base_register(),
-                       chunks.base_register(), chunk_loop.reference);
-
-        assembler_.label(walk.indent, after_chunks.name);
+        walk.access(width);
+        advance(walk.indent, walk.src, width);
+        advance(walk.indent, walk.dst, width);
     }
 
     // after words at most 3 bytes remain, bit 1 selects a halfword and bit 0
@@ -4624,6 +4682,16 @@ class machine_rv32i : public machine {
         return op::sb;
     }
 
+    // loads without sign extension, for copying bytes unchanged
+    // only 'slt' and 'blt' exist: 'x > y' is 'y < x' and 'x <= y' is the
+    // complement of 'y < x'
+    [[nodiscard]] static auto
+    swaps_operands(const comparison_operator operation) -> bool {
+
+        return operation == comparison_operator::greater or
+               operation == comparison_operator::less_equal;
+    }
+
     // pointers may hold any address, so their starts from 'start_of' with
     // alignment 1 gain the type 'alignment' here
     [[nodiscard]] static auto
@@ -4638,7 +4706,6 @@ class machine_rv32i : public machine {
         return typed;
     }
 
-    // loads without sign extension, for copying bytes unchanged
     [[nodiscard]] static auto unsigned_load_op(const size_t width) -> op {
         if (width == 4) {
             return op::lw;
@@ -4667,6 +4734,7 @@ class machine_rv32i : public machine {
 
         assert(address.is_memory());
         assert(is_register(address.base_register()));
+
         assert(address.index_register().empty() or
                is_register(address.index_register()));
 

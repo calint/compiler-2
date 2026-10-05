@@ -51,6 +51,7 @@ struct generic_param {
                     return param.name_tk.text() == name_tk.text();
                 },
             };
+
             if (std::ranges::any_of(params, is_same_name)) {
                 throw compiler_exception{
                     name_tk, std::format("generic parameter '{}' is declared "

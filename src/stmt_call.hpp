@@ -111,6 +111,7 @@ class stmt_call : public expression {
 
         // the whitespace before the receiver belongs to its first token
         const token& first_tk{receiver.first_token()};
+
         const token receiver_pos_tk{
             "", first_tk.start_index(), "",    first_tk.start_index(),
             "", first_tk.at_line(),     false,
@@ -520,6 +521,7 @@ class stmt_call : public expression {
         const std::optional<field_coverage::range> lhs_range{
             lhs.accessed_range(),
         };
+
         const std::optional<field_coverage::range> rhs_range{
             rhs.accessed_range(),
         };
@@ -572,64 +574,6 @@ class stmt_call : public expression {
         }
 
         e.add_call_frame(call_begin_token(), statement::trimmed_source(*this));
-    }
-
-    // an argument that names the result destination, only for '--checks=alias'
-    auto assert_not_shared_with_result(const size_t index,
-                                       const ident_info& info,
-                                       const ident_info& dst_info) const
-        -> void {
-
-        const std::optional<storage_conflict> conflict{
-            shared_storage_conflict(dst_info, info),
-        };
-
-        if (not conflict) {
-            return;
-        }
-
-        throw compiler_exception{
-            args_.at(index).tok(),
-            std::format("{} '{}' may share storage with the "
-                        "result destination '{}' ({}), {}",
-                        describe_argument(index), args_.at(index).identifier(),
-                        dst_info.elem_path.front(), conflict->reason,
-                        conflict->fix)};
-    }
-
-    // an argument that names the storage of an earlier one, unless both
-    // parameters are read-only or the bytes they reach are disjoint
-    auto
-    assert_not_shared_with_earlier(const std::span<const reference> earlier,
-                                   const size_t index, const ident_info& info,
-                                   const bool is_read_only) const -> void {
-
-        const expr_any& arg{args_.at(index)};
-
-        for (const reference& other : earlier) {
-            if (is_read_only and other.is_read_only) {
-                continue;
-            }
-
-            const std::optional<storage_conflict> conflict{
-                shared_storage_conflict(other.info, info),
-            };
-
-            if (not conflict or
-                reach_disjoint_bytes(args_.at(other.index), arg)) {
-
-                continue;
-            }
-
-            throw compiler_exception{
-                arg.tok(),
-                std::format("{} '{}' may share storage with {} '{}' "
-                            "({}), {}",
-                            describe_argument(index), arg.identifier(),
-                            describe_argument(other.index),
-                            args_.at(other.index).identifier(),
-                            conflict->reason, conflict->fix)};
-        }
     }
 
     // the callee and which arguments are globals or the same local, the only
@@ -810,6 +754,64 @@ class stmt_call : public expression {
         }
     }
 
+    // an argument that names the storage of an earlier one, unless both
+    // parameters are read-only or the bytes they reach are disjoint
+    auto
+    assert_not_shared_with_earlier(const std::span<const reference> earlier,
+                                   const size_t index, const ident_info& info,
+                                   const bool is_read_only) const -> void {
+
+        const expr_any& arg{args_.at(index)};
+
+        for (const reference& other : earlier) {
+            if (is_read_only and other.is_read_only) {
+                continue;
+            }
+
+            const std::optional<storage_conflict> conflict{
+                shared_storage_conflict(other.info, info),
+            };
+
+            if (not conflict or
+                reach_disjoint_bytes(args_.at(other.index), arg)) {
+
+                continue;
+            }
+
+            throw compiler_exception{
+                arg.tok(),
+                std::format("{} '{}' may share storage with {} '{}' "
+                            "({}), {}",
+                            describe_argument(index), arg.identifier(),
+                            describe_argument(other.index),
+                            args_.at(other.index).identifier(),
+                            conflict->reason, conflict->fix)};
+        }
+    }
+
+    // an argument that names the result destination, only for '--checks=alias'
+    auto assert_not_shared_with_result(const size_t index,
+                                       const ident_info& info,
+                                       const ident_info& dst_info) const
+        -> void {
+
+        const std::optional<storage_conflict> conflict{
+            shared_storage_conflict(dst_info, info),
+        };
+
+        if (not conflict) {
+            return;
+        }
+
+        throw compiler_exception{
+            args_.at(index).tok(),
+            std::format("{} '{}' may share storage with the "
+                        "result destination '{}' ({}), {}",
+                        describe_argument(index), args_.at(index).identifier(),
+                        dst_info.elem_path.front(), conflict->reason,
+                        conflict->fix)};
+    }
+
     // a result must be stored and a call without one cannot provide it
     auto assert_result_use(const ident_info& dst_info,
                            const stmt_def_func& func) const -> void {
@@ -907,6 +909,7 @@ class stmt_call : public expression {
         // create unique labels for inlined functions
         const std::string_view call_path{tc.get_call_path()};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
+
         const std::string new_call_path{
             call_path.empty() ? src_loc
                               : std::format("{}.{}", src_loc, call_path),
@@ -950,6 +953,7 @@ class stmt_call : public expression {
             assert(func.returns());
 
             const func_return_info& return_info{*func.returns()};
+
             const ident_info& ret_info{
                 tc.make_ident_info(tok(), return_info.ident_tk.text()),
             };
@@ -986,6 +990,7 @@ class stmt_call : public expression {
             address_registers.push_back(address);
 
             x.comment(tok(), indent, "address of parameter '{}'", alias.from);
+
             alias.lea = load_indexed_address(x, indent, address, alias.lea,
                                              keeps_displacement);
         }
@@ -1014,6 +1019,7 @@ class stmt_call : public expression {
         machine& x{tc.machine()};
 
         const bool has_unary_ops{not get_unary_ops().is_empty()};
+
         const bool has_indexed_result{
             not dst_info.operand.index_register().empty(),
         };
@@ -1075,6 +1081,7 @@ class stmt_call : public expression {
         comment_result_address(tc, indent, dst_info);
 
         ident_info address_info{dst_info};
+
         address_info.operand = load_indexed_address(
             x, indent, address, dst_info.operand, keeps_displacement);
 

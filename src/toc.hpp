@@ -461,6 +461,7 @@ class type_table final {
                                             .src_loc_tk{src_loc_tk},
                                             .type_ptr{&tpe},
                                         });
+
         aliases_.emplace_back(std::string{name}, entries_.get_const_ref(name));
     }
 
@@ -501,6 +502,7 @@ class type_table final {
 
     auto unbind(const std::string_view name) -> void {
         entries_.erase(name);
+
         std::erase_if(aliases_, [name](const auto& alias) -> bool {
             return alias.first == name;
         });
@@ -546,6 +548,7 @@ class constant_parser final {
         const std::optional<char> decoded{token::decode_escape(body.substr(1))};
         if (not decoded) {
             const size_t backslash_index{src_loc_tk.start_index() + 1};
+
             // note: +1 because the backslash follows the opening quote
             const token escape_tk{
                 src_loc_tk.is_text(str)
@@ -850,6 +853,7 @@ class toc final {
         ::machine& x{machine()};
 
         x.comment(src_loc_tk, indent, "const {} = {}", name, value);
+
         frames_.back().add_const(name, {
                                            .src_loc_tk{src_loc_tk},
                                            .value{value},
@@ -978,6 +982,7 @@ class toc final {
 
         if (storage_frame) {
             var.base_register = storage_frame->storage_base_register();
+
             storage_frame->record_storage_size_bytes(add_storage_size(
                 src_loc_tk, base_offset, allocated_size_bytes));
         } else {
@@ -988,6 +993,7 @@ class toc final {
         // the total accepts the size before a frame sums it
         vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
                                             allocated_size_bytes);
+
         frames_.back().add_var(var, allocated_size_bytes, kind);
 
         // stats
@@ -1037,6 +1043,7 @@ class toc final {
         const size_t max_vars_size_bytes{usage_max_vars_size_bytes_};
         const size_t string_constant_count{data_.constant_count()};
         const bool was_capacity_unchecked{capacity_unchecked_};
+
         const size_t peak_storage_size_bytes{
             storage_frame ? storage_frame->peak_storage_size_bytes() : 0,
         };
@@ -1109,6 +1116,11 @@ class toc final {
         refresh_usage();
     }
 
+    auto enter_loop(const std::string_view name) -> void {
+        frames_.emplace_back(name, frame::frame_type::loop);
+        refresh_usage();
+    }
+
     // a function with a body of its own, its variables are placed from
     // 'storage_base_register' when not empty
     auto enter_noninline_func(const std::string_view name,
@@ -1120,11 +1132,6 @@ class toc final {
                              std::string{call_path}, std::string{}, false,
                              storage_base_register);
 
-        refresh_usage();
-    }
-
-    auto enter_loop(const std::string_view name) -> void {
-        frames_.emplace_back(name, frame::frame_type::loop);
         refresh_usage();
     }
 
@@ -1428,6 +1435,7 @@ class toc final {
         const ident_info declared{
             make_ident_info_or_throw(st.tok(), st.identifier()),
         };
+
         const bool is_element{st.is_array_element()};
         ident_info info{ident_builder::as_element_if(is_element, declared)};
 
@@ -1469,6 +1477,7 @@ class toc final {
         for (const frame& frm : frames_ | std::views::reverse) {
             local_size_bytes = sum_storage_size(
                 local_size_bytes, frm.allocated_stack_size_bytes());
+
             if (not frm.storage_base_register().empty()) {
                 return operand::mem(frm.storage_base_register(), {}, 1,
                                     address_offset(align_storage_size(
@@ -1581,20 +1590,6 @@ class toc final {
     // statics
     //
 
-    // the label after the code of the construct 'label' names, e.g. a loop
-    [[nodiscard]] static auto end_label(const std::string_view label)
-        -> std::string {
-
-        return std::format("{}.end", label);
-    }
-
-    // the label of the next iteration of the 'foo' loop 'label' names
-    [[nodiscard]] static auto continue_label(const std::string_view label)
-        -> std::string {
-
-        return std::format("{}.continue", label);
-    }
-
     // 'self' is declared only by the compiler: the receiver of a method and the
     // value built by a constructor
     static auto assert_name_not_reserved(const token& name_tk) -> void {
@@ -1615,6 +1610,20 @@ class toc final {
         throw compiler_exception{
             st.tok(),
             std::format("array '{}' must be indexed", st.identifier())};
+    }
+
+    // the label of the next iteration of the 'foo' loop 'label' names
+    [[nodiscard]] static auto continue_label(const std::string_view label)
+        -> std::string {
+
+        return std::format("{}.continue", label);
+    }
+
+    // the label after the code of the construct 'label' names, e.g. a loop
+    [[nodiscard]] static auto end_label(const std::string_view label)
+        -> std::string {
+
+        return std::format("{}.end", label);
     }
 
     [[nodiscard]] static auto make_ident_info_from_register(const operand& reg)
@@ -1644,8 +1653,10 @@ class toc final {
         }
 
         frames_.front().set_padding_between_dats_and_vars(data_.entry_gap());
+
         vars_size_bytes_ =
             add_storage_size(src_loc_tk, vars_size_bytes_, data_.entry_gap());
+
         vars_entry_gap_applied_ = true;
     }
 
@@ -1671,6 +1682,7 @@ class toc final {
 
         if (generics_.has_func(name)) {
             const generic_func_info& fn{generics_.get_func(name)};
+
             throw compiler_exception{
                 src_loc_tk,
                 std::format("function '{}' already defined at {}", name,

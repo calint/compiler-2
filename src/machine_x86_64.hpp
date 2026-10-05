@@ -369,6 +369,7 @@ class machine_x86_64 final : public machine {
         }
 
         comment(src_loc_tk, indent, "set function frame base");
+
         lea(src_loc_tk, indent,
             make_register_operand(frame_base_register(), default_type()),
             frame_address, true);
@@ -469,6 +470,7 @@ class machine_x86_64 final : public machine {
 
         if (options.upper) {
             comment(src_loc_tk, indent, "upper bound");
+
             compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
                                 reg_count);
 
@@ -501,9 +503,11 @@ class machine_x86_64 final : public machine {
         };
 
         lea(src_loc_tk, indent, start, frame_address, true);
+
         assembler_.instruction(
             indent, op::lea, to_argument(remaining),
             assembler_x86_64::memory::of_symbol(variables_label));
+
         cmp_lowered(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::b, frame_overflow_handler_label);
 
@@ -586,12 +590,15 @@ class machine_x86_64 final : public machine {
                 threshold_for_rep_movs_size_bytes);
 
         reserve_named_register(src_loc_tk, indent, "rax", default_type());
+
         for_each_part(
             size_bytes, size_qword,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 const operand reg{sized_register("rax", part_size_bytes)};
+
                 mov(src_loc_tk, indent, reg,
                     memory_part(src, part_size_bytes, offset));
+
                 mov(src_loc_tk, indent,
                     memory_part(dst, part_size_bytes, offset), reg);
             });
@@ -638,6 +645,7 @@ class machine_x86_64 final : public machine {
 
                     store_immediate_part(src_loc_tk, indent, bytes, dst,
                                          size_dword, offset);
+
                     store_immediate_part(src_loc_tk, indent, bytes, dst,
                                          size_dword, offset + size_dword);
 
@@ -725,6 +733,7 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(
             1, op::mov, assembler_x86_64::memory::of_base("rdi", 1), newline);
+
         assembler_.instruction(1, op::dec, "rdi");
         assembler_.instruction(1, op::mov, "rcx", decimal_base);
         assembler_.label(0, ".convert_loop");
@@ -737,6 +746,7 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(1, op::mov,
                                assembler_x86_64::memory::of_base("rdi"), "dl");
+
         assembler_.instruction(1, op::dec, "rdi");
         assembler_.instruction(1, op::test, "rax", "rax");
         assembler_.jcc(1, condition::nz, ".convert_loop");
@@ -800,6 +810,7 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::rodata);
         assembler_.label(0, "msg_frame_overflow");
         assembler_.string_data("panic: frame overflow\\n");
+
         assembler_.define_length("msg_frame_overflow_len",
                                  "msg_frame_overflow");
 
@@ -1196,10 +1207,13 @@ class machine_x86_64 final : public machine {
 
         validate_shift_operand(src_loc_tk, count);
         reserve_named_register(src_loc_tk, indent, "rcx", default_type());
+
         mov(src_loc_tk, indent,
             sized_register("rcx", dst.type_ref().size_bytes()), count);
+
         emit_op(src_loc_tk, indent, code, dst,
                 sized_register("rcx", size_byte));
+
         release_named_register(src_loc_tk, indent, "rcx");
     }
 
@@ -1215,8 +1229,10 @@ class machine_x86_64 final : public machine {
         assembler_.label(0, "_start");
         assembler_.add_separator_newline();
         reserve_variables_base();
+
         assembler_.instruction(0, op::lea, variables_base_register_,
                                assembler_x86_64::memory::of_symbol(data_label));
+
         assembler_.add_separator_newline();
     }
 
@@ -1303,13 +1319,17 @@ class machine_x86_64 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rax", default_type());
             reserve_named_register(src_loc_tk, indent, "rdi", default_type());
             reserve_named_register(src_loc_tk, indent, "rcx", default_type());
+
             xor_op(
                 src_loc_tk, indent,
                 machine_x86_64::make_register_operand("al", builtin_type_i8()),
                 machine_x86_64::make_register_operand("al", builtin_type_i8()));
+
             lea(src_loc_tk, indent, qword_register("rdi"), dst);
+
             mov(src_loc_tk, indent, qword_register("rcx"),
                 immediate(size_bytes));
+
             assembler_.instruction(indent, op::rep_stosb);
             release_named_register(src_loc_tk, indent, "rcx");
             release_named_register(src_loc_tk, indent, "rdi");
@@ -1441,7 +1461,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto branch_comparison(const size_t indent,
-                           const std::string_view comparison,
+                           const comparison_operator comparison,
                            const bool inverted, const std::string_view label)
         -> void {
 
@@ -1688,6 +1708,7 @@ class machine_x86_64 final : public machine {
         assembler_.comment(1, "print message to stderr");
         assembler_.instruction(1, op::mov, "rax", 1);
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
+
         assembler_.instruction(
             1, op::lea, "rsi",
             assembler_x86_64::memory::of_symbol(message_label));
@@ -1861,6 +1882,7 @@ class machine_x86_64 final : public machine {
         const operand address{
             alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
         };
+
         registers.push_back(address);
         const std::string_view sum{address.base_register()};
         assembler_.instruction(indent, op::mov, sum, value.displacement());
@@ -1909,6 +1931,7 @@ class machine_x86_64 final : public machine {
         }
 
         const size_t width_bits{product.type_ref().size_bits()};
+
         const uint64_t mask{
             width_bits >= std::numeric_limits<uint64_t>::digits
                 ? std::numeric_limits<uint64_t>::max()
@@ -1970,6 +1993,7 @@ class machine_x86_64 final : public machine {
     // registers are released in reverse order of allocation
     auto pop_allocation(const std::string_view reg) -> void {
         assert(not allocations_.empty());
+
         assert(allocations_.back().name ==
                sized_register_name(reg, size_qword));
 
@@ -2141,7 +2165,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto store_comparison(const token& src_loc_tk, const size_t indent,
-                          const std::string_view comparison,
+                          const comparison_operator comparison,
                           const bool inverted, const operand& dst) -> void {
 
         if (dst.is_memory()) {
@@ -2151,6 +2175,7 @@ class machine_x86_64 final : public machine {
 
             return;
         }
+
         setcc(src_loc_tk, indent,
               condition_for_comparison(comparison, inverted), dst);
     }
@@ -2239,12 +2264,15 @@ class machine_x86_64 final : public machine {
         }
 
         std::vector<operand> registers;
+
         const operand lowered_dst{
             lower_address(src_loc_tk, indent, dst, registers),
         };
+
         const operand lowered_src{
             lower_address(src_loc_tk, indent, src, registers),
         };
+
         emit(lowered_dst, lowered_src);
         free_scratch_registers(src_loc_tk, indent, registers);
         unavailable_registers_ = saved_unavailable;
@@ -2267,28 +2295,28 @@ class machine_x86_64 final : public machine {
     }
 
     [[nodiscard]] static auto
-    condition_for_comparison(const std::string_view comparison,
+    condition_for_comparison(const comparison_operator comparison,
                              const bool inverted) -> condition {
 
-        if (comparison == "==") {
+        if (comparison == comparison_operator::equal) {
             return inverted ? condition::ne : condition::e;
         }
-        if (comparison == "!=") {
+        if (comparison == comparison_operator::not_equal) {
             return inverted ? condition::e : condition::ne;
         }
-        if (comparison == "<") {
+        if (comparison == comparison_operator::less) {
             return inverted ? condition::ge : condition::l;
         }
-        if (comparison == "<=") {
+        if (comparison == comparison_operator::less_equal) {
             return inverted ? condition::g : condition::le;
         }
-        if (comparison == ">") {
+        if (comparison == comparison_operator::greater) {
             return inverted ? condition::le : condition::g;
         }
-        if (comparison == ">=") {
-            return inverted ? condition::l : condition::ge;
-        }
-        std::unreachable();
+
+        assert(comparison == comparison_operator::greater_equal);
+
+        return inverted ? condition::l : condition::ge;
     }
 
     // the qwords, then the remaining dword, word and byte

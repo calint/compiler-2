@@ -408,6 +408,7 @@ examples:
 
     size_t parsed_size_bytes{};
     const char* const digits_end{std::to_address(digits.end())};
+
     const std::from_chars_result parsed{
         std::from_chars(std::to_address(digits.begin()), digits_end,
                         parsed_size_bytes, base),
@@ -616,6 +617,7 @@ auto print_source_line(const std::string_view src, const size_t start_index,
         start_index == 0 ? std::string_view::npos
                          : src.rfind('\n', start_index - 1),
     };
+
     const size_t line_bgn{
         before_start == std::string_view::npos ? 0 : before_start + 1,
     };

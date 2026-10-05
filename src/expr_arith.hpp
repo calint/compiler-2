@@ -118,6 +118,7 @@ class expr_arith final : public expression {
             if (next_precedence > precedence) {
                 open_implied_subexpression(tc, tz, in_args, next_precedence,
                                            ws_before_op_tk);
+
                 continue;
             }
 
@@ -929,6 +930,7 @@ class expr_arith final : public expression {
 
             const ident_info src_info{tc.make_scalar_ident_info(src)};
             std::vector<operand> lea_registers;
+
             const operand src_operand{
                 tc.get_lea_operand(indent, src, src_info, lea_registers),
             };
@@ -1161,6 +1163,7 @@ class expr_arith final : public expression {
         }
 
         std::vector<operand> lea_registers;
+
         const operand src_operand{
             tc.get_lea_operand(indent, src, src_info, lea_registers),
         };

@@ -147,6 +147,7 @@ class stmt_def_dat final : public statement {
             is_bare ? make_empty_array(src_loc_tk, array_count)
                     : parse_array(tc, tz, src_loc_tk, get_type(), array_count),
         };
+
         if (el.array_count == 0) {
             throw compiler_exception{open_bracket_tk_,
                                      "empty arrays require a specified size"};
@@ -189,12 +190,6 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
-    // the type 'tk' names, printed from 'tk' when the statement is reproduced
-    auto set_named_type(const toc& tc, const token& tk) -> void {
-        type_tk_ = tk;
-        set_type(tc.get_type_or_throw(tk, tk.text()));
-    }
-
     // e.g. 'dat s = "hi"' is an 'i8' array of 2, 'dat a = i8[4]{1, 2}' an 'i8'
     // array of 4, 'dat a = [4]{1, 2}' a default type array of 4, 'dat p =
     // point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8', 'dat b = true' a 'bool'
@@ -207,6 +202,7 @@ class stmt_def_dat final : public statement {
             elem el{};
             el.is_array = true;
             el.src_loc_tk = string_tk;
+
             el.array_count =
                 string_array_count(tc.get_type_i8(), string_tk, get_type(), 0);
 
@@ -278,6 +274,12 @@ class stmt_def_dat final : public statement {
         return parse_builtin(tc, tz, get_type());
     }
 
+    // the type 'tk' names, printed from 'tk' when the statement is reproduced
+    auto set_named_type(const toc& tc, const token& tk) -> void {
+        type_tk_ = tk;
+        set_type(tc.get_type_or_throw(tk, tk.text()));
+    }
+
     //
     // statics
     //
@@ -291,6 +293,7 @@ class stmt_def_dat final : public statement {
 
         if (not elroot.is_array) {
             x.comment(elroot.src_loc_tk, 0, "{}", tp.name());
+
             x.emit_data(tp.size_bytes(), {
                                              .value{elroot.value},
                                              .uops{elroot.uops.to_string()},
@@ -316,6 +319,7 @@ class stmt_def_dat final : public statement {
 
             if (size_bytes < elroot.array_count) {
                 x.comment(elroot.src_loc_tk, 0, "zero remaining array");
+
                 x.emit_repeated_data(tp.size_bytes(),
                                      elroot.array_count - size_bytes, {});
             }
@@ -553,6 +557,7 @@ class stmt_def_dat final : public statement {
         const ident_info ii{
             tc.make_ident_info(el.src_loc_tk, el.src_loc_tk.text()),
         };
+
         if (not ii.is_const()) {
             throw compiler_exception{
                 el.src_loc_tk,
@@ -600,8 +605,10 @@ class stmt_def_dat final : public statement {
         elem el{};
         el.is_array = true;
         el.src_loc_tk = tk;
+
         el.array_count =
             string_array_count(tc.get_type_i8(), tk, tp, array_count);
+
         return el;
     }
 

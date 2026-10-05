@@ -113,26 +113,29 @@ class stmt_builtin_foo final : public statement {
                        reg_counter);
 
         x.comment(tok(), indent, "initiate counter i");
+
         x.copy_value(tok(), indent, reg_counter,
                      operand::imm("0", tc.get_type_default()));
 
         // the loop is tested at the end, so a count of zero or less skips it
         if (has_count()) {
-            x.compare_and_branch(count_.tok(), indent, limit,
-                                 operand::imm("0", tc.get_type_default()),
-                                 {
-                                     .operation{"<="},
-                                     .inverted{},
-                                     .destination{},
-                                     .target{end_label},
-                                     .branch_on_true{true},
-                                 },
-                                 {});
+            x.compare_and_branch(
+                count_.tok(), indent, limit,
+                operand::imm("0", tc.get_type_default()),
+                {
+                    .operation{machine::comparison_operator::less_equal},
+                    .inverted{},
+                    .destination{},
+                    .target{end_label},
+                    .branch_on_true{true},
+                },
+                {});
         }
 
         x.label(indent, loop_label);
         code_.compile(tc, indent, ident_info::make_empty());
         x.label(indent + 1, toc::continue_label(loop_label));
+
         x.advance_array_iteration(tok(), indent + 2, reg_iter, reg_counter,
                                   ii.type_ref().size_bytes(), limit,
                                   loop_label);

@@ -19,7 +19,7 @@ class expr_bool_op final : public statement {
     std::vector<token> nots_;
     expr_arith lhs_;
     token ws_pre_op_;
-    std::string op_; // '<', '<=', '>', '>=', '==', '!='
+    machine::comparison_operator op_{machine::comparison_operator::equal};
     token ws_post_op_;
     expr_arith rhs_;
     bool is_not_{};       // e.g. if not a == b ...
@@ -59,7 +59,7 @@ class expr_bool_op final : public statement {
 
         ws_pre_op_ = tz.next_whitespace_token();
 
-        const std::optional<std::string_view> comparison{
+        const std::optional<machine::comparison_operator> comparison{
             parse_comparison_operator(tz),
         };
 
@@ -95,7 +95,7 @@ class expr_bool_op final : public statement {
         if (is_shorthand_) {
             return;
         }
-        std::print(os, "{}", op_);
+        std::print(os, "{}", machine::source_text(op_));
         ws_post_op_.source_to(os);
         rhs_.source_to(os);
     }
@@ -253,7 +253,7 @@ class expr_bool_op final : public statement {
         // register copy, the width check then applies to the swapped sides
         if (not is_shorthand_ and side_constant(tc, lhs_)) {
             machine::comparison_action mirrored_action{action};
-            mirrored_action.operation = mirrored_operation(op_);
+            mirrored_action.operation = machine::mirrored(op_);
 
             resolve_cmp(tc, indent, rhs_, lhs_, mirrored_action);
 
@@ -266,7 +266,7 @@ class expr_bool_op final : public statement {
         }
 
         machine::comparison_action shorthand_action{action};
-        shorthand_action.operation = "!=";
+        shorthand_action.operation = machine::comparison_operator::not_equal;
 
         // only a shorthand omits its branch, a comparison keeps it
         if (not branch_required) {
@@ -400,7 +400,7 @@ class expr_bool_op final : public statement {
     // the backends compare at the width of 'lhs' which would truncate 'rhs'
     static auto assert_rhs_fits_lhs(toc& tc, const expr_arith& lhs,
                                     const expr_arith& rhs,
-                                    const std::string_view op,
+                                    const machine::comparison_operator op,
                                     const operand& lhs_op,
                                     const operand& rhs_op) -> void {
 
@@ -419,7 +419,8 @@ class expr_bool_op final : public statement {
                     "swap the operands: '{} {} {}'",
                     trimmed_source(rhs), rhs_type.name(), trimmed_source(lhs),
                     lhs_type.name(), trimmed_source(rhs),
-                    mirrored_operation(op), trimmed_source(lhs))};
+                    machine::source_text(machine::mirrored(op)),
+                    trimmed_source(lhs))};
         }
 
         const std::optional<int64_t> constant{side_constant(tc, rhs)};
@@ -453,27 +454,27 @@ class expr_bool_op final : public statement {
         return reg;
     }
 
-    [[nodiscard]] static auto eval_constant(const int64_t lh,
-                                            const std::string_view op,
-                                            const int64_t rh) -> bool {
+    [[nodiscard]] static auto
+    eval_constant(const int64_t lh, const machine::comparison_operator op,
+                  const int64_t rh) -> bool {
 
-        if (op == "==") {
+        if (op == machine::comparison_operator::equal) {
             return lh == rh;
         }
-        if (op == "!=") {
+        if (op == machine::comparison_operator::not_equal) {
             return lh != rh;
         }
-        if (op == "<") {
+        if (op == machine::comparison_operator::less) {
             return lh < rh;
         }
-        if (op == "<=") {
+        if (op == machine::comparison_operator::less_equal) {
             return lh <= rh;
         }
-        if (op == ">") {
+        if (op == machine::comparison_operator::greater) {
             return lh > rh;
         }
 
-        assert(op == ">=");
+        assert(op == machine::comparison_operator::greater_equal);
 
         return lh >= rh;
     }
@@ -494,29 +495,9 @@ class expr_bool_op final : public statement {
                action.target.empty();
     }
 
-    // the operation that gives the same result with the operands swapped
-    [[nodiscard]] static auto mirrored_operation(const std::string_view op)
-        -> std::string_view {
-
-        if (op == "<") {
-            return ">";
-        }
-        if (op == "<=") {
-            return ">=";
-        }
-        if (op == ">") {
-            return "<";
-        }
-        if (op == ">=") {
-            return "<=";
-        }
-
-        return op;
-    }
-
     // the comparison at the next characters, none for a shorthand condition
     [[nodiscard]] static auto parse_comparison_operator(tokenizer& tz)
-        -> std::optional<std::string_view> {
+        -> std::optional<machine::comparison_operator> {
 
         if (tz.is_next_char('=')) {
             if (not tz.is_next_char('=')) {
@@ -526,7 +507,7 @@ class expr_bool_op final : public statement {
                 throw compiler_exception{tz, "expected '=='"};
             }
 
-            return "==";
+            return machine::comparison_operator::equal;
         }
 
         if (tz.is_next_char('!')) {
@@ -537,15 +518,19 @@ class expr_bool_op final : public statement {
                 throw compiler_exception{tz, "expected '!='"};
             }
 
-            return "!=";
+            return machine::comparison_operator::not_equal;
         }
 
         if (tz.is_next_char('<')) {
-            return tz.is_next_char('=') ? "<=" : "<";
+            return tz.is_next_char('=')
+                       ? machine::comparison_operator::less_equal
+                       : machine::comparison_operator::less;
         }
 
         if (tz.is_next_char('>')) {
-            return tz.is_next_char('=') ? ">=" : ">";
+            return tz.is_next_char('=')
+                       ? machine::comparison_operator::greater_equal
+                       : machine::comparison_operator::greater;
         }
 
         return std::nullopt;
@@ -730,6 +715,7 @@ class expr_bool final : public statement {
         for (size_t i{}; i < n; ++i) {
             bools_.at(i).visit(
                 [&os](const auto& e) -> void { e.source_to(os); });
+
             if (i < n - 1) {
                 // note: -1 because there is one operator fewer than elements
 
@@ -864,6 +850,7 @@ class expr_bool final : public statement {
             const std::string_view jmp_false{
                 is_or ? std::string_view{next_label} : jmp_to_if_false,
             };
+
             const std::string_view jmp_true{
                 is_or ? jmp_to_if_true : std::string_view{next_label},
             };

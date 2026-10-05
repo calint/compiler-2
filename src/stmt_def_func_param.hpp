@@ -52,6 +52,7 @@ class stmt_def_func_param final : public statement {
             };
 
             const token open_bracket_tk{tz.is_next_char_token('[')};
+
             const token close_bracket_tk{
                 open_bracket_tk.is_empty() ? token{}
                                            : tz.is_next_char_token(']'),

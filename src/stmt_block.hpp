@@ -136,6 +136,7 @@ class stmt_block final : public statement {
         -> std::optional<field_coverage> {
 
         const field_coverage entry{flow.assigned};
+
         std::optional<field_coverage> outer_breaks{
             std::exchange(flow.at_breaks, std::nullopt),
         };

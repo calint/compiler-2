@@ -618,13 +618,14 @@ auto check_backend_jump_optimization() -> void {
 
     const auto branch_if_different =
         [&](const std::string_view target) -> void {
-        backend.compare_and_branch(token{}, 0, left, right,
-                                   {
-                                       .operation{"!="},
-                                       .target{target},
-                                       .branch_on_true{true},
-                                   },
-                                   {});
+        backend.compare_and_branch(
+            token{}, 0, left, right,
+            {
+                .operation{machine::comparison_operator::not_equal},
+                .target{target},
+                .branch_on_true{true},
+            },
+            {});
     };
 
     backend.branch(0, "cmp_13_26");
@@ -1606,73 +1607,76 @@ auto check_comparison_selection() -> void {
     std::vector<operand> address_registers{
         hold_scratch_registers(backend, 30, integer)};
 
-    backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
-                               operand::reg("a1", integer),
-                               {
-                                   .operation{"<"},
-                                   .destination{operand::reg("a2", boolean)},
-                               },
-                               {});
+    backend.compare_and_branch(
+        token{}, 0, operand::reg("a0", integer), operand::reg("a1", integer),
+        {
+            .operation{machine::comparison_operator::less},
+            .destination{operand::reg("a2", boolean)},
+        },
+        {});
 
     assert(output.str() == "slt a2, a0, a1\n");
     output.str({});
 
-    backend.compare_and_branch(token{}, 0,
-                               operand::mem("a0", {}, 1, 0, integer),
-                               operand::reg("a1", integer),
-                               {
-                                   .operation{"<"},
-                                   .destination{operand::reg("a2", boolean)},
-                               },
-                               {});
+    backend.compare_and_branch(
+        token{}, 0, operand::mem("a0", {}, 1, 0, integer),
+        operand::reg("a1", integer),
+        {
+            .operation{machine::comparison_operator::less},
+            .destination{operand::reg("a2", boolean)},
+        },
+        {});
     assert(output.str() == "lw a2, 0(a0)\nslt a2, a2, a1\n");
     output.str({});
-    backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
-                               operand::mem("a1", {}, 1, 0, integer),
-                               {
-                                   .operation{"=="},
-                                   .destination{operand::reg("a1", boolean)},
-                               },
-                               {});
+    backend.compare_and_branch(
+        token{}, 0, operand::reg("a0", integer),
+        operand::mem("a1", {}, 1, 0, integer),
+        {
+            .operation{machine::comparison_operator::equal},
+            .destination{operand::reg("a1", boolean)},
+        },
+        {});
     assert(output.str() == "lw a1, 0(a1)\nxor a1, a0, a1\nsltiu a1, a1, 1\n");
     output.str({});
-    backend.compare_and_branch(token{}, 0, operand::reg("a0", byte),
-                               operand::reg("a1", integer),
-                               {
-                                   .operation{"<"},
-                                   .destination{operand::reg("a1", boolean)},
-                               },
-                               {});
+    backend.compare_and_branch(
+        token{}, 0, operand::reg("a0", byte), operand::reg("a1", integer),
+        {
+            .operation{machine::comparison_operator::less},
+            .destination{operand::reg("a1", boolean)},
+        },
+        {});
     assert(output.str() ==
            "slli a1, a1, 24\nsrai a1, a1, 24\nslt a1, a0, a1\n");
     output.str({});
 
-    backend.compare_and_branch(token{}, 0, operand::reg("a0", integer),
-                               operand::reg("a1", integer),
-                               {
-                                   .operation{"=="},
-                                   .target{"comparison_target"},
-                                   .branch_on_true{true},
-                               },
-                               {});
+    backend.compare_and_branch(
+        token{}, 0, operand::reg("a0", integer), operand::reg("a1", integer),
+        {
+            .operation{machine::comparison_operator::equal},
+            .target{"comparison_target"},
+            .branch_on_true{true},
+        },
+        {});
 
     // every scratch register is held here, so no far jump register is named
     assert(output.str() == "beq a0, a1, comparison_target\n");
-    for (const std::string_view operation : {"<", "==", "!="}) {
+    using comparison = machine::comparison_operator;
+    for (const comparison operation :
+         {comparison::less, comparison::equal, comparison::not_equal}) {
         output.str({});
 
         backend.compare_and_branch(
             token{}, 0, operand::reg("a0", integer),
-            operand::imm(operation == "<" ? "7" : "0", integer),
+            operand::imm(operation == comparison::less ? "7" : "0", integer),
             {
                 .operation{operation},
                 .destination{operand::reg("a0", boolean)},
             },
             {});
 
-        if (operation == "<") {
+        if (operation == comparison::less) {
             assert(output.str() == "slti a0, a0, 7\n");
-        } else if (operation == "==") {
+        } else if (operation == comparison::equal) {
             assert(output.str() == "sltiu a0, a0, 1\n");
         } else {
             assert(output.str() == "sltu a0, zero, a0\n");
@@ -1680,13 +1684,13 @@ auto check_comparison_selection() -> void {
     }
     output.str({});
 
-    backend.compare_and_branch(token{}, 0, operand::reg("a0", byte),
-                               operand::imm("255", integer),
-                               {
-                                   .operation{"<"},
-                                   .destination{operand::reg("a1", boolean)},
-                               },
-                               {});
+    backend.compare_and_branch(
+        token{}, 0, operand::reg("a0", byte), operand::imm("255", integer),
+        {
+            .operation{machine::comparison_operator::less},
+            .destination{operand::reg("a1", boolean)},
+        },
+        {});
 
     assert(output.str() == "slti a1, a0, -1\n");
     output.str({});
@@ -2148,25 +2152,27 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
         backend.advance_array_iteration(token{}, 1, iterator, counter, 4,
                                         operand::imm("3", integer), loop_label);
 
-        backend.compare_and_branch(token{}, 1, operand::reg("s2", integer),
-                                   operand::imm("15", integer),
-                                   {
-                                       .operation{"!="},
-                                       .target{"far_failure"},
-                                       .branch_on_true{true},
-                                   },
-                                   {});
+        backend.compare_and_branch(
+            token{}, 1, operand::reg("s2", integer),
+            operand::imm("15", integer),
+            {
+                .operation{machine::comparison_operator::not_equal},
+                .target{"far_failure"},
+                .branch_on_true{true},
+            },
+            {});
 
         const std::string taken_label{std::format("far_taken_{}", count)};
 
-        backend.compare_and_branch(token{}, 1, operand::reg("s2", integer),
-                                   operand::imm("15", integer),
-                                   {
-                                       .operation{"=="},
-                                       .target{taken_label},
-                                       .branch_on_true{true},
-                                   },
-                                   {});
+        backend.compare_and_branch(
+            token{}, 1, operand::reg("s2", integer),
+            operand::imm("15", integer),
+            {
+                .operation{machine::comparison_operator::equal},
+                .target{taken_label},
+                .branch_on_true{true},
+            },
+            {});
 
         padding(count);
         backend.exit(token{}, 1, operand::imm("2", integer));
@@ -2686,7 +2692,7 @@ auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
             shared_address ? operand::mem("a0", {}, 1, 4, integer)
                            : operand::reg("a1", integer),
             {
-                .operation{"<"},
+                .operation{machine::comparison_operator::less},
                 .destination{operand::reg("a0", boolean)},
             },
             {});
@@ -2710,8 +2716,11 @@ auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
 //   7     register, constant       memory              yes
 auto emit_comparison_matrix(machine_rv32i& backend) -> void {
     size_t comparison_index{};
-    for (const std::string_view operation :
-         {"==", "!=", "<", ">=", ">", "<="}) {
+    using comparison = machine::comparison_operator;
+    for (const comparison operation :
+         {comparison::equal, comparison::not_equal, comparison::less,
+          comparison::greater_equal, comparison::greater,
+          comparison::less_equal}) {
         for (const bool inverted : {false, true}) {
             for (const bool branch_on_true : {false, true}) {
                 for (const int32_t right_value :
@@ -2722,15 +2731,15 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
                         const std::string target{
                             std::format("comparison_{}", comparison_index++)};
                         bool expected{};
-                        if (operation == "==") {
+                        if (operation == comparison::equal) {
                             expected = -7 == right_value;
-                        } else if (operation == "!=") {
+                        } else if (operation == comparison::not_equal) {
                             expected = -7 != right_value;
-                        } else if (operation == "<") {
+                        } else if (operation == comparison::less) {
                             expected = -7 < right_value;
-                        } else if (operation == ">=") {
+                        } else if (operation == comparison::greater_equal) {
                             expected = -7 >= right_value;
-                        } else if (operation == ">") {
+                        } else if (operation == comparison::greater) {
                             expected = -7 > right_value;
                         } else {
                             expected = -7 <= right_value;

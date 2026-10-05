@@ -99,17 +99,12 @@ better assembler code, medium, largest gain first
     [ ] questionable: 'type::accessor' builds an 'ident_info' with an operand,
         a type knows about storage and registers; 'toc' or 'ident_builder'
         would hold that
-    [ ] medium: the comparison is a string: 'machine::comparison_action::
-        operation' holds "==", "!=", "<", "<=", ">" or ">=", parsed in
-        'expr_bool', mirrored and folded there, and decoded by if-chains of
-        string compares in 'machine_rv32i' (7 places) and 'machine_x86_64';
-        'enum class comparison { equal, not_equal, less, less_equal, greater,
-        greater_equal }' with one 'mirrored' and one 'inverted' function; the
-        arithmetic operators passed as 'char' ('+', '-', '*', '&', ...) have the
-        same smell but are lighter; touches 'machine.hpp', 'expr_bool.hpp',
-        'stmt_builtin_foo.hpp' and both machines (plan and go-ahead first)
-    [ ] missing direct includes (153 of misc-include-cleaner, 'std::format',
-        'size_t', ...): add per header
+    [x] medium: the comparison was a string ("==", "<=", ...)
+        => done (2026-10-05): 'machine::comparison_operator' with 'mirrored'
+           and 'source_text'; 'swaps_operands' in 'machine_rv32i'; the
+           arithmetic operators passed as 'char' stay
+[ ] easy: low priority: missing direct includes (153 of misc-include-cleaner,
+    'std::format', 'size_t', ...): add per header; clangd does not need them
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
 [ ] medium: roome.baz: an inline bool call used as a condition is materialized

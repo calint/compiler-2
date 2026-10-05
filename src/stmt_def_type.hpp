@@ -207,9 +207,11 @@ class stmt_def_type final : public statement {
         alias_tks_.emplace_back(tz.is_next_char_token('='));
 
         const token generic_tk{parse_alias_generic(tc, tz)};
+
         const generic_type_info generic{
             tc.generics().get_type(generic_tk.text()),
         };
+
         const std::vector<token> arg_tks{parse_alias_args(tz)};
 
         assert_arg_count(generic_tk, generic, arg_tks);
@@ -324,6 +326,7 @@ class stmt_def_type final : public statement {
                              generic_type_instance::alias_text(
                                  name_tk_.text(), generic_tk.text(), bindings),
                              "instantiated by");
+
             throw;
         }
 

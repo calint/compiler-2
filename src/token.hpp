@@ -304,6 +304,7 @@ class token final {
 
         unsigned int decoded{};
         const char* const end{std::to_address(digits.end())};
+
         const std::from_chars_result parsed{
             std::from_chars(std::to_address(digits.begin()), end, decoded, 16),
         };

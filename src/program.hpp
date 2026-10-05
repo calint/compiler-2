@@ -325,9 +325,11 @@ class program final {
         }
 
         x.label(indent, func.body_label(array_lengths));
+
         const size_t frame_size_bytes{
             func.compile_body(tc, indent, array_lengths),
         };
+
         x.define_constant(func.frame_size_label(array_lengths),
                           frame_size_bytes);
 
@@ -369,6 +371,7 @@ class program final {
             x.comment({}, 0,
                       "bounds failure handler (--checks=upper or "
                       "--checks=lower)");
+
             x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
         }
     }

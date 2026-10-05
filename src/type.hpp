@@ -129,6 +129,7 @@ class type final {
 
         fields_end_bytes_ =
             add_storage_size(src_loc_tk, offset, total_size_bytes);
+
         alignment_ = std::max(alignment_, tp.alignment_);
         size_bytes_ = align_storage_size(fields_end_bytes_, alignment_);
     }
@@ -222,17 +223,17 @@ class type final {
         return std::ranges::contains(fields_, name, &type_field::name);
     }
 
-    // types are unique objects, a type is only the same as itself
-    [[nodiscard]] auto is_same(const type& other) const -> bool {
-        return this == &other;
-    }
-
     [[nodiscard]] auto is_bool() const -> bool {
         return kind_ == type_kind::boolean;
     }
 
     [[nodiscard]] auto is_builtin() const -> bool {
         return kind_ != type_kind::user;
+    }
+
+    // types are unique objects, a type is only the same as itself
+    [[nodiscard]] auto is_same(const type& other) const -> bool {
+        return this == &other;
     }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }

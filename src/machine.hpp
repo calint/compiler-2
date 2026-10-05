@@ -42,24 +42,14 @@ class machine {
   public:
     enum class builtin_function : uint8_t { read, write, exit };
 
-    // a failed check prints its message to this descriptor and exits with this
-    // code
-    static constexpr int stderr_descriptor{2};
-    static constexpr int panic_exit_code{255};
-
-    // the labels of the sections of the program's data and variables
-    static constexpr std::string_view data_label{"dat"};
-    static constexpr std::string_view data_end_label{"dat.end"};
-    static constexpr std::string_view variables_label{"vars"};
-    static constexpr std::string_view variables_end_label{"vars.end"};
-
-    // the labels of the code that a failed check jumps to, every backend
-    // emits it
-    static constexpr std::string_view bounds_failure_handler_label{
-        "baz_bounds_panic",
-    };
-    static constexpr std::string_view frame_overflow_handler_label{
-        "baz_frame_overflow",
+    // what a comparison asks, e.g. 'a <= b' is 'less_equal'
+    enum class comparison_operator : uint8_t {
+        equal,
+        not_equal,
+        less,
+        less_equal,
+        greater,
+        greater_equal,
     };
 
     struct output_statistics {
@@ -72,8 +62,7 @@ class machine {
     };
 
     struct comparison_action {
-        // '==', '!=', '<', '<=', '>' or '>='
-        std::string_view operation;
+        comparison_operator operation{comparison_operator::equal};
 
         // negate the comparison before storing or branching
         bool inverted{};
@@ -124,6 +113,26 @@ class machine {
     auto operator=(machine&&) -> machine& = delete;
 
     virtual ~machine() = default;
+
+    // a failed check prints its message to this descriptor and exits with this
+    // code
+    static constexpr int stderr_descriptor{2};
+    static constexpr int panic_exit_code{255};
+
+    // the labels of the sections of the program's data and variables
+    static constexpr std::string_view data_label{"dat"};
+    static constexpr std::string_view data_end_label{"dat.end"};
+    static constexpr std::string_view variables_label{"vars"};
+    static constexpr std::string_view variables_end_label{"vars.end"};
+
+    // the labels of the code that a failed check jumps to, every backend
+    // emits it
+    static constexpr std::string_view bounds_failure_handler_label{
+        "baz_bounds_panic",
+    };
+    static constexpr std::string_view frame_overflow_handler_label{
+        "baz_frame_overflow",
+    };
 
     //
     // virtual methods
@@ -478,6 +487,7 @@ class machine {
         const std::string text{
             std::format(format, std::forward<args_t>(args)...),
         };
+
         comment(src_loc_tk, indent, std::string_view{text});
     }
 
@@ -500,6 +510,7 @@ class machine {
         auto&& range{std::forward<values_t>(values)};
         auto current{std::ranges::begin(range)};
         const auto end{std::ranges::end(range)};
+
         auto next{
             [&](data_initializer& value) -> bool {
                 if (current == end) {
@@ -566,6 +577,55 @@ class machine {
         }
 
         return stats;
+    }
+
+    //
+    // statics
+    //
+
+    // the operator that gives the same result with the operands swapped
+    [[nodiscard]] static auto mirrored(const comparison_operator op)
+        -> comparison_operator {
+
+        if (op == comparison_operator::less) {
+            return comparison_operator::greater;
+        }
+        if (op == comparison_operator::less_equal) {
+            return comparison_operator::greater_equal;
+        }
+        if (op == comparison_operator::greater) {
+            return comparison_operator::less;
+        }
+        if (op == comparison_operator::greater_equal) {
+            return comparison_operator::less_equal;
+        }
+
+        return op;
+    }
+
+    // the operator as written in the source
+    [[nodiscard]] static auto source_text(const comparison_operator op)
+        -> std::string_view {
+
+        if (op == comparison_operator::equal) {
+            return "==";
+        }
+        if (op == comparison_operator::not_equal) {
+            return "!=";
+        }
+        if (op == comparison_operator::less) {
+            return "<";
+        }
+        if (op == comparison_operator::less_equal) {
+            return "<=";
+        }
+        if (op == comparison_operator::greater) {
+            return ">";
+        }
+
+        assert(op == comparison_operator::greater_equal);
+
+        return ">=";
     }
 
   protected:
@@ -675,6 +735,7 @@ class machine {
         const std::string_view number{text.substr(digits)};
         const char* const end{std::to_address(number.end())};
         uint64_t bits{};
+
         const std::from_chars_result parsed{
             std::from_chars(std::to_address(number.begin()), end, bits),
         };

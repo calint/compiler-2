@@ -454,6 +454,7 @@ class assembler_rv32i final : public assembler {
                             .target{std::string{target}},
                         },
                         {.rd{link}, .rs1{}, .rs2{}});
+
         mark_call(target);
     }
 
@@ -1058,6 +1059,7 @@ class assembler_rv32i final : public assembler {
             }
 
             const line& l{lines().at(index)};
+
             const data_values* const data{
                 std::get_if<data_values>(record_of(l)),
             };
@@ -1175,6 +1177,7 @@ class assembler_rv32i final : public assembler {
 
     auto grow(line& l) const -> void {
         const jump_info& jump{*l.jump};
+
         const jump_reach grown{
             reach(l) == jump_reach::branch ? jump_reach::jal : jump_reach::far,
         };
@@ -1247,6 +1250,7 @@ class assembler_rv32i final : public assembler {
             const section_start* const start{
                 std::get_if<section_start>(structured),
             };
+
             if (start != nullptr) {
                 current = start->which;
             }
@@ -1471,9 +1475,11 @@ class assembler_rv32i final : public assembler {
             write_zeros(os, address - written);
 
             const line& l{lines().at(index)};
+
             const data_values* const data{
                 std::get_if<data_values>(record_of(l)),
             };
+
             if (data != nullptr) {
                 write_data(os, *data);
                 written = address + data_size_bytes(*data);
@@ -1544,6 +1550,7 @@ class assembler_rv32i final : public assembler {
 
                 encoded +=
                     std::format("\\{:03o}", static_cast<unsigned int>(byte));
+
                 break;
             }
         }
@@ -2278,6 +2285,7 @@ class assembler_rv32i final : public assembler {
             const auto next{
                 std::ranges::upper_bound(definitions, line_index, {}, line_of),
             };
+
             if (next != definitions.end()) {
                 return next->second;
             }
@@ -2287,6 +2295,7 @@ class assembler_rv32i final : public assembler {
             const auto next{
                 std::ranges::lower_bound(definitions, line_index, {}, line_of),
             };
+
             if (next != definitions.begin()) {
                 return std::prev(next)->second;
             }

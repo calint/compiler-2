@@ -66,6 +66,7 @@ class expr_any final : public statement {
         // e.g. "hello" fills the start of an 'i8' array
         if (tz.is_peek_char('"')) {
             string_tk_ = tz.next_token();
+
             array_count_ = string_array_count(tc.get_type_i8(), string_tk_, tp,
                                               array_count_);
 
@@ -133,6 +134,7 @@ class expr_any final : public statement {
                  std::views::zip(var_delims_tk_, vars_ | std::views::drop(1))) {
 
                 d.source_to(os);
+
                 e.visit([&os](const auto& expression) -> void {
                     expression.source_to(os);
                 });
@@ -437,6 +439,7 @@ class expr_any final : public statement {
         for (const auto [i, e] : std::views::enumerate(vars_)) {
             x.comment(tok(), indent, "[{}]", i);
             compile_variant(tc, indent, dst_info, tok(), e);
+
             dst_info.operand.increment_offset(
                 address_offset(dst_info.type_ref().size_bytes()));
         }

@@ -44,8 +44,11 @@ Working agreements for AI sessions in this repository.
 
 ### Blank lines
 
-- Around multiline statements and declarations, and after the `{` of a
-  multiline signature.
+- Around multiline statements and declarations: a blank line before and after,
+  in all source; a comment above or a note below stays with its statement.
+  `python3 etc/ai/style-scripts/multiline-blank.py [apply]` finds and adds
+  them.
+- After the `{` of a multiline signature.
 - Before a return, except for return-only bodies or one single-line statement
   plus a single-line return.
 - Between switch branches (labels sharing a body stay grouped).

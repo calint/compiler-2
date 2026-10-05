@@ -41,6 +41,7 @@ class stmt_builtin_io final : public stmt_call {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
+
         const machine::builtin_function function{
             tok().is_text("read") ? machine::builtin_function::read
                                   : machine::builtin_function::write,
@@ -49,6 +50,7 @@ class stmt_builtin_io final : public stmt_call {
         const machine::builtin_function_registers registers{
             x.registers_for_builtin_function(function),
         };
+
         const std::vector<operand> args{
             compile_array_arguments(tc, indent, registers.arguments),
         };

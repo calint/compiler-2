@@ -123,6 +123,7 @@ class stmt_def_var final : public statement {
 
         // later statements read the size while parsing, e.g. 'var b = a'
         token bracket_tk;
+
         trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
             const expr_any initializer{tc, tz, get_type(), false, true, 0};
 

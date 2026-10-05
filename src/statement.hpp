@@ -28,6 +28,15 @@ class statement {
     unary_ops uops_;
     const type* type_{};
 
+    // a part of the source text as it reads, a source comment, or a string or
+    // character literal
+    enum class piece_kind : uint8_t { code, comment, literal };
+
+    struct source_piece {
+        piece_kind kind;
+        std::string_view text;
+    };
+
   public:
     explicit statement(const token tk, unary_ops uops = {})
         : token_{tk}, uops_{std::move(uops)} {}
@@ -416,15 +425,6 @@ class statement {
     // statics
     //
 
-    // a part of the source text as it reads, a source comment, or a string or
-    // character literal
-    enum class piece_kind : uint8_t { code, comment, literal };
-
-    struct source_piece {
-        piece_kind kind;
-        std::string_view text;
-    };
-
     // one line for an assembler comment: whitespace and source comments
     // become single spaces, string and character literals are kept as written
     //   'a  =  b # note'  =>  'a = b'
@@ -471,57 +471,6 @@ class statement {
         return collapsed;
     }
 
-    // a '#' inside a string or character literal does not start a comment and
-    // a quote inside a comment does not start a literal
-    //   'a = "#" # it's'  =>  code 'a = ', literal '"#"', code ' ',
-    //                         comment '# it's'
-    [[nodiscard]] static auto split_into_pieces(const std::string_view text)
-        -> std::vector<source_piece> {
-
-        std::vector<source_piece> pieces;
-        size_t code_begin{};
-        size_t index{};
-
-        while (index < text.size()) {
-            const char ch{text.at(index)};
-
-            if (ch != '#' and ch != '"' and ch != '\'') {
-                ++index;
-                continue;
-            }
-
-            if (index > code_begin) {
-                pieces.push_back({
-                    .kind{piece_kind::code},
-                    .text{text.substr(code_begin, index - code_begin)},
-                });
-            }
-
-            const bool is_comment{ch == '#'};
-            const size_t end{
-                is_comment ? comment_end(text, index)
-                           : literal_end(text, index),
-            };
-
-            pieces.push_back({
-                .kind{is_comment ? piece_kind::comment : piece_kind::literal},
-                .text{text.substr(index, end - index)},
-            });
-
-            index = end;
-            code_begin = end;
-        }
-
-        if (code_begin < text.size()) {
-            pieces.push_back({
-                .kind{piece_kind::code},
-                .text{text.substr(code_begin)},
-            });
-        }
-
-        return pieces;
-    }
-
     // after the line end of the comment starting at 'begin', or the end of the
     // text
     [[nodiscard]] static auto comment_end(const std::string_view text,
@@ -534,6 +483,11 @@ class statement {
 
         return newline + 1;
         // note: +1 because the line end belongs to the comment
+    }
+
+    [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
+        return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or
+               ch == '\f' or ch == '\v';
     }
 
     // after the closing quote of the literal starting at 'begin', or the end
@@ -591,8 +545,55 @@ class statement {
         return kept;
     }
 
-    [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
-        return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or
-               ch == '\f' or ch == '\v';
+    // a '#' inside a string or character literal does not start a comment and
+    // a quote inside a comment does not start a literal
+    //   'a = "#" # it's'  =>  code 'a = ', literal '"#"', code ' ',
+    //                         comment '# it's'
+    [[nodiscard]] static auto split_into_pieces(const std::string_view text)
+        -> std::vector<source_piece> {
+
+        std::vector<source_piece> pieces;
+        size_t code_begin{};
+        size_t index{};
+
+        while (index < text.size()) {
+            const char ch{text.at(index)};
+
+            if (ch != '#' and ch != '"' and ch != '\'') {
+                ++index;
+                continue;
+            }
+
+            if (index > code_begin) {
+                pieces.push_back({
+                    .kind{piece_kind::code},
+                    .text{text.substr(code_begin, index - code_begin)},
+                });
+            }
+
+            const bool is_comment{ch == '#'};
+
+            const size_t end{
+                is_comment ? comment_end(text, index)
+                           : literal_end(text, index),
+            };
+
+            pieces.push_back({
+                .kind{is_comment ? piece_kind::comment : piece_kind::literal},
+                .text{text.substr(index, end - index)},
+            });
+
+            index = end;
+            code_begin = end;
+        }
+
+        if (code_begin < text.size()) {
+            pieces.push_back({
+                .kind{piece_kind::code},
+                .text{text.substr(code_begin)},
+            });
+        }
+
+        return pieces;
     }
 };

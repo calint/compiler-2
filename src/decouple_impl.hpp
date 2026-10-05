@@ -163,6 +163,7 @@ auto instantiate_generic_method(toc& tc, const token& func_tk,
     } catch (compiler_exception& e) {
         e.add_call_frame(instance.src_loc_tk, instance.alias_text(),
                          "instantiated by");
+
         throw;
     }
 }
@@ -427,6 +428,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
             }
             expr_delims_tk_.emplace_back(t);
         }
+
         // create an expression that assigns to field
         // might recurse creating 'expr_type'
         exprs_.emplace_back(std::make_unique<expr_any>(
@@ -600,6 +602,7 @@ auto expr_type::assert_record_field_not_reading(const expr_any& src,
 
     for (size_t i{}; i < src.element_count(); ++i) {
         const expr_type& element{src.as_expr_type(i)};
+
         const size_t element_offset{
             field_offset +
                 multiply_storage_size(src.tok(), element_size_bytes, i),
@@ -741,6 +744,7 @@ auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     }
 
     std::vector<operand> allocated_registers;
+
     const operand src_op{
         tc.get_lea_operand(indent, *this, src_info, allocated_registers),
     };

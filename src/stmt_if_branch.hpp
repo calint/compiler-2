@@ -39,6 +39,12 @@ class stmt_if_branch final : public statement {
     // class methods
     //
 
+    // the label where the if branch begins evaluating the boolean
+    // expression
+    [[nodiscard]] auto begin_label(const toc& tc) const -> std::string {
+        return tc.create_unique_label(tok(), "if");
+    }
+
     [[nodiscard]] auto
     compile_branch(toc& tc, const size_t indent,
                    const std::string_view jmp_to_if_false_label,
@@ -46,6 +52,7 @@ class stmt_if_branch final : public statement {
         -> std::optional<bool> {
 
         const std::string if_label{begin_label(tc)};
+
         const std::string jmp_to_if_true_label{
             std::format("{}.code", if_label),
         };
@@ -55,6 +62,7 @@ class stmt_if_branch final : public statement {
         machine& x{tc.machine()};
 
         x.label(indent, if_label);
+
         const std::optional<bool> const_eval{
             condition_.compile(tc, indent, jmp_to_if_false_label,
                                jmp_to_if_true_label, {}),
@@ -79,11 +87,5 @@ class stmt_if_branch final : public statement {
         }
 
         return std::nullopt;
-    }
-
-    // the label where the if branch begins evaluating the boolean
-    // expression
-    [[nodiscard]] auto begin_label(const toc& tc) const -> std::string {
-        return tc.create_unique_label(tok(), "if");
     }
 };
