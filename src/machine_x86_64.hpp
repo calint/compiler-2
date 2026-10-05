@@ -169,9 +169,11 @@ class machine_x86_64 final : public machine {
 
     static constexpr std::array<std::string_view, 14> scratch_registers_{
         "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
-        "r11", "rbx", "rsi", "rdi", "rcx", "rdx", "rax",
+        "r11", "rbx", "rdx", "rax", "rsi", "rdi", "rcx",
     };
-    // note: in order of likelihood they are not used by name
+    // note: in order of likelihood they are not used by name, 'rsi', 'rdi'
+    //       and 'rcx' last since every copy and compare of memory needs all
+    //       three
     //       'r11' and 'rcx' are saved around syscalls if they are allocated
     //       because 'syscall' clobbers them
 

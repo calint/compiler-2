@@ -914,15 +914,16 @@ func main() {
 // 4. host checks: the x86_64 backend
 // ============================================================================
 
-// the registers handed out first are the ones no instruction needs: 'rcx',
-// 'rdx' and 'rax' come last, also after a register was freed again
+// the registers handed out first are the ones no instruction needs: 'rdx' and
+// 'rax' come late and 'rsi', 'rdi' and 'rcx', which every copy and compare of
+// memory needs, last, also after a register was freed again
 auto check_x86_scratch_registers() -> void {
     std::ostringstream x86_output;
     machine_x86_64 x86_backend{x86_output, {}};
     x86_backend.set_builtin_types(integer64, integer, half, byte);
     constexpr std::array<std::string_view, 14> x86_scratch_order{
         "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
-        "r11", "rbx", "rsi", "rdi", "rcx", "rdx", "rax"};
+        "r11", "rbx", "rdx", "rax", "rsi", "rdi", "rcx"};
 
     for (size_t pass{}; pass < 2; ++pass) {
         std::vector<operand> registers;
@@ -953,11 +954,11 @@ auto check_x86_scratch_registers() -> void {
         }
         const operand ordinary{
             x86_backend.alloc_scratch_register(token{}, 0, integer64)};
-        assert(ordinary.base_register() == "rdx");
+        assert(ordinary.base_register() == "rdi");
         registers.push_back(ordinary);
         const operand special{
             x86_backend.alloc_scratch_register(token{}, 0, integer64)};
-        assert(special.base_register() == "rax");
+        assert(special.base_register() == "rcx");
         registers.push_back(special);
         x86_backend.free_scratch_registers(token{}, 0, registers);
         x86_backend.finish();
