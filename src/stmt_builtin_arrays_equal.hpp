@@ -3,7 +3,6 @@
 #include <format>
 #include <ostream>
 #include <string>
-#include <vector>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"

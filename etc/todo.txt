@@ -5,6 +5,26 @@ each open item starts with its difficulty: easy, medium or hard
 --------------------------------------------------------------------------------
 better assembler code, medium, largest gain first
 --------------------------------------------------------------------------------
+[o] hard: cleanup before the next feature, plan (no new files, behavior
+    preserved, each step built, 'test-coverage.sh' x86 and rv32i, lint, format)
+    [x] untrack the core file and the two test binaries, ignore them
+    [x] drop unused includes (5 headers)
+    [ ] machine_rv32i.hpp: repeated chunk-loop code in 'copy_runtime_count'
+        (2478, 149 lines) and 'compare_runtime_walk' (2072, 145 lines):
+        head check, 'chunks' end register, loop of whole chunks, tail; extract
+        named steps shared by both, in the same file
+    [ ] machine_rv32i.hpp: group the 178 methods by concern (arithmetic,
+        memory and bulk copy, branches and comparisons, builtins, bounds)
+        with section comments, no file split
+    [ ] machine_x86_64.hpp: the same grouping
+    [ ] machine.hpp: target-independent steps found in both machines move to
+        'machine' as non-virtual helpers
+    [ ] toc.hpp: group the 92 'toc' methods and split frame and variable
+        storage handling into a class in the same file
+    [ ] 'compile_lea' callers repeating a long argument list
+        ('stmt_builtin_array_copy', 'stmt_builtin_equal'): one helper
+    [ ] missing direct includes (153 of misc-include-cleaner, 'std::format',
+        'size_t', ...): add per header
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
 [ ] medium: roome.baz: an inline bool call used as a condition is materialized
