@@ -135,7 +135,9 @@ better assembler code, medium, largest gain first
        'machine::check_bounds' as the one sequence (lower, upper, what the
        other one covers, what a count already checked) with hooks that emit
        the compare and the branch
-    8. 'toc' is 1370 lines with 92 methods: the scope stack with lookups and
+    8. [x] done (2026-10-05): 'scope_stack', 'storage_layout',
+       'builtin_types' and 'ident_resolver' in 'toc.hpp', 'toc' forwards;
+       was: 'toc' is 1370 lines with 92 methods: the scope stack with lookups and
        aliases, the storage allocation ('add_var', 'find_storage_location',
        'next_frame_address', the entry gap), the identifier resolution
        ('make_ident_info*'), the labels and source locations and the check

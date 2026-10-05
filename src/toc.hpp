@@ -843,7 +843,167 @@ struct usage_statistics {
     std::vector<std::string> uninstantiated_generics;
 };
 
-class toc final {
+// the frames of the scopes being compiled, from the root frame that holds the
+// globals to the innermost one
+class scope_stack final {
+    std::vector<frame> frames_;
+    size_t max_depth_{};
+
+  public:
+    [[nodiscard]] auto back() -> frame& { return frames_.back(); }
+
+    [[nodiscard]] auto back() const -> const frame& { return frames_.back(); }
+
+    // blocks and loops belong to the function frame below them
+    [[nodiscard]] auto current_func_frame() const -> const frame& {
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_func()) {
+                return frm;
+            }
+        }
+
+        std::unreachable();
+    }
+
+    auto enter_block() -> void {
+        frames_.emplace_back("", frame::frame_type::block);
+        track_depth();
+    }
+
+    auto enter_foo(const std::string_view name) -> void {
+        frames_.emplace_back(name, frame::frame_type::foo);
+        track_depth();
+    }
+
+    // a function compiled in place, 'return' jumps to 'return_jmp_label'
+    auto enter_func(const std::string_view name,
+                    const std::string_view call_path,
+                    const std::string_view return_jmp_label) -> void {
+
+        frames_.emplace_back(name, frame::frame_type::func,
+                             std::string{call_path},
+                             std::string{return_jmp_label}, true);
+
+        track_depth();
+    }
+
+    auto enter_loop(const std::string_view name) -> void {
+        frames_.emplace_back(name, frame::frame_type::loop);
+        track_depth();
+    }
+
+    // a function with a body of its own, its variables are placed from
+    // 'storage_base_register' when not empty
+    auto enter_noninline_func(const std::string_view name,
+                              const std::string_view call_path,
+                              const std::string_view storage_base_register)
+        -> void {
+
+        frames_.emplace_back(name, frame::frame_type::func,
+                             std::string{call_path}, std::string{}, false,
+                             storage_base_register);
+
+        track_depth();
+    }
+
+    // constants of the current function, then the global ones, not those of
+    // the calling functions
+    [[nodiscard]] auto find_const(const std::string_view name) const
+        -> const const_info* {
+
+        for (const frame& f : frames_ | std::views::reverse) {
+            if (f.has_const(name)) {
+                return &f.get_const(name);
+            }
+
+            if (f.is_func()) {
+                break;
+            }
+        }
+
+        if (frames_.front().has_const(name)) {
+            return &frames_.front().get_const(name);
+        }
+
+        return nullptr;
+    }
+
+    [[nodiscard]] auto frames() -> std::vector<frame>& { return frames_; }
+
+    [[nodiscard]] auto frames() const -> const std::vector<frame>& {
+        return frames_;
+    }
+
+    [[nodiscard]] auto front() -> frame& { return frames_.front(); }
+
+    [[nodiscard]] auto front() const -> const frame& { return frames_.front(); }
+
+    [[nodiscard]] auto is_empty() const -> bool { return frames_.empty(); }
+
+    [[nodiscard]] auto is_in_loop_block() const -> bool {
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_foo()) {
+                return false;
+            }
+
+            if (frm.is_loop()) {
+                return true;
+            }
+        }
+
+        std::unreachable();
+    }
+
+    // same scoping as the identifier resolution, e.g. a variable 'limits'
+    // hides the type 'limits'
+    [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
+        -> bool {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.has_var(name)) {
+                return true;
+            }
+
+            if (frm.is_func()) {
+                return frm.has_alias(name) or frames_.front().has_var(name);
+            }
+        }
+
+        return false;
+    }
+
+    [[nodiscard]] auto looping_label_or_throw(const token& src_loc_tk) const
+        -> std::string_view {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_loop() or frm.is_foo()) {
+                return frm.name();
+            }
+
+            if (frm.is_func()) {
+                throw compiler_exception{src_loc_tk, "not in a loop"};
+            }
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
+
+    auto pop() -> void { frames_.pop_back(); }
+
+    auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
+
+  private:
+    auto track_depth() -> void {
+        max_depth_ = std::max(frames_.size(), max_depth_);
+    }
+};
+
+// where the variables and the dats are placed: the running size of the
+// variables section, the frames that have a storage base of their own, the
+// capacity of the section and the target limits
+class storage_layout final {
     // where a variable is placed, 'storage_frame' is null at the variables base
     struct storage_location {
         frame* storage_frame;
@@ -851,35 +1011,620 @@ class toc final {
     };
 
     std::reference_wrapper<::machine> machine_;
-    std::string_view source_;
-    std::vector<frame> frames_;
-    data_table data_;
-    function_table funcs_;
-    generic_registry generics_;
-    type_table types_;
-    const type* type_void_{};
-    const type* type_bool_{};
-    const type* type_i64_{};
-    const type* type_i32_{};
-    const type* type_i16_{};
-    const type* type_i8_{};
-    size_t usage_max_frame_count_{};
-    size_t usage_max_vars_size_bytes_{};
+    std::reference_wrapper<scope_stack> scopes_;
+    std::reference_wrapper<const data_table> data_;
     size_t vars_size_bytes_{};
     size_t vars_capacity_bytes_;
-    bool vars_entry_gap_applied_{};
-    check_options checks_;
+    size_t max_vars_size_bytes_{};
+    bool entry_gap_applied_{};
+
     // the locals of a dry run live in the callee's own frame
     bool capacity_unchecked_{};
 
   public:
+    // what a dry run changes and 'end_dry_run' puts back
+    struct dry_run_state {
+        bool capacity_unchecked;
+        size_t max_vars_size_bytes;
+        frame* storage_frame;
+        size_t peak_storage_size_bytes;
+    };
+
+    storage_layout(::machine& backend, scope_stack& scopes,
+                   const data_table& data, const size_t vars_capacity_bytes)
+        : machine_{backend}, scopes_{scopes}, data_{data},
+          vars_capacity_bytes_{vars_capacity_bytes} {}
+
+    // places 'var' in the innermost storage that has room and returns the
+    // bytes it takes with the alignment padding, 'var.offset' is set
+    [[nodiscard]] auto allocate(const token& src_loc_tk, var_info& var,
+                                const var_kind kind) -> size_t {
+
+        const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
+        const size_t var_alignment{var_storage_alignment(var)};
+
+        if (kind != var_kind::dat) {
+            apply_entry_gap(src_loc_tk);
+        }
+
+        // offsets are relative to the variables base or to the nearest frame
+        // with its own storage base, both are aligned
+        const storage_location location{find_storage_location(kind)};
+
+        frame* const storage_frame{location.storage_frame};
+        const size_t base_offset{location.base_offset};
+
+        const size_t padding_bytes{
+            align_storage_size(base_offset, var_alignment) - base_offset,
+        };
+
+        const size_t allocated_size_bytes{
+            add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
+        };
+
+        if (kind != var_kind::dat) {
+            assert_vars_capacity(src_loc_tk, var.name, allocated_size_bytes);
+        }
+
+        var.offset = address_offset(base_offset + padding_bytes);
+
+        if (storage_frame) {
+            var.base_register = storage_frame->storage_base_register();
+
+            storage_frame->record_storage_size_bytes(add_storage_size(
+                src_loc_tk, base_offset, allocated_size_bytes));
+        } else {
+            var.offset =
+                add_address_offset(var.offset, -variables_base_shift_bytes());
+        }
+
+        // the total accepts the size before a frame sums it
+        vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
+                                            allocated_size_bytes);
+
+        assert_storage_fits_target(src_loc_tk);
+
+        if (kind != var_kind::dat) {
+            max_vars_size_bytes_ =
+                std::max(used_vars_size_bytes(), max_vars_size_bytes_);
+        }
+
+        return allocated_size_bytes;
+    }
+
+    auto assert_released() const -> void { assert(vars_size_bytes_ == 0); }
+
+    auto begin_dry_run() -> dry_run_state {
+        frame* const storage_frame{
+            find_storage_location(var_kind::var).storage_frame,
+        };
+
+        const dry_run_state saved{
+            .capacity_unchecked{capacity_unchecked_},
+            .max_vars_size_bytes{max_vars_size_bytes_},
+            .storage_frame{storage_frame},
+            .peak_storage_size_bytes{
+                storage_frame ? storage_frame->peak_storage_size_bytes() : 0,
+            },
+        };
+
+        capacity_unchecked_ = true;
+
+        return saved;
+    }
+
+    auto end_dry_run(const dry_run_state& saved) -> void {
+        capacity_unchecked_ = saved.capacity_unchecked;
+        max_vars_size_bytes_ = saved.max_vars_size_bytes;
+
+        if (saved.storage_frame) {
+            saved.storage_frame->restore_peak_storage_size_bytes(
+                saved.peak_storage_size_bytes);
+        }
+    }
+
+    [[nodiscard]] auto max_vars_size_bytes() const -> size_t {
+        return max_vars_size_bytes_;
+    }
+
+    // a callee frame starts aligned for any variable it holds
+    [[nodiscard]] auto next_frame_address(const type& address_type) const
+        -> operand {
+
+        const size_t frame_alignment{machine_.get().address_size_bytes()};
+
+        size_t local_size_bytes{};
+        for (const frame& frm : scopes_.get().frames() | std::views::reverse) {
+            local_size_bytes = sum_storage_size(
+                local_size_bytes, frm.allocated_stack_size_bytes());
+
+            if (not frm.storage_base_register().empty()) {
+                return operand::mem(frm.storage_base_register(), {}, 1,
+                                    address_offset(align_storage_size(
+                                        local_size_bytes, frame_alignment)),
+                                    address_type);
+            }
+        }
+
+        const size_t root_size_bytes{
+            sum_storage_size(vars_size_bytes_,
+                             entry_gap_applied_ ? 0 : data_.get().entry_gap()),
+        };
+
+        const size_t aligned_size_bytes{
+            align_storage_size(root_size_bytes, frame_alignment),
+        };
+
+        const int64_t offset_from_dat{address_offset(aligned_size_bytes)};
+
+        const int64_t offset_from_base{
+            add_address_offset(offset_from_dat, -variables_base_shift_bytes()),
+        };
+
+        return operand::mem(machine_.get().variables_base_register(), {}, 1,
+                            offset_from_base, address_type);
+    }
+
+    [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
+        for (const frame& frm : scopes_.get().frames() | std::views::reverse) {
+            if (not frm.storage_base_register().empty()) {
+                return frm.peak_storage_size_bytes();
+            }
+        }
+
+        std::unreachable();
+    }
+
+    // the root frame applies the dat var gap again when it is entered anew
+    auto pop_scope() -> void {
+        vars_size_bytes_ -= scopes_.get().back().allocated_stack_size_bytes();
+        scopes_.get().pop();
+
+        if (not scopes_.get().is_empty()) {
+            return;
+        }
+
+        assert(vars_size_bytes_ == 0);
+
+        entry_gap_applied_ = false;
+    }
+
+    // all frames are popped and the usage of the last build is forgotten
+    auto reset_usage() -> void {
+        assert(vars_size_bytes_ == 0);
+
+        max_vars_size_bytes_ = 0;
+    }
+
+  private:
+    // the first variable after the dats starts past the entry gap
+    auto apply_entry_gap(const token& src_loc_tk) -> void {
+        if (entry_gap_applied_) {
+            return;
+        }
+
+        scopes_.get().front().set_padding_between_dats_and_vars(
+            data_.get().entry_gap());
+
+        vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
+                                            data_.get().entry_gap());
+
+        entry_gap_applied_ = true;
+    }
+
+    // the declaration that takes the data and variables past what the target
+    // addresses is the error, not the end of the build
+    auto assert_storage_fits_target(const token& src_loc_tk) const -> void {
+        const size_t max_bytes{machine_.get().max_storage_bytes()};
+
+        if (vars_size_bytes_ <= max_bytes) {
+            return;
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("data and variables of {} B exceed the {} B that the "
+                        "target addresses",
+                        vars_size_bytes_, max_bytes)};
+    }
+
+    auto assert_vars_capacity(const token& src_loc_tk,
+                              const std::string_view name,
+                              const size_t allocated_size_bytes) const -> void {
+
+        if (capacity_unchecked_ or
+            allocated_size_bytes <=
+                vars_capacity_bytes_ - used_vars_size_bytes()) {
+
+            return;
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("variable '{}' would overflow allocated vars section",
+                        name)};
+    }
+
+    // a local starts after the storage in use of the nearest frame with its own
+    // storage base and of the frames inside it, other variables and dats start
+    // at the variables base
+    [[nodiscard]] auto find_storage_location(const var_kind kind)
+        -> storage_location {
+
+        if (kind == var_kind::dat) {
+            return {.storage_frame{}, .base_offset{vars_size_bytes_}};
+        }
+
+        size_t local_size_bytes{};
+
+        for (frame& frm : scopes_.get().frames() | std::views::reverse) {
+            local_size_bytes = sum_storage_size(
+                local_size_bytes, frm.allocated_stack_size_bytes());
+
+            if (not frm.storage_base_register().empty()) {
+                return {.storage_frame{&frm}, .base_offset{local_size_bytes}};
+            }
+        }
+
+        return {.storage_frame{}, .base_offset{vars_size_bytes_}};
+    }
+
+    // bytes of variables, without the dats and the gap after them
+    [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
+        return vars_size_bytes_ - data_.get().total_size_bytes() -
+               data_.get().entry_gap();
+    }
+
+    [[nodiscard]] auto var_storage_alignment(const var_info& var) const
+        -> size_t {
+
+        if (var.is_pointer) {
+            return machine_.get().address_size_bytes();
+        }
+
+        return var.type_ptr->alignment();
+    }
+
+    [[nodiscard]] auto var_storage_size_bytes(const token& src_loc_tk,
+                                              const var_info& var) const
+        -> size_t {
+
+        if (var.is_pointer) {
+            return machine_.get().address_size_bytes();
+        }
+
+        return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
+                                     var.is_array ? var.array_len : 1);
+    }
+
+    // offsets count from 'dat', a base register past 'vars' makes the dats
+    // negative and the variables start below the base
+    [[nodiscard]] auto variables_base_shift_bytes() const -> int64_t {
+        const std::optional<size_t> past_vars_bytes{
+            machine_.get().variables_base_past_vars_bytes(),
+        };
+
+        if (not past_vars_bytes) {
+            return 0;
+        }
+
+        const size_t dats_bytes{
+            sum_storage_size(data_.get().total_size_bytes(),
+                             data_.get().entry_gap()),
+        };
+
+        return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
+    }
+};
+
+// the types the front end needs by role: the builtin ones given by the
+// program and the ones the machine decides
+class builtin_types final {
+    std::reference_wrapper<const ::machine> machine_;
+    const type* void_{};
+    const type* bool_{};
+    const type* i64_{};
+    const type* i32_{};
+    const type* i16_{};
+    const type* i8_{};
+
+  public:
+    explicit builtin_types(const ::machine& backend) : machine_{backend} {}
+
+    [[nodiscard]] auto address() const -> const type& {
+        return machine_.get().address_size_bytes() == 4 ? *i32_ : *i64_;
+    }
+
+    [[nodiscard]] auto boolean() const -> const type& { return *bool_; }
+
+    [[nodiscard]] auto default_type() const -> const type& {
+        return machine_.get().default_type();
+    }
+
+    [[nodiscard]] auto i8() const -> const type& { return *i8_; }
+
+    // 'int' and the names of the builtin integer types
+    [[nodiscard]] auto is_integer_name(const std::string_view name) const
+        -> bool {
+
+        return name == "int" or name == i8_->name() or name == i16_->name() or
+               name == i32_->name() or name == i64_->name();
+    }
+
+    auto set_boolean(const type& tpe) -> void { bool_ = &tpe; }
+
+    auto set_integers(const type& t_i64, const type& t_i32, const type& t_i16,
+                      const type& t_i8) -> void {
+
+        i64_ = &t_i64;
+        i32_ = &t_i32;
+        i16_ = &t_i16;
+        i8_ = &t_i8;
+    }
+
+    auto set_void(const type& tpe) -> void { void_ = &tpe; }
+
+    [[nodiscard]] auto void_type() const -> const type& { return *void_; }
+};
+
+// resolves a name to a variable, a register or a constant by walking the
+// frames from the innermost outwards and following aliases
+class ident_resolver final {
+    std::reference_wrapper<const scope_stack> scopes_;
+    std::reference_wrapper<const ::machine> machine_;
+    std::reference_wrapper<const generic_registry> generics_;
+    std::reference_wrapper<const builtin_types> builtins_;
+
+  public:
+    ident_resolver(const scope_stack& scopes, const ::machine& backend,
+                   const generic_registry& generics,
+                   const builtin_types& builtins)
+        : scopes_{scopes}, machine_{backend}, generics_{generics},
+          builtins_{builtins} {}
+
+    // the diagnostic names what an unresolved identifier is instead
+    [[nodiscard]] auto resolve(const token& src_loc_tk,
+                               const std::string_view ident) const
+        -> ident_info {
+
+        const ident_info id_info{resolve_or_empty(src_loc_tk, ident)};
+
+        if (not id_info.is_empty()) {
+            return id_info;
+        }
+
+        if (generics_.get().has_type(ident)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("generic type '{}' is not a value, name an "
+                            "instance first, e.g. 'type str = {}<...>'",
+                            ident, ident)};
+        }
+
+        if (generics_.get().has_func(ident)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("generic function '{}' needs type arguments, "
+                            "e.g. '{}<...>'",
+                            ident, ident)};
+        }
+
+        throw compiler_exception{
+            src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
+    }
+
+  private:
+    [[nodiscard]] auto resolve_constant_or_empty(const token& src_loc_tk,
+                                                 const std::string_view ident,
+                                                 const ident_path& id) const
+        -> ident_info {
+
+        // an integer constant
+        if (const std::optional<int64_t> value{
+                constant_parser::parse_constant(src_loc_tk, id.str()),
+            };
+            value) {
+
+            return ident_info::make_const(
+                ident, id.str(), builtins_.get().default_type(), *value);
+        }
+
+        // a boolean constant
+        if (id.base() == "true") {
+            return ident_info::make_const(ident, id.str(),
+                                          builtins_.get().boolean(), 1);
+        }
+
+        if (id.base() == "false") {
+            return ident_info::make_const(ident, id.str(),
+                                          builtins_.get().boolean(), 0);
+        }
+
+        // is 'id' a constant?
+        if (scopes_.get().find_const(id.str()) != nullptr) {
+            return ident_info::make_const(
+                ident, id.str(), builtins_.get().default_type(),
+                scopes_.get().find_const(id.str())->value);
+        }
+
+        // not resolved, return empty info
+        return ident_info::make_empty();
+    }
+
+    [[nodiscard]] auto
+    resolve_in_frame(const frame& frm, const token& src_loc_tk,
+                     const std::string_view ident, const ident_path& id,
+                     std::vector<operand> lea_path) const -> ident_info {
+
+        // try function scope
+        if (frm.has_var(id.base())) {
+            return resolve_var(src_loc_tk, ident, id,
+                               frm.get_var_const_ref(id.base()),
+                               std::move(lea_path));
+        }
+
+        // try global scope
+        if (scopes_.get().front().has_var(id.base())) {
+            return resolve_var(
+                src_loc_tk, ident, id,
+                scopes_.get().front().get_var_const_ref(id.base()), lea_path);
+        }
+
+        // try constant
+        return resolve_constant_or_empty(src_loc_tk, ident, id);
+    }
+
+    // reviewed: 2026-09-09
+    [[nodiscard]] auto resolve_or_empty(const token& src_loc_tk,
+                                        const std::string_view ident) const
+        -> ident_info {
+
+        assert(not ident.empty());
+
+        ident_path id{std::string{ident}};
+
+        assert(not id.path().empty());
+
+        // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
+        // traverse the frames and resolve to a variable, register or constant
+
+        std::vector<operand> lea_path;
+
+        // note: 'lea' describes the effective address of an identifier's data
+        //       'lea_path' associates address operands with identifier
+        //       components; it is built while walking frames from the
+        //       innermost outwards and reversed before use
+
+        // ignore the elements after the first element:
+        //  e.g.: lnks[1].pos.y
+        //   ignore pos.y since those cannot have a lea
+        //   add empty leas for those
+        //   note: 'lea_path' will be reversed when complete so that
+        //          'ident_path' elements have corresponding lea
+
+        lea_path.insert(lea_path.end(), id.path().size() - 1, operand{});
+        // note: -1 to exclude the first element
+
+        // an alias of an element names the element, not the array holding it
+        bool is_element{};
+
+        for (const frame& cur_frame :
+             scopes_.get().frames() | std::views::reverse) {
+
+            // does this frame contain the variable?
+            if (cur_frame.has_var(id.base())) {
+                ident_info info{
+                    resolve_in_frame(cur_frame, src_loc_tk, ident, id,
+                                     std::move(lea_path)),
+                };
+
+                return ident_builder::as_element_if(is_element,
+                                                    std::move(info));
+            }
+
+            // from the root frame of a function aliases are followed to the
+            // actual variable referred to
+            if (not cur_frame.is_func()) {
+                continue;
+            }
+
+            if (not cur_frame.has_alias(id.base())) {
+                lea_path.emplace_back();
+
+                ident_info info{
+                    resolve_in_frame(cur_frame, src_loc_tk, ident, id,
+                                     std::move(lea_path)),
+                };
+
+                return ident_builder::as_element_if(is_element,
+                                                    std::move(info));
+            }
+
+            // this is an alias, continue resolving until it is a variable,
+            // register or constant
+
+            const alias_info& alias{cur_frame.get_alias(id.base())};
+
+            if (alias.register_operand.is_register() and
+                id.path().size() == 1) {
+
+                return ident_info::make_register(ident, alias.register_operand);
+            }
+
+            // a field path such as 'p.x' gets its array-ness from the field
+            if (alias.is_element and id.path().size() == 1) {
+                is_element = true;
+            }
+
+            lea_path.emplace_back(alias.lea);
+
+            id = ident_builder::replace_alias_base(alias, id, lea_path);
+        }
+
+        return resolve_constant_or_empty(src_loc_tk, ident, id);
+    }
+
+    [[nodiscard]] auto resolve_var(const token& src_loc_tk,
+                                   const std::string_view ident,
+                                   const ident_path& id, const var_info& var,
+                                   std::vector<operand> lea_path) const
+        -> ident_info {
+
+        if (var.value_register.is_register() and id.path().size() == 1) {
+            return ident_info::make_register(ident, var.value_register);
+        }
+
+        ident_info ii{
+            ident_builder::make_var_ident_info(
+                src_loc_tk, ident, id.path(), var,
+                machine_.get().variables_base_register()),
+        };
+
+        ii.read_only_why = var.read_only_why;
+
+        lea_path.resize(id.path().size());
+        // note: pad with empty for the remaining elements in the id path
+
+        std::ranges::reverse(lea_path);
+        // note: reverse it since it was constructed while traversing
+        //       upwards in the frame stack but 'elem_path' and 'type_path'
+        //       are ordered from the top down
+
+        ii.lea_path = std::move(lea_path);
+
+        if (not ii.type_ref().is_builtin()) {
+            return ii;
+        }
+
+        ident_builder::place_operand_from_lea(src_loc_tk, ii);
+
+        return ii;
+    }
+};
+
+class toc final {
+    std::reference_wrapper<::machine> machine_;
+    std::string_view source_;
+    scope_stack scopes_;
+    data_table data_;
+    function_table funcs_;
+    generic_registry generics_;
+    type_table types_;
+    builtin_types builtins_;
+    ident_resolver resolver_;
+    storage_layout storage_;
+    check_options checks_;
+
+  public:
     toc(::machine& backend, const std::string_view source,
         const size_t vars_capacity_bytes, const check_options& checks)
-        : machine_{backend}, source_{source},
-          vars_capacity_bytes_{vars_capacity_bytes}, checks_{checks} {}
+        : machine_{backend}, source_{source}, builtins_{backend},
+          resolver_{scopes_, backend, generics_, builtins_},
+          storage_{backend, scopes_, data_, vars_capacity_bytes},
+          checks_{checks} {}
 
     auto add_alias(const alias_info& ai) -> void {
-        frames_.back().add_alias(ai);
+        scopes_.back().add_alias(ai);
     }
 
     // e.g. the packed elements of a constant '{...}' initializer
@@ -902,7 +1647,7 @@ class toc final {
                    const std::string_view name, const int64_t value) {
 
         if (has_const_in_current_block(name)) {
-            const const_info& c{frames_.back().get_const(name)};
+            const const_info& c{scopes_.back().get_const(name)};
 
             throw compiler_exception{
                 src_loc_tk,
@@ -914,19 +1659,19 @@ class toc final {
 
         x.comment(src_loc_tk, indent, "const {} = {}", name, value);
 
-        frames_.back().add_const(name, {
+        scopes_.back().add_const(name, {
                                            .src_loc_tk{src_loc_tk},
                                            .value{value},
                                        });
     }
 
     auto add_dat(const statement* const stmt) -> void {
-        if (frames_.size() != 1) {
+        if (scopes_.frames().size() != 1) {
             throw compiler_exception{stmt->tok(),
                                      "'dat' can only be added in global scope"};
         }
 
-        if (frames_.front().has_non_dat_var_been_added()) {
+        if (scopes_.front().has_non_dat_var_been_added()) {
             throw compiler_exception{
                 stmt->tok(), "'dat' can only be added before any 'var'"};
         }
@@ -999,63 +1744,17 @@ class toc final {
 
         // the value lives in its register for the whole scope
         if (not var.value_register.is_empty()) {
-            frames_.back().add_var(var, 0, kind);
+            scopes_.back().add_var(var, 0, kind);
             comment_var(src_loc_tk, indent, var);
 
             return;
         }
 
-        const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
-        const size_t var_alignment{var_storage_alignment(var)};
-
-        if (kind != var_kind::dat) {
-            apply_entry_gap(src_loc_tk);
-        }
-
-        // offsets are relative to the variables base or to the nearest frame
-        // with its own storage base, both are aligned
-        const storage_location location{find_storage_location(kind)};
-
-        frame* const storage_frame{location.storage_frame};
-        const size_t base_offset{location.base_offset};
-
-        const size_t padding_bytes{
-            align_storage_size(base_offset, var_alignment) - base_offset,
-        };
-
         const size_t allocated_size_bytes{
-            add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
+            storage_.allocate(src_loc_tk, var, kind),
         };
 
-        if (kind != var_kind::dat) {
-            assert_vars_capacity(src_loc_tk, var.name, allocated_size_bytes);
-        }
-
-        var.offset = address_offset(base_offset + padding_bytes);
-
-        if (storage_frame) {
-            var.base_register = storage_frame->storage_base_register();
-
-            storage_frame->record_storage_size_bytes(add_storage_size(
-                src_loc_tk, base_offset, allocated_size_bytes));
-        } else {
-            var.offset =
-                add_address_offset(var.offset, -variables_base_shift_bytes());
-        }
-
-        // the total accepts the size before a frame sums it
-        vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
-                                            allocated_size_bytes);
-
-        assert_storage_fits_target(src_loc_tk);
-
-        frames_.back().add_var(var, allocated_size_bytes, kind);
-
-        // stats
-        if (kind != var_kind::dat) {
-            usage_max_vars_size_bytes_ =
-                std::max(used_vars_size_bytes(), usage_max_vars_size_bytes_);
-        }
+        scopes_.back().add_var(var, allocated_size_bytes, kind);
 
         comment_var(src_loc_tk, indent, var);
     }
@@ -1090,32 +1789,16 @@ class toc final {
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace
     auto check_only(const std::function_ref<void()> compile) -> void {
-        frame* const storage_frame{
-            find_storage_location(var_kind::var).storage_frame,
-        };
-
-        const size_t max_frame_count{usage_max_frame_count_};
-        const size_t max_vars_size_bytes{usage_max_vars_size_bytes_};
+        const size_t max_frame_count{scopes_.max_depth()};
         const size_t string_constant_count{data_.constant_count()};
-        const bool was_capacity_unchecked{capacity_unchecked_};
 
-        const size_t peak_storage_size_bytes{
-            storage_frame ? storage_frame->peak_storage_size_bytes() : 0,
-        };
-
-        capacity_unchecked_ = true;
+        const storage_layout::dry_run_state saved{storage_.begin_dry_run()};
 
         machine_.get().discard_output(compile);
 
-        capacity_unchecked_ = was_capacity_unchecked;
-        usage_max_frame_count_ = max_frame_count;
-        usage_max_vars_size_bytes_ = max_vars_size_bytes;
+        storage_.end_dry_run(saved);
+        scopes_.set_max_depth(max_frame_count);
         data_.resize_constants(string_constant_count);
-
-        if (storage_frame) {
-            storage_frame->restore_peak_storage_size_bytes(
-                peak_storage_size_bytes);
-        }
     }
 
     // a number or a constant
@@ -1149,14 +1832,10 @@ class toc final {
                                               : std::format(".{}", call_path)));
     }
 
-    auto enter_block() -> void {
-        frames_.emplace_back("", frame::frame_type::block);
-        refresh_usage();
-    }
+    auto enter_block() -> void { scopes_.enter_block(); }
 
     auto enter_foo(const std::string_view name) -> void {
-        frames_.emplace_back(name, frame::frame_type::foo);
-        refresh_usage();
+        scopes_.enter_foo(name);
     }
 
     // a function compiled in place, 'return' jumps to 'return_jmp_label'
@@ -1164,16 +1843,11 @@ class toc final {
                     const std::string_view call_path = {},
                     const std::string_view return_jmp_label = {}) -> void {
 
-        frames_.emplace_back(name, frame::frame_type::func,
-                             std::string{call_path},
-                             std::string{return_jmp_label}, true);
-
-        refresh_usage();
+        scopes_.enter_func(name, call_path, return_jmp_label);
     }
 
     auto enter_loop(const std::string_view name) -> void {
-        frames_.emplace_back(name, frame::frame_type::loop);
-        refresh_usage();
+        scopes_.enter_loop(name);
     }
 
     // a function with a body of its own, its variables are placed from
@@ -1183,43 +1857,40 @@ class toc final {
                               const std::string_view storage_base_register)
         -> void {
 
-        frames_.emplace_back(name, frame::frame_type::func,
-                             std::string{call_path}, std::string{}, false,
-                             storage_base_register);
-
-        refresh_usage();
+        scopes_.enter_noninline_func(name, call_path, storage_base_register);
     }
 
     auto exit_block() -> void {
-        assert(frames_.back().is_block());
+        assert(scopes_.back().is_block());
 
-        pop_frame();
+        storage_.pop_scope();
     }
 
     auto exit_foo([[maybe_unused]] const std::string_view name) -> void {
-        assert(frames_.back().is_foo() and frames_.back().is_name(name));
+        assert(scopes_.back().is_foo() and scopes_.back().is_name(name));
 
-        pop_frame();
+        storage_.pop_scope();
     }
 
     auto exit_func([[maybe_unused]] const std::string_view name) -> void {
-        assert(frames_.back().is_func() and frames_.back().is_name(name));
+        assert(scopes_.back().is_func() and scopes_.back().is_name(name));
 
-        pop_frame();
+        storage_.pop_scope();
     }
 
     auto exit_loop([[maybe_unused]] const std::string_view name) -> void {
-        assert(frames_.back().is_loop() and frames_.back().is_name(name));
+        assert(scopes_.back().is_loop() and scopes_.back().is_name(name));
 
-        pop_frame();
+        storage_.pop_scope();
     }
 
-    // the report after the code, written as comments through the machine
+    // the report is written, the frame usage is forgotten
     auto finish() -> void {
-        assert(frames_.empty());
-        assert(vars_size_bytes_ == 0);
+        assert(scopes_.is_empty());
 
-        usage_max_frame_count_ = 0;
+        storage_.assert_released();
+
+        scopes_.set_max_depth(0);
     }
 
     [[nodiscard]] auto generics() -> generic_registry& { return generics_; }
@@ -1229,11 +1900,11 @@ class toc final {
     }
 
     [[nodiscard]] auto get_call_path() const -> std::string_view {
-        return current_func_frame().call_path();
+        return scopes_.current_func_frame().call_path();
     }
 
     [[nodiscard]] auto get_const(const std::string_view name) const -> int64_t {
-        const const_info* const c{find_const(name)};
+        const const_info* const c{scopes_.find_const(name)};
 
         assert(c != nullptr);
 
@@ -1260,7 +1931,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_func_return_label() const -> std::string_view {
-        return current_func_frame().func_ret_label();
+        return scopes_.current_func_frame().func_ret_label();
     }
 
     [[nodiscard]] auto
@@ -1290,17 +1961,7 @@ class toc final {
     [[nodiscard]] auto get_looping_label_or_throw(const token& src_loc_tk) const
         -> std::string_view {
 
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_loop() or frm.is_foo()) {
-                return frm.name();
-            }
-
-            if (frm.is_func()) {
-                throw compiler_exception{src_loc_tk, "not in a loop"};
-            }
-        }
-
-        std::unreachable();
+        return scopes_.looping_label_or_throw(src_loc_tk);
     }
 
     // no token names a missing 'main'
@@ -1319,19 +1980,20 @@ class toc final {
     }
 
     [[nodiscard]] auto get_type_address() const -> const type& {
-        return machine_.get().address_size_bytes() == 4 ? *type_i32_
-                                                        : *type_i64_;
+        return builtins_.address();
     }
 
     [[nodiscard]] auto get_type_bool() const -> const type& {
-        return *type_bool_;
+        return builtins_.boolean();
     }
 
     [[nodiscard]] auto get_type_default() const -> const type& {
-        return machine_.get().default_type();
+        return builtins_.default_type();
     }
 
-    [[nodiscard]] auto get_type_i8() const -> const type& { return *type_i8_; }
+    [[nodiscard]] auto get_type_i8() const -> const type& {
+        return builtins_.i8();
+    }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
                                          const std::string_view name) const
@@ -1354,17 +2016,17 @@ class toc final {
     }
 
     [[nodiscard]] auto get_type_void() const -> const type& {
-        return *type_void_;
+        return builtins_.void_type();
     }
 
     [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
-        return find_const(name) != nullptr;
+        return scopes_.find_const(name) != nullptr;
     }
 
     [[nodiscard]] auto
     has_const_in_current_block(const std::string_view name) const -> bool {
 
-        return frames_.back().has_const(name);
+        return scopes_.back().has_const(name);
     }
 
     [[nodiscard]] auto has_lea(const statement& st) const -> bool {
@@ -1374,7 +2036,7 @@ class toc final {
 
         std::string_view id_base{ident_path::root_of(st.identifier())};
 
-        for (const frame& frm : frames_ | std::views::reverse) {
+        for (const frame& frm : scopes_.frames() | std::views::reverse) {
             if (frm.has_var(id_base)) {
                 return frm.get_var_const_ref(id_base).is_pointer;
             }
@@ -1438,53 +2100,28 @@ class toc final {
     [[nodiscard]] auto is_global_var(const std::string_view name) const
         -> bool {
 
-        return frames_.front().has_var(name);
+        return scopes_.front().has_var(name);
     }
 
     [[nodiscard]] auto is_in_loop_block() const -> bool {
-
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_foo()) {
-                return false;
-            }
-
-            if (frm.is_loop()) {
-                return true;
-            }
-        }
-
-        std::unreachable();
+        return scopes_.is_in_loop_block();
     }
 
     [[nodiscard]] auto is_inlined_func() const -> bool {
-        return current_func_frame().is_inlined_func();
+        return scopes_.current_func_frame().is_inlined_func();
     }
 
     // 'int' and the names of the builtin integer types
     [[nodiscard]] auto is_integer_type_name(const std::string_view name) const
         -> bool {
 
-        return name == "int" or name == type_i8_->name() or
-               name == type_i16_->name() or name == type_i32_->name() or
-               name == type_i64_->name();
+        return builtins_.is_integer_name(name);
     }
 
-    // same scoping as 'make_ident_info', e.g. a variable 'limits' hides the
-    // type 'limits'
     [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
         -> bool {
 
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.has_var(name)) {
-                return true;
-            }
-
-            if (frm.is_func()) {
-                return frm.has_alias(name) or frames_.front().has_var(name);
-            }
-        }
-
-        return false;
+        return scopes_.is_var_or_alias(name);
     }
 
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
@@ -1494,7 +2131,7 @@ class toc final {
 
         // the name refers to the declared array, 'ps[1]' accesses one element
         const ident_info declared{
-            make_ident_info_or_throw(st.tok(), st.identifier()),
+            resolver_.resolve(st.tok(), st.identifier()),
         };
 
         const bool is_element{st.is_array_element()};
@@ -1509,7 +2146,7 @@ class toc final {
                                        const std::string_view ident) const
         -> ident_info {
 
-        return make_ident_info_or_throw(src_loc_tk, ident);
+        return resolver_.resolve(src_loc_tk, ident);
     }
 
     // a whole array is not read as its first element
@@ -1527,43 +2164,12 @@ class toc final {
     auto make_var_read_only(const std::string_view name,
                             const read_only_cause cause) -> void {
 
-        frames_.back().make_var_read_only(name, cause);
+        scopes_.back().make_var_read_only(name, cause);
     }
 
     // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
-        const size_t frame_alignment{machine_.get().address_size_bytes()};
-
-        size_t local_size_bytes{};
-        for (const frame& frm : frames_ | std::views::reverse) {
-            local_size_bytes = sum_storage_size(
-                local_size_bytes, frm.allocated_stack_size_bytes());
-
-            if (not frm.storage_base_register().empty()) {
-                return operand::mem(frm.storage_base_register(), {}, 1,
-                                    address_offset(align_storage_size(
-                                        local_size_bytes, frame_alignment)),
-                                    get_type_address());
-            }
-        }
-
-        const size_t root_size_bytes{
-            sum_storage_size(vars_size_bytes_,
-                             vars_entry_gap_applied_ ? 0 : data_.entry_gap()),
-        };
-
-        const size_t aligned_size_bytes{
-            align_storage_size(root_size_bytes, frame_alignment),
-        };
-
-        const int64_t offset_from_dat{address_offset(aligned_size_bytes)};
-
-        const int64_t offset_from_base{
-            add_address_offset(offset_from_dat, -variables_base_shift_bytes()),
-        };
-
-        return operand::mem(machine_.get().variables_base_register(), {}, 1,
-                            offset_from_base, get_type_address());
+        return storage_.next_frame_address(get_type_address());
     }
 
     // a copy, the list grows while the instances compile
@@ -1578,36 +2184,26 @@ class toc final {
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (not frm.storage_base_register().empty()) {
-                return frm.peak_storage_size_bytes();
-            }
-        }
-
-        std::unreachable();
+        return storage_.peak_frame_size_bytes();
     }
 
     auto reset_usage() -> void {
-        assert(frames_.empty());
-        assert(vars_size_bytes_ == 0);
+        assert(scopes_.is_empty());
 
-        usage_max_frame_count_ = 0;
-        usage_max_vars_size_bytes_ = 0;
+        storage_.reset_usage();
+        scopes_.set_max_depth(0);
         funcs_.clear_noninline_instances();
     }
 
     auto set_builtin_types(const type& t_i64, const type& t_i32,
                            const type& t_i16, const type& t_i8) -> void {
 
-        type_i64_ = &t_i64;
-        type_i32_ = &t_i32;
-        type_i16_ = &t_i16;
-        type_i8_ = &t_i8;
+        builtins_.set_integers(t_i64, t_i32, t_i16, t_i8);
     }
 
-    auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
+    auto set_type_bool(const type& tpe) -> void { builtins_.set_boolean(tpe); }
 
-    auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
+    auto set_type_void(const type& tpe) -> void { builtins_.set_void(tpe); }
 
     [[nodiscard]] auto source() const -> std::string_view { return source_; }
 
@@ -1629,8 +2225,8 @@ class toc final {
 
     [[nodiscard]] auto usage() const -> usage_statistics {
         return {
-            .max_frame_count{usage_max_frame_count_},
-            .max_vars_size_bytes{usage_max_vars_size_bytes_},
+            .max_frame_count{scopes_.max_depth()},
+            .max_vars_size_bytes{storage_.max_vars_size_bytes()},
             .dat_size_bytes{data_.total_size_bytes()},
             .dat_var_padding_bytes{data_.entry_gap()},
             .uninstantiated_generics{generics_.uninstantiated_func_names()},
@@ -1694,20 +2290,6 @@ class toc final {
             std::move(text));
     }
 
-    // the first variable after the dats starts past the entry gap
-    auto apply_entry_gap(const token& src_loc_tk) -> void {
-        if (vars_entry_gap_applied_) {
-            return;
-        }
-
-        frames_.front().set_padding_between_dats_and_vars(data_.entry_gap());
-
-        vars_size_bytes_ =
-            add_storage_size(src_loc_tk, vars_size_bytes_, data_.entry_gap());
-
-        vars_entry_gap_applied_ = true;
-    }
-
     auto assert_function_not_defined(const token& src_loc_tk,
                                      const std::string_view name) const
         -> void {
@@ -1742,32 +2324,16 @@ class toc final {
                                       const std::string_view name) const
         -> void {
 
-        if (not frames_.back().has_var(name)) {
+        if (not scopes_.back().has_var(name)) {
             return;
         }
 
-        const var_info& decl_var{frames_.back().get_var_const_ref(name)};
+        const var_info& decl_var{scopes_.back().get_var_const_ref(name)};
 
         throw compiler_exception{
             src_loc_tk,
             std::format("variable '{}' already declared at {}", name,
                         source_location_hr(decl_var.src_loc_tk))};
-    }
-
-    // the declaration that takes the data and variables past what the target
-    // addresses is the error, not the end of the build
-    auto assert_storage_fits_target(const token& src_loc_tk) const -> void {
-        const size_t max_bytes{machine_.get().max_storage_bytes()};
-
-        if (vars_size_bytes_ <= max_bytes) {
-            return;
-        }
-
-        throw compiler_exception{
-            src_loc_tk,
-            std::format("data and variables of {} B exceed the {} B that the "
-                        "target addresses",
-                        vars_size_bytes_, max_bytes)};
     }
 
     // a generic type and a type share the namespace of types
@@ -1788,23 +2354,6 @@ class toc final {
                     "type '{}' already defined as a generic type at {}", name,
                     source_location_hr(generics_.get_type(name).src_loc_tk))};
         }
-    }
-
-    auto assert_vars_capacity(const token& src_loc_tk,
-                              const std::string_view name,
-                              const size_t allocated_size_bytes) const -> void {
-
-        if (capacity_unchecked_ or
-            allocated_size_bytes <=
-                vars_capacity_bytes_ - used_vars_size_bytes()) {
-
-            return;
-        }
-
-        throw compiler_exception{
-            src_loc_tk,
-            std::format("variable '{}' would overflow allocated vars section",
-                        name)};
     }
 
     // the resolved name shows where the variable is stored
@@ -1842,63 +2391,6 @@ class toc final {
             name_info.operand);
     }
 
-    // blocks and loops belong to the function frame below them
-    [[nodiscard]] auto current_func_frame() const -> const frame& {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_func()) {
-                return frm;
-            }
-        }
-
-        std::unreachable();
-    }
-
-    // constants of the current function, then the global ones, not those of
-    // the calling functions
-    [[nodiscard]] auto find_const(const std::string_view name) const
-        -> const const_info* {
-
-        for (const frame& f : frames_ | std::views::reverse) {
-            if (f.has_const(name)) {
-                return &f.get_const(name);
-            }
-
-            if (f.is_func()) {
-                break;
-            }
-        }
-
-        if (frames_.front().has_const(name)) {
-            return &frames_.front().get_const(name);
-        }
-
-        return nullptr;
-    }
-
-    // a local starts after the storage in use of the nearest frame with its own
-    // storage base and of the frames inside it, other variables and dats start
-    // at the variables base
-    [[nodiscard]] auto find_storage_location(const var_kind kind)
-        -> storage_location {
-
-        if (kind == var_kind::dat) {
-            return {.storage_frame{}, .base_offset{vars_size_bytes_}};
-        }
-
-        size_t local_size_bytes{};
-
-        for (frame& frm : frames_ | std::views::reverse) {
-            local_size_bytes = sum_storage_size(
-                local_size_bytes, frm.allocated_stack_size_bytes());
-
-            if (not frm.storage_base_register().empty()) {
-                return {.storage_frame{&frm}, .base_offset{local_size_bytes}};
-            }
-        }
-
-        return {.storage_frame{}, .base_offset{vars_size_bytes_}};
-    }
-
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,
                                               const std::string_view name) const
         -> const func_info& {
@@ -1909,238 +2401,6 @@ class toc final {
         }
 
         return funcs_.get(name);
-    }
-
-    [[nodiscard]] auto
-    make_ident_info_const_or_empty(const token& src_loc_tk,
-                                   const std::string_view ident,
-                                   const ident_path& id) const -> ident_info {
-
-        // an integer constant
-        if (const std::optional<int64_t> value{
-                constant_parser::parse_constant(src_loc_tk, id.str()),
-            };
-            value) {
-
-            return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          *value);
-        }
-
-        // a boolean constant
-        if (id.base() == "true") {
-            return ident_info::make_const(ident, id.str(), get_type_bool(), 1);
-        }
-
-        if (id.base() == "false") {
-            return ident_info::make_const(ident, id.str(), get_type_bool(), 0);
-        }
-
-        // is 'id' a constant?
-        if (has_const(id.str())) {
-            return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          get_const(id.str()));
-        }
-
-        // not resolved, return empty info
-        return ident_info::make_empty();
-    }
-
-    [[nodiscard]] auto make_ident_info_from_frame(
-        const frame& frm, const token& src_loc_tk, const std::string_view ident,
-        const ident_path& id, std::vector<operand> lea_path) const
-        -> ident_info {
-
-        // try function scope
-        if (frm.has_var(id.base())) {
-            return make_ident_info_from_var_info(
-                src_loc_tk, ident, id, frm.get_var_const_ref(id.base()),
-                std::move(lea_path));
-        }
-
-        // try global scope
-        if (frames_.front().has_var(id.base())) {
-            return make_ident_info_from_var_info(
-                src_loc_tk, ident, id,
-                frames_.front().get_var_const_ref(id.base()), lea_path);
-        }
-
-        // try constant
-        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
-    }
-
-    [[nodiscard]] auto make_ident_info_from_var_info(
-        const token& src_loc_tk, const std::string_view ident,
-        const ident_path& id, const var_info& var,
-        std::vector<operand> lea_path) const -> ident_info {
-
-        if (var.value_register.is_register() and id.path().size() == 1) {
-            return ident_info::make_register(ident, var.value_register);
-        }
-
-        ident_info ii{
-            ident_builder::make_var_ident_info(
-                src_loc_tk, ident, id.path(), var,
-                machine_.get().variables_base_register()),
-        };
-
-        ii.read_only_why = var.read_only_why;
-
-        lea_path.resize(id.path().size());
-        // note: pad with empty for the remaining elements in the id path
-
-        std::ranges::reverse(lea_path);
-        // note: reverse it since it was constructed while traversing
-        //       upwards in the frame stack but 'elem_path' and 'type_path'
-        //       are ordered from the top down
-
-        ii.lea_path = std::move(lea_path);
-
-        if (not ii.type_ref().is_builtin()) {
-            return ii;
-        }
-
-        ident_builder::place_operand_from_lea(src_loc_tk, ii);
-
-        return ii;
-    }
-
-    // reviewed: 2026-09-09
-    [[nodiscard]] auto
-    make_ident_info_or_empty(const token& src_loc_tk,
-                             const std::string_view ident) const -> ident_info {
-
-        assert(not ident.empty());
-
-        ident_path id{std::string{ident}};
-
-        assert(not id.path().empty());
-
-        // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
-        // traverse the frames and resolve to a variable, register or constant
-
-        std::vector<operand> lea_path;
-
-        // note: 'lea' describes the effective address of an identifier's data
-        //       'lea_path' associates address operands with identifier
-        //       components; it is built while walking frames from the
-        //       innermost outwards and reversed before use
-
-        // ignore the elements after the first element:
-        //  e.g.: lnks[1].pos.y
-        //   ignore pos.y since those cannot have a lea
-        //   add empty leas for those
-        //   note: 'lea_path' will be reversed when complete so that
-        //          'ident_path' elements have corresponding lea
-
-        lea_path.insert(lea_path.end(), id.path().size() - 1, operand{});
-        // note: -1 to exclude the first element
-
-        // an alias of an element names the element, not the array holding it
-        bool is_element{};
-
-        for (const frame& cur_frame : frames_ | std::views::reverse) {
-
-            // does this frame contain the variable?
-            if (cur_frame.has_var(id.base())) {
-                ident_info info{
-                    make_ident_info_from_frame(cur_frame, src_loc_tk, ident, id,
-                                               std::move(lea_path)),
-                };
-
-                return ident_builder::as_element_if(is_element,
-                                                    std::move(info));
-            }
-
-            // from the root frame of a function aliases are followed to the
-            // actual variable referred to
-            if (not cur_frame.is_func()) {
-                continue;
-            }
-
-            if (not cur_frame.has_alias(id.base())) {
-                lea_path.emplace_back();
-
-                ident_info info{
-                    make_ident_info_from_frame(cur_frame, src_loc_tk, ident, id,
-                                               std::move(lea_path)),
-                };
-
-                return ident_builder::as_element_if(is_element,
-                                                    std::move(info));
-            }
-
-            // this is an alias, continue resolving until it is a variable,
-            // register or constant
-
-            const alias_info& alias{cur_frame.get_alias(id.base())};
-
-            if (alias.register_operand.is_register() and
-                id.path().size() == 1) {
-
-                return ident_info::make_register(ident, alias.register_operand);
-            }
-
-            // a field path such as 'p.x' gets its array-ness from the field
-            if (alias.is_element and id.path().size() == 1) {
-                is_element = true;
-            }
-
-            lea_path.emplace_back(alias.lea);
-
-            id = ident_builder::replace_alias_base(alias, id, lea_path);
-        }
-
-        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
-    }
-
-    // helper: call make_ident_info_or_empty and throw if unresolved
-    [[nodiscard]] auto
-    make_ident_info_or_throw(const token& src_loc_tk,
-                             const std::string_view ident) const -> ident_info {
-
-        const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
-
-        if (not id_info.is_empty()) {
-            return id_info;
-        }
-
-        if (generics_.has_type(ident)) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("generic type '{}' is not a value, name an "
-                            "instance first, e.g. 'type str = {}<...>'",
-                            ident, ident)};
-        }
-
-        if (generics_.has_func(ident)) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("generic function '{}' needs type arguments, "
-                            "e.g. '{}<...>'",
-                            ident, ident)};
-        }
-
-        throw compiler_exception{
-            src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
-    }
-
-    // the root frame applies the dat var gap again when it is entered anew
-    auto pop_frame() -> void {
-        vars_size_bytes_ -= frames_.back().allocated_stack_size_bytes();
-        frames_.pop_back();
-
-        if (not frames_.empty()) {
-            return;
-        }
-
-        assert(vars_size_bytes_ == 0);
-
-        vars_entry_gap_applied_ = false;
-    }
-
-    auto refresh_usage() -> void {
-        usage_max_frame_count_ =
-            std::max(frames_.size(), usage_max_frame_count_);
     }
 
     // 'line' and 'column' of the token, 'separator' between them
@@ -2154,51 +2414,6 @@ class toc final {
         };
 
         return std::format("{}{}{}", line, separator, col);
-    }
-
-    // bytes of variables, without the dats and the gap after them
-    [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
-        return vars_size_bytes_ - data_.total_size_bytes() - data_.entry_gap();
-    }
-
-    [[nodiscard]] auto var_storage_alignment(const var_info& var) const
-        -> size_t {
-
-        if (var.is_pointer) {
-            return machine_.get().address_size_bytes();
-        }
-
-        return var.type_ptr->alignment();
-    }
-
-    [[nodiscard]] auto var_storage_size_bytes(const token& src_loc_tk,
-                                              const var_info& var) const
-        -> size_t {
-
-        if (var.is_pointer) {
-            return machine_.get().address_size_bytes();
-        }
-
-        return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
-                                     var.is_array ? var.array_len : 1);
-    }
-
-    // offsets count from 'dat', a base register past 'vars' makes the dats
-    // negative and the variables start below the base
-    [[nodiscard]] auto variables_base_shift_bytes() const -> int64_t {
-        const std::optional<size_t> past_vars_bytes{
-            machine_.get().variables_base_past_vars_bytes(),
-        };
-
-        if (not past_vars_bytes) {
-            return 0;
-        }
-
-        const size_t dats_bytes{
-            sum_storage_size(data_.total_size_bytes(), data_.entry_gap()),
-        };
-
-        return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
     }
 };
 
