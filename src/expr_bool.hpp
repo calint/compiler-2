@@ -291,6 +291,8 @@ class expr_bool_op final : public statement {
             return std::nullopt;
         }
 
+        assert_not_instance_condition(lhs_);
+
         machine::comparison_action shorthand_action{action};
         shorthand_action.operation = machine::comparison_operator::not_equal;
 
@@ -421,6 +423,19 @@ class expr_bool_op final : public statement {
     //
     // statics
     //
+
+    // a condition tests a number, an instance would be tested as its first
+    // field; checked when compiling since the initializer of a 'var' parses
+    // its expression to learn the type, e.g. 'var b = a' copies the instance
+    static auto assert_not_instance_condition(const expr_arith& side) -> void {
+        if (side.get_type().is_builtin()) {
+            return;
+        }
+
+        throw compiler_exception{
+            side.tok(), std::format("an instance of '{}' is not a condition",
+                                    side.get_type().name())};
+    }
 
     // an operator compares a user type instance as its first field only,
     // 'equal(...)' compares all

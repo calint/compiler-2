@@ -2579,3 +2579,6 @@ if [[ $MACHINE != x86_64 ]]; then SRC=836 && COMPERR; fi
 
 # a user type instance is compared with 'equal(...)', not with an operator
 SRC=837 && COMPERR
+
+# an instance of a user type is not a condition
+SRC=838 && COMPERR

@@ -1,0 +1,8 @@
+# an instance of a user type is not a condition, it would be tested as its
+# first field
+type point { x i32, y i32 }
+
+func main() {
+    var a = point{0, 5}
+    if a exit(1)
+}
