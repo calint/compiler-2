@@ -1563,24 +1563,14 @@ class toc final {
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{
-            line_and_col_num_for_char_index(src_loc_tk.at_line(),
-                                            src_loc_tk.start_index(), source_),
-        };
-
-        return std::format("{}.{}", line, col);
+        return source_location(src_loc_tk, '.');
     }
 
     // human-readable source location
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{
-            line_and_col_num_for_char_index(src_loc_tk.at_line(),
-                                            src_loc_tk.start_index(), source_),
-        };
-
-        return std::format("{}:{}", line, col);
+        return source_location(src_loc_tk, ':');
     }
 
     [[nodiscard]] auto types() -> type_table& { return types_; }
@@ -1652,9 +1642,6 @@ class toc final {
             std::move(text));
     }
 
-    // a local starts after the storage in use of the nearest frame with its own
-    // storage base and of the frames inside it, other variables and dats start
-    // at the variables base
     // the first variable after the dats starts past the entry gap
     auto apply_entry_gap(const token& src_loc_tk) -> void {
         if (vars_entry_gap_applied_) {
@@ -1820,6 +1807,9 @@ class toc final {
         return nullptr;
     }
 
+    // a local starts after the storage in use of the nearest frame with its own
+    // storage base and of the frames inside it, other variables and dats start
+    // at the variables base
     [[nodiscard]] auto find_storage_location(const var_kind kind)
         -> storage_location {
 
@@ -2082,6 +2072,19 @@ class toc final {
     auto refresh_usage() -> void {
         usage_max_frame_count_ =
             std::max(frames_.size(), usage_max_frame_count_);
+    }
+
+    // 'line' and 'column' of the token, 'separator' between them
+    [[nodiscard]] auto source_location(const token& src_loc_tk,
+                                       const char separator) const
+        -> std::string {
+
+        const auto [line, col]{
+            line_and_col_num_for_char_index(src_loc_tk.at_line(),
+                                            src_loc_tk.start_index(), source_),
+        };
+
+        return std::format("{}{}{}", line, separator, col);
     }
 
     // bytes of variables, without the dats and the gap after them

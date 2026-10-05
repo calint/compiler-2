@@ -296,6 +296,18 @@ def declaration_lines(cursor, lines, start, end):
     ]
 
 
+def trailing_note(gap):
+    # the comment lines at the start of 'gap' when a blank line follows them
+    count = 0
+    while count < len(gap) and gap[count].strip().startswith("//"):
+        count += 1
+
+    if count == 0 or count == len(gap) or not is_blank(gap[count]):
+        return []
+
+    return gap[:count]
+
+
 def class_members(cursor, lines, open_n, close_n):
     members = []
     prev_end = open_n
@@ -304,6 +316,13 @@ def class_members(cursor, lines, open_n, close_n):
         # that are emitted anew
         gap = [l for l in lines[prev_end + 1 : start] if not ACCESS_LABEL.match(l)]
         gap = without_markers(gap)
+
+        # a comment right below a member, set apart from the next one by a
+        # blank line, is a note of that member and moves with it
+        note = trailing_note(gap)
+        if members and note:
+            members[-1].lines += note
+            gap = gap[len(note) :]
 
         # a blank line after a detached comment stays
         first = 0

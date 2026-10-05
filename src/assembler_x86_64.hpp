@@ -154,24 +154,24 @@ class assembler_x86_64 final : public assembler {
     };
 
   private:
-    static constexpr size_t size_qword{8};
-    static constexpr size_t size_dword{4};
-    static constexpr size_t size_word{2};
-    static constexpr size_t size_byte{1};
-
     struct op_info {
         std::string_view mnemonic;
         size_t operand_count{};
     };
 
     static constexpr size_t op_count{std::to_underlying(op::cmpsq) + 1};
+    // note: +1 because the last enumerator is counted too
 
   public:
+    // the widths of the operands
+    static constexpr size_t size_qword{8};
+    static constexpr size_t size_dword{4};
+    static constexpr size_t size_word{2};
+    static constexpr size_t size_byte{1};
+
     //
     // overridden methods
     //
-
-    // note: +1 because the last enumerator is counted too
 
     auto comment(const size_t indent, const std::string_view text)
         -> void override {

@@ -42,8 +42,9 @@ class machine_rv32i : public machine {
     static constexpr int syscall_exit_{93};
     // shifting a word right by this spreads its sign bit over all bits
     static constexpr int sign_shift_{31};
-    // the return address slot keeps sp 16-byte aligned
-    static constexpr int64_t frame_save_bytes_{16};
+    // sp stays 16-byte aligned, the return address slot of a frame is one unit
+    static constexpr size_t stack_alignment_{16};
+    static constexpr int64_t frame_save_bytes_{stack_alignment_};
     static constexpr size_t word_size_bytes_{4};
     static constexpr size_t register_bits_{
         std::numeric_limits<uint32_t>::digits,
@@ -3361,10 +3362,9 @@ class machine_rv32i : public machine {
                                   const operand& address, const operand& count)
         -> operand {
 
-        constexpr size_t word_size{4};
         for (const operand* value : {&dst, &descriptor, &address, &count}) {
             assert(value->is_register() and
-                   value->type_ref().size_bytes() == word_size);
+                   value->type_ref().size_bytes() == word_size_bytes_);
         }
 
         assert(register_index(dst.base_register()) == register_index("a0"));
@@ -3400,11 +3400,9 @@ class machine_rv32i : public machine {
                         const std::span<const std::string_view> saved) const
         -> size_t {
 
-        constexpr size_t stack_alignment{16};
-
         const size_t stack_bytes{
             align_storage_size(saved.size() * word_size_bytes_,
-                               stack_alignment),
+                               stack_alignment_),
         };
 
         if (stack_bytes != 0) {
@@ -4650,23 +4648,11 @@ class machine_rv32i : public machine {
     [[nodiscard]] static auto split_address_offset(const int64_t offset)
         -> address_offset_parts {
 
-        constexpr unsigned low_bits{12};
-        constexpr uint32_t low_mask{0xfff};
-        constexpr int32_t low_range{4096};
-
-        // keep the signed low 12 bits in the memory operand; subtracting
-        // them from the offset leaves the upper part to load with lui
-        int32_t low{
-            static_cast<int32_t>(static_cast<uint32_t>(offset) & low_mask),
-        };
-
-        if (low > immediate_max) {
-            low -= low_range;
-        }
-
+        // the signed low 12 bits stay in the memory operand, the upper part
+        // is loaded with lui
         return {
-            .upper{static_cast<uint32_t>(offset - low) >> low_bits},
-            .low{low},
+            .upper{assembler_rv32i::upper_part(offset)},
+            .low{assembler_rv32i::lower_part(offset)},
         };
     }
 

@@ -972,6 +972,20 @@ class assembler_rv32i final : public assembler {
         return one_instruction_bytes;
     }
 
+    [[nodiscard]] static auto lower_part(const int64_t value) -> int32_t {
+        constexpr int32_t low_range{4096};
+
+        const int32_t low{
+            static_cast<int32_t>(static_cast<uint32_t>(value) & low_mask),
+        };
+
+        if (low > immediate_max) {
+            return low - low_range;
+        }
+
+        return low;
+    }
+
     // abi names only, the backend names registers that way
     [[nodiscard]] static auto register_number(const std::string_view name)
         -> std::optional<uint8_t> {
@@ -983,6 +997,15 @@ class assembler_rv32i final : public assembler {
         }
 
         return std::nullopt;
+    }
+
+    // '%hi' rounds up when the sign-extended '%lo' is negative
+    [[nodiscard]] static auto upper_part(const int64_t value) -> uint32_t {
+        constexpr uint32_t rounding{0x800};
+        constexpr unsigned low_bits{12};
+
+        return ((static_cast<uint32_t>(value) + rounding) >> low_bits) &
+               upper_mask;
     }
 
   private:
@@ -2202,20 +2225,6 @@ class assembler_rv32i final : public assembler {
         return {encode_jal(zero_register, distance)};
     }
 
-    [[nodiscard]] static auto lower_part(const int64_t value) -> int32_t {
-        constexpr int32_t low_range{4096};
-
-        const int32_t low{
-            static_cast<int32_t>(static_cast<uint32_t>(value) & low_mask),
-        };
-
-        if (low > immediate_max) {
-            return low - low_range;
-        }
-
-        return low;
-    }
-
     [[nodiscard]] static auto number_of(const std::string_view name)
         -> uint8_t {
 
@@ -2330,15 +2339,6 @@ class assembler_rv32i final : public assembler {
         }
 
         return size_bytes;
-    }
-
-    // '%hi' rounds up when the sign-extended '%lo' is negative
-    [[nodiscard]] static auto upper_part(const int64_t value) -> uint32_t {
-        constexpr uint32_t rounding{0x800};
-        constexpr unsigned low_bits{12};
-
-        return ((static_cast<uint32_t>(value) + rounding) >> low_bits) &
-               upper_mask;
     }
 
     static auto write_data(std::ostream& os, const data_values& data) -> void {

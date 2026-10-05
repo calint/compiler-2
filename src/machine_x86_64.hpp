@@ -38,10 +38,10 @@ class machine_x86_64 final : public machine {
 
     using section = assembler_x86_64::section;
 
-    static constexpr size_t size_qword{8};
-    static constexpr size_t size_dword{4};
-    static constexpr size_t size_word{2};
-    static constexpr size_t size_byte{1};
+    static constexpr size_t size_qword{assembler_x86_64::size_qword};
+    static constexpr size_t size_dword{assembler_x86_64::size_dword};
+    static constexpr size_t size_word{assembler_x86_64::size_word};
+    static constexpr size_t size_byte{assembler_x86_64::size_byte};
 
     static constexpr size_t data_alignment_{16};
 
@@ -797,7 +797,7 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(1, condition::nz, ".convert_loop");
         assembler_.instruction(1, op::inc, "rdi");
         assembler_.comment(1, "print line number to stderr");
-        assembler_.instruction(1, op::mov, "rax", 1);
+        assembler_.instruction(1, op::mov, "rax", syscall_write);
         assembler_.instruction(1, op::mov, "rsi", "rdi");
 
         assembler_.instruction(1, op::mov, "rdx",
@@ -1717,7 +1717,7 @@ class machine_x86_64 final : public machine {
     // shared by the panic handlers, which run after all allocations
     auto emit_panic_message(const std::string_view message_label) -> void {
         assembler_.comment(1, "print message to stderr");
-        assembler_.instruction(1, op::mov, "rax", 1);
+        assembler_.instruction(1, op::mov, "rax", syscall_write);
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
 
         assembler_.instruction(
