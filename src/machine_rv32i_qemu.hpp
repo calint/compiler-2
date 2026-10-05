@@ -67,7 +67,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
 
     // the stack follows the variables
     auto emit_stack_setup(assembler_rv32i& a) const -> void override {
-        a.la(0, "sp", "vars.end");
+        a.la(0, "sp", variables_end_label);
         a.li(0, "t0", stack_size_bytes());
         a.add(0, "sp", "sp", "t0");
     }

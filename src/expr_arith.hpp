@@ -857,7 +857,7 @@ class expr_arith final : public expression {
         case '<':
         case '>':
             if (rhs < 0 or
-                std::cmp_greater_equal(rhs, width_bits(width_type))) {
+                std::cmp_greater_equal(rhs, width_type.size_bits())) {
                 return std::nullopt;
             }
 
@@ -1486,15 +1486,10 @@ class expr_arith final : public expression {
         return static_cast<int64_t>(bits >> count);
     }
 
-    [[nodiscard]] static auto width_bits(const type& width_type) -> size_t {
-        constexpr size_t byte_bits{8};
-        return width_type.size_bytes() * byte_bits;
-    }
-
     // e.g. -128 for 'i8'
     [[nodiscard]] static auto width_min(const type& width_type) -> int64_t {
         return static_cast<int64_t>(~uint64_t{}
-                                    << (width_bits(width_type) - 1));
+                                    << (width_type.size_bits() - 1));
         // note: -1 because the sign bit is the highest bit
     }
 
@@ -1502,7 +1497,7 @@ class expr_arith final : public expression {
     [[nodiscard]] static auto wrap_to_width(const int64_t value,
                                             const type& width_type) -> int64_t {
 
-        const size_t bits{width_bits(width_type)};
+        const size_t bits{width_type.size_bits()};
         if (bits >= std::numeric_limits<uint64_t>::digits) {
             return value;
         }

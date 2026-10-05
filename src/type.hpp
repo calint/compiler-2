@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdint>
 #include <format>
+#include <limits>
 #include <ranges>
 #include <span>
 #include <string>
@@ -237,6 +238,10 @@ class type final {
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
     auto set_name(const std::string_view name) -> void { name_ = name; }
+
+    [[nodiscard]] auto size_bits() const -> size_t {
+        return size_bytes_ * std::numeric_limits<unsigned char>::digits;
+    }
 
     [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
 

@@ -303,7 +303,7 @@ class machine_x86_64 final : public machine {
         assembler_.add_separator_newline();
         assembler_.switch_section(section::data);
         assembler_.align(alignment);
-        assembler_.label(0, "dat");
+        assembler_.label(0, data_label);
     }
 
     auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
@@ -398,7 +398,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        const size_t limit_bits{reg_to_check.type_ref().size_bytes() * 8};
+        const size_t limit_bits{reg_to_check.type_ref().size_bits()};
 
         // the unsigned upper comparison already fails a negative index or
         // count as long as the limit is below 2^(width - 1), only a sum
@@ -501,15 +501,16 @@ class machine_x86_64 final : public machine {
         };
 
         lea(src_loc_tk, indent, start, frame_address, true);
-        assembler_.instruction(indent, op::lea, to_argument(remaining),
-                               assembler_x86_64::memory::of_symbol("vars"));
+        assembler_.instruction(
+            indent, op::lea, to_argument(remaining),
+            assembler_x86_64::memory::of_symbol(variables_label));
         cmp_lowered(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::b, frame_overflow_handler_label);
 
         // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
-        assembler_.instruction(
-            indent, op::mov, to_argument(remaining),
-            assembler_x86_64::immediate::of_expression("vars.end", true));
+        assembler_.instruction(indent, op::mov, to_argument(remaining),
+                               assembler_x86_64::immediate::of_expression(
+                                   variables_end_label, true));
 
         cmp_lowered(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
@@ -1123,13 +1124,13 @@ class machine_x86_64 final : public machine {
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
 
-        assembler_.label(0, "dat.end");
+        assembler_.label(0, data_end_label);
         assembler_.add_separator_newline();
         assembler_.switch_section(section::variables);
         assembler_.align(alignment);
-        assembler_.label(0, "vars");
+        assembler_.label(0, variables_label);
         assembler_.reserve(size_bytes);
-        assembler_.label(0, "vars.end");
+        assembler_.label(0, variables_end_label);
     }
 
     auto reserve_variables_base() -> void override {
@@ -1215,7 +1216,7 @@ class machine_x86_64 final : public machine {
         assembler_.add_separator_newline();
         reserve_variables_base();
         assembler_.instruction(0, op::lea, variables_base_register_,
-                               assembler_x86_64::memory::of_symbol("dat"));
+                               assembler_x86_64::memory::of_symbol(data_label));
         assembler_.add_separator_newline();
     }
 
@@ -1907,10 +1908,11 @@ class machine_x86_64 final : public machine {
             return false;
         }
 
-        const size_t width_bits{product.type_ref().size_bytes() * 8};
+        const size_t width_bits{product.type_ref().size_bits()};
         const uint64_t mask{
-            width_bits >= 64 ? std::numeric_limits<uint64_t>::max()
-                             : (uint64_t{1} << width_bits) - 1,
+            width_bits >= std::numeric_limits<uint64_t>::digits
+                ? std::numeric_limits<uint64_t>::max()
+                : (uint64_t{1} << width_bits) - 1,
         };
         // note: -1 makes a mask of 'width_bits' ones
 

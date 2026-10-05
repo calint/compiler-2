@@ -45,6 +45,9 @@ class machine_rv32i : public machine {
     // the return address slot keeps sp 16-byte aligned
     static constexpr int64_t frame_save_bytes_{16};
     static constexpr size_t word_size_bytes_{4};
+    static constexpr size_t register_bits_{
+        std::numeric_limits<uint32_t>::digits,
+    };
     static constexpr size_t address_space_bytes_{
         size_t{std::numeric_limits<uint32_t>::max()} + 1,
     };
@@ -69,21 +72,6 @@ class machine_rv32i : public machine {
         bool named;
     };
 
-    // empty when no binary image is written
-    std::string binary_file_name_;
-    // buffering output is no more logical state than writing to the stream
-    mutable assembler_rv32i assembler_;
-    uint32_t unavailable_registers_{};
-    // registers a lower bounds check found non-negative, allocating a register
-    // forgets it since the new owner writes its own value
-    uint32_t lower_checked_registers_{};
-    bool variables_base_reserved_{};
-    bool frame_base_reserved_{};
-    bool multiply_helper_used_{};
-    bool divide_helper_used_{};
-    std::vector<allocation> allocations_;
-    std::vector<std::array<operand, 3>> bulk_registers_;
-
     // where unrolled accesses start: the address minus 'phase' is aligned to
     // 'alignment', which is at most a word
     struct access_start {
@@ -98,8 +86,6 @@ class machine_rv32i : public machine {
         // a missing address would leave the word alignment unproven
         size_t count{};
     };
-
-    std::vector<bulk_addresses> bulk_addresses_;
 
     // keeps the registers of its operands, and the base and index registers
     // of memory operands, from being picked for scratch while an operation is
@@ -192,11 +178,12 @@ class machine_rv32i : public machine {
     };
 
     // note: zero, copy and compare each have their own functions for a known
-    //       size and for a run-time count ('zero_known_size',
-    //       'copy_known_size', 'copy_runtime_count', 'compare_known_size',
-    //       'compare_runtime_count'); the code is repeated on purpose, so each
-    //       function reads from top to bottom; only plain decisions are shared
-    //       ('aligned_parts', 'plan_loop_start', 'plan_known_loop')
+    //       size ('zero_known_size', 'copy_known_size', 'compare_known_size');
+    //       the code is repeated on purpose, so each function reads from top
+    //       to bottom; only plain decisions are shared ('aligned_parts',
+    //       'plan_loop_start', 'plan_known_loop'); copy and compare share the
+    //       walk of a run-time count ('walk_runtime_count') and differ only in
+    //       the access they emit
     //       * the variables base 's0' and a non-inline frame base 's1' are
     //         word aligned, so an unindexed address from them has a known
     //         position within a word; other addresses are only as aligned as
@@ -223,6 +210,11 @@ class machine_rv32i : public machine {
     static constexpr local_label false_exit{.name{"5"}, .reference{"5f"}};
     static constexpr local_label result_end{.name{"6"}, .reference{"6f"}};
     static constexpr local_label after_head{.name{"7"}, .reference{"7f"}};
+
+    // the labels of a bounds check: a failing check branches to 'bounds_fail'
+    // where the line and the handler follow, a passing one to 'bounds_pass'
+    static constexpr local_label bounds_fail{.name{"1"}, .reference{"1f"}};
+    static constexpr local_label bounds_pass{.name{"2"}, .reference{"2f"}};
 
     // an access of 'width' bytes 'offset' bytes past an address
     struct access_part {
@@ -267,6 +259,22 @@ class machine_rv32i : public machine {
         // a register result holds the left value and saves the final copy
         bool left_is_result{};
     };
+
+    // empty when no binary image is written
+    std::string binary_file_name_;
+    // buffering output is no more logical state than writing to the stream
+    mutable assembler_rv32i assembler_;
+    uint32_t unavailable_registers_{};
+    // registers a lower bounds check found non-negative, allocating a register
+    // forgets it since the new owner writes its own value
+    uint32_t lower_checked_registers_{};
+    bool variables_base_reserved_{};
+    bool frame_base_reserved_{};
+    bool multiply_helper_used_{};
+    bool divide_helper_used_{};
+    std::vector<allocation> allocations_;
+    std::vector<std::array<operand, 3>> bulk_registers_;
+    std::vector<bulk_addresses> bulk_addresses_;
 
   protected:
     //
@@ -359,7 +367,7 @@ class machine_rv32i : public machine {
         -> void override {
 
         assert(dst.is_register() or dst.is_memory());
-        assert(dst.type_ref().size_bytes() == 4);
+        assert(dst.type_ref().size_bytes() == word_size_bytes_);
 
         const address_scope scope{*this, dst, address};
         const operand value{working_register(src_loc_tk, indent, dst)};
@@ -381,7 +389,7 @@ class machine_rv32i : public machine {
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
-        return 4;
+        return word_size_bytes_;
     }
 
     auto advance_array_iteration(const token& src_loc_tk, const size_t indent,
@@ -422,8 +430,13 @@ class machine_rv32i : public machine {
         validate_scalar(src_loc_tk, type_ref);
         const size_t index{register_index(register_name)};
         const uint32_t mask{register_mask(register_name)};
-        if (mask == 0 or index == 0 or index == 2 or
-            (unavailable_registers_ & mask) != 0) {
+
+        // the zero register and the stack pointer are never allocated
+        const bool is_fixed{
+            index == register_index("zero") or index == register_index("sp"),
+        };
+
+        if (mask == 0 or is_fixed or (unavailable_registers_ & mask) != 0) {
             throw compiler_exception{
                 src_loc_tk,
                 std::format("cannot allocate register {}", register_name)};
@@ -497,7 +510,7 @@ class machine_rv32i : public machine {
         emit_arithmetic_helpers();
         assembler_.switch_section(section::data);
         assembler_.align(alignment);
-        label(0, "dat");
+        label(0, data_label);
     }
 
     auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
@@ -609,6 +622,11 @@ class machine_rv32i : public machine {
 
         const address_scope scope{*this, frame_address, frame_size_bytes};
 
+        // 'overflow' is where a frame outside of 'vars' and one too large for
+        // it end up, 'fits' is after the jump to the handler
+        constexpr local_label overflow{.name{"1"}, .reference{"1f"}};
+        constexpr local_label fits{.name{"2"}, .reference{"2f"}};
+
         comment(src_loc_tk, indent, "frame capacity check begin");
         comment(src_loc_tk, indent,
                 "callee storage starts after the caller's storage ({})",
@@ -627,14 +645,15 @@ class machine_rv32i : public machine {
             frame_address.displacement() != 0) {
             assembler_.branch(
                 indent, frame_address.displacement() > 0 ? op::bltu : op::bgtu,
-                start.base_register(), frame_address.base_register(), "1f");
+                start.base_register(), frame_address.base_register(),
+                overflow.reference);
         }
-        assembler_.la(indent, remaining.base_register(), "vars");
+        assembler_.la(indent, remaining.base_register(), variables_label);
         assembler_.bltu(indent, start.base_register(),
-                        remaining.base_register(), "1f");
-        assembler_.la(indent, remaining.base_register(), "vars.end");
+                        remaining.base_register(), overflow.reference);
+        assembler_.la(indent, remaining.base_register(), variables_end_label);
         assembler_.bltu(indent, remaining.base_register(),
-                        start.base_register(), "1f");
+                        start.base_register(), overflow.reference);
         assembler_.sub(indent, remaining.base_register(),
                        remaining.base_register(), start.base_register());
         assembler_.lui(indent, start.base_register(),
@@ -646,10 +665,10 @@ class machine_rv32i : public machine {
                             frame_size_bytes.immediate(),
                             assembler_rv32i::immediate::part::low));
         assembler_.bgeu(indent, remaining.base_register(),
-                        start.base_register(), "2f");
-        assembler_.label(indent, "1");
+                        start.base_register(), fits.reference);
+        assembler_.label(indent, overflow.name);
         branch(indent, frame_overflow_handler_label);
-        assembler_.label(indent, "2");
+        assembler_.label(indent, fits.name);
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
@@ -850,7 +869,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        const size_t shift{32 - (dst.type_ref().size_bytes() * 8)};
+        const size_t shift{register_bits_ - dst.type_ref().size_bits()};
 
         // discard high bits, then sign-extend integers or zero-extend bool
         assembler_.slli(indent, value.base_register(), value.base_register(),
@@ -931,7 +950,7 @@ class machine_rv32i : public machine {
             assembler_.addi(1, "a1", "a1", 1);
             assembler_.addi(1, "a2", "a2", 1);
             assembler_.label(0, "5");
-            assembler_.addi(1, "t0", "t0", 4);
+            assembler_.addi(1, "t0", "t0", word_size_bytes_);
             assembler_.li(1, "t3", 1);
             assembler_.bne(1, "t1", "t3", "1b");
             assembler_.li(1, "t2", newline);
@@ -1285,13 +1304,13 @@ class machine_rv32i : public machine {
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
 
-        label(0, "dat.end");
+        label(0, data_end_label);
         // variables are zeroed when defined, so the image does not hold them
         assembler_.switch_section(section::bss);
         assembler_.align(alignment);
-        label(0, "vars");
+        label(0, variables_label);
         assembler_.zero(size_bytes);
-        label(0, "vars.end");
+        label(0, variables_end_label);
     }
 
     auto reserve_variables_base() -> void override {
@@ -1365,7 +1384,7 @@ class machine_rv32i : public machine {
         // immediate shifts must be resolved here rather than by the assembler
         assert(not count.is_immediate() or constant.has_value());
 
-        const size_t bits{dst.type_ref().size_bytes() * 8};
+        const size_t bits{dst.type_ref().size_bits()};
 
         if (constant.has_value() and
             (*constant < 0 or std::cmp_greater_equal(*constant, bits))) {
@@ -1416,7 +1435,7 @@ class machine_rv32i : public machine {
         label(0, "_start");
         assembler_.add_separator_newline();
         reserve_variables_base();
-        assembler_.la(0, variables_base_register_, "vars");
+        assembler_.la(0, variables_base_register_, variables_label);
         assembler_.addi(0, variables_base_register_, variables_base_register_,
                         static_cast<int64_t>(variables_base_past_vars_bytes_));
         assembler_.add_separator_newline();
@@ -1710,7 +1729,12 @@ class machine_rv32i : public machine {
             "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6",
         };
 
-        const size_t clobber_count{division ? clobbers.size() : 5};
+        // the multiply helper changes the first five, the divide helper all
+        constexpr size_t multiply_clobber_count{5};
+
+        const size_t clobber_count{
+            division ? clobbers.size() : multiply_clobber_count,
+        };
         std::vector<std::string_view> saved;
         for (const std::string_view name :
              std::span{clobbers}.first(clobber_count)) {
@@ -1762,8 +1786,9 @@ class machine_rv32i : public machine {
         copy_value(src_loc_tk, indent, destination, kept);
     }
 
-    // passing checks branch to '2f' and failing ones to '1f', the last check
-    // branches past the handler on success so failures fall through to it
+    // passing checks branch to 'bounds_pass' and failing ones to 'bounds_fail',
+    // the last check branches past the handler on success so failures fall
+    // through to it
     auto check_lower_bounds(const size_t indent, const std::string_view index,
                             const operand& reg_count, const bool is_last)
         -> void {
@@ -1771,7 +1796,8 @@ class machine_rv32i : public machine {
         const auto check_negative = [&](const std::string_view reg,
                                         const bool last) -> void {
             assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
-                                   last ? "2f" : "1f");
+                                   last ? bounds_pass.reference
+                                        : bounds_fail.reference);
         };
 
         if (reg_count.is_empty()) {
@@ -1802,11 +1828,13 @@ class machine_rv32i : public machine {
 
         assembler_.li(indent, limit.base_register(), array_count);
         if (allow_end) {
-            assembler_.bgeu(indent, limit.base_register(), top, "2f");
+            assembler_.bgeu(indent, limit.base_register(), top,
+                            bounds_pass.reference);
             return;
         }
 
-        assembler_.bltu(indent, top, limit.base_register(), "2f");
+        assembler_.bltu(indent, top, limit.base_register(),
+                        bounds_pass.reference);
     }
 
     // accesses widen after the first only when a start inside a word was
@@ -2635,13 +2663,13 @@ class machine_rv32i : public machine {
                               reg_count, options.lower);
         }
 
-        assembler_.label(indent, "1");
+        assembler_.label(indent, bounds_fail.name);
         if (options.with_line) {
             comment(src_loc_tk, indent, "source line");
             assembler_.li(indent, "a0", src_loc_tk.at_line());
         }
         branch(indent, bounds_failure_handler_label);
-        assembler_.label(indent, "2");
+        assembler_.label(indent, bounds_pass.name);
     }
 
     // the address scopes end on return, before the caller frees its registers
@@ -3150,12 +3178,10 @@ class machine_rv32i : public machine {
                               const operand& product, const operand& factor,
                               const int32_t constant) -> void {
 
-        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
-
-        const size_t bits{product.type_ref().size_bytes() * 8};
+        const size_t bits{product.type_ref().size_bits()};
 
         const uint32_t mask{
-            std::numeric_limits<uint32_t>::max() >> (register_bits - bits),
+            std::numeric_limits<uint32_t>::max() >> (register_bits_ - bits),
         };
 
         const uint32_t multiplier{static_cast<uint32_t>(constant) & mask};
@@ -3352,17 +3378,15 @@ class machine_rv32i : public machine {
                            const uint32_t shift_count, const size_t bits)
         -> void {
 
-        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
-
-        if (operation == '<' and bits < register_bits and dst.is_register()) {
+        if (operation == '<' and bits < register_bits_ and dst.is_register()) {
             assembler_.slli(indent, loaded.value.base_register(),
                             loaded.value.base_register(),
-                            register_bits - bits + shift_count);
+                            register_bits_ - bits + shift_count);
 
             assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
                                     loaded.value.base_register(),
                                     loaded.value.base_register(),
-                                    register_bits - bits);
+                                    register_bits_ - bits);
 
             store_operation_result(indent, dst, loaded.address, loaded.value,
                                    false);
@@ -3518,7 +3542,7 @@ class machine_rv32i : public machine {
                              address.displacement(), address.base_register());
 
         } else if (width < 4 and normalize) {
-            const size_t shift{32 - (width * 8)};
+            const size_t shift{register_bits_ - (width * 8)};
 
             assembler_.slli(indent, value.base_register(),
                             value.base_register(), shift);
@@ -3566,7 +3590,7 @@ class machine_rv32i : public machine {
         // a negative index is left to the lower check, which has already
         // failed it when enabled
         if (reg_count.is_empty() and not lower_checked) {
-            assembler_.bltz(indent, index, "2f");
+            assembler_.bltz(indent, index, bounds_pass.reference);
             return std::string{index};
         }
 
@@ -3601,8 +3625,8 @@ class machine_rv32i : public machine {
         assembler_.sltu(indent, limit.base_register(), top, index);
         assembler_.add(indent, high.base_register(), high.base_register(),
                        limit.base_register());
-        assembler_.bltz(indent, high.base_register(), "2f");
-        assembler_.bgtz(indent, high.base_register(), "1f");
+        assembler_.bltz(indent, high.base_register(), bounds_pass.reference);
+        assembler_.bgtz(indent, high.base_register(), bounds_fail.reference);
 
         return top;
     }
@@ -3640,7 +3664,7 @@ class machine_rv32i : public machine {
 
         comment(walk.src_loc_tk, walk.indent, "{}: end of {}, {}: tail bytes",
                 chunks.base_register(),
-                start.width == 4 ? "words" : "halfwords",
+                start.width == word_size_bytes_ ? "words" : "halfwords",
                 walk.count.base_register());
 
         if (start.head_size_bytes != 0) {
@@ -3751,7 +3775,7 @@ class machine_rv32i : public machine {
 
         const std::string_view count{walk.count.base_register()};
 
-        if (width == 4) {
+        if (width == word_size_bytes_) {
             comment(walk.src_loc_tk, walk.indent, "{} optional 2-byte tail",
                     walk.verb);
 
@@ -4086,7 +4110,7 @@ class machine_rv32i : public machine {
         }
 
         return std::format("{} {}-byte {}", verb, width,
-                           width == 4 ? "words" : "halfwords");
+                           width == word_size_bytes_ ? "words" : "halfwords");
     }
 
     // runs of equal widths, e.g. '1 + 2 + 4 x 4 + 1 B'
@@ -4174,7 +4198,8 @@ class machine_rv32i : public machine {
                                            const size_t width) -> bool {
 
         const uint32_t mask{
-            std::numeric_limits<uint32_t>::max() >> ((4 - width) * 8),
+            std::numeric_limits<uint32_t>::max() >>
+                ((word_size_bytes_ - width) * 8),
         };
 
         return (static_cast<uint32_t>(constant) & mask) == mask;
@@ -4328,11 +4353,10 @@ class machine_rv32i : public machine {
                                               const type& value_type)
         -> int32_t {
 
-        constexpr size_t register_bits{std::numeric_limits<uint32_t>::digits};
-        const size_t bits{value_type.size_bytes() * 8};
+        const size_t bits{value_type.size_bits()};
 
         const uint32_t mask{
-            std::numeric_limits<uint32_t>::max() >> (register_bits - bits),
+            std::numeric_limits<uint32_t>::max() >> (register_bits_ - bits),
         };
 
         uint32_t value{static_cast<uint32_t>(constant) & mask};
@@ -4384,8 +4408,7 @@ class machine_rv32i : public machine {
         assert(not dst_type.is_bool());
 
         const int64_t limit{
-            static_cast<int64_t>(uint64_t{1}
-                                 << ((dst_type.size_bytes() * 8) - 1)),
+            static_cast<int64_t>(uint64_t{1} << (dst_type.size_bits() - 1)),
         };
         // note: -1 because the sign bit is the highest bit of the type
 

@@ -47,6 +47,12 @@ class machine {
     static constexpr int stderr_descriptor{2};
     static constexpr int panic_exit_code{255};
 
+    // the labels of the sections of the program's data and variables
+    static constexpr std::string_view data_label{"dat"};
+    static constexpr std::string_view data_end_label{"dat.end"};
+    static constexpr std::string_view variables_label{"vars"};
+    static constexpr std::string_view variables_end_label{"vars.end"};
+
     // the labels of the code that a failed check jumps to, every backend
     // emits it
     static constexpr std::string_view bounds_failure_handler_label{
