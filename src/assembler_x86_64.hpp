@@ -525,9 +525,24 @@ class assembler_x86_64 final : public assembler {
         -> std::string_view {
 
         // indexed by 'condition'
-        constexpr std::array<std::string_view, 11> suffixes{
-            "e", "ne", "l", "le", "g", "ge", "a", "b", "s", "nz", "ae",
+        constexpr auto suffixes{
+            std::to_array<std::string_view>({
+                "e",
+                "ne",
+                "l",
+                "le",
+                "g",
+                "ge",
+                "a",
+                "b",
+                "s",
+                "nz",
+                "ae",
+            }),
         };
+
+        static_assert(suffixes.size() == std::to_underlying(condition::ae) + 1);
+        // note: +1 because the last enumerator is counted too
 
         return suffixes.at(std::to_underlying(cc));
     }
@@ -564,8 +579,8 @@ class assembler_x86_64 final : public assembler {
     // initializers are usable only once the class is complete
     [[nodiscard]] static auto info(const op code) -> const op_info& {
         // indexed by 'op'
-        static constexpr std::array<op_info, op_count> infos{
-            {
+        static constexpr auto infos{
+            std::to_array<op_info>({
                 {.mnemonic{"mov"}, .operand_count{2}},
                 {.mnemonic{"movsx"}, .operand_count{2}},
                 {.mnemonic{"lea"}, .operand_count{2}},
@@ -599,8 +614,10 @@ class assembler_x86_64 final : public assembler {
                 {.mnemonic{"cmpsw"}, .operand_count{}},
                 {.mnemonic{"cmpsd"}, .operand_count{}},
                 {.mnemonic{"cmpsq"}, .operand_count{}},
-            },
+            }),
         };
+
+        static_assert(infos.size() == op_count);
 
         return infos.at(std::to_underlying(code));
     }
@@ -631,13 +648,19 @@ class assembler_x86_64 final : public assembler {
         -> std::string_view {
 
         // indexed by 'section'
-        constexpr std::array<std::string_view, 5> directives{
-            "section .text",
-            "section .rodata",
-            "section .data",
-            "section .bss",
-            "section .bss.vars nobits alloc write",
+        constexpr auto directives{
+            std::to_array<std::string_view>({
+                "section .text",
+                "section .rodata",
+                "section .data",
+                "section .bss",
+                "section .bss.vars nobits alloc write",
+            }),
         };
+
+        static_assert(directives.size() ==
+                      std::to_underlying(section::variables) + 1);
+        // note: +1 because the last enumerator is counted too
 
         return directives.at(std::to_underlying(which));
     }

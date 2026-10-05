@@ -1920,8 +1920,8 @@ class assembler_rv32i final : public assembler {
     // initializers are usable only once the class is complete
     [[nodiscard]] static auto info(const op code) -> const op_info& {
         // indexed by 'op'
-        static constexpr std::array<op_info, op_count> infos{
-            {
+        static constexpr auto infos{
+            std::to_array<op_info>({
                 {.mnemonic{"add"}, .operands{form::registers}, .encoding{0x33}},
                 {
                     .mnemonic{"sub"},
@@ -2101,8 +2101,10 @@ class assembler_rv32i final : public assembler {
                 },
                 {.mnemonic{"call"}, .operands{form::call}, .encoding{0x17}},
                 {.mnemonic{"ret"}, .operands{form::ret}, .encoding{0x8067}},
-            },
+            }),
         };
+
+        static_assert(infos.size() == op_count);
 
         return infos.at(std::to_underlying(code));
     }

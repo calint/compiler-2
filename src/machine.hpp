@@ -130,6 +130,11 @@ class machine {
     static constexpr int stderr_descriptor{2};
     static constexpr int panic_exit_code{255};
 
+    // the unit of the shifts that take a byte out of a value
+    static constexpr size_t bits_per_byte{
+        std::numeric_limits<unsigned char>::digits,
+    };
+
     // the labels of the sections of the program's data and variables
     static constexpr std::string_view data_label{"dat"};
     static constexpr std::string_view data_end_label{"dat.end"};
@@ -724,12 +729,10 @@ class machine {
     [[nodiscard]] static auto little_endian_value(const std::string_view bytes)
         -> int64_t {
 
-        constexpr size_t byte_bits{8};
-
         uint64_t bits{};
         for (size_t i{}; i < bytes.size(); ++i) {
             bits |= uint64_t{static_cast<unsigned char>(bytes.at(i))}
-                    << (byte_bits * i);
+                    << (bits_per_byte * i);
         }
 
         if (bytes.size() == sizeof(int32_t)) {

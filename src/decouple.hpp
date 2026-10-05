@@ -52,18 +52,23 @@ class type;
 class expr_any;
 struct generic_type_instance;
 
+// what the storage size functions below accept
+namespace storage_limits {
+
 // alignment padding of a size at the limit stays in the signed 64-bit range
-inline constexpr size_t max_storage_size_bytes{
+inline constexpr size_t max_size_bytes{
     static_cast<size_t>(std::numeric_limits<int64_t>::max()) - 16,
 };
 // note: -16 leaves room for the alignment padding
+
+} // namespace storage_limits
 
 [[nodiscard]] inline auto add_storage_size(const token& src_loc_tk,
                                            const size_t base,
                                            const size_t size_bytes) -> size_t {
 
-    if (size_bytes > max_storage_size_bytes or
-        base > max_storage_size_bytes - size_bytes) {
+    if (size_bytes > storage_limits::max_size_bytes or
+        base > storage_limits::max_size_bytes - size_bytes) {
 
         throw compiler_exception{src_loc_tk,
                                  "storage size exceeds signed 64-bit range"};
@@ -76,7 +81,7 @@ inline constexpr size_t max_storage_size_bytes{
                                                 const size_t size_bytes,
                                                 const size_t count) -> size_t {
 
-    if (count != 0 and size_bytes > max_storage_size_bytes / count) {
+    if (count != 0 and size_bytes > storage_limits::max_size_bytes / count) {
         throw compiler_exception{src_loc_tk,
                                  "storage size exceeds signed 64-bit range"};
     }
@@ -89,8 +94,8 @@ inline constexpr size_t max_storage_size_bytes{
 [[nodiscard]] inline auto sum_storage_size(const size_t base,
                                            const size_t size_bytes) -> size_t {
 
-    assert(size_bytes <= max_storage_size_bytes);
-    assert(base <= max_storage_size_bytes - size_bytes);
+    assert(size_bytes <= storage_limits::max_size_bytes);
+    assert(base <= storage_limits::max_size_bytes - size_bytes);
 
     return base + size_bytes;
 }

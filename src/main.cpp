@@ -36,12 +36,12 @@
 #include "toc.hpp"
 
 namespace {
+// the sizes of '--vars' and '--stack' are multiples of their alignment, the
+// stack one keeps sp 16-byte aligned
 constexpr size_t default_vars_size_bytes{0x10000};
 constexpr size_t vars_alignment{16};
 constexpr size_t default_stack_size_bytes{0x10000};
-// keeps sp 16-byte aligned
 constexpr size_t stack_alignment{16};
-// note: to avoid "magic number" lint
 
 enum class target : uint8_t { x86_64, rv32i, rv32i_qemu, rv32i_fpga };
 

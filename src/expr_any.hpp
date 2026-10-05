@@ -508,8 +508,6 @@ class expr_any final : public statement {
             return std::nullopt;
         }
 
-        constexpr size_t byte_bits{8};
-
         std::string bytes;
         for (const expr_variant& e : vars_) {
             const std::optional<int64_t> value{constant_element_value(tc, e)};
@@ -523,7 +521,8 @@ class expr_any final : public statement {
 
             const uint64_t bits{static_cast<uint64_t>(*value)};
             for (size_t i{}; i < element_type.size_bytes(); ++i) {
-                bytes += static_cast<char>(bits >> (byte_bits * i));
+                bytes +=
+                    static_cast<char>(bits >> (machine::bits_per_byte * i));
             }
         }
 

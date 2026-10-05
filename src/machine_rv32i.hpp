@@ -3619,7 +3619,7 @@ class machine_rv32i : public machine {
                              address.displacement(), address.base_register());
 
         } else if (width < 4 and normalize) {
-            const size_t shift{register_bits_ - (width * 8)};
+            const size_t shift{register_bits_ - (width * bits_per_byte)};
 
             assembler_.slli(indent, value.base_register(),
                             value.base_register(), shift);
@@ -4283,7 +4283,7 @@ class machine_rv32i : public machine {
 
         const uint32_t mask{
             std::numeric_limits<uint32_t>::max() >>
-                ((word_size_bytes_ - width) * 8),
+                ((word_size_bytes_ - width) * bits_per_byte),
         };
 
         return (static_cast<uint32_t>(constant) & mask) == mask;
