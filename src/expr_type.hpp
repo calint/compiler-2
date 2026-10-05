@@ -240,12 +240,13 @@ class expr_type final : public statement {
             return;
         }
 
+        const field_coverage::range exact{
+            .offset{dst.range.offset},
+            .size_bytes{written_size_bytes},
+        };
+
         // with a runtime index any element of the array may already be written
-        const field_coverage::range written{
-            dst.is_exact
-                ? field_coverage::range{.offset{dst.range.offset},
-                                        .size_bytes{written_size_bytes},}
-                : dst.range,};
+        const field_coverage::range& written{dst.is_exact ? exact : dst.range};
 
         item.visit_reads(
             dst.root,
@@ -304,7 +305,7 @@ class expr_type final : public statement {
 
         // 'expr_any' validates the source element type before entering here
 
-        assert(fld.type().name() == src_info.type_ref().name());
+        assert(fld.type().is_same(src_info.type_ref()));
 
         if (fld.array_count != src_info.array_len) {
             throw compiler_exception{

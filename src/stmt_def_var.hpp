@@ -62,7 +62,7 @@ class stmt_def_var final : public statement {
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it
         if (is_let_) {
-            tc.make_var_read_only(name_tk_.text(), read_only_cause::LET);
+            tc.make_var_read_only(name_tk_.text(), read_only_cause::let);
         }
     }
 
@@ -158,10 +158,10 @@ class stmt_def_var final : public statement {
         tz.put_back_token(tk);
 
         // 'expr_bool' parses any arithmetic too, as a comparison shorthand
-        const expr_bool bol{tc, tz.next_whitespace_token(), tz};
+        const expr_bool condition{tc, tz.next_whitespace_token(), tz};
 
         // a comparison, 'not', 'and' or 'or'
-        const expr_arith* const arith{bol.arithmetic()};
+        const expr_arith* const arith{condition.arithmetic()};
         if (arith == nullptr) {
             set_type(tc.get_type_bool());
             return;

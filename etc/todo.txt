@@ -90,6 +90,15 @@ better assembler code, medium, largest gain first
         does not flag a negative index (x86_64 compares signed, rv32i skips a
         negative index with 'bltz'), the rv32i limit is 2^31, the x86_64 limit
         follows the register width
+    [ ] questionable: 'machine' has two protocols for the same operation
+        chosen by 'compares_directly' ('compare_memory' or 'begin_memory_equal'
+        / 'set_memory_equal_left' / 'set_memory_equal_right' /
+        'end_memory_equal'), and 'begin_array_copy' / 'set_array_copy_source'
+        / 'set_array_copy_destination' / 'end_array_copy' next to 'copy': the
+        x86_64 register protocol leaks into the interface the front end sees
+    [ ] questionable: 'type::accessor' builds an 'ident_info' with an operand,
+        a type knows about storage and registers; 'toc' or 'ident_builder'
+        would hold that
     [ ] missing direct includes (153 of misc-include-cleaner, 'std::format',
         'size_t', ...): add per header
 [ ] ai test suite in c++ being human readable

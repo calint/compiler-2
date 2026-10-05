@@ -84,7 +84,7 @@ enum class var_kind : uint8_t { var, dat };
 
 class frame final {
   public:
-    enum class frame_type : uint8_t { FUNC, BLOCK, LOOP, FOO };
+    enum class frame_type : uint8_t { func, block, loop, foo };
 
   private:
     // optional name
@@ -114,7 +114,7 @@ class frame final {
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
-    frame_type type_{frame_type::FUNC}; // frame type
+    frame_type type_{frame_type::func}; // frame type
     bool is_inlined_{true};
     std::string_view storage_base_register_;
     size_t peak_storage_size_bytes_{};
@@ -198,15 +198,15 @@ class frame final {
     }
 
     [[nodiscard]] auto is_block() const -> bool {
-        return type_ == frame_type::BLOCK;
+        return type_ == frame_type::block;
     }
 
     [[nodiscard]] auto is_foo() const -> bool {
-        return type_ == frame_type::FOO;
+        return type_ == frame_type::foo;
     }
 
     [[nodiscard]] auto is_func() const -> bool {
-        return type_ == frame_type::FUNC;
+        return type_ == frame_type::func;
     }
 
     [[nodiscard]] auto is_inlined_func() const -> bool {
@@ -216,7 +216,7 @@ class frame final {
     }
 
     [[nodiscard]] auto is_loop() const -> bool {
-        return type_ == frame_type::LOOP;
+        return type_ == frame_type::loop;
     }
 
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
@@ -1081,42 +1081,50 @@ class toc final {
 
         const std::string_view call_path{get_call_path()};
         const std::string src_loc{source_location_for_use_in_label(src_loc_tk)};
-        const std::string lbl{
-            std::format("{}.{}{}", prefix, src_loc,
-                        (call_path.empty() ? std::string{}
-                                           : std::format(".{}", call_path))),
-        };
 
-        return lbl;
+        return std::format("{}.{}{}", prefix, src_loc,
+                           (call_path.empty() ? std::string{}
+                                              : std::format(".{}", call_path)));
     }
 
     auto enter_block() -> void {
-        frames_.emplace_back("", frame::frame_type::BLOCK);
+        frames_.emplace_back("", frame::frame_type::block);
         refresh_usage();
     }
 
     auto enter_foo(const std::string_view name) -> void {
-        frames_.emplace_back(name, frame::frame_type::FOO);
+        frames_.emplace_back(name, frame::frame_type::foo);
         refresh_usage();
     }
 
+    // a function compiled in place, 'return' jumps to 'return_jmp_label'
     auto enter_func(const std::string_view name,
                     const std::string_view call_path = {},
-                    const std::string_view return_jmp_label = {},
-                    const bool is_inlined = true,
-                    const std::string_view storage_base_register = {}) -> void {
+                    const std::string_view return_jmp_label = {}) -> void {
 
-        assert(storage_base_register.empty() or not is_inlined);
+        frames_.emplace_back(name, frame::frame_type::func,
+                             std::string{call_path},
+                             std::string{return_jmp_label}, true);
 
-        frames_.emplace_back(
-            name, frame::frame_type::FUNC, std::string{call_path},
-            std::string{return_jmp_label}, is_inlined, storage_base_register);
+        refresh_usage();
+    }
+
+    // a function with a body of its own, its variables are placed from
+    // 'storage_base_register' when not empty
+    auto enter_noninline_func(const std::string_view name,
+                              const std::string_view call_path,
+                              const std::string_view storage_base_register)
+        -> void {
+
+        frames_.emplace_back(name, frame::frame_type::func,
+                             std::string{call_path}, std::string{}, false,
+                             storage_base_register);
 
         refresh_usage();
     }
 
     auto enter_loop(const std::string_view name) -> void {
-        frames_.emplace_back(name, frame::frame_type::LOOP);
+        frames_.emplace_back(name, frame::frame_type::loop);
         refresh_usage();
     }
 
@@ -1573,6 +1581,20 @@ class toc final {
     // statics
     //
 
+    // the label after the code of the construct 'label' names, e.g. a loop
+    [[nodiscard]] static auto end_label(const std::string_view label)
+        -> std::string {
+
+        return std::format("{}.end", label);
+    }
+
+    // the label of the next iteration of the 'foo' loop 'label' names
+    [[nodiscard]] static auto continue_label(const std::string_view label)
+        -> std::string {
+
+        return std::format("{}.continue", label);
+    }
+
     // 'self' is declared only by the compiler: the receiver of a method and the
     // value built by a constructor
     static auto assert_name_not_reserved(const token& name_tk) -> void {
@@ -1713,7 +1735,7 @@ class toc final {
     auto comment_var(const token& src_loc_tk, const size_t indent,
                      const var_info& var) -> void {
 
-        const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
+        const ident_info name_info{make_ident_info(src_loc_tk, var.name)};
 
         ::machine& x{machine()};
 
@@ -1814,7 +1836,7 @@ class toc final {
                                    const std::string_view ident,
                                    const ident_path& id) const -> ident_info {
 
-        // is 'id' an integer?
+        // an integer constant
         if (const std::optional<int64_t> value{
                 constant_parser::parse_constant(src_loc_tk, id.str()),
             };
@@ -1824,7 +1846,7 @@ class toc final {
                                           *value);
         }
 
-        // is it a boolean constant?
+        // a boolean constant
         if (id.base() == "true") {
             return ident_info::make_const(ident, id.str(), get_type_bool(), 1);
         }

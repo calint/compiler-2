@@ -68,7 +68,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // the emulator exits at 'ebreak' with a0 as its status, the loop halts
     // hardware that continues
     auto emit_exit_routine(assembler_rv32i& a) const -> void override {
-        a.label(0, ".Lbaz_exit");
+        a.label(0, exit_label_);
         a.label(0, "1");
         a.ebreak(1);
         a.j(1, "1b");

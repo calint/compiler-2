@@ -13,6 +13,13 @@
 // stack setup, the uart access and how the program ends
 
 class machine_rv32i_bare_metal : public machine_rv32i {
+  protected:
+    // the routines a program calls, the target defines the exit one
+    static constexpr std::string_view exit_label_{".Lbaz_exit"};
+    static constexpr std::string_view read_label_{".Lbaz_read"};
+    static constexpr std::string_view write_label_{".Lbaz_write"};
+
+  private:
     static constexpr int newline_{'\n'};
     static constexpr int carriage_return_{'\r'};
     // ctrl-d
@@ -71,7 +78,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
                    exit_code);
 
-        branch(indent, ".Lbaz_exit");
+        branch(indent, exit_label_);
         exit_used_ = true;
     }
 
@@ -94,12 +101,12 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // the routines return through a7 so the call costs no more registers
     // than the system call
     auto emit_read_call(const size_t indent) -> void override {
-        call_io_routine(indent, ".Lbaz_read", read_clobbered_);
+        call_io_routine(indent, read_label_, read_clobbered_);
         read_used_ = true;
     }
 
     auto emit_write_call(const size_t indent) -> void override {
-        call_io_routine(indent, ".Lbaz_write", write_clobbered_);
+        call_io_routine(indent, write_label_, write_clobbered_);
         write_used_ = true;
     }
 
@@ -140,7 +147,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     auto emit_read_routine() const -> void {
         assembler_rv32i& a{assembler()};
 
-        a.label(0, ".Lbaz_read");
+        a.label(0, read_label_);
         emit_uart_setup(a);
         a.mv(1, "a6", "a1");
         a.li(1, "a0", 0);
@@ -168,7 +175,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     auto emit_write_routine() const -> void {
         assembler_rv32i& a{assembler()};
 
-        a.label(0, ".Lbaz_write");
+        a.label(0, write_label_);
         emit_uart_setup(a);
         a.mv(1, "a5", "a1");
         // the descriptor is not needed so a0 holds the end

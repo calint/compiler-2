@@ -42,6 +42,20 @@ class machine {
   public:
     enum class builtin_function : uint8_t { read, write, exit };
 
+    // a failed check prints its message to this descriptor and exits with this
+    // code
+    static constexpr int stderr_descriptor{2};
+    static constexpr int panic_exit_code{255};
+
+    // the labels of the code that a failed check jumps to, every backend
+    // emits it
+    static constexpr std::string_view bounds_failure_handler_label{
+        "baz_bounds_panic",
+    };
+    static constexpr std::string_view frame_overflow_handler_label{
+        "baz_frame_overflow",
+    };
+
     struct output_statistics {
         // false when written output was not kept to count
         bool is_counted{};
@@ -179,7 +193,6 @@ class machine {
                                       const size_t indent,
                                       const operand& frame_address,
                                       const operand& frame_size_bytes,
-                                      const std::string_view failure_label,
                                       const bool enabled = {}) -> void = 0;
 
     virtual auto comment_alias(const token& src_loc_tk, const size_t indent,

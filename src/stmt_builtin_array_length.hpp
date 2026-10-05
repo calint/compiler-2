@@ -61,7 +61,7 @@ class stmt_builtin_array_length final : public expression {
         // note: assigning to a constant is rejected before the value is built
         assert(not dst_info.is_const());
 
-        if (dst_info.type_ref().name() != tc.get_type_default().name()) {
+        if (not dst_info.type_ref().is_same(tc.get_type_default())) {
             throw compiler_exception{
                 dst_info.error_token(tok()),
                 std::format("destination must be an '{}'",
@@ -90,7 +90,7 @@ class stmt_builtin_array_length final : public expression {
                                        const type& width_type) const
         -> std::optional<int64_t> override {
 
-        if (width_type.name() != tc.get_type_default().name()) {
+        if (not width_type.is_same(tc.get_type_default())) {
             return std::nullopt;
         }
 

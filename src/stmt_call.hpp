@@ -360,7 +360,6 @@ class stmt_call : public expression {
         // the result alias has its own address choice in 'compile'
         const size_t first_argument_alias{aliases_to_add.size()};
 
-        // process each argument
         for (const auto [arg, param] : std::views::zip(args_, func.params())) {
             aliases_to_add.push_back(make_argument_alias(tc, indent, arg, param,
                                                          allocated_registers));
@@ -463,7 +462,7 @@ class stmt_call : public expression {
             tok(), indent, frame_address,
             operand::imm(func.frame_size_label(array_lengths),
                          tc.get_type_address()),
-            "baz_frame_overflow", tc.is_frame_check());
+            tc.is_frame_check());
 
         // write pointers into the callee frame: result (if any), then arguments
         // each slot holds an address, not the value stored at that address
@@ -917,7 +916,7 @@ class stmt_call : public expression {
             std::format("{}.{}", func.body_label(), new_call_path),
         };
 
-        const std::string ret_jmp_label{std::format("{}.end", call_label)};
+        const std::string ret_jmp_label{toc::end_label(call_label)};
 
         func.source_def_comment_to(x, indent);
 

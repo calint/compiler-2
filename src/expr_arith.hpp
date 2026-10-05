@@ -138,7 +138,7 @@ class expr_arith final : public expression {
             // consume the second character of a previously recognized shift
             // operator
             if (ch == '<' or ch == '>') {
-                std::ignore = tz.next_char();
+                tz.skip_char();
             }
 
             exprs_.emplace_back(parse_element(tc, tz, in_args));
@@ -197,9 +197,9 @@ class expr_arith final : public expression {
             }
         }
 
-        // is destination a register or a single element without unary ops?
+        // a register or a single plain element is compiled directly, without
+        // trying with and without a scratch register
         if (dst_info.is_register() or is_single_plain_element()) {
-            // yes, compile without trying with and without scratch register
             do_compile(tc, indent, dst_info);
             return;
         }
@@ -817,7 +817,7 @@ class expr_arith final : public expression {
                                       : expr->get_type(),
             };
 
-            if (expr_type.name() == tc.get_type_bool().name()) {
+            if (expr_type.is_bool()) {
                 throw compiler_exception{
                     expr->tok(),
                     "boolean values cannot be arithmetic operands"};

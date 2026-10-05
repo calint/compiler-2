@@ -585,7 +585,7 @@ class expr_any final : public statement {
                      : tc.get_type_default(),
         };
 
-        if (literal_type.name() != tp.name()) {
+        if (not literal_type.is_same(tp)) {
             throw compiler_exception{is_typed ? tk : open_bracket_tk_,
                                      std::format("expected type '{}', got '{}'",
                                                  tp.name(),
@@ -639,7 +639,7 @@ class expr_any final : public statement {
 
         // e.g. 'true' or a named constant
         if (not e.is_expression()) {
-            const ident_info& src_info{tc.make_ident_info(e)};
+            const ident_info src_info{tc.make_ident_info(e)};
 
             assert(src_info.is_const());
 
@@ -671,7 +671,7 @@ class expr_any final : public statement {
 
         // labels to jump to depending on the evaluation
         const std::string jmp_to_end{
-            std::format("{}.end", tc.create_unique_label(src_loc_tk, "bool")),
+            toc::end_label(tc.create_unique_label(src_loc_tk, "bool")),
         };
 
         // compile and possibly evaluate constant expression
@@ -684,7 +684,7 @@ class expr_any final : public statement {
         // not constant evaluation
         x.label(indent, jmp_to_end);
 
-        // did the evaluation result in a constant?
+        // a constant evaluation stores its value
         if (const_eval) {
             x.store_boolean(src_loc_tk, indent, dst, *const_eval);
         }
@@ -744,7 +744,7 @@ class expr_any final : public statement {
             return expr_type{tc, tz, tp, false};
         }
 
-        if (tp.name() == tc.get_type_bool().name()) {
+        if (tp.is_bool()) {
             // destination is boolean
 
             // e.g. 'var b = bool' is 'var b = false'

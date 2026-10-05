@@ -2051,8 +2051,7 @@ auto generate_frame_checks() -> void {
                              offset, case_index);
                 backend.check_frame_capacity(
                     token{}, 1, operand::mem("a0", {}, 1, 0, integer),
-                    operand::imm(size_label, integer), "frame_overflow",
-                    enabled);
+                    operand::imm(size_label, integer), enabled);
                 std::println("    li a3, 0\nframe_result_{}:\n    li a4, {}\n"
                              "    beq a3, a4, 1f\n    j frame_failure\n1:",
                              case_index++, failed ? 1 : 0);
@@ -2069,14 +2068,15 @@ auto generate_frame_checks() -> void {
             operand::mem("a0", {}, 1,
                          positive ? int64_t{UINT32_MAX} : -int64_t{UINT32_MAX},
                          integer),
-            operand::imm("0", integer), "frame_overflow", true);
+            operand::imm("0", integer), true);
         std::println("    li a3, 0\nframe_result_{}:\n    li a4, 1\n"
                      "    beq a3, a4, 1f\n    j frame_failure\n1:",
                      case_index++);
     }
     backend.free_named_register(token{}, 0, continuation);
     backend.end_main();
-    std::println("frame_overflow:\n    li a3, 1\n    jr s3\nframe_failure:");
+    std::println("{}:\n    li a3, 1\n    jr s3\nframe_failure:",
+                 machine::frame_overflow_handler_label);
     backend.exit(token{}, 1, operand::imm("1", integer));
     backend.finish();
     std::println(".data\ndat:\nvars:\n    .zero 256\nvars.end:");

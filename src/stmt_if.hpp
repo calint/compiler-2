@@ -26,13 +26,10 @@ class stmt_if final : public statement {
         : statement{src_loc_tk} {
 
         set_type(tc.get_type_void());
-        // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3}, broken
-        // down into branches 'a == b {x = 1}', 'c == d {y = 2}', ending with
-        // an optional 'else' block
 
-        // note: 'if' token has been read
-
-        // read branch e.g. a == b {x = 1}
+        // 'if a == b {x = 1} else if c == d {y = 2} else {z = 3}' breaks down
+        // into the branches 'a == b {x = 1}' and 'c == d {y = 2}' and an
+        // optional 'else' block, the 'if' token has been read
         branches_.emplace_back(tc, tz);
 
         while (parse_else(tc, tz)) {
@@ -51,7 +48,6 @@ class stmt_if final : public statement {
         // output first branch
         const stmt_if_branch& branch{branches_.at(0)};
         branch.source_to(os);
-        // output the remaining 'else if' branches
         const auto else_if_branches{branches_ | std::views::drop(1)};
         for (const auto [b, t] :
              std::views::zip(else_if_branches, else_if_tokens_)) {
@@ -72,7 +68,7 @@ class stmt_if final : public statement {
 
         // the 'if' keyword locates the labels shared by all branches
         const std::string if_label{tc.create_unique_label(tok(), "if")};
-        const std::string label_after_if{std::format("{}.end", if_label)};
+        const std::string label_after_if{toc::end_label(if_label)};
 
         const std::string label_else_branch{
             stmt_if::create_label_else_branch(else_code_, if_label,
@@ -90,9 +86,8 @@ class stmt_if final : public statement {
 
             // a false condition continues at the next branch or the 'else'
             const std::string jmp_if_false{
-                is_last_branch
-                    ? label_else_branch
-                    : branches_.at(branch_index + 1).if_bgn_label(tc),
+                is_last_branch ? label_else_branch
+                               : branches_.at(branch_index + 1).begin_label(tc),
             };
             // note: +1 is the branch after the current one
 
@@ -114,11 +109,10 @@ class stmt_if final : public statement {
                 break;
             }
         }
-        // if it wasn't a constant evaluation that was true, generate the else
-        // code
 
         machine& x{tc.machine()};
 
+        // a branch that is constant true leaves no way to the 'else' code
         if (not branch_evaluated_to_true and not else_code_.is_empty()) {
             x.label(indent, label_else_branch);
             else_code_.compile(tc, indent, dst_info);

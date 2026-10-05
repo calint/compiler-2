@@ -79,7 +79,7 @@ class stmt_builtin_equal final : public expression {
         const ident_info lhs_info{make_operand_info(tc, lhs_)};
         const ident_info rhs_info{make_operand_info(tc, rhs_)};
 
-        if (lhs_info.type_ref().name() != rhs_info.type_ref().name()) {
+        if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compiler_exception{
                 rhs_.tok(),
                 std::format("source and compare types are not the "

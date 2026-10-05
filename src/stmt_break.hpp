@@ -32,7 +32,7 @@ class stmt_break final : public statement {
         const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};
 
         // jump out of the loop or foo
-        x.branch(indent, std::format("{}.end", loop_label));
+        x.branch(indent, toc::end_label(loop_label));
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

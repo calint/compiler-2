@@ -276,13 +276,13 @@ class operand {
     }
 };
 
-// why a name cannot be written, for the diagnostic; NONE is writable
+// why a name cannot be written, for the diagnostic; 'none' is writable
 enum class read_only_cause : uint8_t {
-    NONE,
-    LET,
-    PARAM,
-    FOO_ELEMENT,
-    FOO_COUNTER,
+    none,
+    let,
+    param,
+    foo_element,
+    foo_counter,
 };
 
 struct var_info {
@@ -301,7 +301,7 @@ struct var_info {
 
 struct ident_info {
   private:
-    enum class kind : uint8_t { EMPTY, CONST, VAR, REGISTER };
+    enum class kind : uint8_t { empty, constant, var, reg };
 
   public:
     std::string id;
@@ -341,19 +341,19 @@ struct ident_info {
         assert(validate_invariants());
     }
 
-    [[nodiscard]] auto is_const() const -> bool { return kind == kind::CONST; }
+    [[nodiscard]] auto is_const() const -> bool {
+        return kind == kind::constant;
+    }
 
-    [[nodiscard]] auto is_empty() const -> bool { return kind == kind::EMPTY; }
+    [[nodiscard]] auto is_empty() const -> bool { return kind == kind::empty; }
 
     [[nodiscard]] auto is_read_only() const -> bool {
-        return read_only_why != read_only_cause::NONE;
+        return read_only_why != read_only_cause::none;
     }
 
-    [[nodiscard]] auto is_register() const -> bool {
-        return kind == kind::REGISTER;
-    }
+    [[nodiscard]] auto is_register() const -> bool { return kind == kind::reg; }
 
-    [[nodiscard]] auto is_var() const -> bool { return kind == kind::VAR; }
+    [[nodiscard]] auto is_var() const -> bool { return kind == kind::var; }
 
     void pop() {
         assert(validate_invariants());
@@ -431,7 +431,7 @@ struct ident_info {
             .lea_path{::operand{}},
             .operand{},
             .const_value{value},
-            .kind{kind::CONST},
+            .kind{kind::constant},
         };
     }
 
@@ -460,7 +460,7 @@ struct ident_info {
             .type_path{&reg.type_ref()},
             .lea_path{::operand{}},
             .operand{reg},
-            .kind{kind::REGISTER},
+            .kind{kind::reg},
         };
     }
 
@@ -487,7 +487,7 @@ struct ident_info {
             .array_len{array_len},
             .is_array{is_array},
             .is_pointer{is_pointer},
-            .kind{kind::VAR},
+            .kind{kind::var},
         };
     }
 };

@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/match.h"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
@@ -281,7 +280,7 @@ auto is_bare_builtin_type(const toc& tc, const token& tk, tokenizer& tz)
 
     // an arithmetic operator would continue the expression, e.g. 'i8 + 1'
     return next != '(' and next != '[' and
-           !absl::StrContains(std::string_view{"+-*/%&|^<>"}, next);
+           not std::string_view{"+-*/%&|^<>"}.contains(next);
 }
 
 // declared in 'decouple.hpp'
@@ -372,7 +371,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     const bool is_typed_literal{is_record_literal(tc, tok(), tz) or is_bare};
     // note: compared by type, a type parameter names the type of its argument
     if (is_typed_literal and
-        tc.get_type_or_throw(tok(), tok().text()).name() != tp.name()) {
+        not tc.get_type_or_throw(tok(), tok().text()).is_same(tp)) {
 
         throw compiler_exception{tok(),
                                  std::format("expected type '{}', got '{}'",
@@ -490,7 +489,7 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
 
     const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
 
-    if (tp.name() != src_info.type_ref().name()) {
+    if (not tp.is_same(src_info.type_ref())) {
         throw compiler_exception{
             stmt_ident_->last_token(),
             std::format("expected type '{}', got '{}'", tp.name(),
@@ -502,7 +501,7 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::assert_call_type(const type& tp) const -> void {
-    if (tp.name() == stmt_call_->get_type().name()) {
+    if (tp.is_same(stmt_call_->get_type())) {
         return;
     }
 
@@ -730,7 +729,7 @@ auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     // 'expr_type' validates the source type before entering here
 
-    assert(dst_type.name() == src_info.type_ref().name());
+    assert(dst_type.is_same(src_info.type_ref()));
 
     // the copy size comes from the source, a whole array would overflow
     if (src_info.is_array and not is_array_destination_) {

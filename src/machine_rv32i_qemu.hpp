@@ -46,7 +46,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
 
     // ends qemu with the exit code a0 as its status
     auto emit_exit_routine(assembler_rv32i& a) const -> void override {
-        a.label(0, ".Lbaz_exit");
+        a.label(0, exit_label_);
         a.slli(1, "a0", "a0", finisher_code_shift_);
         a.li(1, "t0", finisher_pass_);
         a.or_op(1, "a0", "a0", "t0");

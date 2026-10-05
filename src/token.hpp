@@ -152,7 +152,7 @@ class token final {
                 continue;
             }
 
-            const size_t escape_size{escape.starts_with('x') ? 3UZ : 1UZ};
+            const size_t escape_size{escape_length(escape)};
             if (not decode_escape(escape.substr(0, escape_size))) {
                 const size_t backslash_index{start_ix_ + 1 + i};
                 // note: +1 because the text starts after the opening quote
@@ -236,10 +236,7 @@ class token final {
                 continue;
             }
 
-            // a hex escape spans the 'x' and two digits
-            const size_t escape_size{
-                text.substr(i + 1).starts_with('x') ? 3UZ : 1UZ,
-            };
+            const size_t escape_size{escape_length(text.substr(i + 1))};
 
             const std::optional<char> decoded{
                 decode_escape(text.substr(i + 1, escape_size)),
@@ -276,6 +273,14 @@ class token final {
         }
 
         return text;
+    }
+
+    // the characters after a backslash that make up its escape: a hex escape
+    // spans the 'x' and two digits, any other one character
+    [[nodiscard]] static auto escape_length(const std::string_view escape)
+        -> size_t {
+
+        return escape.starts_with('x') ? 3UZ : 1UZ;
     }
 
     // a marker at 'index' with empty text and whitespace

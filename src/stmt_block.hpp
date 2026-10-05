@@ -23,7 +23,7 @@
 
 class stmt_block final : public statement {
     token open_brace_tk_;
-    std::vector<std::unique_ptr<statement>> stms_;
+    std::vector<std::unique_ptr<statement>> statements_;
     token close_brace_tk_;
     bool is_one_statement_{};
 
@@ -45,7 +45,7 @@ class stmt_block final : public statement {
 
         tc.enter_block();
         while (true) {
-            // is it the end of the block?
+            // the '}' ends the block
             close_brace_tk_ = tz.is_next_char_token('}');
             if (not close_brace_tk_.is_empty() and is_one_statement_) {
                 throw compiler_exception{
@@ -57,16 +57,16 @@ class stmt_block final : public statement {
                 break;
             }
 
-            // is it a subblock?
+            // a '{' starts a subblock
             if (const token t{tz.is_next_char_token('{')}; not t.is_empty()) {
                 tz.put_back_token(t);
-                stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
+                statements_.emplace_back(std::make_unique<stmt_block>(tc, tz));
                 continue;
             }
 
             const token tk{tz.next_token()};
 
-            // no more tokens in the block?
+            // the source ended before the '}'
             if (tk.is_empty() and not is_one_statement_) {
                 throw compiler_exception{tz, "expected '}' to close block"};
             }
@@ -75,7 +75,7 @@ class stmt_block final : public statement {
                 break;
             }
 
-            stms_.emplace_back(parse_statement(tc, tz, tk));
+            statements_.emplace_back(parse_statement(tc, tz, tk));
 
             if (is_one_statement_) {
                 break;
@@ -94,7 +94,7 @@ class stmt_block final : public statement {
         if (not is_one_statement_) {
             open_brace_tk_.source_to(os);
         }
-        for (const std::unique_ptr<statement>& s : stms_) {
+        for (const std::unique_ptr<statement>& s : statements_) {
             s->source_to(os);
         }
         if (not is_one_statement_) {
@@ -106,14 +106,14 @@ class stmt_block final : public statement {
         -> void override {
 
         tc.enter_block();
-        for (const std::unique_ptr<statement>& s : stms_) {
+        for (const std::unique_ptr<statement>& s : statements_) {
             s->compile(tc, indent + 1, dst_info);
         }
         tc.exit_block();
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        for (const std::unique_ptr<statement>& s : stms_) {
+        for (const std::unique_ptr<statement>& s : statements_) {
             s->trace_assignment(flow);
 
             // statements after 'return', 'break', 'continue' or 'exit' never
@@ -128,7 +128,7 @@ class stmt_block final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
+    [[nodiscard]] auto is_empty() const -> bool { return statements_.empty(); }
 
     // every iteration starts with at least the coverage at loop entry
     // returns the coverage common to every 'break' of this loop body

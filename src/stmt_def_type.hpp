@@ -46,30 +46,30 @@ class stmt_def_type final : public statement {
 
         toc::assert_name_not_reserved(name_tk_);
 
-        // e.g. 'type text<capacity> {...}'
-        if (open_brace_tk_.is_empty() and
-            tz.peek_char_after_whitespace() == '<') {
+        if (not open_brace_tk_.is_empty()) {
+            parse_fields(tc, tz);
 
+            add_type(tc);
+
+            return;
+        }
+
+        const char next{tz.peek_char_after_whitespace()};
+
+        // e.g. 'type text<capacity> {...}'
+        if (next == '<') {
             define_generic(tc, tk, tz);
             return;
         }
 
         // e.g. 'type str = text<127>'
-        if (open_brace_tk_.is_empty() and
-            tz.peek_char_after_whitespace() == '=') {
-
+        if (next == '=') {
             parse_alias(tc, tz);
             return;
         }
 
-        if (open_brace_tk_.is_empty()) {
-            throw compiler_exception{
-                tz, "expected '{' to begin declaration of type"};
-        }
-
-        parse_fields(tc, tz);
-
-        add_type(tc);
+        throw compiler_exception{tz,
+                                 "expected '{' to begin declaration of type"};
     }
 
     stmt_def_type() = default;
@@ -145,10 +145,8 @@ class stmt_def_type final : public statement {
 
   private:
     auto add_fields(toc& tc) -> void {
-        // initialize the type definition
         type_.set_name(name_tk_.text());
 
-        // add the fields
         for (const stmt_def_type_field& fld : fields_) {
             toc::assert_name_not_reserved(fld.tok());
 

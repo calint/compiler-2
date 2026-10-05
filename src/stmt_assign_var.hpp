@@ -26,7 +26,7 @@ class stmt_assign_var final : public statement {
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           equals_tk_{equals_tk} {
 
-        const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
+        const ident_info dst_info{tc.make_ident_info(stmt_ident_)};
 
         assert_not_read_only(tok(), "assign to", stmt_ident_.identifier(),
                              dst_info);
@@ -47,8 +47,8 @@ class stmt_assign_var final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        // note: all the source info is in 'stmt_ident_'
-        // statement::source_to(os);
+        // all the source info is in 'stmt_ident_', not in this statement's
+        // token
         stmt_ident_.source_to(os);
         equals_tk_.source_to(os);
         expr_.source_to(os);

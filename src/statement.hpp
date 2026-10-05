@@ -334,11 +334,11 @@ class statement {
 
         const std::string_view root{info.root_id()};
 
-        if (info.read_only_why == read_only_cause::LET) {
+        if (info.read_only_why == read_only_cause::let) {
             return std::format(", '{}' is declared with 'let'", root);
         }
 
-        if (info.read_only_why == read_only_cause::PARAM) {
+        if (info.read_only_why == read_only_cause::param) {
             if (root == "self") {
                 return ", the method is not declared 'mut'";
             }
@@ -346,12 +346,12 @@ class statement {
             return std::format(", parameter '{}' is not declared 'mut'", root);
         }
 
-        if (info.read_only_why == read_only_cause::FOO_ELEMENT) {
+        if (info.read_only_why == read_only_cause::foo_element) {
             return std::format(", '{}' is an element of a read-only array",
                                root);
         }
 
-        assert(info.read_only_why == read_only_cause::FOO_COUNTER);
+        assert(info.read_only_why == read_only_cause::foo_counter);
 
         return std::format(", '{}' is the counter of 'foo'", root);
     }

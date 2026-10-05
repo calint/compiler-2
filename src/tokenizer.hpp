@@ -90,6 +90,9 @@ class tokenizer final {
         return ch;
     }
 
+    // reads a character the caller has no use for
+    auto skip_char() -> void { std::ignore = next_char(); }
+
     [[nodiscard]] auto next_token() -> token {
         const std::string_view ws_before{next_whitespace()};
         const size_t at_line{at_line_};
@@ -240,7 +243,7 @@ class tokenizer final {
 
             // the escaped character may be a quote
             if (ch == '\\' and not is_eos() and not is_peek_char('\n')) {
-                std::ignore = next_char();
+                skip_char();
             }
         }
 
@@ -268,7 +271,7 @@ class tokenizer final {
                     throw compiler_exception{open_quote_tk,
                                              "unterminated string"};
                 }
-                std::ignore = next_char();
+                skip_char();
                 continue;
             }
 
@@ -279,7 +282,7 @@ class tokenizer final {
             if (is_eos()) {
                 throw compiler_exception{open_quote_tk, "unterminated string"};
             }
-            std::ignore = next_char();
+            skip_char();
         }
 
         const size_t end_ix{char_ix_};
@@ -385,7 +388,7 @@ class tokenizer final {
     // text
     auto skip_token() -> void {
         if (next_token().text().empty() and not is_eos()) {
-            std::ignore = next_char();
+            skip_char();
         }
     }
 };

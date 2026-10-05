@@ -88,8 +88,7 @@ class stmt_builtin_array_copy final : public statement {
         const ident_info array_src_info{tc.make_ident_info(src_)};
         const ident_info array_dst_info{tc.make_ident_info(dst_)};
 
-        if (array_src_info.type_ref().name() !=
-            array_dst_info.type_ref().name()) {
+        if (not array_src_info.type_ref().is_same(array_dst_info.type_ref())) {
             throw compiler_exception{
                 dst_.tok(),
                 std::format("source type '{}' does not match destination "

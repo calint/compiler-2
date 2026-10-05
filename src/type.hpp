@@ -19,12 +19,12 @@
 class type;
 
 struct type_field {
-    std::string name;       //
+    std::string name;
     const type* type_ptr{}; // element type
     size_t offset{};        // offset relative to instance address
     size_t size_bytes{};    // total size in bytes of all elements
     size_t array_count{};   // array size in elements
-    bool is_array{};        //
+    bool is_array{};
 
     [[nodiscard]] auto type() const -> const type& { return *type_ptr; }
 };
@@ -219,6 +219,11 @@ class type final {
 
     [[nodiscard]] auto has_field(const std::string_view name) const -> bool {
         return std::ranges::contains(fields_, name, &type_field::name);
+    }
+
+    // types are unique objects, a type is only the same as itself
+    [[nodiscard]] auto is_same(const type& other) const -> bool {
+        return this == &other;
     }
 
     [[nodiscard]] auto is_bool() const -> bool {

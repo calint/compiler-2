@@ -40,7 +40,6 @@ class stmt_builtin_foo final : public statement {
 
         // add vars to toc without emitting output so that the code block can be
         // parsed
-
         const ident_info ii{tc.make_ident_info(ident_)};
         tc.enter_foo("");
         add_loop_names(tc, 0, token{}, token{}, ii, operand{}, operand{});
@@ -70,10 +69,9 @@ class stmt_builtin_foo final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        // emit a one-line trimmed comment for the definition
-
         machine& x{tc.machine()};
 
+        // a one-line comment for the definition
         std::string header{statement::trimmed_source(ident_)};
         if (has_count()) {
             header += ", " + statement::trimmed_source(count_);
@@ -82,11 +80,10 @@ class stmt_builtin_foo final : public statement {
         x.comment(tok(), indent, "foo {}", header);
 
         const std::string loop_label{tc.create_unique_label(tok(), "foo")};
-        const std::string end_label{loop_label + ".end"};
+        const std::string end_label{toc::end_label(loop_label)};
 
         // the array and the count are resolved before 'e', 'i' and 'n' can
         // hide names they use
-
         const ident_info ii{tc.make_ident_info(ident_)};
 
         const operand reg_iter{
@@ -135,7 +132,7 @@ class stmt_builtin_foo final : public statement {
 
         x.label(indent, loop_label);
         code_.compile(tc, indent, ident_info::make_empty());
-        x.label(indent + 1, loop_label + ".continue");
+        x.label(indent + 1, toc::continue_label(loop_label));
         x.advance_array_iteration(tok(), indent + 2, reg_iter, reg_counter,
                                   ii.type_ref().size_bytes(), limit,
                                   loop_label);
@@ -238,8 +235,8 @@ class stmt_builtin_foo final : public statement {
                 .type_ptr{&array_info.type_ref()},
                 .src_loc_tk{decl_tk},
                 .read_only_why{
-                    array_info.is_read_only() ? read_only_cause::FOO_ELEMENT
-                                              : read_only_cause::NONE,
+                    array_info.is_read_only() ? read_only_cause::foo_element
+                                              : read_only_cause::none,
                 },
                 .pointer_register{iterator},
                 .base_register{},
@@ -252,7 +249,7 @@ class stmt_builtin_foo final : public statement {
                        .name{"i"},
                        .type_ptr{&tc.get_type_default()},
                        .src_loc_tk{decl_tk},
-                       .read_only_why{read_only_cause::FOO_COUNTER},
+                       .read_only_why{read_only_cause::foo_counter},
                        .pointer_register{},
                        .base_register{},
                        .value_register{counter},

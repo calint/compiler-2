@@ -62,8 +62,8 @@ class stmt_def_func final : public statement {
 
     // 'type_args' are the arguments of an instance of a generic definition, the
     // tokenizer is then at the start of that definition. 'generic_instance' is
-    // the instance of a generic type that an instance of its method is for
-    // 'make_instance' is the way to make one
+    // the instance of a generic type that an instance of its method is for,
+    // 'make_instance' makes an instance
     stmt_def_func(toc& tc, const token tk, tokenizer& tz,
                   const std::span<const type* const> type_args,
                   const generic_type_instance* const generic_instance)
@@ -189,10 +189,11 @@ class stmt_def_func final : public statement {
         x.reserve_frame_base();
 
         // the path keeps the labels of the body unique per instance
-        tc.enter_func(name(),
-                      array_lengths.empty() ? std::string{}
-                                            : instance_path(array_lengths),
-                      {}, false, x.frame_base_register());
+        tc.enter_noninline_func(name(),
+                                array_lengths.empty()
+                                    ? std::string{}
+                                    : instance_path(array_lengths),
+                                x.frame_base_register());
         add_constants(tc, indent + 1);
         add_signature_vars(tc, indent + 1, true, array_lengths);
         code_.compile(tc, indent, ident_info::make_empty());
@@ -369,8 +370,8 @@ class stmt_def_func final : public statement {
                            .is_array{param.is_array()},
                            .is_pointer{is_pointer},
                            .read_only_why{
-                               param.is_read_only() ? read_only_cause::PARAM
-                                                    : read_only_cause::NONE,
+                               param.is_read_only() ? read_only_cause::param
+                                                    : read_only_cause::none,
                            },
                            .array_len{array_len},
                            .pointer_register{},
@@ -483,7 +484,11 @@ class stmt_def_func final : public statement {
     // the function scope is established before the body is parsed, its
     // variables are registered without emitting output
     auto parse_body(toc& tc, tokenizer& tz) -> void {
-        tc.enter_func(name(), {}, {}, is_inlined());
+        if (is_inlined()) {
+            tc.enter_func(name());
+        } else {
+            tc.enter_noninline_func(name(), {}, {});
+        }
 
         add_constants(tc, 0);
 

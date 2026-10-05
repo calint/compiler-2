@@ -53,8 +53,9 @@ class machine_x86_64 final : public machine {
     static constexpr size_t threshold_for_rep_movs_size_bytes{16};
     // up to this many qwords single compares cost less than loading 'rcx'
     static constexpr size_t threshold_for_repe_cmpsq_count{2};
+    static constexpr int syscall_read{0};
+    static constexpr int syscall_write{1};
     static constexpr int syscall_exit{60};
-    static constexpr int panic_exit_code{255};
 
     struct register_names {
         std::string_view qword;
@@ -480,7 +481,6 @@ class machine_x86_64 final : public machine {
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
                               const operand& frame_address,
                               const operand& frame_size_bytes,
-                              const std::string_view failure_label,
                               const bool enabled = {}) -> void override {
 
         if (not enabled) {
@@ -504,7 +504,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(indent, op::lea, to_argument(remaining),
                                assembler_x86_64::memory::of_symbol("vars"));
         cmp_lowered(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::b, failure_label);
+        assembler_.jcc(indent, condition::b, frame_overflow_handler_label);
 
         // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
         assembler_.instruction(
@@ -512,11 +512,11 @@ class machine_x86_64 final : public machine {
             assembler_x86_64::immediate::of_expression("vars.end", true));
 
         cmp_lowered(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::a, failure_label);
+        assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
         emit_op(src_loc_tk, indent, op::sub, remaining, start);
         mov(src_loc_tk, indent, start, frame_size_bytes);
         cmp_lowered(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::a, failure_label);
+        assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
@@ -693,7 +693,7 @@ class machine_x86_64 final : public machine {
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
         if (not with_line) {
-            assembler_.label(0, "baz_bounds_panic");
+            assembler_.label(0, bounds_failure_handler_label);
             emit_panic_exit();
 
             return;
@@ -703,10 +703,10 @@ class machine_x86_64 final : public machine {
         for (const size_t line : bounds_panic_lines_) {
             assembler_.label(0, bounds_panic_label(line));
             assembler_.instruction(1, op::mov, "rbp", line);
-            assembler_.jmp(1, "baz_bounds_panic");
+            assembler_.jmp(1, bounds_failure_handler_label);
         }
 
-        assembler_.label(0, "baz_bounds_panic");
+        assembler_.label(0, bounds_failure_handler_label);
         emit_panic_message("msg_panic");
 
         constexpr int newline{10};
@@ -749,7 +749,7 @@ class machine_x86_64 final : public machine {
                                    "num_buffer + 20", true));
 
         assembler_.instruction(1, op::sub, "rdx", "rdi");
-        assembler_.instruction(1, op::mov, "rdi", 2);
+        assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
         assembler_.instruction(1, op::syscall);
         emit_panic_exit();
         assembler_.switch_section(section::rodata);
@@ -793,7 +793,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_frame_overflow_handler() -> void override {
-        assembler_.label(0, "baz_frame_overflow");
+        assembler_.label(0, frame_overflow_handler_label);
         emit_panic_message("msg_frame_overflow");
         emit_panic_exit();
         assembler_.switch_section(section::rodata);
@@ -1065,7 +1065,8 @@ class machine_x86_64 final : public machine {
               const operand& descriptor, const operand& address,
               const operand& count) -> void override {
 
-        io_syscall(src_loc_tk, indent, dst, descriptor, address, count, 0);
+        io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
+                   syscall_read);
     }
 
     [[nodiscard]] auto
@@ -1284,7 +1285,8 @@ class machine_x86_64 final : public machine {
                const operand& descriptor, const operand& address,
                const operand& count) -> void override {
 
-        io_syscall(src_loc_tk, indent, dst, descriptor, address, count, 1);
+        io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
+                   syscall_write);
     }
 
     auto write_assembly(std::ostream& os) -> void override {
@@ -1452,7 +1454,7 @@ class machine_x86_64 final : public machine {
                                 const std::optional<size_t> line) -> void {
 
         if (not line.has_value()) {
-            assembler_.jcc(indent, failed, "baz_bounds_panic");
+            assembler_.jcc(indent, failed, bounds_failure_handler_label);
             return;
         }
 
@@ -1684,7 +1686,7 @@ class machine_x86_64 final : public machine {
     auto emit_panic_message(const std::string_view message_label) -> void {
         assembler_.comment(1, "print message to stderr");
         assembler_.instruction(1, op::mov, "rax", 1);
-        assembler_.instruction(1, op::mov, "rdi", 2);
+        assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
         assembler_.instruction(
             1, op::lea, "rsi",
             assembler_x86_64::memory::of_symbol(message_label));

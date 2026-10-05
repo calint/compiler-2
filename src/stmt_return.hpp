@@ -30,10 +30,9 @@ class stmt_return final : public statement {
             return;
         }
 
-        // get the jump target to exit function
-        const std::string_view ret_lbl{tc.get_func_return_label()};
+        const std::string_view return_label{tc.get_func_return_label()};
 
-        if (ret_lbl.empty()) {
+        if (return_label.empty()) {
             // note: return from 'main' is exiting
             x.exit(tok(), indent, operand::imm("0", tc.get_type_default()));
 
@@ -41,7 +40,7 @@ class stmt_return final : public statement {
         }
 
         // jump to return labels
-        x.branch(indent, ret_lbl);
+        x.branch(indent, return_label);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

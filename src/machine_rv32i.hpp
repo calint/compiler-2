@@ -597,7 +597,6 @@ class machine_rv32i : public machine {
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
                               const operand& frame_address,
                               const operand& frame_size_bytes,
-                              const std::string_view failure_label,
                               const bool enabled = {}) -> void override {
 
         if (not enabled) {
@@ -649,7 +648,7 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, remaining.base_register(),
                         start.base_register(), "2f");
         assembler_.label(indent, "1");
-        branch(indent, failure_label);
+        branch(indent, frame_overflow_handler_label);
         assembler_.label(indent, "2");
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
@@ -801,7 +800,7 @@ class machine_rv32i : public machine {
 
         // skip self assignment
         if (dst.is_memory() and src.is_memory() and
-            dst.type_ref().name() == src.type_ref().name() and
+            dst.type_ref().is_same(src.type_ref()) and
             dst.base_register() == src.base_register() and
             dst.index_register() == src.index_register() and
             dst.scale() == src.scale() and
@@ -902,10 +901,10 @@ class machine_rv32i : public machine {
         constexpr int digit_zero{'0'};
         constexpr int newline{'\n'};
 
-        label(0, "baz_bounds_panic");
+        label(0, bounds_failure_handler_label);
         if (with_line) {
             assembler_.mv(1, "s2", "a0");
-            assembler_.li(1, "a0", 2);
+            assembler_.li(1, "a0", stderr_descriptor);
             assembler_.la(1, "a1", ".Lbaz_bounds_message");
             assembler_.li(1, "a2", message.size());
             emit_write_call(1);
@@ -939,10 +938,11 @@ class machine_rv32i : public machine {
             assembler_.sb(1, "t2", 0, "a1");
             assembler_.addi(1, "a2", "a2", 1);
             assembler_.mv(1, "a1", "sp");
-            assembler_.li(1, "a0", 2);
+            assembler_.li(1, "a0", stderr_descriptor);
             emit_write_call(1);
         }
-        exit(token{}, 1, operand::imm("255", default_type()));
+        exit(token{}, 1,
+             operand::imm(std::format("{}", panic_exit_code), default_type()));
         if (with_line) {
             constexpr std::array<int64_t, 10> decimal_places{
                 1000000000, 100000000, 10000000, 1000000, 100000,
@@ -979,13 +979,14 @@ class machine_rv32i : public machine {
         constexpr std::string_view message{"panic: frame overflow"};
         constexpr std::array<int64_t, 1> newline{'\n'};
 
-        label(0, "baz_frame_overflow");
-        assembler_.li(1, "a0", 2);
+        label(0, frame_overflow_handler_label);
+        assembler_.li(1, "a0", stderr_descriptor);
         assembler_.la(1, "a1", ".Lbaz_frame_message");
         // the newline follows the message text
         assembler_.li(1, "a2", message.size() + 1);
         emit_write_call(1);
-        exit(token{}, 1, operand::imm("255", default_type()));
+        exit(token{}, 1,
+             operand::imm(std::format("{}", panic_exit_code), default_type()));
         assembler_.switch_section(section::rodata);
         assembler_.label(0, ".Lbaz_frame_message");
         assembler_.ascii(message);
@@ -1272,8 +1273,8 @@ class machine_rv32i : public machine {
     auto reserve_frame_base() -> void override {
         assert(not frame_base_reserved_);
 
-        static_cast<void>(alloc_named_register(
-            token{}, 0, frame_base_register(), default_type()));
+        std::ignore = alloc_named_register(token{}, 0, frame_base_register(),
+                                           default_type());
 
         frame_base_reserved_ = true;
 
@@ -1296,8 +1297,8 @@ class machine_rv32i : public machine {
     auto reserve_variables_base() -> void override {
         assert(not variables_base_reserved_);
 
-        static_cast<void>(alloc_named_register(
-            token{}, 0, variables_base_register(), default_type()));
+        std::ignore = alloc_named_register(
+            token{}, 0, variables_base_register(), default_type());
 
         variables_base_reserved_ = true;
     }
@@ -2113,8 +2114,7 @@ class machine_rv32i : public machine {
         -> operand {
 
         // matching register representations need no conversion
-        if (source.is_register() and
-            source.type_ref().name() == width_type.name()) {
+        if (source.is_register() and source.type_ref().is_same(width_type)) {
             return source;
         }
 
@@ -2640,7 +2640,7 @@ class machine_rv32i : public machine {
             comment(src_loc_tk, indent, "source line");
             assembler_.li(indent, "a0", src_loc_tk.at_line());
         }
-        branch(indent, "baz_bounds_panic");
+        branch(indent, bounds_failure_handler_label);
         assembler_.label(indent, "2");
     }
 
@@ -4498,7 +4498,7 @@ class machine_rv32i : public machine {
         };
 
         return left.is_memory() and right.is_memory() and
-               left.type_ref().name() == right.type_ref().name() and
+               left.type_ref().is_same(right.type_ref()) and
                same_register(left.base_register(), right.base_register()) and
                same_register(left.index_register(), right.index_register()) and
                left.scale() == right.scale() and

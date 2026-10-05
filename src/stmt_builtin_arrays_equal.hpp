@@ -95,7 +95,7 @@ class stmt_builtin_arrays_equal final : public expression {
         const ident_info lhs_info{tc.make_ident_info(lhs_)};
         const ident_info rhs_info{tc.make_ident_info(rhs_)};
 
-        if (lhs_info.type_ref().name() != rhs_info.type_ref().name()) {
+        if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compiler_exception{
                 rhs_.tok(),
                 std::format("source type '{}' does not match compare type '{}'",
@@ -146,7 +146,7 @@ class stmt_builtin_arrays_equal final : public expression {
     auto assert_destination_type(const type& dst_type,
                                  const token& src_loc_tk) const -> void {
 
-        if (dst_type.name() == get_type().name()) {
+        if (dst_type.is_same(get_type())) {
             return;
         }
 

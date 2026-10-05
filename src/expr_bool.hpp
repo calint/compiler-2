@@ -307,8 +307,7 @@ class expr_bool_op final : public statement {
 
         if (lhs.produces_boolean() and not action.destination.is_empty()) {
             // note: only a 'bool' is assigned a boolean expression
-            assert(lhs.get_type().name() ==
-                   action.destination.type_ref().name());
+            assert(lhs.get_type().is_same(action.destination.type_ref()));
 
             lhs.compile_boolean(tc, indent + 1, action.destination,
                                 action.inverted);
@@ -337,7 +336,7 @@ class expr_bool_op final : public statement {
 
         // optimization: copy a plain 'bool' instead of evaluating the
         // shorthand as '!= 0'
-        if (is_bool_copy(tc, lhs, action)) {
+        if (is_bool_copy(lhs, action)) {
             machine& x{tc.machine()};
 
             const operand src{
@@ -362,9 +361,8 @@ class expr_bool_op final : public statement {
     }
 
     auto resolve_if_op_is_expression() -> void {
-        // is it a negated expression?
+        // a negated expression is an expression
         if (is_not_) {
-            // yes, then it is an expression
             is_expression_ = true;
 
             return;
@@ -384,9 +382,8 @@ class expr_bool_op final : public statement {
         // if not expression, then it is a single statement and identifier is
         // valid
         const std::string_view id{lhs_.identifier()};
-        // is it a boolean value?
+        // a boolean value is not an expression
         if (id == "true" or id == "false") {
-            // yes, not an expression
             is_expression_ = false;
 
             return;
@@ -484,18 +481,16 @@ class expr_bool_op final : public statement {
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
     // inversion and branches keep the comparison which is shorter on x86
     [[nodiscard]] static auto
-    is_bool_copy(const toc& tc, const expr_arith& lhs,
+    is_bool_copy(const expr_arith& lhs,
                  const machine::comparison_action& action) -> bool {
-
-        const std::string_view bool_name{tc.get_type_bool().name()};
 
         // note: a shorthand without a branch target stores into a 'bool'
         assert(not action.target.empty() or
                (not action.destination.is_empty() and
-                action.destination.type_ref().name() == bool_name));
+                action.destination.type_ref().is_bool()));
 
         return not lhs.is_expression() and lhs.get_unary_ops().is_empty() and
-               lhs.get_type().name() == bool_name and not action.inverted and
+               lhs.get_type().is_bool() and not action.inverted and
                action.target.empty();
     }
 
@@ -621,7 +616,7 @@ class expr_bool_op final : public statement {
             return side.folded_constant(tc, side.get_type());
         }
 
-        const ident_info& info{tc.make_ident_info(side)};
+        const ident_info info{tc.make_ident_info(side)};
         if (not info.is_const()) {
             return std::nullopt;
         }
@@ -637,7 +632,7 @@ class expr_bool_op final : public statement {
                        std::vector<operand>& allocated_registers) -> operand {
 
         if (lhs.is_expression() and action.destination.is_register() and
-            lhs.get_type().name() == action.destination.type_ref().name()) {
+            lhs.get_type().is_same(action.destination.type_ref())) {
 
             lhs.compile(tc, indent + 1,
                         toc::make_ident_info_from_register(action.destination));
@@ -683,11 +678,10 @@ class expr_bool final : public statement {
                 parse_element(tc, tz);
             }
 
-            // end of '(...)' enclosed expression?
+            // the ')' ends an enclosed expression
             if (enclosed_) {
                 close_paren_tk_ = tz.is_next_char_token(')');
                 if (not close_paren_tk_.is_empty()) {
-                    // yes, done
                     return;
                 }
             }
@@ -695,35 +689,27 @@ class expr_bool final : public statement {
             // read 'and' or 'or'
             const token op_tk{tz.next_token()};
             if (not op_tk.is_text("or") and not op_tk.is_text("and")) {
-                // not expected keyword, end of expression, put token back and
-                // return
-
-                // is the expression enclosed and no closing ')' found?
+                // anything else ends the expression, an enclosed one needs
+                // its ')' first
                 if (enclosed_) {
-                    // yes, fail
                     throw compiler_exception{
                         op_tk, "expected ')' to close expression"};
                 }
 
-                // success
                 tz.put_back_token(op_tk);
 
                 return;
             }
 
-            // get the 'and' or 'or' mode of this expression
             if (prv_op.is_empty()) {
                 prv_op = op_tk;
             }
 
-            // is it mixing 'and's and 'or's?
             if (not prv_op.is_text(op_tk.text())) {
-                // yes, not allowed
                 throw compiler_exception{
                     op_tk, "mixing 'and' and 'or' without parenthesis"};
             }
 
-            // add the list of ops
             ops_.emplace_back(op_tk);
         }
     }
@@ -782,9 +768,8 @@ class expr_bool final : public statement {
 
     // assumes callers only query this when expression status is relevant
     [[nodiscard]] auto is_expression() const -> bool override {
-        // is there more than 1 bool in the list?
+        // more than one bool in the list is an expression
         if (bools_.size() > 1) {
-            // yes, it is an expression
             return true;
         }
 
@@ -1043,7 +1028,7 @@ class expr_bool final : public statement {
         }
 
         // '(t1 + t2) > 3' parses as a list but is a comparison
-        expr_bool bol{tc, pos_tk, tz, true, maybe_not_tk, open_paren_tk};
+        expr_bool nested{tc, pos_tk, tz, true, maybe_not_tk, open_paren_tk};
 
         // an operator after ')' means the parentheses belonged to an operand
         if (std::string_view{"<>=!+-*/%&|^"}.contains(
@@ -1055,7 +1040,7 @@ class expr_bool final : public statement {
             return;
         }
 
-        bools_.emplace_back(std::move(bol));
+        bools_.emplace_back(std::move(nested));
     }
 
     // a constant last element decides the list only if all earlier elements

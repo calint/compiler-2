@@ -15,10 +15,10 @@ class stmt_loop final : public statement {
         : statement{src_loc_tk} {
 
         set_type(tc.get_type_void());
-        const std::string lbl{tc.create_unique_label(tok(), "loop")};
-        tc.enter_loop(lbl);
+        const std::string label{tc.create_unique_label(tok(), "loop")};
+        tc.enter_loop(label);
         code_ = {tc, tz};
-        tc.exit_loop(lbl);
+        tc.exit_loop(label);
     }
 
     stmt_loop() = default;
@@ -39,13 +39,13 @@ class stmt_loop final : public statement {
 
         x.comment(tok(), indent, "label");
 
-        const std::string lbl{tc.create_unique_label(tok(), "loop")};
-        x.label(indent, lbl);
-        tc.enter_loop(lbl);
+        const std::string label{tc.create_unique_label(tok(), "loop")};
+        x.label(indent, label);
+        tc.enter_loop(label);
         code_.compile(tc, indent, dst_info);
-        x.branch(indent, lbl);
-        x.label(indent, std::format("{}.end", lbl));
-        tc.exit_loop(lbl);
+        x.branch(indent, label);
+        x.label(indent, toc::end_label(label));
+        tc.exit_loop(label);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
