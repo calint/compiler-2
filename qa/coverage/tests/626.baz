@@ -1,7 +1,0 @@
-# 'int' is not a type name, an array argument of the default type is 'arr[]'
-
-func sum(arr int[]) res {
-    res = arr[0]
-}
-
-func main() {}

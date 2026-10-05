@@ -1,4 +1,0 @@
-
-625.baz:4:13: cannot resolve identifier 'int'
-    var a = int[2]{1, 2}
-            ^~~

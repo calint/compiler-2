@@ -1,0 +1,25 @@
+# 'int' names the default type, also as a type argument and a field type
+type pair { first int, second int }
+
+type list<T type, capacity> {
+    array T[capacity],
+    len int,
+}
+
+type ids = list<int, 4>
+
+func twice(value int) res int {
+    res = value * 2
+}
+
+func main() {
+    var p = pair{1, 2}
+    var numbers = int[3]{4, 5, 6}
+    var id_list = ids
+    id_list.array[0] = twice(p.second)
+    id_list.len = 1
+    if numbers[2] != 6 exit(1)
+    if id_list.array[0] != 4 exit(2)
+    if int(7) != 7 exit(3)
+    exit(0)
+}

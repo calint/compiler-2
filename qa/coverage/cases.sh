@@ -1890,12 +1890,6 @@ SRC=623 && COMPERR
 # 'true' and 'false' are of type 'bool' and cannot be arithmetic operands
 SRC=624 && COMPERR
 
-# 'int' is not a type name, an array literal of the default type omits it
-SRC=625 && COMPERR
-
-# 'int' is not a type name, an array argument of the default type is 'arr[]'
-SRC=626 && COMPERR
-
 # an array literal without a type name has the default type which must match
 # the destination
 SRC=627 && COMPERR
@@ -2576,3 +2570,9 @@ SRC=839 && COMPERR
 
 # a user type instance is not compared with a number by an operator
 SRC=840 && COMPERR
+
+# 'int' names the default type, also as a type argument and a field type
+SRC=841 && EXP=0 && RUN
+
+# 'int' is a type name, a type cannot be defined with it
+SRC=842 && COMPERR

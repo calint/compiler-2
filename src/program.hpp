@@ -298,6 +298,9 @@ class program final {
         tc_.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
         x.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
 
+        // the default type has a name of its own so that it is portable
+        tc_.add_type_alias(src_loc_tk, "int", tc_.get_type_default());
+
         tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr);
         tc_.add_func(src_loc_tk, "write", tc_.get_type_default(), nullptr);
 

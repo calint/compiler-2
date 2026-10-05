@@ -386,7 +386,14 @@ local function declared_type(root, bufnr, id, kind, name, depth)
   if declaration_types[parent_type] then
     -- the initializer of an access chain is spread over its elements
     local initializer = parent:field("initializer")
-    return type_of_node(root, bufnr, initializer[#initializer], depth + 1)
+    local last = initializer[#initializer]
+    -- 'dat objects = objects' initializes with the type of the same name, the
+    -- variable is not declared yet in its own initializer
+    if #initializer == 1 and last:type() == "identifier" and text(last, bufnr) == name
+      and top_level(root, bufnr, "type", name) then
+      return { name = name, array = false }
+    end
+    return type_of_node(root, bufnr, last, depth + 1)
   end
   return nil
 end
@@ -875,7 +882,11 @@ handlers["textDocument/references"] = function(params)
   if not target then
     return {}
   end
-  return locations(uri, references(root, bufnr, target, params.context.includeDeclaration))
+  -- asked from a use, the references are the other uses, the declaration is
+  -- listed only when it is the place asked from
+  local at_declaration = #target.decls == 1 and node_key(target.decls[1]) == node_key(node)
+  local include_declaration = params.context.includeDeclaration and at_declaration
+  return locations(uri, references(root, bufnr, target, include_declaration))
 end
 
 handlers["textDocument/prepareRename"] = function(params)

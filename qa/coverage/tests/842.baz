@@ -1,0 +1,6 @@
+# 'int' is a type name, a type cannot be defined with it
+type int { value i32 }
+
+func main() {
+    exit(0)
+}

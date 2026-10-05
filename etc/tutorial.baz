@@ -107,7 +107,8 @@ func sized_types() {
 
     var wide = int(small)
     assert(wide == -56)
-    # 'int(x)' converts to the default type
+    # 'int(x)' converts to the default type, 'int' also names that type, e.g.
+    # 'int[4]' and 'list<int, 8>'
 
 #   small = wide
 #   compile error because the value might not fit, narrowing must be

@@ -520,6 +520,16 @@ class type_table final {
                                               });
     }
 
+    // another name for a type, e.g. 'int' for the default type
+    auto add_alias(const token& src_loc_tk, const std::string_view name,
+                   const type& tpe) -> void {
+
+        entries_.put(std::string{name}, {
+                                            .src_loc_tk{src_loc_tk},
+                                            .type_ptr{&tpe},
+                                        });
+    }
+
     // a type parameter names its argument until 'unbind', the name is free
     auto bind(const token& src_loc_tk, const std::string_view name,
               const type& tpe) -> void {
@@ -1746,6 +1756,13 @@ class toc final {
         assert_type_not_defined(src_loc_tk, tpe.name());
 
         types_.add(src_loc_tk, tpe);
+    }
+
+    auto add_type_alias(const token& src_loc_tk, const std::string_view name,
+                        const type& tpe) -> void {
+
+        assert_type_not_defined(src_loc_tk, name);
+        types_.add_alias(src_loc_tk, name, tpe);
     }
 
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,

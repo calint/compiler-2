@@ -1,4 +1,0 @@
-
-626.baz:3:14: type 'int' not found
-func sum(arr int[]) res {
-             ^~~
