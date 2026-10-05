@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: generics (2026-10-04..05): types and functions with compile-time
+    parameters, to remove the repetition in roome.baz ('str' and 'name' differ
+    in capacity, 'tokenizer.to_name' and 'to_str' in the result type)
+    => syntax: parameters in '<...>', 'NAME' is a constant of the default
+       type, 'NAME type' is a type: 'func tokenizer.to<T type>() res T',
+       'type text<capacity> {...}', 'type str = text<127>' (alias at top
+       level); '<' after a known generic name opens the arguments
+    => design: an instance is the definition parsed again with the arguments
+       bound, registered under the mangled name 'to<name>' (label
+       'tokenizer.to.name'); the generic itself is never compiled, errors in
+       its body appear at the first instantiation; methods of a generic type
+       are made for every instance, also earlier ones
+    => the type arguments of a call are deduced (2026-10-05) from a variable,
+       field or element passed for a parameter declared with the type
+       parameter ('s.append(n)'), or from the type the call is assigned to
+       when it is the result ('x.f = tz.to()'); roome.baz uses it
+    => code: 'generics.hpp' (structs and 'generic_registry'), 'type_table'
+       and 'type_alias_scope' in 'toc.hpp'; errors name the instance ('type
+       str = text<8>' instantiated by); the footer of the generated assembly
+       lists the generic functions without an instance
+    => tests 774-835; tree-sitter grammar, highlights and baz-lsp.lua know
+       generics (checked with a headless nvim test); documented in
+       etc/tutorial.baz
+[-] medium: low priority: generics: document them in etc/readme
+    => etc/tutorial.baz is the source of documentation and has a section on
+       generics; the readme only states 'basic support for generics'
+[-] medium: low priority: generics: a regression test for the nvim plugin
+    => tested by using it
 [x] medium: report at the end of the generated code on noinline functions
     (2026-10-04) so the user can decide between noinline and inline
     => done (2026-10-04): a 'noinline functions:' block before the optimization

@@ -130,6 +130,11 @@ Working agreements for AI sessions in this repository.
   outputs (`.out`) instead of comparing; run it for x86 and rv32i, then review
   the diff.
 
+## Todo
+
+- A resolved or discarded item leaves `etc/todo.txt` and goes to the top of
+  `etc/todo-resolved.txt`, below its legend, newest first.
+
 ## Tools
 
 - Run symbol renames before `git mv`/file renames (open buffers at the old
