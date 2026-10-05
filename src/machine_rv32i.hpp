@@ -869,13 +869,6 @@ class machine_rv32i : public machine {
         assembler_.define_constant(name, static_cast<int64_t>(value));
     }
 
-    auto discard_lines(const std::function_ref<void()> emit) -> void override {
-
-        // buffered because comments are otherwise written as emitted
-        assembler_.emit_buffered(
-            [&] -> void { std::ignore = assembler_.capture(emit); });
-    }
-
     auto divide(const token& src_loc_tk, const size_t indent,
                 const char operation, const operand& dst,
                 const operand& divisor) -> void override {
@@ -2078,142 +2071,14 @@ class machine_rv32i : public machine {
 
         const address_scope walk_scope{*this};
 
-        // the run-time count may be smaller than any head
-        const std::array<access_start, 2> typed{
-            typed_starts(starts, alignment),
-        };
-
-        const loop_start start{
-            plan_loop_start(typed, std::numeric_limits<size_t>::max()),
-        };
-
-        comment_pointer_loop(src_loc_tk, indent, start, typed, alignment);
-
         const operand left_at{memory_at(left)};
         const operand right_at{memory_at(right)};
 
-        // without a known alignment every access is a byte
-        if (start.width == 1) {
-            comment(src_loc_tk, indent, "{}; skip if none",
-                    describe_loop("compare", 1));
-
-            assembler_.beqz(indent, count.base_register(), walk_end.reference);
-
-            // 'count' becomes the end of the walk, which saves a decrement in
-            // every iteration
-            assembler_.add(indent, count.base_register(), count.base_register(),
-                           left.base_register());
-
-            assembler_.label(indent, chunk_loop.name);
-            compare_access(indent, registers, 1, left_at, right_at);
-            advance(indent, left, 1);
-            advance(indent, right, 1);
-            assembler_.bne(indent, left.base_register(), count.base_register(),
-                           chunk_loop.reference);
-
-            assembler_.label(indent, walk_end.name);
-
-            return;
-        }
-
-        // the end of the chunks, also the scratch of the head check and the
-        // halfword tail test
-        const operand chunks{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        comment(src_loc_tk, indent, "{}: end of {}, {}: tail bytes",
-                chunks.base_register(),
-                start.width == 4 ? "words" : "halfwords",
-                count.base_register());
-
-        // each head access first checks that the count still covers it,
-        // otherwise the fewer bytes are left to the tail, which needs no more
-        // than the current pointer alignment
-        if (start.head_size_bytes != 0) {
-            comment(src_loc_tk, indent, "compare {} B head",
-                    start.head_size_bytes);
-
-            if ((start.head_size_bytes & size_t{1}) != 0) {
-                assembler_.beqz(indent, count.base_register(),
-                                after_head.reference);
-
-                compare_access(indent, registers, 1, left_at, right_at);
-                advance(indent, left, 1);
-                advance(indent, right, 1);
-                assembler_.addi(indent, count.base_register(),
-                                count.base_register(), -1);
-            }
-
-            if ((start.head_size_bytes & size_t{2}) != 0) {
-                assembler_.sltiu(indent, chunks.base_register(),
-                                 count.base_register(), 2);
-
-                assembler_.bnez(indent, chunks.base_register(),
-                                after_head.reference);
-
-                compare_access(indent, registers, 2, left_at, right_at);
-                advance(indent, left, 2);
-                advance(indent, right, 2);
-                assembler_.addi(indent, count.base_register(),
-                                count.base_register(), -2);
-            }
-
-            assembler_.label(indent, after_head.name);
-        }
-
-        // the loop takes 'count' rounded down to whole chunks and ends when
-        // 'left' reaches their end, 'count' keeps the tail bytes
-        comment(src_loc_tk, indent,
-                "split bytes into chunks and tail; skip loop if none");
-
-        assembler_.andi(indent, chunks.base_register(), count.base_register(),
-                        -static_cast<int64_t>(start.width));
-
-        assembler_.andi(indent, count.base_register(), count.base_register(),
-                        start.width - 1);
-
-        assembler_.beqz(indent, chunks.base_register(), after_chunks.reference);
-
-        assembler_.add(indent, chunks.base_register(), chunks.base_register(),
-                       left.base_register());
-
-        comment(src_loc_tk, indent, "{}",
-                describe_loop("compare", start.width));
-
-        assembler_.label(indent, chunk_loop.name);
-        compare_access(indent, registers, start.width, left_at, right_at);
-        advance(indent, left, start.width);
-        advance(indent, right, start.width);
-        assembler_.bne(indent, left.base_register(), chunks.base_register(),
-                       chunk_loop.reference);
-
-        assembler_.label(indent, after_chunks.name);
-
-        // after words at most 3 bytes remain, bit 1 selects a halfword and bit
-        // 0 the final byte
-        if (start.width == 4) {
-            comment(src_loc_tk, indent, "compare optional 2-byte tail");
-
-            assembler_.andi(indent, chunks.base_register(),
-                            count.base_register(), 2);
-
-            assembler_.beqz(indent, chunks.base_register(),
-                            after_halfword.reference);
-
-            compare_access(indent, registers, 2, left_at, right_at);
-            advance(indent, left, 2);
-            advance(indent, right, 2);
-            assembler_.label(indent, after_halfword.name);
-            assembler_.andi(indent, count.base_register(),
-                            count.base_register(), 1);
-        }
-
-        comment(src_loc_tk, indent, "compare optional final byte");
-
-        assembler_.beqz(indent, count.base_register(), walk_end.reference);
-        compare_access(indent, registers, 1, left_at, right_at);
-        assembler_.label(indent, walk_end.name);
+        walk_runtime_count(src_loc_tk, indent, "compare", left, right, count,
+                           starts, alignment, [&](const size_t width) -> void {
+                               compare_access(indent, registers, width, left_at,
+                                              right_at);
+                           });
     }
 
     // 'source' in a register of the comparison width
@@ -2473,8 +2338,6 @@ class machine_rv32i : public machine {
         }
     }
 
-    // run-time count: the addresses are pointer registers and 'count' is a
-    // byte count
     auto copy_runtime_count(const token& src_loc_tk, const size_t indent,
                             const operand& src, const operand& dst,
                             const operand& count,
@@ -2489,141 +2352,13 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        // the run-time count may be smaller than any head
-        const std::array<access_start, 2> typed{
-            typed_starts(starts, alignment),
-        };
-
-        const loop_start start{
-            plan_loop_start(typed, std::numeric_limits<size_t>::max()),
-        };
-
-        comment_pointer_loop(src_loc_tk, indent, start, typed, alignment);
-
         const operand from{memory_at(src)};
         const operand to{memory_at(dst)};
 
-        // without a known alignment every access is a byte
-        if (start.width == 1) {
-            comment(src_loc_tk, indent, "{}; skip if none",
-                    describe_loop("copy", 1));
-
-            assembler_.beqz(indent, count.base_register(), walk_end.reference);
-
-            // 'count' becomes the end of the walk, which saves a decrement in
-            // every iteration
-            assembler_.add(indent, count.base_register(), count.base_register(),
-                           src.base_register());
-
-            assembler_.label(indent, chunk_loop.name);
-            copy_access(indent, value, 1, from, to);
-            advance(indent, src, 1);
-            advance(indent, dst, 1);
-            assembler_.bne(indent, src.base_register(), count.base_register(),
-                           chunk_loop.reference);
-
-            assembler_.label(indent, walk_end.name);
-
-            return;
-        }
-
-        // the end of the chunks, also the scratch of the head check and the
-        // halfword tail test
-        const operand chunks{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        comment(src_loc_tk, indent, "{}: end of {}, {}: tail bytes",
-                chunks.base_register(),
-                start.width == 4 ? "words" : "halfwords",
-                count.base_register());
-
-        // each head access first checks that the count still covers it,
-        // otherwise the fewer bytes are left to the tail, which needs no more
-        // than the current pointer alignment
-        if (start.head_size_bytes != 0) {
-            comment(src_loc_tk, indent, "copy {} B head",
-                    start.head_size_bytes);
-
-            if ((start.head_size_bytes & size_t{1}) != 0) {
-                assembler_.beqz(indent, count.base_register(),
-                                after_head.reference);
-
-                copy_access(indent, value, 1, from, to);
-                advance(indent, src, 1);
-                advance(indent, dst, 1);
-                assembler_.addi(indent, count.base_register(),
-                                count.base_register(), -1);
-            }
-
-            if ((start.head_size_bytes & size_t{2}) != 0) {
-                assembler_.sltiu(indent, chunks.base_register(),
-                                 count.base_register(), 2);
-
-                assembler_.bnez(indent, chunks.base_register(),
-                                after_head.reference);
-
-                copy_access(indent, value, 2, from, to);
-                advance(indent, src, 2);
-                advance(indent, dst, 2);
-                assembler_.addi(indent, count.base_register(),
-                                count.base_register(), -2);
-            }
-
-            assembler_.label(indent, after_head.name);
-        }
-
-        // the loop takes 'count' rounded down to whole chunks and ends when
-        // 'src' reaches their end, 'count' keeps the tail bytes
-        comment(src_loc_tk, indent,
-                "split bytes into chunks and tail; skip loop if none");
-
-        assembler_.andi(indent, chunks.base_register(), count.base_register(),
-                        -static_cast<int64_t>(start.width));
-
-        assembler_.andi(indent, count.base_register(), count.base_register(),
-                        start.width - 1);
-
-        assembler_.beqz(indent, chunks.base_register(), after_chunks.reference);
-
-        assembler_.add(indent, chunks.base_register(), chunks.base_register(),
-                       src.base_register());
-
-        comment(src_loc_tk, indent, "{}", describe_loop("copy", start.width));
-
-        assembler_.label(indent, chunk_loop.name);
-        copy_access(indent, value, start.width, from, to);
-        advance(indent, src, start.width);
-        advance(indent, dst, start.width);
-        assembler_.bne(indent, src.base_register(), chunks.base_register(),
-                       chunk_loop.reference);
-
-        assembler_.label(indent, after_chunks.name);
-
-        // after words at most 3 bytes remain, bit 1 selects a halfword and bit
-        // 0 the final byte
-        if (start.width == 4) {
-            comment(src_loc_tk, indent, "copy optional 2-byte tail");
-
-            assembler_.andi(indent, chunks.base_register(),
-                            count.base_register(), 2);
-
-            assembler_.beqz(indent, chunks.base_register(),
-                            after_halfword.reference);
-
-            copy_access(indent, value, 2, from, to);
-            advance(indent, src, 2);
-            advance(indent, dst, 2);
-            assembler_.label(indent, after_halfword.name);
-            assembler_.andi(indent, count.base_register(),
-                            count.base_register(), 1);
-        }
-
-        comment(src_loc_tk, indent, "copy optional final byte");
-
-        assembler_.beqz(indent, count.base_register(), walk_end.reference);
-        copy_access(indent, value, 1, from, to);
-        assembler_.label(indent, walk_end.name);
+        walk_runtime_count(src_loc_tk, indent, "copy", src, dst, count, starts,
+                           alignment, [&](const size_t width) -> void {
+                               copy_access(indent, value, width, from, to);
+                           });
     }
 
     // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
@@ -3829,6 +3564,148 @@ class machine_rv32i : public machine {
         assembler_.bgtz(indent, high.base_register(), "1f");
 
         return top;
+    }
+
+    // run-time count: the addresses are pointer registers and 'count' is a
+    // byte count
+    // the walk of a run-time count over two pointers: a head up to the first
+    // aligned chunk, whole chunks, then a tail, 'access' emits one access of
+    // 'width' bytes at the current pointers and 'verb' names it in comments
+    auto walk_runtime_count(const token& src_loc_tk, const size_t indent,
+                            const std::string_view verb, const operand& src,
+                            const operand& dst, const operand& count,
+                            const std::array<access_start, 2>& starts,
+                            const size_t alignment,
+                            const std::function<void(size_t)>& access) -> void {
+
+        // the run-time count may be smaller than any head
+        const std::array<access_start, 2> typed{
+            typed_starts(starts, alignment),
+        };
+
+        const loop_start start{
+            plan_loop_start(typed, std::numeric_limits<size_t>::max()),
+        };
+
+        comment_pointer_loop(src_loc_tk, indent, start, typed, alignment);
+
+        const auto access_and_advance = [&](const size_t width) -> void {
+            access(width);
+            advance(indent, src, width);
+            advance(indent, dst, width);
+        };
+
+        // without a known alignment every access is a byte
+        if (start.width == 1) {
+            comment(src_loc_tk, indent, "{}; skip if none",
+                    describe_loop(verb, 1));
+
+            assembler_.beqz(indent, count.base_register(), walk_end.reference);
+
+            // 'count' becomes the end of the walk, which saves a decrement in
+            // every iteration
+            assembler_.add(indent, count.base_register(), count.base_register(),
+                           src.base_register());
+
+            assembler_.label(indent, chunk_loop.name);
+            access_and_advance(1);
+            assembler_.bne(indent, src.base_register(), count.base_register(),
+                           chunk_loop.reference);
+
+            assembler_.label(indent, walk_end.name);
+
+            return;
+        }
+
+        // the end of the chunks, also the scratch of the head check and the
+        // halfword tail test
+        const operand chunks{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        comment(src_loc_tk, indent, "{}: end of {}, {}: tail bytes",
+                chunks.base_register(),
+                start.width == 4 ? "words" : "halfwords",
+                count.base_register());
+
+        // each head access first checks that the count still covers it,
+        // otherwise the fewer bytes are left to the tail, which needs no more
+        // than the current pointer alignment
+        if (start.head_size_bytes != 0) {
+            comment(src_loc_tk, indent, "{} {} B head", verb,
+                    start.head_size_bytes);
+
+            if ((start.head_size_bytes & size_t{1}) != 0) {
+                assembler_.beqz(indent, count.base_register(),
+                                after_head.reference);
+
+                access_and_advance(1);
+                assembler_.addi(indent, count.base_register(),
+                                count.base_register(), -1);
+            }
+
+            if ((start.head_size_bytes & size_t{2}) != 0) {
+                assembler_.sltiu(indent, chunks.base_register(),
+                                 count.base_register(), 2);
+
+                assembler_.bnez(indent, chunks.base_register(),
+                                after_head.reference);
+
+                access_and_advance(2);
+                assembler_.addi(indent, count.base_register(),
+                                count.base_register(), -2);
+            }
+
+            assembler_.label(indent, after_head.name);
+        }
+
+        // the loop takes 'count' rounded down to whole chunks and ends when
+        // 'src' reaches their end, 'count' keeps the tail bytes
+        comment(src_loc_tk, indent,
+                "split bytes into chunks and tail; skip loop if none");
+
+        assembler_.andi(indent, chunks.base_register(), count.base_register(),
+                        -static_cast<int64_t>(start.width));
+
+        assembler_.andi(indent, count.base_register(), count.base_register(),
+                        start.width - 1);
+
+        assembler_.beqz(indent, chunks.base_register(), after_chunks.reference);
+
+        assembler_.add(indent, chunks.base_register(), chunks.base_register(),
+                       src.base_register());
+
+        comment(src_loc_tk, indent, "{}", describe_loop(verb, start.width));
+
+        assembler_.label(indent, chunk_loop.name);
+        access_and_advance(start.width);
+        assembler_.bne(indent, src.base_register(), chunks.base_register(),
+                       chunk_loop.reference);
+
+        assembler_.label(indent, after_chunks.name);
+
+        // after words at most 3 bytes remain, bit 1 selects a halfword and bit
+        // 0 the final byte
+        if (start.width == 4) {
+            comment(src_loc_tk, indent, "{} optional 2-byte tail", verb);
+
+            assembler_.andi(indent, chunks.base_register(),
+                            count.base_register(), 2);
+
+            assembler_.beqz(indent, chunks.base_register(),
+                            after_halfword.reference);
+
+            access_and_advance(2);
+            assembler_.label(indent, after_halfword.name);
+            assembler_.andi(indent, count.base_register(),
+                            count.base_register(), 1);
+        }
+
+        comment(src_loc_tk, indent, "{} optional final byte", verb);
+
+        assembler_.beqz(indent, count.base_register(), walk_end.reference);
+        access(1);
+        assembler_.label(indent, walk_end.name);
     }
 
     // a register destination holds the result directly, memory needs a scratch

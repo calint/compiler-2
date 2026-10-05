@@ -15,6 +15,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 #include "assembler.hpp"
@@ -242,10 +243,6 @@ class machine {
     virtual auto define_constant(const std::string_view name,
                                  const size_t value) -> void = 0;
 
-    // runs 'emit' for its checks only, nothing it emits is kept
-    virtual auto discard_lines(const std::function_ref<void()> emit)
-        -> void = 0;
-
     virtual auto divide(const token& src_loc_tk, const size_t indent,
                         const char operation, const operand& dst,
                         const operand& divisor) -> void = 0;
@@ -465,11 +462,14 @@ class machine {
         comment(src_loc_tk, indent, std::string_view{text});
     }
 
-    // the registers used by the discarded code are not counted
+    // runs 'emit' for its checks only, nothing it emits is kept and the
+    // registers it used are not counted
     auto discard_output(const std::function_ref<void()> emit) -> void {
         const size_t max_scratch_regs{usage_max_scratch_regs_};
 
-        discard_lines(emit);
+        // buffered because comments are otherwise written as emitted
+        target_assembler().emit_buffered(
+            [&] -> void { std::ignore = target_assembler().capture(emit); });
 
         usage_max_scratch_regs_ = max_scratch_regs;
     }

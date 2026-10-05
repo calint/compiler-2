@@ -947,24 +947,11 @@ class toc final {
             return;
         }
 
-        const size_t var_size_bytes{
-            var.is_pointer
-                ? machine_.get().address_size_bytes()
-                : multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
-                                        var.is_array ? var.array_len : 1),
-        };
+        const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
+        const size_t var_alignment{var_storage_alignment(var)};
 
-        const size_t var_alignment{
-            var.is_pointer ? machine_.get().address_size_bytes()
-                           : var.type_ptr->alignment(),
-        };
-
-        if (not is_dat and not vars_entry_gap_applied_) {
-            frames_.front().set_padding_between_dats_and_vars(
-                data_.entry_gap());
-            vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
-                                                data_.entry_gap());
-            vars_entry_gap_applied_ = true;
+        if (not is_dat) {
+            apply_entry_gap(src_loc_tk);
         }
 
         // offsets are relative to the variables base or to the nearest frame
@@ -1602,6 +1589,21 @@ class toc final {
             std::move(text));
     }
 
+    // a local starts after the storage in use of the nearest frame with its own
+    // storage base and of the frames inside it, other variables and dats start
+    // at the variables base
+    // the first variable after the dats starts past the entry gap
+    auto apply_entry_gap(const token& src_loc_tk) -> void {
+        if (vars_entry_gap_applied_) {
+            return;
+        }
+
+        frames_.front().set_padding_between_dats_and_vars(data_.entry_gap());
+        vars_size_bytes_ =
+            add_storage_size(src_loc_tk, vars_size_bytes_, data_.entry_gap());
+        vars_entry_gap_applied_ = true;
+    }
+
     auto assert_function_not_defined(const token& src_loc_tk,
                                      const std::string_view name) const
         -> void {
@@ -1751,9 +1753,6 @@ class toc final {
         return nullptr;
     }
 
-    // a local starts after the storage in use of the nearest frame with its own
-    // storage base and of the frames inside it, other variables and dats start
-    // at the variables base
     [[nodiscard]] auto find_storage_location(const bool is_dat)
         -> storage_location {
 
@@ -2020,6 +2019,28 @@ class toc final {
     // bytes of variables, without the dats and the gap after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
         return vars_size_bytes_ - data_.total_size_bytes() - data_.entry_gap();
+    }
+
+    [[nodiscard]] auto var_storage_alignment(const var_info& var) const
+        -> size_t {
+
+        if (var.is_pointer) {
+            return machine_.get().address_size_bytes();
+        }
+
+        return var.type_ptr->alignment();
+    }
+
+    [[nodiscard]] auto var_storage_size_bytes(const token& src_loc_tk,
+                                              const var_info& var) const
+        -> size_t {
+
+        if (var.is_pointer) {
+            return machine_.get().address_size_bytes();
+        }
+
+        return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
+                                     var.is_array ? var.array_len : 1);
     }
 
     // offsets count from 'dat', a base register past 'vars' makes the dats

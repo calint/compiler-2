@@ -9,20 +9,40 @@ better assembler code, medium, largest gain first
     preserved, each step built, 'test-coverage.sh' x86 and rv32i, lint, format)
     [x] untrack the core file and the two test binaries, ignore them
     [x] drop unused includes (5 headers)
-    [ ] machine_rv32i.hpp: repeated chunk-loop code in 'copy_runtime_count'
+    [x] machine_rv32i.hpp: repeated chunk-loop code in 'copy_runtime_count'
         (2478, 149 lines) and 'compare_runtime_walk' (2072, 145 lines):
         head check, 'chunks' end register, loop of whole chunks, tail; extract
         named steps shared by both, in the same file
-    [ ] machine_rv32i.hpp: group the 178 methods by concern (arithmetic,
-        memory and bulk copy, branches and comparisons, builtins, bounds)
-        with section comments, no file split
-    [ ] machine_x86_64.hpp: the same grouping
-    [ ] machine.hpp: target-independent steps found in both machines move to
+        => done (2026-10-05): 'walk_runtime_count' with an access callback,
+           -116 lines, rv32i tests and bulk widths unchanged
+    [-] machine_rv32i.hpp and machine_x86_64.hpp: group the methods by concern
+        with section comments
+        => discarded (2026-10-05): both files keep their methods in
+           alphabetical order within 'public', 'private' and the statics;
+           grouping by concern means reordering all of it and loses the
+           lookup by name
+    [x] machine.hpp: target-independent steps found in both machines move to
         'machine' as non-virtual helpers
-    [ ] toc.hpp: group the 92 'toc' methods and split frame and variable
-        storage handling into a class in the same file
-    [ ] 'compile_lea' callers repeating a long argument list
-        ('stmt_builtin_array_copy', 'stmt_builtin_equal'): one helper
+        => done (2026-10-05): only 'discard_lines' was identical in both
+           machines, now inside 'discard_output'; the other same-named methods
+           (call_function, reserve_variables, comment_variable, ...) differ in
+           backend details, so sharing them would need new hooks
+    [x] toc.hpp: 'toc::add_var' (80 lines) mixes sizing, the entry gap,
+        placement, capacity check and usage stats: split into named steps;
+        'next_frame_address' and 'find_storage_location' walk the frames in
+        reverse the same way but differ at the root (the gap), so they stay
+        separate unless a shared walk keeps both results
+        => a class for frames and variable storage was considered: 'frames_',
+           'vars_size_bytes_', the gap flag and the usage counters are used by
+           the scope, lookup and ident-info code alike, so the split would
+           touch most of the 92 methods for little gain (plan and go-ahead
+           first if still wanted)
+        => done (2026-10-05): 'apply_entry_gap', 'var_storage_size_bytes' and
+           'var_storage_alignment' extracted; the class split is dropped, large
+           files are fine as long as they hold logical units
+    [-] 'compile_lea' callers repeating a long argument list
+        => discarded (2026-10-05): 4 call sites of 3 lines each, the shared
+           part is a 'comment' plus one call, a helper saves about 4 lines
     [ ] missing direct includes (153 of misc-include-cleaner, 'std::format',
         'size_t', ...): add per header
 [ ] ai test suite in c++ being human readable
