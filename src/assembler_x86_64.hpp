@@ -165,12 +165,13 @@ class assembler_x86_64 final : public assembler {
     };
 
     static constexpr size_t op_count{std::to_underlying(op::cmpsq) + 1};
-    // note: +1 because the last enumerator is counted too
 
   public:
     //
     // overridden methods
     //
+
+    // note: +1 because the last enumerator is counted too
 
     auto comment(const size_t indent, const std::string_view text)
         -> void override {

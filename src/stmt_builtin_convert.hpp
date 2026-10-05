@@ -176,13 +176,6 @@ class stmt_builtin_convert final : public expression {
         return tc.get_type_or_throw(tk, tk.text());
     }
 
-    [[nodiscard]] static auto is_builtin_name(const std::string_view name)
-        -> bool {
-
-        return name == "int" or name == "i8" or name == "i16" or
-               name == "i32" or name == "i64";
-    }
-
   private:
     auto compile_in_destination(toc& tc, const size_t indent,
                                 const ident_info& dst_info) const -> void {

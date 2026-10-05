@@ -510,7 +510,7 @@ class expr_arith final : public expression {
             return;
 
         case '*':
-            x.multiply(tok(), indent, dst_info.operand, constant, false);
+            x.multiply(tok(), indent, dst_info.operand, constant);
             return;
 
         case '/':

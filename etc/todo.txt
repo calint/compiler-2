@@ -43,6 +43,23 @@ better assembler code, medium, largest gain first
     [-] 'compile_lea' callers repeating a long argument list
         => discarded (2026-10-05): 4 call sites of 3 lines each, the shared
            part is a 'comment' plus one call, a helper saves about 4 lines
+    [x] machine_rv32i.hpp told 'bool' from the integer of its size by the type
+        name ('name() == "bool"', 7 sites)
+        => done (2026-10-05): 'type_kind' with 'type::is_bool()'
+    [x] builtin types recognized by name text
+        => done (2026-10-05): 'toc::set_builtin_types' with 'get_type_i8',
+           'get_type_address' and 'is_integer_type_name' from the types of
+           'program', strings check the element type by identity
+    [x] boolean flag parameters at the call
+        => done (2026-10-05): 'var_kind' for 'add_var', 'source_signature_to'
+           replaces 'source_def_to(os, summary)', the redundant 'false' of
+           'multiply' dropped; about 100 other 'const bool' parameters
+           remain ('inverted', 'in_args', 'allow_end', ...), they are named
+           at the declaration and mostly forwarded, not passed as literals
+    [ ] long parameter lists: 'stmt_identifier::compile_indexed_element' (11),
+        'machine::compare_memory' and its rv32i chain (8-9),
+        'fold_indexed_address' (8), 'add_generic_func' (8): group what travels
+        together into a struct
     [ ] missing direct includes (153 of misc-include-cleaner, 'std::format',
         'size_t', ...): add per header
 [ ] ai test suite in c++ being human readable

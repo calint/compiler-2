@@ -35,21 +35,24 @@ struct byte_range {
     size_t size_bytes{};
 };
 
+// 'boolean' is a builtin that machines treat differently from the integer
+// of its size
+enum class type_kind : uint8_t { user, builtin, boolean };
+
 class type final {
     std::string name_;
     size_t size_bytes_{};       // total size of type in bytes including padding
     size_t fields_end_bytes_{}; // end of the last field before tail padding
     size_t alignment_{1};
     std::vector<type_field> fields_;
-    bool is_builtin_{};
+    type_kind kind_{type_kind::user};
 
   public:
     // builtins are aligned to their size, a zero size needs no alignment
     type(const std::string_view name, const size_t size_bytes,
-         const bool is_builtin)
+         const type_kind kind)
         : name_{name}, size_bytes_{size_bytes},
-          alignment_{std::max(size_bytes, size_t{1})}, is_builtin_{is_builtin} {
-    }
+          alignment_{std::max(size_bytes, size_t{1})}, kind_{kind} {}
 
     type() = default;
 
@@ -135,7 +138,7 @@ class type final {
     [[nodiscard]] auto data_ranges() const -> std::vector<byte_range> {
         std::vector<byte_range> ranges;
 
-        if (is_builtin_) {
+        if (is_builtin()) {
             append_range(ranges, 0, size_bytes_);
             return ranges;
         }
@@ -218,7 +221,13 @@ class type final {
         return std::ranges::contains(fields_, name, &type_field::name);
     }
 
-    [[nodiscard]] auto is_builtin() const -> bool { return is_builtin_; }
+    [[nodiscard]] auto is_bool() const -> bool {
+        return kind_ == type_kind::boolean;
+    }
+
+    [[nodiscard]] auto is_builtin() const -> bool {
+        return kind_ != type_kind::user;
+    }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 

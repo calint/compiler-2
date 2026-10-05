@@ -271,8 +271,7 @@ auto is_bare_record_type(const toc& tc, const token& tk, tokenizer& tz)
 auto is_bare_builtin_type(const toc& tc, const token& tk, tokenizer& tz)
     -> bool {
 
-    if (not(stmt_builtin_convert::is_builtin_name(tk.text()) or
-            tk.is_text("bool")) or
+    if (not(tc.is_integer_type_name(tk.text()) or tk.is_text("bool")) or
         tc.is_var_or_alias(tk.text()) or tc.has_const(tk.text())) {
 
         return false;
@@ -318,7 +317,7 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         return std::make_unique<stmt_builtin_equal>(tc, std::move(uops), tk,
                                                     tz);
     }
-    if (stmt_builtin_convert::is_builtin_name(tk.text()) and
+    if (tc.is_integer_type_name(tk.text()) and
         tz.peek_char_after_whitespace() == '(') {
 
         return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,

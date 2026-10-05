@@ -358,9 +358,9 @@ class statement {
 
     // shared by 'dat' and 'var' initializers, 'array_count' 0 takes the size
     // of the string
-    [[nodiscard]] static auto string_array_count(const token& string_tk,
-                                                 const type& element_type,
-                                                 const size_t array_count)
+    [[nodiscard]] static auto
+    string_array_count(const type& string_element_type, const token& string_tk,
+                       const type& element_type, const size_t array_count)
         -> size_t {
 
         const size_t size_bytes{string_tk.string_size_bytes()};
@@ -378,7 +378,7 @@ class statement {
                                        size_bytes, array_count)};
         }
 
-        if (element_type.name() != "i8") {
+        if (&element_type != &string_element_type) {
             throw compiler_exception{string_tk,
                                      "only arrays of type 'i8' can be "
                                      "initialized with strings"};

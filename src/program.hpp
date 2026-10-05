@@ -60,12 +60,12 @@ struct report_section {
 
 class program final {
     // built-in types
-    type type_void{"void", 0, true};
-    type type_i64{"i64", sizeof(int64_t), true};
-    type type_i32{"i32", sizeof(int32_t), true};
-    type type_i16{"i16", sizeof(int16_t), true};
-    type type_i8{"i8", sizeof(int8_t), true};
-    type type_bool{"bool", type_i8.size_bytes(), true};
+    type type_void{"void", 0, type_kind::builtin};
+    type type_i64{"i64", sizeof(int64_t), type_kind::builtin};
+    type type_i32{"i32", sizeof(int32_t), type_kind::builtin};
+    type type_i16{"i16", sizeof(int16_t), type_kind::builtin};
+    type type_i8{"i8", sizeof(int8_t), type_kind::builtin};
+    type type_bool{"bool", type_i8.size_bytes(), type_kind::boolean};
 
     std::vector<std::unique_ptr<statement>> statements_;
     toc tc_; // table of contents
@@ -106,6 +106,7 @@ class program final {
 
         machine& x{tc_.machine()};
 
+        tc_.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
         x.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
 
         tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr);

@@ -1443,7 +1443,7 @@ class machine_rv32i : public machine {
 
         // 'not' of a bool flips the stored byte only
         const int mask{
-            destination.type_ref().name() == "bool"
+            destination.type_ref().is_bool()
                 ? std::numeric_limits<uint8_t>::max()
                 : -1,
         };
@@ -4082,7 +4082,7 @@ class machine_rv32i : public machine {
 
     // the shift that extends the high bits of a narrow value, zero for bool
     [[nodiscard]] static auto extend_shift_op(const type& value_type) -> op {
-        return value_type.name() == "bool" ? op::srli : op::srai;
+        return value_type.is_bool() ? op::srli : op::srai;
     }
 
     [[nodiscard]] static auto format_address(const operand& address)
@@ -4188,7 +4188,7 @@ class machine_rv32i : public machine {
             return op::lh;
         }
 
-        if (value_type.name() == "bool") {
+        if (value_type.is_bool()) {
             return op::lbu;
         }
 
@@ -4274,7 +4274,7 @@ class machine_rv32i : public machine {
 
         uint32_t value{static_cast<uint32_t>(constant) & mask};
 
-        if (value_type.name() != "bool" and
+        if (not value_type.is_bool() and
             (value & (uint32_t{1} << (bits - 1))) != 0) {
             // note: -1 because the sign bit is the highest bit
 
@@ -4313,13 +4313,12 @@ class machine_rv32i : public machine {
         // bitwise results stay in range when the source representation does
         if (not constant.has_value()) {
             return src.type_ref().size_bytes() > dst_type.size_bytes() or
-                   (src.type_ref().name() == "bool") !=
-                       (dst_type.name() == "bool");
+                   src.type_ref().is_bool() != dst_type.is_bool();
         }
 
         // a constant is narrowed to the width of a destination, a bool
         // destination has no constant operand
-        assert(dst_type.name() != "bool");
+        assert(not dst_type.is_bool());
 
         const int64_t limit{
             static_cast<int64_t>(uint64_t{1}
@@ -4417,7 +4416,7 @@ class machine_rv32i : public machine {
         const size_t src_size_bytes{src.type_ref().size_bytes()};
 
         const bool extension_differs{
-            (src.type_ref().name() == "bool") != (dst_type.name() == "bool"),
+            src.type_ref().is_bool() != dst_type.is_bool(),
         };
 
         return dst_size_bytes < 4 and

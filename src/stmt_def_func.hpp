@@ -134,7 +134,8 @@ class stmt_def_func final : public statement {
             return;
         }
 
-        source_def_to(os, false);
+        statement::source_to(os);
+        source_signature_to(os);
         code_.source_to(os);
     }
 
@@ -255,14 +256,12 @@ class stmt_def_func final : public statement {
 
     auto source_def_comment_to(machine& x, const size_t indent) const -> void {
         std::stringstream ss;
-        source_def_to(ss, true);
+        source_signature_to(ss);
         x.comment(name_tk_, indent, "{}", statement::trimmed_source(ss.view()));
     }
 
-    auto source_def_to(std::ostream& os, const bool summary) const -> void {
-        if (not summary) {
-            statement::source_to(os);
-        }
+    // the definition after its first token, without the body
+    auto source_signature_to(std::ostream& os) const -> void {
         noinline_tk_.source_to(os);
         mut_tk_.source_to(os);
         name_tk_.source_to(os);
@@ -352,7 +351,7 @@ class stmt_def_func final : public statement {
                            .base_register{},
                            .value_register{},
                        },
-                       false);
+                       var_kind::var);
         }
 
         for (const stmt_def_func_param& param : params_) {
@@ -378,7 +377,7 @@ class stmt_def_func final : public statement {
                            .base_register{},
                            .value_register{},
                        },
-                       false);
+                       var_kind::var);
         }
     }
 

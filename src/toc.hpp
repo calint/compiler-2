@@ -79,6 +79,9 @@ struct const_info {
     int64_t value;
 };
 
+// what a variable is declared by: 'var' or 'dat'
+enum class var_kind : uint8_t { var, dat };
+
 class frame final {
   public:
     enum class frame_type : uint8_t { FUNC, BLOCK, LOOP, FOO };
@@ -135,14 +138,14 @@ class frame final {
     }
 
     auto add_var(const var_info& var, const size_t allocated_size_bytes,
-                 const bool is_dat = false) -> void {
+                 const var_kind kind = var_kind::var) -> void {
 
         allocated_stack_size_bytes_ =
             sum_storage_size(allocated_stack_size_bytes_, allocated_size_bytes);
 
         vars_.put(var.name, var);
 
-        if (not is_dat) {
+        if (kind != var_kind::dat) {
             non_dat_var_has_been_added_ = true;
         }
     }
@@ -793,6 +796,10 @@ class toc final {
     type_table types_;
     const type* type_void_{};
     const type* type_bool_{};
+    const type* type_i64_{};
+    const type* type_i32_{};
+    const type* type_i16_{};
+    const type* type_i8_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_vars_size_bytes_{};
     size_t vars_size_bytes_{};
@@ -938,13 +945,13 @@ class toc final {
     }
 
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
-                 const bool is_dat) -> void {
+                 const var_kind kind) -> void {
 
         assert_not_declared_in_scope(src_loc_tk, var.name);
 
         // the value lives in its register for the whole scope
         if (not var.value_register.is_empty()) {
-            frames_.back().add_var(var, 0, is_dat);
+            frames_.back().add_var(var, 0, kind);
             comment_var(src_loc_tk, indent, var);
 
             return;
@@ -953,13 +960,13 @@ class toc final {
         const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
         const size_t var_alignment{var_storage_alignment(var)};
 
-        if (not is_dat) {
+        if (kind != var_kind::dat) {
             apply_entry_gap(src_loc_tk);
         }
 
         // offsets are relative to the variables base or to the nearest frame
         // with its own storage base, both are aligned
-        const storage_location location{find_storage_location(is_dat)};
+        const storage_location location{find_storage_location(kind)};
 
         frame* const storage_frame{location.storage_frame};
         const size_t base_offset{location.base_offset};
@@ -972,7 +979,7 @@ class toc final {
             add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
         };
 
-        if (not is_dat) {
+        if (kind != var_kind::dat) {
             assert_vars_capacity(src_loc_tk, var.name, allocated_size_bytes);
         }
 
@@ -990,10 +997,10 @@ class toc final {
         // the total accepts the size before a frame sums it
         vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
                                             allocated_size_bytes);
-        frames_.back().add_var(var, allocated_size_bytes, is_dat);
+        frames_.back().add_var(var, allocated_size_bytes, kind);
 
         // stats
-        if (not is_dat) {
+        if (kind != var_kind::dat) {
             usage_max_vars_size_bytes_ =
                 std::max(used_vars_size_bytes(), usage_max_vars_size_bytes_);
         }
@@ -1031,7 +1038,9 @@ class toc final {
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace
     auto check_only(const std::function_ref<void()> compile) -> void {
-        frame* const storage_frame{find_storage_location(false).storage_frame};
+        frame* const storage_frame{
+            find_storage_location(var_kind::var).storage_frame,
+        };
 
         const size_t max_frame_count{usage_max_frame_count_};
         const size_t max_vars_size_bytes{usage_max_vars_size_bytes_};
@@ -1247,8 +1256,8 @@ class toc final {
     }
 
     [[nodiscard]] auto get_type_address() const -> const type& {
-        return get_type_or_throw(
-            token{}, machine_.get().address_size_bytes() == 4 ? "i32" : "i64");
+        return machine_.get().address_size_bytes() == 4 ? *type_i32_
+                                                        : *type_i64_;
     }
 
     [[nodiscard]] auto get_type_bool() const -> const type& {
@@ -1258,6 +1267,8 @@ class toc final {
     [[nodiscard]] auto get_type_default() const -> const type& {
         return machine_.get().default_type();
     }
+
+    [[nodiscard]] auto get_type_i8() const -> const type& { return *type_i8_; }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
                                          const std::string_view name) const
@@ -1383,6 +1394,15 @@ class toc final {
         return current_func_frame().is_inlined_func();
     }
 
+    // 'int' and the names of the builtin integer types
+    [[nodiscard]] auto is_integer_type_name(const std::string_view name) const
+        -> bool {
+
+        return name == "int" or name == type_i8_->name() or
+               name == type_i16_->name() or name == type_i32_->name() or
+               name == type_i64_->name();
+    }
+
     // same scoping as 'make_ident_info', e.g. a variable 'limits' hides the
     // type 'limits'
     [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
@@ -1505,6 +1525,15 @@ class toc final {
         usage_max_frame_count_ = 0;
         usage_max_vars_size_bytes_ = 0;
         funcs_.clear_noninline_instances();
+    }
+
+    auto set_builtin_types(const type& t_i64, const type& t_i32,
+                           const type& t_i16, const type& t_i8) -> void {
+
+        type_i64_ = &t_i64;
+        type_i32_ = &t_i32;
+        type_i16_ = &t_i16;
+        type_i8_ = &t_i8;
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
@@ -1756,10 +1785,10 @@ class toc final {
         return nullptr;
     }
 
-    [[nodiscard]] auto find_storage_location(const bool is_dat)
+    [[nodiscard]] auto find_storage_location(const var_kind kind)
         -> storage_location {
 
-        if (is_dat) {
+        if (kind == var_kind::dat) {
             return {.storage_frame{}, .base_offset{vars_size_bytes_}};
         }
 

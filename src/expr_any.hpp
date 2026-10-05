@@ -66,7 +66,8 @@ class expr_any final : public statement {
         // e.g. "hello" fills the start of an 'i8' array
         if (tz.is_peek_char('"')) {
             string_tk_ = tz.next_token();
-            array_count_ = string_array_count(string_tk_, tp, array_count_);
+            array_count_ = string_array_count(tc.get_type_i8(), string_tk_, tp,
+                                              array_count_);
 
             return;
         }

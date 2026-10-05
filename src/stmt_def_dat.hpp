@@ -67,7 +67,7 @@ class stmt_def_dat final : public statement {
 
         // register the data without emitting output so it is available
         // during subsequent parsing
-        tc.add_var(name_tk_, 0, make_var_info(), true);
+        tc.add_var(name_tk_, 0, make_var_info(), var_kind::dat);
 
         tc.add_dat(this);
     }
@@ -101,7 +101,7 @@ class stmt_def_dat final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        tc.add_var(name_tk_, indent, make_var_info(), true);
+        tc.add_var(name_tk_, indent, make_var_info(), var_kind::dat);
     }
 
     auto compile_data(toc& tc) const -> void override {
@@ -196,12 +196,13 @@ class stmt_def_dat final : public statement {
     [[nodiscard]] auto parse_initializer(toc& tc, tokenizer& tz) -> elem {
         if (tz.peek_char_after_whitespace() == '"') {
             const token string_tk{tz.next_token()};
-            set_type(tc.get_type_or_throw(string_tk, "i8"));
+            set_type(tc.get_type_i8());
 
             elem el{};
             el.is_array = true;
             el.src_loc_tk = string_tk;
-            el.array_count = string_array_count(string_tk, get_type(), 0);
+            el.array_count =
+                string_array_count(tc.get_type_i8(), string_tk, get_type(), 0);
 
             return el;
         }
@@ -256,7 +257,7 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
-        if (stmt_builtin_convert::is_builtin_name(tk.text()) and
+        if (tc.is_integer_type_name(tk.text()) and
             tz.peek_char_after_whitespace() == '(') {
 
             type_tk_ = tk;
@@ -596,7 +597,8 @@ class stmt_def_dat final : public statement {
         elem el{};
         el.is_array = true;
         el.src_loc_tk = tk;
-        el.array_count = string_array_count(tk, tp, array_count);
+        el.array_count =
+            string_array_count(tc.get_type_i8(), tk, tp, array_count);
         return el;
     }
 

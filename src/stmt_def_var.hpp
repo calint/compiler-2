@@ -42,7 +42,7 @@ class stmt_def_var final : public statement {
 
         // add var to toc without emitting output so the further parsing has the
         // variable declared
-        tc.add_var(name_tk_, 0, make_var_info(), false);
+        tc.add_var(name_tk_, 0, make_var_info(), var_kind::var);
 
         // the identifier is parsed where it ends at '=', past it the '[2]' in
         // 'var a = [2]{}' would read as an index
@@ -88,7 +88,7 @@ class stmt_def_var final : public statement {
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         // an unsized array has its size from the initializer by now
-        tc.add_var(name_tk_, indent, make_var_info(), false);
+        tc.add_var(name_tk_, indent, make_var_info(), var_kind::var);
 
         const ident_info& var_dst_info{
             tc.make_ident_info(name_tk_, name_tk_.text()),
@@ -119,8 +119,7 @@ class stmt_def_var final : public statement {
         }
 
         is_array_ = true;
-        set_type(is_string ? tc.get_type_or_throw(name_tk_, "i8")
-                           : array_element_type(tc, tz));
+        set_type(is_string ? tc.get_type_i8() : array_element_type(tc, tz));
 
         // later statements read the size while parsing, e.g. 'var b = a'
         token bracket_tk;
@@ -222,7 +221,7 @@ class stmt_def_var final : public statement {
         const token start_tk{tz.cur_position_token()};
 
         tc.enter_block();
-        tc.add_var(name_tk_, 0, make_var_info(), false);
+        tc.add_var(name_tk_, 0, make_var_info(), var_kind::var);
 
         parse();
 

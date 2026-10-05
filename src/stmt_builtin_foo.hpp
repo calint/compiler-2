@@ -245,7 +245,7 @@ class stmt_builtin_foo final : public statement {
                 .base_register{},
                 .value_register{},
             },
-            false);
+            var_kind::var);
 
         tc.add_var(src_loc_tk, indent,
                    {
@@ -257,7 +257,7 @@ class stmt_builtin_foo final : public statement {
                        .base_register{},
                        .value_register{counter},
                    },
-                   false);
+                   var_kind::var);
 
         tc.add_const(src_loc_tk, indent, "n",
                      static_cast<int64_t>(array_info.array_len));
