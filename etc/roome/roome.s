@@ -7688,52 +7688,53 @@ func.parse_input:
                 if.575.8.600.24.959.9.code:
                     # [575:30] return
                 if.575.5.600.24.959.9.end:
-                # [577:8] tz.token_to(link_names.array[link_names.len])
-                # [577:34] allocate scratch register -> t2
-                # [577:34] set array index
-                # [577:34] link_names.len
+                # [577:5] link_names.array[link_names.len] = tz.token()
+                # [577:22] allocate scratch register -> t2
+                # [577:22] set array index
+                # [577:22] link_names.len
                 lui t2, 1048551
                 add t2, t2, s0
                 lw t2, 148(t2)
-                # [577:34] bounds check begin
-                # [577:34] lower bound
-                # [577:34] t2 lower bound covered by the unsigned upper bound
-                # [577:34] upper bound
-                # [577:34] allocate scratch register -> t3
+                # [577:22] bounds check begin
+                # [577:22] lower bound
+                # [577:22] t2 lower bound covered by the unsigned upper bound
+                # [577:22] upper bound
+                # [577:22] allocate scratch register -> t3
                 li t3, 1024
                 bltu t2, t3, 2f
                 1:
-                # [577:34] source line
+                # [577:22] source line
                 li a0, 577
                 j baz_bounds_panic
                 2:
-                # [577:34] free scratch register t3
-                # [577:34] bounds check end
-                # [577:34] allocate scratch register -> t3
+                # [577:22] free scratch register t3
+                # [577:22] bounds check end
+                # [577:22] allocate scratch register -> t3
                 slli t3, t2, 2
                 add t2, t3, t2
                 slli t2, t2, 2
-                # [577:34] free scratch register t3
-                # [577:8] allocate scratch register -> t3
-                # [577:8] address of parameter 'dst'
+                # [577:22] free scratch register t3
+                # [577:43] tz.token()
+                # [577:43] allocate scratch register -> t3
+                # [577:43] address of result element in array 'link_names.array'
                 add t3, s0, t2
-                # [577:8] allocate scratch register -> t4
+                # [577:43] allocate scratch register -> t4
                 lui t4, 1048546
                 add t3, t3, t4
-                # [577:8] free scratch register t4
+                # [577:43] free scratch register t4
                 addi t3, t3, 148
-                # [467:6] tokenizer.token_to(dst mut T)
-                func.tokenizer.token_to.name.577.8.600.24.959.9:
-                    # [577:8] alias self -> tz
-                    # [577:8] alias dst -> link_names.array
-                    # [468:5] dst.len = self.len()
-                    # [468:20] dst.len = self.len()
-                    # [468:20] = expression
-                    # [468:20] self.len()
+                # [461:6] tokenizer.token() res T
+                func.tokenizer.token.name.577.43.600.24.959.9:
+                    # [577:43] alias res -> link_names.array
+                    # [577:43] alias self -> tz
+                    # [462:5] res.len = self.len()
+                    # [462:20] res.len = self.len()
+                    # [462:20] = expression
+                    # [462:20] self.len()
                     # [439:6] tokenizer.len() res
-                    func.tokenizer.len.468.20.577.8.600.24.959.9:
-                        # [468:20] alias res -> dst.len
-                        # [468:20] alias self -> self
+                    func.tokenizer.len.462.20.577.43.600.24.959.9:
+                        # [462:20] alias res -> res.len
+                        # [462:20] alias self -> self
                         # [440:5] res = self.end - self.start
                         # [440:11] allocate scratch register -> t4
                         # [440:11] self.end
@@ -7746,9 +7747,9 @@ func.parse_input:
                         # [440:22] free scratch register t5
                         sw t4, 16(t3)
                         # [440:11] free scratch register t4
-                    func.tokenizer.len.468.20.577.8.600.24.959.9.end:
-                    # [469:5] dst.array = {}
-                    # [469:17] zero remaining elements: 16 * 1 B = 16 B
+                    func.tokenizer.len.462.20.577.43.600.24.959.9.end:
+                    # [463:5] res.array = {}
+                    # [463:17] zero remaining elements: 16 * 1 B = 16 B
                     sb zero, 0(t3)
                     sb zero, 1(t3)
                     sb zero, 2(t3)
@@ -7765,59 +7766,59 @@ func.parse_input:
                     sb zero, 13(t3)
                     sb zero, 14(t3)
                     sb zero, 15(t3)
-                    # [470:5] array_copy(self.str.array[self.start], dst.array, dst.len)
-                    # [470:5] allocate scratch register -> t4
-                    # [470:5] allocate scratch register -> t5
-                    # [470:5] allocate scratch register -> t6
-                    # [470:5] t4: source, t5: destination, t6: count
-                    # [470:55] dst.len
-                    # [470:55] dst.len
+                    # [464:5] array_copy(self.str.array[self.start], res.array, res.len)
+                    # [464:5] allocate scratch register -> t4
+                    # [464:5] allocate scratch register -> t5
+                    # [464:5] allocate scratch register -> t6
+                    # [464:5] t4: source, t5: destination, t6: count
+                    # [464:55] res.len
+                    # [464:55] res.len
                     lw t6, 16(t3)
-                    # [470:16] self.str.array[self.start]
-                    # [470:31] allocate scratch register -> s2
-                    # [470:31] set array index
-                    # [470:31] self.start
+                    # [464:16] self.str.array[self.start]
+                    # [464:31] allocate scratch register -> s2
+                    # [464:31] set array index
+                    # [464:31] self.start
                     lw s2, 132(t1)
-                    # [470:31] bounds check begin
-                    # [470:31] lower bound
+                    # [464:31] bounds check begin
+                    # [464:31] lower bound
                     bltz s2, 1f
                     bltz t6, 1f
-                    # [470:31] upper bound
-                    # [470:31] allocate scratch register -> s3
-                    # [470:31] allocate scratch register -> s4
+                    # [464:31] upper bound
+                    # [464:31] allocate scratch register -> s3
+                    # [464:31] allocate scratch register -> s4
                     add s4, s2, t6
                     li s3, 127
                     bgeu s3, s4, 2f
                     1:
-                    # [470:31] source line
-                    li a0, 470
+                    # [464:31] source line
+                    li a0, 464
                     j baz_bounds_panic
                     2:
-                    # [470:31] free scratch register s4
-                    # [470:31] free scratch register s3
-                    # [470:31] bounds check end
+                    # [464:31] free scratch register s4
+                    # [464:31] free scratch register s3
+                    # [464:31] bounds check end
                     add t4, t1, s2
-                    # [470:5] free scratch register s2
-                    # [470:44] dst.array
-                    # [470:44] bounds check begin
-                    # [470:44] lower bound
-                    # [470:44] t6 lower bound covered by the unsigned upper bound
-                    # [470:44] upper bound
-                    # [470:44] allocate scratch register -> s2
+                    # [464:5] free scratch register s2
+                    # [464:44] res.array
+                    # [464:44] bounds check begin
+                    # [464:44] lower bound
+                    # [464:44] t6 lower bound covered by the unsigned upper bound
+                    # [464:44] upper bound
+                    # [464:44] allocate scratch register -> s2
                     li s2, 16
                     bgeu s2, t6, 2f
                     1:
-                    # [470:44] source line
-                    li a0, 470
+                    # [464:44] source line
+                    li a0, 464
                     j baz_bounds_panic
                     2:
-                    # [470:44] free scratch register s2
-                    # [470:44] bounds check end
+                    # [464:44] free scratch register s2
+                    # [464:44] bounds check end
                     addi t5, t3, 0
-                    # [470:5] t6: elements to bytes (1 bytes/element)
-                    # [470:5] allocate scratch register -> s2
-                    # [470:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                    # [470:5] copy bytes; skip if none
+                    # [464:5] t6: elements to bytes (1 bytes/element)
+                    # [464:5] allocate scratch register -> s2
+                    # [464:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
+                    # [464:5] copy bytes; skip if none
                     beqz t6, 4f
                     add t6, t6, t4
                     1:
@@ -7827,13 +7828,13 @@ func.parse_input:
                     addi t5, t5, 1
                     bne t4, t6, 1b
                     4:
-                    # [470:5] free scratch register s2
-                    # [470:5] free scratch register t6
-                    # [470:5] free scratch register t5
-                    # [470:5] free scratch register t4
-                    # [577:8] free scratch register t3
-                func.tokenizer.token_to.name.577.8.600.24.959.9.end:
-                    # [577:8] free scratch register t2
+                    # [464:5] free scratch register s2
+                    # [464:5] free scratch register t6
+                    # [464:5] free scratch register t5
+                    # [464:5] free scratch register t4
+                func.tokenizer.token.name.577.43.600.24.959.9.end:
+                # [577:43] free scratch register t3
+                # [577:5] free scratch register t2
                 # [579:5] res = link_names.len
                 # [579:11] link_names.len
                 # [579:11] allocate scratch register -> t2
@@ -8322,52 +8323,53 @@ func.parse_input:
                 if.575.8.609.29.959.9.code:
                     # [575:30] return
                 if.575.5.609.29.959.9.end:
-                # [577:8] tz.token_to(link_names.array[link_names.len])
-                # [577:34] allocate scratch register -> t2
-                # [577:34] set array index
-                # [577:34] link_names.len
+                # [577:5] link_names.array[link_names.len] = tz.token()
+                # [577:22] allocate scratch register -> t2
+                # [577:22] set array index
+                # [577:22] link_names.len
                 lui t2, 1048551
                 add t2, t2, s0
                 lw t2, 148(t2)
-                # [577:34] bounds check begin
-                # [577:34] lower bound
-                # [577:34] t2 lower bound covered by the unsigned upper bound
-                # [577:34] upper bound
-                # [577:34] allocate scratch register -> t3
+                # [577:22] bounds check begin
+                # [577:22] lower bound
+                # [577:22] t2 lower bound covered by the unsigned upper bound
+                # [577:22] upper bound
+                # [577:22] allocate scratch register -> t3
                 li t3, 1024
                 bltu t2, t3, 2f
                 1:
-                # [577:34] source line
+                # [577:22] source line
                 li a0, 577
                 j baz_bounds_panic
                 2:
-                # [577:34] free scratch register t3
-                # [577:34] bounds check end
-                # [577:34] allocate scratch register -> t3
+                # [577:22] free scratch register t3
+                # [577:22] bounds check end
+                # [577:22] allocate scratch register -> t3
                 slli t3, t2, 2
                 add t2, t3, t2
                 slli t2, t2, 2
-                # [577:34] free scratch register t3
-                # [577:8] allocate scratch register -> t3
-                # [577:8] address of parameter 'dst'
+                # [577:22] free scratch register t3
+                # [577:43] tz.token()
+                # [577:43] allocate scratch register -> t3
+                # [577:43] address of result element in array 'link_names.array'
                 add t3, s0, t2
-                # [577:8] allocate scratch register -> t4
+                # [577:43] allocate scratch register -> t4
                 lui t4, 1048546
                 add t3, t3, t4
-                # [577:8] free scratch register t4
+                # [577:43] free scratch register t4
                 addi t3, t3, 148
-                # [467:6] tokenizer.token_to(dst mut T)
-                func.tokenizer.token_to.name.577.8.609.29.959.9:
-                    # [577:8] alias self -> tz
-                    # [577:8] alias dst -> link_names.array
-                    # [468:5] dst.len = self.len()
-                    # [468:20] dst.len = self.len()
-                    # [468:20] = expression
-                    # [468:20] self.len()
+                # [461:6] tokenizer.token() res T
+                func.tokenizer.token.name.577.43.609.29.959.9:
+                    # [577:43] alias res -> link_names.array
+                    # [577:43] alias self -> tz
+                    # [462:5] res.len = self.len()
+                    # [462:20] res.len = self.len()
+                    # [462:20] = expression
+                    # [462:20] self.len()
                     # [439:6] tokenizer.len() res
-                    func.tokenizer.len.468.20.577.8.609.29.959.9:
-                        # [468:20] alias res -> dst.len
-                        # [468:20] alias self -> self
+                    func.tokenizer.len.462.20.577.43.609.29.959.9:
+                        # [462:20] alias res -> res.len
+                        # [462:20] alias self -> self
                         # [440:5] res = self.end - self.start
                         # [440:11] allocate scratch register -> t4
                         # [440:11] self.end
@@ -8380,9 +8382,9 @@ func.parse_input:
                         # [440:22] free scratch register t5
                         sw t4, 16(t3)
                         # [440:11] free scratch register t4
-                    func.tokenizer.len.468.20.577.8.609.29.959.9.end:
-                    # [469:5] dst.array = {}
-                    # [469:17] zero remaining elements: 16 * 1 B = 16 B
+                    func.tokenizer.len.462.20.577.43.609.29.959.9.end:
+                    # [463:5] res.array = {}
+                    # [463:17] zero remaining elements: 16 * 1 B = 16 B
                     sb zero, 0(t3)
                     sb zero, 1(t3)
                     sb zero, 2(t3)
@@ -8399,59 +8401,59 @@ func.parse_input:
                     sb zero, 13(t3)
                     sb zero, 14(t3)
                     sb zero, 15(t3)
-                    # [470:5] array_copy(self.str.array[self.start], dst.array, dst.len)
-                    # [470:5] allocate scratch register -> t4
-                    # [470:5] allocate scratch register -> t5
-                    # [470:5] allocate scratch register -> t6
-                    # [470:5] t4: source, t5: destination, t6: count
-                    # [470:55] dst.len
-                    # [470:55] dst.len
+                    # [464:5] array_copy(self.str.array[self.start], res.array, res.len)
+                    # [464:5] allocate scratch register -> t4
+                    # [464:5] allocate scratch register -> t5
+                    # [464:5] allocate scratch register -> t6
+                    # [464:5] t4: source, t5: destination, t6: count
+                    # [464:55] res.len
+                    # [464:55] res.len
                     lw t6, 16(t3)
-                    # [470:16] self.str.array[self.start]
-                    # [470:31] allocate scratch register -> s2
-                    # [470:31] set array index
-                    # [470:31] self.start
+                    # [464:16] self.str.array[self.start]
+                    # [464:31] allocate scratch register -> s2
+                    # [464:31] set array index
+                    # [464:31] self.start
                     lw s2, 132(t1)
-                    # [470:31] bounds check begin
-                    # [470:31] lower bound
+                    # [464:31] bounds check begin
+                    # [464:31] lower bound
                     bltz s2, 1f
                     bltz t6, 1f
-                    # [470:31] upper bound
-                    # [470:31] allocate scratch register -> s3
-                    # [470:31] allocate scratch register -> s4
+                    # [464:31] upper bound
+                    # [464:31] allocate scratch register -> s3
+                    # [464:31] allocate scratch register -> s4
                     add s4, s2, t6
                     li s3, 127
                     bgeu s3, s4, 2f
                     1:
-                    # [470:31] source line
-                    li a0, 470
+                    # [464:31] source line
+                    li a0, 464
                     j baz_bounds_panic
                     2:
-                    # [470:31] free scratch register s4
-                    # [470:31] free scratch register s3
-                    # [470:31] bounds check end
+                    # [464:31] free scratch register s4
+                    # [464:31] free scratch register s3
+                    # [464:31] bounds check end
                     add t4, t1, s2
-                    # [470:5] free scratch register s2
-                    # [470:44] dst.array
-                    # [470:44] bounds check begin
-                    # [470:44] lower bound
-                    # [470:44] t6 lower bound covered by the unsigned upper bound
-                    # [470:44] upper bound
-                    # [470:44] allocate scratch register -> s2
+                    # [464:5] free scratch register s2
+                    # [464:44] res.array
+                    # [464:44] bounds check begin
+                    # [464:44] lower bound
+                    # [464:44] t6 lower bound covered by the unsigned upper bound
+                    # [464:44] upper bound
+                    # [464:44] allocate scratch register -> s2
                     li s2, 16
                     bgeu s2, t6, 2f
                     1:
-                    # [470:44] source line
-                    li a0, 470
+                    # [464:44] source line
+                    li a0, 464
                     j baz_bounds_panic
                     2:
-                    # [470:44] free scratch register s2
-                    # [470:44] bounds check end
+                    # [464:44] free scratch register s2
+                    # [464:44] bounds check end
                     addi t5, t3, 0
-                    # [470:5] t6: elements to bytes (1 bytes/element)
-                    # [470:5] allocate scratch register -> s2
-                    # [470:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                    # [470:5] copy bytes; skip if none
+                    # [464:5] t6: elements to bytes (1 bytes/element)
+                    # [464:5] allocate scratch register -> s2
+                    # [464:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
+                    # [464:5] copy bytes; skip if none
                     beqz t6, 4f
                     add t6, t6, t4
                     1:
@@ -8461,13 +8463,13 @@ func.parse_input:
                     addi t5, t5, 1
                     bne t4, t6, 1b
                     4:
-                    # [470:5] free scratch register s2
-                    # [470:5] free scratch register t6
-                    # [470:5] free scratch register t5
-                    # [470:5] free scratch register t4
-                    # [577:8] free scratch register t3
-                func.tokenizer.token_to.name.577.8.609.29.959.9.end:
-                    # [577:8] free scratch register t2
+                    # [464:5] free scratch register s2
+                    # [464:5] free scratch register t6
+                    # [464:5] free scratch register t5
+                    # [464:5] free scratch register t4
+                func.tokenizer.token.name.577.43.609.29.959.9.end:
+                # [577:43] free scratch register t3
+                # [577:5] free scratch register t2
                 # [579:5] res = link_names.len
                 # [579:11] link_names.len
                 # [579:11] allocate scratch register -> t2
@@ -9037,29 +9039,29 @@ func.parse_input:
                 sw t2, 136(t1)
                 # [475:16] free scratch register t2
             func.tokenizer.to_end.635.8.962.9.end:
-            # [636:8] tz.token_to(rooms.array[entities.array[eid].room_id].description)
-            # [636:29] allocate scratch register -> t2
-            # [636:29] set array index
-            # [636:29] entities.array[eid].room_id
-            # [636:44] allocate scratch register -> t3
-            # [636:44] set array index
-            # [636:44] eid
+            # [636:5] rooms.array[entities.array[eid].room_id].description = tz.token()
+            # [636:17] allocate scratch register -> t2
+            # [636:17] set array index
+            # [636:17] entities.array[eid].room_id
+            # [636:32] allocate scratch register -> t3
+            # [636:32] set array index
+            # [636:32] eid
             lw t3, 0(t0)
-            # [636:44] bounds check begin
-            # [636:44] lower bound
-            # [636:44] t3 lower bound covered by the unsigned upper bound
-            # [636:44] upper bound
-            # [636:44] allocate scratch register -> t4
+            # [636:32] bounds check begin
+            # [636:32] lower bound
+            # [636:32] t3 lower bound covered by the unsigned upper bound
+            # [636:32] upper bound
+            # [636:32] allocate scratch register -> t4
             li t4, 32
             bltu t3, t4, 2f
             1:
-            # [636:44] source line
+            # [636:32] source line
             li a0, 636
             j baz_bounds_panic
             2:
-            # [636:44] free scratch register t4
-            # [636:44] bounds check end
-            # [636:44] allocate scratch register -> t4
+            # [636:32] free scratch register t4
+            # [636:32] bounds check end
+            # [636:32] allocate scratch register -> t4
             slli t4, t3, 2
             add t4, t4, t3
             slli t4, t4, 2
@@ -9067,29 +9069,29 @@ func.parse_input:
             slli t4, t4, 2
             sub t3, t4, t3
             slli t3, t3, 5
-            # [636:44] free scratch register t4
+            # [636:32] free scratch register t4
             add t2, s0, t3
-            # [636:29] allocate scratch register -> t4
+            # [636:17] allocate scratch register -> t4
             lui t4, 1048527
             add t2, t2, t4
-            # [636:29] free scratch register t4
+            # [636:17] free scratch register t4
             lw t2, 1188(t2)
-            # [636:29] free scratch register t3
-            # [636:29] bounds check begin
-            # [636:29] lower bound
-            # [636:29] t2 lower bound covered by the unsigned upper bound
-            # [636:29] upper bound
-            # [636:29] allocate scratch register -> t3
+            # [636:17] free scratch register t3
+            # [636:17] bounds check begin
+            # [636:17] lower bound
+            # [636:17] t2 lower bound covered by the unsigned upper bound
+            # [636:17] upper bound
+            # [636:17] allocate scratch register -> t3
             li t3, 128
             bltu t2, t3, 2f
             1:
-            # [636:29] source line
+            # [636:17] source line
             li a0, 636
             j baz_bounds_panic
             2:
-            # [636:29] free scratch register t3
-            # [636:29] bounds check end
-            # [636:29] allocate scratch register -> t3
+            # [636:17] free scratch register t3
+            # [636:17] bounds check end
+            # [636:17] allocate scratch register -> t3
             slli t3, t2, 2
             add t3, t3, t2
             slli t3, t3, 2
@@ -9097,27 +9099,37 @@ func.parse_input:
             slli t3, t3, 2
             add t2, t3, t2
             slli t2, t2, 3
-            # [636:29] free scratch register t3
-            # [636:8] allocate scratch register -> t3
-            # [636:8] address of parameter 'dst'
+            # [636:17] free scratch register t3
+            # [636:60] zero padding: 1 B
+            # [636:60] allocate scratch register -> t3
             add t3, s0, t2
-            # [636:8] allocate scratch register -> t4
+            # [636:60] allocate scratch register -> t4
             lui t4, 1048556
             add t3, t3, t4
-            # [636:8] free scratch register t4
+            # [636:60] free scratch register t4
+            sb zero, 311(t3)
+            # [636:60] free scratch register t3
+            # [636:63] tz.token()
+            # [636:63] allocate scratch register -> t3
+            # [636:63] address of indexed result 'rooms.array.description'
+            add t3, s0, t2
+            # [636:63] allocate scratch register -> t4
+            lui t4, 1048556
+            add t3, t3, t4
+            # [636:63] free scratch register t4
             addi t3, t3, 184
-            # [467:6] tokenizer.token_to(dst mut T)
-            func.tokenizer.token_to.str.636.8.962.9:
-                # [636:8] alias self -> tz
-                # [636:8] alias dst -> rooms.array.description
-                # [468:5] dst.len = self.len()
-                # [468:20] dst.len = self.len()
-                # [468:20] = expression
-                # [468:20] self.len()
+            # [461:6] tokenizer.token() res T
+            func.tokenizer.token.str.636.63.962.9:
+                # [636:63] alias res -> rooms.array.description
+                # [636:63] alias self -> tz
+                # [462:5] res.len = self.len()
+                # [462:20] res.len = self.len()
+                # [462:20] = expression
+                # [462:20] self.len()
                 # [439:6] tokenizer.len() res
-                func.tokenizer.len.468.20.636.8.962.9:
-                    # [468:20] alias res -> dst.len
-                    # [468:20] alias self -> self
+                func.tokenizer.len.462.20.636.63.962.9:
+                    # [462:20] alias res -> res.len
+                    # [462:20] alias self -> self
                     # [440:5] res = self.end - self.start
                     # [440:11] allocate scratch register -> t4
                     # [440:11] self.end
@@ -9130,74 +9142,74 @@ func.parse_input:
                     # [440:22] free scratch register t5
                     sw t4, 128(t3)
                     # [440:11] free scratch register t4
-                func.tokenizer.len.468.20.636.8.962.9.end:
-                # [469:5] dst.array = {}
-                # [469:17] zero remaining elements: 127 * 1 B = 127 B
-                # [469:17] zero loop of 1-byte accesses: start 1-byte aligned
-                # [469:17] allocate scratch register -> t4
+                func.tokenizer.len.462.20.636.63.962.9.end:
+                # [463:5] res.array = {}
+                # [463:17] zero remaining elements: 127 * 1 B = 127 B
+                # [463:17] zero loop of 1-byte accesses: start 1-byte aligned
+                # [463:17] allocate scratch register -> t4
                 addi t4, t3, 0
-                # [469:17] allocate scratch register -> t5
-                # [469:17] zero bytes
+                # [463:17] allocate scratch register -> t5
+                # [463:17] zero bytes
                 addi t5, t4, 127
                 1:
                 sb zero, 0(t4)
                 addi t4, t4, 1
                 bne t4, t5, 1b
-                # [469:17] free scratch register t5
-                # [469:17] free scratch register t4
-                # [470:5] array_copy(self.str.array[self.start], dst.array, dst.len)
-                # [470:5] allocate scratch register -> t4
-                # [470:5] allocate scratch register -> t5
-                # [470:5] allocate scratch register -> t6
-                # [470:5] t4: source, t5: destination, t6: count
-                # [470:55] dst.len
-                # [470:55] dst.len
+                # [463:17] free scratch register t5
+                # [463:17] free scratch register t4
+                # [464:5] array_copy(self.str.array[self.start], res.array, res.len)
+                # [464:5] allocate scratch register -> t4
+                # [464:5] allocate scratch register -> t5
+                # [464:5] allocate scratch register -> t6
+                # [464:5] t4: source, t5: destination, t6: count
+                # [464:55] res.len
+                # [464:55] res.len
                 lw t6, 128(t3)
-                # [470:16] self.str.array[self.start]
-                # [470:31] allocate scratch register -> s2
-                # [470:31] set array index
-                # [470:31] self.start
+                # [464:16] self.str.array[self.start]
+                # [464:31] allocate scratch register -> s2
+                # [464:31] set array index
+                # [464:31] self.start
                 lw s2, 132(t1)
-                # [470:31] bounds check begin
-                # [470:31] lower bound
+                # [464:31] bounds check begin
+                # [464:31] lower bound
                 bltz s2, 1f
                 bltz t6, 1f
-                # [470:31] upper bound
-                # [470:31] allocate scratch register -> s3
-                # [470:31] allocate scratch register -> s4
+                # [464:31] upper bound
+                # [464:31] allocate scratch register -> s3
+                # [464:31] allocate scratch register -> s4
                 add s4, s2, t6
                 li s3, 127
                 bgeu s3, s4, 2f
                 1:
-                # [470:31] source line
-                li a0, 470
+                # [464:31] source line
+                li a0, 464
                 j baz_bounds_panic
                 2:
-                # [470:31] free scratch register s4
-                # [470:31] free scratch register s3
-                # [470:31] bounds check end
+                # [464:31] free scratch register s4
+                # [464:31] free scratch register s3
+                # [464:31] bounds check end
                 add t4, t1, s2
-                # [470:5] free scratch register s2
-                # [470:44] dst.array
-                # [470:44] bounds check begin
-                # [470:44] lower bound
-                # [470:44] t6 lower bound covered by the unsigned upper bound
-                # [470:44] upper bound
-                # [470:44] allocate scratch register -> s2
+                # [464:5] free scratch register s2
+                # [464:44] res.array
+                # [464:44] bounds check begin
+                # [464:44] lower bound
+                # [464:44] t6 lower bound covered by the unsigned upper bound
+                # [464:44] upper bound
+                # [464:44] allocate scratch register -> s2
                 li s2, 127
                 bgeu s2, t6, 2f
                 1:
-                # [470:44] source line
-                li a0, 470
+                # [464:44] source line
+                li a0, 464
                 j baz_bounds_panic
                 2:
-                # [470:44] free scratch register s2
-                # [470:44] bounds check end
+                # [464:44] free scratch register s2
+                # [464:44] bounds check end
                 addi t5, t3, 0
-                # [470:5] t6: elements to bytes (1 bytes/element)
-                # [470:5] allocate scratch register -> s2
-                # [470:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                # [470:5] copy bytes; skip if none
+                # [464:5] t6: elements to bytes (1 bytes/element)
+                # [464:5] allocate scratch register -> s2
+                # [464:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
+                # [464:5] copy bytes; skip if none
                 beqz t6, 4f
                 add t6, t6, t4
                 1:
@@ -9207,13 +9219,13 @@ func.parse_input:
                 addi t5, t5, 1
                 bne t4, t6, 1b
                 4:
-                # [470:5] free scratch register s2
-                # [470:5] free scratch register t6
-                # [470:5] free scratch register t5
-                # [470:5] free scratch register t4
-                # [636:8] free scratch register t3
-            func.tokenizer.token_to.str.636.8.962.9.end:
-                # [636:8] free scratch register t2
+                # [464:5] free scratch register s2
+                # [464:5] free scratch register t6
+                # [464:5] free scratch register t5
+                # [464:5] free scratch register t4
+            func.tokenizer.token.str.636.63.962.9.end:
+            # [636:63] free scratch register t3
+            # [636:5] free scratch register t2
             # [638:9] out.print_all(str_new_room_description)
             # [68:6] printer.print_all(s i8[])
             func.printer.print_all.638.9.962.9:
@@ -9532,29 +9544,29 @@ func.parse_input:
                 sw t2, 136(t1)
                 # [475:16] free scratch register t2
             func.tokenizer.to_end.643.8.965.9.end:
-            # [644:8] tz.token_to(rooms.array[entities.array[eid].room_id].note)
-            # [644:29] allocate scratch register -> t2
-            # [644:29] set array index
-            # [644:29] entities.array[eid].room_id
-            # [644:44] allocate scratch register -> t3
-            # [644:44] set array index
-            # [644:44] eid
+            # [644:5] rooms.array[entities.array[eid].room_id].note = tz.token()
+            # [644:17] allocate scratch register -> t2
+            # [644:17] set array index
+            # [644:17] entities.array[eid].room_id
+            # [644:32] allocate scratch register -> t3
+            # [644:32] set array index
+            # [644:32] eid
             lw t3, 0(t0)
-            # [644:44] bounds check begin
-            # [644:44] lower bound
-            # [644:44] t3 lower bound covered by the unsigned upper bound
-            # [644:44] upper bound
-            # [644:44] allocate scratch register -> t4
+            # [644:32] bounds check begin
+            # [644:32] lower bound
+            # [644:32] t3 lower bound covered by the unsigned upper bound
+            # [644:32] upper bound
+            # [644:32] allocate scratch register -> t4
             li t4, 32
             bltu t3, t4, 2f
             1:
-            # [644:44] source line
+            # [644:32] source line
             li a0, 644
             j baz_bounds_panic
             2:
-            # [644:44] free scratch register t4
-            # [644:44] bounds check end
-            # [644:44] allocate scratch register -> t4
+            # [644:32] free scratch register t4
+            # [644:32] bounds check end
+            # [644:32] allocate scratch register -> t4
             slli t4, t3, 2
             add t4, t4, t3
             slli t4, t4, 2
@@ -9562,29 +9574,29 @@ func.parse_input:
             slli t4, t4, 2
             sub t3, t4, t3
             slli t3, t3, 5
-            # [644:44] free scratch register t4
+            # [644:32] free scratch register t4
             add t2, s0, t3
-            # [644:29] allocate scratch register -> t4
+            # [644:17] allocate scratch register -> t4
             lui t4, 1048527
             add t2, t2, t4
-            # [644:29] free scratch register t4
+            # [644:17] free scratch register t4
             lw t2, 1188(t2)
-            # [644:29] free scratch register t3
-            # [644:29] bounds check begin
-            # [644:29] lower bound
-            # [644:29] t2 lower bound covered by the unsigned upper bound
-            # [644:29] upper bound
-            # [644:29] allocate scratch register -> t3
+            # [644:17] free scratch register t3
+            # [644:17] bounds check begin
+            # [644:17] lower bound
+            # [644:17] t2 lower bound covered by the unsigned upper bound
+            # [644:17] upper bound
+            # [644:17] allocate scratch register -> t3
             li t3, 128
             bltu t2, t3, 2f
             1:
-            # [644:29] source line
+            # [644:17] source line
             li a0, 644
             j baz_bounds_panic
             2:
-            # [644:29] free scratch register t3
-            # [644:29] bounds check end
-            # [644:29] allocate scratch register -> t3
+            # [644:17] free scratch register t3
+            # [644:17] bounds check end
+            # [644:17] allocate scratch register -> t3
             slli t3, t2, 2
             add t3, t3, t2
             slli t3, t3, 2
@@ -9592,27 +9604,37 @@ func.parse_input:
             slli t3, t3, 2
             add t2, t3, t2
             slli t2, t2, 3
-            # [644:29] free scratch register t3
-            # [644:8] allocate scratch register -> t3
-            # [644:8] address of parameter 'dst'
+            # [644:17] free scratch register t3
+            # [644:53] zero padding: 1 B
+            # [644:53] allocate scratch register -> t3
             add t3, s0, t2
-            # [644:8] allocate scratch register -> t4
+            # [644:53] allocate scratch register -> t4
             lui t4, 1048556
             add t3, t3, t4
-            # [644:8] free scratch register t4
+            # [644:53] free scratch register t4
+            sb zero, 443(t3)
+            # [644:53] free scratch register t3
+            # [644:56] tz.token()
+            # [644:56] allocate scratch register -> t3
+            # [644:56] address of indexed result 'rooms.array.note'
+            add t3, s0, t2
+            # [644:56] allocate scratch register -> t4
+            lui t4, 1048556
+            add t3, t3, t4
+            # [644:56] free scratch register t4
             addi t3, t3, 316
-            # [467:6] tokenizer.token_to(dst mut T)
-            func.tokenizer.token_to.str.644.8.965.9:
-                # [644:8] alias self -> tz
-                # [644:8] alias dst -> rooms.array.note
-                # [468:5] dst.len = self.len()
-                # [468:20] dst.len = self.len()
-                # [468:20] = expression
-                # [468:20] self.len()
+            # [461:6] tokenizer.token() res T
+            func.tokenizer.token.str.644.56.965.9:
+                # [644:56] alias res -> rooms.array.note
+                # [644:56] alias self -> tz
+                # [462:5] res.len = self.len()
+                # [462:20] res.len = self.len()
+                # [462:20] = expression
+                # [462:20] self.len()
                 # [439:6] tokenizer.len() res
-                func.tokenizer.len.468.20.644.8.965.9:
-                    # [468:20] alias res -> dst.len
-                    # [468:20] alias self -> self
+                func.tokenizer.len.462.20.644.56.965.9:
+                    # [462:20] alias res -> res.len
+                    # [462:20] alias self -> self
                     # [440:5] res = self.end - self.start
                     # [440:11] allocate scratch register -> t4
                     # [440:11] self.end
@@ -9625,74 +9647,74 @@ func.parse_input:
                     # [440:22] free scratch register t5
                     sw t4, 128(t3)
                     # [440:11] free scratch register t4
-                func.tokenizer.len.468.20.644.8.965.9.end:
-                # [469:5] dst.array = {}
-                # [469:17] zero remaining elements: 127 * 1 B = 127 B
-                # [469:17] zero loop of 1-byte accesses: start 1-byte aligned
-                # [469:17] allocate scratch register -> t4
+                func.tokenizer.len.462.20.644.56.965.9.end:
+                # [463:5] res.array = {}
+                # [463:17] zero remaining elements: 127 * 1 B = 127 B
+                # [463:17] zero loop of 1-byte accesses: start 1-byte aligned
+                # [463:17] allocate scratch register -> t4
                 addi t4, t3, 0
-                # [469:17] allocate scratch register -> t5
-                # [469:17] zero bytes
+                # [463:17] allocate scratch register -> t5
+                # [463:17] zero bytes
                 addi t5, t4, 127
                 1:
                 sb zero, 0(t4)
                 addi t4, t4, 1
                 bne t4, t5, 1b
-                # [469:17] free scratch register t5
-                # [469:17] free scratch register t4
-                # [470:5] array_copy(self.str.array[self.start], dst.array, dst.len)
-                # [470:5] allocate scratch register -> t4
-                # [470:5] allocate scratch register -> t5
-                # [470:5] allocate scratch register -> t6
-                # [470:5] t4: source, t5: destination, t6: count
-                # [470:55] dst.len
-                # [470:55] dst.len
+                # [463:17] free scratch register t5
+                # [463:17] free scratch register t4
+                # [464:5] array_copy(self.str.array[self.start], res.array, res.len)
+                # [464:5] allocate scratch register -> t4
+                # [464:5] allocate scratch register -> t5
+                # [464:5] allocate scratch register -> t6
+                # [464:5] t4: source, t5: destination, t6: count
+                # [464:55] res.len
+                # [464:55] res.len
                 lw t6, 128(t3)
-                # [470:16] self.str.array[self.start]
-                # [470:31] allocate scratch register -> s2
-                # [470:31] set array index
-                # [470:31] self.start
+                # [464:16] self.str.array[self.start]
+                # [464:31] allocate scratch register -> s2
+                # [464:31] set array index
+                # [464:31] self.start
                 lw s2, 132(t1)
-                # [470:31] bounds check begin
-                # [470:31] lower bound
+                # [464:31] bounds check begin
+                # [464:31] lower bound
                 bltz s2, 1f
                 bltz t6, 1f
-                # [470:31] upper bound
-                # [470:31] allocate scratch register -> s3
-                # [470:31] allocate scratch register -> s4
+                # [464:31] upper bound
+                # [464:31] allocate scratch register -> s3
+                # [464:31] allocate scratch register -> s4
                 add s4, s2, t6
                 li s3, 127
                 bgeu s3, s4, 2f
                 1:
-                # [470:31] source line
-                li a0, 470
+                # [464:31] source line
+                li a0, 464
                 j baz_bounds_panic
                 2:
-                # [470:31] free scratch register s4
-                # [470:31] free scratch register s3
-                # [470:31] bounds check end
+                # [464:31] free scratch register s4
+                # [464:31] free scratch register s3
+                # [464:31] bounds check end
                 add t4, t1, s2
-                # [470:5] free scratch register s2
-                # [470:44] dst.array
-                # [470:44] bounds check begin
-                # [470:44] lower bound
-                # [470:44] t6 lower bound covered by the unsigned upper bound
-                # [470:44] upper bound
-                # [470:44] allocate scratch register -> s2
+                # [464:5] free scratch register s2
+                # [464:44] res.array
+                # [464:44] bounds check begin
+                # [464:44] lower bound
+                # [464:44] t6 lower bound covered by the unsigned upper bound
+                # [464:44] upper bound
+                # [464:44] allocate scratch register -> s2
                 li s2, 127
                 bgeu s2, t6, 2f
                 1:
-                # [470:44] source line
-                li a0, 470
+                # [464:44] source line
+                li a0, 464
                 j baz_bounds_panic
                 2:
-                # [470:44] free scratch register s2
-                # [470:44] bounds check end
+                # [464:44] free scratch register s2
+                # [464:44] bounds check end
                 addi t5, t3, 0
-                # [470:5] t6: elements to bytes (1 bytes/element)
-                # [470:5] allocate scratch register -> s2
-                # [470:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                # [470:5] copy bytes; skip if none
+                # [464:5] t6: elements to bytes (1 bytes/element)
+                # [464:5] allocate scratch register -> s2
+                # [464:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
+                # [464:5] copy bytes; skip if none
                 beqz t6, 4f
                 add t6, t6, t4
                 1:
@@ -9702,13 +9724,13 @@ func.parse_input:
                 addi t5, t5, 1
                 bne t4, t6, 1b
                 4:
-                # [470:5] free scratch register s2
-                # [470:5] free scratch register t6
-                # [470:5] free scratch register t5
-                # [470:5] free scratch register t4
-                # [644:8] free scratch register t3
-            func.tokenizer.token_to.str.644.8.965.9.end:
-                # [644:8] free scratch register t2
+                # [464:5] free scratch register s2
+                # [464:5] free scratch register t6
+                # [464:5] free scratch register t5
+                # [464:5] free scratch register t4
+            func.tokenizer.token.str.644.56.965.9.end:
+            # [644:56] free scratch register t3
+            # [644:5] free scratch register t2
             # [965:9] free scratch register t1
             # [965:9] free scratch register t0
         func.action_set_room_note.965.9.end:
@@ -10217,29 +10239,29 @@ func.parse_input:
                 # [661:9] return
                 j func.action_set_room_name.968.9.end
             if.659.5.968.9.end:
-            # [664:8] tz.token_to(rooms.array[entities.array[eid].room_id].name)
-            # [664:29] allocate scratch register -> t2
-            # [664:29] set array index
-            # [664:29] entities.array[eid].room_id
-            # [664:44] allocate scratch register -> t3
-            # [664:44] set array index
-            # [664:44] eid
+            # [664:5] rooms.array[entities.array[eid].room_id].name = tz.token()
+            # [664:17] allocate scratch register -> t2
+            # [664:17] set array index
+            # [664:17] entities.array[eid].room_id
+            # [664:32] allocate scratch register -> t3
+            # [664:32] set array index
+            # [664:32] eid
             lw t3, 0(t0)
-            # [664:44] bounds check begin
-            # [664:44] lower bound
-            # [664:44] t3 lower bound covered by the unsigned upper bound
-            # [664:44] upper bound
-            # [664:44] allocate scratch register -> t4
+            # [664:32] bounds check begin
+            # [664:32] lower bound
+            # [664:32] t3 lower bound covered by the unsigned upper bound
+            # [664:32] upper bound
+            # [664:32] allocate scratch register -> t4
             li t4, 32
             bltu t3, t4, 2f
             1:
-            # [664:44] source line
+            # [664:32] source line
             li a0, 664
             j baz_bounds_panic
             2:
-            # [664:44] free scratch register t4
-            # [664:44] bounds check end
-            # [664:44] allocate scratch register -> t4
+            # [664:32] free scratch register t4
+            # [664:32] bounds check end
+            # [664:32] allocate scratch register -> t4
             slli t4, t3, 2
             add t4, t4, t3
             slli t4, t4, 2
@@ -10247,29 +10269,29 @@ func.parse_input:
             slli t4, t4, 2
             sub t3, t4, t3
             slli t3, t3, 5
-            # [664:44] free scratch register t4
+            # [664:32] free scratch register t4
             add t2, s0, t3
-            # [664:29] allocate scratch register -> t4
+            # [664:17] allocate scratch register -> t4
             lui t4, 1048527
             add t2, t2, t4
-            # [664:29] free scratch register t4
+            # [664:17] free scratch register t4
             lw t2, 1188(t2)
-            # [664:29] free scratch register t3
-            # [664:29] bounds check begin
-            # [664:29] lower bound
-            # [664:29] t2 lower bound covered by the unsigned upper bound
-            # [664:29] upper bound
-            # [664:29] allocate scratch register -> t3
+            # [664:17] free scratch register t3
+            # [664:17] bounds check begin
+            # [664:17] lower bound
+            # [664:17] t2 lower bound covered by the unsigned upper bound
+            # [664:17] upper bound
+            # [664:17] allocate scratch register -> t3
             li t3, 128
             bltu t2, t3, 2f
             1:
-            # [664:29] source line
+            # [664:17] source line
             li a0, 664
             j baz_bounds_panic
             2:
-            # [664:29] free scratch register t3
-            # [664:29] bounds check end
-            # [664:29] allocate scratch register -> t3
+            # [664:17] free scratch register t3
+            # [664:17] bounds check end
+            # [664:17] allocate scratch register -> t3
             slli t3, t2, 2
             add t3, t3, t2
             slli t3, t3, 2
@@ -10277,27 +10299,28 @@ func.parse_input:
             slli t3, t3, 2
             add t2, t3, t2
             slli t2, t2, 3
-            # [664:29] free scratch register t3
-            # [664:8] allocate scratch register -> t3
-            # [664:8] address of parameter 'dst'
+            # [664:17] free scratch register t3
+            # [664:56] tz.token()
+            # [664:56] allocate scratch register -> t3
+            # [664:56] address of indexed result 'rooms.array.name'
             add t3, s0, t2
-            # [664:8] allocate scratch register -> t4
+            # [664:56] allocate scratch register -> t4
             lui t4, 1048556
             add t3, t3, t4
-            # [664:8] free scratch register t4
+            # [664:56] free scratch register t4
             addi t3, t3, 164
-            # [467:6] tokenizer.token_to(dst mut T)
-            func.tokenizer.token_to.name.664.8.968.9:
-                # [664:8] alias self -> tz
-                # [664:8] alias dst -> rooms.array.name
-                # [468:5] dst.len = self.len()
-                # [468:20] dst.len = self.len()
-                # [468:20] = expression
-                # [468:20] self.len()
+            # [461:6] tokenizer.token() res T
+            func.tokenizer.token.name.664.56.968.9:
+                # [664:56] alias res -> rooms.array.name
+                # [664:56] alias self -> tz
+                # [462:5] res.len = self.len()
+                # [462:20] res.len = self.len()
+                # [462:20] = expression
+                # [462:20] self.len()
                 # [439:6] tokenizer.len() res
-                func.tokenizer.len.468.20.664.8.968.9:
-                    # [468:20] alias res -> dst.len
-                    # [468:20] alias self -> self
+                func.tokenizer.len.462.20.664.56.968.9:
+                    # [462:20] alias res -> res.len
+                    # [462:20] alias self -> self
                     # [440:5] res = self.end - self.start
                     # [440:11] allocate scratch register -> t4
                     # [440:11] self.end
@@ -10310,9 +10333,9 @@ func.parse_input:
                     # [440:22] free scratch register t5
                     sw t4, 16(t3)
                     # [440:11] free scratch register t4
-                func.tokenizer.len.468.20.664.8.968.9.end:
-                # [469:5] dst.array = {}
-                # [469:17] zero remaining elements: 16 * 1 B = 16 B
+                func.tokenizer.len.462.20.664.56.968.9.end:
+                # [463:5] res.array = {}
+                # [463:17] zero remaining elements: 16 * 1 B = 16 B
                 sb zero, 0(t3)
                 sb zero, 1(t3)
                 sb zero, 2(t3)
@@ -10329,59 +10352,59 @@ func.parse_input:
                 sb zero, 13(t3)
                 sb zero, 14(t3)
                 sb zero, 15(t3)
-                # [470:5] array_copy(self.str.array[self.start], dst.array, dst.len)
-                # [470:5] allocate scratch register -> t4
-                # [470:5] allocate scratch register -> t5
-                # [470:5] allocate scratch register -> t6
-                # [470:5] t4: source, t5: destination, t6: count
-                # [470:55] dst.len
-                # [470:55] dst.len
+                # [464:5] array_copy(self.str.array[self.start], res.array, res.len)
+                # [464:5] allocate scratch register -> t4
+                # [464:5] allocate scratch register -> t5
+                # [464:5] allocate scratch register -> t6
+                # [464:5] t4: source, t5: destination, t6: count
+                # [464:55] res.len
+                # [464:55] res.len
                 lw t6, 16(t3)
-                # [470:16] self.str.array[self.start]
-                # [470:31] allocate scratch register -> s2
-                # [470:31] set array index
-                # [470:31] self.start
+                # [464:16] self.str.array[self.start]
+                # [464:31] allocate scratch register -> s2
+                # [464:31] set array index
+                # [464:31] self.start
                 lw s2, 132(t1)
-                # [470:31] bounds check begin
-                # [470:31] lower bound
+                # [464:31] bounds check begin
+                # [464:31] lower bound
                 bltz s2, 1f
                 bltz t6, 1f
-                # [470:31] upper bound
-                # [470:31] allocate scratch register -> s3
-                # [470:31] allocate scratch register -> s4
+                # [464:31] upper bound
+                # [464:31] allocate scratch register -> s3
+                # [464:31] allocate scratch register -> s4
                 add s4, s2, t6
                 li s3, 127
                 bgeu s3, s4, 2f
                 1:
-                # [470:31] source line
-                li a0, 470
+                # [464:31] source line
+                li a0, 464
                 j baz_bounds_panic
                 2:
-                # [470:31] free scratch register s4
-                # [470:31] free scratch register s3
-                # [470:31] bounds check end
+                # [464:31] free scratch register s4
+                # [464:31] free scratch register s3
+                # [464:31] bounds check end
                 add t4, t1, s2
-                # [470:5] free scratch register s2
-                # [470:44] dst.array
-                # [470:44] bounds check begin
-                # [470:44] lower bound
-                # [470:44] t6 lower bound covered by the unsigned upper bound
-                # [470:44] upper bound
-                # [470:44] allocate scratch register -> s2
+                # [464:5] free scratch register s2
+                # [464:44] res.array
+                # [464:44] bounds check begin
+                # [464:44] lower bound
+                # [464:44] t6 lower bound covered by the unsigned upper bound
+                # [464:44] upper bound
+                # [464:44] allocate scratch register -> s2
                 li s2, 16
                 bgeu s2, t6, 2f
                 1:
-                # [470:44] source line
-                li a0, 470
+                # [464:44] source line
+                li a0, 464
                 j baz_bounds_panic
                 2:
-                # [470:44] free scratch register s2
-                # [470:44] bounds check end
+                # [464:44] free scratch register s2
+                # [464:44] bounds check end
                 addi t5, t3, 0
-                # [470:5] t6: elements to bytes (1 bytes/element)
-                # [470:5] allocate scratch register -> s2
-                # [470:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                # [470:5] copy bytes; skip if none
+                # [464:5] t6: elements to bytes (1 bytes/element)
+                # [464:5] allocate scratch register -> s2
+                # [464:5] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
+                # [464:5] copy bytes; skip if none
                 beqz t6, 4f
                 add t6, t6, t4
                 1:
@@ -10391,13 +10414,13 @@ func.parse_input:
                 addi t5, t5, 1
                 bne t4, t6, 1b
                 4:
-                # [470:5] free scratch register s2
-                # [470:5] free scratch register t6
-                # [470:5] free scratch register t5
-                # [470:5] free scratch register t4
-                # [664:8] free scratch register t3
-            func.tokenizer.token_to.name.664.8.968.9.end:
-                # [664:8] free scratch register t2
+                # [464:5] free scratch register s2
+                # [464:5] free scratch register t6
+                # [464:5] free scratch register t5
+                # [464:5] free scratch register t4
+            func.tokenizer.token.name.664.56.968.9.end:
+            # [664:56] free scratch register t3
+            # [664:5] free scratch register t2
             # [666:9] out.print_all(str_new_room_name)
             # [68:6] printer.print_all(s i8[])
             func.printer.print_all.666.9.968.9:
@@ -20010,7 +20033,10 @@ vars.end:
 # free named register s0
 
 #           noinline functions:
-#                  parse_input: 1 body, 2 calls, 4845 instructions
+#                  parse_input: 1 body, 2 calls, 4853 instructions
+#
+#      uninstantiated generics:
+#           tokenizer.token_to
 #
 #   removed jumps to next code: 242
 #    removed unreachable jumps: 0
@@ -20021,4 +20047,4 @@ vars.end:
 #                     dat size: 198427 B
 #              dat var padding: 5 B
 #                max vars size: 2540 B
-#                 instructions: 5952
+#                 instructions: 5960
