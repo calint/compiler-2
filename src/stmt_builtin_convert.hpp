@@ -43,7 +43,7 @@ class stmt_builtin_convert final : public expression {
         }
 
         const std::optional<int64_t> value{
-            toc::parse_constant(tk, arg_.identifier()),
+            constant_parser::parse_constant(tk, arg_.identifier()),
         };
 
         if (value) {

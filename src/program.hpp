@@ -20,6 +20,44 @@
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
 
+// a line of a report section, e.g. 'removed unreachable jumps: 0', without a
+// value only the name is written
+struct report_entry {
+    std::string name;
+    std::string value;
+};
+
+// lines of the report after the code: an optional title, the entries aligned
+// and a separator after a titled section
+struct report_section {
+    std::string title;
+    std::vector<report_entry> entries;
+
+    // written as comments, nothing for a section without entries
+    auto write_to(machine& x) const -> void {
+        if (entries.empty()) {
+            return;
+        }
+
+        if (not title.empty()) {
+            x.comment(token{}, 0, "{:>28}:", title);
+        }
+
+        for (const report_entry& entry : entries) {
+            if (entry.value.empty()) {
+                x.comment(token{}, 0, "{:>28}", entry.name);
+                continue;
+            }
+
+            x.comment(token{}, 0, "{:>28}: {}", entry.name, entry.value);
+        }
+
+        if (not title.empty()) {
+            x.comment(token{}, 0, "");
+        }
+    }
+};
+
 class program final {
     // built-in types
     type type_void{"void", 0, true};
@@ -100,6 +138,7 @@ class program final {
         x.start();
         compile(tc_, 0);
         x.finish();
+        write_report(x);
         tc_.finish();
 
         x.write_assembly(os);
@@ -229,6 +268,26 @@ class program final {
         x.reserve_variables(alignment, vars_size_bytes_);
     }
 
+    // the statistics after the code, as comments
+    auto write_report(machine& x) const -> void {
+        const machine::output_statistics stats{x.statistics()};
+        const usage_statistics usage{tc_.usage()};
+
+        x.separate_report();
+
+        if (stats.is_counted) {
+            noinline_report(stats).write_to(x);
+        }
+
+        generics_report(usage).write_to(x);
+
+        if (stats.is_counted) {
+            optimization_report(stats).write_to(x);
+        }
+
+        usage_report(stats, usage).write_to(x);
+    }
+
     //
     // statics
     //
@@ -332,5 +391,112 @@ class program final {
 
         x.comment({}, 0, "");
         x.emit_string_constants(tc.get_string_constants());
+    }
+
+    [[nodiscard]] static auto generics_report(const usage_statistics& usage)
+        -> report_section {
+
+        report_section section{
+            .title{"uninstantiated generics"},
+            .entries{},
+        };
+
+        for (const std::string& name : usage.uninstantiated_generics) {
+            section.entries.push_back({.name{name}, .value{}});
+        }
+
+        return section;
+    }
+
+    [[nodiscard]] static auto
+    noinline_report(const ::machine::output_statistics& stats)
+        -> report_section {
+
+        report_section section{.title{"noinline functions"}, .entries{}};
+
+        for (const assembler::function_summary& f : stats.noinline_functions) {
+            section.entries.push_back({
+                .name{f.function},
+                .value{
+                    std::format(
+                        "{} {}, {} {}, {} instructions{}", f.body_count,
+                        f.body_count == 1 ? "body" : "bodies", f.call_count,
+                        f.call_count == 1 ? "call" : "calls",
+                        f.instruction_count,
+                        f.call_count <= f.body_count ? ", no reuse" : ""),
+                },
+            });
+        }
+
+        return section;
+    }
+
+    [[nodiscard]] static auto
+    optimization_report(const ::machine::output_statistics& stats)
+        -> report_section {
+
+        const assembler::optimization_counts& o{stats.optimizations};
+
+        return {
+            .title{},
+            .entries{
+                {
+                    .name = "removed jumps to next code",
+                    .value = std::format("{}", o.jumps_to_next),
+                },
+                {
+                    .name = "removed unreachable jumps",
+                    .value = std::format("{}", o.unreachable_jumps),
+                },
+                {
+                    .name = "removed same target branches",
+                    .value = std::format("{}", o.same_outcome_branches),
+                },
+                {
+                    .name = "inverted branches over jumps",
+                    .value = std::format("{}", o.inverted_branches),
+                },
+            },
+        };
+    }
+
+    [[nodiscard]] static auto
+    usage_report(const machine::output_statistics& stats,
+                 const usage_statistics& usage) -> report_section {
+
+        report_section section{
+            .title{},
+            .entries{
+                {
+                    .name = "max scratch registers in use",
+                    .value = std::format("{}", stats.max_scratch_registers),
+                },
+                {
+                    .name = "max frames in use",
+                    .value = std::format("{}", usage.max_frame_count),
+                },
+                {
+                    .name = "dat size",
+                    .value = std::format("{} B", usage.dat_size_bytes),
+                },
+                {
+                    .name = "dat var padding",
+                    .value = std::format("{} B", usage.dat_var_padding_bytes),
+                },
+                {
+                    .name = "max vars size",
+                    .value = std::format("{} B", usage.max_vars_size_bytes),
+                },
+            },
+        };
+
+        if (stats.is_counted) {
+            section.entries.push_back({
+                .name = "instructions",
+                .value = std::format("{}", stats.instruction_count),
+            });
+        }
+
+        return section;
     }
 };

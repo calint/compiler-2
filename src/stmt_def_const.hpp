@@ -109,7 +109,7 @@ class stmt_def_const final : public statement {
         }
 
         const bool is_constant_operand{
-            tc.has_const(text) or toc::is_character_literal(text) or
+            tc.has_const(text) or constant_parser::is_character_literal(text) or
                 (text.front() >= '0' and text.front() <= '9'),
         };
 

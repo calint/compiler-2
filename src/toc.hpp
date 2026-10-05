@@ -288,12 +288,140 @@ class ident_path final {
 
     [[nodiscard]] auto str() const -> const std::string& { return id_; }
 
+    //
+    // statics
+    //
+
+    // the variable name without the field path
+    [[nodiscard]] static auto root_of(const std::string_view id)
+        -> std::string_view {
+
+        return id.substr(0, id.find('.'));
+    }
+
   private:
     auto refresh_path() -> void {
         path_.clear();
         for (auto const part : id_ | std::views::split('.')) {
             path_.emplace_back(part.begin(), part.end());
         }
+    }
+};
+
+// builds the identifier info of a path: the elements of an indexed array, the
+// address held below a run-time index and the base of an alias
+class ident_builder final {
+  public:
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto as_element_if(const bool is_element,
+                                            ident_info info) -> ident_info {
+
+        if (not is_element) {
+            return info;
+        }
+
+        info.is_array = false;
+        info.array_len = 0;
+
+        return info;
+    }
+
+    // makes room in 'lea_path' for the elements 'target_count' adds
+    //
+    // 'lea_path' has one entry per element of the identifier, an empty entry
+    // where no address is known; the entries are built while walking the
+    // frames outwards, so a target with several elements needs entries
+    // between the alias address just added and the next base
+    static auto pad_lea_path(std::vector<operand>& lea_path,
+                             const size_t target_count) -> void {
+
+        const size_t lea_count{lea_path.size()};
+
+        if (target_count > lea_count and target_count - lea_count > 1) {
+            // -2 because the last element is the alias address and the
+            // first is added when its own frame is walked
+            lea_path.resize(lea_count + target_count - 2);
+        }
+    }
+
+    // a built-in identifier below a run-time indexed element is addressed from
+    // the last address held, e.g. 'wld.rooms[ix].description.data'
+    static auto place_operand_from_lea(const token& src_loc_tk, ident_info& ii)
+        -> void {
+
+        // find the first element from the top that has a 'lea' and get
+        // accessor relative to that
+        operand lea;
+        size_t lea_index{ii.elem_path.size()};
+        while (lea_index--) {
+            if (not ii.lea_path.at(lea_index).is_empty()) {
+                lea = ii.lea_path.at(lea_index);
+                break;
+            }
+        }
+
+        if (lea.is_empty()) {
+            return;
+        }
+
+        // identifier has lea, construct operand
+
+        // example of resulting data structure:
+        //
+        // type string { len : i8, data : i8[127] }
+        // type room { name : string, description : string, note : string }
+        // type world { rooms : room[128] }
+        //
+        // id path     |  type  |  lea          |
+        // ------------|--------|---------------|
+        // wld         | world  | -             |
+        // rooms[2]    | room   | r15           |
+        // description | string | -             |
+        // data        | i8     | r15 + 129     |
+        //
+        // the indexing in 'rooms' is done at runtime thus the memory
+        // location of 'rooms[2]' cannot be deduced statically, thus the
+        // last lea encountered is the starting point when accessing
+        // identifiers
+
+        // start from the lea address and calculate offset to referred field
+        const std::span<std::string> elem_path_from_lea{
+            std::span{ii.elem_path}.subspan(lea_index),
+        };
+
+        // navigate to referred element and get offset
+        const size_t offset{
+            ii.type_path.at(lea_index)->field_offset(src_loc_tk,
+                                                     elem_path_from_lea),
+        };
+
+        ii.operand = operand::mem(lea, ii.type_ref());
+        if (offset != 0) {
+            ii.operand.increment_offset(address_offset(offset));
+        }
+    }
+
+    // 'id' with the base replaced by what the alias refers to, e.g.
+    //   res -> pt.x becomes pt.x
+    //   pt.x -> p becomes p.x
+    //   lnk.count -> world.room.link becomes world.room.link.count
+    [[nodiscard]] static auto replace_alias_base(const alias_info& alias,
+                                                 const ident_path& id,
+                                                 std::vector<operand>& lea_path)
+        -> ident_path {
+
+        ident_path target{std::string{alias.to}};
+
+        pad_lea_path(lea_path, target.path().size());
+
+        for (const std::string& s : id.path() | std::views::drop(1)) {
+            target.append(s);
+        }
+
+        return target;
     }
 };
 
@@ -376,42 +504,274 @@ class type_table final {
     }
 };
 
-// a line of a report section, e.g. 'removed unreachable jumps: 0', without a
-// value only the name is written
-struct report_entry {
-    std::string name;
-    std::string value;
+// the value of a number or character literal as the tokenizer keeps its text
+class constant_parser final {
+  public:
+    //
+    // statics
+    //
+
+    // the tokenizer keeps the quotes in the text of a character literal
+    [[nodiscard]] static auto is_character_literal(const std::string_view str)
+        -> bool {
+
+        return str.size() >= 2 and str.starts_with('\'') and
+               str.ends_with('\'');
+    }
+
+    // the value is the byte, e.g. 'a' is 97 and '\\xff' is 255
+    [[nodiscard]] static auto parse_character(const token& src_loc_tk,
+                                              const std::string_view str)
+        -> int64_t {
+
+        assert(is_character_literal(str));
+
+        const std::string_view body{str.substr(1, str.size() - 2)};
+
+        if (body.size() == 1 and body.at(0) != '\\') {
+            return static_cast<unsigned char>(body.at(0));
+        }
+
+        if (not body.starts_with('\\')) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("character literal {} must contain one character",
+                            str)};
+        }
+
+        const std::optional<char> decoded{token::decode_escape(body.substr(1))};
+        if (not decoded) {
+            const size_t backslash_index{src_loc_tk.start_index() + 1};
+            // note: +1 because the backslash follows the opening quote
+            const token escape_tk{
+                src_loc_tk.is_text(str)
+                    ? token::position(backslash_index, src_loc_tk.at_line())
+                    : src_loc_tk,
+            };
+
+            throw compiler_exception{
+                escape_tk,
+                std::format("unsupported escape in character literal {}", str)};
+        }
+
+        return static_cast<unsigned char>(*decoded);
+    }
+
+    [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
+                                             const std::string_view str)
+        -> std::optional<int64_t> {
+
+        if (is_character_literal(str)) {
+            return parse_character(src_loc_tk, str);
+        }
+
+        constexpr int base_decimal{10};
+        constexpr int base_hex{16};
+        constexpr int base_binary{2};
+
+        int base{base_decimal};
+        std::string_view digits{str};
+        if (str.starts_with("0x") or str.starts_with("0X")) {
+            base = base_hex;
+            digits.remove_prefix(2);
+        } else if (str.starts_with("0b") or str.starts_with("0B")) {
+            base = base_binary;
+            digits.remove_prefix(2);
+        }
+
+        int64_t value{};
+
+        const char* const begin{std::to_address(digits.begin())};
+        const char* const end{std::to_address(digits.end())};
+
+        const std::from_chars_result result{
+            std::from_chars(begin, end, value, base),
+        };
+
+        if (result.ec == std::errc::result_out_of_range) {
+            throw compiler_exception{
+                src_loc_tk, std::format("constant '{}' is out of range", str)};
+        }
+
+        if (result.ec == std::errc{} and result.ptr == end) {
+            return value;
+        }
+
+        return std::nullopt;
+    }
 };
 
-// lines of the report after the code: an optional title, the entries aligned
-// and a separator after a titled section
-struct report_section {
-    std::string title;
-    std::vector<report_entry> entries;
+// the functions of the program: the built-in ones, the defined ones and the
+// instances of generic ones, and the bodies of non-inline functions to compile
+class function_table final {
+    lut<func_info> funcs_;
+    std::vector<const stmt_def_func*> defs_;
+    std::vector<std::shared_ptr<const stmt_def_func>> instances_;
+    std::vector<noninline_instance> noninline_instances_;
+    std::set<std::string> checked_calls_;
 
-    // written as comments, nothing for a section without entries
-    auto write_to(machine& x) const -> void {
-        if (entries.empty()) {
+  public:
+    // the name has been checked, a built-in function has no definition
+    auto add(const token& src_loc_tk, std::string name, const type& return_type,
+             const stmt_def_func* const func_def) -> void {
+
+        funcs_.put(std::move(name), {
+                                        .src_loc_tk{src_loc_tk},
+                                        .def{func_def},
+                                        .type_ptr{&return_type},
+                                    });
+
+        if (func_def) {
+            defs_.emplace_back(func_def);
+        }
+    }
+
+    // false when the signature was already added, so a call is checked once
+    [[nodiscard]] auto add_checked_call(std::string signature) -> bool {
+        return checked_calls_.insert(std::move(signature)).second;
+    }
+
+    // keeps the instance alive, 'funcs_' refers to it
+    auto add_instance(std::shared_ptr<const stmt_def_func> instance) -> void {
+        instances_.emplace_back(std::move(instance));
+    }
+
+    // a body is emitted once per distinct instance
+    auto add_noninline_instance(const stmt_def_func& func,
+                                std::vector<size_t> array_lengths) -> void {
+
+        const auto is_same_instance =
+            [&](const noninline_instance& known) -> bool {
+            return known.func == &func and known.array_lengths == array_lengths;
+        };
+
+        if (std::ranges::any_of(noninline_instances_, is_same_instance)) {
             return;
         }
 
-        if (not title.empty()) {
-            x.comment(token{}, 0, "{:>28}:", title);
-        }
-
-        for (const report_entry& entry : entries) {
-            if (entry.value.empty()) {
-                x.comment(token{}, 0, "{:>28}", entry.name);
-                continue;
-            }
-
-            x.comment(token{}, 0, "{:>28}: {}", entry.name, entry.value);
-        }
-
-        if (not title.empty()) {
-            x.comment(token{}, 0, "");
-        }
+        noninline_instances_.push_back({
+            .func{&func},
+            .array_lengths{std::move(array_lengths)},
+        });
     }
+
+    auto clear_noninline_instances() -> void { noninline_instances_.clear(); }
+
+    [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
+        return defs_;
+    }
+
+    // the name is known
+    [[nodiscard]] auto get(const std::string_view name) const
+        -> const func_info& {
+
+        return funcs_.get_const_ref(name);
+    }
+
+    [[nodiscard]] auto has(const std::string_view name) const -> bool {
+        return funcs_.has(name);
+    }
+
+    // a copy, the list grows while the instances compile
+    [[nodiscard]] auto noninline_instance_at(const size_t index) const
+        -> noninline_instance {
+
+        return noninline_instances_.at(index);
+    }
+
+    [[nodiscard]] auto noninline_instance_count() const -> size_t {
+        return noninline_instances_.size();
+    }
+};
+
+// the 'dat' declarations and the read-only constants of the program
+class data_table final {
+    std::vector<const statement*> statements_;
+    std::vector<machine::string_constant> constants_;
+    size_t total_size_bytes_{};
+    // padding after the dats so that the variables are aligned
+    size_t entry_gap_{};
+
+  public:
+    // identical text shares the label of the first constant added
+    [[nodiscard]] auto add_constant(std::string label, std::string text)
+        -> std::string {
+
+        for (const machine::string_constant& constant : constants_) {
+            if (constant.text == text) {
+                return constant.label;
+            }
+        }
+
+        constants_.push_back({
+            .label{std::move(label)},
+            .text{std::move(text)},
+        });
+
+        return constants_.back().label;
+    }
+
+    // 'data_alignment' is the alignment of the data section of the machine
+    auto add_dat(const statement* const stmt, const size_t data_alignment)
+        -> void {
+
+        statements_.emplace_back(stmt);
+
+        // same padding as 'add_var' places before the dat
+        total_size_bytes_ = add_storage_size(
+            stmt->tok(),
+            align_storage_size(total_size_bytes_, stmt->get_type().alignment()),
+            stmt->dat_size_bytes());
+
+        entry_gap_ = (data_alignment - (total_size_bytes_ % data_alignment)) %
+                     data_alignment;
+    }
+
+    [[nodiscard]] auto constant_count() const -> size_t {
+        return constants_.size();
+    }
+
+    [[nodiscard]] auto constants() const
+        -> std::span<const machine::string_constant> {
+
+        return constants_;
+    }
+
+    [[nodiscard]] auto entry_gap() const -> size_t { return entry_gap_; }
+
+    // drops the constants added after the first 'count'
+    auto resize_constants(const size_t count) -> void {
+        constants_.resize(count);
+    }
+
+    [[nodiscard]] auto statements() const
+        -> const std::vector<const statement*>& {
+
+        return statements_;
+    }
+
+    [[nodiscard]] auto total_size_bytes() const -> size_t {
+        return total_size_bytes_;
+    }
+};
+
+// what the compiler checks while it compiles and what it makes the program
+// check at run time
+struct check_options {
+    bool bounds_upper{};
+    bool bounds_lower{};
+    bool bounds_with_line{};
+    bool frame{};
+    bool alias{};
+};
+
+// what the compile used, for the report
+struct usage_statistics {
+    size_t max_frame_count{};
+    size_t max_vars_size_bytes{};
+    size_t dat_size_bytes{};
+    size_t dat_var_padding_bytes{};
+    std::vector<std::string> uninstantiated_generics;
 };
 
 class toc final {
@@ -424,29 +784,18 @@ class toc final {
     std::reference_wrapper<::machine> machine_;
     std::string_view source_;
     std::vector<frame> frames_;
-    std::vector<const stmt_def_func*> func_defs_;
-    std::vector<std::shared_ptr<const stmt_def_func>> func_instances_;
-    std::vector<noninline_instance> noninline_instances_;
-    std::vector<const statement*> data_;
-    std::vector<machine::string_constant> string_constants_;
-    std::set<std::string> checked_noninline_calls_;
-    lut<func_info> funcs_;
+    data_table data_;
+    function_table funcs_;
     generic_registry generics_;
     type_table types_;
     const type* type_void_{};
     const type* type_bool_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_vars_size_bytes_{};
-    size_t total_dat_size_bytes_{};
-    size_t vars_entry_gap_{};
     size_t vars_size_bytes_{};
     size_t vars_capacity_bytes_;
     bool vars_entry_gap_applied_{};
-    bool bounds_check_upper_{};
-    bool bounds_check_with_line_{};
-    bool bounds_check_lower_{};
-    bool frame_check_{};
-    bool alias_check_{};
+    check_options checks_;
     // the locals of a dry run live in the callee's own frame
     bool capacity_unchecked_{};
 
@@ -457,10 +806,13 @@ class toc final {
         const bool frame_check = {}, const bool alias_check = {})
         : machine_{backend}, source_{source},
           vars_capacity_bytes_{vars_capacity_bytes},
-          bounds_check_upper_{bounds_check_upper},
-          bounds_check_with_line_{bounds_check_with_line},
-          bounds_check_lower_{bounds_check_lower}, frame_check_{frame_check},
-          alias_check_{alias_check} {}
+          checks_{
+              .bounds_upper{bounds_check_upper},
+              .bounds_lower{bounds_check_lower},
+              .bounds_with_line{bounds_check_with_line},
+              .frame{frame_check},
+              .alias{alias_check},
+          } {}
 
     auto add_alias(const alias_info& ai) -> void {
         frames_.back().add_alias(ai);
@@ -479,7 +831,7 @@ class toc final {
     [[nodiscard]] auto add_checked_noninline_call(std::string signature)
         -> bool {
 
-        return checked_noninline_calls_.insert(std::move(signature)).second;
+        return funcs_.add_checked_call(std::move(signature));
     }
 
     auto add_const(const token& src_loc_tk, const size_t indent,
@@ -512,17 +864,8 @@ class toc final {
             throw compiler_exception{
                 stmt->tok(), "'dat' can only be added before any 'var'"};
         }
-        data_.emplace_back(stmt);
 
-        // same padding as 'add_var' places before the dat
-        total_dat_size_bytes_ =
-            add_storage_size(stmt->tok(),
-                             align_storage_size(total_dat_size_bytes_,
-                                                stmt->get_type().alignment()),
-                             stmt->dat_size_bytes());
-        const size_t alignment{machine_.get().data_alignment()};
-        vars_entry_gap_ =
-            (alignment - (total_dat_size_bytes_ % alignment)) % alignment;
+        data_.add_dat(stmt, machine_.get().data_alignment());
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
@@ -537,22 +880,14 @@ class toc final {
 
         assert_function_not_defined(src_loc_tk, name);
 
-        funcs_.put(std::move(name), {
-                                        .src_loc_tk{src_loc_tk},
-                                        .def{func_def},
-                                        .type_ptr{&return_type},
-                                    });
-
-        if (func_def) {
-            func_defs_.emplace_back(func_def);
-        }
+        funcs_.add(src_loc_tk, std::move(name), return_type, func_def);
     }
 
     // keeps the instance alive, 'funcs_' refers to it
     auto add_func_instance(std::shared_ptr<const stmt_def_func> instance)
         -> void {
 
-        func_instances_.emplace_back(std::move(instance));
+        funcs_.add_instance(std::move(instance));
     }
 
     auto add_generic_func(
@@ -582,19 +917,7 @@ class toc final {
     auto add_noninline_instance(const stmt_def_func& func,
                                 std::vector<size_t> array_lengths) -> void {
 
-        const auto is_same_instance =
-            [&](const noninline_instance& known) -> bool {
-            return known.func == &func and known.array_lengths == array_lengths;
-        };
-
-        if (std::ranges::any_of(noninline_instances_, is_same_instance)) {
-            return;
-        }
-
-        noninline_instances_.push_back({
-            .func{&func},
-            .array_lengths{std::move(array_lengths)},
-        });
+        funcs_.add_noninline_instance(func, std::move(array_lengths));
     }
 
     // identical strings share the label of the first one compiled
@@ -637,9 +960,10 @@ class toc final {
         };
 
         if (not is_dat and not vars_entry_gap_applied_) {
-            frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
-            vars_size_bytes_ =
-                add_storage_size(src_loc_tk, vars_size_bytes_, vars_entry_gap_);
+            frames_.front().set_padding_between_dats_and_vars(
+                data_.entry_gap());
+            vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
+                                                data_.entry_gap());
             vars_entry_gap_applied_ = true;
         }
 
@@ -708,9 +1032,9 @@ class toc final {
         -> machine::bounds_check_options {
 
         return {
-            .upper{bounds_check_upper_},
-            .lower{bounds_check_lower_},
-            .with_line{bounds_check_with_line_},
+            .upper{checks_.bounds_upper},
+            .lower{checks_.bounds_lower},
+            .with_line{checks_.bounds_with_line},
         };
     }
 
@@ -721,7 +1045,7 @@ class toc final {
 
         const size_t max_frame_count{usage_max_frame_count_};
         const size_t max_vars_size_bytes{usage_max_vars_size_bytes_};
-        const size_t string_constant_count{string_constants_.size()};
+        const size_t string_constant_count{data_.constant_count()};
         const bool was_capacity_unchecked{capacity_unchecked_};
         const size_t peak_storage_size_bytes{
             storage_frame ? storage_frame->peak_storage_size_bytes() : 0,
@@ -734,7 +1058,7 @@ class toc final {
         capacity_unchecked_ = was_capacity_unchecked;
         usage_max_frame_count_ = max_frame_count;
         usage_max_vars_size_bytes_ = max_vars_size_bytes;
-        string_constants_.resize(string_constant_count);
+        data_.resize_constants(string_constant_count);
 
         if (storage_frame) {
             storage_frame->restore_peak_storage_size_bytes(
@@ -746,7 +1070,9 @@ class toc final {
     [[nodiscard]] auto constant_value_of(const token& tk) const
         -> std::optional<int64_t> {
 
-        if (const std::optional<int64_t> value{parse_constant(tk, tk.text())};
+        if (const std::optional<int64_t> value{
+                constant_parser::parse_constant(tk, tk.text()),
+            };
             value) {
 
             return value;
@@ -830,63 +1156,6 @@ class toc final {
 
     // the report after the code, written as comments through the machine
     auto finish() -> void {
-        ::machine& x{machine_.get()};
-
-        const ::machine::output_statistics stats{x.statistics()};
-
-        x.separate_report();
-
-        if (stats.is_counted) {
-            noinline_report(stats).write_to(x);
-        }
-
-        report_section generics_report{
-            .title{"uninstantiated generics"},
-            .entries{},
-        };
-        for (std::string& name : generics_.uninstantiated_func_names()) {
-            generics_report.entries.push_back(
-                {.name{std::move(name)}, .value{}});
-        }
-        generics_report.write_to(x);
-
-        if (stats.is_counted) {
-            optimization_report(stats).write_to(x);
-        }
-
-        report_section usage_report{
-            .title{},
-            .entries{
-                {
-                    .name = "max scratch registers in use",
-                    .value = std::format("{}", stats.max_scratch_registers),
-                },
-                {
-                    .name = "max frames in use",
-                    .value = std::format("{}", usage_max_frame_count_),
-                },
-                {
-                    .name = "dat size",
-                    .value = std::format("{} B", total_dat_size_bytes_),
-                },
-                {
-                    .name = "dat var padding",
-                    .value = std::format("{} B", vars_entry_gap_),
-                },
-                {
-                    .name = "max vars size",
-                    .value = std::format("{} B", usage_max_vars_size_bytes_),
-                },
-            },
-        };
-        if (stats.is_counted) {
-            usage_report.entries.push_back({
-                .name = "instructions",
-                .value = std::format("{}", stats.instruction_count),
-            });
-        }
-        usage_report.write_to(x);
-
         assert(frames_.empty());
         assert(vars_size_bytes_ == 0);
 
@@ -914,13 +1183,13 @@ class toc final {
     [[nodiscard]] auto get_data() const
         -> const std::vector<const statement*>& {
 
-        return data_;
+        return data_.statements();
     }
 
     [[nodiscard]] auto get_func_defs() const
         -> std::span<const stmt_def_func* const> {
 
-        return func_defs_;
+        return funcs_.defs();
     }
 
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
@@ -978,13 +1247,13 @@ class toc final {
             throw compiler_exception::file_level("function 'main' not found");
         }
 
-        return *funcs_.get_const_ref("main").def;
+        return *funcs_.get("main").def;
     }
 
     [[nodiscard]] auto get_string_constants() const
         -> std::span<const machine::string_constant> {
 
-        return string_constants_;
+        return data_.constants();
     }
 
     [[nodiscard]] auto get_type_address() const -> const type& {
@@ -1039,7 +1308,7 @@ class toc final {
             return false;
         }
 
-        std::string_view id_base{root_id_of(st.identifier())};
+        std::string_view id_base{ident_path::root_of(st.identifier())};
 
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.has_var(id_base)) {
@@ -1063,7 +1332,7 @@ class toc final {
                 return false;
             }
 
-            id_base = root_id_of(alias.to);
+            id_base = ident_path::root_of(alias.to);
         }
 
         std::unreachable();
@@ -1073,21 +1342,21 @@ class toc final {
         return types_.has(name);
     }
 
-    [[nodiscard]] auto is_alias_check() const -> bool { return alias_check_; }
+    [[nodiscard]] auto is_alias_check() const -> bool { return checks_.alias; }
 
     [[nodiscard]] auto is_bounds_check_lower() const -> bool {
-        return bounds_check_lower_;
+        return checks_.bounds_lower;
     }
 
     [[nodiscard]] auto is_bounds_check_upper() const -> bool {
-        return bounds_check_upper_;
+        return checks_.bounds_upper;
     }
 
     [[nodiscard]] auto is_bounds_check_with_line() const -> bool {
-        return bounds_check_with_line_;
+        return checks_.bounds_with_line;
     }
 
-    [[nodiscard]] auto is_frame_check() const -> bool { return frame_check_; }
+    [[nodiscard]] auto is_frame_check() const -> bool { return checks_.frame; }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name) or generics_.has_func(name);
@@ -1096,7 +1365,7 @@ class toc final {
     [[nodiscard]] auto is_func_builtin(const std::string_view name) const
         -> bool {
 
-        return funcs_.get_const_ref(name).def == nullptr;
+        return funcs_.get(name).def == nullptr;
     }
 
     // a local with the same name shadows it, so this may report a local
@@ -1150,7 +1419,8 @@ class toc final {
         const ident_info declared{
             make_ident_info_or_throw(st.tok(), st.identifier()),
         };
-        ident_info info{as_element_if(st.is_array_element(), declared)};
+        const bool is_element{st.is_array_element()};
+        ident_info info{ident_builder::as_element_if(is_element, declared)};
 
         info.src_loc_tk = st.name_token();
 
@@ -1200,7 +1470,7 @@ class toc final {
 
         const size_t root_size_bytes{
             sum_storage_size(vars_size_bytes_,
-                             vars_entry_gap_applied_ ? 0 : vars_entry_gap_),
+                             vars_entry_gap_applied_ ? 0 : data_.entry_gap()),
         };
 
         const size_t aligned_size_bytes{
@@ -1221,11 +1491,11 @@ class toc final {
     [[nodiscard]] auto noninline_instance_at(const size_t index) const
         -> noninline_instance {
 
-        return noninline_instances_.at(index);
+        return funcs_.noninline_instance_at(index);
     }
 
     [[nodiscard]] auto noninline_instance_count() const -> size_t {
-        return noninline_instances_.size();
+        return funcs_.noninline_instance_count();
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
@@ -1244,7 +1514,7 @@ class toc final {
 
         usage_max_frame_count_ = 0;
         usage_max_vars_size_bytes_ = 0;
-        noninline_instances_.clear();
+        funcs_.clear_noninline_instances();
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
@@ -1279,6 +1549,16 @@ class toc final {
 
     [[nodiscard]] auto types() -> type_table& { return types_; }
 
+    [[nodiscard]] auto usage() const -> usage_statistics {
+        return {
+            .max_frame_count{usage_max_frame_count_},
+            .max_vars_size_bytes{usage_max_vars_size_bytes_},
+            .dat_size_bytes{data_.total_size_bytes()},
+            .dat_var_padding_bytes{data_.entry_gap()},
+            .uninstantiated_generics{generics_.uninstantiated_func_names()},
+        };
+    }
+
     //
     // statics
     //
@@ -1305,122 +1585,21 @@ class toc final {
             std::format("array '{}' must be indexed", st.identifier())};
     }
 
-    // the tokenizer keeps the quotes in the text of a character literal
-    [[nodiscard]] static auto is_character_literal(const std::string_view str)
-        -> bool {
-
-        return str.size() >= 2 and str.starts_with('\'') and
-               str.ends_with('\'');
-    }
-
     [[nodiscard]] static auto make_ident_info_from_register(const operand& reg)
         -> ident_info {
 
         return ident_info::make_register(reg.base_register(), reg);
     }
 
-    // the value is the byte, e.g. 'a' is 97 and '\\xff' is 255
-    [[nodiscard]] static auto parse_character(const token& src_loc_tk,
-                                              const std::string_view str)
-        -> int64_t {
-
-        assert(is_character_literal(str));
-
-        const std::string_view body{str.substr(1, str.size() - 2)};
-
-        if (body.size() == 1 and body.at(0) != '\\') {
-            return static_cast<unsigned char>(body.at(0));
-        }
-
-        if (not body.starts_with('\\')) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("character literal {} must contain one character",
-                            str)};
-        }
-
-        const std::optional<char> decoded{token::decode_escape(body.substr(1))};
-        if (not decoded) {
-            const size_t backslash_index{src_loc_tk.start_index() + 1};
-            // note: +1 because the backslash follows the opening quote
-            const token escape_tk{
-                src_loc_tk.is_text(str)
-                    ? token::position(backslash_index, src_loc_tk.at_line())
-                    : src_loc_tk,
-            };
-
-            throw compiler_exception{
-                escape_tk,
-                std::format("unsupported escape in character literal {}", str)};
-        }
-
-        return static_cast<unsigned char>(*decoded);
-    }
-
-    [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
-                                             const std::string_view str)
-        -> std::optional<int64_t> {
-
-        if (is_character_literal(str)) {
-            return parse_character(src_loc_tk, str);
-        }
-
-        constexpr int base_decimal{10};
-        constexpr int base_hex{16};
-        constexpr int base_binary{2};
-
-        int base{base_decimal};
-        std::string_view digits{str};
-        if (str.starts_with("0x") or str.starts_with("0X")) {
-            base = base_hex;
-            digits.remove_prefix(2);
-        } else if (str.starts_with("0b") or str.starts_with("0B")) {
-            base = base_binary;
-            digits.remove_prefix(2);
-        }
-
-        int64_t value{};
-
-        const char* const begin{std::to_address(digits.begin())};
-        const char* const end{std::to_address(digits.end())};
-
-        const std::from_chars_result result{
-            std::from_chars(begin, end, value, base),
-        };
-
-        if (result.ec == std::errc::result_out_of_range) {
-            throw compiler_exception{
-                src_loc_tk, std::format("constant '{}' is out of range", str)};
-        }
-
-        if (result.ec == std::errc{} and result.ptr == end) {
-            return value;
-        }
-
-        return std::nullopt;
-    }
-
   private:
-    // identical text shares the label of the first constant added
     [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
                                               const token& src_loc_tk,
                                               std::string text) -> std::string {
 
-        for (const machine::string_constant& s : string_constants_) {
-            if (s.text == text) {
-                return s.label;
-            }
-        }
-
-        string_constants_.push_back({
-            .label{
-                std::format("{}.{}", kind,
-                            source_location_for_use_in_label(src_loc_tk)),
-            },
-            .text{std::move(text)},
-        });
-
-        return string_constants_.back().label;
+        return data_.add_constant(
+            std::format("{}.{}", kind,
+                        source_location_for_use_in_label(src_loc_tk)),
+            std::move(text));
     }
 
     auto assert_function_not_defined(const token& src_loc_tk,
@@ -1428,7 +1607,7 @@ class toc final {
         -> void {
 
         if (funcs_.has(name)) {
-            const func_info& fn{funcs_.get_const_ref(name)};
+            const func_info& fn{funcs_.get(name)};
 
             // a built-in function has no source location
             if (fn.src_loc_tk.at_line() == 0) {
@@ -1605,7 +1784,7 @@ class toc final {
                 src_loc_tk, std::format("function '{}' not found", name)};
         }
 
-        return funcs_.get_const_ref(name);
+        return funcs_.get(name);
     }
 
     [[nodiscard]] auto
@@ -1615,7 +1794,7 @@ class toc final {
 
         // is 'id' an integer?
         if (const std::optional<int64_t> value{
-                parse_constant(src_loc_tk, id.str()),
+                constant_parser::parse_constant(src_loc_tk, id.str()),
             };
             value) {
 
@@ -1695,7 +1874,7 @@ class toc final {
             return ii;
         }
 
-        place_operand_from_lea(src_loc_tk, ii);
+        ident_builder::place_operand_from_lea(src_loc_tk, ii);
 
         return ii;
     }
@@ -1743,7 +1922,8 @@ class toc final {
                                                std::move(lea_path)),
                 };
 
-                return as_element_if(is_element, std::move(info));
+                return ident_builder::as_element_if(is_element,
+                                                    std::move(info));
             }
 
             // from the root frame of a function aliases are followed to the
@@ -1760,7 +1940,8 @@ class toc final {
                                                std::move(lea_path)),
                 };
 
-                return as_element_if(is_element, std::move(info));
+                return ident_builder::as_element_if(is_element,
+                                                    std::move(info));
             }
 
             // this is an alias, continue resolving until it is a variable,
@@ -1781,7 +1962,7 @@ class toc final {
 
             lea_path.emplace_back(alias.lea);
 
-            id = replace_alias_base(alias, id, lea_path);
+            id = ident_builder::replace_alias_base(alias, id, lea_path);
         }
 
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);
@@ -1838,7 +2019,7 @@ class toc final {
 
     // bytes of variables, without the dats and the gap after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
-        return vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_;
+        return vars_size_bytes_ - data_.total_size_bytes() - data_.entry_gap();
     }
 
     // offsets count from 'dat', a base register past 'vars' makes the dats
@@ -1853,181 +2034,10 @@ class toc final {
         }
 
         const size_t dats_bytes{
-            sum_storage_size(total_dat_size_bytes_, vars_entry_gap_),
+            sum_storage_size(data_.total_size_bytes(), data_.entry_gap()),
         };
 
         return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
-    }
-
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto as_element_if(const bool is_element,
-                                            ident_info info) -> ident_info {
-
-        if (not is_element) {
-            return info;
-        }
-
-        info.is_array = false;
-        info.array_len = 0;
-
-        return info;
-    }
-
-    [[nodiscard]] static auto
-    noinline_report(const ::machine::output_statistics& stats)
-        -> report_section {
-
-        report_section section{.title{"noinline functions"}, .entries{}};
-
-        for (const assembler::function_summary& f : stats.noinline_functions) {
-            section.entries.push_back({
-                .name{f.function},
-                .value{
-                    std::format(
-                        "{} {}, {} {}, {} instructions{}", f.body_count,
-                        f.body_count == 1 ? "body" : "bodies", f.call_count,
-                        f.call_count == 1 ? "call" : "calls",
-                        f.instruction_count,
-                        f.call_count <= f.body_count ? ", no reuse" : ""),
-                },
-            });
-        }
-
-        return section;
-    }
-
-    [[nodiscard]] static auto
-    optimization_report(const ::machine::output_statistics& stats)
-        -> report_section {
-
-        const assembler::optimization_counts& o{stats.optimizations};
-
-        return {
-            .title{},
-            .entries{
-                {
-                    .name = "removed jumps to next code",
-                    .value = std::format("{}", o.jumps_to_next),
-                },
-                {
-                    .name = "removed unreachable jumps",
-                    .value = std::format("{}", o.unreachable_jumps),
-                },
-                {
-                    .name = "removed same target branches",
-                    .value = std::format("{}", o.same_outcome_branches),
-                },
-                {
-                    .name = "inverted branches over jumps",
-                    .value = std::format("{}", o.inverted_branches),
-                },
-            },
-        };
-    }
-
-    // makes room in 'lea_path' for the elements 'target_count' adds
-    //
-    // 'lea_path' has one entry per element of the identifier, an empty entry
-    // where no address is known; the entries are built while walking the
-    // frames outwards, so a target with several elements needs entries
-    // between the alias address just added and the next base
-    static auto pad_lea_path(std::vector<operand>& lea_path,
-                             const size_t target_count) -> void {
-
-        const size_t lea_count{lea_path.size()};
-
-        if (target_count > lea_count and target_count - lea_count > 1) {
-            // -2 because the last element is the alias address and the
-            // first is added when its own frame is walked
-            lea_path.resize(lea_count + target_count - 2);
-        }
-    }
-
-    // a built-in identifier below a run-time indexed element is addressed from
-    // the last address held, e.g. 'wld.rooms[ix].description.data'
-    static auto place_operand_from_lea(const token& src_loc_tk, ident_info& ii)
-        -> void {
-
-        // find the first element from the top that has a 'lea' and get
-        // accessor relative to that
-        operand lea;
-        size_t lea_index{ii.elem_path.size()};
-        while (lea_index--) {
-            if (not ii.lea_path.at(lea_index).is_empty()) {
-                lea = ii.lea_path.at(lea_index);
-                break;
-            }
-        }
-
-        if (lea.is_empty()) {
-            return;
-        }
-
-        // identifier has lea, construct operand
-
-        // example of resulting data structure:
-        //
-        // type string { len : i8, data : i8[127] }
-        // type room { name : string, description : string, note : string }
-        // type world { rooms : room[128] }
-        //
-        // id path     |  type  |  lea          |
-        // ------------|--------|---------------|
-        // wld         | world  | -             |
-        // rooms[2]    | room   | r15           |
-        // description | string | -             |
-        // data        | i8     | r15 + 129     |
-        //
-        // the indexing in 'rooms' is done at runtime thus the memory
-        // location of 'rooms[2]' cannot be deduced statically, thus the
-        // last lea encountered is the starting point when accessing
-        // identifiers
-
-        // start from the lea address and calculate offset to referred field
-        const std::span<std::string> elem_path_from_lea{
-            std::span{ii.elem_path}.subspan(lea_index),
-        };
-
-        // navigate to referred element and get offset
-        const size_t offset{
-            ii.type_path.at(lea_index)->field_offset(src_loc_tk,
-                                                     elem_path_from_lea),
-        };
-
-        ii.operand = operand::mem(lea, ii.type_ref());
-        if (offset != 0) {
-            ii.operand.increment_offset(address_offset(offset));
-        }
-    }
-
-    // 'id' with the base replaced by what the alias refers to, e.g.
-    //   res -> pt.x becomes pt.x
-    //   pt.x -> p becomes p.x
-    //   lnk.count -> world.room.link becomes world.room.link.count
-    [[nodiscard]] static auto replace_alias_base(const alias_info& alias,
-                                                 const ident_path& id,
-                                                 std::vector<operand>& lea_path)
-        -> ident_path {
-
-        ident_path target{std::string{alias.to}};
-
-        pad_lea_path(lea_path, target.path().size());
-
-        for (const std::string& s : id.path() | std::views::drop(1)) {
-            target.append(s);
-        }
-
-        return target;
-    }
-
-    // variable name without the field path
-    [[nodiscard]] static auto root_id_of(const std::string_view id)
-        -> std::string_view {
-
-        return id.substr(0, id.find('.'));
     }
 };
 
