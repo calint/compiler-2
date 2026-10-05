@@ -117,6 +117,8 @@ auto print_call_frames(std::string_view src_file_name, std::string_view src,
                        std::span<const compiler_exception::call_frame> frames)
     -> void;
 
+auto trimmed_line_at(std::string_view src, size_t index) -> std::string_view;
+
 auto print_source_error(const std::string_view src_file_name,
                         const std::string_view src, const size_t line,
                         const size_t start_index, const size_t end_index,
@@ -569,11 +571,39 @@ auto print_call_frames(
             line_and_col_num_for_char_index(frame.line, frame.start_index, src),
         };
 
-        std::println(stderr, "{}:{}:{}: {} '{}'", src_file_name, line_num, col,
-                     frame.reason, frame.text);
+        // the source line shows a call that is the whole line
+        if (frame.text == trimmed_line_at(src, frame.start_index)) {
+            std::println(stderr, "{}:{}:{}: {}", src_file_name, line_num, col,
+                         frame.reason);
+        } else {
+            std::println(stderr, "{}:{}:{}: {} '{}'", src_file_name, line_num,
+                         col, frame.reason, frame.text);
+        }
 
         print_source_line(src, frame.start_index, frame.end_index);
     }
+}
+
+// the line of the character at 'index' without its surrounding whitespace
+auto trimmed_line_at(const std::string_view src, const size_t index)
+    -> std::string_view {
+
+    constexpr std::string_view whitespace{" \t\r"};
+
+    const size_t line_start{src.rfind('\n', index) + 1};
+    // note: +1 because the line starts after the newline, npos + 1 is 0
+
+    const size_t line_end{std::min(src.find('\n', index), src.size())};
+    const std::string_view line{src.substr(line_start, line_end - line_start)};
+
+    const size_t first{line.find_first_not_of(whitespace)};
+
+    if (first == std::string_view::npos) {
+        return {};
+    }
+
+    return line.substr(first, line.find_last_not_of(whitespace) - first + 1);
+    // note: +1 because the end position is inclusive
 }
 
 // 'line' and 'start_index' locate the error, the column is derived from them,

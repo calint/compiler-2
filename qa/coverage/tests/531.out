@@ -2,6 +2,6 @@
 531.baz:11:21: argument 1 'value' may share storage with the result destination 'total' (both name 'total'), use a separate variable
     total = add_one(value)
                     ^
-531.baz:15:5: called from 'bump(total)'
+531.baz:15:5: called from
     bump(total)
     ^~~~
