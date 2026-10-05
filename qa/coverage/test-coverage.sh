@@ -18,7 +18,7 @@ cd "$SCRIPT_DIR"
 
 BIN="$SCRIPT_DIR/../../baz"
 MACHINE="${MACHINE:-x86_64}"
-OPTS="--vars=262144 --checks=upper,lower,line --reproduce-source"
+OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source"
 SEP="--------------------------------------------------------------------------------"
 
 usage() {

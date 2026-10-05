@@ -907,10 +907,10 @@ SRC=310 && COMPERR
 SRC=311 && EXP=255 && RUN_ERR
 
 # lower-bound check without upper check
-SRC=312 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower,line"
+SRC=312 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=lower,line"
 
 # upper-bound check without lower check
-SRC=313 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=upper,line"
+SRC=313 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=upper,line"
 
 # panic line from a multiline index
 SRC=314 && EXP=255 && RUN_ERR
@@ -934,10 +934,10 @@ SRC=319 && EXP=255 && RUN_ERR
 SRC=320 && EXP=0 && RUN
 
 # one-element lower failure without line output
-SRC=321 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower"
+SRC=321 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=lower"
 
 # one-element upper failure without line output
-SRC=322 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=upper"
+SRC=322 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=upper"
 
 # signed eight-bit index remains negative
 SRC=323 && EXP=255 && RUN_ERR
@@ -964,7 +964,7 @@ SRC=329 && COMPERR
 SRC=330 && EXP=0 && RUN
 
 # combined bounds checks without line output
-SRC=331 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=upper,lower"
+SRC=331 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=upper,lower"
 
 # unary negative constant index is rejected at compile
 SRC=332 && COMPERR
@@ -1230,16 +1230,16 @@ SRC=416 && DIFF
 SRC=417 && EXP=0 && RUN
 
 # non-inline recursion: factorial results and caller-local preservation
-SRC=417 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
+SRC=417 && EXP=0 && OPTS="--vars=0x40000 --checks=frame --reproduce-source" RUN
 
 # non-inline recursion: factorial results and caller-local preservation
-SRC=417 && EXP=255 && RUN_ERR_OPTS "--vars=64 --checks=frame"
+SRC=417 && EXP=255 && RUN_ERR_OPTS "--vars=0x40 --checks=frame"
 
 # non-inline user types: nested fields, reference mutation, copies and returns
 SRC=418 && EXP=0 && RUN
 
 # non-inline user types: nested fields, reference mutation, copies and returns
-SRC=418 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
+SRC=418 && EXP=0 && OPTS="--vars=0x40000 --checks=frame --reproduce-source" RUN
 
 # non-inline return value cannot be discarded
 SRC=419 && COMPERR
@@ -1303,10 +1303,10 @@ SRC=437 && EXP=0 && RUN
 SRC=438 && EXP=0 && RUN
 
 # non-inline recursion, references, aggregate returns and large local frames
-SRC=438 && EXP=0 && OPTS="--vars=262144 --checks=upper,lower,line,frame --reproduce-source" RUN
+SRC=438 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,frame --reproduce-source" RUN
 
 # non-inline recursion, references, aggregate returns and large local frames
-SRC=438 && EXP=255 && RUN_ERR_OPTS "--vars=4128 --checks=frame"
+SRC=438 && EXP=255 && RUN_ERR_OPTS "--vars=0x1020 --checks=frame"
 
 # arrays with omitted element type use the target's default integer type
 SRC=439 && EXP=0 && RUN
@@ -1582,7 +1582,7 @@ SRC=524 && EXP=255 && RUN_ERR
 # constant multiplication with shifts and adds or subtracts matches the
 # runtime multiply for many constants, operands and widths
 SRC=525 && EXP=0 && RUN
-UB_ALIAS="--vars=262144 --checks=upper,lower,line,alias --reproduce-source"
+UB_ALIAS="--vars=0x40000 --checks=upper,lower,line,alias --reproduce-source"
 
 # --checks=alias: an inline result may share storage with an argument
 SRC=526 && OPTS="$UB_ALIAS" COMPERR
@@ -2182,10 +2182,10 @@ SRC=705 && COMPERR
 SRC=706 && COMPERR
 
 # a negative count is rejected by the lower check alone
-SRC=707 && EXP=255 && RUN_ERR_OPTS "--vars=65536 --checks=lower"
+SRC=707 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=lower"
 
 # a constant count is range checked by the lower check alone
-SRC=708 && EXP=0 && RUN_ERR_OPTS "--vars=65536 --checks=lower"
+SRC=708 && EXP=0 && RUN_ERR_OPTS "--vars=0x10000 --checks=lower"
 
 # a global passed to a non-inline function that also names it shares storage
 SRC=709 && COMPERR
@@ -2227,7 +2227,7 @@ SRC=720 && COMPERR
 SRC=721 && COMPERR
 
 # a variable must fit in the vars section
-SRC=722 && OPTS="--vars=64" COMPERR
+SRC=722 && OPTS="--vars=0x40" COMPERR
 
 # a statement is not allowed at the top level
 SRC=723 && COMPERR
@@ -2275,7 +2275,7 @@ if [[ $MACHINE != x86_64 ]]; then SRC=736 && COMPERR; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=737 && COMPERR; fi
 
 # rv32i: a constant copy size beyond the 32-bit address range
-if [[ $MACHINE != x86_64 ]]; then SRC=738 && OPTS="--vars=65536" COMPERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=738 && OPTS="--vars=0x10000" COMPERR; fi
 
 # rv32i: data elements must be 1, 2 or 4 bytes
 if [[ $MACHINE != x86_64 ]]; then SRC=739 && COMPERR; fi
@@ -2326,7 +2326,7 @@ if [[ $MACHINE != x86_64 ]]; then SRC=753 && EXP=101 && RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=754 && EXP=2 && RUN; fi
 
 # a range with a runtime start and count when only the upper limit is checked
-SRC=755 && OPTS="--vars=262144 --checks=upper --reproduce-source" DIFF
+SRC=755 && OPTS="--vars=0x40000 --checks=upper --reproduce-source" DIFF
 
 # rv32i: a constant shift count of a 32-bit value must be below 32
 if [[ $MACHINE != x86_64 ]]; then SRC=756 && COMPERR; fi
@@ -2373,7 +2373,7 @@ SRC=769 && EXP=0 && RUN
 # two array parameters, recursion, methods, a dat array and an uncalled
 # function
 SRC=770 && EXP=0 && RUN
-SRC=770 && EXP=0 && OPTS="--vars=262144 --checks=frame --reproduce-source" RUN
+SRC=770 && EXP=0 && OPTS="--vars=0x40000 --checks=frame --reproduce-source" RUN
 
 # a constant index out of bounds is found for the lengths of one call
 SRC=771 && COMPERR

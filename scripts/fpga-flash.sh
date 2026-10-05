@@ -43,7 +43,7 @@ fi
 echo
 echo "building firmware from '$SOURCE_FILE'"
 
-./baz --target=rv32i-fpga --vars=131072 --checks=noub,line --bin="$FIRMWARE_FILE" "$SOURCE_FILE" >"${SOURCE_FILE%.baz}.s"
+./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin="$FIRMWARE_FILE" "$SOURCE_FILE" >"${SOURCE_FILE%.baz}.s"
 
 # check result
 if [ ! -f "$FIRMWARE_FILE" ]; then
