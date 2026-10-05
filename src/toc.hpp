@@ -2,7 +2,9 @@
 // reviewed: 2025-09-29
 
 #include <algorithm>
+#include <cassert>
 #include <charconv>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <functional>
@@ -13,14 +15,18 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
+#include <vector>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "generics.hpp"
 #include "lut.hpp"
 #include "machine.hpp"
+#include "operand.hpp"
 #include "statement.hpp"
+#include "token.hpp"
 #include "type.hpp"
 
 class stmt_def_func;
@@ -385,8 +391,13 @@ class ident_builder final {
         };
 
         return ident_info::make_var(std::string{ident}, path,
-                                    std::move(type_path), op, idx, array_count,
-                                    is_array, var.is_pointer);
+                                    std::move(type_path), op,
+                                    {
+                                        .offset{idx},
+                                        .array_len{array_count},
+                                        .is_array{is_array},
+                                        .is_pointer{var.is_pointer},
+                                    });
     }
 
     // makes room in 'lea_path' for the elements 'target_count' adds

@@ -2,10 +2,12 @@
 // reviewed: 2025-09-28
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
-#include <span>
+#include <ostream>
+#include <print>
 #include <sstream>
 #include <string>
 #include <string_view>

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -10,8 +11,11 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
+#include "operand.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 class stmt_builtin_array_copy final : public statement {
@@ -111,9 +115,7 @@ class stmt_builtin_array_copy final : public statement {
             return;
         }
 
-        x.copy_elements(
-            tok(), indent, array_src_info.type_ref().size_bytes(),
-            array_src_info.type_ref().alignment(),
+        const auto emit_count{
             [&](const operand& count_register) -> void {
                 x.comment(count_.tok(), indent,
                           statement::trimmed_source(count_));
@@ -122,6 +124,9 @@ class stmt_builtin_array_copy final : public statement {
                     tc, indent,
                     toc::make_ident_info_from_register(count_register));
             },
+        };
+
+        const auto emit_src{
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
                 src_.compile_address(tc, indent, tok(),
@@ -132,6 +137,9 @@ class stmt_builtin_array_copy final : public statement {
                                      },
                                      use);
             },
+        };
+
+        const auto emit_dst{
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
                 dst_.compile_address(tc, indent, tok(),
@@ -141,7 +149,16 @@ class stmt_builtin_array_copy final : public statement {
                                          .address_register{address_register},
                                      },
                                      use);
-            });
+            },
+        };
+
+        x.copy_elements(tok(), indent, array_src_info.type_ref().size_bytes(),
+                        emit_count,
+                        {
+                            .alignment{array_src_info.type_ref().alignment()},
+                            .src{emit_src},
+                            .dst{emit_dst},
+                        });
     }
 
     // the copied elements are not tracked, so the destination stays unassigned

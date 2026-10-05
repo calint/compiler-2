@@ -1,14 +1,20 @@
 #pragma once
 
+#include <cstddef>
 #include <format>
 #include <ostream>
 #include <string>
-#include <vector>
+#include <string_view>
+#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "expression.hpp"
+#include "operand.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 class stmt_builtin_equal final : public expression {
@@ -112,8 +118,7 @@ class stmt_builtin_equal final : public expression {
                                                lhs_info.array_len);
         }
 
-        x.memory_equal(
-            tok(), indent, size_bytes, lhs_info.type_ref().alignment(),
+        const auto emit_lhs{
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
                 lhs_.compile_address(tc, indent, tok(),
@@ -124,6 +129,9 @@ class stmt_builtin_equal final : public expression {
                                      },
                                      use);
             },
+        };
+
+        const auto emit_rhs{
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
                 rhs_.compile_address(tc, indent, tok(),
@@ -134,7 +142,16 @@ class stmt_builtin_equal final : public expression {
                                      },
                                      use);
             },
-            dst, inverted);
+        };
+
+        x.memory_equal(tok(), indent, size_bytes,
+                       {
+                           .alignment{lhs_info.type_ref().alignment()},
+                           .lhs{emit_lhs},
+                           .rhs{emit_rhs},
+                           .dst{dst},
+                           .inverted{inverted},
+                       });
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {

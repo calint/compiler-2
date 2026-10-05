@@ -9,8 +9,10 @@
 //     'statement.hpp'
 
 #include <cassert>
+#include <cstddef>
 #include <format>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <ranges>
 #include <span>
@@ -24,6 +26,8 @@
 #include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expr_type.hpp"
+#include "generics.hpp"
+#include "operand.hpp"
 #include "stmt_builtin_array_length.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_convert.hpp"
@@ -39,6 +43,7 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 // definitions are intentionally not 'inline': single translation unit build

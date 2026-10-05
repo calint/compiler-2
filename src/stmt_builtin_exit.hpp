@@ -1,9 +1,14 @@
 #pragma once
 
+#include <cstddef>
 #include <vector>
 
 #include "decouple.hpp"
+#include "machine.hpp"
+#include "operand.hpp"
 #include "stmt_call.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 
 class stmt_builtin_exit final : public stmt_call {
   public:

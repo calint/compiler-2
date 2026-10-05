@@ -19,8 +19,11 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
+#include "operand.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 class stmt_identifier : public statement {

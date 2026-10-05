@@ -1,17 +1,23 @@
 #pragma once
 // reviewed: 2025-09-29
 
+#include <cassert>
+#include <cstddef>
 #include <format>
 #include <memory>
 #include <optional>
-#include <span>
+#include <ostream>
 #include <string_view>
 #include <vector>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "operand.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
+#include "token.hpp"
+#include "type.hpp"
+#include "ub_unset_var.hpp"
 
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
 //       implemented in 'decouple_impl.hpp', those headers include this one

@@ -2,10 +2,13 @@
 // reviewed: 2025-09-28
 
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <format>
 #include <functional>
 #include <ostream>
 #include <ranges>
+#include <span>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -13,6 +16,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "operand.hpp"
 #include "statement.hpp"
 #include "stmt_builtin_convert.hpp"
 #include "stmt_const.hpp"

@@ -1,14 +1,20 @@
 #pragma once
 
+#include <cstddef>
 #include <format>
 #include <ostream>
 #include <string>
+#include <string_view>
+#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
+#include "expression.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 class stmt_builtin_arrays_equal final : public expression {
@@ -108,9 +114,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
         assert_destination_type(dst.type_ref(), tok());
 
-        x.arrays_equal(
-            tok(), indent, lhs_info.type_ref().size_bytes(),
-            lhs_info.type_ref().alignment(),
+        const auto emit_count{
             [&](const operand& count_register) -> void {
                 x.comment(count_.tok(), indent,
                           statement::trimmed_source(count_));
@@ -119,6 +123,9 @@ class stmt_builtin_arrays_equal final : public expression {
                     tc, indent,
                     toc::make_ident_info_from_register(count_register));
             },
+        };
+
+        const auto emit_lhs{
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
                 lhs_.compile_address(tc, indent, tok(),
@@ -129,6 +136,9 @@ class stmt_builtin_arrays_equal final : public expression {
                                      },
                                      use);
             },
+        };
+
+        const auto emit_rhs{
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
                 rhs_.compile_address(tc, indent, tok(),
@@ -139,7 +149,17 @@ class stmt_builtin_arrays_equal final : public expression {
                                      },
                                      use);
             },
-            dst, inverted);
+        };
+
+        x.arrays_equal(tok(), indent, lhs_info.type_ref().size_bytes(),
+                       emit_count,
+                       {
+                           .alignment{lhs_info.type_ref().alignment()},
+                           .lhs{emit_lhs},
+                           .rhs{emit_rhs},
+                           .dst{dst},
+                           .inverted{inverted},
+                       });
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {

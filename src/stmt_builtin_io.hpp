@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cstddef>
 #include <format>
 #include <span>
 #include <string_view>
@@ -8,7 +9,11 @@
 #include <vector>
 
 #include "decouple.hpp"
+#include "machine.hpp"
+#include "operand.hpp"
 #include "stmt_call.hpp"
+#include "token.hpp"
+#include "unary_ops.hpp"
 
 class stmt_builtin_io final : public stmt_call {
   public:

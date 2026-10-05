@@ -1,7 +1,9 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <functional>
@@ -9,16 +11,22 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <print>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "decouple.hpp"
 #include "expression.hpp"
+#include "machine.hpp"
+#include "operand.hpp"
 #include "toc.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
+#include "unary_ops.hpp"
 
 //
 // a flat list of elements and nested lists instead of a binary tree

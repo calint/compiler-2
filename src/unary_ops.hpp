@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 //           2026-09-09
 
+#include <cstddef>
 #include <cstdint>
 #include <ostream>
 #include <print>
@@ -10,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "token.hpp"
 #include "tokenizer.hpp"
 
 class toc;

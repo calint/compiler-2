@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <string>
+#include <utility>
 
 class panic_exception final : public std::exception {
     std::string msg_;

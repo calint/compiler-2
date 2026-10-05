@@ -1,22 +1,33 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <bit>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <format>
 #include <fstream>
+#include <functional>
+#include <ios>
 #include <limits>
 #include <optional>
 #include <ostream>
 #include <ranges>
 #include <span>
+#include <string>
 #include <string_view>
 #include <tuple>
 #include <utility>
+#include <vector>
 
+#include "assembler.hpp"
 #include "assembler_rv32i.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "token.hpp"
 #include "type.hpp"
 
 class machine_rv32i : public machine {
@@ -263,6 +274,22 @@ class machine_rv32i : public machine {
         bool left_is_result{};
     };
 
+    // the two memory operands of a comparison of a known size and where each
+    // access starts in its word
+    struct compared_memory {
+        operand left;
+        operand right;
+        std::array<access_start, 2> starts;
+    };
+
+    // the pointer registers of a comparison with a run-time byte count
+    struct compared_range {
+        operand left;
+        operand right;
+        operand count;
+        std::array<access_start, 2> starts;
+    };
+
     // empty when no binary image is written
     std::string binary_file_name_;
     // buffering output is no more logical state than writing to the stream
@@ -486,11 +513,9 @@ class machine_rv32i : public machine {
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
-                      const size_t element_size_bytes, const size_t alignment,
+                      const size_t element_size_bytes,
                       const std::function_ref<void(const operand&)> emit_count,
-                      const address_emitter emit_left,
-                      const address_emitter emit_right, const operand& dst,
-                      const bool inverted) -> void override {
+                      const equality_request& request) -> void override {
 
         const operand count{begin_array_operation(src_loc_tk, indent)};
 
@@ -498,20 +523,20 @@ class machine_rv32i : public machine {
 
         // borrowed pointers avoid a temporary address and final move for
         // indexing
-        emit_left(count, bulk_registers_.back().at(0),
-                  [&](const operand& address) -> void {
-                      set_bulk_address(src_loc_tk, indent, 0, address);
-                  });
+        request.lhs(count, bulk_registers_.back().at(0),
+                    [&](const operand& address) -> void {
+                        set_bulk_address(src_loc_tk, indent, 0, address);
+                    });
 
-        emit_right(count, bulk_registers_.back().at(1),
-                   [&](const operand& address) -> void {
-                       set_bulk_address(src_loc_tk, indent, 1, address);
-                   });
+        request.rhs(count, bulk_registers_.back().at(1),
+                    [&](const operand& address) -> void {
+                        set_bulk_address(src_loc_tk, indent, 1, address);
+                    });
 
         const std::array<operand, 3>& registers{bulk_registers_.back()};
         {
             // scaling the count must not pick the result registers
-            const address_scope scope{*this, dst, operand{}};
+            const address_scope scope{*this, request.dst, operand{}};
 
             comment(src_loc_tk, indent,
                     "{}: elements to bytes ({} bytes/element)",
@@ -521,9 +546,14 @@ class machine_rv32i : public machine {
                         element_size_bytes);
         }
 
-        compare_runtime_count(src_loc_tk, indent, registers.at(0),
-                              registers.at(1), registers.at(2), bulk_starts(),
-                              alignment, dst, inverted);
+        compare_runtime_count(src_loc_tk, indent,
+                              {
+                                  .left{registers.at(0)},
+                                  .right{registers.at(1)},
+                                  .count{registers.at(2)},
+                                  .starts{bulk_starts()},
+                              },
+                              request);
 
         release_bulk(src_loc_tk, indent);
     }
@@ -813,11 +843,9 @@ class machine_rv32i : public machine {
     }
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
-                       const size_t element_size_bytes, const size_t alignment,
+                       const size_t element_size_bytes,
                        const std::function_ref<void(const operand&)> emit_count,
-                       const address_emitter emit_source,
-                       const address_emitter emit_destination)
-        -> void override {
+                       const copy_request& request) -> void override {
 
         const operand count{begin_array_operation(src_loc_tk, indent)};
 
@@ -825,15 +853,15 @@ class machine_rv32i : public machine {
 
         // borrowed pointers avoid a temporary address and final move for
         // indexing
-        emit_source(count, bulk_registers_.back().at(0),
+        request.src(count, bulk_registers_.back().at(0),
                     [&](const operand& address) -> void {
                         set_bulk_address(src_loc_tk, indent, 0, address);
                     });
 
-        emit_destination(count, bulk_registers_.back().at(1),
-                         [&](const operand& address) -> void {
-                             set_bulk_address(src_loc_tk, indent, 1, address);
-                         });
+        request.dst(count, bulk_registers_.back().at(1),
+                    [&](const operand& address) -> void {
+                        set_bulk_address(src_loc_tk, indent, 1, address);
+                    });
 
         const std::array<operand, 3>& registers{bulk_registers_.back()};
 
@@ -843,7 +871,7 @@ class machine_rv32i : public machine {
         scale_index(src_loc_tk, indent, registers.at(2), element_size_bytes);
 
         copy_runtime_count(src_loc_tk, indent, registers.at(0), registers.at(1),
-                           registers.at(2), bulk_starts(), alignment);
+                           registers.at(2), bulk_starts(), request.alignment);
 
         release_bulk(src_loc_tk, indent);
     }
@@ -1212,15 +1240,13 @@ class machine_rv32i : public machine {
     // unrolled and larger ones in a loop, both addresses stay in their
     // registers until it has compared
     auto memory_equal(const token& src_loc_tk, const size_t indent,
-                      const size_t size_bytes, const size_t alignment,
-                      const address_emitter emit_left,
-                      const address_emitter emit_right, const operand& dst,
-                      const bool inverted) -> void override {
+                      const size_t size_bytes, const equality_request& request)
+        -> void override {
 
-        emit_left({}, {}, [&](const operand& left) -> void {
-            emit_right({}, {}, [&](const operand& right) -> void {
-                compare_memory(src_loc_tk, indent, left, right, size_bytes,
-                               alignment, dst, inverted);
+        request.lhs({}, {}, [&](const operand& left) -> void {
+            request.rhs({}, {}, [&](const operand& right) -> void {
+                compare_memory(src_loc_tk, indent, size_bytes, left, right,
+                               request);
             });
         });
     }
@@ -1967,14 +1993,17 @@ class machine_rv32i : public machine {
                        registers.right.base_register(), false_exit.reference);
     }
 
-    // known size: the addresses are memory operands and 'result' is 1 when
-    // every access matched, 0 at the first mismatch; 'inverted' swaps them
+    // known size: the addresses are memory operands and the result of the
+    // request is 1 when every access matched, 0 at the first mismatch; its
+    // 'inverted' swaps them
     auto compare_known_size(const token& src_loc_tk, const size_t indent,
-                            const operand& left, const operand& right,
                             const size_t size_bytes,
-                            const std::array<access_start, 2>& starts,
-                            const operand& result, const bool inverted)
-        -> void {
+                            const compared_memory& memory,
+                            const equality_request& request) -> void {
+
+        const operand& left{memory.left};
+        const operand& right{memory.right};
+        const operand& result{request.dst};
 
         // keeps the registers of both addresses from being picked for scratch
         const address_scope operand_scope{*this, right, left};
@@ -1988,18 +2017,21 @@ class machine_rv32i : public machine {
             alloc_compare_registers(src_loc_tk, indent, result, in_use),
         };
 
-        compare_known_walk(src_loc_tk, indent, left, right, size_bytes, starts,
-                           registers);
+        compare_known_walk(src_loc_tk, indent, size_bytes, memory, registers);
 
-        write_compare_result(src_loc_tk, indent, result, registers, inverted);
+        write_compare_result(src_loc_tk, indent, result, registers,
+                             request.inverted);
     }
 
     // the walk's own registers are freed before the result is written
     auto compare_known_walk(const token& src_loc_tk, const size_t indent,
-                            const operand& left, const operand& right,
                             const size_t size_bytes,
-                            const std::array<access_start, 2>& starts,
+                            const compared_memory& memory,
                             const compare_registers& registers) -> void {
+
+        const operand& left{memory.left};
+        const operand& right{memory.right};
+        const std::array<access_start, 2>& starts{memory.starts};
 
         const address_scope walk_scope{*this};
 
@@ -2093,21 +2125,22 @@ class machine_rv32i : public machine {
     }
 
     auto compare_memory(const token& src_loc_tk, const size_t indent,
-                        const operand& left, const operand& right,
-                        const size_t size_bytes, const size_t alignment,
-                        const operand& dst, const bool inverted) -> void {
+                        const size_t size_bytes, const operand& left,
+                        const operand& right, const equality_request& request)
+        -> void {
 
         // compared sizes are limited by the variables that hold the data
         assert(size_bytes <= std::numeric_limits<uint32_t>::max());
 
         // unrolled accesses can follow where each address is within its word
         const std::array<access_start, 2> starts{
-            start_of(left, alignment),
-            start_of(right, alignment),
+            start_of(left, request.alignment),
+            start_of(right, request.alignment),
         };
 
-        compare_known_size(src_loc_tk, indent, left, right, size_bytes, starts,
-                           dst, inverted);
+        compare_known_size(src_loc_tk, indent, size_bytes,
+                           {.left{left}, .right{right}, .starts{starts}},
+                           request);
     }
 
     auto compare_parts(const size_t indent, const compare_registers& registers,
@@ -2125,11 +2158,13 @@ class machine_rv32i : public machine {
     // run-time count: the addresses are pointer registers and 'count' is a
     // byte count, the result is as for 'compare_known_size'
     auto compare_runtime_count(const token& src_loc_tk, const size_t indent,
-                               const operand& left, const operand& right,
-                               const operand& count,
-                               const std::array<access_start, 2>& starts,
-                               const size_t alignment, const operand& result,
-                               const bool inverted) -> void {
+                               const compared_range& range,
+                               const equality_request& request) -> void {
+
+        const operand& left{range.left};
+        const operand& right{range.right};
+        const operand& count{range.count};
+        const operand& result{request.dst};
 
         // keeps the registers of both addresses from being picked for scratch
         const address_scope operand_scope{*this, right, left};
@@ -2143,19 +2178,23 @@ class machine_rv32i : public machine {
             alloc_compare_registers(src_loc_tk, indent, result, in_use),
         };
 
-        compare_runtime_walk(src_loc_tk, indent, left, right, count, starts,
-                             alignment, registers);
+        compare_runtime_walk(src_loc_tk, indent, range, request.alignment,
+                             registers);
 
-        write_compare_result(src_loc_tk, indent, result, registers, inverted);
+        write_compare_result(src_loc_tk, indent, result, registers,
+                             request.inverted);
     }
 
     // the walk's own registers are freed before the result is written
     auto compare_runtime_walk(const token& src_loc_tk, const size_t indent,
-                              const operand& left, const operand& right,
-                              const operand& count,
-                              const std::array<access_start, 2>& starts,
+                              const compared_range& range,
                               const size_t alignment,
                               const compare_registers& registers) -> void {
+
+        const operand& left{range.left};
+        const operand& right{range.right};
+        const operand& count{range.count};
+        const std::array<access_start, 2>& starts{range.starts};
 
         const address_scope walk_scope{*this};
 

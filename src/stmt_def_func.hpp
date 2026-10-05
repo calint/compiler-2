@@ -3,13 +3,16 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
+#include <format>
 #include <memory>
 #include <optional>
 #include <ostream>
 #include <print>
 #include <ranges>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -17,8 +20,12 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "generics.hpp"
+#include "machine.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
+#include "toc.hpp"
+#include "token.hpp"
 
 class stmt_def_func final : public statement {
     // what a function has from generics: a generic definition is only text and

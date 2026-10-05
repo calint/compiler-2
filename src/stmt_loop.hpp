@@ -1,11 +1,16 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
 #include <optional>
+#include <ostream>
+#include <string>
 
 #include "decouple.hpp"
 #include "statement.hpp"
 #include "stmt_block.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 
 class stmt_loop final : public statement {
     stmt_block code_;

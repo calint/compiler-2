@@ -5,11 +5,9 @@
 // the statement factories at the end are implemented in 'decouple_impl.hpp'
 
 #include <algorithm>
-#include <bit>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <memory>
 #include <span>
 #include <string>
@@ -78,6 +76,14 @@ struct var_info {
 struct ident_info {
   private:
     enum class kind : uint8_t { empty, constant, var, reg };
+
+    // where a variable is and what it holds, besides its operand
+    struct var_layout {
+        int64_t offset;
+        size_t array_len;
+        bool is_array;
+        bool is_pointer;
+    };
 
   public:
     std::string id;
@@ -240,11 +246,11 @@ struct ident_info {
         };
     }
 
-    [[nodiscard]] static auto
-    make_var(std::string ident, std::vector<std::string> elem_path,
-             std::vector<const type*> type_path, const ::operand& op,
-             const int64_t offset, const size_t array_len, const bool is_array,
-             const bool is_pointer = {}) -> ident_info {
+    [[nodiscard]] static auto make_var(std::string ident,
+                                       std::vector<std::string> elem_path,
+                                       std::vector<const type*> type_path,
+                                       const ::operand& op,
+                                       const var_layout& layout) -> ident_info {
 
         assert(not ident.empty());
         assert(not elem_path.empty());
@@ -259,10 +265,10 @@ struct ident_info {
             .type_path{std::move(type_path)},
             .lea_path{lea_count, ::operand{}},
             .operand{op},
-            .offset{offset},
-            .array_len{array_len},
-            .is_array{is_array},
-            .is_pointer{is_pointer},
+            .offset{layout.offset},
+            .array_len{layout.array_len},
+            .is_array{layout.is_array},
+            .is_pointer{layout.is_pointer},
             .kind{kind::var},
         };
     }

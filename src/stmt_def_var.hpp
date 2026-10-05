@@ -2,8 +2,10 @@
 // reviewed: 2025-09-28
 //           2026-09-09
 
+#include <cstddef>
 #include <format>
 #include <functional>
+#include <ostream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -12,11 +14,15 @@
 #include "decouple.hpp"
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
+#include "machine.hpp"
+#include "operand.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_builtin_convert.hpp"
 #include "stmt_identifier.hpp"
+#include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
+#include "ub_unset_var.hpp"
 
 // e.g. 'var x = i32(0)', the initializer gives the type; 'let' with a
 // non-constant initializer is a 'var' that is read-only once initialized

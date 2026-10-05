@@ -2,22 +2,31 @@
 // reviewed: 2025-09-28
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
+#include <format>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "assembler.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "operand.hpp"
 #include "statement.hpp"
 #include "stmt_def_const.hpp"
+#include "stmt_def_dat.hpp"
 #include "stmt_def_func.hpp"
 #include "stmt_def_type.hpp"
+#include "stmt_def_var.hpp"
 #include "toc.hpp"
 #include "tokenizer.hpp"
+#include "type.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 // a line of a report section, e.g. 'removed unreachable jumps: 0', without a

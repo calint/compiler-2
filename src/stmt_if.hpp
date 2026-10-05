@@ -1,12 +1,21 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
+#include <format>
+#include <optional>
+#include <ostream>
 #include <ranges>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "decouple.hpp"
+#include "machine.hpp"
 #include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 
 class stmt_if final : public statement {
     // e.g. 'else if' of 'else if c == d {y = 2}'

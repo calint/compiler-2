@@ -1,7 +1,9 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
 #include <format>
+#include <ostream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -10,8 +12,12 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
+#include "machine.hpp"
+#include "operand.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 
 class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;

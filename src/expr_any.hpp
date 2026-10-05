@@ -2,12 +2,16 @@
 // reviewed: 2025-09-29
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <format>
+#include <memory>
 #include <optional>
-#include <span>
+#include <ostream>
+#include <ranges>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -16,8 +20,13 @@
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "expr_type.hpp"
+#include "machine.hpp"
+#include "operand.hpp"
 #include "stmt_builtin_convert.hpp"
 #include "stmt_const.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
+#include "unary_ops.hpp"
 
 class expr_any final : public statement {
     using expr_variant = std::variant<expr_arith, expr_bool, expr_type>;

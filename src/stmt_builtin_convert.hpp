@@ -1,18 +1,22 @@
 #pragma once
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_arith.hpp"
 #include "expression.hpp"
 #include "toc.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 // e.g. 'i8(x)' converts 'x' to the type, a narrowing store truncates on

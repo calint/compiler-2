@@ -1,9 +1,16 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "decouple.hpp"
 #include "machine.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
+
+#include <cstddef>
+
+#include <string_view>
 
 class stmt_continue final : public statement {
   public:

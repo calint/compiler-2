@@ -5,9 +5,11 @@
 #include <bit>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <ios>
 #include <iterator>
 #include <limits>
 #include <memory>

@@ -2,7 +2,9 @@
 // reviewed: 2025-09-28
 
 #include <cstdint>
+#include <format>
 #include <optional>
+#include <ostream>
 #include <string>
 
 #include "compiler_exception.hpp"

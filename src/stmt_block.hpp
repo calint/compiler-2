@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -10,6 +11,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "stmt_assign_var.hpp"
 #include "stmt_break.hpp"
 #include "stmt_builtin_array_copy.hpp"
 #include "stmt_continue.hpp"
@@ -18,7 +20,9 @@
 #include "stmt_def_var.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_return.hpp"
+#include "token.hpp"
 #include "tokenizer.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 class stmt_block final : public statement {

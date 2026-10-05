@@ -2,6 +2,9 @@
 // reviewed: 2025-09-28
 
 #include <cassert>
+#include <cstddef>
+#include <format>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <tuple>

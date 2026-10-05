@@ -9,11 +9,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 #include "compiler_exception.hpp"
 #include "token.hpp"

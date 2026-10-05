@@ -152,8 +152,6 @@ better assembler code, medium, largest gain first
         compiles through the machine and takes part in the flow analysis
         ('trace_assignment', 'visit_reads'): four concerns in one class
         (questionable, see 4)
-[ ] easy: low priority: missing direct includes (153 of misc-include-cleaner,
-    'std::format', 'size_t', ...): add per header; clangd does not need them
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
 [ ] medium: roome.baz: an inline bool call used as a condition is materialized

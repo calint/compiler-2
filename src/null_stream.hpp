@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <ostream>
+#include <streambuf>
 
 class null_stream final : public std::ostream {
     class null_buffer : public std::streambuf {

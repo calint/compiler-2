@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "assembler.hpp"
 #include "assembler_x86_64.hpp"
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -283,21 +284,18 @@ class machine_x86_64 final : public machine {
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
                       const size_t element_size_bytes,
-                      [[maybe_unused]] const size_t alignment,
                       const std::function_ref<void(const operand&)> emit_count,
-                      const address_emitter emit_left,
-                      const address_emitter emit_right, const operand& dst,
-                      const bool inverted) -> void override {
+                      const equality_request& request) -> void override {
 
         const operand count{alloc_bulk_registers(src_loc_tk, indent)};
 
         emit_count(count);
 
-        emit_left(count, {}, [&](const operand& address) -> void {
+        request.lhs(count, {}, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rsi"), address);
         });
 
-        emit_right(count, {}, [&](const operand& address) -> void {
+        request.rhs(count, {}, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rdi"), address);
         });
 
@@ -307,7 +305,7 @@ class machine_x86_64 final : public machine {
         test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
         assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(src_loc_tk, indent, dst, inverted);
+        store_equal_result(src_loc_tk, indent, request.dst, request.inverted);
     }
 
     auto begin_data(const size_t alignment) -> void override {
@@ -645,21 +643,18 @@ class machine_x86_64 final : public machine {
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
                        const size_t element_size_bytes,
-                       [[maybe_unused]] const size_t alignment,
                        const std::function_ref<void(const operand&)> emit_count,
-                       const address_emitter emit_source,
-                       const address_emitter emit_destination)
-        -> void override {
+                       const copy_request& request) -> void override {
 
         const operand count{alloc_bulk_registers(src_loc_tk, indent)};
 
         emit_count(count);
 
-        emit_source(count, {}, [&](const operand& address) -> void {
+        request.src(count, {}, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rsi"), address);
         });
 
-        emit_destination(count, {}, [&](const operand& address) -> void {
+        request.dst(count, {}, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rdi"), address);
         });
 
@@ -980,19 +975,16 @@ class machine_x86_64 final : public machine {
     }
 
     auto memory_equal(const token& src_loc_tk, const size_t indent,
-                      const size_t size_bytes,
-                      [[maybe_unused]] const size_t alignment,
-                      const address_emitter emit_left,
-                      const address_emitter emit_right, const operand& dst,
-                      const bool inverted) -> void override {
+                      const size_t size_bytes, const equality_request& request)
+        -> void override {
 
         std::ignore = alloc_bulk_registers(src_loc_tk, indent);
 
-        emit_left({}, {}, [&](const operand& address) -> void {
+        request.lhs({}, {}, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rsi"), address);
         });
 
-        emit_right({}, {}, [&](const operand& address) -> void {
+        request.rhs({}, {}, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rdi"), address);
         });
 
@@ -1025,7 +1017,7 @@ class machine_x86_64 final : public machine {
         }
 
         release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(src_loc_tk, indent, dst, inverted);
+        store_equal_result(src_loc_tk, indent, request.dst, request.inverted);
     }
 
     auto multiply(const token& src_loc_tk, const size_t indent,

@@ -1,6 +1,10 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
+#include <cstdint>
+#include <format>
+#include <ostream>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -13,6 +17,8 @@
 #include "stmt_block.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
 class stmt_builtin_foo final : public statement {

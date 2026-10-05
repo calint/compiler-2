@@ -5,9 +5,13 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <format>
+#include <functional>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <ranges>
 #include <span>
 #include <string>
@@ -18,8 +22,16 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
+#include "expression.hpp"
+#include "generics.hpp"
+#include "machine.hpp"
+#include "operand.hpp"
 #include "stmt_def_func.hpp"
 #include "stmt_identifier.hpp"
+#include "toc.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
+#include "unary_ops.hpp"
 
 class stmt_call : public expression {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument

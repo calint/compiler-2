@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <limits>
@@ -15,6 +16,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "operand.hpp"
 #include "token.hpp"
 
 class type;

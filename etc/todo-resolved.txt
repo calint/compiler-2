@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: low priority: missing direct includes (313 of misc-include-cleaner,
+    'std::format', 'size_t', ...): add per header
+    => done (2026-10-05): every header includes what it uses and nothing
+       else; checked per header with
+       'clang-tidy --checks=-*,misc-include-cleaner' (the unity build reports
+       only 'main.cpp')
 [x] hard: generics (2026-10-04..05): types and functions with compile-time
     parameters, to remove the repetition in roome.baz ('str' and 'name' differ
     in capacity, 'tokenizer.to_name' and 'to_str' in the result type)

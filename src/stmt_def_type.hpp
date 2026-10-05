@@ -2,17 +2,27 @@
 // reviewed: 2025-09-28
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <ostream>
 #include <print>
 #include <ranges>
 #include <span>
+#include <string_view>
 #include <tuple>
+#include <utility>
 #include <vector>
 
+#include "decouple.hpp"
 #include "generics.hpp"
+#include "machine.hpp"
+#include "statement.hpp"
 #include "stmt_def_type_field.hpp"
+#include "toc.hpp"
+#include "token.hpp"
+#include "tokenizer.hpp"
 #include "type.hpp"
 
 class stmt_def_type final : public statement {

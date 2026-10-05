@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <cassert>
+#include <cstddef>
 #include <exception>
 #include <string>
 #include <utility>

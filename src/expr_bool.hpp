@@ -2,9 +2,13 @@
 // reviewed: 2025-09-29
 
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <format>
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <print>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -13,7 +17,10 @@
 
 #include "decouple.hpp"
 #include "expr_arith.hpp"
+#include "operand.hpp"
 #include "statement.hpp"
+#include "token.hpp"
+#include "ub_unset_var.hpp"
 
 class expr_bool_op final : public statement {
     std::vector<token> nots_;

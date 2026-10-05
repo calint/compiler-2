@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <charconv>
+#include <cstddef>
 #include <format>
 #include <memory>
 #include <optional>

@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -15,8 +16,10 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include "assembler.hpp"
 #include "decouple.hpp"
@@ -116,46 +119,12 @@ class register_pool {
 };
 
 class machine {
-    std::reference_wrapper<std::ostream> os_;
-    std::string_view source_;
-    assembler::jump_mode jump_mode_;
-    const type* type_i64_{};
-    const type* type_i32_{};
-    const type* type_i16_{};
-    const type* type_i8_{};
-    size_t usage_max_scratch_regs_{};
-
-  protected:
-    // buffered modes hold output from 'start' to 'finish' so jumps can be
-    // optimized and grown to reach their targets
-    using jump_mode = assembler::jump_mode;
-
   public:
     enum class builtin_function : uint8_t { read, write, exit };
 
     // receives an address while the registers that built it are allocated
     using address_use = std::function_ref<void(const operand& address)>;
 
-    // 'source' locates the tokens of comments, backend tests may leave it empty
-    machine(std::ostream& os, const std::string_view source,
-            const jump_mode jumps)
-        : os_{os}, source_{source}, jump_mode_{jumps} {}
-
-    machine(const machine&) = delete;
-    machine(machine&&) = delete;
-    auto operator=(const machine&) -> machine& = delete;
-    auto operator=(machine&&) -> machine& = delete;
-
-    virtual ~machine() = default;
-
-  protected:
-    // emits one address of a bulk operation: 'count' is the register of the
-    // element count, empty for a known size, 'preferred' a register the address
-    // may be built in, empty when the backend has none to offer
-    using address_emitter = std::function_ref<void(
-        const operand& count, const operand& preferred, address_use use)>;
-
-  public:
     // what the methods 'add_subtract', 'bitwise', 'divide', 'shift' and
     // 'unary' take, each one a part of it
     enum class arithmetic_operator : uint8_t {
@@ -216,20 +185,6 @@ class machine {
         bool with_line{};
     };
 
-  protected:
-    // what a bounds check does about the lower bound, decided from its
-    // options and operands
-    struct bounds_plan {
-        // the unsigned upper comparison already fails a negative index or
-        // count as long as the limit is below 2^(width - 1), only a sum
-        // 'index + count' needs both signs checked
-        bool upper_covers_lower{};
-
-        // the second array of a copy or compare checks the same count again
-        bool count_known{};
-    };
-
-  public:
     struct data_initializer {
         int64_t value{};
         std::string_view uops; // unary operations
@@ -249,6 +204,72 @@ class machine {
         std::string_view result;
     };
 
+  private:
+    // emits one address of a bulk operation: 'count' is the register of the
+    // element count, empty for a known size, 'preferred' a register the address
+    // may be built in, empty when the backend has none to offer
+    using address_emitter = std::function<void(
+        const operand& count, const operand& preferred, address_use use)>;
+
+    std::reference_wrapper<std::ostream> os_;
+    std::string_view source_;
+    assembler::jump_mode jump_mode_;
+    const type* type_i64_{};
+    const type* type_i32_{};
+    const type* type_i16_{};
+    const type* type_i8_{};
+    size_t usage_max_scratch_regs_{};
+
+  protected:
+    // buffered modes hold output from 'start' to 'finish' so jumps can be
+    // optimized and grown to reach their targets
+    using jump_mode = assembler::jump_mode;
+
+    // the addresses and the result of a comparison of two arrays, 'alignment'
+    // is the alignment known for both
+    struct equality_request {
+        size_t alignment{};
+        address_emitter lhs;
+        address_emitter rhs;
+        operand dst;
+        bool inverted{};
+    };
+
+    // the addresses of a copy of elements, 'alignment' is the alignment known
+    // for both
+    struct copy_request {
+        size_t alignment{};
+        address_emitter src;
+        address_emitter dst;
+    };
+
+  public:
+    // 'source' locates the tokens of comments, backend tests may leave it empty
+    machine(std::ostream& os, const std::string_view source,
+            const jump_mode jumps)
+        : os_{os}, source_{source}, jump_mode_{jumps} {}
+
+    machine(const machine&) = delete;
+    machine(machine&&) = delete;
+    auto operator=(const machine&) -> machine& = delete;
+    auto operator=(machine&&) -> machine& = delete;
+
+    virtual ~machine() = default;
+
+  protected:
+    // what a bounds check does about the lower bound, decided from its
+    // options and operands
+    struct bounds_plan {
+        // the unsigned upper comparison already fails a negative index or
+        // count as long as the limit is below 2^(width - 1), only a sum
+        // 'index + count' needs both signs checked
+        bool upper_covers_lower{};
+
+        // the second array of a copy or compare checks the same count again
+        bool count_known{};
+    };
+
+  public:
     // a failed check prints its message to this descriptor and exits with this
     // code
     static constexpr int stderr_descriptor{2};
@@ -310,11 +331,9 @@ class machine {
     // and the result, 1 when they are equal, goes to 'dst'
     virtual auto
     arrays_equal(const token& src_loc_tk, const size_t indent,
-                 const size_t element_size_bytes, const size_t alignment,
+                 const size_t element_size_bytes,
                  const std::function_ref<void(const operand&)> emit_count,
-                 const address_emitter emit_left,
-                 const address_emitter emit_right, const operand& dst,
-                 const bool inverted) -> void = 0;
+                 const equality_request& request) -> void = 0;
 
     virtual auto begin_data(const size_t alignment) -> void = 0;
 
@@ -373,14 +392,13 @@ class machine {
                             const std::function_ref<std::string()> add_constant)
         -> void = 0;
 
-    // copies the count of elements 'emit_count' compiles, 'emit_source' and
-    // 'emit_destination' emit the addresses
+    // copies the count of elements 'emit_count' compiles, the request emits
+    // the addresses
     virtual auto
     copy_elements(const token& src_loc_tk, const size_t indent,
-                  const size_t element_size_bytes, const size_t alignment,
+                  const size_t element_size_bytes,
                   const std::function_ref<void(const operand&)> emit_count,
-                  const address_emitter emit_source,
-                  const address_emitter emit_destination) -> void = 0;
+                  const copy_request& request) -> void = 0;
 
     virtual auto copy_value(const token& src_loc_tk, const size_t indent,
                             const operand& dst, const operand& src) -> void = 0;
@@ -458,14 +476,11 @@ class machine {
     // the most bytes of data and variables the target can address
     [[nodiscard]] virtual auto max_storage_bytes() const -> size_t = 0;
 
-    // compares 'size_bytes' of two arrays and puts 1 into 'dst' when they are
-    // equal, 'alignment' is the alignment known for both addresses
+    // compares 'size_bytes' of two arrays and puts 1 into the destination of
+    // the request when they are equal
     virtual auto memory_equal(const token& src_loc_tk, const size_t indent,
-                              const size_t size_bytes, const size_t alignment,
-                              const address_emitter emit_left,
-                              const address_emitter emit_right,
-                              const operand& dst, const bool inverted)
-        -> void = 0;
+                              const size_t size_bytes,
+                              const equality_request& request) -> void = 0;
 
     virtual auto multiply(const token& src_loc_tk, const size_t indent,
                           const operand& product, const operand& factor,

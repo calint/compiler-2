@@ -6,8 +6,9 @@
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
-#include "decouple.hpp"
 #include "machine_rv32i.hpp"
+#include "operand.hpp"
+#include "token.hpp"
 
 // runs the flat image without an operating system, the targets supply the
 // stack setup, the uart access and how the program ends
