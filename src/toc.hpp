@@ -332,6 +332,63 @@ class ident_builder final {
         return info;
     }
 
+    // the identifier 'ident' of the variable 'var', its path walks the fields
+    // of the type of the variable, 'base_register' is where its storage starts
+    // unless the variable has a base of its own
+    [[nodiscard]] static auto
+    make_var_ident_info(const token& src_loc_tk, const std::string_view ident,
+                        const std::vector<std::string>& path,
+                        const var_info& var,
+                        const std::string_view base_register) -> ident_info {
+
+        const type* tp{var.type_ptr};
+
+        std::vector<const type*> type_path;
+        type_path.emplace_back(tp);
+
+        size_t offset{};
+        bool is_array{var.is_array};
+        size_t array_count{var.array_len};
+
+        for (const std::string& field_name : path | std::views::drop(1)) {
+            // note: drop 1 because the first element is retrieved outside the
+            //       loop
+
+            const type_field& tf{tp->field(src_loc_tk, field_name)};
+            offset = sum_storage_size(offset, tf.offset);
+            tp = tf.type_ptr;
+            is_array = tf.is_array;
+            array_count = tf.array_count;
+            type_path.emplace_back(tp);
+        }
+
+        const int64_t idx{
+            var.pointer_register.is_empty()
+                ? add_address_offset(var.offset, address_offset(offset))
+                : address_offset(offset),
+        };
+
+        const std::string_view storage_base{
+            var.base_register.empty() ? base_register : var.base_register,
+        };
+
+        // find first field so operand gets a valid built-in
+        while (not tp->is_builtin()) {
+            tp = tp->fields().front().type_ptr;
+        }
+
+        const operand op{
+            operand::mem(var.pointer_register.is_empty()
+                             ? storage_base
+                             : var.pointer_register.base_register(),
+                         "", 1, idx, *tp),
+        };
+
+        return ident_info::make_var(std::string{ident}, path,
+                                    std::move(type_path), op, idx, array_count,
+                                    is_array, var.is_pointer);
+    }
+
     // makes room in 'lea_path' for the elements 'target_count' adds
     //
     // 'lea_path' has one entry per element of the identifier, an empty entry
@@ -899,18 +956,10 @@ class toc final {
         funcs_.add_instance(std::move(instance));
     }
 
-    auto add_generic_func(
-        const token& src_loc_tk, std::string name, const token& func_tk,
-        const token& start_tk, std::string report_name,
-        std::vector<std::string> param_names,
-        std::vector<generic_deduction> deductions,
-        std::optional<generic_type_instance> receiver_instance = {}) -> void {
+    auto add_generic_func(std::string name, generic_func_info info) -> void {
+        assert_function_not_defined(info.src_loc_tk, name);
 
-        assert_function_not_defined(src_loc_tk, name);
-
-        generics_.add_func(src_loc_tk, std::move(name), func_tk, start_tk,
-                           std::move(report_name), std::move(param_names),
-                           std::move(deductions), std::move(receiver_instance));
+        generics_.add_func(std::move(name), std::move(info));
     }
 
     auto add_generic_type(const token& src_loc_tk, const std::string_view name,
@@ -1233,8 +1282,9 @@ class toc final {
             return src_info.operand;
         }
 
-        return src.compile_lea(*this, indent, src.tok(), lea_registers, {},
-                               src_info.lea_path, {});
+        return src.compile_lea(
+            *this, indent, src.tok(), lea_registers,
+            {.reg_count{}, .lea_path{src_info.lea_path}, .address_register{}});
     }
 
     [[nodiscard]] auto get_looping_label_or_throw(const token& src_loc_tk) const
@@ -1928,8 +1978,9 @@ class toc final {
         }
 
         ident_info ii{
-            var.type_ptr->accessor(src_loc_tk, ident, id.path(), var,
-                                   machine_.get().variables_base_register()),
+            ident_builder::make_var_ident_info(
+                src_loc_tk, ident, id.path(), var,
+                machine_.get().variables_base_register()),
         };
 
         ii.read_only_why = var.read_only_why;

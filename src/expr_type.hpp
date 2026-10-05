@@ -72,9 +72,7 @@ class expr_type final : public statement {
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
-                                   const operand& reg_count,
-                                   const std::span<const operand> lea_path,
-                                   const operand& address_register) const
+                                   const lea_request& request) const
         -> operand override;
 
     // out-of-line: calls 'stmt_identifier'

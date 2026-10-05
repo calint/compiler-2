@@ -115,8 +115,41 @@ better assembler code, medium, largest gain first
     3. [x] done (2026-10-05): 'machine::arithmetic_operator' replaces the
        'char' operators of 'machine' and of 'expr_arith' ('ops_', the steps,
        the merge passes); the source characters stay in the parser
-    4. long parameter lists, 'type::accessor' building operands and the 'statement'
-       virtuals (see the items above)
+    4. [x] done (2026-10-05): 'type::accessor' is 'ident_builder', the
+       parameter lists of 'path_registers', generics 'add_func' and
+       'compile_lea' are structs; left: 'machine::arrays_equal' (9),
+       'memory_equal', 'copy_elements', 'ident_info::make_var' (8)
+    5. [x] done (2026-10-05): 'operand.hpp' holds 'operand' and the storage
+       arithmetic; was: 'decouple.hpp' (568 lines) holds four concerns: forward declarations,
+       the storage size arithmetic, the backend value type 'operand' and the
+       front end facts 'var_info' / 'ident_info'; 'machine.hpp' includes it
+       for 'operand' and gets the front end with it: 'operand', 'storage size'
+       and 'ident_info' are units of their own
+    6. [x] done (2026-10-05): 'register_pool'; was: both machines keep the same register discipline by hand ('allocation',
+       the unavailable mask, the lifo stack, "allocate/free ... register"
+       comments, 'lower_checked_registers_', the scratch statistics): one
+       'register_pool' parameterized by the register names, each machine keeps
+       its choice of order and its calling convention
+    7. [x] done (2026-10-05): 'plan_bounds_check' in 'machine'; was: the bounds check policy is written in both machines ('check_bounds' of
+       x86_64, cognitive complexity 27 and 'emit_bounds_check' of rv32i):
+       'machine::check_bounds' as the one sequence (lower, upper, what the
+       other one covers, what a count already checked) with hooks that emit
+       the compare and the branch
+    8. 'toc' is 1370 lines with 92 methods: the scope stack with lookups and
+       aliases, the storage allocation ('add_var', 'find_storage_location',
+       'next_frame_address', the entry gap), the identifier resolution
+       ('make_ident_info*'), the labels and source locations and the check
+       options; scopes, storage and resolution are classes of their own that
+       'toc' composes
+    9. [x] done (2026-10-05): 'report_renderer' and 'assignment_analysis'
+       in 'program.hpp'; was: 'program' orders the passes and also holds the built-in setup, the
+       report rendering and the definite assignment analysis
+       ('assert_functions_set_return_value'): the report and the analysis can
+       leave it
+    10. every statement parses in its constructor, reproduces its source,
+        compiles through the machine and takes part in the flow analysis
+        ('trace_assignment', 'visit_reads'): four concerns in one class
+        (questionable, see 4)
 [ ] easy: low priority: missing direct includes (153 of misc-include-cleaner,
     'std::format', 'size_t', ...): add per header; clangd does not need them
 [ ] ai test suite in c++ being human readable

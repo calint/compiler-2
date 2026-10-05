@@ -217,8 +217,9 @@ class stmt_builtin_foo final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand op{
-            ident_.compile_lea(tc, indent, tok(), allocated_registers, {},
-                               ii.lea_path, {}),
+            ident_.compile_lea(
+                tc, indent, tok(), allocated_registers,
+                {.reg_count{}, .lea_path{ii.lea_path}, .address_register{}}),
         };
 
         x.address_of(tok(), indent, reg_iter, op);

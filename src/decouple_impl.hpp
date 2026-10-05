@@ -929,12 +929,10 @@ auto expr_type::visit_reads(const std::string_view var,
 auto expr_type::compile_lea(toc& tc, const size_t indent,
                             const token& src_loc_tk,
                             std::vector<operand>& allocated_registers,
-                            const operand& reg_count,
-                            const std::span<const operand> lea_path,
-                            const operand& address_register) const -> operand {
+                            const lea_request& request) const -> operand {
 
     return stmt_ident_->compile_lea(tc, indent, src_loc_tk, allocated_registers,
-                                    reg_count, lea_path, address_register);
+                                    request);
 }
 
 // declared in 'expr_type.hpp'

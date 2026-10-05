@@ -241,24 +241,8 @@ class generic_registry {
     std::set<std::string, std::less<>> instantiated_funcs_;
 
   public:
-    auto add_func(const token& src_loc_tk, std::string name,
-                  const token& func_tk, const token& start_tk,
-                  std::string report_name, std::vector<std::string> param_names,
-                  std::vector<generic_deduction> deductions,
-                  std::optional<generic_type_instance> receiver_instance)
-        -> void {
-
-        funcs_.put(std::move(name), {
-                                        .src_loc_tk{src_loc_tk},
-                                        .func_tk{func_tk},
-                                        .start_tk{start_tk},
-                                        .report_name{std::move(report_name)},
-                                        .param_names{std::move(param_names)},
-                                        .deductions{std::move(deductions)},
-                                        .receiver_instance{
-                                            std::move(receiver_instance),
-                                        },
-                                    });
+    auto add_func(std::string name, generic_func_info info) -> void {
+        funcs_.put(std::move(name), std::move(info));
     }
 
     auto add_method(const std::string_view type_name, const token& func_tk,

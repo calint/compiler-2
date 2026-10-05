@@ -584,7 +584,11 @@ class expr_bool_op final : public statement {
 
         if (expr.is_indexed() or tc.has_lea(expr)) {
             return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
-                                    {}, expr_info.lea_path, {});
+                                    {
+                                        .reg_count{},
+                                        .lea_path{expr_info.lea_path},
+                                        .address_register{},
+                                    });
         }
 
         // a constant left side was mirrored onto the right

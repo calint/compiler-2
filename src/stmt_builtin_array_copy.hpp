@@ -124,13 +124,23 @@ class stmt_builtin_array_copy final : public statement {
             },
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
-                src_.compile_address(tc, indent, tok(), array_src_info.lea_path,
-                                     reg_count, address_register, use);
+                src_.compile_address(tc, indent, tok(),
+                                     {
+                                         .reg_count{reg_count},
+                                         .lea_path{array_src_info.lea_path},
+                                         .address_register{address_register},
+                                     },
+                                     use);
             },
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
-                dst_.compile_address(tc, indent, tok(), array_dst_info.lea_path,
-                                     reg_count, address_register, use);
+                dst_.compile_address(tc, indent, tok(),
+                                     {
+                                         .reg_count{reg_count},
+                                         .lea_path{array_dst_info.lea_path},
+                                         .address_register{address_register},
+                                     },
+                                     use);
             });
     }
 
@@ -174,16 +184,24 @@ class stmt_builtin_array_copy final : public statement {
 
         const operand src_operand{
             src_.compile_lea(tc, indent, src_.first_token(),
-                             allocated_scratch_registers, count_register,
-                             array_src_info.lea_path, {}),
+                             allocated_scratch_registers,
+                             {
+                                 .reg_count{count_register},
+                                 .lea_path{array_src_info.lea_path},
+                                 .address_register{},
+                             }),
         };
 
         x.comment(dst_.tok(), indent, statement::trimmed_source(dst_));
 
         const operand dst_operand{
             dst_.compile_lea(tc, indent, dst_.first_token(),
-                             allocated_scratch_registers, count_register,
-                             array_dst_info.lea_path, {}),
+                             allocated_scratch_registers,
+                             {
+                                 .reg_count{count_register},
+                                 .lea_path{array_dst_info.lea_path},
+                                 .address_register{},
+                             }),
         };
 
         x.copy(tok(), indent, src_operand, dst_operand,

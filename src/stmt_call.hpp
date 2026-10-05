@@ -1594,8 +1594,12 @@ class stmt_call : public expression {
         std::vector<operand> regs_lea;
 
         const operand lea{
-            arg.compile_lea(tc, indent, arg.tok(), regs_lea, {},
-                            arg_info.lea_path, {}),
+            arg.compile_lea(tc, indent, arg.tok(), regs_lea,
+                            {
+                                .reg_count{},
+                                .lea_path{arg_info.lea_path},
+                                .address_register{},
+                            }),
         };
 
         // the address registers stay allocated until the inlined body is

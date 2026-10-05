@@ -25,6 +25,7 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "machine.hpp"
+#include "operand.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
@@ -165,15 +166,6 @@ class machine_x86_64 final : public machine {
         },
     };
 
-    // named and scratch allocations share one stack so frees can be checked
-    // to happen in reverse order of allocation
-    struct allocation {
-        std::string_view name; // qword register name
-        const type* type_ptr{};
-        std::string source_location;
-        bool named{};
-    };
-
     static constexpr std::array<std::string_view, 14> scratch_registers_{
         "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
         "r11", "rbx", "rsi", "rdi", "rcx", "rdx", "rax",
@@ -182,15 +174,10 @@ class machine_x86_64 final : public machine {
     //       'r11' and 'rcx' are saved around syscalls if they are allocated
     //       because 'syscall' clobbers them
 
-    // bit per 'register_names_' entry, set while allocated or while an
-    // operation protects the registers of its operands
-    uint16_t unavailable_registers_{};
-    // registers a lower bounds check found non-negative, allocating a register
-    // forgets it since the new owner writes its own value
-    uint16_t lower_checked_registers_{};
+    // the indexes are those of 'register_names_'
+    register_pool registers_;
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
-    std::vector<allocation> allocations_;
     // numbers the labels after the parts of a memory compare
     size_t equal_label_count_{};
     // source lines of the bounds checks, each gets a stub that reports it
@@ -271,7 +258,7 @@ class machine_x86_64 final : public machine {
         -> operand override {
 
         for (const std::string_view register_name : scratch_registers_) {
-            if ((unavailable_registers_ & register_bit(register_name)) != 0) {
+            if (registers_.is_unavailable(register_bit(register_name))) {
                 continue;
             }
 
@@ -280,7 +267,7 @@ class machine_x86_64 final : public machine {
 
             push_allocation(src_loc_tk, register_name, type_ref, false);
 
-            record_scratch_register_count(scratch_count());
+            record_scratch_register_count(registers_.scratch_count());
 
             operand result{make_register_operand(register_name, type_ref)};
 
@@ -366,12 +353,17 @@ class machine_x86_64 final : public machine {
         // the callee may use every register but the variables base, so only
         // values live at the call need saving
         std::vector<operand> saved;
-        for (const allocation& allocated : allocations_) {
-            if (allocated.name == variables_base_register_) {
+        for (const register_pool::allocation& allocated :
+             registers_.allocations()) {
+
+            const std::string_view name{
+                register_names_.at(allocated.index).qword};
+
+            if (name == variables_base_register_) {
                 continue;
             }
 
-            saved.push_back(qword_register(allocated.name));
+            saved.push_back(qword_register(name));
         }
 
         if (not saved.empty()) {
@@ -417,25 +409,17 @@ class machine_x86_64 final : public machine {
 
         const size_t limit_bits{reg_to_check.type_ref().size_bits()};
 
-        // the unsigned upper comparison already fails a negative index or
-        // count as long as the limit is below 2^(width - 1), only a sum
-        // 'index + count' needs both signs checked
-        const bool upper_covers_lower{
-            options.lower and options.upper and reg_count.is_empty() and
-                array_count <= (uint64_t{1} << (limit_bits - 1)) - 1,
+        const bounds_plan plan{
+            plan_bounds_check(options, reg_count, array_count,
+                              (uint64_t{1} << (limit_bits - 1)) - 1,
+                              registers_.is_lower_checked(
+                                  register_bit(reg_count.base_register()))),
         };
         // note: -1 gives the signed maximum 2^(limit_bits - 1) - 1
 
-        // the second array of a copy or compare checks the same count again
-        const bool count_known{
-            not reg_count.is_empty() and
-                (lower_checked_registers_ &
-                 register_bit(reg_count.base_register())) != 0,
-        };
-
         condition out_of_bounds{allow_end ? condition::g : condition::ge};
 
-        if (upper_covers_lower) {
+        if (plan.upper_covers_lower) {
             out_of_bounds = allow_end ? condition::a : condition::ae;
         }
 
@@ -447,27 +431,16 @@ class machine_x86_64 final : public machine {
         };
 
         if (options.lower) {
-            comment(src_loc_tk, indent, "lower bound");
+            comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count,
+                                plan);
         }
 
-        if (options.lower and upper_covers_lower) {
-            comment(src_loc_tk, indent,
-                    "{} lower bound covered by the unsigned upper bound",
-                    reg_to_check.base_register());
-        }
-
-        if (options.lower and not upper_covers_lower) {
-            if (count_known) {
-                comment(src_loc_tk, indent,
-                        "count {} lower bound already checked",
-                        reg_count.base_register());
-            }
-
+        if (options.lower and not plan.upper_covers_lower) {
             // a negative count passes 'start + count' but spans the address
             // space
             for (const operand* value : {&reg_to_check, &reg_count}) {
                 if (value->is_empty() or
-                    (count_known and value == &reg_count)) {
+                    (plan.count_known and value == &reg_count)) {
                     continue;
                 }
 
@@ -477,12 +450,8 @@ class machine_x86_64 final : public machine {
         }
 
         if (options.lower) {
-            // a count alone is checked as the index of its own range
-            const operand& checked{
-                reg_count.is_empty() ? reg_to_check : reg_count,
-            };
-
-            lower_checked_registers_ |= register_bit(checked.base_register());
+            registers_.mark_lower_checked(
+                register_bit(lower_checked_register(reg_to_check, reg_count)));
         }
 
         if (options.upper) {
@@ -952,8 +921,8 @@ class machine_x86_64 final : public machine {
 
         finish_output();
 
-        assert(allocations_.empty());
-        assert(unavailable_registers_ == 0);
+        assert(registers_.is_empty());
+        assert(registers_.unavailable_mask() == 0);
         assert(not frame_base_reserved_);
     }
 
@@ -979,7 +948,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "free scratch register {}",
                 reg.allocation_register());
 
-        assert(not allocations_.back().named);
+        assert(not registers_.top().named);
 
         pop_allocation(reg.allocation_register());
     }
@@ -1145,7 +1114,7 @@ class machine_x86_64 final : public machine {
 
     auto release_frame_base() -> void override {
         assert(frame_base_reserved_);
-        assert(scratch_count() == 0);
+        assert(registers_.scratch_count() == 0);
 
         pop_allocation(frame_base_register());
 
@@ -1162,7 +1131,7 @@ class machine_x86_64 final : public machine {
 
     auto reserve_frame_base() -> void override {
         assert(not frame_base_reserved_);
-        assert(scratch_count() == 0);
+        assert(registers_.scratch_count() == 0);
 
         push_allocation(token{}, frame_base_register(), default_type(), true);
 
@@ -1372,10 +1341,12 @@ class machine_x86_64 final : public machine {
 
         assert(size_bytes != 0);
 
-        const std::string canonical_name{sized_register_name(name, size_qword)};
+        const size_t index{register_index(name)};
 
-        for (const allocation& allocated : allocations_) {
-            if (canonical_name == allocated.name) {
+        for (const register_pool::allocation& allocated :
+             registers_.allocations()) {
+
+            if (allocated.index == index) {
                 return allocated.type_ptr->size_bytes() == size_bytes
                            ? allocated.type_ptr
                            : &builtin_type_for_size_bytes(size_bytes);
@@ -2009,15 +1980,7 @@ class machine_x86_64 final : public machine {
 
     // registers are released in reverse order of allocation
     auto pop_allocation(const std::string_view reg) -> void {
-        assert(not allocations_.empty());
-
-        assert(allocations_.back().name ==
-               sized_register_name(reg, size_qword));
-
-        unavailable_registers_ &=
-            static_cast<uint16_t>(~register_bit(allocations_.back().name));
-
-        allocations_.pop_back();
+        registers_.pop(register_index(reg));
     }
 
     auto push(const size_t indent, const operand& src) -> void {
@@ -2026,29 +1989,16 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(indent, op::push, to_argument(src));
     }
 
-    // the stored name refers to 'register_names_' so it outlives the caller's
-    // text
     auto push_allocation(const token& src_loc_tk, const std::string_view reg,
                          const type& type_ref, const bool named) -> void {
 
-        const uint16_t bit{register_bit(reg)};
-
-        assert(bit != 0 and (unavailable_registers_ & bit) == 0);
-
-        const size_t index{static_cast<size_t>(std::countr_zero(bit))};
-
-        allocations_.push_back({
-            .name{register_names_.at(index).qword},
+        registers_.push({
+            .index{register_index(reg)},
+            .src_loc_tk{src_loc_tk},
+            .indent{},
             .type_ptr{&type_ref},
-            .source_location{
-                src_loc_tk.at_line() == 0 ? std::string{}
-                                          : source_location_hr(src_loc_tk),
-            },
             .named{named},
         });
-
-        unavailable_registers_ |= bit;
-        lower_checked_registers_ &= static_cast<uint16_t>(~bit);
     }
 
     // e.g. the fixed registers of 'rep movsb' and syscalls
@@ -2071,7 +2021,7 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "free named register {}", reg);
 
-        assert(allocations_.back().named);
+        assert(registers_.top().named);
 
         pop_allocation(reg);
     }
@@ -2082,7 +2032,7 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "allocate named register {}", reg);
 
-        if ((unavailable_registers_ & register_bit(reg)) == 0) {
+        if (not registers_.is_unavailable(register_bit(reg))) {
             push_allocation(src_loc_tk, reg, type_ref, true);
             return;
         }
@@ -2106,11 +2056,6 @@ class machine_x86_64 final : public machine {
         }
 
         imul(src_loc_tk, indent, value, immediate(element_size_bytes));
-    }
-
-    [[nodiscard]] auto scratch_count() const -> size_t {
-        return static_cast<size_t>(
-            std::ranges::count(allocations_, false, &allocation::named));
     }
 
     auto setcc(const token& src_loc_tk, const size_t indent, const condition cc,
@@ -2234,14 +2179,24 @@ class machine_x86_64 final : public machine {
                                             const std::string_view reg) const
         -> void {
 
+        const std::span<const register_pool::allocation> allocations{
+            registers_.allocations(),
+        };
+
         const auto holder{
-            std::ranges::find(allocations_,
-                              sized_register_name(reg, size_qword),
-                              &allocation::name),
+            std::ranges::find(allocations, register_index(reg),
+                              &register_pool::allocation::index),
         };
 
         // operands are protected only while lowering a single instruction
-        assert(holder != allocations_.end());
+        assert(holder != allocations.end());
+
+        // a register named by the backend itself has no place in the source
+        const std::string holder_location{
+            holder->src_loc_tk.at_line() == 0
+                ? std::string{}
+                : source_location_hr(holder->src_loc_tk),
+        };
 
         // the last resort scratch registers are also needed by instructions
         if (not holder->named) {
@@ -2250,13 +2205,13 @@ class machine_x86_64 final : public machine {
                 std::format("cannot allocate register {} because it holds a "
                             "scratch value allocated at {}. try to reduce "
                             "expression complexity",
-                            reg, holder->source_location)};
+                            reg, holder_location)};
         }
 
         throw compiler_exception{
             src_loc_tk, std::format("cannot allocate register {} because it "
                                     "was allocated at {}",
-                                    reg, holder->source_location)};
+                                    reg, holder_location)};
     }
 
     auto with_lowered_addresses(
@@ -2270,16 +2225,16 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        const uint16_t saved_unavailable{unavailable_registers_};
+        const uint32_t saved_unavailable{registers_.unavailable_mask()};
 
         // registers the operands refer to must not be picked for lowering
         for (const operand* value : {&dst, &src}) {
             if (value->is_register() or value->is_memory()) {
-                unavailable_registers_ |= register_bit(value->base_register());
+                registers_.protect(register_bit(value->base_register()));
             }
 
             if (value->is_memory()) {
-                unavailable_registers_ |= register_bit(value->index_register());
+                registers_.protect(register_bit(value->index_register()));
             }
         }
 
@@ -2295,7 +2250,7 @@ class machine_x86_64 final : public machine {
 
         emit(lowered_dst, lowered_src);
         free_scratch_registers(src_loc_tk, indent, registers);
-        unavailable_registers_ = saved_unavailable;
+        registers_.restore_unavailable(saved_unavailable);
     }
 
     auto xor_op(const token& src_loc_tk, const size_t indent,
@@ -2387,8 +2342,6 @@ class machine_x86_64 final : public machine {
         return not std::in_range<int32_t>(std::bit_cast<int64_t>(*bits));
     }
 
-    // bit in 'unavailable_registers_' for any size alias of a register, 0 for
-    // other text such as labels
     [[nodiscard]] static auto register_bit(const std::string_view name)
         -> uint16_t {
 
@@ -2407,6 +2360,19 @@ class machine_x86_64 final : public machine {
         }
 
         std::unreachable();
+    }
+
+    // bit in the mask of 'registers_' for any size alias of a register, 0 for
+    // other text such as labels
+    // the index in 'register_names_' of a register of any size
+    [[nodiscard]] static auto register_index(const std::string_view name)
+        -> size_t {
+
+        const uint16_t bit{register_bit(name)};
+
+        assert(bit != 0);
+
+        return static_cast<size_t>(std::countr_zero(bit));
     }
 
     [[nodiscard]] static auto register_sum(const std::string_view base,

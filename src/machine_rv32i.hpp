@@ -16,6 +16,7 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "machine.hpp"
+#include "operand.hpp"
 #include "type.hpp"
 
 class machine_rv32i : public machine {
@@ -66,13 +67,6 @@ class machine_rv32i : public machine {
     //       registers stay late to avoid builtin conflicts and a0 stays last
     //       because syscalls overwrite it with their result
 
-    struct allocation {
-        size_t register_index;
-        token source_location;
-        size_t indent;
-        bool named;
-    };
-
     // where unrolled accesses start: the address minus 'phase' is aligned to
     // 'alignment', which is at most a word
     struct access_start {
@@ -88,8 +82,8 @@ class machine_rv32i : public machine {
         size_t count{};
     };
 
-    uint32_t unavailable_registers_{};
-    std::vector<allocation> allocations_;
+    // the indexes are those of 'register_names_'
+    register_pool registers_;
 
     // keeps the registers of its operands, and the base and index registers
     // of memory operands, from being picked for scratch while an operation is
@@ -105,18 +99,19 @@ class machine_rv32i : public machine {
       public:
         address_scope(machine_rv32i& backend, const operand& dst,
                       const operand& src)
-            : backend_{backend}, saved_mask_{backend.unavailable_registers_},
-              saved_count_{backend.allocations_.size()} {
+            : backend_{backend},
+              saved_mask_{backend.registers_.unavailable_mask()},
+              saved_count_{backend.registers_.allocations().size()} {
 
             for (const operand* value : {&dst, &src}) {
                 if (value->is_register() or value->is_memory()) {
-                    backend_.unavailable_registers_ |=
-                        register_mask(value->base_register());
+                    backend_.registers_.protect(
+                        register_mask(value->base_register()));
                 }
 
                 if (value->is_memory()) {
-                    backend_.unavailable_registers_ |=
-                        register_mask(value->index_register());
+                    backend_.registers_.protect(
+                        register_mask(value->index_register()));
                 }
             }
         }
@@ -131,20 +126,22 @@ class machine_rv32i : public machine {
         auto operator=(address_scope&&) -> address_scope& = delete;
 
         ~address_scope() {
-            while (backend_.allocations_.size() > saved_count_) {
+            while (backend_.registers_.allocations().size() > saved_count_) {
                 // implicit releases need the allocation context for a balanced
                 // trace
-                const allocation& entry{backend_.allocations_.back()};
+                const register_pool::allocation entry{
+                    backend_.registers_.top(),
+                };
 
-                backend_.comment(entry.source_location, entry.indent,
+                backend_.comment(entry.src_loc_tk, entry.indent,
                                  "free {} register {}",
                                  entry.named ? "named" : "scratch",
-                                 register_names_.at(entry.register_index));
+                                 register_names_.at(entry.index));
 
-                backend_.allocations_.pop_back();
+                std::ignore = backend_.registers_.pop(entry.index);
             }
 
-            backend_.unavailable_registers_ = saved_mask_;
+            backend_.registers_.restore_unavailable(saved_mask_);
         }
     };
 
@@ -270,9 +267,6 @@ class machine_rv32i : public machine {
     std::string binary_file_name_;
     // buffering output is no more logical state than writing to the stream
     mutable assembler_rv32i assembler_;
-    // registers a lower bounds check found non-negative, allocating a register
-    // forgets it since the new owner writes its own value
-    uint32_t lower_checked_registers_{};
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
     bool multiply_helper_used_{};
@@ -445,7 +439,7 @@ class machine_rv32i : public machine {
             index == register_index("zero") or index == register_index("sp"),
         };
 
-        if (mask == 0 or is_fixed or (unavailable_registers_ & mask) != 0) {
+        if (mask == 0 or is_fixed or registers_.is_unavailable(mask)) {
             throw compiler_exception{
                 src_loc_tk,
                 std::format("cannot allocate register {}", register_name)};
@@ -453,7 +447,7 @@ class machine_rv32i : public machine {
 
         operand result{make_register_operand(register_name, type_ref)};
         result.set_allocation_register(register_names_.at(index));
-        record_allocation(src_loc_tk, indent, index, true);
+        record_allocation(src_loc_tk, indent, index, type_ref, true);
 
         comment(src_loc_tk, indent, "allocate named register {}",
                 register_names_.at(index));
@@ -468,13 +462,13 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, type_ref);
         for (const size_t index : scratch_registers_) {
-            if ((unavailable_registers_ & (uint32_t{1} << index)) != 0) {
+            if (registers_.is_unavailable(uint32_t{1} << index)) {
                 continue;
             }
 
-            record_allocation(src_loc_tk, indent, index, false);
+            record_allocation(src_loc_tk, indent, index, type_ref, false);
 
-            record_scratch_register_count(scratch_count());
+            record_scratch_register_count(registers_.scratch_count());
 
             comment(src_loc_tk, indent, "allocate scratch register -> {}",
                     register_names_.at(index));
@@ -579,14 +573,14 @@ class machine_rv32i : public machine {
         // the callee may use every register but the variables base, so only
         // values live at the call need saving
         std::vector<std::string_view> saved;
-        for (const allocation& allocated : allocations_) {
-            if (allocated.register_index ==
-                register_index(variables_base_register_)) {
+        for (const register_pool::allocation& allocated :
+             registers_.allocations()) {
 
+            if (allocated.index == register_index(variables_base_register_)) {
                 continue;
             }
 
-            saved.push_back(register_names_.at(allocated.register_index));
+            saved.push_back(register_names_.at(allocated.index));
         }
 
         if (not saved.empty()) {
@@ -1146,8 +1140,8 @@ class machine_rv32i : public machine {
         }
 
         assert(bulk_registers_.empty());
-        assert(allocations_.empty());
-        assert(unavailable_registers_ == 0);
+        assert(registers_.is_empty());
+        assert(registers_.unavailable_mask() == 0);
         assert(not variables_base_reserved_);
         assert(not frame_base_reserved_);
 
@@ -1180,19 +1174,14 @@ class machine_rv32i : public machine {
     auto free_scratch_register(const token& src_loc_tk, const size_t indent,
                                const operand& reg) -> void override {
 
-        assert(not allocations_.empty());
-
         const size_t index{register_index(reg.allocation_register())};
-
-        assert(allocations_.back().register_index == index);
 
         // named and scratch allocations share the same lifo pool
         comment(src_loc_tk, indent, "free {} register {}",
-                allocations_.back().named ? "named" : "scratch",
+                registers_.top().named ? "named" : "scratch",
                 register_names_.at(index));
 
-        unavailable_registers_ &= ~(uint32_t{1} << index);
-        allocations_.pop_back();
+        std::ignore = registers_.pop(index);
     }
 
     auto label(const size_t indent, const std::string_view label)
@@ -1756,7 +1745,7 @@ class machine_rv32i : public machine {
 
         const address_scope scope{*this, destination, source};
 
-        const uint32_t live{unavailable_registers_};
+        const uint32_t live{registers_.unavailable_mask()};
 
         // argument registers are allocated last, so the helpers rarely
         // clobber a live scratch register that would need saving
@@ -1785,7 +1774,7 @@ class machine_rv32i : public machine {
             }
 
             // staging registers must survive the helper call
-            unavailable_registers_ |= register_mask(name);
+            registers_.protect(register_mask(name));
         }
 
         // variables and frames are based on 's0' and 's1', and the save area
@@ -2675,50 +2664,27 @@ class machine_rv32i : public machine {
 
         const std::string_view index{reg_to_check.base_register()};
 
-        // the unsigned upper comparison already fails a negative index or
-        // count as long as the limit is below 2^31, only a sum 'index + count'
-        // needs both signs checked
-        const bool upper_covers_lower{
-            options.upper and reg_count.is_empty() and
-                array_count <= std::numeric_limits<int32_t>::max(),
-        };
-
-        // the second array of a copy or compare checks the same count again
-        const bool count_known{
-            not reg_count.is_empty() and
-                (lower_checked_registers_ &
-                 register_mask(reg_count.base_register())) != 0,
+        const bounds_plan plan{
+            plan_bounds_check(options, reg_count, array_count,
+                              std::numeric_limits<int32_t>::max(),
+                              registers_.is_lower_checked(
+                                  register_mask(reg_count.base_register()))),
         };
 
         if (options.lower) {
-            comment(src_loc_tk, indent, "lower bound");
+            comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count,
+                                plan);
         }
 
-        if (options.lower and upper_covers_lower) {
-            comment(src_loc_tk, indent,
-                    "{} lower bound covered by the unsigned upper bound",
-                    index);
-        }
-
-        if (options.lower and not upper_covers_lower) {
-            if (count_known) {
-                comment(src_loc_tk, indent,
-                        "count {} lower bound already checked",
-                        reg_count.base_register());
-            }
-
+        if (options.lower and not plan.upper_covers_lower) {
             check_lower_bounds(indent, index,
-                               count_known ? operand{} : reg_count,
+                               plan.count_known ? operand{} : reg_count,
                                not options.upper);
         }
 
         if (options.lower) {
-            // a count alone is checked as the index of its own range
-            const operand& checked{
-                reg_count.is_empty() ? reg_to_check : reg_count,
-            };
-
-            lower_checked_registers_ |= register_mask(checked.base_register());
+            registers_.mark_lower_checked(
+                register_mask(lower_checked_register(reg_to_check, reg_count)));
         }
 
         if (options.upper) {
@@ -2988,7 +2954,7 @@ class machine_rv32i : public machine {
     // a jump grown beyond 1 MiB needs a register without a live value
     [[nodiscard]] auto far_jump_register() const -> std::string_view {
         for (const size_t index : scratch_registers_) {
-            if ((unavailable_registers_ & (uint32_t{1} << index)) == 0) {
+            if (not registers_.is_unavailable(uint32_t{1} << index)) {
                 return register_names_.at(index);
             }
         }
@@ -2999,7 +2965,7 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto is_register_allocated(const std::string_view name) const
         -> bool {
 
-        return (unavailable_registers_ & register_mask(name)) != 0;
+        return registers_.is_unavailable(register_mask(name));
     }
 
     // variables and frames start word aligned so a direct offset from their
@@ -3339,15 +3305,14 @@ class machine_rv32i : public machine {
 
     // named and scratch allocations share one lifo stack
     auto record_allocation(const token& src_loc_tk, const size_t indent,
-                           const size_t index, const bool named) -> void {
+                           const size_t index, const type& type_ref,
+                           const bool named) -> void {
 
-        unavailable_registers_ |= uint32_t{1} << index;
-        lower_checked_registers_ &= ~(uint32_t{1} << index);
-
-        allocations_.push_back({
-            .register_index{index},
-            .source_location{src_loc_tk},
+        registers_.push({
+            .index{index},
+            .src_loc_tk{src_loc_tk},
             .indent{indent},
+            .type_ptr{&type_ref},
             .named{named},
         });
     }
@@ -3428,11 +3393,6 @@ class machine_rv32i : public machine {
         }
 
         return stack_bytes;
-    }
-
-    [[nodiscard]] auto scratch_count() const -> size_t {
-        return static_cast<size_t>(
-            std::ranges::count(allocations_, false, &allocation::named));
     }
 
     // the pointer of 'slot', 0 the first address and 1 the second, holds the

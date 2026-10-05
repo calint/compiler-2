@@ -182,8 +182,12 @@ class stmt_builtin_io final : public stmt_call {
         std::vector<operand> lea_registers;
 
         const operand buffer_lea{
-            buffer.compile_lea(tc, indent, buffer.tok(), lea_registers, range,
-                               buffer_info.lea_path, {}),
+            buffer.compile_lea(tc, indent, buffer.tok(), lea_registers,
+                               {
+                                   .reg_count{range},
+                                   .lea_path{buffer_info.lea_path},
+                                   .address_register{},
+                               }),
         };
 
         x.address_of(tok(), indent, buffer_reg, buffer_lea);

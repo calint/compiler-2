@@ -121,13 +121,23 @@ class stmt_builtin_arrays_equal final : public expression {
             },
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
-                lhs_.compile_address(tc, indent, tok(), lhs_info.lea_path,
-                                     reg_count, address_register, use);
+                lhs_.compile_address(tc, indent, tok(),
+                                     {
+                                         .reg_count{reg_count},
+                                         .lea_path{lhs_info.lea_path},
+                                         .address_register{address_register},
+                                     },
+                                     use);
             },
             [&](const operand& reg_count, const operand& address_register,
                 const machine::address_use use) -> void {
-                rhs_.compile_address(tc, indent, tok(), rhs_info.lea_path,
-                                     reg_count, address_register, use);
+                rhs_.compile_address(tc, indent, tok(),
+                                     {
+                                         .reg_count{reg_count},
+                                         .lea_path{rhs_info.lea_path},
+                                         .address_register{address_register},
+                                     },
+                                     use);
             },
             dst, inverted);
     }

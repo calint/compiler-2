@@ -228,15 +228,12 @@ class expr_any final : public statement {
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
-                                   const operand& reg_count,
-                                   const std::span<const operand> lea_path,
-                                   const operand& address_register) const
+                                   const lea_request& request) const
         -> operand override {
 
         return vars_.at(0).visit([&](const auto& expression) -> operand {
             return expression.compile_lea(tc, indent, src_loc_tk,
-                                          allocated_registers, reg_count,
-                                          lea_path, address_register);
+                                          allocated_registers, request);
         });
     }
 

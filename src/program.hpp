@@ -58,110 +58,10 @@ struct report_section {
     }
 };
 
-class program final {
-    // built-in types
-    type type_void{"void", 0, type_kind::builtin};
-    type type_i64{"i64", sizeof(int64_t), type_kind::builtin};
-    type type_i32{"i32", sizeof(int32_t), type_kind::builtin};
-    type type_i16{"i16", sizeof(int16_t), type_kind::builtin};
-    type type_i8{"i8", sizeof(int8_t), type_kind::builtin};
-    type type_bool{"bool", type_i8.size_bytes(), type_kind::boolean};
-
-    std::vector<std::unique_ptr<statement>> statements_;
-    toc tc_; // table of contents
-    size_t vars_size_bytes_{};
-
+// definite assignment: every path through a function with a return variable
+// sets it, and the paths that reach the end of a body
+class assignment_analysis {
   public:
-    program(machine& backend, const std::string_view source,
-            const size_t vars_size_bytes, const check_options& checks)
-        : tc_{backend, source, vars_size_bytes, checks},
-          vars_size_bytes_{vars_size_bytes} {
-
-        // create a placeholder token to use with 'toc' functions
-        const token src_loc_tk{};
-
-        // add built-in calls
-        tc_.add_func(src_loc_tk, "exit", type_void, nullptr);
-
-        // add built-in types
-        tc_.add_type(src_loc_tk, type_i64);
-        tc_.add_type(src_loc_tk, type_i32);
-        tc_.add_type(src_loc_tk, type_i16);
-        tc_.add_type(src_loc_tk, type_i8);
-        tc_.add_type(src_loc_tk, type_bool);
-        tc_.add_type(src_loc_tk, type_void);
-
-        // the types the front end needs by role
-        tc_.set_type_void(type_void);
-        tc_.set_type_bool(type_bool);
-
-        machine& x{tc_.machine()};
-
-        tc_.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
-        x.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
-
-        tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr);
-        tc_.add_func(src_loc_tk, "write", tc_.get_type_default(), nullptr);
-
-        tc_.enter_block();
-
-        tokenizer tz{source};
-        while (true) {
-            const token tk{tz.next_token()};
-
-            if (tk.is_empty()) {
-                // note: every character makes a token, only the end of the
-                //       source gives an empty one
-                assert(tz.is_eos());
-
-                break;
-            }
-
-            statements_.emplace_back(parse_definition(tc_, tz, tk));
-        }
-
-        tc_.exit_block();
-
-        assert_functions_set_return_value(tc_.get_func_defs());
-    }
-
-    auto build(std::ostream& os) -> void {
-        machine& x{tc_.machine()};
-
-        x.start();
-        compile(tc_, 0);
-        x.finish();
-        write_report(x);
-        tc_.finish();
-
-        x.write_assembly(os);
-    }
-
-    auto compile(toc& tc, const size_t indent) const -> void {
-        tc.reset_usage();
-
-        tc.enter_block();
-
-        for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc, indent, ident_info::make_empty());
-        }
-
-        compile_main(tc, indent);
-        compile_noninline_functions(tc, indent);
-
-        tc.exit_block();
-
-        emit_failure_handlers(tc);
-        emit_read_only_data(tc);
-        emit_data_section(tc);
-    }
-
-    auto source_to(std::ostream& os) const -> void {
-        for (const std::unique_ptr<statement>& s : statements_) {
-            s->source_to(os);
-        }
-    }
-
     //
     // statics
     //
@@ -207,69 +107,17 @@ class program final {
 
         return flow.is_reachable;
     }
+};
 
-    // only definitions are allowed at the top level
-    [[nodiscard]] static auto parse_definition(toc& tc, tokenizer& tz,
-                                               const token tk)
-        -> std::unique_ptr<statement> {
+// the statistics after the code, as comment lines
+class report_renderer {
+  public:
+    //
+    // statics
+    //
 
-        if (tk.is_text("func")) {
-            return std::make_unique<stmt_def_func>(tc, tk, tz);
-        }
-
-        if (tk.is_text("type")) {
-            return std::make_unique<stmt_def_type>(tc, tk, tz);
-        }
-
-        if (tk.is_text("let")) {
-            return stmt_def_const::parse_let(tc, tz, tk);
-        }
-
-        if (tk.is_text("dat")) {
-            return std::make_unique<stmt_def_dat>(tc, tk, tz);
-        }
-
-        if (tk.is_text("var")) {
-            return std::make_unique<stmt_def_var>(tc, tk, tz);
-        }
-
-        throw compiler_exception{
-            tk, std::format("unexpected keyword '{}'", tk.text())};
-    }
-
-  private:
-    auto emit_data_section(toc& tc) const -> void {
-        machine& x{tc.machine()};
-
-        const size_t alignment{x.data_alignment()};
-        x.begin_data(alignment);
-
-        // zero padding places each dat at the offset 'toc::add_var' gave it
-        size_t dat_offset{};
-        for (const statement* s : tc.get_data()) {
-            const size_t padding_bytes{
-                align_storage_size(dat_offset, s->get_type().alignment()) -
-                    dat_offset,
-            };
-
-            if (padding_bytes != 0) {
-                x.comment({}, 0, "padding {} B", padding_bytes);
-                x.emit_zero_data(padding_bytes);
-            }
-
-            s->compile_data(tc);
-
-            dat_offset = add_storage_size(s->tok(), dat_offset + padding_bytes,
-                                          s->dat_size_bytes());
-        }
-
-        x.reserve_variables(alignment, vars_size_bytes_);
-    }
-
-    // the statistics after the code, as comments
-    auto write_report(machine& x) const -> void {
+    static auto write(machine& x, const usage_statistics& usage) -> void {
         const machine::output_statistics stats{x.statistics()};
-        const usage_statistics usage{tc_.usage()};
 
         x.separate_report();
 
@@ -286,113 +134,10 @@ class program final {
         usage_report(stats, usage).write_to(x);
     }
 
+  private:
     //
     // statics
     //
-
-    // the main function is compiled where the program starts
-    static auto compile_main(toc& tc, const size_t indent) -> void {
-        const stmt_def_func& func_main{tc.get_main_or_throw()};
-
-        if (not func_main.is_inlined()) {
-            throw compiler_exception{func_main.noinline_token(),
-                                     "main cannot be declared noinline"};
-        }
-
-        machine& x{tc.machine()};
-
-        x.comment({}, 0, "");
-
-        x.label(0, "main");
-        tc.enter_func("main");
-        func_main.code().compile(tc, indent, ident_info::make_empty());
-        tc.exit_func("main");
-
-        // code after an 'exit' or 'return' on every path would never run
-        if (is_end_reachable(func_main)) {
-            x.end_main();
-        }
-    }
-
-    static auto compile_noninline_body(
-        toc& tc, const size_t indent, const stmt_def_func& func,
-        const std::span<const size_t> array_lengths) -> void {
-
-        machine& x{tc.machine()};
-
-        x.begin_noinline_body(std::string{func.name()},
-                              func.body_label(array_lengths));
-
-        x.comment({}, 0, "");
-        func.source_def_comment_to(x, 0);
-
-        if (not array_lengths.empty()) {
-            x.comment({}, 0, "array parameter lengths: {:n}", array_lengths);
-        }
-
-        x.label(indent, func.body_label(array_lengths));
-
-        const size_t frame_size_bytes{
-            func.compile_body(tc, indent, array_lengths),
-        };
-
-        x.define_constant(func.frame_size_label(array_lengths),
-                          frame_size_bytes);
-
-        x.end_noinline_body();
-    }
-
-    // each noninline function has one body per kind of call, after 'main'
-    static auto compile_noninline_functions(toc& tc, const size_t indent)
-        -> void {
-
-        for (const stmt_def_func* f : tc.get_func_defs()) {
-            if (f->is_inlined() or f->has_array_param()) {
-                continue;
-            }
-
-            compile_noninline_body(tc, indent, *f, {});
-        }
-
-        // note: the calls in a body can request more instances, so the count
-        //       is read on every pass
-        for (size_t i{}; i < tc.noninline_instance_count(); ++i) {
-            const noninline_instance instance{tc.noninline_instance_at(i)};
-
-            compile_noninline_body(tc, indent, *instance.func,
-                                   instance.array_lengths);
-        }
-    }
-
-    // only the checks the user asked for have a handler
-    static auto emit_failure_handlers(toc& tc) -> void {
-        machine& x{tc.machine()};
-
-        if (tc.is_frame_check()) {
-            x.comment({}, 0, "frame overflow handler (--checks=frame)");
-            x.emit_frame_overflow_handler();
-        }
-
-        if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
-            x.comment({}, 0,
-                      "bounds failure handler (--checks=upper or "
-                      "--checks=lower)");
-
-            x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
-        }
-    }
-
-    static auto emit_read_only_data(toc& tc) -> void {
-        // no section switches without strings
-        if (tc.get_string_constants().empty()) {
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        x.comment({}, 0, "");
-        x.emit_string_constants(tc.get_string_constants());
-    }
 
     [[nodiscard]] static auto generics_report(const usage_statistics& usage)
         -> report_section {
@@ -499,5 +244,281 @@ class program final {
         }
 
         return section;
+    }
+};
+
+class program final {
+    // built-in types
+    type type_void{"void", 0, type_kind::builtin};
+    type type_i64{"i64", sizeof(int64_t), type_kind::builtin};
+    type type_i32{"i32", sizeof(int32_t), type_kind::builtin};
+    type type_i16{"i16", sizeof(int16_t), type_kind::builtin};
+    type type_i8{"i8", sizeof(int8_t), type_kind::builtin};
+    type type_bool{"bool", type_i8.size_bytes(), type_kind::boolean};
+
+    std::vector<std::unique_ptr<statement>> statements_;
+    toc tc_; // table of contents
+    size_t vars_size_bytes_{};
+
+  public:
+    program(machine& backend, const std::string_view source,
+            const size_t vars_size_bytes, const check_options& checks)
+        : tc_{backend, source, vars_size_bytes, checks},
+          vars_size_bytes_{vars_size_bytes} {
+
+        // create a placeholder token to use with 'toc' functions
+        const token src_loc_tk{};
+
+        // add built-in calls
+        tc_.add_func(src_loc_tk, "exit", type_void, nullptr);
+
+        // add built-in types
+        tc_.add_type(src_loc_tk, type_i64);
+        tc_.add_type(src_loc_tk, type_i32);
+        tc_.add_type(src_loc_tk, type_i16);
+        tc_.add_type(src_loc_tk, type_i8);
+        tc_.add_type(src_loc_tk, type_bool);
+        tc_.add_type(src_loc_tk, type_void);
+
+        // the types the front end needs by role
+        tc_.set_type_void(type_void);
+        tc_.set_type_bool(type_bool);
+
+        machine& x{tc_.machine()};
+
+        tc_.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
+        x.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
+
+        tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr);
+        tc_.add_func(src_loc_tk, "write", tc_.get_type_default(), nullptr);
+
+        tc_.enter_block();
+
+        tokenizer tz{source};
+        while (true) {
+            const token tk{tz.next_token()};
+
+            if (tk.is_empty()) {
+                // note: every character makes a token, only the end of the
+                //       source gives an empty one
+                assert(tz.is_eos());
+
+                break;
+            }
+
+            statements_.emplace_back(parse_definition(tc_, tz, tk));
+        }
+
+        tc_.exit_block();
+
+        assignment_analysis::assert_functions_set_return_value(
+            tc_.get_func_defs());
+    }
+
+    auto build(std::ostream& os) -> void {
+        machine& x{tc_.machine()};
+
+        x.start();
+        compile(tc_, 0);
+        x.finish();
+        report_renderer::write(x, tc_.usage());
+        tc_.finish();
+
+        x.write_assembly(os);
+    }
+
+    auto compile(toc& tc, const size_t indent) const -> void {
+        tc.reset_usage();
+
+        tc.enter_block();
+
+        for (const std::unique_ptr<statement>& s : statements_) {
+            s->compile(tc, indent, ident_info::make_empty());
+        }
+
+        compile_main(tc, indent);
+        compile_noninline_functions(tc, indent);
+
+        tc.exit_block();
+
+        emit_failure_handlers(tc);
+        emit_read_only_data(tc);
+        emit_data_section(tc);
+    }
+
+    auto source_to(std::ostream& os) const -> void {
+        for (const std::unique_ptr<statement>& s : statements_) {
+            s->source_to(os);
+        }
+    }
+
+    //
+    // statics
+    //
+
+    // only definitions are allowed at the top level
+    [[nodiscard]] static auto parse_definition(toc& tc, tokenizer& tz,
+                                               const token tk)
+        -> std::unique_ptr<statement> {
+
+        if (tk.is_text("func")) {
+            return std::make_unique<stmt_def_func>(tc, tk, tz);
+        }
+
+        if (tk.is_text("type")) {
+            return std::make_unique<stmt_def_type>(tc, tk, tz);
+        }
+
+        if (tk.is_text("let")) {
+            return stmt_def_const::parse_let(tc, tz, tk);
+        }
+
+        if (tk.is_text("dat")) {
+            return std::make_unique<stmt_def_dat>(tc, tk, tz);
+        }
+
+        if (tk.is_text("var")) {
+            return std::make_unique<stmt_def_var>(tc, tk, tz);
+        }
+
+        throw compiler_exception{
+            tk, std::format("unexpected keyword '{}'", tk.text())};
+    }
+
+  private:
+    auto emit_data_section(toc& tc) const -> void {
+        machine& x{tc.machine()};
+
+        const size_t alignment{x.data_alignment()};
+        x.begin_data(alignment);
+
+        // zero padding places each dat at the offset 'toc::add_var' gave it
+        size_t dat_offset{};
+        for (const statement* s : tc.get_data()) {
+            const size_t padding_bytes{
+                align_storage_size(dat_offset, s->get_type().alignment()) -
+                    dat_offset,
+            };
+
+            if (padding_bytes != 0) {
+                x.comment({}, 0, "padding {} B", padding_bytes);
+                x.emit_zero_data(padding_bytes);
+            }
+
+            s->compile_data(tc);
+
+            dat_offset = add_storage_size(s->tok(), dat_offset + padding_bytes,
+                                          s->dat_size_bytes());
+        }
+
+        x.reserve_variables(alignment, vars_size_bytes_);
+    }
+
+    //
+    // statics
+    //
+
+    // the main function is compiled where the program starts
+    static auto compile_main(toc& tc, const size_t indent) -> void {
+        const stmt_def_func& func_main{tc.get_main_or_throw()};
+
+        if (not func_main.is_inlined()) {
+            throw compiler_exception{func_main.noinline_token(),
+                                     "main cannot be declared noinline"};
+        }
+
+        machine& x{tc.machine()};
+
+        x.comment({}, 0, "");
+
+        x.label(0, "main");
+        tc.enter_func("main");
+        func_main.code().compile(tc, indent, ident_info::make_empty());
+        tc.exit_func("main");
+
+        // code after an 'exit' or 'return' on every path would never run
+        if (assignment_analysis::is_end_reachable(func_main)) {
+            x.end_main();
+        }
+    }
+
+    static auto compile_noninline_body(
+        toc& tc, const size_t indent, const stmt_def_func& func,
+        const std::span<const size_t> array_lengths) -> void {
+
+        machine& x{tc.machine()};
+
+        x.begin_noinline_body(std::string{func.name()},
+                              func.body_label(array_lengths));
+
+        x.comment({}, 0, "");
+        func.source_def_comment_to(x, 0);
+
+        if (not array_lengths.empty()) {
+            x.comment({}, 0, "array parameter lengths: {:n}", array_lengths);
+        }
+
+        x.label(indent, func.body_label(array_lengths));
+
+        const size_t frame_size_bytes{
+            func.compile_body(tc, indent, array_lengths),
+        };
+
+        x.define_constant(func.frame_size_label(array_lengths),
+                          frame_size_bytes);
+
+        x.end_noinline_body();
+    }
+
+    // each noninline function has one body per kind of call, after 'main'
+    static auto compile_noninline_functions(toc& tc, const size_t indent)
+        -> void {
+
+        for (const stmt_def_func* f : tc.get_func_defs()) {
+            if (f->is_inlined() or f->has_array_param()) {
+                continue;
+            }
+
+            compile_noninline_body(tc, indent, *f, {});
+        }
+
+        // note: the calls in a body can request more instances, so the count
+        //       is read on every pass
+        for (size_t i{}; i < tc.noninline_instance_count(); ++i) {
+            const noninline_instance instance{tc.noninline_instance_at(i)};
+
+            compile_noninline_body(tc, indent, *instance.func,
+                                   instance.array_lengths);
+        }
+    }
+
+    // only the checks the user asked for have a handler
+    static auto emit_failure_handlers(toc& tc) -> void {
+        machine& x{tc.machine()};
+
+        if (tc.is_frame_check()) {
+            x.comment({}, 0, "frame overflow handler (--checks=frame)");
+            x.emit_frame_overflow_handler();
+        }
+
+        if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
+            x.comment({}, 0,
+                      "bounds failure handler (--checks=upper or "
+                      "--checks=lower)");
+
+            x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
+        }
+    }
+
+    static auto emit_read_only_data(toc& tc) -> void {
+        // no section switches without strings
+        if (tc.get_string_constants().empty()) {
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        x.comment({}, 0, "");
+        x.emit_string_constants(tc.get_string_constants());
     }
 };

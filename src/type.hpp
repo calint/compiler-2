@@ -57,58 +57,6 @@ class type final {
 
     type() = default;
 
-    [[nodiscard]] auto
-    accessor(const token& src_loc_tk, const std::string_view ident,
-             const std::vector<std::string>& path, const var_info& var,
-             const std::string_view base_register) const -> ident_info {
-
-        std::vector<const type*> type_path;
-
-        type_path.emplace_back(this);
-
-        size_t offset{};
-        bool is_array{var.is_array};
-        size_t array_count{var.array_len};
-
-        const type* tp{this};
-        for (const std::string& field_name : path | std::views::drop(1)) {
-            // note: drop 1 because the first element is retrieved outside the
-            //       loop
-
-            const type_field& tf{tp->field(src_loc_tk, field_name)};
-            offset = sum_storage_size(offset, tf.offset);
-            tp = tf.type_ptr;
-            is_array = tf.is_array;
-            array_count = tf.array_count;
-            type_path.emplace_back(tp);
-        }
-
-        const int64_t idx{
-            var.pointer_register.is_empty()
-                ? add_address_offset(var.offset, address_offset(offset))
-                : address_offset(offset),
-        };
-
-        const std::string_view storage_base{
-            var.base_register.empty() ? base_register : var.base_register};
-
-        // find first field so operand gets a valid built-in
-        while (not tp->is_builtin()) {
-            tp = tp->fields_.at(0).type_ptr;
-        }
-
-        const operand op{
-            operand::mem(var.pointer_register.is_empty()
-                             ? storage_base
-                             : var.pointer_register.base_register(),
-                         "", 1, idx, *tp),
-        };
-
-        return ident_info::make_var(std::string{ident}, path,
-                                    std::move(type_path), op, idx, array_count,
-                                    is_array, var.is_pointer);
-    }
-
     // fields are placed at offsets aligned to their type and the size is
     // rounded up so that array elements stay aligned
     auto add_field(const token& src_loc_tk, const std::string_view name,

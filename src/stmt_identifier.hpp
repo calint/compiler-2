@@ -41,6 +41,46 @@ class stmt_identifier : public statement {
         }
     };
 
+    // the scratch registers that the address of a path is built with
+    class path_registers {
+        std::reference_wrapper<std::vector<operand>> allocated_;
+        // the registers from here on were allocated for this path and may be
+        // overwritten, the earlier ones are the caller's
+        size_t owned_from_;
+        // where the caller prefers the address, empty without a preference
+        operand address_register_;
+        // kept between the indexes of the path while it is not in the way
+        operand index_register_;
+
+      public:
+        path_registers(std::vector<operand>& allocated,
+                       operand address_register)
+            : allocated_{allocated}, owned_from_{allocated.size()},
+              address_register_{std::move(address_register)} {}
+
+        auto add(const operand& reg) -> void {
+            allocated_.get().push_back(reg);
+        }
+
+        [[nodiscard]] auto address_register() const -> const operand& {
+            return address_register_;
+        }
+
+        auto forget_index_register() -> void { index_register_ = {}; }
+
+        [[nodiscard]] auto index_register() const -> const operand& {
+            return index_register_;
+        }
+
+        [[nodiscard]] auto owned() const -> std::span<const operand> {
+            return std::span{allocated_.get()}.subspan(owned_from_);
+        }
+
+        auto set_index_register(const operand& reg) -> void {
+            index_register_ = reg;
+        }
+    };
+
     std::vector<ident_elem> elems_;
     std::vector<token> elem_delims_tk_;
     std::string path_as_string_;
@@ -155,23 +195,18 @@ class stmt_identifier : public statement {
                        dst_type);
     }
 
-    // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248'
-    //   'lea_path'          known addresses of the path, from the call stack
-    //   'allocated_registers' receives the scratch registers of the indexing
-    //   'address_register'  preferred start of the operand
-    //   'reg_count'         the range of a span operation on an array
+    // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
+    // 'allocated_registers' receives the scratch registers of the indexing and
     // 'machine' says which scalings an operand can have
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
-                                   const operand& reg_count,
-                                   const std::span<const operand> lea_path,
-                                   const operand& address_register) const
+                                   const lea_request& request) const
         -> operand override {
 
         // view the last n elements of lea_path
         const std::span<const operand> known_addresses{
-            lea_path.last(elems_.size()),
+            request.lea_path.last(elems_.size()),
         };
 
         // start at the deepest known address, or the root if none exists
@@ -179,17 +214,13 @@ class stmt_identifier : public statement {
 
         std::string path{elems_.at(start_index).name_tk.text()};
 
-        // registers appended from here on belong to this path and may be
-        // overwritten, earlier entries are the caller's
-        const size_t owned_from{allocated_registers.size()};
+        path_registers registers{allocated_registers, request.address_register};
 
         operand address{
-            start_address(tc, indent, src_loc_tk, allocated_registers,
+            start_address(tc, indent, src_loc_tk, registers,
                           known_addresses.at(start_index),
                           tc.make_ident_info(src_loc_tk, path)),
         };
-
-        operand index_register;
 
         const type* parent_type{};
 
@@ -221,15 +252,14 @@ class stmt_identifier : public statement {
             // an unindexed element only needs a possible range bounds check
             if (not cur_elem.array_index_expr) {
                 check_unindexed_range(tc, indent, src_loc_tk, cur_info,
-                                      is_last_elem, reg_count);
+                                      is_last_elem, request.reg_count);
 
                 continue;
             }
 
             address = compile_indexed_element(
-                tc, indent, src_loc_tk, allocated_registers, owned_from,
-                cur_elem, cur_info, is_last_elem ? reg_count : operand{},
-                address, address_register, index_register);
+                tc, indent, src_loc_tk, registers, cur_elem, cur_info,
+                is_last_elem ? request.reg_count : operand{}, address);
         }
 
         return operand::mem(address, *parent_type);
@@ -283,8 +313,7 @@ class stmt_identifier : public statement {
     // allocated, then they are freed
     auto
     compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                    const std::span<const operand> lea_path,
-                    const operand& reg_count, const operand& address_register,
+                    const lea_request& request,
                     const std::function_ref<void(const operand&)> use) const
         -> void {
 
@@ -296,7 +325,7 @@ class stmt_identifier : public statement {
 
         const operand address{
             compile_lea(tc, indent, first_token(), allocated_registers,
-                        reg_count, lea_path, address_register),
+                        request),
         };
 
         use(address);
@@ -660,22 +689,23 @@ class stmt_identifier : public statement {
     // yet, keeping its base and displacement
     [[nodiscard]] static auto
     add_index(toc& tc, const token& src_loc_tk, const size_t indent,
-              std::vector<operand>& allocated_registers,
-              const ident_elem& cur_elem, const ident_info& cur_info,
-              const operand& reg_count, const operand& address,
-              operand& index_register) -> operand {
+              path_registers& registers, const ident_elem& cur_elem,
+              const ident_info& cur_info, const operand& reg_count,
+              const operand& address) -> operand {
 
         machine& x{tc.machine()};
 
         // a register kept by an earlier fold is reused since the fold already
         // consumed its value
-        if (index_register.is_empty()) {
+        if (registers.index_register().is_empty()) {
             // index expressions are parsed with the default type
-            index_register = x.alloc_scratch_register(src_loc_tk, indent,
-                                                      tc.get_type_default());
+            registers.set_index_register(x.alloc_scratch_register(
+                src_loc_tk, indent, tc.get_type_default()));
 
-            allocated_registers.push_back(index_register);
+            registers.add(registers.index_register());
         }
+
+        const operand& index_register{registers.index_register()};
 
         const int64_t addend_elements{
             compile_checked_index(tc, indent, *cur_elem.array_index_expr,
@@ -801,10 +831,9 @@ class stmt_identifier : public statement {
     // displacement and any other one into an index register
     [[nodiscard]] static auto compile_indexed_element(
         toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const size_t owned_from,
-        const ident_elem& cur_elem, const ident_info& cur_info,
-        const operand& range_count, const operand& address,
-        const operand& address_register, operand& index_register) -> operand {
+        path_registers& registers, const ident_elem& cur_elem,
+        const ident_info& cur_info, const operand& range_count,
+        const operand& address) -> operand {
 
         const std::optional<int64_t> constant_index{
             cur_elem.array_index_expr->constant_value(tc),
@@ -830,16 +859,13 @@ class stmt_identifier : public statement {
         operand base{address};
 
         if (not address.index_register().empty()) {
-            base = operand::mem(
-                fold_indexed_address(tc, indent, src_loc_tk,
-                                     allocated_registers, owned_from, address,
-                                     address_register, index_register),
-                cur_info.type_ref());
+            base = operand::mem(fold_indexed_address(tc, indent, src_loc_tk,
+                                                     registers, address),
+                                cur_info.type_ref());
         }
 
         return add_index(tc, cur_elem.array_index_expr->tok(), indent,
-                         allocated_registers, cur_elem, cur_info, range_count,
-                         base, index_register);
+                         registers, cur_elem, cur_info, range_count, base);
     }
 
     [[nodiscard]] static auto
@@ -861,23 +887,20 @@ class stmt_identifier : public statement {
     // computes 'address' into a register so another index can be added
     [[nodiscard]] static auto
     fold_indexed_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                         std::vector<operand>& allocated_registers,
-                         const size_t owned_from, const operand& address,
-                         const operand& address_register,
-                         operand& index_register) -> operand {
+                         path_registers& registers, const operand& address)
+        -> operand {
 
         machine& x{tc.machine()};
 
         operand target{
-            fold_register(std::span{allocated_registers}.subspan(owned_from),
-                          address, address_register, index_register),
+            fold_register(registers, address),
         };
 
         if (target.is_empty()) {
             target = x.alloc_scratch_register(src_loc_tk, indent,
                                               tc.get_type_address());
 
-            allocated_registers.push_back(target);
+            registers.add(target);
         }
 
         x.address_of(src_loc_tk, indent, target, address);
@@ -889,20 +912,18 @@ class stmt_identifier : public statement {
     // when a new one must be allocated
     // note: only 'address' refers to an owned register and the fold replaces
     //       'address', so an owned base is dead once 'lea' has read it
-    [[nodiscard]] static auto
-    fold_register(const std::span<const operand> owned, const operand& address,
-                  const operand& address_register, operand& index_register)
-        -> operand {
+    [[nodiscard]] static auto fold_register(path_registers& registers,
+                                            const operand& address) -> operand {
 
         // the caller loads the final address into it anyway, so it is free
         // until then and folding there may save the final move
-        if (not address_register.is_empty()) {
-            return address_register;
+        if (not registers.address_register().is_empty()) {
+            return registers.address_register();
         }
 
         // an owned base is a loaded pointer or an earlier fold target, reusing
         // it keeps 'index_register' for the next index
-        for (const operand& r : owned) {
+        for (const operand& r : registers.owned()) {
             // the frame register and the caller's registers are never owned,
             // so a match proves the base is private to this path
             if (r.base_register() == address.base_register()) {
@@ -912,14 +933,14 @@ class stmt_identifier : public statement {
 
         // the base must survive, so without an index register a new one is
         // needed
-        if (index_register.is_empty()) {
+        if (registers.index_register().is_empty()) {
             return {};
         }
 
         // 'lea' may write the index register it reads, the next index then
         // gets its own register so it never overwrites the new base
-        const operand folded_into{index_register};
-        index_register = {};
+        const operand folded_into{registers.index_register()};
+        registers.forget_index_register();
 
         return folded_into;
     }
@@ -943,8 +964,8 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] static auto
     load_pointer(toc& tc, const size_t indent, const token& src_loc_tk,
-                 std::vector<operand>& allocated_registers,
-                 const operand& pointer_slot) -> operand {
+                 path_registers& registers, const operand& pointer_slot)
+        -> operand {
 
         machine& x{tc.machine()};
 
@@ -952,7 +973,7 @@ class stmt_identifier : public statement {
             x.alloc_scratch_register(src_loc_tk, indent, tc.get_type_address()),
         };
 
-        allocated_registers.push_back(pointer_register);
+        registers.add(pointer_register);
 
         x.copy_value(src_loc_tk, indent, pointer_register,
                      operand::mem(pointer_slot, tc.get_type_address()));
@@ -963,16 +984,15 @@ class stmt_identifier : public statement {
     // an inlined argument's known address, a loaded pointer or the storage
     [[nodiscard]] static auto
     start_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                  std::vector<operand>& allocated_registers,
-                  const operand& known_address, const ident_info& storage)
-        -> operand {
+                  path_registers& registers, const operand& known_address,
+                  const ident_info& storage) -> operand {
 
         if (not known_address.is_empty()) {
             return known_address;
         }
 
         if (storage.is_pointer) {
-            return load_pointer(tc, indent, src_loc_tk, allocated_registers,
+            return load_pointer(tc, indent, src_loc_tk, registers,
                                 storage.operand);
         }
 

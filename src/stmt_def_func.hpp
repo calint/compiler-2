@@ -446,10 +446,17 @@ class stmt_def_func final : public statement {
                 : name_,
         };
 
-        tc.add_generic_func(name_tk_, name_, func_tk, start_tk_,
-                            std::move(report_name), std::move(param_names),
-                            deductions(param_tks, tz),
-                            std::move(receiver_instance));
+        tc.add_generic_func(name_, {
+                                       .src_loc_tk{name_tk_},
+                                       .func_tk{func_tk},
+                                       .start_tk{start_tk_},
+                                       .report_name{std::move(report_name)},
+                                       .param_names{std::move(param_names)},
+                                       .deductions{deductions(param_tks, tz)},
+                                       .receiver_instance{
+                                           std::move(receiver_instance),
+                                       },
+                                   });
 
         generic_.mode = generic_part::kind::definition;
         generic_.text = tz.skip_braced_block_after(func_tk);

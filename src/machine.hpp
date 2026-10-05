@@ -20,9 +20,100 @@
 
 #include "assembler.hpp"
 #include "decouple.hpp"
+#include "operand.hpp"
 #include "token.hpp"
 
 class type;
+
+// the registers of a machine that hold a value: named ones are fixed by an
+// instruction or the calling convention, scratch ones are picked by the
+// machine, all are freed in the reverse order of allocation. a register is
+// 'unavailable' while it is allocated and while an operation protects the
+// registers of its operands. the machine names the registers, the pool counts
+// them by their index in the names of the machine and by masks of 1 << index
+class register_pool {
+  public:
+    struct allocation {
+        size_t index{};
+        // where it was allocated, 'indent' is the indent of that code
+        token src_loc_tk;
+        size_t indent{};
+        const type* type_ptr{};
+        bool named{};
+    };
+
+  private:
+    uint32_t unavailable_{};
+    // registers a lower bounds check found non-negative, allocating a register
+    // forgets it since the new owner writes its own value
+    uint32_t lower_checked_{};
+    std::vector<allocation> allocations_;
+
+  public:
+    [[nodiscard]] auto allocations() const -> std::span<const allocation> {
+        return allocations_;
+    }
+
+    [[nodiscard]] auto is_empty() const -> bool { return allocations_.empty(); }
+
+    [[nodiscard]] auto is_lower_checked(const uint32_t mask) const -> bool {
+        return (lower_checked_ & mask) != 0;
+    }
+
+    // 'mask' has a register that is allocated or protected
+    [[nodiscard]] auto is_unavailable(const uint32_t mask) const -> bool {
+        return (unavailable_ & mask) != 0;
+    }
+
+    auto mark_lower_checked(const uint32_t mask) -> void {
+        lower_checked_ |= mask;
+    }
+
+    // the register of the last allocation, freeing is in reverse order
+    auto pop(const size_t index) -> allocation {
+        assert(top().index == index);
+
+        const allocation entry{allocations_.back()};
+
+        allocations_.pop_back();
+        unavailable_ &= ~(uint32_t{1} << index);
+
+        return entry;
+    }
+
+    auto protect(const uint32_t mask) -> void { unavailable_ |= mask; }
+
+    auto push(const allocation& entry) -> void {
+        const uint32_t mask{uint32_t{1} << entry.index};
+
+        assert(not is_unavailable(mask));
+
+        allocations_.push_back(entry);
+        unavailable_ |= mask;
+        lower_checked_ &= ~mask;
+    }
+
+    // forgets what 'protect' added since 'saved' was read by 'unavailable_mask'
+    auto restore_unavailable(const uint32_t saved) -> void {
+        unavailable_ = saved;
+    }
+
+    [[nodiscard]] auto scratch_count() const -> size_t {
+        return static_cast<size_t>(
+            std::ranges::count(allocations_, false, &allocation::named));
+    }
+
+    [[nodiscard]] auto top() const -> const allocation& {
+        assert(not allocations_.empty());
+
+        return allocations_.back();
+    }
+
+    // the registers that are allocated or protected, none when all is freed
+    [[nodiscard]] auto unavailable_mask() const -> uint32_t {
+        return unavailable_;
+    }
+};
 
 class machine {
     std::reference_wrapper<std::ostream> os_;
@@ -125,6 +216,20 @@ class machine {
         bool with_line{};
     };
 
+  protected:
+    // what a bounds check does about the lower bound, decided from its
+    // options and operands
+    struct bounds_plan {
+        // the unsigned upper comparison already fails a negative index or
+        // count as long as the limit is below 2^(width - 1), only a sum
+        // 'index + count' needs both signs checked
+        bool upper_covers_lower{};
+
+        // the second array of a copy or compare checks the same count again
+        bool count_known{};
+    };
+
+  public:
     struct data_initializer {
         int64_t value{};
         std::string_view uops; // unary operations
@@ -710,6 +815,29 @@ class machine {
         return *type_i8_;
     }
 
+    // what the lower bound check is about, a bounds check that has none says
+    // nothing
+    auto comment_lower_bound(const token& src_loc_tk, const size_t indent,
+                             const operand& reg_to_check,
+                             const operand& reg_count, const bounds_plan& plan)
+        -> void {
+
+        comment(src_loc_tk, indent, "lower bound");
+
+        if (plan.upper_covers_lower) {
+            comment(src_loc_tk, indent,
+                    "{} lower bound covered by the unsigned upper bound",
+                    reg_to_check.base_register());
+
+            return;
+        }
+
+        if (plan.count_known) {
+            comment(src_loc_tk, indent, "count {} lower bound already checked",
+                    reg_count.base_register());
+        }
+    }
+
     // the optional jump optimization of buffered output
     auto finish_output() -> void {
         assembler& output{target_assembler()};
@@ -818,5 +946,32 @@ class machine {
         }
 
         return std::bit_cast<int64_t>(bits);
+    }
+
+    // the register whose lower bound a check settles, a count alone is checked
+    // as the index of its own range
+    [[nodiscard]] static auto
+    lower_checked_register(const operand& reg_to_check,
+                           const operand& reg_count) -> std::string_view {
+
+        return reg_count.is_empty() ? reg_to_check.base_register()
+                                    : reg_count.base_register();
+    }
+
+    // 'signed_max' is the largest value of the signed type of the compare,
+    // 'count_known' tells that the lower bound of 'reg_count' was checked
+    [[nodiscard]] static auto
+    plan_bounds_check(const bounds_check_options& options,
+                      const operand& reg_count, const size_t array_count,
+                      const uint64_t signed_max, const bool count_known)
+        -> bounds_plan {
+
+        return {
+            .upper_covers_lower{
+                options.lower and options.upper and reg_count.is_empty() and
+                    array_count <= signed_max,
+            },
+            .count_known{not reg_count.is_empty() and count_known},
+        };
     }
 };
