@@ -134,6 +134,9 @@ Working agreements for AI sessions in this repository.
 
 ## Tests
 
+- Test runs: `--target=x86` and `--target=rv32i-fpga` are enough.
+- While working on `etc/roome/roome.baz`, compile it for both x86_64 and
+  rv32i-fpga to catch register issues.
 - A new error test: check that each `line:column` in its `.out` points at the
   token where the error is detected (print the source line with a caret), not
   only that the message reads well.

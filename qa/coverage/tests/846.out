@@ -1,0 +1,7 @@
+
+846.baz:7:30: type 'T (point)' has no constructor 'at'
+    self.array[self.len] = T.at(x)
+                             ^~
+846.baz:11:6: instantiated by
+type points = list<point, 4>
+     ^~~~~~

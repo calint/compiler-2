@@ -142,7 +142,7 @@ class stmt_call : public expression {
           constructor_dot_tk_{tz.is_next_char_token('.')},
           constructor_name_tk_{tz.next_token()},
           func_name_{
-              std::format("{}.{}", type_tk.text(), constructor_name_tk_.text()),
+              constructor_function_name(tc, type_tk, constructor_name_tk_),
           } {
 
         assert(not constructor_dot_tk_.is_empty());
@@ -154,7 +154,8 @@ class stmt_call : public expression {
         if (not tc.is_func(func_name_)) {
             throw compiler_exception{
                 constructor_name_tk_,
-                std::format("type '{}' has no constructor '{}'", type_tk.text(),
+                std::format("type '{}' has no constructor '{}'",
+                            type_description(tc, type_tk),
                             constructor_name_tk_.text())};
         }
 
@@ -1484,6 +1485,28 @@ class stmt_call : public expression {
         }
     }
 
+    // 'point.at' for the type named as written, e.g. an alias with constructors
+    // of its own; else the name of the type that a type parameter is bound to,
+    // e.g. 'T.at' where 'T' is 'point'
+    [[nodiscard]] static auto
+    constructor_function_name(const toc& tc, const token& type_tk,
+                              const token& constructor_name_tk) -> std::string {
+
+        std::string name{
+            std::format("{}.{}", type_tk.text(), constructor_name_tk.text()),
+        };
+
+        if (tc.is_func(name) or not tc.has_type(type_tk.text())) {
+            return name;
+        }
+
+        name = std::format("{}.{}",
+                           tc.get_type_or_throw(type_tk, type_tk.text()).name(),
+                           constructor_name_tk.text());
+
+        return name;
+    }
+
     static auto free_in_reverse(machine& x, const token& src_loc_tk,
                                 const size_t indent,
                                 const std::span<const operand> registers)
@@ -1663,5 +1686,26 @@ class stmt_call : public expression {
             .register_operand{},
             .is_element{},
         };
+    }
+
+    // the type as written, with the type it is bound to when that differs,
+    // e.g. 'T (point)'
+    [[nodiscard]] static auto type_description(const toc& tc,
+                                               const token& type_tk)
+        -> std::string {
+
+        std::string description{type_tk.text()};
+
+        if (tc.has_type(type_tk.text())) {
+            const std::string_view bound{
+                tc.get_type_or_throw(type_tk, type_tk.text()).name(),
+            };
+
+            if (bound != type_tk.text()) {
+                description += std::format(" ({})", bound);
+            }
+        }
+
+        return description;
     }
 };

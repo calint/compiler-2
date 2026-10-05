@@ -2580,3 +2580,9 @@ SRC=843 && EXP=0 && RUN
 # a copy of memory needs rsi, rdi and rcx, the last resort registers on x86_64,
 # below nine live scratch values and the bounds checks
 SRC=844 && EXP=0 && RUN
+
+# a constructor is called on a type parameter, T.at(...) builds a point in place
+SRC=845 && EXP=0 && RUN
+
+# a constructor called on a type parameter must exist for its argument
+SRC=846 && COMPERR

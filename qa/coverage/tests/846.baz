@@ -1,0 +1,16 @@
+# a constructor called on a type parameter must exist for its argument
+type point { x i32 }
+
+type list<T type, capacity> { array T[capacity], len }
+
+func mut list.add(x i32) {
+    self.array[self.len] = T.at(x)
+    self.len = self.len + 1
+}
+
+type points = list<point, 4>
+
+func main() {
+    var l = points
+    l.add(1)
+}
