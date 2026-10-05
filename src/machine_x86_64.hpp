@@ -1194,6 +1194,7 @@ class machine_x86_64 final : public machine {
         if (count.is_immediate()) {
             emit_op(src_loc_tk, indent, code, dst,
                     shift_count_immediate(count));
+
             return;
         }
 
@@ -1508,6 +1509,7 @@ class machine_x86_64 final : public machine {
         if (reg_count.is_empty()) {
             cmp_lowered(src_loc_tk, indent, reg_to_check,
                         immediate(array_count));
+
             return;
         }
 
@@ -2058,6 +2060,7 @@ class machine_x86_64 final : public machine {
         if (std::has_single_bit(element_size_bytes)) {
             shl(src_loc_tk, indent, value,
                 immediate(std::countr_zero(element_size_bytes)));
+
             return;
         }
 

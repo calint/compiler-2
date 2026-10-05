@@ -9,6 +9,7 @@ class stmt_continue final : public statement {
   public:
     stmt_continue(const toc& tc, const token src_loc_tk)
         : statement{src_loc_tk} {
+
         set_type(tc.get_type_void());
     }
 

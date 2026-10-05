@@ -117,7 +117,6 @@ struct generic_arguments {
             const token close_tk{tz.is_next_char_token('>')};
             if (not close_tk.is_empty()) {
                 args.list_tks.emplace_back(close_tk);
-
                 return args;
             }
 

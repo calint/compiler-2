@@ -126,6 +126,9 @@ Working agreements for AI sessions in this repository.
 - A new error test: check that each `line:column` in its `.out` points at the
   token where the error is detected (print the source line with a caret), not
   only that the message reads well.
+- `UPDATE=1 qa/coverage/test-coverage.sh --target=x86 run` writes the expected
+  outputs (`.out`) instead of comparing; run it for x86 and rv32i, then review
+  the diff.
 
 ## Tools
 

@@ -223,7 +223,11 @@ compile_expect_error() {
 # Common: compare output with expected
 check_output() {
     local expected="$1"
-    if cmp -s out "$expected"; then
+    # 'UPDATE=1' writes the output as the expected output, review the diff
+    if [[ -n "${UPDATE:-}" ]]; then
+        cp out "$expected"
+        echo updated
+    elif cmp -s out "$expected"; then
         echo ok
     else
         echo "FAILED. output differs. see: diff out $expected"

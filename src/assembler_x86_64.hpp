@@ -475,6 +475,7 @@ class assembler_x86_64 final : public assembler {
         if (const std::string_view* const name{
                 std::get_if<std::string_view>(&value),
             }) {
+
             return std::string{*name};
         }
 

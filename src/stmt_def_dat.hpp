@@ -306,6 +306,7 @@ class stmt_def_dat final : public statement {
         if (elroot.src_loc_tk.is_string()) {
             x.emit_string_data(elroot.src_loc_tk.string_text());
             const size_t size_bytes{elroot.src_loc_tk.string_size_bytes()};
+
             // pad remaining array with 0
             assert(elroot.array_count != 0);
 

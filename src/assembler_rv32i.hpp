@@ -2139,7 +2139,6 @@ class assembler_rv32i final : public assembler {
         -> bool {
 
         const std::string_view name{code.substr(0, code.find_first_of(" \t"))};
-
         return name == ".option" or name == ".globl" or name == ".equ";
     }
 

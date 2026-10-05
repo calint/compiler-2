@@ -137,7 +137,6 @@ class type final {
 
         if (is_builtin_) {
             append_range(ranges, 0, size_bytes_);
-
             return ranges;
         }
 
@@ -258,7 +257,6 @@ class type final {
             ranges.back().offset + ranges.back().size_bytes == offset) {
 
             ranges.back().size_bytes += size_bytes;
-
             return;
         }
 

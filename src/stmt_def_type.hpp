@@ -83,7 +83,6 @@ class stmt_def_type final : public statement {
 
         if (kind_ == kind::generic) {
             std::print(os, "{}", generic_text_);
-
             return;
         }
 

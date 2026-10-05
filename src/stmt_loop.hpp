@@ -13,6 +13,7 @@ class stmt_loop final : public statement {
   public:
     stmt_loop(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk} {
+
         set_type(tc.get_type_void());
         const std::string lbl{tc.create_unique_label(tok(), "loop")};
         tc.enter_loop(lbl);

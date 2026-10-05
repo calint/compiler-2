@@ -475,6 +475,7 @@ class expr_bool_op final : public statement {
         if (op == ">") {
             return lh > rh;
         }
+
         assert(op == ">=");
 
         return lh >= rh;

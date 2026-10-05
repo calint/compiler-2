@@ -541,7 +541,6 @@ class stmt_call : public expression {
         -> std::string_view {
 
         const std::string_view path{arg.identifier()};
-
         return path.substr(0, path.find('.'));
     }
 
