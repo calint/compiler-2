@@ -356,6 +356,8 @@ class machine_x86_64 final : public machine {
             saved.push_back(qword_register(name));
         }
 
+        record_noinline_call(src_loc_tk, label, saved.size());
+
         if (not saved.empty()) {
             comment(src_loc_tk, indent,
                     "before call: save allocated registers");

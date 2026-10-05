@@ -266,6 +266,15 @@ class machine {
     std::vector<call_frame_info> peak_frames_;
     std::map<std::string, callee_use> callee_uses_;
 
+    // what the calls of a function with a body of its own save
+    struct noinline_calls {
+        size_t calls{};
+        size_t saved_peak{};
+        token peak_site_tk;
+    };
+
+    std::map<std::string, noinline_calls> noinline_calls_;
+
   protected:
     // buffered modes hold output from 'start' to 'finish' so jumps can be
     // optimized and grown to reach their targets
@@ -490,6 +499,9 @@ class machine {
   public:
     // a failed check prints its message to this descriptor and exits with this
     // code
+    // the name of the frame of a function with a body of its own ends with this
+    static constexpr std::string_view noinline_body_suffix{" (noinline body)"};
+
     static constexpr int stderr_descriptor{2};
     static constexpr int panic_exit_code{255};
 
@@ -851,6 +863,7 @@ class machine {
 
         const std::vector<call_frame_info> kept_frames{peak_frames_};
         const std::map<std::string, callee_use> kept_callees{callee_uses_};
+        const std::map<std::string, noinline_calls> kept_calls{noinline_calls_};
 
         // buffered because comments are otherwise written as emitted
         target_assembler().emit_buffered(
@@ -860,6 +873,7 @@ class machine {
         peak_allocations_ = kept_allocations;
         peak_frames_ = kept_frames;
         callee_uses_ = kept_callees;
+        noinline_calls_ = kept_calls;
     }
 
     template <std::ranges::input_range values_t>
@@ -912,10 +926,26 @@ class machine {
         }
     }
 
-    // the use of registers at the busiest point of the build, as lines after
-    // the code when asked for, else none
-    [[nodiscard]] auto register_peak_report() const
-        -> std::vector<std::string> {
+    // a call of the function with the body 'label' saves the registers 'saved'
+    auto record_noinline_call(const token& call_site_tk,
+                              const std::string_view label, const size_t saved)
+        -> void {
+
+        if (not register_report_enabled_) {
+            return;
+        }
+
+        noinline_calls& entry{noinline_calls_[std::string{label}]};
+
+        ++entry.calls;
+
+        if (saved > entry.saved_peak or entry.calls == 1) {
+            entry.saved_peak = saved;
+            entry.peak_site_tk = call_site_tk;
+        }
+    }
+
+    [[nodiscard]] auto register_peak_lines() const -> std::vector<std::string> {
 
         if (not register_report_enabled_) {
             return {};
@@ -930,6 +960,16 @@ class machine {
 
         for (const auto line : std::views::split(text, '\n')) {
             lines.emplace_back(std::string_view{line});
+        }
+
+        if (not peak_frames_.empty() and
+            peak_frames_.front().name.ends_with(noinline_body_suffix)) {
+
+            lines.emplace_back();
+
+            lines.emplace_back("the peak is in a function with a body of its "
+                               "own, compiled with all registers free, its "
+                               "callers are not on this stack");
         }
 
         lines.emplace_back();
@@ -954,6 +994,61 @@ class machine {
         for (const auto& [name, use] : callees) {
             lines.push_back(std::format("{:>5}{:>11}  {}", use.own_peak,
                                         use.instances, name));
+        }
+
+        if (noinline_calls_.empty()) {
+            return lines;
+        }
+
+        lines.emplace_back();
+
+        lines.emplace_back(
+            "calls of functions with a body of their own save the "
+            "registers held at the call");
+
+        lines.emplace_back();
+        lines.emplace_back("  saved  calls  callee, most saved at");
+
+        std::vector<std::pair<std::string, noinline_calls>> calls{
+            noinline_calls_.begin(),
+            noinline_calls_.end(),
+        };
+
+        std::ranges::stable_sort(
+            calls, [](const auto& lhs, const auto& rhs) -> bool {
+                return lhs.second.saved_peak > rhs.second.saved_peak;
+            });
+
+        for (const auto& [label, entry] : calls) {
+            const std::string_view name{
+                label.starts_with("func.")
+                    ? std::string_view{label}.substr(
+                          std::string_view{"func."}.size())
+                    : std::string_view{label},
+            };
+
+            lines.push_back(std::format("{:>7}{:>7}  {} {}", entry.saved_peak,
+                                        entry.calls, name,
+                                        location_text(entry.peak_site_tk)));
+        }
+
+        return lines;
+    }
+
+    // the use of registers at the busiest point of the build, as lines after
+    // the code when asked for, else none
+    [[nodiscard]] auto register_peak_report() const
+        -> std::vector<std::string> {
+
+        // room for the comment marker and a space of the assembly output
+        constexpr size_t max_line_width{78};
+
+        std::vector<std::string> lines;
+
+        for (const std::string& line : register_peak_lines()) {
+            for (std::string& part : wrapped(line, max_line_width)) {
+                lines.push_back(std::move(part));
+            }
         }
 
         return lines;
@@ -1099,6 +1194,40 @@ class machine {
         assert(op == comparison_operator::greater_equal);
 
         return ">=";
+    }
+
+    // breaks a line that is too long at spaces, the parts keep its indentation
+    [[nodiscard]] static auto wrapped(const std::string& line,
+                                      const size_t width)
+        -> std::vector<std::string> {
+
+        std::vector<std::string> parts;
+
+        const std::string indentation(
+            std::min(line.find_first_not_of(' '), line.size()), ' ');
+
+        std::string rest{line};
+
+        while (rest.size() > width) {
+            const size_t space{rest.rfind(' ', width)};
+
+            // note: a word longer than the width is left as it is
+            if (space == std::string::npos or space <= indentation.size()) {
+                break;
+            }
+
+            parts.push_back(rest.substr(0, space));
+
+            std::string next{indentation};
+            next += rest.substr(space + 1);
+            // note: +1 because the space that the line broke at is dropped
+
+            rest = std::move(next);
+        }
+
+        parts.push_back(std::move(rest));
+
+        return parts;
     }
 
   protected:

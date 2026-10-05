@@ -585,6 +585,8 @@ class machine_rv32i : public machine {
             saved.push_back(register_names_.at(allocated.index));
         }
 
+        record_noinline_call(src_loc_tk, label, saved.size());
+
         if (not saved.empty()) {
             comment(src_loc_tk, indent,
                     "before call: save allocated registers");

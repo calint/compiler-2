@@ -476,7 +476,7 @@ class program final {
         const machine::call_frame_scope call_frame{
             x,
             token{},
-            std::string{func.name()},
+            std::format("{}{}", func.name(), machine::noinline_body_suffix),
         };
 
         x.begin_noinline_body(std::string{func.name()},

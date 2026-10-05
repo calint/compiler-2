@@ -20744,7 +20744,7 @@ vars.end:
 # register use at the peak: 14 of 30 scratch registers live
 #
 #   held  frame, registers (allocated at)
-#      2  parse_input
+#      2  parse_input (noinline body)
 #           t0 914:19
 #           t1 914:24
 #      6  action_go called at 914:9
@@ -20762,12 +20762,16 @@ vars.end:
 #           s7 450:48
 #           s8 450:48
 #
-# making a frame noinline starts its body with all 30 registers free and saves the
+# making a frame noinline starts its body with all 30 registers free and saves
+# the
 # registers held above it around the call:
 #
 #   noinline frame      held inside  saved at the call
 #   action_go                    12                  2
 #   tokenizer.is<name>            6                  8
+#
+# the peak is in a function with a body of its own, compiled with all registers
+# free, its callers are not on this stack
 #
 # per callee, the most scratch registers one instance holds itself
 #
@@ -20820,7 +20824,7 @@ vars.end:
 #     2          1  entities.reserve
 #     2          2  link_names.reserve
 #     2          1  objects.reserve
-#     2          1  parse_input
+#     2          1  parse_input (noinline body)
 #     2          2  printer.set_silenced
 #     2          1  rooms.reserve
 #     2          3  tokenizer.next_name_or_say
@@ -20833,3 +20837,9 @@ vars.end:
 #     0         24  printer.println
 #     0          1  tokenizer.input
 #     0         10  tokenizer.next_or_say
+#
+# calls of functions with a body of their own save the registers held at the
+# call
+#
+#   saved  calls  callee, most saved at
+#       2      2  parse_input 973:13

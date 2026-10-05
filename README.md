@@ -135,10 +135,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           7305           2895          21768
+C/C++ Header                    55           7342           2902          21857
 C++                              1            160             40            521
 -------------------------------------------------------------------------------
-SUM:                            56           7465           2935          22289
+SUM:                            56           7502           2942          22378
 -------------------------------------------------------------------------------
 ```
 
@@ -5869,7 +5869,7 @@ vars.end:
 ; register use at the peak: 4 of 14 scratch registers live
 ;
 ;   held  frame, registers (allocated at)
-;      4  print_num
+;      4  print_num (noinline body)
 ;           r15 153:13
 ;           r14 153:18
 ;           r13 153:29
@@ -5877,11 +5877,14 @@ vars.end:
 ;           rdx 153:31 (named)
 ;           r12 153:31
 ;
+; the peak is in a function with a body of its own, compiled with all registers
+; free, its callers are not on this stack
+;
 ; per callee, the most scratch registers one instance holds itself
 ;
 ;   own  instances  callee
-;     4          1  print_num
-;     3          1  factorial
+;     4          1  print_num (noinline body)
+;     3          1  factorial (noinline body)
 ;     3          1  main
 ;     1          3  baz
 ;     1          1  greet
@@ -5897,4 +5900,11 @@ vars.end:
 ;     0          1  point.x
 ;     0          9  print
 ;     0          1  str.print
+;
+; calls of functions with a body of their own save the registers held at the
+; call
+;
+;   saved  calls  callee, most saved at
+;       1      2  factorial 179:19
+;       0      2  print_num 404:9
 ```
