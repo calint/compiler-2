@@ -66,6 +66,7 @@ struct options {
     check_options checks{};
     bool optimize_jumps{true};
     bool reproduce_source{};
+    bool report_registers{};
     // empty until given, the default depends on the source and target
     std::string_view binary_file_name;
 };
@@ -255,6 +256,24 @@ template <typename T>
         return true;
     }
 
+    if (const std::optional<std::string_view> value{
+            option_value(arg, "--report="),
+        }) {
+
+        if (*value != "registers") {
+            print_usage_error(
+                std::format("Invalid report: '{}'. Supported reports are: "
+                            "registers.",
+                            *value));
+
+            return false;
+        }
+
+        opts.report_registers = true;
+
+        return true;
+    }
+
     if (arg == "--nopt") {
         opts.optimize_jumps = false;
         return true;
@@ -294,6 +313,9 @@ options:
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of {3} (default: {4})
   --checks=LIST       comma separated checks, replaces earlier --checks
+  --report=registers  after the code, how the scratch registers are used at the
+                      busiest point: what each call frame holds and what a
+                      noinline frame would save, and what each callee holds
   --bin=FILE          rv32i targets binary image (default: file without
                       extension followed by -MACHINE.bin)
   --nopt              no jump optimizations
@@ -349,6 +371,10 @@ examples:
                          opts.stack_size_bytes, binary),
         };
 
+        if (opts.report_registers) {
+            backend->enable_register_report();
+        }
+
         program prg{*backend, src, opts.vars_size_bytes, opts.checks};
 
         if (opts.reproduce_source) {
@@ -370,6 +396,10 @@ examples:
                            e.end_index, e.msg);
 
         print_call_frames(opts.src_file_name, src, e.call_frames);
+
+        if (not e.detail.empty()) {
+            std::println(stderr, "\n{}", e.detail);
+        }
 
         return 1;
     } catch (const panic_exception& e) {

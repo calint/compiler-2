@@ -945,6 +945,12 @@ class stmt_call : public expression {
 
         tc.enter_func(func.name(), new_call_path, ret_jmp_label);
 
+        const machine::call_frame_scope call_frame{
+            x,
+            tok(),
+            std::string{func.name()},
+        };
+
         func.add_constants(tc, indent + 1);
 
         // add aliases

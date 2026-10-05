@@ -259,7 +259,7 @@ class machine_x86_64 final : public machine {
 
             push_allocation(src_loc_tk, register_name, type_ref, false);
 
-            record_scratch_register_count(registers_.scratch_count());
+            record_scratch_registers(registers_);
 
             operand result{make_register_operand(register_name, type_ref)};
 
@@ -268,9 +268,10 @@ class machine_x86_64 final : public machine {
             return result;
         }
 
-        throw compiler_exception{src_loc_tk,
-                                 "out of scratch registers. try to reduce "
-                                 "expression complexity"};
+        throw register_error(src_loc_tk,
+                             "out of scratch registers. try to reduce "
+                             "expression complexity",
+                             registers_);
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
@@ -1089,6 +1090,12 @@ class machine_x86_64 final : public machine {
                    syscall_read);
     }
 
+    [[nodiscard]] auto register_display_name(const size_t index) const
+        -> std::string override {
+
+        return std::string{register_names_.at(index).qword};
+    }
+
     [[nodiscard]] auto
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers override {
@@ -1171,6 +1178,10 @@ class machine_x86_64 final : public machine {
 
         scale_by_element_size_bytes(src_loc_tk, indent, index,
                                     element_size_bytes);
+    }
+
+    [[nodiscard]] auto scratch_register_total() const -> size_t override {
+        return scratch_registers_.size();
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -1999,6 +2010,7 @@ class machine_x86_64 final : public machine {
             .indent{},
             .type_ptr{&type_ref},
             .named{named},
+            .frame{current_call_frame()},
         });
     }
 
@@ -2201,18 +2213,21 @@ class machine_x86_64 final : public machine {
 
         // the last resort scratch registers are also needed by instructions
         if (not holder->named) {
-            throw compiler_exception{
+            throw register_error(
                 src_loc_tk,
                 std::format("cannot allocate register {} because it holds a "
                             "scratch value allocated at {}. try to reduce "
                             "expression complexity",
-                            reg, holder_location)};
+                            reg, holder_location),
+                registers_);
         }
 
-        throw compiler_exception{
-            src_loc_tk, std::format("cannot allocate register {} because it "
-                                    "was allocated at {}",
-                                    reg, holder_location)};
+        throw register_error(
+            src_loc_tk,
+            std::format("cannot allocate register {} because it was allocated "
+                        "at {}",
+                        reg, holder_location),
+            registers_);
     }
 
     auto with_lowered_addresses(

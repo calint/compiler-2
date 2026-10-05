@@ -141,6 +141,10 @@ class report_renderer {
         }
 
         usage_report(stats, usage).write_to(x);
+
+        for (const std::string& line : x.register_peak_report()) {
+            x.comment(token{}, 0, "{}", line);
+        }
     }
 
   private:
@@ -441,6 +445,8 @@ class program final {
 
         machine& x{tc.machine()};
 
+        const machine::call_frame_scope call_frame{x, token{}, "main"};
+
         x.comment({}, 0, "");
 
         x.label(0, "main");
@@ -459,6 +465,12 @@ class program final {
         const std::span<const size_t> array_lengths) -> void {
 
         machine& x{tc.machine()};
+
+        const machine::call_frame_scope call_frame{
+            x,
+            token{},
+            std::string{func.name()},
+        };
 
         x.begin_noinline_body(std::string{func.name()},
                               func.body_label(array_lengths));

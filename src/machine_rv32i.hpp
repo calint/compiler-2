@@ -437,9 +437,10 @@ class machine_rv32i : public machine {
         };
 
         if (mask == 0 or is_fixed or registers_.is_unavailable(mask)) {
-            throw compiler_exception{
+            throw register_error(
                 src_loc_tk,
-                std::format("cannot allocate register {}", register_name)};
+                std::format("cannot allocate register {}", register_name),
+                registers_);
         }
 
         operand result{make_register_operand(register_name, type_ref)};
@@ -465,7 +466,7 @@ class machine_rv32i : public machine {
 
             record_allocation(src_loc_tk, indent, index, type_ref, false);
 
-            record_scratch_register_count(registers_.scratch_count());
+            record_scratch_registers(registers_);
 
             comment(src_loc_tk, indent, "allocate scratch register -> {}",
                     register_names_.at(index));
@@ -479,7 +480,8 @@ class machine_rv32i : public machine {
             return result;
         }
 
-        throw compiler_exception{src_loc_tk, "out of RV32I scratch registers"};
+        throw register_error(src_loc_tk, "out of RV32I scratch registers",
+                             registers_);
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
@@ -1296,6 +1298,12 @@ class machine_rv32i : public machine {
         free_named_register(src_loc_tk, indent, call_register);
     }
 
+    [[nodiscard]] auto register_display_name(const size_t index) const
+        -> std::string override {
+
+        return std::string{register_names_.at(index)};
+    }
+
     [[nodiscard]] auto
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers override {
@@ -1398,6 +1406,10 @@ class machine_rv32i : public machine {
         multiply(src_loc_tk, indent, index,
                  operand::imm(std::format("{}", element_size_bytes),
                               default_type()));
+    }
+
+    [[nodiscard]] auto scratch_register_total() const -> size_t override {
+        return scratch_registers_.size();
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -3356,6 +3368,7 @@ class machine_rv32i : public machine {
             .indent{indent},
             .type_ptr{&type_ref},
             .named{named},
+            .frame{current_call_frame()},
         });
     }
 

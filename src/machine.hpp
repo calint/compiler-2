@@ -9,6 +9,7 @@
 #include <format>
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -22,6 +23,7 @@
 #include <vector>
 
 #include "assembler.hpp"
+#include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "operand.hpp"
 #include "token.hpp"
@@ -43,6 +45,8 @@ class register_pool {
         size_t indent{};
         const type* type_ptr{};
         bool named{};
+        // the index of the inlined call that allocated it, see 'call_frame'
+        size_t frame{};
     };
 
   private:
@@ -204,6 +208,26 @@ class machine {
         std::string_view result;
     };
 
+    // ends the call frame when it goes out of scope, an error leaves it too
+    class call_frame_scope final {
+        std::reference_wrapper<machine> machine_;
+
+      public:
+        call_frame_scope(machine& backend, const token& call_site_tk,
+                         std::string name)
+            : machine_{backend} {
+
+            backend.begin_call_frame(call_site_tk, std::move(name));
+        }
+
+        call_frame_scope(const call_frame_scope&) = delete;
+        call_frame_scope(call_frame_scope&&) = delete;
+        auto operator=(const call_frame_scope&) -> call_frame_scope& = delete;
+        auto operator=(call_frame_scope&&) -> call_frame_scope& = delete;
+
+        ~call_frame_scope() { machine_.get().end_call_frame(); }
+    };
+
   private:
     // emits one address of a bulk operation: 'count' is the register of the
     // element count, empty for a known size, 'preferred' a register the address
@@ -219,6 +243,28 @@ class machine {
     const type* type_i16_{};
     const type* type_i8_{};
     size_t usage_max_scratch_regs_{};
+
+    // an inlined call being compiled, the registers it allocates are its own
+    struct call_frame_info {
+        std::string name;
+        token call_site_tk;
+    };
+
+    // the inlined calls being compiled, the outermost first
+    std::vector<call_frame_info> call_frames_;
+
+    // what a callee holds itself, over all its instances
+    struct callee_use {
+        size_t own_peak{};
+        size_t instances{};
+    };
+
+    // the register report keeps the allocations at the busiest point of the
+    // build and what each callee held
+    bool register_report_enabled_{};
+    std::vector<register_pool::allocation> peak_allocations_;
+    std::vector<call_frame_info> peak_frames_;
+    std::map<std::string, callee_use> callee_uses_;
 
   protected:
     // buffered modes hold output from 'start' to 'finish' so jumps can be
@@ -268,6 +314,178 @@ class machine {
         // the second array of a copy or compare checks the same count again
         bool count_known{};
     };
+
+    // the call frame that allocations are made in
+    [[nodiscard]] auto current_call_frame() const -> size_t {
+        return call_frames_.empty() ? 0 : call_frames_.size() - 1;
+    }
+
+    [[nodiscard]] auto location_text(const token& src_loc_tk) const
+        -> std::string {
+
+        if (src_loc_tk.at_line() == 0 or source_.empty()) {
+            return "-";
+        }
+
+        const auto [line, column]{
+            line_and_col_num_for_char_index(src_loc_tk.at_line(),
+                                            src_loc_tk.start_index(), source_),
+        };
+
+        return std::format("{}:{}", line, column);
+    }
+
+    // an error that the registers ran out or are held by a value, with how the
+    // registers are used by each frame and what a 'noinline' frame would give
+    [[nodiscard]] auto register_error(const token& src_loc_tk,
+                                      std::string message,
+                                      const register_pool& pool) const
+        -> compiler_exception {
+
+        compiler_exception error{src_loc_tk, std::move(message)};
+
+        error.detail = register_use_report(pool.allocations(), call_frames_,
+                                           "register use at the failure");
+
+        return error;
+    }
+
+    [[nodiscard]] auto register_use_report(
+        const std::span<const register_pool::allocation> allocations,
+        const std::vector<call_frame_info>& frames,
+        const std::string_view heading) const -> std::string {
+
+        const size_t scratch_total{scratch_register_total()};
+
+        // what each frame holds
+        struct frame_use {
+            size_t scratch{};
+            std::vector<std::string> registers;
+        };
+
+        const size_t frame_count{std::max<size_t>(frames.size(), 1)};
+        std::vector<frame_use> uses(frame_count);
+        size_t live{};
+
+        for (const register_pool::allocation& allocated : allocations) {
+            frame_use& use{uses.at(std::min(allocated.frame, frame_count - 1))};
+
+            std::string text{
+                std::format("{} {}", register_display_name(allocated.index),
+                            location_text(allocated.src_loc_tk)),
+            };
+
+            if (allocated.named) {
+                // a register the backend holds itself has no place in the
+                // source
+                if (allocated.src_loc_tk.at_line() == 0) {
+                    continue;
+                }
+
+                text += " (named)";
+            } else {
+                ++use.scratch;
+                ++live;
+            }
+
+            use.registers.push_back(std::move(text));
+        }
+
+        const auto frame_label{
+            [&](const size_t frame) -> std::string {
+                if (frames.empty()) {
+                    return "code";
+                }
+
+                const call_frame_info& info{frames.at(frame)};
+
+                if (frame == 0) {
+                    return info.name;
+                }
+
+                return std::format("{} called at {}", info.name,
+                                   location_text(info.call_site_tk));
+            },
+        };
+
+        std::string report{
+            std::format("{}: {} of {} scratch registers live\n\n  held  "
+                        "frame, registers (allocated at)",
+                        heading, live, scratch_total),
+        };
+
+        for (const auto [frame, use] : std::views::enumerate(uses)) {
+            report += std::format("\n{:>6}  {}", use.scratch,
+                                  frame_label(static_cast<size_t>(frame)));
+
+            for (const std::string& text : use.registers) {
+                report += std::format("\n          {}", text);
+            }
+        }
+
+        if (frame_count < 2) {
+            return report;
+        }
+
+        // a frame helps when registers are held above it
+        struct candidate {
+            std::string name;
+            size_t inside{};
+            size_t saved{};
+        };
+
+        std::vector<candidate> candidates;
+        size_t saved{};
+        size_t inside{live};
+
+        for (const auto [frame, use] : std::views::enumerate(uses)) {
+            if (frame > 0 and saved > 0) {
+                candidates.push_back({
+                    .name{frames.at(static_cast<size_t>(frame)).name},
+                    .inside{inside},
+                    .saved{saved},
+                });
+            }
+
+            saved += use.scratch;
+            inside -= use.scratch;
+        }
+
+        if (candidates.empty()) {
+            report += "\n\nno noinline frame helps, the registers are held by "
+                      "the innermost frame, simplify its expression";
+
+            return report;
+        }
+
+        constexpr size_t min_name_width{14};
+
+        size_t name_width{min_name_width};
+
+        for (const candidate& entry : candidates) {
+            name_width = std::max(name_width, entry.name.size());
+        }
+
+        // the names are padded to the widest
+        const auto padded{
+            [&](const std::string& name) -> std::string {
+                return name + std::string(name_width - name.size(), ' ');
+            },
+        };
+
+        report += std::format(
+            "\n\nmaking a frame noinline starts its body with all {} registers "
+            "free and saves the\nregisters held above it around the "
+            "call:\n\n  {}  held inside  saved at the call",
+            scratch_total, padded("noinline frame"));
+
+        for (const candidate& entry : candidates) {
+            report += std::format("\n  {}{:>13}{:>19}", padded(entry.name),
+                                  entry.inside, entry.saved);
+        }
+
+        return report;
+    }
 
   public:
     // a failed check prints its message to this descriptor and exits with this
@@ -496,6 +714,10 @@ class machine {
                       const operand& dst, const operand& descriptor,
                       const operand& address, const operand& count) -> void = 0;
 
+    // the name of a register in the output, for the use of registers
+    [[nodiscard]] virtual auto register_display_name(size_t index) const
+        -> std::string = 0;
+
     [[nodiscard]] virtual auto
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers = 0;
@@ -516,6 +738,9 @@ class machine {
     virtual auto scale_index(const token& src_loc_tk, const size_t indent,
                              const operand& index,
                              const size_t element_size_bytes) -> void = 0;
+
+    // how many scratch registers the backend can hand out
+    [[nodiscard]] virtual auto scratch_register_total() const -> size_t = 0;
 
     virtual auto shift(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
@@ -567,6 +792,20 @@ class machine {
     // class methods
     //
 
+    // the registers allocated until 'end_call_frame' belong to the inlined call
+    // of 'name' made at 'call_site_tk', the first frame is the function being
+    // compiled and has no call site
+    auto begin_call_frame(const token& call_site_tk, std::string name) -> void {
+        if (register_report_enabled_) {
+            ++callee_uses_[name].instances;
+        }
+
+        call_frames_.push_back({
+            .name{std::move(name)},
+            .call_site_tk{call_site_tk},
+        });
+    }
+
     // the code emitted up to 'end_noinline_body' is a body of 'function'
     auto begin_noinline_body(std::string function, std::string label) -> void {
         target_assembler().begin_body(std::move(function), std::move(label));
@@ -606,11 +845,21 @@ class machine {
     auto discard_output(const std::function_ref<void()> emit) -> void {
         const size_t max_scratch_regs{usage_max_scratch_regs_};
 
+        const std::vector<register_pool::allocation> kept_allocations{
+            peak_allocations_,
+        };
+
+        const std::vector<call_frame_info> kept_frames{peak_frames_};
+        const std::map<std::string, callee_use> kept_callees{callee_uses_};
+
         // buffered because comments are otherwise written as emitted
         target_assembler().emit_buffered(
             [&] -> void { std::ignore = target_assembler().capture(emit); });
 
         usage_max_scratch_regs_ = max_scratch_regs;
+        peak_allocations_ = kept_allocations;
+        peak_frames_ = kept_frames;
+        callee_uses_ = kept_callees;
     }
 
     template <std::ranges::input_range values_t>
@@ -638,6 +887,11 @@ class machine {
                         std::function_ref<bool(data_initializer&)>{next});
     }
 
+    // the report of the use of registers is kept for 'register_peak_report'
+    auto enable_register_report() -> void { register_report_enabled_ = true; }
+
+    auto end_call_frame() -> void { call_frames_.pop_back(); }
+
     auto end_noinline_body() -> void { target_assembler().end_body(); }
 
     auto free_named_registers(const token& src_loc_tk, const size_t indent,
@@ -656,6 +910,53 @@ class machine {
         for (const operand& r : registers | std::views::reverse) {
             free_scratch_register(src_loc_tk, indent, r);
         }
+    }
+
+    // the use of registers at the busiest point of the build, as lines after
+    // the code when asked for, else none
+    [[nodiscard]] auto register_peak_report() const
+        -> std::vector<std::string> {
+
+        if (not register_report_enabled_) {
+            return {};
+        }
+
+        const std::string text{
+            register_use_report(peak_allocations_, peak_frames_,
+                                "register use at the peak"),
+        };
+
+        std::vector<std::string> lines;
+
+        for (const auto line : std::views::split(text, '\n')) {
+            lines.emplace_back(std::string_view{line});
+        }
+
+        lines.emplace_back();
+
+        lines.emplace_back(
+            "per callee, the most scratch registers one instance "
+            "holds itself");
+
+        lines.emplace_back();
+        lines.emplace_back("  own  instances  callee");
+
+        std::vector<std::pair<std::string, callee_use>> callees{
+            callee_uses_.begin(),
+            callee_uses_.end(),
+        };
+
+        std::ranges::stable_sort(
+            callees, [](const auto& lhs, const auto& rhs) -> bool {
+                return lhs.second.own_peak > rhs.second.own_peak;
+            });
+
+        for (const auto& [name, use] : callees) {
+            lines.push_back(std::format("{:>5}{:>11}  {}", use.own_peak,
+                                        use.instances, name));
+        }
+
+        return lines;
     }
 
     // a blank line that separates the code from the report
@@ -869,7 +1170,43 @@ class machine {
     }
 
     // keeps the greatest count of scratch registers in use at once
-    auto record_scratch_register_count(const size_t count) -> void {
+    // what the call frame being compiled holds itself
+    auto record_callee_use(const register_pool& pool) -> void {
+        const size_t frame{current_call_frame()};
+
+        const auto own{
+            std::ranges::count_if(
+                pool.allocations(),
+                [frame](const register_pool::allocation& allocated) -> bool {
+                    return not allocated.named and allocated.frame == frame;
+                }),
+        };
+
+        callee_use& use{
+            callee_uses_[call_frames_.empty() ? "code"
+                                              : call_frames_.back().name],
+        };
+
+        use.own_peak = std::max(use.own_peak, static_cast<size_t>(own));
+    }
+
+    // 'pool' has just got a scratch register
+    auto record_scratch_registers(const register_pool& pool) -> void {
+        const size_t count{pool.scratch_count()};
+
+        if (register_report_enabled_) {
+            record_callee_use(pool);
+
+            if (count > usage_max_scratch_regs_) {
+                const std::span<const register_pool::allocation> live{
+                    pool.allocations(),
+                };
+
+                peak_allocations_.assign(live.begin(), live.end());
+                peak_frames_ = call_frames_;
+            }
+        }
+
         usage_max_scratch_regs_ = std::max(usage_max_scratch_regs_, count);
     }
 

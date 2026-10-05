@@ -171,6 +171,21 @@ CLI_FILE_ERRORS() {
     echo ok
 }
 
+CLI_REGISTER_REPORT() {
+    echo -n "cli --report=registers: "
+    "$BIN" 847.baz >/dev/null 2>err && exit 1
+    grep -Fq "register use at the failure" err
+    "$BIN" 843.baz >gen.s 2>err
+    "$BIN" --report=registers 843.baz >out 2>err
+    [[ ! -s err ]]
+    # the report only follows the code and the usual report
+    cmp -s -n "$(stat -c %s gen.s)" gen.s out
+    grep -Fq "register use at the peak" out
+    grep -Fq "per callee, the most scratch registers one instance holds itself" out
+    grep -Fq "register use at the peak" gen.s && exit 1
+    echo ok
+}
+
 CLI_ADDRESS_RANGE() {
     echo -n "cli rv32i address range: "
     local target
@@ -288,6 +303,8 @@ CLI --target= 1 --help
 CLI --target=unknown 1 --help
 CLI --bin= 1 --help
 CLI --bin=gen-rv32i.bin 0 --help
+CLI --report=registers 0 015.baz
+CLI --report=unknown 1 --help
 CLI_TARGETS
 CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE
@@ -298,6 +315,7 @@ CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
 CLI_QEMU_STACK
 CLI_NOINLINE_REPORT
+CLI_REGISTER_REPORT
 CLI_ADDRESS_RANGE
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

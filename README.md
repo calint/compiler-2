@@ -94,6 +94,9 @@ options:
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of 16 (default: 65536)
   --checks=LIST       comma separated checks, replaces earlier --checks
+  --report=registers  after the code, how the scratch registers are used at the
+                      busiest point: what each call frame holds and what a
+                      noinline frame would save, and what each callee holds
   --bin=FILE          rv32i targets binary image (default: file without
                       extension followed by -MACHINE.bin)
   --nopt              no jump optimizations
@@ -132,10 +135,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           7216           2868          21491
-C++                              1            153             40            498
+C/C++ Header                    55           7303           2894          21764
+C++                              1            160             40            521
 -------------------------------------------------------------------------------
-SUM:                            56           7369           2908          21989
+SUM:                            56           7463           2934          22285
 -------------------------------------------------------------------------------
 ```
 

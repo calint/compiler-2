@@ -2586,3 +2586,7 @@ SRC=845 && EXP=0 && RUN
 
 # a constructor called on a type parameter must exist for its argument
 SRC=846 && COMPERR
+
+# x86: running out of registers in nested inline calls reports who holds them and
+# what a noinline frame would save
+if [[ $MACHINE == x86_64 ]]; then SRC=847 && COMPERR; fi

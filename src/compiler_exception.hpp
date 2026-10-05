@@ -46,6 +46,9 @@ class compiler_exception final : public std::exception {
     // innermost call first, each call inlined the one before it
     std::vector<call_frame> call_frames;
 
+    // more text for the user after the call frames, e.g. the use of registers
+    std::string detail;
+
     auto add_call_frame(const token& call_tk, std::string text,
                         std::string reason = "called from") -> void {
 

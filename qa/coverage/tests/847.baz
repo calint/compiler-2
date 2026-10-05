@@ -1,0 +1,38 @@
+# x86: running out of registers in nested inline calls reports who holds them and
+# what a noinline frame would save
+func leaf(v i32[]) res {
+    var a = 1
+    var b = 2
+    var c = 3
+    var d = 4
+    var e = 5
+    var f = 6
+    res = a + (b + (c + (d + (e + (f + (v[1]))))))
+}
+
+func middle(v i32[]) res {
+    var a = 1
+    var b = 2
+    var c = 3
+    var d = 4
+    var e = 5
+    res = a + (b + (c + (d + (e + (leaf(v))))))
+}
+
+func top(v i32[]) res {
+    var a = 1
+    var b = 2
+    var c = 3
+    var d = 4
+    res = a + (b + (c + (d + (middle(v)))))
+}
+
+func main() {
+    var v = i32[4]{1, 2, 3, 4}
+    var w = v[0]
+    var x = v[1]
+    var y = v[2]
+    var z = v[3]
+    var q = w + (x + (y + (z + (top(v)))))
+    exit(0)
+}
