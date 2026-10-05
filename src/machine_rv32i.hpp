@@ -1097,10 +1097,13 @@ class machine_rv32i : public machine {
 
         finish_output();
 
+        // direct output was written as emitted, there is nothing to resolve
+        if (not assembler_.is_buffering()) {
+            return;
+        }
+
         // the report counts after resolving because grown jumps take more
         // instructions, a failing build writes nothing
-        assert(assembler_.is_buffering());
-
         assembler_.resolve_jumps();
         check_address_range(assembler_.memory_end_address());
         check_memory_end(assembler_.memory_end_address());

@@ -395,10 +395,7 @@ class expr_arith final : public expression {
 
         const type& width_type{dst_info.type_ref()};
 
-        std::vector<step> steps{make_steps(tc, width_type)};
-        steps = merge_commutative_constants(steps, width_type);
-        steps = merge_divisors(steps, width_type);
-        lead_with_constant(tc, steps);
+        const std::vector<step> steps{plan_steps(tc, width_type)};
 
         const step& last{steps.back()};
 
@@ -565,10 +562,7 @@ class expr_arith final : public expression {
 
         const type& width_type{dst_info.type_ref()};
 
-        std::vector<step> steps{make_steps(tc, width_type)};
-        steps = merge_commutative_constants(steps, width_type);
-        steps = merge_divisors(steps, width_type);
-        lead_with_constant(tc, steps);
+        const std::vector<step> steps{plan_steps(tc, width_type)};
 
         compile_first_step(tc, indent, dst_info, steps.front());
 
@@ -779,6 +773,18 @@ class expr_arith final : public expression {
         exprs_.emplace_back(make_unique<expr_arith>(
             tc, tz, in_args, false, token{}, true, unary_ops{}, next_precedence,
             std::move(last_elem_in_list)));
+    }
+
+    // the passes in order, the steps are ready to compile
+    [[nodiscard]] auto plan_steps(const toc& tc, const type& width_type) const
+        -> std::vector<step> {
+
+        std::vector<step> steps{make_steps(tc, width_type)};
+        steps = merge_commutative_constants(steps, width_type);
+        steps = merge_divisors(steps, width_type);
+        lead_with_constant(tc, steps);
+
+        return steps;
     }
 
     // a plain first element is copied before anything writes the destination

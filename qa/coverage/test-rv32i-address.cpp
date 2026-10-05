@@ -71,11 +71,11 @@ namespace {
 // shared fixtures
 // ----------------------------------------------------------------------------
 
-const type integer64{"i64", 8, true};
-const type integer{"i32", 4, true};
-const type half{"i16", 2, true};
-const type byte{"i8", 1, true};
-const type boolean{"bool", 1, true};
+const type integer64{"i64", 8, type_kind::builtin};
+const type integer{"i32", 4, type_kind::builtin};
+const type half{"i16", 2, type_kind::builtin};
+const type byte{"i8", 1, type_kind::builtin};
+const type boolean{"bool", 1, type_kind::boolean};
 
 // the diagnostics of the rejected calls need a real position
 const token source_tk{token::position(0, 1)};
@@ -754,7 +754,7 @@ func main() {
 )baz"};
     std::ostringstream output;
     machine_rv32i compiler{output};
-    program prg{compiler, source, 4096, false, false, false};
+    program prg{compiler, source, 4096, check_options{}};
     prg.build(output);
     // reserved pointers must hold the address throughout index arithmetic
     assert(output.str().contains("slli t0, t3, 2\n"));
@@ -778,7 +778,7 @@ func main() {
 )baz"};
     std::ostringstream output;
     machine_rv32i compiler{output};
-    program prg{compiler, source, 4096, false, false, false};
+    program prg{compiler, source, 4096, check_options{}};
     prg.build(output);
     assert(output.str().contains("slli t1, t4, 2\n"));
     assert(output.str().contains("add t1, t1, s0\n"));
@@ -816,7 +816,7 @@ func main() {
 )baz"};
     std::ostringstream output;
     machine_x86_64 compiler{output, source};
-    program prg{compiler, source, 4096, false, false, false};
+    program prg{compiler, source, 4096, check_options{}};
     prg.build(output);
     assert(output.str().contains("sete r15b\n"));
     assert(not output.str().contains("xor r15b, 1\n"));
@@ -840,7 +840,7 @@ func main() {
 )baz"};
     std::ostringstream x86_output;
     machine_x86_64 x86_compiler{x86_output, source};
-    program x86_program{x86_compiler, source, 4096, false, false, false};
+    program x86_program{x86_compiler, source, 4096, check_options{}};
     x86_program.build(x86_output);
     assert(x86_output.str().contains("sete byte [rbp + 4]\n"));
     assert(x86_output.str().contains("setne byte [rbp + 4]\n"));
@@ -851,7 +851,7 @@ func main() {
 
     std::ostringstream rv32i_output;
     machine_rv32i rv32i_compiler{rv32i_output};
-    program rv32i_program{rv32i_compiler, source, 4096, false, false, false};
+    program rv32i_program{rv32i_compiler, source, 4096, check_options{}};
     rv32i_program.build(rv32i_output);
     assert(rv32i_output.str().contains("sb t3, -2028(s0)\n"));
     assert(not rv32i_output.str().contains("sltu "));
@@ -997,7 +997,7 @@ auto check_x86_write_in_program() -> void {
 
     std::ostringstream output;
     machine_x86_64 compiler{output, source};
-    program prg{compiler, source, 4096, false, false, false};
+    program prg{compiler, source, 4096, check_options{}};
     prg.build(output);
     const std::string assembly{output.str()};
     const size_t main_start{assembly.find("main:")};
@@ -1017,7 +1017,7 @@ auto check_x86_nested_syscalls_rejected() -> void {
           "func main() { var b = i8[1]{} exit(write(1, b, 0)) }"}) {
         std::ostringstream output;
         machine_x86_64 compiler{output, source};
-        program prg{compiler, source, 4096, false, false, false};
+        program prg{compiler, source, 4096, check_options{}};
         assert(rejected_with([&] { prg.build(output); },
                              "cannot allocate register rdi"));
     }
@@ -1434,7 +1434,7 @@ auto check_shift_of_variables() -> void {
 
     std::ostringstream output;
     machine_rv32i compiler{output};
-    program prg{compiler, source, 4096, false, false, false};
+    program prg{compiler, source, 4096, check_options{}};
     prg.build(output);
     assert(output.str().contains("sll t0, t0, t1"));
     assert(not output.str().contains("addi t1, t0, 0"));
@@ -2222,7 +2222,7 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
 
     machine_rv32i compiler{std::cout, {}, jumps};
 
-    program prg{compiler, source, 4096, false, false, false};
+    program prg{compiler, source, 4096, check_options{}};
     prg.build(std::cout);
 }
 
@@ -2272,7 +2272,12 @@ func main() {
 }
 )baz"};
     machine_rv32i compiler{std::cout};
-    program prg{compiler, source, 4096, true, true, true};
+    program prg{compiler, source, 4096,
+                check_options{
+                    .bounds_upper{true},
+                    .bounds_lower{true},
+                    .bounds_with_line{true},
+                }};
     prg.build(std::cout);
 }
 
@@ -2290,7 +2295,7 @@ func main() {
 }
 )baz"};
     machine_rv32i compiler{std::cout};
-    program prg{compiler, source, 4096, false, false, false};
+    program prg{compiler, source, 4096, check_options{}};
     prg.build(std::cout);
 }
 

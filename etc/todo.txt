@@ -56,10 +56,40 @@ better assembler code, medium, largest gain first
            'multiply' dropped; about 100 other 'const bool' parameters
            remain ('inverted', 'in_args', 'allow_end', ...), they are named
            at the declaration and mostly forwarded, not passed as literals
-    [ ] long parameter lists: 'stmt_identifier::compile_indexed_element' (11),
-        'machine::compare_memory' and its rv32i chain (8-9),
-        'fold_indexed_address' (8), 'add_generic_func' (8): group what travels
-        together into a struct
+    [x] 'check_options' declared twice (main.cpp and toc.hpp), 'program' and
+        'toc' took five positional bools
+        => done (2026-10-05): one 'check_options', passed as a whole
+    [x] tokenizer: write-only 'pos_' and 'src_str_' kept for debugging, a
+        '\0' in 'delimiters_' that a string view of a literal never holds
+    [x] easy: 'qa/coverage/test-rv32i.sh' aborted since before the cleanup
+        => done (2026-10-05): 'machine_rv32i::finish' returns after
+           'finish_output' for direct output ('as_emitted'), there is nothing
+           to resolve; the driver compiled against the old 'type'
+           constructor and 'program' signature, fixed
+    [x] easy: 'main.cpp' named the target as text in four places
+        => done (2026-10-05): 'enum class target' with a 'target_names' table
+    [x] easy: 'main.cpp' 'parse_size_bytes' used 'std::stoull' inside
+        'try { } catch (...)'
+        => done (2026-10-05): 'std::from_chars', no longer accepts octal,
+           leading space or '+'
+    [-] 20 headers carry '// reviewed: 2025-09-2x' stamps
+        => discarded (2026-10-05): kept as they are
+    [ ] questionable, hard: 'statement' is a base class of 24 virtuals whose
+        defaults are 'std::unreachable()' plus 'is_*' tests instead of rtti;
+        a closed set of node kinds as 'std::variant' with visitors would drop
+        the defaults; costs: indirection for nested nodes, every visit
+        instantiates all alternatives (compile time), a new node kind touches
+        every visitor; 'expr_any' and 'expr_bool' already do this for the
+        expression kinds (design change, only if the next features keep
+        adding virtuals)
+    [ ] medium: the bounds check policy is written twice, 'machine_x86_64::
+        check_bounds' and 'machine_rv32i::emit_bounds_check': 'upper_covers_
+        lower', 'count_known', the comments and the 'lower_checked_registers_'
+        bookkeeping; the decisions belong in 'machine', the backends emit the
+        compare and the branch; both backends agree that '--checks=upper' alone
+        does not flag a negative index (x86_64 compares signed, rv32i skips a
+        negative index with 'bltz'), the rv32i limit is 2^31, the x86_64 limit
+        follows the register width
     [ ] missing direct includes (153 of misc-include-cleaner, 'std::format',
         'size_t', ...): add per header
 [ ] ai test suite in c++ being human readable
@@ -110,6 +140,11 @@ better assembler code, medium, largest gain first
 [ ] medium: evaluate BMI2 alternatives for variable-count shifts
     (shlx/shrx/sarx), 'machine_x86_64::shift'
 [ ] medium: reorder locals by alignment, largest first, to reduce padding
+[ ] medium: low priority: long parameter lists: 'stmt_identifier::
+    compile_indexed_element' (11), 'machine::compare_memory' and its rv32i
+    chain (8-9), 'fold_indexed_address' (8), 'add_generic_func' (8): group what
+    travels together into a struct; changes interfaces across several files
+    (plan and go-ahead first)
 [ ] medium: low priority: code after an unconditional 'exit' elsewhere than the
     end of 'main' is generated, e.g. after a constant false 'assert'
 [ ] medium: low priority: the scaled index goes into a new register instead of

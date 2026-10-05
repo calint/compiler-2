@@ -1,6 +1,5 @@
 #pragma once
 // reviewed: 2025-09-28
-// refactored: pointer-free implementation
 
 #include <cassert>
 #include <string>
@@ -12,23 +11,20 @@
 #include "token.hpp"
 
 class tokenizer final {
-    std::string_view src_str_; // used for easier debugging with 'pos'
-    std::string_view src_;     // source as a string view
-    size_t char_ix_{};         // current char index in 'src_'
-    std::string_view pos_;     // position in string used for easier debugging
+    std::string_view src_;
+    size_t char_ix_{}; // current char index in 'src_'
     size_t at_line_{1};
 
     static constexpr std::string_view delimiters_{
-        " \t\r\n(){}[]=,.:+-*/%&|^<>!#\0"};
+        " \t\r\n(){}[]=,.:+-*/%&|^<>!#"};
 
   public:
-    explicit tokenizer(const std::string_view src_str)
-        : src_str_{src_str}, src_{src_str_} {}
+    explicit tokenizer(const std::string_view src) : src_{src} {}
 
     // continues at a position of an earlier pass over the same source
-    tokenizer(const std::string_view src_str, const token& position_tk)
-        : src_str_{src_str}, src_{src_str_},
-          char_ix_{position_tk.start_index()}, at_line_{position_tk.at_line()} {
+    tokenizer(const std::string_view src, const token& position_tk)
+        : src_{src}, char_ix_{position_tk.start_index()},
+          at_line_{position_tk.at_line()} {
 
         assert(char_ix_ <= src_.size());
     }
@@ -86,14 +82,11 @@ class tokenizer final {
     [[nodiscard]] auto next_char() -> char {
         assert(not is_eos());
 
-        // note: just for easier debugging
         const char ch{src_.at(char_ix_)};
         ++char_ix_;
         if (ch == '\n') {
             ++at_line_;
         }
-        pos_ = src_str_.substr(char_ix_);
-
         return ch;
     }
 
@@ -324,8 +317,6 @@ class tokenizer final {
                 --at_line_;
             }
         }
-
-        pos_ = src_str_.substr(char_ix_);
     }
 
     [[nodiscard]] auto next_token_str() -> std::string_view {
@@ -379,7 +370,6 @@ class tokenizer final {
             }
             ++char_ix_;
         }
-        pos_ = src_str_.substr(char_ix_);
         const size_t len{char_ix_ - bgn_ix};
 
         return src_.substr(bgn_ix, len);

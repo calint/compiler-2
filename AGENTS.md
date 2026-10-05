@@ -26,6 +26,8 @@ Working agreements for AI sessions in this repository.
 - Report what was and was not verified, and why.
 - Failed precondition: stop and explain, no weaker version.
 - Use workspace-relative paths.
+- Lists in replies are numbered, not bulleted, so items can be referred to by
+  number.
 
 ## C++ style
 

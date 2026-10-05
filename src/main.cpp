@@ -1,7 +1,9 @@
 // reviewed: 2025-09-29
 
 #include <algorithm>
+#include <array>
 #include <cassert>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -14,9 +16,10 @@
 #include <print>
 #include <ranges>
 #include <span>
-#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <utility>
 
 #include "assembler.hpp"
 #include "compiler_exception.hpp"
@@ -30,16 +33,9 @@
 #include "null_stream.hpp"
 #include "panic_exception.hpp"
 #include "program.hpp"
+#include "toc.hpp"
 
 namespace {
-struct check_options {
-    bool upper{};
-    bool lower{};
-    bool show_line{};
-    bool frame{};
-    bool alias{};
-};
-
 constexpr size_t default_vars_size_bytes{0x10000};
 constexpr size_t vars_alignment{16};
 constexpr size_t default_stack_size_bytes{0x10000};
@@ -47,9 +43,24 @@ constexpr size_t default_stack_size_bytes{0x10000};
 constexpr size_t stack_alignment{16};
 // note: to avoid "magic number" lint
 
+enum class target : uint8_t { x86_64, rv32i, rv32i_qemu, rv32i_fpga };
+
+struct target_name {
+    target kind;
+    std::string_view text;
+};
+
+// the names of '--target', in the order of the usage text
+constexpr std::array<target_name, 4> target_names{
+    target_name{.kind{target::x86_64}, .text{"x86_64"}},
+    target_name{.kind{target::rv32i}, .text{"rv32i"}},
+    target_name{.kind{target::rv32i_qemu}, .text{"rv32i-qemu"}},
+    target_name{.kind{target::rv32i_fpga}, .text{"rv32i-fpga"}},
+};
+
 struct options {
     const char* src_file_name{"prog.baz"};
-    std::string_view target{"x86_64"};
+    target machine_target{target::x86_64};
     size_t vars_size_bytes{default_vars_size_bytes};
     size_t stack_size_bytes{default_stack_size_bytes};
     check_options checks{};
@@ -82,11 +93,18 @@ auto print_help(const char* const program_name) -> void;
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options>;
 
+[[nodiscard]] auto find_target(const std::string_view text)
+    -> std::optional<target>;
+
+[[nodiscard]] auto target_text(target kind) -> std::string_view;
+
+[[nodiscard]] auto supported_target_texts() -> std::string;
+
 [[nodiscard]] auto
 default_binary_file_name(const std::string_view src_file_name,
-                         const std::string_view target) -> std::string;
+                         const target machine_target) -> std::string;
 
-[[nodiscard]] auto make_backend(const std::string_view target, std::ostream& os,
+[[nodiscard]] auto make_backend(const target machine_target, std::ostream& os,
                                 const std::string_view src,
                                 const assembler::jump_mode jumps,
                                 const size_t stack_size_bytes,
@@ -199,17 +217,16 @@ template <typename T>
             option_value(arg, "--target="),
         }) {
 
-        opts.target = *value;
-        if (opts.target != "x86_64" and opts.target != "rv32i" and
-            opts.target != "rv32i-qemu" and opts.target != "rv32i-fpga") {
-
+        const std::optional<target> found{find_target(*value)};
+        if (not found) {
             print_usage_error(
-                std::format("Invalid target: '{}'. Supported targets are: "
-                            "x86_64, rv32i, rv32i-qemu, rv32i-fpga.",
-                            opts.target));
+                std::format("Invalid target: '{}'. Supported targets are: {}.",
+                            *value, supported_target_texts()));
 
             return false;
         }
+
+        opts.machine_target = *found;
 
         return true;
     }
@@ -281,9 +298,8 @@ options:
   --help, -h          this help
 
 checks:
-  upper  runtime upper array bounds, often enough to also catch negative
-         indexes
-  lower  runtime lower array bounds
+  upper  runtime upper array bounds only, a negative index passes
+  lower  runtime lower array bounds, catches negative indexes
   line   report line number on failed bounds check
   frame  runtime non-inlined function frame capacity
   alias  compile time rejection of calls where a result may share storage
@@ -319,23 +335,17 @@ examples:
 
         const std::string binary{
             opts.binary_file_name.empty()
-                ? default_binary_file_name(opts.src_file_name, opts.target)
+                ? default_binary_file_name(opts.src_file_name,
+                                           opts.machine_target)
                 : std::string{opts.binary_file_name},
         };
 
         const std::unique_ptr<machine> backend{
-            make_backend(opts.target, parser_output, src, jumps,
+            make_backend(opts.machine_target, parser_output, src, jumps,
                          opts.stack_size_bytes, binary),
         };
 
-        program prg{*backend,
-                    src,
-                    opts.vars_size_bytes,
-                    opts.checks.upper,
-                    opts.checks.lower,
-                    opts.checks.show_line,
-                    opts.checks.frame,
-                    opts.checks.alias};
+        program prg{*backend, src, opts.vars_size_bytes, opts.checks};
 
         if (opts.reproduce_source) {
             std::ofstream reproduced_source{"diff.baz"};
@@ -384,21 +394,28 @@ examples:
                                     const size_t alignment)
     -> std::optional<size_t> {
 
-    static_assert(sizeof(size_t) == sizeof(uint64_t));
+    constexpr int decimal_base{10};
+    constexpr int hex_base{16};
+
+    std::string_view digits{text};
+    int base{decimal_base};
+
+    if (digits.starts_with("0x") or digits.starts_with("0X")) {
+        base = hex_base;
+        digits.remove_prefix(2);
+        // note: 2 for the '0x' prefix
+    }
 
     size_t parsed_size_bytes{};
-    try {
-        const std::string digits{text};
-        size_t chars_read{};
-        // stoull throws for empty text and for text without digits
-        parsed_size_bytes = std::stoull(digits, &chars_read, 0);
+    const char* const digits_end{std::to_address(digits.end())};
+    const std::from_chars_result parsed{
+        std::from_chars(std::to_address(digits.begin()), digits_end,
+                        parsed_size_bytes, base),
+    };
 
-        if (digits.starts_with('-') or chars_read != digits.size() or
-            parsed_size_bytes == 0) {
+    if (parsed.ec != std::errc{} or parsed.ptr != digits_end or
+        parsed_size_bytes == 0) {
 
-            throw std::invalid_argument{std::format("invalid {}", name)};
-        }
-    } catch (...) {
         print_usage_error(
             std::format("Could not parse {}: \"{}\"", name, text));
 
@@ -424,11 +441,11 @@ examples:
     for (const auto part : checks | std::views::split(',')) {
         const std::string_view option{part};
         if (option == "upper") {
-            parsed.upper = true;
+            parsed.bounds_upper = true;
         } else if (option == "lower") {
-            parsed.lower = true;
+            parsed.bounds_lower = true;
         } else if (option == "line") {
-            parsed.show_line = true;
+            parsed.bounds_with_line = true;
         } else if (option == "frame") {
             parsed.frame = true;
         } else if (option == "alias") {
@@ -436,8 +453,8 @@ examples:
         } else if (option == "noub") {
             // 'line' only changes the report, it prevents no undefined
             // behavior
-            parsed.upper = true;
-            parsed.lower = true;
+            parsed.bounds_upper = true;
+            parsed.bounds_lower = true;
             parsed.frame = true;
             parsed.alias = true;
         } else if (not option.empty()) {
@@ -453,19 +470,56 @@ examples:
     return parsed;
 }
 
+[[nodiscard]] auto find_target(const std::string_view text)
+    -> std::optional<target> {
+
+    for (const target_name& name : target_names) {
+        if (name.text == text) {
+            return name.kind;
+        }
+    }
+
+    return std::nullopt;
+}
+
+[[nodiscard]] auto target_text(const target kind) -> std::string_view {
+    for (const target_name& name : target_names) {
+        if (name.kind == kind) {
+            return name.text;
+        }
+    }
+
+    std::unreachable();
+}
+
+// e.g. 'x86_64, rv32i, rv32i-qemu, rv32i-fpga'
+[[nodiscard]] auto supported_target_texts() -> std::string {
+    std::string texts;
+
+    for (const target_name& name : target_names) {
+        if (not texts.empty()) {
+            texts += ", ";
+        }
+
+        texts += name.text;
+    }
+
+    return texts;
+}
+
 // keeps the directory so the image lands next to its source
 [[nodiscard]] auto
 default_binary_file_name(const std::string_view src_file_name,
-                         const std::string_view target) -> std::string {
+                         const target machine_target) -> std::string {
 
     std::filesystem::path path{src_file_name};
     path.replace_extension();
 
-    return std::format("{}-{}.bin", path.string(), target);
+    return std::format("{}-{}.bin", path.string(), target_text(machine_target));
 }
 
 // 'os' receives the output of the parse stage
-[[nodiscard]] auto make_backend(const std::string_view target, std::ostream& os,
+[[nodiscard]] auto make_backend(const target machine_target, std::ostream& os,
                                 const std::string_view src,
                                 const assembler::jump_mode jumps,
                                 const size_t stack_size_bytes,
@@ -473,22 +527,22 @@ default_binary_file_name(const std::string_view src_file_name,
     -> std::unique_ptr<machine> {
 
     // todo: x86_64 writes no binary, see etc/todo.txt
-    if (target == "x86_64") {
+    if (machine_target == target::x86_64) {
         return std::make_unique<machine_x86_64>(os, src, jumps);
     }
 
-    if (target == "rv32i") {
+    if (machine_target == target::rv32i) {
         return std::make_unique<machine_rv32i>(os, src, jumps,
                                                binary_file_name);
     }
 
-    if (target == "rv32i-qemu") {
+    if (machine_target == target::rv32i_qemu) {
         return std::make_unique<machine_rv32i_qemu>(
             os, src, jumps, binary_file_name, stack_size_bytes);
     }
 
     // the command line accepts only these four targets
-    assert(target == "rv32i-fpga");
+    assert(machine_target == target::rv32i_fpga);
 
     return std::make_unique<machine_rv32i_fpga>(
         os, src, jumps, binary_file_name, stack_size_bytes);

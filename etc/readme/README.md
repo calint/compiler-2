@@ -102,9 +102,8 @@ options:
   --help, -h          this help
 
 checks:
-  upper  runtime upper array bounds, often enough to also catch negative
-         indexes
-  lower  runtime lower array bounds
+  upper  runtime upper array bounds only, a negative index passes
+  lower  runtime lower array bounds, catches negative indexes
   line   report line number on failed bounds check
   frame  runtime non-inlined function frame capacity
   alias  compile time rejection of calls where a result may share storage
@@ -133,10 +132,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           6516           2748          20566
-C++                              1            122             34            444
+C/C++ Header                    55           6517           2748          20546
+C++                              1            138             36            480
 -------------------------------------------------------------------------------
-SUM:                            56           6638           2782          21010
+SUM:                            56           6655           2784          21026
 -------------------------------------------------------------------------------
 ```
 

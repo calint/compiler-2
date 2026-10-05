@@ -811,18 +811,9 @@ class toc final {
 
   public:
     toc(::machine& backend, const std::string_view source,
-        const size_t vars_capacity_bytes, const bool bounds_check_upper,
-        const bool bounds_check_lower, const bool bounds_check_with_line,
-        const bool frame_check = {}, const bool alias_check = {})
+        const size_t vars_capacity_bytes, const check_options& checks)
         : machine_{backend}, source_{source},
-          vars_capacity_bytes_{vars_capacity_bytes},
-          checks_{
-              .bounds_upper{bounds_check_upper},
-              .bounds_lower{bounds_check_lower},
-              .bounds_with_line{bounds_check_with_line},
-              .frame{frame_check},
-              .alias{alias_check},
-          } {}
+          vars_capacity_bytes_{vars_capacity_bytes}, checks_{checks} {}
 
     auto add_alias(const alias_info& ai) -> void {
         frames_.back().add_alias(ai);
