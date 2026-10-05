@@ -633,13 +633,21 @@ dat str_what_name = "what name\n"
 dat str_name_too_long = "name too long\n"
 dat str_new_room_name = "new room name\n"
 
-func action_set_room_name(eid, tz mut tokenizer) {
-    if not tz.next_or_say(str_what_name) return
+# moves to the next token, it must exist and fit a name, else the user is told
+func mut tokenizer.next_name_or_say() res bool {
+    res = false
+    if not self.next_or_say(str_what_name) return
 
-    if tz.len() > max_name_len {
+    if self.len() > max_name_len {
         out.print_all(str_name_too_long)
         return
     }
+
+    res = true
+}
+
+func action_set_room_name(eid, tz mut tokenizer) {
+    if not tz.next_name_or_say() return
 
     rooms.array[entities.array[eid].room_id].name = tz.token()
 
@@ -649,7 +657,7 @@ func action_set_room_name(eid, tz mut tokenizer) {
 dat str_new_entity_created = "new entity created\n"
 
 func action_new_entity(eid, tz mut tokenizer) {
-    if not tz.next_or_say(str_what_name) return
+    if not tz.next_name_or_say() return
 
     let name = tz.token<name>()
 
@@ -665,7 +673,7 @@ func action_new_entity(eid, tz mut tokenizer) {
 dat str_new_object_created = "new object created\n"
 
 func action_new_object(eid, tz mut tokenizer) {
-    if not tz.next_or_say(str_what_name) return
+    if not tz.next_name_or_say() return
 
     let name = tz.token<name>()
 

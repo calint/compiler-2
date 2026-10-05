@@ -139,6 +139,24 @@ u r in roome
 u c me
 exits: none, office
 todo: find an exit
+u > on abcdefghijklmnopq
+
+name too long
+--
+
+u r in roome
+u c u
+exits: none, office
+todo: find an exit
+me > en abcdefghijklmnopq
+
+name too long
+--
+
+u r in roome
+u c me
+exits: none, office
+todo: find an exit
 u > i
 
 u have nothing
