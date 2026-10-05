@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-# applies the source formatting rules to C++ files under 'src/'
+# applies the source formatting rules to C++ files under 'src/': the layout
+# of the classes and the blank lines of AGENTS.md
 # usage: qa/lint/format-source.py [--apply] [files relative to the root...]
 # without '--apply' it prints the files that would change
 #
-# the classes are found in the syntax tree of 'src/main.cpp' parsed by
-# libclang, the text is rearranged by whole lines of the members
+# the classes and the statements are found in the syntax tree of 'src/main.cpp'
+# parsed by libclang, the text is rearranged by whole lines of the members,
+# the blank lines are added to and removed from the gaps between statements
 
 import os
 import pathlib
@@ -816,6 +818,281 @@ def format_file(tu, path):
     return "\n".join(out)
 
 
+#
+# the blank line rules of AGENTS.md
+#
+# a rule looks at the statements of one block and asks for a blank line or for
+# none in the gap before a statement, 'wants' of index 0 is the gap after the
+# '{' of the block, a later one the gap after the statement before. the want
+# with the highest priority wins, a blank line is asked for by default. a new
+# rule is a function 'rule_x(block, want)' added to 'BLANK_LINE_RULES'
+#
+
+BLANK = "blank"
+TIGHT = "tight"
+
+# a rule that only keeps statements together gives way to the others
+PRIORITY = {BLANK: 2, TIGHT: 1}
+
+CONTROL_KINDS = {
+    K.IF_STMT,
+    K.FOR_STMT,
+    K.CXX_FOR_RANGE_STMT,
+    K.WHILE_STMT,
+    K.DO_STMT,
+    K.SWITCH_STMT,
+    K.CXX_TRY_STMT,
+}
+# blocks, labels and empty statements do not ask for blank lines themselves
+PASSIVE_KINDS = {K.COMPOUND_STMT, K.NULL_STMT, K.LABEL_STMT}
+CASE_KINDS = {K.CASE_STMT, K.DEFAULT_STMT}
+DEFINITION_KINDS = FUNCTION_KINDS | {K.FUNCTION_DECL}
+
+ASSERT = re.compile(r"\s*assert\(")
+
+
+@dataclass
+class stmt:
+    kind: object
+    # the first line, of the case label when it has one, the line the
+    # statement itself starts at and its last line, all 0-based
+    first: int
+    start: int
+    last: int
+    # the first statement after a case label needs no blank line before it
+    after_label: bool
+    is_assert: bool
+
+    @property
+    def is_multiline(self):
+        return self.start != self.last
+
+    @property
+    def is_control(self):
+        return self.kind in CONTROL_KINDS
+
+    @property
+    def is_plain(self):
+        # a statement that a rule treats as one line of code
+        return not (
+            self.is_control
+            or self.is_assert
+            or self.kind in PASSIVE_KINDS | {K.RETURN_STMT}
+        )
+
+
+@dataclass
+class block:
+    lines: list
+    # the line of the '{'
+    open_line: int
+    stmts: list
+    # the definition this block is the body of, none for other blocks
+    function: object = None
+
+    def has_multiline_signature(self):
+        if self.function is None:
+            return False
+
+        start = self.function.extent.start.line - 1
+        while self.lines[start].lstrip().startswith("template"):
+            start += 1
+
+        # an attribute on a line of its own is part of the declaration
+        while start > 0 and self.lines[start - 1].lstrip().startswith("[["):
+            start -= 1
+
+        return start != self.open_line
+
+
+def statement_of(child, lines):
+    after_label = False
+    effective = child
+    while effective.kind in CASE_KINDS:
+        after_label = True
+        effective = list(effective.get_children())[-1]
+
+    first = child.extent.start.line - 1
+    start = effective.extent.start.line - 1
+    last = effective.extent.end.line - 1
+    is_assert = ASSERT.match(lines[start]) is not None
+
+    return stmt(effective.kind, first, start, last, after_label, is_assert)
+
+
+def source_path(cursor, resolved):
+    # the file of a cursor, 'resolved' remembers the paths by name because
+    # resolving one is a file system call
+    file = cursor.location.file
+    if file is None:
+        return None
+
+    if file.name not in resolved:
+        resolved[file.name] = pathlib.Path(file.name).resolve()
+
+    return resolved[file.name]
+
+
+def blocks_by_file(tu, paths, texts):
+    # the blocks of each file in one walk, the headers of the library and the
+    # syntax of other files are not entered
+    wanted = {p.resolve() for p in paths}
+    resolved = {}
+    bodies = {}
+    seen = set()
+    found = {p: [] for p in wanted}
+    for top in tu.cursor.get_children():
+        path = source_path(top, resolved)
+        if path not in wanted:
+            continue
+
+        lines = texts[path]
+        for cursor in top.walk_preorder():
+            if cursor.kind in DEFINITION_KINDS:
+                for child in cursor.get_children():
+                    if child.kind == K.COMPOUND_STMT:
+                        bodies[(path, child.extent.start.line - 1)] = cursor
+
+                continue
+
+            if cursor.kind != K.COMPOUND_STMT:
+                continue
+
+            open_line = cursor.extent.start.line - 1
+            if source_path(cursor, resolved) != path or (path, open_line) in seen:
+                continue
+
+            seen.add((path, open_line))
+            stmts = [statement_of(c, lines) for c in cursor.get_children()]
+            found[path].append(
+                block(lines, open_line, stmts, bodies.get((path, open_line)))
+            )
+
+    return found
+
+
+def rule_signature(b, want):
+    # a function whose declaration spans several lines has a blank line after
+    # its '{'
+    if b.stmts and b.has_multiline_signature():
+        want(0, BLANK)
+
+
+def rule_multiline(b, want):
+    # a statement that spans several lines is set apart, a multiline 'if' on
+    # both sides and other control statements below
+    for i, s in enumerate(b.stmts):
+        if not s.is_multiline or s.kind in PASSIVE_KINDS:
+            continue
+
+        # the first statement of a block needs no blank line above it
+        if i > 0 and (not s.is_control or s.kind == K.IF_STMT):
+            if not s.after_label:
+                want(i, BLANK)
+
+        want(i + 1, BLANK)
+
+
+def rule_assert_groups(b, want):
+    # consecutive asserts form a group, set apart on both sides
+    i = 0
+    while i < len(b.stmts):
+        if not b.stmts[i].is_assert:
+            i += 1
+            continue
+
+        end = i
+        while end + 1 < len(b.stmts) and b.stmts[end + 1].is_assert:
+            end += 1
+
+        if i > 0 and not b.stmts[i].after_label:
+            want(i, BLANK)
+
+        want(end + 1, BLANK)
+        i = end + 1
+
+
+def rule_tight_return(b, want):
+    # a return after the only statement of a block, or of a case, stays
+    # with it
+    for i, s in enumerate(b.stmts):
+        if i == 0 or s.kind != K.RETURN_STMT or s.is_multiline:
+            continue
+
+        before = b.stmts[i - 1]
+        if not before.is_plain or before.is_multiline:
+            continue
+
+        # a note below the statement keeps the gap
+        gap = range(before.last + 1, s.first)
+        if any(not is_blank(b.lines[n]) for n in gap):
+            continue
+
+        # a comment above the statement keeps the gap
+        opening = b.open_line if i == 1 else before.first
+        between = range(opening + 1, before.start if i != 1 else before.first)
+        if any(not is_blank(b.lines[n]) for n in between):
+            continue
+
+        if i == 1 or before.after_label:
+            want(i, TIGHT)
+
+
+BLANK_LINE_RULES = [
+    rule_signature,
+    rule_multiline,
+    rule_assert_groups,
+    rule_tight_return,
+]
+
+
+def block_gaps(b):
+    wants = {}
+
+    def want(index, state):
+        # a gap after the last statement is the end of the block
+        if index >= len(b.stmts):
+            return
+
+        best = wants.get(index)
+        if best is None or PRIORITY[state] > PRIORITY[best]:
+            wants[index] = state
+
+    for rule in BLANK_LINE_RULES:
+        rule(b, want)
+
+    return wants
+
+
+def blank_line_edits(blocks, lines):
+    # the lines to insert a blank line before and the blank lines to remove
+    inserts = set()
+    removes = set()
+    for b in blocks:
+        for index, state in block_gaps(b).items():
+            above = b.open_line if index == 0 else b.stmts[index - 1].last
+            region = range(above + 1, b.stmts[index].first)
+            blanks = [n for n in region if is_blank(lines[n])]
+            if state == TIGHT:
+                removes.update(blanks)
+            elif not blanks:
+                inserts.add(above + 1)
+
+    return inserts, removes
+
+
+def apply_blank_lines(lines, inserts, removes):
+    out = []
+    for n, line in enumerate(lines):
+        if n in inserts:
+            out.append("")
+
+        if n not in removes:
+            out.append(line)
+
+    return out
+
+
 def main():
     args = sys.argv[1:]
     apply = "--apply" in args
@@ -828,35 +1105,58 @@ def main():
     if not paths:
         paths = sorted(pathlib.Path("src").glob("*.[ch]pp"))
 
+    root = pathlib.Path("src").resolve()
     tu = parse()
-    analyze_access(tu, pathlib.Path("src").resolve())
+    analyze_access(tu, root)
     parsed = {
         pathlib.Path(i.include.name).resolve() for i in tu.get_includes()
     }
     parsed.add(pathlib.Path("src/main.cpp").resolve())
 
-    changed = 0
-    for path in paths:
-        if path.resolve() not in parsed:
-            print(f"not included by 'src/main.cpp': {path}", file=sys.stderr)
-            continue
+    paths = [p for p in paths if p.resolve() in parsed]
 
+    # the class layout moves lines, so the blank lines are looked at in the
+    # source as it is after it
+    laid_out = 0
+    for path in paths:
         text = path.read_text()
         formatted = format_file(tu, path)
         if formatted == text:
             continue
 
-        changed += 1
+        laid_out += 1
         if apply:
             path.write_text(formatted)
-            print(f"formatted: {path}")
+            print(f"laid out: {path}")
             continue
 
         # a diff of moved sections is hard to read, 'git diff' after applying
         # shows them better
-        print(f"would format: {path}")
+        print(f"would lay out: {path}")
 
-    print(f"{changed} file(s) {'formatted' if apply else 'would change'}")
+    if apply and laid_out:
+        tu = parse()
+
+    texts = {p.resolve(): p.read_text().split("\n") for p in paths}
+    blocks = blocks_by_file(tu, paths, texts)
+
+    changes = 0
+    for path in paths:
+        lines = texts[path.resolve()]
+        inserts, removes = blank_line_edits(blocks[path.resolve()], lines)
+        if not inserts and not removes:
+            continue
+
+        changes += len(inserts) + len(removes)
+        if apply:
+            path.write_text("\n".join(apply_blank_lines(lines, inserts, removes)))
+            print(f"blank lines: {path}")
+            continue
+
+        print(f"would change blank lines: {path} (+{len(inserts)} -{len(removes)})")
+
+    verb = "done" if apply else "pending"
+    print(f"{laid_out} file(s) laid out, {changes} blank line change(s) {verb}")
 
 
 main()

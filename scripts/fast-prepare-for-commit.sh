@@ -8,8 +8,6 @@ echo clang tidy
 qa/lint/clang-tidy.sh fix
 echo format source
 qa/lint/format-source.sh
-echo clang format
-clang-format -i --style=file src/*
 echo build with -O3
 ./make.sh build -O3
 echo run tests

@@ -46,8 +46,9 @@ Working agreements for AI sessions in this repository.
 
 - Around multiline statements and declarations: a blank line before and after,
   in all source; a comment above or a note below stays with its statement.
-  `qa/lint/format-source.sh` applies them and the class member order, run it
-  before clang-format (the scripts it runs are in `qa/lint/`).
+  `qa/lint/format-source.sh` applies them with the class member order and then
+  runs clang-format (`qa/lint/format-source.py` holds the rules, one rule is a
+  function in its blank line section).
 - Before and after a multiline `if`, after a multiline `for`, `while`,
   `switch` or `try`, so statements have some space between them (the script
   covers it).
