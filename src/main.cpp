@@ -565,11 +565,14 @@ auto print_source_line(const std::string_view src, const size_t start_index,
     const size_t line_bgn{
         before_start == std::string_view::npos ? 0 : before_start + 1,
     };
+    // note: +1 because the line starts after the line end
+
     const size_t line_end{std::min(src.find('\n', start_index), src.size())};
 
     std::string_view line{src.substr(line_bgn, line_end - line_bgn)};
     if (line.ends_with('\r')) {
         line.remove_suffix(1);
+        // note: 1 for the carriage return of a crlf line end
     }
 
     // an error at the end of a file has no line to show
@@ -592,5 +595,6 @@ auto print_source_line(const std::string_view src, const size_t start_index,
 
     std::println(stderr, "{}\n{}^{}", line, padding,
                  std::string(mark_size - 1, '~'));
+    // note: -1 because the caret already marks the first character
 }
 } // namespace

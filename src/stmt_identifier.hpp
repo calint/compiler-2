@@ -221,6 +221,7 @@ class stmt_identifier : public statement {
             parent_type = &cur_info.type_ref();
 
             const bool is_last_elem{elem_index == elems_.size() - 1};
+            // note: -1 is the index of the last element
 
             // an unindexed element only needs a possible range bounds check
             if (not cur_elem.array_index_expr) {
@@ -556,6 +557,7 @@ class stmt_identifier : public statement {
 
         // the last element keeps the padding after the array
         const bool is_last_element{*index == array_info.array_len - 1};
+        // note: -1 is the index of the last element
 
         access_range_ = {
             .offset{access_range_.offset + element_offset},

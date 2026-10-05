@@ -425,6 +425,7 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                             "expected ',' followed by a value for field '{}' "
                             "in type '{}'",
                             flds.at(counter - 1).name, tp.name())};
+                // note: -1 names the previous field
             }
             expr_delims_tk_.emplace_back(t);
         }

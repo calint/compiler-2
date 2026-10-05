@@ -745,6 +745,8 @@ class expr_bool final : public statement {
             bools_.at(i).visit(
                 [&os](const auto& e) -> void { e.source_to(os); });
             if (i < n - 1) {
+                // note: -1 because there is one operator fewer than elements
+
                 ops_.at(i).source_to(os);
             }
         }
@@ -871,6 +873,7 @@ class expr_bool final : public statement {
             const std::string next_label{
                 create_cmp_label_from(tc, bools_.at(expr_index + 1)),
             };
+            // note: +1 because the next element is the continuation
 
             // an 'or' continues when false and an 'and' continues when true
             const std::string_view jmp_false{
@@ -959,6 +962,8 @@ class expr_bool final : public statement {
         bool has_runtime_element{};
 
         const size_t last_index{bools_.size() - 1};
+        // note: -1 is the index of the last element
+
         for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
             const std::optional<bool> const_eval{
                 compile_inner_element(tc, indent, expr_index, jmp_to_if_false,

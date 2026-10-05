@@ -573,6 +573,8 @@ class expr_arith final : public expression {
         compile_first_step(tc, indent, dst_info, steps.front());
 
         for (const step& s : std::span{steps}.subspan(1)) {
+            // note: 1 because the first step is compiled above
+
             compile_step(tc, indent, dst_info, s);
         }
     }
@@ -740,6 +742,8 @@ class expr_arith final : public expression {
 
         for (size_t i{}; i < exprs_.size(); ++i) {
             const char op{i == 0 ? first_op() : ops_.at(i - 1)};
+            // note: -1 because the first expression has no operator before it
+
             const statement& e{*exprs_.at(i)};
 
             steps.push_back({
@@ -1242,6 +1246,7 @@ class expr_arith final : public expression {
         }
 
         std::ranges::rotate(steps, steps.end() - 1);
+        // note: -1 moves the last step to the front
     }
 
     // pass 1: the constants of a run of '+' and '-', of '*' or of one bitwise
@@ -1484,6 +1489,7 @@ class expr_arith final : public expression {
     [[nodiscard]] static auto width_min(const type& width_type) -> int64_t {
         return static_cast<int64_t>(~uint64_t{}
                                     << (width_bits(width_type) - 1));
+        // note: -1 because the sign bit is the highest bit
     }
 
     // the value a register of 'width_type' holds, sign extended
@@ -1496,6 +1502,8 @@ class expr_arith final : public expression {
         }
 
         const uint64_t sign_bit{uint64_t{1} << (bits - 1)};
+        // note: -1 because the sign bit is the highest bit
+
         const uint64_t low{
             static_cast<uint64_t>(value) & ((sign_bit << 1U) - 1U),
         };

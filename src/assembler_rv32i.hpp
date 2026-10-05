@@ -176,6 +176,7 @@ class assembler_rv32i final : public assembler {
     };
 
     static constexpr size_t op_count{std::to_underlying(op::ret) + 1};
+    // note: +1 because the last enumerator is counted too
 
     static constexpr uint32_t addi_encoding{0x00000013};
     static constexpr uint32_t lui_encoding{0x00000037};
@@ -1367,6 +1368,7 @@ class assembler_rv32i final : public assembler {
         records_.push_back(std::move(structured));
 
         return records_.size() - 1;
+        // note: -1 because the record was just added
     }
 
     auto write_code(std::ostream& os, const line& l, const size_t line_index,
@@ -1506,6 +1508,7 @@ class assembler_rv32i final : public assembler {
 
         return (value + alignment_bytes - 1) / alignment_bytes *
                alignment_bytes;
+        // note: -1 rounds up to a multiple of 'alignment_bytes'
     }
 
     [[nodiscard]] static auto ascii_text(const std::string_view bytes)
@@ -2261,6 +2264,7 @@ class assembler_rv32i final : public assembler {
         const auto locals{
             symbols.local_labels.find(name.substr(0, name.size() - 1)),
         };
+        // note: -1 because the name ends with ':'
 
         assert(name.size() >= 2 and locals != symbols.local_labels.end());
 

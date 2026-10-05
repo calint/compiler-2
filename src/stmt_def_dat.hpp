@@ -662,6 +662,7 @@ class stmt_def_dat final : public statement {
         for (size_t i{}; i < elroot.elems.size(); ++i) {
             if (i != 0) {
                 elroot.elem_delims_tk_.at(i - 1).source_to(os);
+                // note: -1 because there is one delimiter fewer than elements
             }
             print_item(i, elroot.elems.at(i));
         }

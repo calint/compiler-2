@@ -3500,6 +3500,7 @@ class machine_rv32i : public machine {
 
         if (lowered.displacement() + static_cast<int64_t>(size_bytes) - 1 >
             immediate_max) {
+            // note: -1 because the last byte accessed is at 'size_bytes - 1'
 
             const operand pointer{
                 alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -3669,6 +3670,7 @@ class machine_rv32i : public machine {
 
         assembler_.andi(indent, count.base_register(), count.base_register(),
                         start.width - 1);
+        // note: -1 turns the power of two 'width' into a mask of the tail bytes
 
         assembler_.beqz(indent, chunks.base_register(), after_chunks.reference);
 
@@ -4213,6 +4215,8 @@ class machine_rv32i : public machine {
 
         // the leading nonzero digit is now plus one and starts the result
         size_t top{digits.size() - 1};
+        // note: -1 is the index of the top digit
+
         while (digits.at(top) == 0) {
             --top;
         }
@@ -4247,6 +4251,8 @@ class machine_rv32i : public machine {
             const bool in_run{(remaining & 3U) == 3};
             digits.at(i) = in_run ? -1 : 1;
             remaining = in_run ? remaining + 1 : remaining - 1;
+            // note: +1 carries a run of set bits, -1 clears a lone set bit
+
             remaining >>= 1U;
         }
 
@@ -4270,6 +4276,7 @@ class machine_rv32i : public machine {
 
         if (value_type.name() != "bool" and
             (value & (uint32_t{1} << (bits - 1))) != 0) {
+            // note: -1 because the sign bit is the highest bit
 
             value |= ~mask;
         }
@@ -4318,6 +4325,7 @@ class machine_rv32i : public machine {
             static_cast<int64_t>(uint64_t{1}
                                  << ((dst_type.size_bytes() * 8) - 1)),
         };
+        // note: -1 because the sign bit is the highest bit of the type
 
         return *constant < -limit or *constant >= limit;
     }

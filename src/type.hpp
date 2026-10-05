@@ -179,6 +179,7 @@ class type final {
         const size_t next_offset{
             i + 1 < fields_.size() ? fields_.at(i + 1).offset : size_bytes_,
         };
+        // note: +1 is the next field, the last field ends at the type size
 
         return next_offset - fields_.at(i).offset;
     }

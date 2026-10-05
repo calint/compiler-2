@@ -406,6 +406,7 @@ class machine_x86_64 final : public machine {
             options.lower and options.upper and reg_count.is_empty() and
                 array_count <= (uint64_t{1} << (limit_bits - 1)) - 1,
         };
+        // note: -1 gives the signed maximum 2^(limit_bits - 1) - 1
 
         // the second array of a copy or compare checks the same count again
         const bool count_known{
@@ -1909,6 +1910,8 @@ class machine_x86_64 final : public machine {
             width_bits >= 64 ? std::numeric_limits<uint64_t>::max()
                              : (uint64_t{1} << width_bits) - 1,
         };
+        // note: -1 makes a mask of 'width_bits' ones
+
         const uint64_t multiplier{*bits & mask};
 
         // 'xor' is the shorter idiom but cannot target memory

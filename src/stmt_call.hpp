@@ -175,6 +175,7 @@ class stmt_call : public expression {
             args_.at(first).source_to(os);
             for (const auto [d, e] : std::views::zip(
                      arg_delims_tk_, args_ | std::views::drop(first + 1))) {
+                // note: +1 because the first argument is printed above
 
                 d.source_to(os);
                 e.source_to(os);
@@ -703,6 +704,7 @@ class stmt_call : public expression {
                 throw compiler_exception{
                     arg.tok(), std::format("parameter {} requires an array",
                                            index + 1 - first_argument_index())};
+                // note: +1 because parameters are numbered from 1
             }
 
             return;

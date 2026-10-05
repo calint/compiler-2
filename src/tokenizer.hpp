@@ -80,6 +80,7 @@ class tokenizer final {
 
     [[nodiscard]] auto is_peek_char2(const char ch) const -> bool {
         return char_ix_ + 1 < src_.size() and src_.at(char_ix_ + 1) == ch;
+        // note: +1 because the character after the current one is peeked
     }
 
     [[nodiscard]] auto next_char() -> char {
@@ -295,6 +296,7 @@ class tokenizer final {
             ws_before, bgn_ix,   src_.substr(bgn_ix + 1, end_ix - bgn_ix - 2),
             end_ix,    ws_after, at_line,
             true};
+        // note: +1 and -2 because the text is between the quotes
 
         if (const std::optional<token> escape_tk{
                 string_tk.unsupported_escape_position(),
@@ -353,6 +355,7 @@ class tokenizer final {
         move_back(len - newline - 1);
 
         return src_.substr(bgn_ix, newline + 1);
+        // note: +1 to include the line end
     }
 
     // comments are part of the whitespace so parsers never see them and

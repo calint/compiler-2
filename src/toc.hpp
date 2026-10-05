@@ -527,6 +527,7 @@ class constant_parser final {
         assert(is_character_literal(str));
 
         const std::string_view body{str.substr(1, str.size() - 2)};
+        // note: 1 and -2 because the literal is between the quotes
 
         if (body.size() == 1 and body.at(0) != '\\') {
             return static_cast<unsigned char>(body.at(0));
@@ -574,9 +575,11 @@ class constant_parser final {
         if (str.starts_with("0x") or str.starts_with("0X")) {
             base = base_hex;
             digits.remove_prefix(2);
+            // note: 2 for the '0x' prefix
         } else if (str.starts_with("0b") or str.starts_with("0B")) {
             base = base_binary;
             digits.remove_prefix(2);
+            // note: 2 for the '0b' prefix
         }
 
         int64_t value{};

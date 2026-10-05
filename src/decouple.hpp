@@ -54,6 +54,7 @@ struct generic_type_instance;
 inline constexpr size_t max_storage_size_bytes{
     static_cast<size_t>(std::numeric_limits<int64_t>::max()) - 16,
 };
+// note: -16 leaves room for the alignment padding
 
 [[nodiscard]] inline auto add_storage_size(const token& src_loc_tk,
                                            const size_t base,

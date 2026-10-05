@@ -75,6 +75,8 @@ class token final {
         const std::string_view s{joined};
         for (size_t i{}; i < s.size(); ++i, ++len) {
             if (s.at(i) != '\\' or i + 1 >= s.size()) {
+                // note: +1 because a backslash needs a character after it
+
                 continue;
             }
 
@@ -92,18 +94,24 @@ class token final {
         joined.reserve(text_.size());
         for (size_t i{}; i < text_.size(); ++i) {
             if (text_.at(i) != '\\' or i + 1 >= text_.size()) {
+                // note: +1 because a backslash needs a character after it
+
                 joined += text_.at(i);
                 continue;
             }
 
             if (text_.at(i + 1) == '\n') {
                 i += 1;
+                // note: 1 skips the backslash, the loop skips the line end
+
                 continue;
             }
 
             // crlf line ends
             if (text_.substr(i + 1).starts_with("\r\n")) {
                 i += 2;
+                // note: 2 skips '\' and '\r', the loop skips the '\n'
+
                 continue;
             }
 
@@ -112,6 +120,7 @@ class token final {
             joined += text_.at(i);
             joined += text_.at(i + 1);
             i += 1;
+            // note: 1 skips the backslash, the loop skips the escaped char
         }
 
         return joined;
@@ -136,6 +145,7 @@ class token final {
             }
 
             const std::string_view escape{text_.substr(i + 1)};
+            // note: +1 because the escape follows the backslash
 
             // a backslash before a line end continues the string
             if (escape.starts_with('\n') or escape.starts_with("\r\n")) {
@@ -168,6 +178,7 @@ class token final {
 
         if (escape.starts_with('x')) {
             return decode_hex_escape(escape.substr(1));
+            // note: 1 because the digits follow the 'x'
         }
 
         if (escape.size() != 1) {
