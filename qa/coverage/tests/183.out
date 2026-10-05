@@ -1,4 +1,0 @@
-
-183.baz:4:21: expected ',' followed by 'compare'
-    var z = equal(1 2)
-                    ^

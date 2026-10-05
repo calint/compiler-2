@@ -1,6 +1,6 @@
-# 'equal' of a whole array and an element
+# '==' of a whole array and an element
 
 func main() {
     var arr = i32[2]{}
-    var ok = equal(arr[1], arr)
+    var ok = arr[1] == arr
 }

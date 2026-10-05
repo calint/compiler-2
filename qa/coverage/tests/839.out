@@ -1,0 +1,4 @@
+
+839.baz:8:13: source and compare types are not the same. source is 'point' and compare is 'other'
+    if a == b exit(1)
+            ^

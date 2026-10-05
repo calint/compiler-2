@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <optional>
 #include <ostream>
 #include <print>
@@ -72,6 +73,18 @@ class statement {
                          [[maybe_unused]] const size_t indent,
                          [[maybe_unused]] const ident_info& dst_info) const
         -> void {
+
+        std::unreachable();
+    }
+
+    // 'use' runs while the scratch registers that build the address are still
+    // allocated, then they are freed
+    virtual auto compile_address(
+        [[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
+        [[maybe_unused]] const token& src_loc_tk,
+        [[maybe_unused]] const lea_request& request,
+        [[maybe_unused]] const std::function_ref<void(const operand&)> use)
+        const -> void {
 
         std::unreachable();
     }

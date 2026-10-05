@@ -255,8 +255,8 @@ func arrays() {
     # indexed array starts at that element
 
     assert(arrays_equal(primes[1], copy, 3))
-    assert(not equal(primes, copy))
-    # built-in 'arrays_equal' compares a number of elements and 'equal'
+    assert(primes != copy)
+    # built-in 'arrays_equal' compares a number of elements and '=='
     # compares arrays of the same size
 }
 
@@ -401,8 +401,9 @@ func user_types() {
 
     var q = px.pos
     q.y = 4
-    assert(equal(q, px.pos))
-    # copying an instance copies all fields, built-in 'equal' compares instances
+    assert(q == px.pos)
+    # copying an instance copies all fields, '==' and '!=' compare instances of
+    # the same type
 
     var points = point[3]{{1, 2}, {3, 4}}
     points[2] = points[0]
@@ -510,7 +511,7 @@ func arrays_in_types() {
 
     var copy = s
     copy.items[0] = 0
-    assert(s.items[0] == 7 and not equal(s, copy))
+    assert(s.items[0] == 7 and s != copy)
     # copying an instance copies its array fields
 }
 

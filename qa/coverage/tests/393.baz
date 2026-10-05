@@ -31,7 +31,7 @@ func main() {
     assert(locations[1].name.len == 3)
     assert(locations[1].name.data[1] == 0x61)
 
-    var z = equal(locations[1].name.data[1], locations[0].name.data[1])
+    var z = locations[1].name.data[1] == locations[0].name.data[1]
     assert(z)
 
     var ix = 1

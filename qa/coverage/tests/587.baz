@@ -27,6 +27,6 @@ func main() {
 
     var ps = point[2]{{1, 2}, {3, 4}}
     assert(sum(ps[1]) == 7)
-    assert(equal(ps[0], ps[0]))
-    assert(not equal(arr[0], arr[1]))
+    assert(ps[0] == ps[0])
+    assert(arr[0] != arr[1])
 }

@@ -1012,18 +1012,17 @@ main:
     mov rax, qword [rbp + 432]
     mov qword [rbp + 492], rax
 ;   [259:16] free named register rax
-;   [260:5] assert(equal(arr, arr4))
+;   [260:5] assert(arr == arr4)
 ;   [260:12] allocate scratch register -> r15
-;   [260:12] ? equal(arr, arr4)
-;   [260:12] ? shorthand: equal(arr, arr4)
+;   [260:12] ? arr == arr4
+;   [260:12] ? arr == arr4
     cmp.260.12:
-;       [260:12] equal(arr, arr4)
 ;       [260:12] allocate named register rsi
 ;       [260:12] allocate named register rdi
 ;       [260:12] allocate named register rcx
-;       [260:18] arr
+;       [260:12] arr
         lea rsi, [rbp + 424]
-;       [260:23] arr4
+;       [260:19] arr4
         lea rdi, [rbp + 484]
         cmpsq
         jne .Lbaz_equal.0
@@ -1033,6 +1032,7 @@ main:
 ;       [260:12] free named register rdi
 ;       [260:12] free named register rsi
         sete r15b
+    cmp r15b, 0
     bool.260.12.end:
 ;   [38:6] assert(ok bool)
     func.assert.260.5:
@@ -1364,18 +1364,17 @@ main:
     mov rax, qword [rbp + 528]
     mov qword [rbp + 544], rax
 ;   [294:13] free named register rax
-;   [297:5] assert(equal(p, q))
+;   [297:5] assert(p == q)
 ;   [297:12] allocate scratch register -> r15
-;   [297:12] ? equal(p, q)
-;   [297:12] ? shorthand: equal(p, q)
+;   [297:12] ? p == q
+;   [297:12] ? p == q
     cmp.297.12:
-;       [297:12] equal(p, q)
 ;       [297:12] allocate named register rsi
 ;       [297:12] allocate named register rdi
 ;       [297:12] allocate named register rcx
-;       [297:18] p
+;       [297:12] p
         lea rsi, [rbp + 520]
-;       [297:21] q
+;       [297:17] q
         lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.1
@@ -1385,6 +1384,7 @@ main:
 ;       [297:12] free named register rdi
 ;       [297:12] free named register rsi
         sete r15b
+    cmp r15b, 0
     bool.297.12.end:
 ;   [38:6] assert(ok bool)
     func.assert.297.5:
@@ -1409,27 +1409,27 @@ main:
 ;   [301:5] q.x = 3
 ;   [301:11] 3
     mov qword [rbp + 536], 3
-;   [302:5] assert(not equal(p, q))
+;   [302:5] assert(p != q)
 ;   [302:12] allocate scratch register -> r15
-;   [302:12] ? not equal(p, q)
-;   [302:12] ? shorthand: not equal(p, q)
+;   [302:12] ? p != q
+;   [302:12] ? p != q
     cmp.302.12:
-;       [302:16] equal(p, q)
-;       [302:16] allocate named register rsi
-;       [302:16] allocate named register rdi
-;       [302:16] allocate named register rcx
-;       [302:22] p
+;       [302:12] allocate named register rsi
+;       [302:12] allocate named register rdi
+;       [302:12] allocate named register rcx
+;       [302:12] p
         lea rsi, [rbp + 520]
-;       [302:25] q
+;       [302:17] q
         lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.2
         cmpsq
         .Lbaz_equal.2:
-;       [302:16] free named register rcx
-;       [302:16] free named register rdi
-;       [302:16] free named register rsi
+;       [302:12] free named register rcx
+;       [302:12] free named register rdi
+;       [302:12] free named register rsi
         setne r15b
+    cmp r15b, 0
     bool.302.12.end:
 ;   [38:6] assert(ok bool)
     func.assert.302.5:
@@ -3636,11 +3636,11 @@ vars.end:
 ;
 ;   removed jumps to next code: 129
 ;    removed unreachable jumps: 2
-; removed same target branches: 51
+; removed same target branches: 54
 ; inverted branches over jumps: 7
 ; max scratch registers in use: 4
 ;            max frames in use: 10
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 975
+;                 instructions: 978

@@ -885,8 +885,8 @@ func main() {
     var right = i8[2]{1, 2}
     var same = arrays_equal(left, right, 2)
     same = not arrays_equal(left, right, 2)
-    same = equal(left, right)
-    same = not equal(left, right)
+    same = left == right
+    same = left != right
 }
 )baz"};
     std::ostringstream x86_output;
@@ -2332,9 +2332,9 @@ func main() {
     var source = packed[3]{{1, 300}, {2, -400}, {3, 500}}
     var destination = packed[3]{}
     var single = source[1]
-    assert(equal(single, source[1]))
+    assert(single == source[1])
     single.second = 12
-    assert(not equal(single, source[1]))
+    assert(single != source[1])
     array_copy(source, destination, nested(source, destination))
     assert(arrays_equal(source, destination, 2))
     assert(not arrays_equal(source, destination, 3))
@@ -2344,14 +2344,14 @@ func main() {
     destination[index].second = 501
     assert(not arrays_equal(source[index], destination[index], 1))
     destination[index].second = 500
-    assert(equal(source, destination))
+    assert(source == destination)
     array_copy(source, destination, 0)
     assert(arrays_equal(source, destination, 0))
     array_copy(source, source, 3)
-    assert(equal(source, destination))
+    assert(source == destination)
     array_copy(destination[1], destination, 2)
-    assert(equal(destination[0], source[1]))
-    assert(equal(destination[1], source[2]))
+    assert(destination[0] == source[1])
+    assert(destination[1] == source[2])
     destination[0].first = 7
     assert(not arrays_equal(source[1], destination, 1))
     destination[0] = source[1]

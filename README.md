@@ -39,7 +39,7 @@ compiler writes the binary image itself.
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`
-* built-in functions: `array_copy`, `array_length`, `arrays_equal`, `equal`, `read`,
+* built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 
 ## Howto
@@ -132,10 +132,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    56           7190           2840          21434
+C/C++ Header                    55           7195           2845          21441
 C++                              1            145             36            480
 -------------------------------------------------------------------------------
-SUM:                            57           7335           2876          21914
+SUM:                            56           7340           2881          21921
 -------------------------------------------------------------------------------
 ```
 
@@ -401,8 +401,8 @@ func main() {
     assert(not arrays_equal(arr, arr1, 4))
 
     var arr4 = arr
-    assert(equal(arr, arr4))
-    # initializing from an array copies it, `equal` compares same size arrays
+    assert(arr == arr4)
+    # initializing from an array copies it, `==` compares same size arrays
 
 #   arr[ix] = ~inv(arr[ix - 1])
 #   `--checks=alias` rejects this because "return" and the argument may share
@@ -438,12 +438,12 @@ func main() {
     var q = p
     # user type initializer may be an expression
 
-    assert(equal(p, q))
-    # `equal` is built-in function to compare user types for equality or same
-    # size arrays
+    assert(p == q)
+    # `==` and `!=` compare the bytes of user types and of same size arrays,
+    # the padding between fields is zero so equal values compare equal
 
     q.x = 3
-    assert(not equal(p, q))
+    assert(p != q)
 
     var i = 0
     bar(i)
@@ -1024,6 +1024,7 @@ main:
         cmpsq
         .Lbaz_equal.0:
         sete r15b
+    cmp r15b, 0
     bool.260.12.end:
     func.assert.260.5:
         if.38.27.260.5:
@@ -1179,6 +1180,7 @@ main:
         cmpsq
         .Lbaz_equal.1:
         sete r15b
+    cmp r15b, 0
     bool.297.12.end:
     func.assert.297.5:
         if.38.27.297.5:
@@ -1200,6 +1202,7 @@ main:
         cmpsq
         .Lbaz_equal.2:
         setne r15b
+    cmp r15b, 0
     bool.302.12.end:
     func.assert.302.5:
         if.38.27.302.5:
@@ -3227,18 +3230,17 @@ main:
     mov rax, qword [rbp + 432]
     mov qword [rbp + 492], rax
 ;   [259:16] free named register rax
-;   [260:5] assert(equal(arr, arr4))
+;   [260:5] assert(arr == arr4)
 ;   [260:12] allocate scratch register -> r15
-;   [260:12] ? equal(arr, arr4)
-;   [260:12] ? shorthand: equal(arr, arr4)
+;   [260:12] ? arr == arr4
+;   [260:12] ? arr == arr4
     cmp.260.12:
-;       [260:12] equal(arr, arr4)
 ;       [260:12] allocate named register rsi
 ;       [260:12] allocate named register rdi
 ;       [260:12] allocate named register rcx
-;       [260:18] arr
+;       [260:12] arr
         lea rsi, [rbp + 424]
-;       [260:23] arr4
+;       [260:19] arr4
         lea rdi, [rbp + 484]
         cmpsq
         jne .Lbaz_equal.0
@@ -3248,6 +3250,7 @@ main:
 ;       [260:12] free named register rdi
 ;       [260:12] free named register rsi
         sete r15b
+    cmp r15b, 0
     bool.260.12.end:
 ;   [38:6] assert(ok bool)
     func.assert.260.5:
@@ -3579,18 +3582,17 @@ main:
     mov rax, qword [rbp + 528]
     mov qword [rbp + 544], rax
 ;   [294:13] free named register rax
-;   [297:5] assert(equal(p, q))
+;   [297:5] assert(p == q)
 ;   [297:12] allocate scratch register -> r15
-;   [297:12] ? equal(p, q)
-;   [297:12] ? shorthand: equal(p, q)
+;   [297:12] ? p == q
+;   [297:12] ? p == q
     cmp.297.12:
-;       [297:12] equal(p, q)
 ;       [297:12] allocate named register rsi
 ;       [297:12] allocate named register rdi
 ;       [297:12] allocate named register rcx
-;       [297:18] p
+;       [297:12] p
         lea rsi, [rbp + 520]
-;       [297:21] q
+;       [297:17] q
         lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.1
@@ -3600,6 +3602,7 @@ main:
 ;       [297:12] free named register rdi
 ;       [297:12] free named register rsi
         sete r15b
+    cmp r15b, 0
     bool.297.12.end:
 ;   [38:6] assert(ok bool)
     func.assert.297.5:
@@ -3624,27 +3627,27 @@ main:
 ;   [301:5] q.x = 3
 ;   [301:11] 3
     mov qword [rbp + 536], 3
-;   [302:5] assert(not equal(p, q))
+;   [302:5] assert(p != q)
 ;   [302:12] allocate scratch register -> r15
-;   [302:12] ? not equal(p, q)
-;   [302:12] ? shorthand: not equal(p, q)
+;   [302:12] ? p != q
+;   [302:12] ? p != q
     cmp.302.12:
-;       [302:16] equal(p, q)
-;       [302:16] allocate named register rsi
-;       [302:16] allocate named register rdi
-;       [302:16] allocate named register rcx
-;       [302:22] p
+;       [302:12] allocate named register rsi
+;       [302:12] allocate named register rdi
+;       [302:12] allocate named register rcx
+;       [302:12] p
         lea rsi, [rbp + 520]
-;       [302:25] q
+;       [302:17] q
         lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.2
         cmpsq
         .Lbaz_equal.2:
-;       [302:16] free named register rcx
-;       [302:16] free named register rdi
-;       [302:16] free named register rsi
+;       [302:12] free named register rcx
+;       [302:12] free named register rdi
+;       [302:12] free named register rsi
         setne r15b
+    cmp r15b, 0
     bool.302.12.end:
 ;   [38:6] assert(ok bool)
     func.assert.302.5:
@@ -5851,12 +5854,12 @@ vars.end:
 ;
 ;   removed jumps to next code: 129
 ;    removed unreachable jumps: 2
-; removed same target branches: 51
+; removed same target branches: 54
 ; inverted branches over jumps: 7
 ; max scratch registers in use: 4
 ;            max frames in use: 10
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 975
+;                 instructions: 978
 ```

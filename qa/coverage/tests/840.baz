@@ -1,0 +1,7 @@
+# a user type instance is not compared with a number by an operator
+type point { x i32, y i32 }
+
+func main() {
+    var a = point{1, 2}
+    if a == 1 exit(1)
+}

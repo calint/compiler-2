@@ -1,4 +1,4 @@
-# equal compares indexed i16 values
+# == compares indexed i16 values
 
 func assert(x bool) { if not x exit(1) }
 func main() {
@@ -6,5 +6,5 @@ func main() {
     var b = i16[2]{}
     a[0] = 3
     b[0] = 3
-    assert(equal(a[0],b[0]))
+    assert(a[0] == b[0])
 }

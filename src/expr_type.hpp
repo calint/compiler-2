@@ -192,7 +192,7 @@ class expr_type final : public statement {
                              const operand& dst_op) const -> void;
 
     // a call writes the fields only, so the padding is zeroed before it and
-    // 'equal' can compare instances byte by byte
+    // '==' can compare instances byte by byte
     auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
                       const operand& dst_op) const -> void {
 

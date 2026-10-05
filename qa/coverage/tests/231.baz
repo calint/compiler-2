@@ -1,4 +1,4 @@
-# equal compares indexed byte values
+# == compares indexed byte values
 
 func assert(x bool) { if not x exit(1) }
 func main() {
@@ -6,6 +6,6 @@ func main() {
     var b = i8[2]{}
     a[0] = 1
     b[0] = 1
-    var z = equal(a[0],b[0])
+    var z = a[0] == b[0]
     assert(z)
 }

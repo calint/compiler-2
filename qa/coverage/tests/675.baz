@@ -1,4 +1,4 @@
-# 'equal' compares the bytes of the fields, the padding of an instance is not
+# '==' compares the bytes of the fields, the padding of an instance is not
 # compared: a constructor leaves the padding as the storage held it
 
 func assert(err, ok bool) { if not ok exit(err) }
@@ -35,55 +35,55 @@ func main() {
     var p = padded.at(1, 2, 3)
     var q = padded.at(1, 2, 3)
 
-    assert(1, equal(p, q))
-    assert(2, not not equal(p, q))
-    assert(3, not (not equal(p, q)))
+    assert(1, p == q)
+    assert(2, not not p == q)
+    assert(3, not (not p == q))
 
     q.b = 5
-    assert(4, not equal(p, q))
+    assert(4, p != q)
 
     q.b = 2
     q.c = 4
-    assert(5, not equal(p, q))
+    assert(5, p != q)
 
     q.c = 3
     q.a = 0
-    assert(6, not equal(p, q))
+    assert(6, p != q)
 
     q.a = 1
-    assert(7, equal(p, q))
+    assert(7, p == q)
 
-    var same = equal(p, q)
+    var same = p == q
     assert(8, same)
 
     var differs = false
     q.b = 7
-    differs = equal(p, q)
+    differs = p == q
     assert(9, not differs)
 
     # padding inside an instance field
     var n = nested.at(1, 2, 3, 4)
     var m = nested.at(1, 2, 3, 4)
-    assert(10, equal(n, m))
+    assert(10, n == m)
 
     m.d = 5
-    assert(11, not equal(n, m))
+    assert(11, n != m)
 
     m.d = 4
     m.inner.c = 9
-    assert(12, not equal(n, m))
+    assert(12, n != m)
 
     m.inner.c = 3
-    assert(13, equal(n.inner, m.inner))
+    assert(13, n.inner == m.inner)
 
     # instances in an array, one with a run-time index
     var ps = padded[2]{}
     ps[0] = padded.at(1, 2, 3)
     ps[1] = padded.at(1, 2, 3)
     var ix = 1
-    assert(14, equal(ps[0], ps[ix]))
-    assert(15, equal(ps[ix], p))
+    assert(14, ps[0] == ps[ix])
+    assert(15, ps[ix] == p)
 
     ps[ix].c = 8
-    assert(16, not equal(ps[ix], p))
+    assert(16, ps[ix] != p)
 }

@@ -415,10 +415,10 @@ SRC=142 && EXP=0 && RUN
 
 SRC=143 && EXP=0 && RUN
 
-# equal compares user-defined values
+# == compares user-defined values
 SRC=144 && EXP=0 && RUN
 
-# equal compares arrays
+# == compares arrays
 SRC=145 && EXP=0 && RUN
 
 # boolean assignment from comparisons and integers
@@ -528,9 +528,6 @@ SRC=181 && COMPERR
 # arrays_equal arguments require commas
 SRC=182 && COMPERR
 
-# equal arguments require a comma
-SRC=183 && COMPERR
-
 SRC=184 && COMPERR
 
 SRC=185 && COMPERR
@@ -603,7 +600,7 @@ SRC=208 && COMPERR
 # conditional expression requires a closing parenthesis
 SRC=209 && COMPERR
 
-# equal requires matching array sizes
+# == requires matching array sizes
 SRC=210 && COMPERR
 
 # array_length result requires a wide destination
@@ -663,7 +660,7 @@ SRC=229 && COMPERR
 # nested user-type array fields must match
 SRC=230 && COMPERR
 
-# equal compares indexed byte values
+# == compares indexed byte values
 SRC=231 && EXP=0 && RUN
 
 # arrays_equal compares indexed byte ranges
@@ -672,7 +669,7 @@ SRC=232 && EXP=0 && RUN
 # unary negation of an array element is rejected here
 SRC=233 && COMPERR
 
-# equal compares indexed i32 values
+# == compares indexed i32 values
 SRC=234 && EXP=0 && RUN
 
 # incomplete addition is rejected
@@ -703,7 +700,7 @@ SRC=242 && COMPERR
 # user-type fields require structured initializers
 SRC=243 && COMPERR
 
-# equal compares indexed i16 values
+# == compares indexed i16 values
 SRC=244 && EXP=0 && RUN
 
 # arrays_equal compares i32 array values
@@ -712,19 +709,10 @@ SRC=245 && EXP=0 && RUN
 # distinct user types cannot be passed to a function
 SRC=246 && COMPERR
 
-# unary operations are forbidden on equal
-SRC=247 && COMPERR
-
 # unary operations are forbidden on arrays_equal
 SRC=248 && COMPERR
 
-# equal requires parentheses
-SRC=249 && COMPERR
-
-# equal requires a closing parenthesis
-SRC=250 && COMPERR
-
-# equal requires matching argument types
+# a whole array is not compared with a number
 SRC=251 && COMPERR
 
 # arrays_equal requires parentheses
@@ -1160,7 +1148,7 @@ SRC=396 && EXP=0 && RUN
 
 SRC=397 && EXP=0 && RUN
 
-# equal compares indexed default-type values (true and false paths)
+# == compares indexed default-type values (true and false paths)
 SRC=398 && EXP=0 && RUN
 
 # shorthand bool truthiness with unary '~' across scalar widths
@@ -1774,7 +1762,7 @@ SRC=584 && COMPERR
 # a whole array passed to a scalar parameter
 SRC=585 && COMPERR
 
-# 'equal' of a whole array and an element
+# '==' of a whole array and an element
 SRC=586 && COMPERR
 
 # aliases of array elements are read as the element
@@ -1819,7 +1807,7 @@ SRC=596 && COMPERR
 # a constant left side of a comparison may not truncate either
 SRC=597 && COMPERR
 
-# 'equal' of a known size compares the qwords, then the remaining dword, word
+# '==' of a known size compares the qwords, then the remaining dword, word
 # and byte; a difference in any byte of any part makes it false
 SRC=598 && EXP=0 && RUN
 
@@ -2070,7 +2058,7 @@ SRC=673 && COMPERR
 # work on read-only receivers, a function can still be named 'mut'
 SRC=674 && EXP=0 && RUN
 
-# 'equal' compares the bytes of the fields, the padding of an instance is not
+# '==' compares the bytes of the fields, the padding of an instance is not
 # compared: a constructor leaves the padding as the storage held it
 SRC=675 && EXP=0 && RUN
 
@@ -2121,7 +2109,7 @@ SRC=686 && COMPERR
 # a narrow destination computes a converted operand at the wide width
 SRC=687 && EXP=45 && RUN
 
-# equal arguments require the same type
+# == requires arrays of the same element type
 SRC=688 && COMPERR
 
 # a non-inline function reads an array parameter
@@ -2577,8 +2565,14 @@ SRC=835 && EXP=0 && RUN
 # data larger than the address range of rv32i is rejected at its declaration
 if [[ $MACHINE != x86_64 ]]; then SRC=836 && COMPERR; fi
 
-# a user type instance is compared with 'equal(...)', not with an operator
-SRC=837 && COMPERR
+# user type instances and arrays are compared with == and !=
+SRC=837 && EXP=0 && RUN
 
 # an instance of a user type is not a condition
 SRC=838 && COMPERR
+
+# a user type instance is compared only with an instance of the same type
+SRC=839 && COMPERR
+
+# a user type instance is not compared with a number by an operator
+SRC=840 && COMPERR

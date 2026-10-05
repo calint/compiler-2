@@ -1,7 +1,7 @@
-# equal arguments require the same type
+# == requires arrays of the same element type
 
 func main() {
-    var a = i8(1)
-    var b = i16(1)
-    var z = equal(a, b)
+    var a = i8[2]{}
+    var b = i16[2]{}
+    var z = a == b
 }

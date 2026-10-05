@@ -1,0 +1,9 @@
+# a user type instance is compared only with an instance of the same type
+type point { x i32, y i32 }
+type other { x i32, y i32 }
+
+func main() {
+    var a = point{1, 2}
+    var b = other{1, 2}
+    if a == b exit(1)
+}

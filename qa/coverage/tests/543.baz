@@ -80,18 +80,18 @@ func main() {
     m.tag = 9
     assert(3, m.value == -123456789 and m.half == -2 and m.last == 4)
 
-    # instances equal field by field compare equal including their padding
+    # instances == field by field compare == including their padding
     var p = mixed{9, -123456789, -2, 4}
-    assert(4, equal(m, p))
+    assert(4, m == p)
     var q = m
-    assert(5, equal(q, p))
+    assert(5, q == p)
     q.last = 5
-    assert(6, not equal(q, p))
+    assert(6, q != p)
 
     # unlisted fields and padding are zero
     var z = mixed{1}
     var zero_mixed = mixed{1, 0, 0, 0}
-    assert(7, equal(z, zero_mixed))
+    assert(7, z == zero_mixed)
 
     # nested instances and arrays of instances keep their own alignment
     var o = outer{true, {1, 2, 3, 4}, {5, 6, 7}, {{8, 9, 10, 11}}}
@@ -104,14 +104,14 @@ func main() {
     assert(12, o.items[0].last == 11 and o.names[0] == 5)
 
     var o2 = o
-    assert(13, equal(o, o2))
+    assert(13, o == o2)
     o2.items[1].half = 301
-    assert(14, not equal(o, o2))
+    assert(14, o != o2)
 
     # instances without wider fields need no padding
     var pk = packed{1, 2, 3}
     var pk2 = pk
-    assert(15, equal(pk, pk2) and pk2.c == 3)
+    assert(15, pk == pk2 and pk2.c == 3)
 
     # data after data of other sizes
     assert(16, greeting[2] == 33)
@@ -120,7 +120,7 @@ func main() {
     assert(19, halves[0] == -1 and halves[1] == 2)
     assert(20, constant_mixed.value == 2 and constant_mixed.last == 4)
     var cm = mixed{1, 2, 3, 4}
-    assert(21, equal(cm, constant_mixed))
+    assert(21, cm == constant_mixed)
 
     # a byte between word sized locals
     var before = 11
@@ -152,7 +152,7 @@ func main() {
     var big1 = mixed[5]{{1, 2, 3, 4}, {5, 6, 7, 8}}
     var big2 = big1
     assert(30, big2[1].value == 6 and big2[4].value == 0)
-    assert(31, equal(big1, big2))
+    assert(31, big1 == big2)
     array_copy(big1, big2[3], 2)
     assert(32, big2[3].value == 2 and big2[4].half == 7)
 

@@ -1,12 +1,12 @@
-# equal compares arrays
+# == compares arrays
 
 func assert(expr bool) { if not expr exit(1) }
 
 func main() {
     var p = i32[4]{}
     var q = i32[4]{}
-    assert(equal(p, q))
+    assert(p == q)
 
     q[1] = 2
-    assert(not equal(p, q))
+    assert(p != q)
 }

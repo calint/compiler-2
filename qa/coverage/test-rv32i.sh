@@ -80,7 +80,7 @@ qemu-riscv32 "$TEST_DIR/strings" > "$TEST_DIR/output"
 printf '\101\000\007\010\011\012\013\014\015\033\042\047\140\134\000\177\200\377\101\102' > "$TEST_DIR/expected"
 cmp "$TEST_DIR/output" "$TEST_DIR/expected"
 printf 'rv32i strings and write: ok\n'
-# 'equal', 'arrays_equal' and 'array_copy' on arrays of records
+# '==', 'arrays_equal' and 'array_copy' on arrays of instances
 printf 'rv32i bulk operations: compiling and executing\n'
 "$TEST_DIR/generate" bulk > "$TEST_DIR/bulk.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \

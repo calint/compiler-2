@@ -22,7 +22,7 @@ func main() {
     }
     assert(sum == 1 + 2 + 3)
 
-    # a count equal to the array size visits every element
+    # a count == to the array size visits every element
     sum = 0
     foo arr, 5 {
         sum = sum + i

@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -32,6 +33,10 @@ class expr_bool_op final : public statement {
     bool is_not_{};       // e.g. if not a == b ...
     bool is_shorthand_{}; // e.g. if a ...
     bool is_expression_{};
+
+    // e.g. 'a == b' of two user type instances or two whole arrays, the bytes
+    // are compared
+    bool is_memory_comparison_{};
 
   public:
     expr_bool_op(toc& tc, tokenizer& tz,
@@ -92,8 +97,14 @@ class expr_bool_op final : public statement {
                 op_ == machine::comparison_operator::not_equal,
         };
 
-        assert_not_record(lhs_, is_equality);
-        assert_not_record(rhs_, is_equality);
+        is_memory_comparison_ = is_equality and is_memory_operand(tc, lhs_) and
+                                is_memory_operand(tc, rhs_);
+
+        if (not is_memory_comparison_) {
+            assert_not_record(lhs_, is_equality);
+            assert_not_record(rhs_, is_equality);
+        }
+
         resolve_if_op_is_expression();
     }
 
@@ -286,6 +297,11 @@ class expr_bool_op final : public statement {
             return std::nullopt;
         }
 
+        if (is_memory_comparison_) {
+            resolve_memory_cmp(tc, indent, action);
+            return std::nullopt;
+        }
+
         if (not is_shorthand_) {
             resolve_cmp(tc, indent, lhs_, rhs_, action);
             return std::nullopt;
@@ -420,6 +436,57 @@ class expr_bool_op final : public statement {
         is_expression_ = true;
     }
 
+    // the bytes are compared and the result is branched on as for a shorthand
+    // condition
+    auto resolve_memory_cmp(toc& tc, const size_t indent,
+                            const machine::comparison_action& action) const
+        -> void {
+
+        const statement& lhs{lhs_.identifier_statement()};
+        const statement& rhs{rhs_.identifier_statement()};
+
+        const bool is_not_equal{op_ == machine::comparison_operator::not_equal};
+        machine& x{tc.machine()};
+
+        if (not action.destination.is_empty()) {
+            compile_memory_equality(tc, indent + 1, tok(), lhs, rhs,
+                                    action.destination,
+                                    action.inverted != is_not_equal);
+
+            if (action.target.empty()) {
+                return;
+            }
+
+            machine::comparison_action branch_action{action};
+            // the stored result has the inversion applied
+
+            branch_action.destination = {};
+            branch_action.inverted = false;
+
+            x.compare_and_branch(tok(), indent, action.destination,
+                                 operand::imm("0", tc.get_type_default()),
+                                 branch_action, {});
+
+            return;
+        }
+
+        const operand result{
+            x.alloc_scratch_register(tok(), indent, tc.get_type_bool()),
+        };
+
+        compile_memory_equality(tc, indent + 1, tok(), lhs, rhs, result,
+                                is_not_equal);
+
+        machine::comparison_action branch_action{action};
+        branch_action.operation = machine::comparison_operator::not_equal;
+
+        const std::vector<operand> allocated_registers{result};
+
+        x.compare_and_branch(tok(), indent, result,
+                             operand::imm("0", tc.get_type_default()),
+                             branch_action, allocated_registers);
+    }
+
     //
     // statics
     //
@@ -437,8 +504,7 @@ class expr_bool_op final : public statement {
                                     side.get_type().name())};
     }
 
-    // an operator compares a user type instance as its first field only,
-    // 'equal(...)' compares all
+    // an operator would compare a user type instance as its first field only
     static auto assert_not_record(const expr_arith& side,
                                   const bool is_equality) -> void {
 
@@ -451,8 +517,8 @@ class expr_bool_op final : public statement {
         if (is_equality) {
             throw compiler_exception{
                 side.tok(),
-                std::format("cannot compare an instance of '{}' with an "
-                            "operator, use 'equal(...)'",
+                std::format("an instance of '{}' is compared only with an "
+                            "instance of the same type",
                             type_name)};
         }
 
@@ -502,6 +568,87 @@ class expr_bool_op final : public statement {
             rhs.tok(),
             std::format("constant '{}' does not fit '{}' of type '{}'", value,
                         trimmed_source(lhs), lhs_type.name())};
+    }
+
+    // compares the bytes of two user type instances or of two whole arrays,
+    // 1 is put into 'dst' when they are equal, 0 when 'inverted'
+    static auto compile_memory_equality(toc& tc, const size_t indent,
+                                        const token& src_loc_tk,
+                                        const statement& lhs,
+                                        const statement& rhs,
+                                        const operand& dst, const bool inverted)
+        -> void {
+
+        machine& x{tc.machine()};
+
+        const ident_info lhs_info{make_memory_operand_info(tc, lhs)};
+        const ident_info rhs_info{make_memory_operand_info(tc, rhs)};
+
+        if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
+            throw compiler_exception{
+                rhs.tok(),
+                std::format("source and compare types are not the "
+                            "same. source is '{}' and compare is '{}'",
+                            lhs_info.type_ref().name(),
+                            rhs_info.type_ref().name())};
+        }
+
+        size_t size_bytes{lhs_info.type_ref().size_bytes()};
+
+        // a whole array is not compared as its first element
+        if (lhs_info.is_array != rhs_info.is_array) {
+            toc::assert_not_whole_array(lhs, lhs_info);
+            toc::assert_not_whole_array(rhs, rhs_info);
+        }
+
+        // check comparing 2 arrays of the same size without indexing
+        // note: a whole array on one side only was rejected above
+        if (lhs_info.is_array) {
+
+            if (lhs_info.array_len != rhs_info.array_len) {
+                throw compiler_exception{lhs.tok(),
+                                         "cannot compare arrays of different "
+                                         "sizes"};
+            }
+
+            size_bytes = multiply_storage_size(lhs.tok(), size_bytes,
+                                               lhs_info.array_len);
+        }
+
+        const auto emit_lhs{
+            [&](const operand& reg_count, const operand& address_register,
+                const machine::address_use use) -> void {
+                lhs.compile_address(tc, indent, src_loc_tk,
+                                    {
+                                        .reg_count{reg_count},
+                                        .lea_path{lhs_info.lea_path},
+                                        .address_register{address_register},
+                                    },
+                                    use);
+            },
+        };
+
+        const auto emit_rhs{
+            [&](const operand& reg_count, const operand& address_register,
+                const machine::address_use use) -> void {
+                rhs.compile_address(tc, indent, src_loc_tk,
+                                    {
+                                        .reg_count{reg_count},
+                                        .lea_path{rhs_info.lea_path},
+                                        .address_register{address_register},
+                                    },
+                                    use);
+            },
+        };
+
+        x.memory_equal(src_loc_tk, indent, size_bytes,
+                       {
+                           .alignment{lhs_info.type_ref().alignment()},
+                           .lhs{emit_lhs},
+                           .rhs{emit_rhs},
+                           .dst{dst},
+                           .inverted{inverted},
+                       });
     }
 
     [[nodiscard]] static auto
@@ -563,6 +710,36 @@ class expr_bool_op final : public statement {
         return not lhs.is_expression() and lhs.get_unary_ops().is_empty() and
                lhs.get_type().is_bool() and not action.inverted and
                action.target.empty();
+    }
+
+    // a user type instance or a whole array, not unary operated or computed
+    [[nodiscard]] static auto is_memory_operand(const toc& tc,
+                                                const expr_arith& side)
+        -> bool {
+
+        if (not side.is_identifier() or not side.get_unary_ops().is_empty()) {
+            return false;
+        }
+
+        const ident_info info{tc.make_ident_info(side.identifier_statement())};
+
+        return not info.is_const() and
+               (info.is_array or not info.type_ref().is_builtin());
+    }
+
+    // memory is compared, so a constant has nothing to compare
+    [[nodiscard]] static auto
+    make_memory_operand_info(const toc& tc, const statement& identifier)
+        -> ident_info {
+
+        ident_info info{tc.make_ident_info(identifier)};
+
+        if (info.is_const()) {
+            throw compiler_exception{identifier.tok(),
+                                     "constant not supported"};
+        }
+
+        return info;
     }
 
     // the comparison at the next characters, none for a shorthand condition

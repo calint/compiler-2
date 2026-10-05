@@ -31,7 +31,6 @@
 #include "stmt_builtin_array_length.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_convert.hpp"
-#include "stmt_builtin_equal.hpp"
 #include "stmt_builtin_exit.hpp"
 #include "stmt_builtin_foo.hpp"
 #include "stmt_builtin_io.hpp"
@@ -326,11 +325,6 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     if (tk.is_text("arrays_equal")) {
         return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
                                                            tk, tz);
-    }
-
-    if (tk.is_text("equal")) {
-        return std::make_unique<stmt_builtin_equal>(tc, std::move(uops), tk,
-                                                    tz);
     }
 
     if (tc.is_integer_type_name(tk.text()) and

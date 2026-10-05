@@ -75,7 +75,7 @@ func main() {
     var o2 = object{point.at(11, 12), 13}
     assert(7, o2.pos.x == 11 and o2.color == 13)
     var p2 = point.at(11, 12)
-    assert(8, equal(o2.pos, p2))
+    assert(8, o2.pos == p2)
 
     o2.pos = point.at(14, 15)
     assert(9, o2.pos.sum() == 29)

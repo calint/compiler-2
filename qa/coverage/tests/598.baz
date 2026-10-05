@@ -1,4 +1,4 @@
-# 'equal' of a known size compares the qwords, then the remaining dword, word
+# '==' of a known size compares the qwords, then the remaining dword, word
 # and byte; a difference in any byte of any part makes it false
 
 func assert(err, expr bool) { if not expr exit(err) }
@@ -12,18 +12,18 @@ func fill(a mut i8[]) {
     }
 }
 
-# 'a' and 'b' are equal, then differ in each byte in turn
+# 'a' and 'b' are ==, then differ in each byte in turn
 func check(err, a mut i8[], b mut i8[]) {
     fill(a)
     fill(b)
-    assert(err, equal(a, b))
+    assert(err, a == b)
     var i = 0
     loop {
         if i == array_length(b) break
         b[i] = 0
-        assert(err, not equal(a, b))
+        assert(err, a != b)
         b[i] = a[i]
-        assert(err, equal(a, b))
+        assert(err, a == b)
         i = i + 1
     }
 }
@@ -79,35 +79,35 @@ func main() {
 
     var p = tail{1, 2, 3, 4, 5, 6, 7, 8}
     var q = p
-    assert(50, equal(p, q))
+    assert(50, p == q)
     q.d1 = 0
-    assert(51, not equal(p, q))
+    assert(51, p != q)
     q = p
     q.d6 = 0
-    assert(52, not equal(p, q))
+    assert(52, p != q)
     q = p
     q.w = 0
-    assert(53, not equal(p, q))
+    assert(53, p != q)
     q = p
     q.b = 0
-    assert(54, not equal(p, q))
+    assert(54, p != q)
     q = p
-    assert(55, equal(p, q))
+    assert(55, p == q)
 
-    # 'test-equal-compares.sh' checks the instructions of these lines against
+    # 'test-==-compares.sh' checks the instructions of these lines against
     # 'tests/598.x86_64.compares'
-    assert(60, equal(a1, b1)) # compares
-    assert(61, equal(a2, b2)) # compares
-    assert(62, equal(a3, b3)) # compares
-    assert(63, equal(a4, b4)) # compares
-    assert(64, equal(a7, b7)) # compares
-    assert(65, equal(a8, b8)) # compares
-    assert(66, equal(a15, b15)) # compares
-    assert(67, equal(a16, b16)) # compares
-    assert(68, equal(a23, b23)) # compares
-    assert(69, equal(a24, b24)) # compares
-    assert(70, equal(a29, b29)) # compares
-    assert(71, equal(a31, b31)) # compares
-    assert(72, equal(a40, b40)) # compares
-    assert(73, equal(p, q)) # compares
+    assert(60, a1 == b1) # compares
+    assert(61, a2 == b2) # compares
+    assert(62, a3 == b3) # compares
+    assert(63, a4 == b4) # compares
+    assert(64, a7 == b7) # compares
+    assert(65, a8 == b8) # compares
+    assert(66, a15 == b15) # compares
+    assert(67, a16 == b16) # compares
+    assert(68, a23 == b23) # compares
+    assert(69, a24 == b24) # compares
+    assert(70, a29 == b29) # compares
+    assert(71, a31 == b31) # compares
+    assert(72, a40 == b40) # compares
+    assert(73, p == q) # compares
 }

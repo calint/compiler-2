@@ -1,9 +1,45 @@
-# user type instances are compared with 'equal(...)', an operator would
-# compare only the first field
-type point { x i32, y i32 }
+# user type instances and arrays are compared with == and !=
+type inner { a i8, b i32 }
+type point { x i32, y i32, in inner }
+
+func check(ok bool) { if not ok exit(1) }
 
 func main() {
-    var a = point{1, 2}
-    var b = point{1, 3}
-    if a == b exit(1)
+    var p = point{1, 2, {3, 4}}
+    var q = point{1, 2, {3, 4}}
+    var r = point{1, 2, {3, 5}}
+    check(p == q)
+    check(not (p == r))
+    check(p != r)
+    check(not (p != q))
+    if p == q {
+        check(true)
+    } else {
+        exit(2)
+    }
+    if p != q exit(3)
+    var same = p == q
+    check(same)
+    var diff = p != r
+    check(diff)
+    check(p.in == q.in)
+    check(p.in != r.in)
+    var ps = point[2]{p, r}
+    check(ps[0] == p)
+    check(ps[1] != p)
+    check(p == q and p != r)
+    check(p != q or p == r or true)
+
+    var numbers = i32[3]{1, 2, 3}
+    var same_numbers = i32[3]{1, 2, 3}
+    var other_numbers = i32[3]{1, 2, 4}
+    check(numbers == same_numbers)
+    check(numbers != other_numbers)
+    check(not numbers == other_numbers)
+    var qs = point[2]{p, r}
+    var rs = point[2]{p, r}
+    check(qs == rs)
+    rs[1].y = 9
+    check(qs != rs)
+    exit(0)
 }

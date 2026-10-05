@@ -1,4 +1,4 @@
-# equal compares indexed default-type values (true and false paths)
+# == compares indexed default-type values (true and false paths)
 
 func assert(err, expr bool) { if not expr exit(err) }
 
@@ -11,12 +11,12 @@ func main() {
     a[1] = 9
     b[1] = 10
 
-    assert(1, equal(a[0], b[0]))
-    assert(2, not equal(a[1], b[1]))
+    assert(1, a[0] == b[0])
+    assert(2, a[1] != b[1])
 
-    var z = equal(a[1], b[1])
+    var z = a[1] == b[1]
     assert(3, not z)
 
-    var y = equal(a[0], b[0])
+    var y = a[0] == b[0]
     assert(4, y)
 }

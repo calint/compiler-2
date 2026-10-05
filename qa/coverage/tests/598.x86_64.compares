@@ -1,32 +1,19 @@
-=== 99:     assert(60, equal(a1, b1)) # compares
+=== 99:     assert(60, a1 == b1) # compares
 cmpsb
 sete
-=== 100:     assert(61, equal(a2, b2)) # compares
+=== 100:     assert(61, a2 == b2) # compares
 cmpsw
 sete
-=== 101:     assert(62, equal(a3, b3)) # compares
-cmpsw
-jne .Lbaz_equal.N
-cmpsb
-.Lbaz_equal.N:
-sete
-=== 102:     assert(63, equal(a4, b4)) # compares
-cmpsd
-sete
-=== 103:     assert(64, equal(a7, b7)) # compares
-cmpsd
-jne .Lbaz_equal.N
+=== 101:     assert(62, a3 == b3) # compares
 cmpsw
 jne .Lbaz_equal.N
 cmpsb
 .Lbaz_equal.N:
 sete
-=== 104:     assert(65, equal(a8, b8)) # compares
-cmpsq
+=== 102:     assert(63, a4 == b4) # compares
+cmpsd
 sete
-=== 105:     assert(66, equal(a15, b15)) # compares
-cmpsq
-jne .Lbaz_equal.N
+=== 103:     assert(64, a7 == b7) # compares
 cmpsd
 jne .Lbaz_equal.N
 cmpsw
@@ -34,15 +21,10 @@ jne .Lbaz_equal.N
 cmpsb
 .Lbaz_equal.N:
 sete
-=== 106:     assert(67, equal(a16, b16)) # compares
+=== 104:     assert(65, a8 == b8) # compares
 cmpsq
-jne .Lbaz_equal.N
-cmpsq
-.Lbaz_equal.N:
 sete
-=== 107:     assert(68, equal(a23, b23)) # compares
-cmpsq
-jne .Lbaz_equal.N
+=== 105:     assert(66, a15 == b15) # compares
 cmpsq
 jne .Lbaz_equal.N
 cmpsd
@@ -52,35 +34,53 @@ jne .Lbaz_equal.N
 cmpsb
 .Lbaz_equal.N:
 sete
-=== 108:     assert(69, equal(a24, b24)) # compares
+=== 106:     assert(67, a16 == b16) # compares
+cmpsq
+jne .Lbaz_equal.N
+cmpsq
+.Lbaz_equal.N:
+sete
+=== 107:     assert(68, a23 == b23) # compares
+cmpsq
+jne .Lbaz_equal.N
+cmpsq
+jne .Lbaz_equal.N
+cmpsd
+jne .Lbaz_equal.N
+cmpsw
+jne .Lbaz_equal.N
+cmpsb
+.Lbaz_equal.N:
+sete
+=== 108:     assert(69, a24 == b24) # compares
 mov rcx, 3
 repe cmpsq
 sete
-=== 109:     assert(70, equal(a29, b29)) # compares
-mov rcx, 3
-repe cmpsq
-jne .Lbaz_equal.N
-cmpsd
-jne .Lbaz_equal.N
-cmpsb
-.Lbaz_equal.N:
-sete
-=== 110:     assert(71, equal(a31, b31)) # compares
+=== 109:     assert(70, a29 == b29) # compares
 mov rcx, 3
 repe cmpsq
 jne .Lbaz_equal.N
 cmpsd
 jne .Lbaz_equal.N
+cmpsb
+.Lbaz_equal.N:
+sete
+=== 110:     assert(71, a31 == b31) # compares
+mov rcx, 3
+repe cmpsq
+jne .Lbaz_equal.N
+cmpsd
+jne .Lbaz_equal.N
 cmpsw
 jne .Lbaz_equal.N
 cmpsb
 .Lbaz_equal.N:
 sete
-=== 111:     assert(72, equal(a40, b40)) # compares
+=== 111:     assert(72, a40 == b40) # compares
 mov rcx, 5
 repe cmpsq
 sete
-=== 112:     assert(73, equal(p, q)) # compares
+=== 112:     assert(73, p == q) # compares
 mov rcx, 3
 repe cmpsq
 jne .Lbaz_equal.N

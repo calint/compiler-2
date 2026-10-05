@@ -446,6 +446,7 @@ main:
         cmpsq
         .Lbaz_equal.0:
         sete r15b
+    cmp r15b, 0
     bool.260.12.end:
     func.assert.260.5:
         if.38.27.260.5:
@@ -601,6 +602,7 @@ main:
         cmpsq
         .Lbaz_equal.1:
         sete r15b
+    cmp r15b, 0
     bool.297.12.end:
     func.assert.297.5:
         if.38.27.297.5:
@@ -622,6 +624,7 @@ main:
         cmpsq
         .Lbaz_equal.2:
         setne r15b
+    cmp r15b, 0
     bool.302.12.end:
     func.assert.302.5:
         if.38.27.302.5:

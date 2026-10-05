@@ -436,6 +436,13 @@ class expr_arith final : public expression {
         return last.value;
     }
 
+    // the statement of an arithmetic that is only an identifier
+    [[nodiscard]] auto identifier_statement() const -> const statement& {
+        assert(is_identifier());
+
+        return *exprs_.front();
+    }
+
     // e.g. 'flag', 'p', 'f(x)' or '-i32(x)', a parenthesized list is
     // arithmetic of its own
     [[nodiscard]] auto is_single_operand() const -> bool {

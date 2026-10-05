@@ -21,9 +21,9 @@ func main() {
     compare[1] = 3
     results[index].equal = not arrays_equal(source, compare, 2)
     assert(results[index].equal)
-    results[index].equal = equal(source, compare)
+    results[index].equal = source == compare
     assert(not results[index].equal)
-    results[index].equal = not equal(source, compare)
+    results[index].equal = source != compare
     assert(results[index].equal)
     results[index].equal = arrays_equal(source, compare, 0)
     assert(results[index].equal)
@@ -45,6 +45,6 @@ func main() {
     assert(hits == 2)
 
     var expected = result{false}
-    results[index].equal = equal(results[index], expected)
+    results[index].equal = results[index] == expected
     assert(results[index].equal)
 }

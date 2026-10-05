@@ -30,7 +30,7 @@ local injected = { e = true, i = true, n = true }
 -- built-in functions have no declaration in the source, they match by name
 local builtin_functions = {}
 for word in
-  ([[array_copy array_length arrays_equal equal exit read write]]):gmatch("%S+")
+  ([[array_copy array_length arrays_equal exit read write]]):gmatch("%S+")
 do
   builtin_functions[word] = true
 end

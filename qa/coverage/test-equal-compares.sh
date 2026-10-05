@@ -1,5 +1,5 @@
 #!/bin/bash
-# checks the x86_64 string compares emitted for 'equal' on source lines marked
+# checks the x86_64 string compares emitted for '==' and '!=' on source lines marked
 # '# compares' against 'tests/NNN.x86_64.compares' so a known size keeps
 # 'repe cmpsq' for more than 2 qwords and single compares for the rest
 #
@@ -27,7 +27,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cd "$WORK"
 
-# prints the compare instructions from each marked line's 'equal' comment to
+# prints the compare instructions from each marked line's comparison comment to
 # the instruction storing the result; label numbers depend on earlier code, so
 # they are left out
 extract() {
@@ -40,7 +40,7 @@ extract() {
             next
         }
 
-        match($0, /^[[:space:]]*;[[:space:]]*\[[0-9]+:[0-9]+\] (not )?equal\(/) {
+        match($0, /^[[:space:]]*;[[:space:]]*\[[0-9]+:[0-9]+\] \? .*(==|!=) /) {
             line = $0
             sub(/^[[:space:]]*;[[:space:]]*\[/, "", line)
             sub(/:.*/, "", line)

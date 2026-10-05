@@ -1,0 +1,4 @@
+
+840.baz:6:8: an instance of 'point' is compared only with an instance of the same type
+    if a == 1 exit(1)
+       ^

@@ -115,7 +115,7 @@ func main() {
     var buf = i8[20]{}
 
     var q = p1
-    assert(equal(p1, q))
+    assert(p1 == q)
 
     array_copy(worlds[1].locations, worlds[0].locations,
                array_length(worlds[0].locations))

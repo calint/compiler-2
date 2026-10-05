@@ -257,8 +257,8 @@ func main() {
     assert(not arrays_equal(arr, arr1, 4))
 
     var arr4 = arr
-    assert(equal(arr, arr4))
-    # initializing from an array copies it, `equal` compares same size arrays
+    assert(arr == arr4)
+    # initializing from an array copies it, `==` compares same size arrays
 
 #   arr[ix] = ~inv(arr[ix - 1])
 #   `--checks=alias` rejects this because "return" and the argument may share
@@ -294,12 +294,12 @@ func main() {
     var q = p
     # user type initializer may be an expression
 
-    assert(equal(p, q))
-    # `equal` is built-in function to compare user types for equality or same
-    # size arrays
+    assert(p == q)
+    # `==` and `!=` compare the bytes of user types and of same size arrays,
+    # the padding between fields is zero so equal values compare equal
 
     q.x = 3
-    assert(not equal(p, q))
+    assert(p != q)
 
     var i = 0
     bar(i)

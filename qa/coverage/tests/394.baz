@@ -37,15 +37,15 @@ func main() {
     var ix = 1
     ws[ix].l = ws[0].r
 
-    if not equal(ws[ix].l.a, ws[0].r.a) exit(12)
-    if not equal(ws[ix].l.b, ws[0].r.b) exit(13)
+    if ws[ix].l.a != ws[0].r.a exit(12)
+    if ws[ix].l.b != ws[0].r.b exit(13)
 
     ws[ix].r.a = inv8(ws[ix - 1].l.a)
     ws[ix].r.b = inv8(ws[ix - 1].l.b)
 
     if not (ws[1].r.a == ~1) exit(14)
     if not (ws[1].r.b == ~2) exit(15)
-    if equal(ws[1].r.a, ws[1].r.b) exit(16)
+    if ws[1].r.a == ws[1].r.b exit(16)
 
     var q = 4
     triple(q)

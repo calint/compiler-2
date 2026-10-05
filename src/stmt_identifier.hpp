@@ -198,6 +198,28 @@ class stmt_identifier : public statement {
                        dst_type);
     }
 
+    auto
+    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                    const lea_request& request,
+                    const std::function_ref<void(const operand&)> use) const
+        -> void override {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, statement::trimmed_source(*this));
+
+        std::vector<operand> allocated_registers;
+
+        const operand address{
+            compile_lea(tc, indent, first_token(), allocated_registers,
+                        request),
+        };
+
+        use(address);
+
+        x.free_scratch_registers(src_loc_tk, indent, allocated_registers);
+    }
+
     // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
     // 'allocated_registers' receives the scratch registers of the indexing and
     // 'machine' says which scalings an operand can have
@@ -311,30 +333,6 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
-
-    // 'use' runs while the scratch registers that build the address are still
-    // allocated, then they are freed
-    auto
-    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                    const lea_request& request,
-                    const std::function_ref<void(const operand&)> use) const
-        -> void {
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, statement::trimmed_source(*this));
-
-        std::vector<operand> allocated_registers;
-
-        const operand address{
-            compile_lea(tc, indent, first_token(), allocated_registers,
-                        request),
-        };
-
-        use(address);
-
-        x.free_scratch_registers(src_loc_tk, indent, allocated_registers);
-    }
 
     [[nodiscard]] auto first_token() const -> const token& {
         return elems_.at(0).name_tk;
