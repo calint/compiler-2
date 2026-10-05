@@ -3645,10 +3645,10 @@ vars.end:
 ;                max vars size: 1045 B
 ;                 instructions: 978
 ;
-; register use at the peak: 4 of 14 scratch registers live
+; register use at the peak: 6 of 14 registers live, 2 named by instructions
 ;
 ;   held  frame, registers (allocated at)
-;      4  print_num (noinline body)
+;      6  print_num (noinline body)
 ;           r15 153:13
 ;           r14 153:18
 ;           r13 153:29
@@ -3659,26 +3659,27 @@ vars.end:
 ; the peak is in a function with a body of its own, compiled with all registers
 ; free, its callers are not on this stack
 ;
-; per callee, the most scratch registers one instance holds itself
+; per callee, the most registers one instance holds itself
 ;
 ;   own  instances  callee
-;     4          1  print_num (noinline body)
+;     6          1  print_num (noinline body)
+;     5          1  main
+;     4          9  print
+;     4          1  str.input
+;     4          1  str.print
 ;     3          1  factorial (noinline body)
-;     3          1  main
+;     1         60  assert
 ;     1          3  baz
 ;     1          1  greet
 ;     1          6  inv
-;     1          1  str.input
-;     0         60  assert
 ;     0          2  bar
+;     0          0  code
 ;     0          1  faz
 ;     0          1  object.at
 ;     0          2  point.at
 ;     0          2  point.fooz
 ;     0          2  point.sum
 ;     0          1  point.x
-;     0          9  print
-;     0          1  str.print
 ;
 ; calls of functions with a body of their own save the registers held at the
 ; call

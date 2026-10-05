@@ -12,7 +12,7 @@
     var q = w + (x + (y + (z + (top(v)))))
                                 ^~~
 
-register use at the failure: 14 of 14 scratch registers live
+register use at the failure: 14 of 14 registers live
 
   held  frame, registers (allocated at)
      4  main

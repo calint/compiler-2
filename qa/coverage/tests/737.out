@@ -3,7 +3,7 @@
                                                             foo a {
                                                             ^~~
 
-register use at the failure: 29 of 30 scratch registers live
+register use at the failure: 29 of 30 registers live
 
   held  frame, registers (allocated at)
     29  main

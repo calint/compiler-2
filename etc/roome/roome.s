@@ -20741,48 +20741,53 @@ vars.end:
 #                max vars size: 2540 B
 #                 instructions: 6031
 #
-# register use at the peak: 14 of 30 scratch registers live
+# register use at the peak: 14 of 30 registers live, 3 named by instructions
 #
 #   held  frame, registers (allocated at)
-#      2  parse_input (noinline body)
-#           t0 914:19
-#           t1 914:24
-#      6  action_go called at 914:9
-#           t2 508:9
-#           t3 508:41
-#           t4 508:5
-#           t5 509:12
-#           t6 509:35
-#           s2 509:15
-#      6  tokenizer.is<name> called at 509:15
-#           s3 450:11
-#           s4 450:11
-#           s5 450:11
-#           s6 450:48
-#           s7 450:48
-#           s8 450:48
+#      2  main
+#           t0 999:24
+#           t1 999:29
+#      3  entity.print_messages called at 999:29
+#           t2 252:9
+#           t3 252:30
+#           t4 252:5
+#      1  message.print called at 253:11
+#           t5 238:20
+#      0  name.print called at 238:36
+#      2  printer.print called at 89:9
+#           t6 65:10
+#           s1 65:10
+#      6  printer.print_at called at 65:10
+#           a0 61:5 (named)
+#           a1 61:5 (named)
+#           a2 61:5 (named)
+#           s2 61:24
+#           s3 61:24
+#           s4 61:24
 #
 # making a frame noinline starts its body with all 30 registers free and saves
 # the
 # registers held above it around the call:
 #
-#   noinline frame      held inside  saved at the call
-#   action_go                    12                  2
-#   tokenizer.is<name>            6                  8
+#   noinline frame         held inside  saved at the call
+#   entity.print_messages           12                  2
+#   message.print                    9                  5
+#   name.print                       8                  6
+#   printer.print                    8                  6
+#   printer.print_at                 6                  8
 #
-# the peak is in a function with a body of its own, compiled with all registers
-# free, its callers are not on this stack
-#
-# per callee, the most scratch registers one instance holds itself
+# per callee, the most registers one instance holds itself
 #
 #   own  instances  callee
 #     7          1  action_drop
 #     7          1  action_give
 #     7          1  action_go
+#     7          1  str.input
 #     6          1  action_inventory
 #     6         11  id_list.delete_index
 #     6         21  messages.add
 #     6          6  notify_room
+#     6        236  printer.print_at
 #     6          3  room.print
 #     6         10  str.append<name>
 #     6         15  tokenizer.is<name>
@@ -20800,7 +20805,6 @@ vars.end:
 #     4         15  id_list.push
 #     4          1  main
 #     4          1  run_creation_script
-#     4          1  str.input
 #     3          1  action_new_entity
 #     3          1  action_new_object
 #     3          1  action_say
@@ -20815,7 +20819,6 @@ vars.end:
 #     3         35  messages.reserve
 #     3         42  name.print
 #     3        194  printer.print
-#     3        236  printer.print_at
 #     3         13  str.print
 #     3          1  tokenizer.first
 #     3         66  tokenizer.len
@@ -20828,11 +20831,12 @@ vars.end:
 #     2          2  printer.set_silenced
 #     2          1  rooms.reserve
 #     2          3  tokenizer.next_name_or_say
+#     1          1  assert
 #     1         12  tokenizer.is_empty
 #     1          5  tokenizer.print
 #     1          4  tokenizer.to_end
 #     0          1  action_help
-#     0          1  assert
+#     0          0  code
 #     0         94  printer.print_all
 #     0         24  printer.println
 #     0          1  tokenizer.input

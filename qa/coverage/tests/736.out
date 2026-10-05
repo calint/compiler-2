@@ -3,10 +3,10 @@
                                                 write(1, a, 2)
                                                 ^~~~~
 
-register use at the failure: 22 of 30 scratch registers live
+register use at the failure: 23 of 30 registers live, 1 named by instructions
 
   held  frame, registers (allocated at)
-    22  main
+    23  main
           t0 6:9
           t1 6:5
           t2 7:13

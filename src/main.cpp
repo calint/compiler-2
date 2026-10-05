@@ -58,6 +58,11 @@ constexpr std::array<target_name, 4> target_names{
     target_name{.kind{target::rv32i_fpga}, .text{"rv32i-fpga"}},
 };
 
+// what the compiler reports after the code, besides the usual statistics
+struct report_options {
+    bool registers{};
+};
+
 struct options {
     const char* src_file_name{"prog.baz"};
     target machine_target{target::x86_64};
@@ -66,7 +71,7 @@ struct options {
     check_options checks{};
     bool optimize_jumps{true};
     bool reproduce_source{};
-    bool report_registers{};
+    report_options reports{};
     // empty until given, the default depends on the source and target
     std::string_view binary_file_name;
 };
@@ -93,6 +98,9 @@ auto print_help(const char* const program_name) -> void;
 
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options>;
+
+[[nodiscard]] auto parse_reports(const std::string_view reports)
+    -> std::optional<report_options>;
 
 [[nodiscard]] auto find_target(const std::string_view text)
     -> std::optional<target>;
@@ -260,18 +268,7 @@ template <typename T>
             option_value(arg, "--report="),
         }) {
 
-        if (*value != "registers") {
-            print_usage_error(
-                std::format("Invalid report: '{}'. Supported reports are: "
-                            "registers.",
-                            *value));
-
-            return false;
-        }
-
-        opts.report_registers = true;
-
-        return true;
+        return store_parsed(parse_reports(*value), opts.reports);
     }
 
     if (arg == "--nopt") {
@@ -313,15 +310,19 @@ options:
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of {3} (default: {4})
   --checks=LIST       comma separated checks, replaces earlier --checks
-  --report=registers  after the code, how the scratch registers are used at the
-                      busiest point: what each call frame holds and what a
-                      noinline frame would save, and what each callee holds
+  --report=LIST       comma separated reports after the code, replaces earlier
+                      --report
   --bin=FILE          rv32i targets binary image (default: file without
                       extension followed by -MACHINE.bin)
   --nopt              no jump optimizations
   --reproduce-source  write reproduced source to diff.baz and check that it
                       matches the input
   --help, -h          this help
+
+reports:
+  registers  how the scratch registers are used at the busiest point: what
+             each call frame holds, what a noinline frame would save and what
+             each callee holds
 
 checks:
   upper  runtime upper array bounds only, a negative index passes
@@ -371,7 +372,7 @@ examples:
                          opts.stack_size_bytes, binary),
         };
 
-        if (opts.report_registers) {
+        if (opts.reports.registers) {
             backend->enable_register_report();
         }
 
@@ -469,6 +470,38 @@ examples:
 }
 
 // each '--checks' replaces the earlier ones, empty parts are ignored
+[[nodiscard]] auto parse_reports(const std::string_view reports)
+    -> std::optional<report_options> {
+
+    // note: splitting an empty text gives no parts
+    if (reports.empty()) {
+        print_usage_error("Invalid --report: empty report name");
+        return std::nullopt;
+    }
+
+    report_options parsed{};
+
+    for (const auto part : reports | std::views::split(',')) {
+        const std::string_view report{part};
+
+        if (report == "registers") {
+            parsed.registers = true;
+        } else if (report.empty()) {
+            print_usage_error("Invalid --report: empty report name");
+            return std::nullopt;
+        } else {
+            print_usage_error(
+                std::format("Invalid --report option: '{}'. Supported "
+                            "reports are: registers.",
+                            report));
+
+            return std::nullopt;
+        }
+    }
+
+    return parsed;
+}
+
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options> {
 

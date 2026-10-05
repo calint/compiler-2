@@ -3372,6 +3372,8 @@ class machine_rv32i : public machine {
             .named{named},
             .frame{current_call_frame()},
         });
+
+        record_register_use(registers_);
     }
 
     // the pointers advance together so both starts decide the loop width

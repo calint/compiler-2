@@ -94,15 +94,19 @@ options:
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of 16 (default: 65536)
   --checks=LIST       comma separated checks, replaces earlier --checks
-  --report=registers  after the code, how the scratch registers are used at the
-                      busiest point: what each call frame holds and what a
-                      noinline frame would save, and what each callee holds
+  --report=LIST       comma separated reports after the code, replaces earlier
+                      --report
   --bin=FILE          rv32i targets binary image (default: file without
                       extension followed by -MACHINE.bin)
   --nopt              no jump optimizations
   --reproduce-source  write reproduced source to diff.baz and check that it
                       matches the input
   --help, -h          this help
+
+reports:
+  registers  how the scratch registers are used at the busiest point: what
+             each call frame holds, what a noinline frame would save and what
+             each callee holds
 
 checks:
   upper  runtime upper array bounds only, a negative index passes
@@ -135,10 +139,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           7342           2902          21857
-C++                              1            160             40            521
+C/C++ Header                    55           7351           2906          21875
+C++                              1            167             42            545
 -------------------------------------------------------------------------------
-SUM:                            56           7502           2942          22378
+SUM:                            56           7518           2948          22420
 -------------------------------------------------------------------------------
 ```
 
@@ -5866,10 +5870,10 @@ vars.end:
 ;                max vars size: 1045 B
 ;                 instructions: 978
 ;
-; register use at the peak: 4 of 14 scratch registers live
+; register use at the peak: 6 of 14 registers live, 2 named by instructions
 ;
 ;   held  frame, registers (allocated at)
-;      4  print_num (noinline body)
+;      6  print_num (noinline body)
 ;           r15 153:13
 ;           r14 153:18
 ;           r13 153:29
@@ -5880,26 +5884,27 @@ vars.end:
 ; the peak is in a function with a body of its own, compiled with all registers
 ; free, its callers are not on this stack
 ;
-; per callee, the most scratch registers one instance holds itself
+; per callee, the most registers one instance holds itself
 ;
 ;   own  instances  callee
-;     4          1  print_num (noinline body)
+;     6          1  print_num (noinline body)
+;     5          1  main
+;     4          9  print
+;     4          1  str.input
+;     4          1  str.print
 ;     3          1  factorial (noinline body)
-;     3          1  main
+;     1         60  assert
 ;     1          3  baz
 ;     1          1  greet
 ;     1          6  inv
-;     1          1  str.input
-;     0         60  assert
 ;     0          2  bar
+;     0          0  code
 ;     0          1  faz
 ;     0          1  object.at
 ;     0          2  point.at
 ;     0          2  point.fooz
 ;     0          2  point.sum
 ;     0          1  point.x
-;     0          9  print
-;     0          1  str.print
 ;
 ; calls of functions with a body of their own save the registers held at the
 ; call

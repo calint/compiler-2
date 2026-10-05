@@ -23,7 +23,6 @@
 
 #include "assembler.hpp"
 #include "assembler_x86_64.hpp"
-#include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
@@ -2014,6 +2013,8 @@ class machine_x86_64 final : public machine {
             .named{named},
             .frame{current_call_frame()},
         });
+
+        record_register_use(registers_);
     }
 
     // e.g. the fixed registers of 'rep movsb' and syscalls

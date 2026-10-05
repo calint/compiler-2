@@ -3,10 +3,10 @@
                                 x = x / i
                                         ^
 
-register use at the failure: 10 of 14 scratch registers live
+register use at the failure: 11 of 14 registers live, 1 named by instructions
 
   held  frame, registers (allocated at)
-    10  main
+    11  main
           r15 7:9
           r14 7:5
           r13 8:13

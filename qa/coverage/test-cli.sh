@@ -181,7 +181,7 @@ CLI_REGISTER_REPORT() {
     # the report only follows the code and the usual report
     cmp -s -n "$(stat -c %s gen.s)" gen.s out
     grep -Fq "register use at the peak" out
-    grep -Fq "per callee, the most scratch registers one instance holds itself" out
+    grep -Fq "per callee, the most registers one instance holds itself" out
     grep -Fq "register use at the peak" gen.s && exit 1
     echo ok
 }
@@ -305,6 +305,10 @@ CLI --bin= 1 --help
 CLI --bin=gen-rv32i.bin 0 --help
 CLI --report=registers 0 015.baz
 CLI --report=unknown 1 --help
+CLI --report=registers,unknown 1 --help
+CLI --report= 1 --help
+CLI --report=registers, 1 --help
+CLI --report=registers,registers 0 015.baz
 CLI_TARGETS
 CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE

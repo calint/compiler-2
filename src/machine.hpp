@@ -262,6 +262,7 @@ class machine {
     // the register report keeps the allocations at the busiest point of the
     // build and what each callee held
     bool register_report_enabled_{};
+    size_t peak_held_{};
     std::vector<register_pool::allocation> peak_allocations_;
     std::vector<call_frame_info> peak_frames_;
     std::map<std::string, callee_use> callee_uses_;
@@ -368,13 +369,15 @@ class machine {
 
         // what each frame holds
         struct frame_use {
-            size_t scratch{};
+            // the registers listed, those named by instructions included
+            size_t held{};
             std::vector<std::string> registers;
         };
 
         const size_t frame_count{std::max<size_t>(frames.size(), 1)};
         std::vector<frame_use> uses(frame_count);
         size_t live{};
+        size_t named{};
 
         for (const register_pool::allocation& allocated : allocations) {
             frame_use& use{uses.at(std::min(allocated.frame, frame_count - 1))};
@@ -392,10 +395,11 @@ class machine {
                 }
 
                 text += " (named)";
-            } else {
-                ++use.scratch;
-                ++live;
+                ++named;
             }
+
+            ++use.held;
+            ++live;
 
             use.registers.push_back(std::move(text));
         }
@@ -417,14 +421,19 @@ class machine {
             },
         };
 
+        const std::string named_note{
+            named == 0 ? std::string{}
+                       : std::format(", {} named by instructions", named),
+        };
+
         std::string report{
-            std::format("{}: {} of {} scratch registers live\n\n  held  "
-                        "frame, registers (allocated at)",
-                        heading, live, scratch_total),
+            std::format("{}: {} of {} registers live{}\n\n  held  frame, "
+                        "registers (allocated at)",
+                        heading, live, scratch_total, named_note),
         };
 
         for (const auto [frame, use] : std::views::enumerate(uses)) {
-            report += std::format("\n{:>6}  {}", use.scratch,
+            report += std::format("\n{:>6}  {}", use.held,
                                   frame_label(static_cast<size_t>(frame)));
 
             for (const std::string& text : use.registers) {
@@ -456,8 +465,8 @@ class machine {
                 });
             }
 
-            saved += use.scratch;
-            inside -= use.scratch;
+            saved += use.held;
+            inside -= use.held;
         }
 
         if (candidates.empty()) {
@@ -857,6 +866,8 @@ class machine {
     auto discard_output(const std::function_ref<void()> emit) -> void {
         const size_t max_scratch_regs{usage_max_scratch_regs_};
 
+        const size_t kept_held{peak_held_};
+
         const std::vector<register_pool::allocation> kept_allocations{
             peak_allocations_,
         };
@@ -870,6 +881,7 @@ class machine {
             [&] -> void { std::ignore = target_assembler().capture(emit); });
 
         usage_max_scratch_regs_ = max_scratch_regs;
+        peak_held_ = kept_held;
         peak_allocations_ = kept_allocations;
         peak_frames_ = kept_frames;
         callee_uses_ = kept_callees;
@@ -974,9 +986,8 @@ class machine {
 
         lines.emplace_back();
 
-        lines.emplace_back(
-            "per callee, the most scratch registers one instance "
-            "holds itself");
+        lines.emplace_back("per callee, the most registers one instance holds "
+                           "itself");
 
         lines.emplace_back();
         lines.emplace_back("  own  instances  callee");
@@ -1298,45 +1309,45 @@ class machine {
         }
     }
 
-    // keeps the greatest count of scratch registers in use at once
-    // what the call frame being compiled holds itself
-    auto record_callee_use(const register_pool& pool) -> void {
-        const size_t frame{current_call_frame()};
+    // 'pool' has just got a register, for the report of the use of registers:
+    // what the frame being compiled holds itself and the busiest point
+    auto record_register_use(const register_pool& pool) -> void {
+        if (not register_report_enabled_) {
+            return;
+        }
 
-        const auto own{
-            std::ranges::count_if(
-                pool.allocations(),
-                [frame](const register_pool::allocation& allocated) -> bool {
-                    return not allocated.named and allocated.frame == frame;
-                }),
-        };
+        const size_t frame{current_call_frame()};
 
         callee_use& use{
             callee_uses_[call_frames_.empty() ? "code"
                                               : call_frames_.back().name],
         };
 
-        use.own_peak = std::max(use.own_peak, static_cast<size_t>(own));
+        use.own_peak = std::max(use.own_peak, held_count(pool, frame));
+
+        size_t held{};
+
+        for (size_t index{}; index <= frame; ++index) {
+            held += held_count(pool, index);
+        }
+
+        if (held <= peak_held_) {
+            return;
+        }
+
+        const std::span<const register_pool::allocation> live{
+            pool.allocations(),
+        };
+
+        peak_held_ = held;
+        peak_allocations_.assign(live.begin(), live.end());
+        peak_frames_ = call_frames_;
     }
 
     // 'pool' has just got a scratch register
     auto record_scratch_registers(const register_pool& pool) -> void {
-        const size_t count{pool.scratch_count()};
-
-        if (register_report_enabled_) {
-            record_callee_use(pool);
-
-            if (count > usage_max_scratch_regs_) {
-                const std::span<const register_pool::allocation> live{
-                    pool.allocations(),
-                };
-
-                peak_allocations_.assign(live.begin(), live.end());
-                peak_frames_ = call_frames_;
-            }
-        }
-
-        usage_max_scratch_regs_ = std::max(usage_max_scratch_regs_, count);
+        usage_max_scratch_regs_ =
+            std::max(usage_max_scratch_regs_, pool.scratch_count());
     }
 
     [[nodiscard]] auto source() const -> std::string_view { return source_; }
@@ -1376,6 +1387,23 @@ class machine {
                 offset += w;
             }
         }
+    }
+
+    // keeps the greatest count of scratch registers in use at once
+    // the registers listed in the report: those a source location allocated,
+    // the register a backend holds itself is left out
+    [[nodiscard]] static auto held_count(const register_pool& pool,
+                                         const size_t frame) -> size_t {
+
+        return static_cast<size_t>(std::ranges::count_if(
+            pool.allocations(),
+            [frame](const register_pool::allocation& allocated) -> bool {
+                const bool held_by_backend{
+                    allocated.named and allocated.src_loc_tk.at_line() == 0,
+                };
+
+                return allocated.frame == frame and not held_by_backend;
+            }));
     }
 
     // immediates are decimal numbers prefixed by unary '-' and '~' operators

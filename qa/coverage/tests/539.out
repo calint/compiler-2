@@ -3,7 +3,7 @@
     var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n / 2)))))))))))))
                                                                                       ^
 
-register use at the failure: 13 of 14 scratch registers live
+register use at the failure: 13 of 14 registers live
 
   held  frame, registers (allocated at)
     13  main
