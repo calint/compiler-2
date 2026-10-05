@@ -310,12 +310,6 @@ class machine {
 
     [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
 
-    // 'limit' is the constant array size or a register holding a count
-    virtual auto advance_array_iteration(
-        const token& src_loc_tk, const size_t indent, const operand& iterator,
-        const operand& counter, const size_t element_size_bytes,
-        const operand& limit, const std::string_view loop_label) -> void = 0;
-
     [[nodiscard]] virtual auto
     alloc_named_register(const token& src_loc_tk, const size_t indent,
                          const std::string_view register_name,
@@ -454,6 +448,18 @@ class machine {
                       const operand& exit_code) -> void = 0;
 
     virtual auto finish() -> void = 0;
+
+    // 'limit' is the constant array size or a register holding a count,
+    // 'counter' is a register or a memory operand
+    virtual auto
+    foo_advance_iteration(const token& src_loc_tk, const size_t indent,
+                          const operand& iterator, const operand& counter,
+                          const size_t element_size_bytes, const operand& limit,
+                          const std::string_view loop_label) -> void = 0;
+
+    // whether the counter of an array loop is better kept in memory than in a
+    // register, decided when the loop starts
+    [[nodiscard]] virtual auto foo_counter_in_memory() const -> bool = 0;
 
     [[nodiscard]] virtual auto frame_base_register() const
         -> std::string_view = 0;

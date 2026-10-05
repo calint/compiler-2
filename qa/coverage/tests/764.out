@@ -2,6 +2,6 @@
 764.baz:12:20: argument 2 'arr' may share storage with argument 1 'a' (both name 'arr'), use a separate variable
     swap_values(a, arr[1])
                    ^
-764.baz:17:5: called from 'outer(arr[i])'
+764.baz:17:5: called from
     outer(arr[i])
     ^~~~~

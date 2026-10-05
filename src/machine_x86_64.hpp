@@ -177,6 +177,9 @@ class machine_x86_64 final : public machine {
     //       'r11' and 'rcx' are saved around syscalls if they are allocated
     //       because 'syscall' clobbers them
 
+    // scratch values live from which an array loop counts in memory
+    static constexpr size_t memory_counter_pressure_count{6};
+
     // the indexes are those of 'register_names_'
     register_pool registers_;
     bool variables_base_reserved_{};
@@ -225,20 +228,6 @@ class machine_x86_64 final : public machine {
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
         return size_qword;
-    }
-
-    auto advance_array_iteration(const token& src_loc_tk, const size_t indent,
-                                 const operand& iterator,
-                                 const operand& counter,
-                                 const size_t element_size_bytes,
-                                 const operand& limit,
-                                 const std::string_view loop_label)
-        -> void override {
-
-        add(src_loc_tk, indent, iterator, immediate(element_size_bytes));
-        inc(src_loc_tk, indent, counter);
-        cmp_lowered(src_loc_tk, indent, counter, limit);
-        assembler_.jcc(indent, condition::ne, loop_label);
     }
 
     [[nodiscard]] auto
@@ -923,6 +912,25 @@ class machine_x86_64 final : public machine {
         assert(not frame_base_reserved_);
     }
 
+    auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
+                               const operand& iterator, const operand& counter,
+                               const size_t element_size_bytes,
+                               const operand& limit,
+                               const std::string_view loop_label)
+        -> void override {
+
+        add(src_loc_tk, indent, iterator, immediate(element_size_bytes));
+        inc(src_loc_tk, indent, counter);
+        cmp_lowered(src_loc_tk, indent, counter, limit);
+        assembler_.jcc(indent, condition::ne, loop_label);
+    }
+
+    // 'inc' and 'cmp' work on memory, so a loop counter leaves its register to
+    // the values that need one once many are live
+    [[nodiscard]] auto foo_counter_in_memory() const -> bool override {
+        return registers_.scratch_count() >= memory_counter_pressure_count;
+    }
+
     [[nodiscard]] auto frame_base_register() const
         -> std::string_view override {
 
@@ -1239,26 +1247,25 @@ class machine_x86_64 final : public machine {
         [[maybe_unused]] const size_t element_size_bytes) const
         -> void override {}
 
-    auto validate_division_operand(const token& src_loc_tk,
-                                   const operand& divisor) const
+    auto
+    validate_division_operand([[maybe_unused]] const token& src_loc_tk,
+                              [[maybe_unused]] const operand& divisor) const
         -> void override {
 
-        if (divisor.is_register() and (divisor.base_register() == "rdx" or
-                                       divisor.base_register() == "rax")) {
-            throw compiler_exception{
-                src_loc_tk, "cannot use 'rdx' or 'rax' for division; they are "
-                            "reserved"};
-        }
+        // only a loop counter held in a register could be 'rdx' or 'rax', the
+        // last scratch registers, and a loop counts in memory before that
+        assert(
+            not(divisor.is_register() and (divisor.base_register() == "rdx" or
+                                           divisor.base_register() == "rax")));
     }
 
-    auto validate_shift_operand(const token& src_loc_tk,
-                                const operand& count) const -> void override {
+    auto validate_shift_operand([[maybe_unused]] const token& src_loc_tk,
+                                [[maybe_unused]] const operand& count) const
+        -> void override {
 
-        if (count.is_register() and count.base_register() == "rcx") {
-            throw compiler_exception{
-                src_loc_tk, "cannot use 'rcx' as a shift operand; it is "
-                            "reserved for the count"};
-        }
+        // only a loop counter held in a register could be 'rcx', the last
+        // scratch register, and a loop counts in memory before that
+        assert(not(count.is_register() and count.base_register() == "rcx"));
     }
 
     [[nodiscard]] auto variables_base_past_vars_bytes() const

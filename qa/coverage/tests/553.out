@@ -2,6 +2,6 @@
 553.baz:4:11: string size 3 overflows array size 2
     dst = "abc"
           ^~~~~
-553.baz:9:5: called from 'fill(small)'
+553.baz:9:5: called from
     fill(small)
     ^~~~

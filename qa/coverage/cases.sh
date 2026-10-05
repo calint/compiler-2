@@ -1608,7 +1608,7 @@ SRC=536 && DIFF
 # a comment at the end of the file without a final newline
 SRC=537 && EXP=0 && RUN
 
-# nested expressions deeper than the eight x86 scratch registers r8-r15
+# nested expressions deeper than the nine x86 scratch registers that no instruction needs
 SRC=538 && EXP=0 && RUN
 
 # x86: division needs 'rdx' while it holds a last resort scratch value
@@ -2238,10 +2238,7 @@ SRC=730 && COMPERR
 # a call result wider than the destination is narrowed explicitly
 SRC=731 && COMPERR
 
-# x86: a loop counter held in 'rcx' cannot be a shift count
-if [[ $MACHINE == x86_64 ]]; then SRC=732 && COMPERR; fi
-
-# x86: a loop counter held in 'rax' cannot be a divisor
+# x86: a division needs 'rdx' while the iterator of a loop holds it
 if [[ $MACHINE == x86_64 ]]; then SRC=733 && COMPERR; fi
 
 # x86: the count of an 'array_copy' is computed while 'rcx' is reserved
@@ -2576,3 +2573,10 @@ SRC=841 && EXP=0 && RUN
 
 # 'int' is a type name, a type cannot be defined with it
 SRC=842 && COMPERR
+
+# nested foo loops deep enough for x86_64 to count in memory
+SRC=843 && EXP=0 && RUN
+
+# a copy of memory needs rsi, rdi and rcx, the last resort registers on x86_64,
+# below nine live scratch values and the bounds checks
+SRC=844 && EXP=0 && RUN

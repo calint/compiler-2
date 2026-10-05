@@ -1,4 +1,4 @@
 
-540.baz:16:78: cannot allocate register rcx because it holds a scratch value allocated at 16:73. try to reduce expression complexity
-    var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l << a)))))))))))
-                                                                             ^
+540.baz:18:88: cannot allocate register rcx because it holds a scratch value allocated at 18:83. try to reduce expression complexity
+    var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n << a)))))))))))))
+                                                                                       ^

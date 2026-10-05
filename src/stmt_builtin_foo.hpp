@@ -114,18 +114,30 @@ class stmt_builtin_foo final : public statement {
 
         tc.enter_foo(loop_label);
 
-        const operand reg_counter{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_default()),
-        };
+        // the counter is a register or a variable in memory, as the machine
+        // prefers
+        const bool counter_in_memory{x.foo_counter_in_memory()};
 
-        allocated_registers.push_back(reg_counter);
+        operand reg_counter;
+
+        if (not counter_in_memory) {
+            reg_counter =
+                x.alloc_scratch_register(tok(), indent, tc.get_type_default());
+
+            allocated_registers.push_back(reg_counter);
+        }
 
         add_loop_names(tc, indent, ident_.tok(), tok(), ii, reg_iter,
                        reg_counter);
 
+        const operand counter{
+            counter_in_memory ? tc.make_ident_info(tok(), "i").operand
+                              : reg_counter,
+        };
+
         x.comment(tok(), indent, "initiate counter i");
 
-        x.copy_value(tok(), indent, reg_counter,
+        x.copy_value(tok(), indent, counter,
                      operand::imm("0", tc.get_type_default()));
 
         // the loop is tested at the end, so a count of zero or less skips it
@@ -147,9 +159,8 @@ class stmt_builtin_foo final : public statement {
         code_.compile(tc, indent, ident_info::make_empty());
         x.label(indent + 1, toc::continue_label(loop_label));
 
-        x.advance_array_iteration(tok(), indent + 2, reg_iter, reg_counter,
-                                  ii.type_ref().size_bytes(), limit,
-                                  loop_label);
+        x.foo_advance_iteration(tok(), indent + 2, reg_iter, counter,
+                                ii.type_ref().size_bytes(), limit, loop_label);
 
         x.label(indent, end_label);
 
@@ -261,6 +272,7 @@ class stmt_builtin_foo final : public statement {
             },
             var_kind::var);
 
+        // an empty counter is a variable in memory
         tc.add_var(src_loc_tk, indent,
                    {
                        .name{"i"},

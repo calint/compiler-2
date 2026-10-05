@@ -2,6 +2,6 @@
 709.baz:12:20: argument 2 'g' may share storage with argument 1 'a' (both name 'g'), use a separate variable
     swap_values(a, g)
                    ^
-709.baz:16:5: called from 'outer(g)'
+709.baz:16:5: called from
     outer(g)
     ^~~~~

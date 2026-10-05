@@ -1,4 +1,4 @@
-# x86: a loop counter held in 'rax' cannot be a divisor
+# x86: a division needs 'rdx' while the iterator of a loop holds it
 
 dat a = []{1, 2}
 

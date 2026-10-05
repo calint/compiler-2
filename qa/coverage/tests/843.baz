@@ -1,0 +1,41 @@
+# nested foo loops deep enough for x86_64 to count in memory: the elements and
+# counters of every level are read in the innermost body and a count bounds one
+# of the loops
+func assert(code, ok bool) { if not ok exit(code) }
+
+func main() {
+    var a = i32[2]{1, 2}
+    var b = i32[3]{10, 20, 30}
+    var c = i32[2]{100, 200}
+    var d = i32[2]{1000, 2000}
+    var f = i32[2]{5, 6}
+    var bn = 2
+    var total = 0
+    var steps = 0
+
+    foo a {
+        let ea = e
+        let ia = i
+        foo b, bn {
+            let eb = e
+            let ib = i
+            foo c {
+                let ec = e
+                let ic = i
+                foo d {
+                    let ed = e
+                    let id = i
+                    foo f {
+                        total = total + ea + eb + ec + ed + e
+                        total = total + ia + ib + ic + id + i
+                        steps = steps + 1
+                    }
+                }
+            }
+        }
+    }
+
+    assert(1, steps == 32)
+    assert(2, total == 53584)
+    exit(0)
+}

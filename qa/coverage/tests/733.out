@@ -1,4 +1,4 @@
 
-733.baz:14:41: cannot use 'rdx' or 'rax' for division; they are reserved
+733.baz:14:41: cannot allocate register rdx because it holds a scratch value allocated at 13:33. try to reduce expression complexity
                                 x = x / i
                                         ^

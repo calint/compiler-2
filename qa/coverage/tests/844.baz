@@ -1,0 +1,26 @@
+# a copy of memory needs rsi, rdi and rcx, the last resort registers on x86_64,
+# below nine live scratch values and the bounds checks
+func copy64(from i8[], to mut i8[]) res {
+    array_copy(from, to, 64)
+    res = 1
+}
+
+func main() {
+    var a = 1
+    var b = 2
+    var c = 3
+    var d = 4
+    var e = 5
+    var f = 6
+    var g = 7
+    var h = 8
+    var i = 9
+    var source = i8[64]{ 1, 2, 3 }
+    source[63] = 64
+    var target = i8[64]
+
+    var sum = a + (b + (c + (d + (e + (f + (g + (h + (i + (copy64(source, target))))))))))
+    if sum != 46 exit(1)
+    if target[0] != 1 exit(2)
+    if target[63] != 64 exit(3)
+}

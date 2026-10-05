@@ -1,4 +1,4 @@
 
-539.baz:18:87: cannot allocate register rdx because it holds a scratch value allocated at 18:83. try to reduce expression complexity
+539.baz:18:87: cannot allocate register rax because it holds a scratch value allocated at 18:73. try to reduce expression complexity
     var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n / 2)))))))))))))
                                                                                       ^

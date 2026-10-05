@@ -2,6 +2,6 @@
 820.baz:9:6: function 'str.size' already defined at 8:6
 func text.size() res { res = capacity }
      ^~~~
-820.baz:11:6: instantiated by 'type str = text<8>'
+820.baz:11:6: instantiated by
 type str = text<8>
      ^~~

@@ -1,4 +1,0 @@
-
-732.baz:13:38: cannot use 'rcx' as a shift operand; it is reserved for the count
-                            x = x << i
-                                     ^

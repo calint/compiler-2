@@ -2178,10 +2178,10 @@ auto generate_long_loop() -> void {
         std::println("    sw zero, 0(sp)\n    li s2, 0");
         backend.label(0, loop_label);
         std::println("    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1");
-        backend.advance_array_iteration(token{}, 1, operand::reg("s2", integer),
-                                        operand::mem("sp", {}, 1, 0, integer),
-                                        stride, operand::imm("3", integer),
-                                        loop_label);
+        backend.foo_advance_iteration(token{}, 1, operand::reg("s2", integer),
+                                      operand::mem("sp", {}, 1, 0, integer),
+                                      stride, operand::imm("3", integer),
+                                      loop_label);
         std::println("    li t0, {}\n    beq s2, t0, 1f\n"
                      "    j long_loop_failure\n1:\n"
                      "    lw t1, 0(sp)\n    li t0, 3\n"
@@ -2231,8 +2231,8 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
         backend.add_subtract(token{}, 1, op_of('+'), iterator,
                              operand::imm("1", integer));
 
-        backend.advance_array_iteration(token{}, 1, iterator, counter, 4,
-                                        operand::imm("3", integer), loop_label);
+        backend.foo_advance_iteration(token{}, 1, iterator, counter, 4,
+                                      operand::imm("3", integer), loop_label);
 
         backend.compare_and_branch(
             token{}, 1, operand::reg("s2", integer),

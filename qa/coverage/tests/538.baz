@@ -1,4 +1,4 @@
-# nested expressions deeper than the eight x86 scratch registers r8-r15
+# nested expressions deeper than the nine x86 scratch registers that no instruction needs
 
 func assert(err, ok bool) { if not ok exit(err) }
 
@@ -19,13 +19,14 @@ func main() {
     var n = 14
     var o = 15
 
-    # the last resort registers rbx, rsi, rdi, rcx, rdx and rax
+    # the last resort registers rdx, rax, rsi, rdi and rcx
     var sum = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n + o)))))))))))))
     assert(1, sum == 120)
 
-    # division reserves rax and rdx below the live scratch values
-    var quotient = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k / 2))))))))))
-    assert(2, quotient == 60)
+    # division reserves rax and rdx below the live scratch values, they are
+    # the first last resort registers
+    var quotient = a + (b + (c + (d + (e + (f + (g + (h + (i / 2))))))))
+    assert(2, quotient == 40)
 
     # a variable shift count reserves rcx below the live scratch values
     var shifted = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k << a))))))))))

@@ -422,36 +422,6 @@ class machine_rv32i : public machine {
         return word_size_bytes_;
     }
 
-    auto advance_array_iteration(const token& src_loc_tk, const size_t indent,
-                                 const operand& iterator,
-                                 const operand& counter,
-                                 const size_t element_size_bytes,
-                                 const operand& limit,
-                                 const std::string_view loop_label)
-        -> void override {
-
-        // element sizes are limited by the variables that hold the arrays
-        assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
-
-        const address_scope scope{*this, iterator, counter};
-
-        add_subtract(src_loc_tk, indent, arithmetic_operator::add, iterator,
-                     operand::imm(std::format("{}", element_size_bytes),
-                                  default_type()));
-
-        add_subtract(src_loc_tk, indent, arithmetic_operator::add, counter,
-                     operand::imm("1", default_type()));
-
-        emit_comparison(src_loc_tk, indent, counter, limit,
-                        {
-                            .operation{comparison_operator::not_equal},
-                            .inverted{},
-                            .destination{},
-                            .target{loop_label},
-                            .branch_on_true{true},
-                        });
-    }
-
     [[nodiscard]] auto
     alloc_named_register(const token& src_loc_tk, const size_t indent,
                          const std::string_view register_name,
@@ -1185,6 +1155,40 @@ class machine_rv32i : public machine {
         assembler_.resolve_jumps();
         check_address_range(assembler_.memory_end_address());
         check_memory_end(assembler_.memory_end_address());
+    }
+
+    auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
+                               const operand& iterator, const operand& counter,
+                               const size_t element_size_bytes,
+                               const operand& limit,
+                               const std::string_view loop_label)
+        -> void override {
+
+        // element sizes are limited by the variables that hold the arrays
+        assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
+
+        const address_scope scope{*this, iterator, counter};
+
+        add_subtract(src_loc_tk, indent, arithmetic_operator::add, iterator,
+                     operand::imm(std::format("{}", element_size_bytes),
+                                  default_type()));
+
+        add_subtract(src_loc_tk, indent, arithmetic_operator::add, counter,
+                     operand::imm("1", default_type()));
+
+        emit_comparison(src_loc_tk, indent, counter, limit,
+                        {
+                            .operation{comparison_operator::not_equal},
+                            .inverted{},
+                            .destination{},
+                            .target{loop_label},
+                            .branch_on_true{true},
+                        });
+    }
+
+    // a load and store machine counts in a register
+    [[nodiscard]] auto foo_counter_in_memory() const -> bool override {
+        return false;
     }
 
     [[nodiscard]] auto frame_base_register() const
@@ -3010,7 +3014,6 @@ class machine_rv32i : public machine {
     // variables and frames start word aligned so a direct offset from their
     // base has a known position within a word
     [[nodiscard]] auto is_word_based(const operand& address) const -> bool {
-
         // an index register holds a value unknown at compile time
         if (not address.is_memory() or not address.index_register().empty()) {
             return false;
