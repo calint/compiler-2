@@ -189,6 +189,12 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
+    // the type 'tk' names, printed from 'tk' when the statement is reproduced
+    auto set_named_type(const toc& tc, const token& tk) -> void {
+        type_tk_ = tk;
+        set_type(tc.get_type_or_throw(tk, tk.text()));
+    }
+
     // e.g. 'dat s = "hi"' is an 'i8' array of 2, 'dat a = i8[4]{1, 2}' an 'i8'
     // array of 4, 'dat a = [4]{1, 2}' a default type array of 4, 'dat p =
     // point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8', 'dat b = true' a 'bool'
@@ -223,15 +229,13 @@ class stmt_def_dat final : public statement {
         const token tk{tz.next_token()};
 
         if (is_array_literal(tc, tk, tz)) {
-            type_tk_ = tk;
-            set_type(tc.get_type_or_throw(tk, tk.text()));
+            set_named_type(tc, tk);
 
             return parse_array_literal(tc, tz);
         }
 
         if (is_bare_record_type(tc, tk, tz)) {
-            type_tk_ = tk;
-            set_type(tc.get_type_or_throw(tk, tk.text()));
+            set_named_type(tc, tk);
 
             // e.g. 'dat p = point' is 'point{}'
             elem el{};
@@ -241,8 +245,7 @@ class stmt_def_dat final : public statement {
         }
 
         if (is_record_literal(tc, tk, tz)) {
-            type_tk_ = tk;
-            set_type(tc.get_type_or_throw(tk, tk.text()));
+            set_named_type(tc, tk);
 
             return parse_type(tc, tz, get_type());
         }

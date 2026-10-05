@@ -154,16 +154,12 @@ class stmt_identifier : public statement {
                        dst_type);
     }
 
-    // * using 'lea_path' which depends on the call-stack builds and
-    //    accessor operand to this identifier
-    // * scratch registers used to build the indexing are added to
-    //   'allocated_registers'
-    // * preferred starting point to operand building is specified in
-    //   'address_register'
-    // * if identifier is a reference to an array and a span operation is
-    //   constructed then the range is specified in 'reg_count'
-    // * the operand has the form: e.g. rbp + 4 * r15 + 248
-    // * the 'machine' interface describes what scalings are supported
+    // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248'
+    //   'lea_path'          known addresses of the path, from the call stack
+    //   'allocated_registers' receives the scratch registers of the indexing
+    //   'address_register'  preferred start of the operand
+    //   'reg_count'         the range of a span operation on an array
+    // 'machine' says which scalings an operand can have
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
@@ -202,9 +198,7 @@ class stmt_identifier : public statement {
             const ident_elem& cur_elem{elems_.at(elem_index)};
 
             // field offsets stay in the operand, not in the base register
-
             if (elem_index != start_index) {
-
                 path.push_back('.');
                 path += cur_elem.name_tk.text();
 
@@ -518,18 +512,18 @@ class stmt_identifier : public statement {
 
         const type& path_type{info.type_ref()};
 
-        if (not tc.is_func(
-                std::format("{}.{}", path_type.name(), name_tk.text()))) {
+        const std::string method_name{
+            std::format("{}.{}", path_type.name(), name_tk.text()),
+        };
 
+        if (not tc.is_func(method_name)) {
             return false;
         }
 
         // a method and a field may share a name, only the call has '(' or the
         // type arguments of a generic method
         if (tz.peek_char_after_whitespace() == '(' or
-            is_generic_call(
-                tc, std::format("{}.{}", path_type.name(), name_tk.text()),
-                tz)) {
+            is_generic_call(tc, method_name, tz)) {
 
             return true;
         }
@@ -656,11 +650,12 @@ class stmt_identifier : public statement {
 
     // adds the element index of 'cur_elem' to 'address', which has no index
     // yet, keeping its base and displacement
-    [[nodiscard]] auto static add_index(
-        toc& tc, const token& src_loc_tk, const size_t indent,
-        std::vector<operand>& allocated_registers, const ident_elem& cur_elem,
-        const ident_info& cur_info, const operand& reg_count,
-        const operand& address, operand& index_register) -> operand {
+    [[nodiscard]] static auto
+    add_index(toc& tc, const token& src_loc_tk, const size_t indent,
+              std::vector<operand>& allocated_registers,
+              const ident_elem& cur_elem, const ident_info& cur_info,
+              const operand& reg_count, const operand& address,
+              operand& index_register) -> operand {
 
         machine& x{tc.machine()};
 
@@ -752,10 +747,8 @@ class stmt_identifier : public statement {
 
     // the index goes into 'index_register', returns the constant a trailing
     // '+ c' or '- c' leaves out for the displacement, e.g. 'ix + 1' compiles
-    // 'ix' and returns 1
-    //
-    // note: only without bounds checks, they check the sum in the register
-    //
+    // 'ix' and returns 1, only without bounds checks since they check the sum
+    // in the register
     [[nodiscard]] static auto compile_checked_index(
         toc& tc, const size_t indent, const expr_any& index_expr,
         const operand& index_register, const size_t array_length,

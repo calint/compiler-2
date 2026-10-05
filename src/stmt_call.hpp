@@ -40,6 +40,13 @@ class stmt_call : public expression {
         std::string fix;
     };
 
+    // an argument that names a variable, kept to compare with the next ones
+    struct reference {
+        size_t index;
+        ident_info info;
+        bool is_read_only;
+    };
+
   public:
     // 'expected_type' is the type the call is assigned to, it tells a type
     // parameter that is the result, e.g. 'x.f = tz.to()'
@@ -243,13 +250,7 @@ class stmt_call : public expression {
     auto assert_no_shared_storage(const toc& tc, const ident_info& dst_info,
                                   const stmt_def_func& func) const -> void {
 
-        const bool is_result_checked{tc.is_alias_check()};
-
-        struct reference {
-            size_t index;
-            ident_info info;
-            bool is_read_only;
-        };
+        const bool is_result_checked{tc.is_alias_check() and dst_info.is_var()};
 
         std::vector<reference> references;
 
@@ -268,46 +269,13 @@ class stmt_call : public expression {
                 continue;
             }
 
-            if (is_result_checked and dst_info.is_var()) {
-                const std::optional<storage_conflict> conflict{
-                    shared_storage_conflict(dst_info, info),
-                };
-
-                if (conflict) {
-                    throw compiler_exception{
-                        arg.tok(),
-                        std::format("{} '{}' may share storage with the "
-                                    "result destination '{}' ({}), {}",
-                                    describe_argument(i), arg.identifier(),
-                                    dst_info.elem_path.front(),
-                                    conflict->reason, conflict->fix)};
-                }
+            if (is_result_checked) {
+                assert_not_shared_with_result(i, info, dst_info);
             }
 
             const bool is_read_only{func.param(i).is_read_only()};
 
-            for (const reference& other : references) {
-                if (is_read_only and other.is_read_only) {
-                    continue;
-                }
-
-                const std::optional<storage_conflict> conflict{
-                    shared_storage_conflict(other.info, info),
-                };
-
-                if (conflict and
-                    not reach_disjoint_bytes(args_.at(other.index), arg)) {
-
-                    throw compiler_exception{
-                        arg.tok(),
-                        std::format("{} '{}' may share storage with {} '{}' "
-                                    "({}), {}",
-                                    describe_argument(i), arg.identifier(),
-                                    describe_argument(other.index),
-                                    args_.at(other.index).identifier(),
-                                    conflict->reason, conflict->fix)};
-                }
-            }
+            assert_not_shared_with_earlier(references, i, info, is_read_only);
 
             references.push_back({
                 .index{i},
@@ -356,7 +324,6 @@ class stmt_call : public expression {
         args.reserve(registers.size());
 
         for (size_t index{}; index < registers.size(); ++index) {
-
             args.push_back(x.alloc_named_register(
                 tok(), indent, registers.at(index), tc.get_type_default()));
 
@@ -606,6 +573,64 @@ class stmt_call : public expression {
         }
 
         e.add_call_frame(call_begin_token(), statement::trimmed_source(*this));
+    }
+
+    // an argument that names the result destination, only for '--checks=alias'
+    auto assert_not_shared_with_result(const size_t index,
+                                       const ident_info& info,
+                                       const ident_info& dst_info) const
+        -> void {
+
+        const std::optional<storage_conflict> conflict{
+            shared_storage_conflict(dst_info, info),
+        };
+
+        if (not conflict) {
+            return;
+        }
+
+        throw compiler_exception{
+            args_.at(index).tok(),
+            std::format("{} '{}' may share storage with the "
+                        "result destination '{}' ({}), {}",
+                        describe_argument(index), args_.at(index).identifier(),
+                        dst_info.elem_path.front(), conflict->reason,
+                        conflict->fix)};
+    }
+
+    // an argument that names the storage of an earlier one, unless both
+    // parameters are read-only or the bytes they reach are disjoint
+    auto
+    assert_not_shared_with_earlier(const std::span<const reference> earlier,
+                                   const size_t index, const ident_info& info,
+                                   const bool is_read_only) const -> void {
+
+        const expr_any& arg{args_.at(index)};
+
+        for (const reference& other : earlier) {
+            if (is_read_only and other.is_read_only) {
+                continue;
+            }
+
+            const std::optional<storage_conflict> conflict{
+                shared_storage_conflict(other.info, info),
+            };
+
+            if (not conflict or
+                reach_disjoint_bytes(args_.at(other.index), arg)) {
+
+                continue;
+            }
+
+            throw compiler_exception{
+                arg.tok(),
+                std::format("{} '{}' may share storage with {} '{}' "
+                            "({}), {}",
+                            describe_argument(index), arg.identifier(),
+                            describe_argument(other.index),
+                            args_.at(other.index).identifier(),
+                            conflict->reason, conflict->fix)};
+        }
     }
 
     // the callee and which arguments are globals or the same local, the only

@@ -101,14 +101,12 @@ class machine_rv32i : public machine {
 
     std::vector<bulk_addresses> bulk_addresses_;
 
-    // 'address_scope' protects operand registers and memory base/index
-    // registers from scratch allocation while lowering an operation, including
-    // raw register operands on scope exit, drops temporaries allocated within
-    // the scope and restores the previous unavailable mask, including during
-    // exception unwinding this restores allocator bookkeeping only, not runtime
-    // register values allocations that existed on entry must not be freed
-    // within the scope
-
+    // keeps the registers of its operands, and the base and index registers
+    // of memory operands, from being picked for scratch while an operation is
+    // lowered. on exit, also while an exception unwinds, it frees the
+    // temporaries allocated within the scope and restores what was protected.
+    // it restores allocator bookkeeping only, not register values, and what
+    // was allocated before the scope must not be freed within it
     class address_scope {
         machine_rv32i& backend_;
         uint32_t saved_mask_;
@@ -248,6 +246,18 @@ class machine_rv32i : public machine {
         // chunks
         size_t chunk_count{};
         size_t tail_size_bytes{};
+    };
+
+    // two pointers walked by a run-time byte count, 'access' emits one access
+    // of 'width' bytes at the current pointers and 'verb' names it in comments
+    struct runtime_walk {
+        token src_loc_tk;
+        size_t indent{};
+        std::string_view verb;
+        operand src;
+        operand dst;
+        operand count;
+        std::function<void(size_t)> access;
     };
 
     // the registers a comparison loads both sides into
@@ -2077,11 +2087,23 @@ class machine_rv32i : public machine {
         const operand left_at{memory_at(left)};
         const operand right_at{memory_at(right)};
 
-        walk_runtime_count(src_loc_tk, indent, "compare", left, right, count,
-                           starts, alignment, [&](const size_t width) -> void {
-                               compare_access(indent, registers, width, left_at,
-                                              right_at);
-                           });
+        const std::function<void(size_t)> access{
+            [&](const size_t width) -> void {
+                compare_access(indent, registers, width, left_at, right_at);
+            },
+        };
+
+        walk_runtime_count(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"compare"},
+                .src{left},
+                .dst{right},
+                .count{count},
+                .access{access},
+            },
+            starts, alignment);
     }
 
     // 'source' in a register of the comparison width
@@ -2341,6 +2363,8 @@ class machine_rv32i : public machine {
         }
     }
 
+    // run-time count: the addresses are pointer registers and 'count' is a
+    // byte count
     auto copy_runtime_count(const token& src_loc_tk, const size_t indent,
                             const operand& src, const operand& dst,
                             const operand& count,
@@ -2358,10 +2382,23 @@ class machine_rv32i : public machine {
         const operand from{memory_at(src)};
         const operand to{memory_at(dst)};
 
-        walk_runtime_count(src_loc_tk, indent, "copy", src, dst, count, starts,
-                           alignment, [&](const size_t width) -> void {
-                               copy_access(indent, value, width, from, to);
-                           });
+        const std::function<void(size_t)> access{
+            [&](const size_t width) -> void {
+                copy_access(indent, value, width, from, to);
+            },
+        };
+
+        walk_runtime_count(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"copy"},
+                .src{src},
+                .dst{dst},
+                .count{count},
+                .access{access},
+            },
+            starts, alignment);
     }
 
     // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
@@ -3570,17 +3607,10 @@ class machine_rv32i : public machine {
         return top;
     }
 
-    // run-time count: the addresses are pointer registers and 'count' is a
-    // byte count
-    // the walk of a run-time count over two pointers: a head up to the first
-    // aligned chunk, whole chunks, then a tail, 'access' emits one access of
-    // 'width' bytes at the current pointers and 'verb' names it in comments
-    auto walk_runtime_count(const token& src_loc_tk, const size_t indent,
-                            const std::string_view verb, const operand& src,
-                            const operand& dst, const operand& count,
+    // a head up to the first aligned chunk, whole chunks, then a tail
+    auto walk_runtime_count(const runtime_walk& walk,
                             const std::array<access_start, 2>& starts,
-                            const size_t alignment,
-                            const std::function<void(size_t)>& access) -> void {
+                            const size_t alignment) -> void {
 
         // the run-time count may be smaller than any head
         const std::array<access_start, 2> typed{
@@ -3591,32 +3621,12 @@ class machine_rv32i : public machine {
             plan_loop_start(typed, std::numeric_limits<size_t>::max()),
         };
 
-        comment_pointer_loop(src_loc_tk, indent, start, typed, alignment);
-
-        const auto access_and_advance = [&](const size_t width) -> void {
-            access(width);
-            advance(indent, src, width);
-            advance(indent, dst, width);
-        };
+        comment_pointer_loop(walk.src_loc_tk, walk.indent, start, typed,
+                             alignment);
 
         // without a known alignment every access is a byte
         if (start.width == 1) {
-            comment(src_loc_tk, indent, "{}; skip if none",
-                    describe_loop(verb, 1));
-
-            assembler_.beqz(indent, count.base_register(), walk_end.reference);
-
-            // 'count' becomes the end of the walk, which saves a decrement in
-            // every iteration
-            assembler_.add(indent, count.base_register(), count.base_register(),
-                           src.base_register());
-
-            assembler_.label(indent, chunk_loop.name);
-            access_and_advance(1);
-            assembler_.bne(indent, src.base_register(), count.base_register(),
-                           chunk_loop.reference);
-
-            assembler_.label(indent, walk_end.name);
+            walk_runtime_bytes(walk);
 
             return;
         }
@@ -3624,93 +3634,143 @@ class machine_rv32i : public machine {
         // the end of the chunks, also the scratch of the head check and the
         // halfword tail test
         const operand chunks{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(walk.src_loc_tk, walk.indent,
+                                   default_type()),
         };
 
-        comment(src_loc_tk, indent, "{}: end of {}, {}: tail bytes",
+        comment(walk.src_loc_tk, walk.indent, "{}: end of {}, {}: tail bytes",
                 chunks.base_register(),
                 start.width == 4 ? "words" : "halfwords",
-                count.base_register());
+                walk.count.base_register());
 
-        // each head access first checks that the count still covers it,
-        // otherwise the fewer bytes are left to the tail, which needs no more
-        // than the current pointer alignment
         if (start.head_size_bytes != 0) {
-            comment(src_loc_tk, indent, "{} {} B head", verb,
-                    start.head_size_bytes);
-
-            if ((start.head_size_bytes & size_t{1}) != 0) {
-                assembler_.beqz(indent, count.base_register(),
-                                after_head.reference);
-
-                access_and_advance(1);
-                assembler_.addi(indent, count.base_register(),
-                                count.base_register(), -1);
-            }
-
-            if ((start.head_size_bytes & size_t{2}) != 0) {
-                assembler_.sltiu(indent, chunks.base_register(),
-                                 count.base_register(), 2);
-
-                assembler_.bnez(indent, chunks.base_register(),
-                                after_head.reference);
-
-                access_and_advance(2);
-                assembler_.addi(indent, count.base_register(),
-                                count.base_register(), -2);
-            }
-
-            assembler_.label(indent, after_head.name);
+            walk_runtime_head(walk, chunks, start.head_size_bytes);
         }
 
-        // the loop takes 'count' rounded down to whole chunks and ends when
-        // 'src' reaches their end, 'count' keeps the tail bytes
-        comment(src_loc_tk, indent,
-                "split bytes into chunks and tail; skip loop if none");
+        walk_runtime_chunks(walk, chunks, start.width);
+        walk_runtime_tail(walk, chunks, start.width);
+    }
 
-        assembler_.andi(indent, chunks.base_register(), count.base_register(),
-                        -static_cast<int64_t>(start.width));
+    // one access at the current pointers, then both move past it
+    auto walk_runtime_step(const runtime_walk& walk, const size_t width)
+        -> void {
 
-        assembler_.andi(indent, count.base_register(), count.base_register(),
-                        start.width - 1);
-        // note: -1 turns the power of two 'width' into a mask of the tail bytes
+        walk.access(width);
+        advance(walk.indent, walk.src, width);
+        advance(walk.indent, walk.dst, width);
+    }
 
-        assembler_.beqz(indent, chunks.base_register(), after_chunks.reference);
+    auto walk_runtime_bytes(const runtime_walk& walk) -> void {
+        const std::string_view count{walk.count.base_register()};
 
-        assembler_.add(indent, chunks.base_register(), chunks.base_register(),
-                       src.base_register());
+        comment(walk.src_loc_tk, walk.indent, "{}; skip if none",
+                describe_loop(walk.verb, 1));
 
-        comment(src_loc_tk, indent, "{}", describe_loop(verb, start.width));
+        assembler_.beqz(walk.indent, count, walk_end.reference);
 
-        assembler_.label(indent, chunk_loop.name);
-        access_and_advance(start.width);
-        assembler_.bne(indent, src.base_register(), chunks.base_register(),
+        // 'count' becomes the end of the walk, which saves a decrement in
+        // every iteration
+        assembler_.add(walk.indent, count, count, walk.src.base_register());
+
+        assembler_.label(walk.indent, chunk_loop.name);
+        walk_runtime_step(walk, 1);
+        assembler_.bne(walk.indent, walk.src.base_register(), count,
                        chunk_loop.reference);
 
-        assembler_.label(indent, after_chunks.name);
+        assembler_.label(walk.indent, walk_end.name);
+    }
 
-        // after words at most 3 bytes remain, bit 1 selects a halfword and bit
-        // 0 the final byte
-        if (start.width == 4) {
-            comment(src_loc_tk, indent, "{} optional 2-byte tail", verb);
+    // each head access first checks that the count still covers it, otherwise
+    // the fewer bytes are left to the tail, which needs no more than the
+    // current pointer alignment
+    auto walk_runtime_head(const runtime_walk& walk, const operand& chunks,
+                           const size_t head_size_bytes) -> void {
 
-            assembler_.andi(indent, chunks.base_register(),
-                            count.base_register(), 2);
+        const std::string_view count{walk.count.base_register()};
 
-            assembler_.beqz(indent, chunks.base_register(),
-                            after_halfword.reference);
+        comment(walk.src_loc_tk, walk.indent, "{} {} B head", walk.verb,
+                head_size_bytes);
 
-            access_and_advance(2);
-            assembler_.label(indent, after_halfword.name);
-            assembler_.andi(indent, count.base_register(),
-                            count.base_register(), 1);
+        if ((head_size_bytes & size_t{1}) != 0) {
+            assembler_.beqz(walk.indent, count, after_head.reference);
+
+            walk_runtime_step(walk, 1);
+            assembler_.addi(walk.indent, count, count, -1);
         }
 
-        comment(src_loc_tk, indent, "{} optional final byte", verb);
+        if ((head_size_bytes & size_t{2}) != 0) {
+            assembler_.sltiu(walk.indent, chunks.base_register(), count, 2);
 
-        assembler_.beqz(indent, count.base_register(), walk_end.reference);
-        access(1);
-        assembler_.label(indent, walk_end.name);
+            assembler_.bnez(walk.indent, chunks.base_register(),
+                            after_head.reference);
+
+            walk_runtime_step(walk, 2);
+            assembler_.addi(walk.indent, count, count, -2);
+        }
+
+        assembler_.label(walk.indent, after_head.name);
+    }
+
+    // the loop takes 'count' rounded down to whole chunks and ends when 'src'
+    // reaches their end, 'count' keeps the tail bytes
+    auto walk_runtime_chunks(const runtime_walk& walk, const operand& chunks,
+                             const size_t width) -> void {
+
+        const std::string_view count{walk.count.base_register()};
+
+        comment(walk.src_loc_tk, walk.indent,
+                "split bytes into chunks and tail; skip loop if none");
+
+        assembler_.andi(walk.indent, chunks.base_register(), count,
+                        -static_cast<int64_t>(width));
+
+        assembler_.andi(walk.indent, count, count, width - 1);
+        // note: -1 turns the power of two 'width' into a mask of the tail bytes
+
+        assembler_.beqz(walk.indent, chunks.base_register(),
+                        after_chunks.reference);
+
+        assembler_.add(walk.indent, chunks.base_register(),
+                       chunks.base_register(), walk.src.base_register());
+
+        comment(walk.src_loc_tk, walk.indent, "{}",
+                describe_loop(walk.verb, width));
+
+        assembler_.label(walk.indent, chunk_loop.name);
+        walk_runtime_step(walk, width);
+        assembler_.bne(walk.indent, walk.src.base_register(),
+                       chunks.base_register(), chunk_loop.reference);
+
+        assembler_.label(walk.indent, after_chunks.name);
+    }
+
+    // after words at most 3 bytes remain, bit 1 selects a halfword and bit 0
+    // the final byte
+    auto walk_runtime_tail(const runtime_walk& walk, const operand& chunks,
+                           const size_t width) -> void {
+
+        const std::string_view count{walk.count.base_register()};
+
+        if (width == 4) {
+            comment(walk.src_loc_tk, walk.indent, "{} optional 2-byte tail",
+                    walk.verb);
+
+            assembler_.andi(walk.indent, chunks.base_register(), count, 2);
+
+            assembler_.beqz(walk.indent, chunks.base_register(),
+                            after_halfword.reference);
+
+            walk_runtime_step(walk, 2);
+            assembler_.label(walk.indent, after_halfword.name);
+            assembler_.andi(walk.indent, count, count, 1);
+        }
+
+        comment(walk.src_loc_tk, walk.indent, "{} optional final byte",
+                walk.verb);
+
+        assembler_.beqz(walk.indent, count, walk_end.reference);
+        walk.access(1);
+        assembler_.label(walk.indent, walk_end.name);
     }
 
     // a register destination holds the result directly, memory needs a scratch
