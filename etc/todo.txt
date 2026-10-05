@@ -105,6 +105,19 @@ better assembler code, medium, largest gain first
         => done (2026-10-05): 'machine::comparison_operator' with 'mirrored'
            and 'source_text'; 'swaps_operands' in 'machine_rv32i'; the
            arithmetic operators passed as 'char' stay
+[ ] cleanup, last pass (bigger items found while sweeping, do after the small ones)
+    1. a storage size that does not fit the target is found late: the front
+       end checks 64 bits ('storage_limits::max_size_bytes'), rv32i checks its
+       32-bit range after the jumps are resolved ('check_address_range');
+       'machine' could give the limit so the declaration is rejected where it
+       is ('add_storage_size' and friends are free functions, 'toc' passes it)
+    2. 'qa/lint/format-source.py' attaches the comment lines above a member to
+       it, two stacked comments (a doc comment and an older note) can be
+       separated when members move
+    3. the arithmetic operators passed as 'char' ('+', '-', '*', '&', '<', '>')
+       through 'machine' (the comparison is an enum now)
+    4. long parameter lists, 'type::accessor' building operands and the 'statement'
+       virtuals (see the items above)
 [ ] easy: low priority: missing direct includes (153 of misc-include-cleaner,
     'std::format', 'size_t', ...): add per header; clangd does not need them
 [ ] ai test suite in c++ being human readable
