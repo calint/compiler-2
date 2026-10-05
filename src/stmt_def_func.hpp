@@ -62,7 +62,7 @@ class stmt_def_func final : public statement {
 
     // 'type_args' are the arguments of an instance of a generic definition, the
     // tokenizer is then at the start of that definition. 'generic_instance' is
-    // the instance of a generic type that an instance of its method is for.
+    // the instance of a generic type that an instance of its method is for
     // 'make_instance' is the way to make one
     stmt_def_func(toc& tc, const token tk, tokenizer& tz,
                   const std::span<const type* const> type_args,

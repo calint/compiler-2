@@ -1894,7 +1894,7 @@ class toc final {
 
         std::vector<operand> lea_path;
 
-        // note: 'lea' describes the effective address of an identifier's data.
+        // note: 'lea' describes the effective address of an identifier's data
         //       'lea_path' associates address operands with identifier
         //       components; it is built while walking frames from the
         //       innermost outwards and reversed before use

@@ -72,7 +72,7 @@ class stmt_if_branch final : public statement {
             return true;
         }
         // after the branch code executes, jump to the end of the
-        // 'if ... else if ... else ...' block.
+        // 'if ... else if ... else ...' block
         // if the jump label is not provided, then there is no 'else' and this
         // is the last 'if' so just continue execution
         if (not jmp_to_after_code_label.empty()) {
@@ -82,7 +82,7 @@ class stmt_if_branch final : public statement {
         return std::nullopt;
     }
 
-    // Returns the label where the if branch begins evaluating the boolean
+    // the label where the if branch begins evaluating the boolean
     // expression
     [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
         return tc.create_unique_label(tok(), "if");
