@@ -37,7 +37,7 @@ class expr_type final : public statement {
     bool is_array_destination_{};
 
   public:
-    // bytes of the variable a record value is written into
+    // bytes of the variable an instance value is written into
     struct record_destination {
         std::string_view root;
         field_coverage::range range;
@@ -192,13 +192,13 @@ class expr_type final : public statement {
                              const operand& dst_op) const -> void;
 
     // a call writes the fields only, so the padding is zeroed before it and
-    // 'equal' can compare records byte by byte
+    // 'equal' can compare instances byte by byte
     auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
                       const operand& dst_op) const -> void {
 
         operand cursor{dst_op};
 
-        // bytes of the record before 'cursor', fields in order then padding
+        // bytes of the instance before 'cursor', fields in order then padding
         size_t covered_bytes{};
 
         for (const byte_range& r : dst_type.data_ranges()) {
@@ -215,7 +215,7 @@ class expr_type final : public statement {
             offset_alignment(covered_bytes, dst_type.alignment()), cursor);
     }
 
-    // padding is zeroed too so that records compare equal byte by byte
+    // padding is zeroed too so that instances compare equal byte by byte
     auto zero_unwritten(toc& tc, const size_t indent,
                         const std::string_view what, const size_t size_bytes,
                         const size_t alignment, operand& dst_op) const -> void {

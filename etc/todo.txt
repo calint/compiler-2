@@ -334,7 +334,7 @@ other, hard, easiest first
 [ ] hard: func object(self : object inout, pos, vel, color) called when 'var o :
     object = {...}'
 [ ] hard: --checks=alias: runtime address check or a frame temporary for the
-    remaining record and non-inline results with runtime indexes
+    remaining instance and non-inline results with runtime indexes
 [ ] hard: UB detection: result aliases a by-reference argument: 'x = f(x)',
     'p = swap(p)' (485.baz, inline and noinline). reject when the callee
     reads that parameter after writing its result: per-function summary of
@@ -356,7 +356,7 @@ other, hard, easiest first
        division that conflicts with the syscall registers on x86 and uses
        the helper on rv32i
     => test with 'DIFFINP2' input split inside a record
-[ ] hard: allow record literals and record call results as arguments, e.g.
+[ ] hard: allow instance literals and instance call results as arguments, e.g.
     'sum({ 1, 2 })' and 'sum(mk(1, 2))', by passing a temporary on the
     caller's frame (rejected today: "argument 1 cannot be a temporary",
     501.baz, 502.baz); same plan as 'non-inline calls take expression
@@ -393,12 +393,12 @@ other, hard, easiest first
        parameter type in its own frame ('tc.add_var' inside 'tc.enter_block()'
        around the call, freed by 'exit_block' after 'call_function') and
        passes that address. 'stmt_call::assert_noninline_argument' accepts an
-       expression, constant, conversion or record literal whose type fits
+       expression, constant, conversion or instance literal whose type fits
        like an assignment; a plain variable keeps the exact-type check;
        arguments are evaluated left to right before any slot address is
        taken; writes to such a parameter change only the temporary
     => tests: 424.baz becomes a run test (constant, arithmetic, conversion,
-       record literal, nested non-inline calls, '--checks=frame', both
+       instance literal, nested non-inline calls, '--checks=frame', both
        targets), a COMPERR for a narrowing argument
     => roome.baz: 'i64(counter)' does not compile on rv32i; the default type
        conversion works on both targets

@@ -1,4 +1,4 @@
-# record fields whose sizes together exceed the signed 64-bit range
+# instance fields whose sizes together exceed the signed 64-bit range
 
 type item { a i64[2305843009213693952], b i64[2305843009213693952] }
 

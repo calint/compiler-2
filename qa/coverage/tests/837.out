@@ -1,0 +1,4 @@
+
+837.baz:8:8: cannot compare an instance of 'point' with an operator, use 'equal(...)'
+    if a == b exit(1)
+       ^

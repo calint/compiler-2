@@ -1,4 +1,4 @@
-# a record data field is checked after its unary operations
+# an instance data field is checked after its unary operations
 
 type limits {
     low i16,

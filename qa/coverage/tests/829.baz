@@ -1,4 +1,4 @@
-# a type name alone is its zero value in a record literal and in an index
+# a type name alone is its zero value in an instance literal and in an index
 
 func assert(err, ok bool) { if not ok exit(err) }
 type p {x, y}

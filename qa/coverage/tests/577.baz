@@ -1,4 +1,4 @@
-# a record copied from an indexed array element copies one element and leaves
+# an instance copied from an indexed array element copies one element and leaves
 # the bytes after the destination untouched
 
 func assert(err, ok bool) { if not ok exit(err) }

@@ -222,7 +222,7 @@ class stmt_def_dat final : public statement {
             return parse_array_literal(tc, tz);
         }
 
-        // a record initializer cannot deduce its type, e.g. 'dat p = {1, 2}'
+        // an instance initializer cannot deduce its type, e.g. 'dat p = {1, 2}'
         if (const token brace_tk{tz.is_next_char_token('{')};
             not brace_tk.is_empty()) {
 
@@ -361,7 +361,7 @@ class stmt_def_dat final : public statement {
 
         machine& x{tc.machine()};
 
-        // bytes of the record emitted so far, fields in order then padding
+        // bytes of the instance emitted so far, fields in order then padding
         size_t written_bytes{};
 
         const std::span<const type_field> flds{tp.fields()};

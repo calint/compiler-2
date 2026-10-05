@@ -100,7 +100,7 @@ func main() {
     assert(7, h.lst.size() == 1 and h.lists[0].size() == 0)
     assert(8, h.lists[1].sum() == 30)
 
-    # record result
+    # instance result
     var p = point{1, 2}
     var q = p.shifted(3, 4)
     assert(9, q.x == 4 and q.y == 6)

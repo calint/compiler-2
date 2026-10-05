@@ -1,4 +1,4 @@
-# foo over 8196-byte records, beyond the RV32I addi immediate range
+# foo over 8196-byte instances, beyond the RV32I addi immediate range
 
 type large_item { first i32, padding i8[8188], last i32 }
 

@@ -1,4 +1,4 @@
-# a record value starts with '{'
+# an instance value starts with '{'
 
 type point { x, y }
 

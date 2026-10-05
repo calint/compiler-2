@@ -1,4 +1,4 @@
-# a record copied from a whole array
+# an instance copied from a whole array
 
 type point { x i32, y i32 }
 func main() {

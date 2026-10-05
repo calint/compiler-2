@@ -1,4 +1,4 @@
-# a typed record literal must name the type of the destination
+# a typed instance literal must name the type of the destination
 
 type point {
     x,

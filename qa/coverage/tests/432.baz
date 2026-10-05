@@ -1,4 +1,4 @@
-# write and read an indexed field in a 12-byte record
+# write and read an indexed field in a 12-byte instance
 
 type record { first i32, second i32, third i32 }
 

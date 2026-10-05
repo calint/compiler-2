@@ -1,4 +1,4 @@
-# 'equal' compares the bytes of the fields, the padding of a record is not
+# 'equal' compares the bytes of the fields, the padding of an instance is not
 # compared: a constructor leaves the padding as the storage held it
 
 func assert(err, ok bool) { if not ok exit(err) }
@@ -27,7 +27,7 @@ func nested.at(a i8, b i32, c i16, d i8) self {
 
 func main() {
     # the storage of the next variables is first filled with bytes, ones for
-    # the first record and zeros for the second
+    # the first instance and zeros for the second
     if true {
         var scribble = i8[24]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
     }
@@ -61,7 +61,7 @@ func main() {
     differs = equal(p, q)
     assert(9, not differs)
 
-    # padding inside a record field
+    # padding inside an instance field
     var n = nested.at(1, 2, 3, 4)
     var m = nested.at(1, 2, 3, 4)
     assert(10, equal(n, m))
@@ -76,7 +76,7 @@ func main() {
     m.inner.c = 3
     assert(13, equal(n.inner, m.inner))
 
-    # records in an array, one with a run-time index
+    # instances in an array, one with a run-time index
     var ps = padded[2]{}
     ps[0] = padded.at(1, 2, 3)
     ps[1] = padded.at(1, 2, 3)

@@ -1,4 +1,4 @@
-# indexing a record element of an array parameter
+# indexing an instance element of an array parameter
 
 type point { x, y }
 

@@ -176,7 +176,7 @@ class stmt_identifier : public statement {
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 
-        // records are copied whole and cannot narrow
+        // instances are copied whole and cannot narrow
         assert(dst_type.is_builtin());
 
         const ident_info info{tc.make_ident_info(*this)};
@@ -517,7 +517,7 @@ class stmt_identifier : public statement {
     }
 
     // a field covers its trailing padding so that assigning every field
-    // assigns the whole record
+    // assigns the whole instance
     [[nodiscard]] auto field_range(const type& parent_type,
                                    const ident_elem& elem) const
         -> field_coverage::range {

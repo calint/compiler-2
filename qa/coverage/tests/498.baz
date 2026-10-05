@@ -1,4 +1,4 @@
-# a record literal assigns every element of an array-of-records field
+# an instance literal assigns every element of an array-of-instances field
 func assert(ok bool, code) { if not ok exit(code) }
 type point { x, y }
 type box { corners point[2], tag }

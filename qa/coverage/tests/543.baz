@@ -1,5 +1,5 @@
 # natural alignment: words at multiples of 4 and half words at even offsets,
-# padding between and after fields is zero so records compare byte by byte
+# padding between and after fields is zero so instances compare byte by byte
 
 func assert(err, ok bool) { if not ok exit(err) }
 
@@ -80,7 +80,7 @@ func main() {
     m.tag = 9
     assert(3, m.value == -123456789 and m.half == -2 and m.last == 4)
 
-    # records equal field by field compare equal including their padding
+    # instances equal field by field compare equal including their padding
     var p = mixed{9, -123456789, -2, 4}
     assert(4, equal(m, p))
     var q = m
@@ -93,7 +93,7 @@ func main() {
     var zero_mixed = mixed{1, 0, 0, 0}
     assert(7, equal(z, zero_mixed))
 
-    # nested records and arrays of records keep their own alignment
+    # nested instances and arrays of instances keep their own alignment
     var o = outer{true, {1, 2, 3, 4}, {5, 6, 7}, {{8, 9, 10, 11}}}
     assert(8, o.flag and o.inner.value == 2 and o.inner.last == 4)
     assert(9, o.names[2] == 7 and o.items[0].value == 9)
@@ -108,7 +108,7 @@ func main() {
     o2.items[1].half = 301
     assert(14, not equal(o, o2))
 
-    # records without wider fields need no padding
+    # instances without wider fields need no padding
     var pk = packed{1, 2, 3}
     var pk2 = pk
     assert(15, equal(pk, pk2) and pk2.c == 3)
@@ -148,7 +148,7 @@ func main() {
     assert(28, arrays_equal(bytes1[1], bytes2[1], 5))
     assert(29, not arrays_equal(bytes1, bytes2, 7))
 
-    # large records and arrays copy with the widest aligned accesses
+    # large instances and arrays copy with the widest aligned accesses
     var big1 = mixed[5]{{1, 2, 3, 4}, {5, 6, 7, 8}}
     var big2 = big1
     assert(30, big2[1].value == 6 and big2[4].value == 0)

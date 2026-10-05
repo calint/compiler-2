@@ -46,7 +46,7 @@ func main() {
     assert(12, empty[0] == 0 and empty[2] == 0)
     assert(13, cleared[0] == 0 and cleared[2] == 0)
 
-    # record literal fields, nested record arrays and field assignment
+    # instance literal fields, nested instance arrays and field assignment
     var t = team{{"ann", 3}, {{"bo", 2}, {"cy", 2}},
                   "strings longer than 16!\n"}
     assert(5, t.lead.text[2] == 'n' and t.lead.text[3] == 0)

@@ -1,4 +1,4 @@
-# without a count the whole array is transferred, a record array field too
+# without a count the whole array is transferred, an instance array field too
 
 type line { len i8, text i8[3] }
 

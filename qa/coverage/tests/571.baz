@@ -1,4 +1,4 @@
-# a record literal field narrows only with 'i8(...)' etc, also for a plain
+# an instance literal field narrows only with 'i8(...)' etc, also for a plain
 # identifier that is copied directly
 
 type pixel {

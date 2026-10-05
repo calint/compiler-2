@@ -41,7 +41,7 @@ func main() {
     assert(16, delimiters[2] == 46)
     assert(17, delimiters[7] == 43)
 
-    # data and record initializers
+    # data and instance initializers
     assert(18, letters[0] == 'b' and letters[2] == 'z')
     assert(19, quoted.ch == 39 and quoted.code == 34)
 

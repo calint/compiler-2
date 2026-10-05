@@ -732,7 +732,7 @@ class expr_any final : public statement {
         });
     }
 
-    // 'bool' and record elements are not packed
+    // 'bool' and instance elements are not packed
     [[nodiscard]] static auto constant_element_value(const toc& tc,
                                                      const expr_variant& e)
         -> std::optional<int64_t> {

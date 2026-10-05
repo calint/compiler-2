@@ -98,7 +98,7 @@ func main() {
     var t = twice(small + 0) # is default
     assert(11, t == -6)
 
-    # records from literals, copies, fields and constructors
+    # instances from literals, copies, fields and constructors
     var p = point{1, 2} # is point
     assert(12, p.x == 1 and p.y == 2)
 

@@ -150,7 +150,7 @@ class stmt_def_var final : public statement {
     // e.g. 'point{1, 2}', 'x < 3', 'flag', 'p', 'f(x)', 'i32(x)', 'a + 1' or
     // the array 'a'
     auto deduce_from_initializer(toc& tc, tokenizer& tz) -> void {
-        // 'expr_arith' cannot parse the '{' of a record literal
+        // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};
 
         if (is_record_literal(tc, tk, tz) or is_bare_record_type(tc, tk, tz)) {

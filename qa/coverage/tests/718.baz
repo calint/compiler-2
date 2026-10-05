@@ -1,4 +1,4 @@
-# a record value reads the whole destination after writing a field
+# an instance value reads the whole destination after writing a field
 type point {x, y}
 func sum(p point) res {
     res = p.x + p.y

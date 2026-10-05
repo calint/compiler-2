@@ -1,4 +1,4 @@
-# a record array field copied from an array of another size
+# an instance array field copied from an array of another size
 
 type point { x i32, y i32 }
 type line { pts point[2] }

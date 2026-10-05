@@ -215,7 +215,7 @@ func arrays() {
 
     let table = []{10, 20, 30}
     assert(table[1] == 20)
-    # a read-only 'let' array and the fields of a read-only 'let' record
+    # a read-only 'let' array and the fields of a read-only 'let' instance
     # are read-only too, 'table[1] = 0' is a compile error
 
     var sum = 0
@@ -386,7 +386,7 @@ type pixel {
 func user_types() {
     var p = point{1, 2}
     assert(p.x == 1 and p.y == 2)
-    # a record literal names the type and lists the fields in order
+    # an instance literal names the type and lists the fields in order
 
     var origin = point
     assert(origin.x == 0 and origin.y == 0)
@@ -402,12 +402,12 @@ func user_types() {
     var q = px.pos
     q.y = 4
     assert(equal(q, px.pos))
-    # copying a record copies all fields, built-in 'equal' compares records
+    # copying an instance copies all fields, built-in 'equal' compares instances
 
     var points = point[3]{{1, 2}, {3, 4}}
     points[2] = points[0]
     assert(points[2].y == 2)
-    # arrays of records work like other arrays
+    # arrays of instances work like other arrays
 }
 
 #
@@ -511,7 +511,7 @@ func arrays_in_types() {
     var copy = s
     copy.items[0] = 0
     assert(s.items[0] == 7 and not equal(s, copy))
-    # copying a record copies its array fields
+    # copying an instance copies its array fields
 }
 
 #

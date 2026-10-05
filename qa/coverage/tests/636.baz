@@ -1,4 +1,4 @@
-# data record initializer requires the type name
+# data instance initializer requires the type name
 
 type point { x i16, y i16 }
 

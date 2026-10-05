@@ -1,4 +1,4 @@
-# --checks=alias: a record result may share storage with another element
+# --checks=alias: an instance result may share storage with another element
 
 type point {x, y}
 

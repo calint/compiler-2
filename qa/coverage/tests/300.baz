@@ -1,4 +1,4 @@
-# partial array and record initializers zero-fill the rest
+# partial array and instance initializers zero-fill the rest
 
 func assert(expr bool) { if not expr exit(1) }
 

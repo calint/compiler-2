@@ -834,7 +834,7 @@ SRC=286 && COMPERR
 # negative type-level array size is rejected
 SRC=287 && COMPERR
 
-# indexing a record element of an array parameter
+# indexing an instance element of an array parameter
 SRC=288 && EXP=0 && RUN
 
 # direct default-type array indexing
@@ -870,7 +870,7 @@ SRC=298 && COMPERR
 # narrowing conversion preserves the low byte
 SRC=299 && EXP=0 && RUN
 
-# partial array and record initializers zero-fill the rest
+# partial array and instance initializers zero-fill the rest
 SRC=300 && EXP=0 && RUN
 
 # boolean values can be copied
@@ -1280,7 +1280,7 @@ SRC=430 && EXP=42 && RUN
 # copy an i32 scalar and exit with the copied value
 SRC=431 && EXP=42 && RUN
 
-# write and read an indexed field in a 12-byte record
+# write and read an indexed field in a 12-byte instance
 SRC=432 && EXP=42 && RUN
 
 # reject redefinition of the reserved exit builtin
@@ -1296,7 +1296,7 @@ SRC=435 && COMPERR
 # write requires an array, not an address
 SRC=436 && COMPERR
 
-# foo over 8196-byte records, beyond the RV32I addi immediate range
+# foo over 8196-byte instances, beyond the RV32I addi immediate range
 SRC=437 && EXP=0 && RUN
 
 # non-inline recursion, references, aggregate returns and large local frames
@@ -1462,13 +1462,13 @@ SRC=484 && COMPERR
 # the destination is read by a later element of its own expression
 SRC=486 && EXP=0 && RUN
 
-# a record value reads the destination it assigns
+# an instance value reads the destination it assigns
 SRC=487 && COMPERR
 
 # a boolean list reads the destination it assigns
 SRC=488 && EXP=0 && RUN
 
-# a runtime index may already have written the element a record value reads
+# a runtime index may already have written the element an instance value reads
 SRC=489 && COMPERR
 
 # a narrower operand widens to the destination size in arithmetic
@@ -1495,7 +1495,7 @@ SRC=496 && COMPERR
 # an inline result names the destination so the types must match
 SRC=497 && COMPERR
 
-# a record literal assigns every element of an array-of-records field
+# an instance literal assigns every element of an array-of-instances field
 SRC=498 && EXP=0 && RUN
 
 # an array literal may not have more elements than the array
@@ -1504,10 +1504,10 @@ SRC=499 && COMPERR
 # an array field literal may not have more elements than the field
 SRC=500 && COMPERR
 
-# a record argument cannot be a temporary such as a literal
+# an instance argument cannot be a temporary such as a literal
 SRC=501 && COMPERR
 
-# a record argument cannot be a temporary such as a call result
+# an instance argument cannot be a temporary such as a call result
 SRC=502 && COMPERR
 
 # a named constant argument is the caller's constant even when the callee
@@ -1558,7 +1558,7 @@ SRC=516 && COMPERR
 # the start is the 4th argument, not an element
 SRC=517 && COMPERR
 
-# without a count the whole array is transferred, a record array field too
+# without a count the whole array is transferred, an instance array field too
 SRC=518 && DIFFINP
 
 # a range may end exactly at the array end, an empty range may start there
@@ -1587,7 +1587,7 @@ UB_ALIAS="--vars=0x40000 --checks=upper,lower,line,alias --reproduce-source"
 # --checks=alias: an inline result may share storage with an argument
 SRC=526 && OPTS="$UB_ALIAS" COMPERR
 
-# --checks=alias: a record result may share storage with another element
+# --checks=alias: an instance result may share storage with another element
 SRC=527 && OPTS="$UB_ALIAS" COMPERR
 
 # --checks=alias: a non-inline result may share storage with an argument
@@ -1634,7 +1634,7 @@ if [[ $MACHINE == x86_64 ]]; then SRC=541 && COMPERR; fi
 # SRC=542 && EXP=0 && RUN # note: generates a huge file and is very slow
 
 # natural alignment: words at multiples of 4 and half words at even offsets,
-# padding between and after fields is zero so records compare byte by byte
+# padding between and after fields is zero so instances compare byte by byte
 SRC=543 && EXP=0 && RUN
 
 # character literals are constants with the value of their byte
@@ -1726,7 +1726,7 @@ SRC=569 && COMPERR
 # may still start the next line
 SRC=570 && EXP=0 && RUN
 
-# a record literal field narrows only with 'i8(...)' etc, also for a plain
+# an instance literal field narrows only with 'i8(...)' etc, also for a plain
 # identifier that is copied directly
 SRC=571 && COMPERR
 
@@ -1736,7 +1736,7 @@ SRC=572 && EXP=0 && RUN
 # an array data element outside the signed range of its type is rejected
 SRC=573 && COMPERR
 
-# a record data field is checked after its unary operations
+# an instance data field is checked after its unary operations
 SRC=574 && COMPERR
 
 # a scalar data value outside the signed range of its type is rejected
@@ -1746,17 +1746,17 @@ SRC=575 && COMPERR
 # array index, keeps the original value until the last add or sub
 SRC=576 && EXP=0 && RUN
 
-# a record copied from an indexed array element copies one element and leaves
+# an instance copied from an indexed array element copies one element and leaves
 # the bytes after the destination untouched
 SRC=577 && EXP=0 && RUN
 
-# a record array field copied from an array of another size
+# an instance array field copied from an array of another size
 SRC=578 && COMPERR
 
-# a record copied from a whole array
+# an instance copied from a whole array
 SRC=579 && COMPERR
 
-# a record array field copied from a single record
+# an instance array field copied from a single instance
 SRC=580 && COMPERR
 
 # an array copied from an indexed array element
@@ -1852,7 +1852,7 @@ SRC=608 && COMPERR
 # target
 SRC=609 && EXP=0 && RUN
 
-# a typed record literal must name the type of the destination
+# a typed instance literal must name the type of the destination
 SRC=610 && COMPERR
 
 # an untyped variable cannot take its type from '{...}', e.g. 'point{1, 2}'
@@ -1912,8 +1912,8 @@ SRC=626 && COMPERR
 # the destination
 SRC=627 && COMPERR
 
-# a missing first argument of a record type is reported as missing rather than
-# as a malformed record value
+# a missing first argument of a user type is reported as missing rather than
+# as a malformed instance value
 SRC=628 && COMPERR
 
 # a call without a result inside a function with a result is a statement, not
@@ -1939,7 +1939,7 @@ SRC=634 && COMPERR
 # the foo counter 'i' is read-only also through a parameter
 SRC=635 && COMPERR
 
-# data record initializer requires the type name
+# data instance initializer requires the type name
 SRC=636 && COMPERR
 
 # data built-in field initialized with braces
@@ -2070,7 +2070,7 @@ SRC=673 && COMPERR
 # work on read-only receivers, a function can still be named 'mut'
 SRC=674 && EXP=0 && RUN
 
-# 'equal' compares the bytes of the fields, the padding of a record is not
+# 'equal' compares the bytes of the fields, the padding of an instance is not
 # compared: a constructor leaves the padding as the storage held it
 SRC=675 && EXP=0 && RUN
 
@@ -2214,7 +2214,7 @@ SRC=716 && EXP=5 && RUN_NO_CHECKS
 # adding the most negative value of the width stays an addition
 SRC=717 && EXP=0 && RUN
 
-# a record value reads the whole destination after writing a field
+# an instance value reads the whole destination after writing a field
 SRC=718 && COMPERR
 
 # a constant shift by a negative count is not folded, rv32i rejects it
@@ -2250,7 +2250,7 @@ SRC=728 && COMPERR
 # a hex escape in a string has two hex digits
 SRC=729 && COMPERR
 
-# a record value starts with '{'
+# an instance value starts with '{'
 SRC=730 && COMPERR
 
 # a call result wider than the destination is narrowed explicitly
@@ -2295,10 +2295,10 @@ SRC=743 && EXP=0 && RUN
 # an array whose size exceeds the signed 64-bit range
 SRC=744 && COMPERR
 
-# a record field whose size exceeds the signed 64-bit range
+# an instance field whose size exceeds the signed 64-bit range
 SRC=745 && COMPERR
 
-# record fields whose sizes together exceed the signed 64-bit range
+# instance fields whose sizes together exceed the signed 64-bit range
 SRC=746 && COMPERR
 
 # data arrays whose sizes together exceed the signed 64-bit range, rv32i
@@ -2553,7 +2553,7 @@ SRC=827 && COMPERR
 # a type name assigned is the zero value of that type
 SRC=828 && EXP=0 && RUN
 
-# a type name alone is its zero value in a record literal and in an index
+# a type name alone is its zero value in an instance literal and in an index
 SRC=829 && EXP=0 && RUN
 
 # a type name alone as an argument is a temporary
@@ -2576,3 +2576,6 @@ SRC=835 && EXP=0 && RUN
 
 # data larger than the address range of rv32i is rejected at its declaration
 if [[ $MACHINE != x86_64 ]]; then SRC=836 && COMPERR; fi
+
+# a user type instance is compared with 'equal(...)', not with an operator
+SRC=837 && COMPERR

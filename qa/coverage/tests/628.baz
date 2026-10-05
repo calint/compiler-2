@@ -1,5 +1,5 @@
-# a missing first argument of a record type is reported as missing rather than
-# as a malformed record value
+# a missing first argument of a user type is reported as missing rather than
+# as a malformed instance value
 
 type point {
     x,

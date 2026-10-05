@@ -1,4 +1,4 @@
-# a runtime index may already have written the element a record value reads
+# a runtime index may already have written the element an instance value reads
 type point {x, y}
 func main() {
     var ps = point[2]{}

@@ -246,7 +246,7 @@ auto is_constructor_call(const toc& tc, const token& tk, tokenizer& tz)
 }
 
 // declared in 'decouple.hpp'
-// e.g. 'point{1, 2}', a record type name followed by '{' has no other meaning
+// e.g. 'point{1, 2}', a user type name followed by '{' has no other meaning
 auto is_record_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
     if (not is_type_name_followed_by(tc, tk, tz, '{')) {
         return false;
@@ -256,7 +256,7 @@ auto is_record_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
 }
 
 // declared in 'decouple.hpp'
-// e.g. 'point' in 'var p = point' is 'point{}', a record type name not followed
+// e.g. 'point' in 'var p = point' is 'point{}', a user type name not followed
 // by '{', '[' or '.' has no other meaning
 auto is_bare_record_type(const toc& tc, const token& tk, tokenizer& tz)
     -> bool {
@@ -614,8 +614,8 @@ auto expr_type::assert_items_not_reading(const record_destination& dst,
 }
 
 // declared in 'expr_type.hpp'
-// each element of a record array field is an item of its own, a plain record
-// field is the single element
+// each element of an instance array field is an item of its own, a plain
+// instance field is the single element
 auto expr_type::assert_record_field_not_reading(const expr_any& src,
                                                 const type_field& field,
                                                 const record_destination& dst,
@@ -678,7 +678,7 @@ auto expr_type::compile_call_field(toc& tc, const size_t indent,
 }
 
 // declared in 'expr_type.hpp'
-// advances 'dst_op' past the field, a record field does it in the recursion
+// advances 'dst_op' past the field, an instance field does it in the recursion
 auto expr_type::compile_field(toc& tc, const size_t indent, const expr_any& src,
                               const type_field& field, ident_info& dst_info,
                               operand& dst_op) const -> void {
@@ -712,7 +712,7 @@ auto expr_type::compile_field_list(toc& tc, const size_t indent,
 
     machine& x{tc.machine()};
 
-    // bytes of the record written so far, fields in order then padding
+    // bytes of the instance written so far, fields in order then padding
     size_t written_bytes{};
 
     for (const auto [expr, field] : std::views::zip(exprs_, flds)) {
@@ -877,7 +877,7 @@ auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
 }
 
 // declared in 'expr_type.hpp'
-// a record field, or each element of a record array field in turn
+// an instance field, or each element of an instance array field in turn
 auto expr_type::compile_record_field(toc& tc, const size_t indent,
                                      const expr_any& src,
                                      const type_field& field,
@@ -889,7 +889,7 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
         validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
     }
 
-    // one assignment fills a record or copies a whole array identifier
+    // one assignment fills an instance or copies a whole array identifier
     if (not field.is_array or src.is_array_identifier()) {
         src.as_expr_type().compile_assign(tc, indent, field.type(), dst_info,
                                           dst_op);

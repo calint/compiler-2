@@ -14,7 +14,8 @@
 // .baz source can produce. It runs in one of these ways, chosen by the first
 // command line argument of 'main' at the end of the file:
 //
-//   (none)     the host checks (parts 1 to 8) assert on the emitted text, then
+//   (none)     the host checks (parts 1 to 8 and 12) assert on the emitted
+//   text, then
 //              the runtime program (part 11) is printed on stdout, which the
 //              script assembles and runs under QEMU; a wrong result jumps to
 //              the label 'failure'
@@ -38,6 +39,7 @@
 //   9  special programs with hand-written lines between the backend's output
 //   10 special programs from .baz sources, and bounds checks
 //   11 the runtime program
+//   12 the front end tables: scopes and storage
 // ============================================================================
 
 // instruction-shape tests must not depend on register diagnostic comments
@@ -760,22 +762,22 @@ auto check_comments_with_source_positions() -> void {
     }
     located.free_scratch_registers(location, 1, ordered);
     comments.str({});
-    located.copy_elements(
-        location, 1, 4,
-        [&](const operand& count) -> void {
-            located.copy_value(location, 1, count, operand::imm("2", integer));
-        },
-        {
-            .alignment{4},
-            .src{[&](const operand&, const operand&,
-                     const machine::address_use use) -> void {
-                use(operand::mem("s0", {}, 1, 216, integer));
-            }},
-            .dst{[&](const operand&, const operand&,
-                     const machine::address_use use) -> void {
-                use(operand::mem("s0", {}, 1, 208, integer));
-            }},
-        });
+    located.copy_elements(location, 1, 4,
+                          [&](const operand& count) -> void {
+                              located.copy_value(location, 1, count,
+                                                 operand::imm("2", integer));
+                          },
+                          {
+                              .alignment{4},
+                              .src{[&](const operand&, const operand&,
+                                       const machine::address_use use) -> void {
+                                  use(operand::mem("s0", {}, 1, 216, integer));
+                              }},
+                              .dst{[&](const operand&, const operand&,
+                                       const machine::address_use use) -> void {
+                                  use(operand::mem("s0", {}, 1, 208, integer));
+                              }},
+                          });
     for (const std::string_view text :
          {"t0: source, t1: destination, t2: count",
           "t2: elements to bytes (4 bytes/element)",
@@ -3285,6 +3287,128 @@ auto generate_runtime_program() -> void {
     backend.finish();
 }
 
+// ============================================================================
+// 12. host checks: the front end tables (scopes and storage)
+// ============================================================================
+
+// a 'toc' over an x86_64 backend with the builtin types, the global frame is
+// entered
+struct front_end {
+    std::ostringstream output;
+    machine_x86_64 backend{output, {}};
+    toc tc;
+
+    // errors need a token with a line
+    token at{{}, 0, {}, 0, {}, 1, false};
+
+    explicit front_end(const size_t vars_capacity_bytes)
+        : tc{backend, {}, vars_capacity_bytes, check_options{}} {
+
+        backend.set_builtin_types(integer64, integer, half, byte);
+        tc.set_builtin_types(integer64, integer, half, byte);
+        tc.set_type_bool(boolean);
+        tc.set_type_void(integer);
+        tc.enter_block();
+    }
+
+    // a scalar or an array of 'array_len' elements of 'value_type'
+    auto add_var(const std::string_view name, const type& value_type,
+                 const size_t array_len = 0) -> int64_t {
+
+        tc.add_var(at, 0,
+                   {
+                       .name{name},
+                       .type_ptr{&value_type},
+                       .src_loc_tk{at},
+                       .is_array{array_len != 0},
+                       .array_len{array_len},
+                   },
+                   var_kind::var);
+
+        return tc.make_ident_info(at, name).offset;
+    }
+};
+
+// variables are placed in declaration order with the alignment of their type,
+// and the usage keeps the most that was in use after the scope ends
+auto check_storage_placement() -> void {
+    front_end fe{64};
+
+    fe.tc.enter_block();
+    const int64_t first{fe.add_var("a", byte)};
+    const int64_t second{fe.add_var("b", integer)};
+    // 'a' takes one byte and 'b' starts at the next multiple of four
+    assert(second - first == 4);
+    fe.tc.exit_block();
+
+    assert(fe.tc.usage().max_vars_size_bytes == 8);
+
+    // the space is reused by the next scope
+    fe.tc.enter_block();
+    const int64_t reused{fe.add_var("c", integer)};
+    assert(reused == first);
+    fe.tc.exit_block();
+    assert(fe.tc.usage().max_vars_size_bytes == 8);
+
+    fe.tc.exit_block();
+    fe.tc.finish();
+}
+
+// a variable beyond the capacity of the variables section is rejected, except
+// in a dry run, which leaves no trace in the usage, the depth or the data
+auto check_dry_run_leaves_no_trace() -> void {
+    front_end fe{64};
+
+    fe.tc.enter_block();
+    fe.add_var("a", integer);
+    const usage_statistics before{fe.tc.usage()};
+    const size_t constants_before{fe.tc.get_string_constants().size()};
+
+    assert(rejected_with([&] -> void { fe.add_var("big", integer64, 16); },
+                         "would overflow allocated vars section"));
+
+    fe.tc.check_only([&] -> void {
+        fe.tc.enter_block();
+        fe.tc.enter_block();
+        fe.add_var("big", integer64, 16);
+        std::ignore = fe.tc.add_bytes_constant(token{}, "dry run only");
+        fe.tc.exit_block();
+        fe.tc.exit_block();
+    });
+
+    const usage_statistics after{fe.tc.usage()};
+    assert(after.max_vars_size_bytes == before.max_vars_size_bytes);
+    assert(after.max_frame_count == before.max_frame_count);
+    assert(fe.tc.get_string_constants().size() == constants_before);
+
+    // the capacity is enforced again after the dry run
+    assert(rejected_with([&] -> void { fe.add_var("big", integer64, 16); },
+                         "would overflow allocated vars section"));
+
+    fe.tc.exit_block();
+    fe.tc.exit_block();
+    fe.tc.finish();
+}
+
+// a constant is visible in its function and in the global frame, not in the
+// function that called it
+auto check_constant_scopes() -> void {
+    front_end fe{64};
+
+    fe.tc.add_const(token{}, 0, "global", 1);
+    fe.tc.enter_func("outer");
+    fe.tc.add_const(token{}, 0, "outer_only", 2);
+    fe.tc.enter_func("inner", "path", "");
+    assert(fe.tc.has_const("global"));
+    assert(not fe.tc.has_const("outer_only"));
+    fe.tc.exit_func("inner");
+    assert(fe.tc.has_const("outer_only"));
+    fe.tc.exit_func("outer");
+
+    fe.tc.exit_block();
+    fe.tc.finish();
+}
+
 } // namespace
 
 auto main(const int argc, const char* argv[]) -> int {
@@ -3348,6 +3472,9 @@ auto main(const int argc, const char* argv[]) -> int {
         check_invalid_addresses_rejected();
         check_scratch_register_pool();
         check_multiply_divide_routines();
+        check_storage_placement();
+        check_dry_run_leaves_no_trace();
+        check_constant_scopes();
         generate_runtime_program();
     }
 

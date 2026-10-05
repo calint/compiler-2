@@ -86,6 +86,14 @@ class expr_bool_op final : public statement {
         ws_post_op_ = tz.next_whitespace_token();
 
         rhs_ = {tc, tz, true};
+
+        const bool is_equality{
+            op_ == machine::comparison_operator::equal or
+                op_ == machine::comparison_operator::not_equal,
+        };
+
+        assert_not_record(lhs_, is_equality);
+        assert_not_record(rhs_, is_equality);
         resolve_if_op_is_expression();
     }
 
@@ -413,6 +421,30 @@ class expr_bool_op final : public statement {
     //
     // statics
     //
+
+    // an operator compares a user type instance as its first field only,
+    // 'equal(...)' compares all
+    static auto assert_not_record(const expr_arith& side,
+                                  const bool is_equality) -> void {
+
+        if (side.get_type().is_builtin()) {
+            return;
+        }
+
+        const std::string_view type_name{side.get_type().name()};
+
+        if (is_equality) {
+            throw compiler_exception{
+                side.tok(),
+                std::format("cannot compare an instance of '{}' with an "
+                            "operator, use 'equal(...)'",
+                            type_name)};
+        }
+
+        throw compiler_exception{
+            side.tok(),
+            std::format("an instance of '{}' is not a number", type_name)};
+    }
 
     // the backends compare at the width of 'lhs' which would truncate 'rhs'
     static auto assert_rhs_fits_lhs(toc& tc, const expr_arith& lhs,
