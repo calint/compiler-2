@@ -20740,3 +20740,96 @@ vars.end:
 #              dat var padding: 5 B
 #                max vars size: 2540 B
 #                 instructions: 6031
+#
+# register use at the peak: 14 of 30 scratch registers live
+#
+#   held  frame, registers (allocated at)
+#      2  parse_input
+#           t0 914:19
+#           t1 914:24
+#      6  action_go called at 914:9
+#           t2 508:9
+#           t3 508:41
+#           t4 508:5
+#           t5 509:12
+#           t6 509:35
+#           s2 509:15
+#      6  tokenizer.is<name> called at 509:15
+#           s3 450:11
+#           s4 450:11
+#           s5 450:11
+#           s6 450:48
+#           s7 450:48
+#           s8 450:48
+#
+# making a frame noinline starts its body with all 30 registers free and saves the
+# registers held above it around the call:
+#
+#   noinline frame      held inside  saved at the call
+#   action_go                    12                  2
+#   tokenizer.is<name>            6                  8
+#
+# per callee, the most scratch registers one instance holds itself
+#
+#   own  instances  callee
+#     7          1  action_drop
+#     7          1  action_give
+#     7          1  action_go
+#     6          1  action_inventory
+#     6         11  id_list.delete_index
+#     6         21  messages.add
+#     6          6  notify_room
+#     6          3  room.print
+#     6         10  str.append<name>
+#     6         15  tokenizer.is<name>
+#     6         14  tokenizer.is_array
+#     6          1  tokenizer.set_line
+#     6         11  tokenizer.token<name>
+#     6          8  tokenizer.token<str>
+#     5          1  entities.add
+#     5          5  id_list.index_of
+#     5          1  objects.add
+#     5          4  str.add
+#     4          1  action_new_room
+#     4          1  action_tell
+#     4          2  find_link_name_or_make
+#     4         15  id_list.push
+#     4          1  main
+#     4          1  run_creation_script
+#     4          1  str.input
+#     3          1  action_new_entity
+#     3          1  action_new_object
+#     3          1  action_say
+#     3          1  action_set_room_description
+#     3          1  action_set_room_name
+#     3          1  action_set_room_note
+#     3          9  entity.print
+#     3          3  entity.print_messages
+#     3          3  id_list.delete_item
+#     3         25  id_list.reserve
+#     3          3  message.print
+#     3         35  messages.reserve
+#     3         42  name.print
+#     3        194  printer.print
+#     3        236  printer.print_at
+#     3         13  str.print
+#     3          1  tokenizer.first
+#     3         66  tokenizer.len
+#     3         10  tokenizer.next
+#     3         15  tokenizer.skip_whitespace
+#     2          1  entities.reserve
+#     2          2  link_names.reserve
+#     2          1  objects.reserve
+#     2          1  parse_input
+#     2          2  printer.set_silenced
+#     2          1  rooms.reserve
+#     2          3  tokenizer.next_name_or_say
+#     1         12  tokenizer.is_empty
+#     1          5  tokenizer.print
+#     1          4  tokenizer.to_end
+#     0          1  action_help
+#     0          1  assert
+#     0         94  printer.print_all
+#     0         24  printer.println
+#     0          1  tokenizer.input
+#     0         10  tokenizer.next_or_say

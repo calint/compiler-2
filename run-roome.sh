@@ -7,8 +7,8 @@ cd "$(dirname "$0")"
 SEP="--------------------------------------------------------------------------------"
 
 # a '--checks' in the arguments replaces the default one
-./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line "$@" \
-    etc/roome/roome.baz >etc/roome/roome.s
+./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --report=registers \
+    "$@" etc/roome/roome.baz >etc/roome/roome.s
 echo "$SEP"
 
 # the report follows the last blank line

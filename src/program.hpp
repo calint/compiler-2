@@ -142,7 +142,14 @@ class report_renderer {
 
         usage_report(stats, usage).write_to(x);
 
-        for (const std::string& line : x.register_peak_report()) {
+        const std::vector<std::string> register_lines{x.register_peak_report()};
+
+        // set apart from the reports above
+        if (not register_lines.empty()) {
+            x.comment(token{}, 0, "");
+        }
+
+        for (const std::string& line : register_lines) {
             x.comment(token{}, 0, "{}", line);
         }
     }

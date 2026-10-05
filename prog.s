@@ -3644,3 +3644,35 @@ vars.end:
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
 ;                 instructions: 978
+;
+; register use at the peak: 4 of 14 scratch registers live
+;
+;   held  frame, registers (allocated at)
+;      4  print_num
+;           r15 153:13
+;           r14 153:18
+;           r13 153:29
+;           rax 153:31 (named)
+;           rdx 153:31 (named)
+;           r12 153:31
+;
+; per callee, the most scratch registers one instance holds itself
+;
+;   own  instances  callee
+;     4          1  print_num
+;     3          1  factorial
+;     3          1  main
+;     1          3  baz
+;     1          1  greet
+;     1          6  inv
+;     1          1  str.input
+;     0         60  assert
+;     0          2  bar
+;     0          1  faz
+;     0          1  object.at
+;     0          2  point.at
+;     0          2  point.fooz
+;     0          2  point.sum
+;     0          1  point.x
+;     0          9  print
+;     0          1  str.print

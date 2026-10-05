@@ -41,7 +41,7 @@ printf './baz --checks=noub,line'
 printf ' %s' "$@"
 printf '\n'
 # a '--checks' in the arguments replaces the default one
-./baz --checks=noub,line "$@" >"$ASM"
+./baz --checks=noub,line --report=registers "$@" >"$ASM"
 echo "$SEP"
 COMMENT=';'
 if [ -n "$RV32I" ]; then
