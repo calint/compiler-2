@@ -2,8 +2,9 @@ roome.baz on rv32i-fpga: local inefficiencies within one machine operation
 --------------------------------------------------------------------------------
 compiled with: ./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line \
                      etc/roome/roome.baz
-13111 instructions. global optimizations and instruction tricks excluded.
-site counts are occurrences in the generated code.
+5841 instructions (2026-10-06, the counts of the points below were taken
+before 'roome.baz' shrank, they are kept as history). global optimizations and
+instruction tricks excluded. site counts are occurrences in the generated code.
 
 [o] 1. base address computed twice in one operation (about 300 sites, 2
        instructions each)
@@ -43,6 +44,10 @@ site counts are occurrences in the generated code.
              separate 'binary_operation' with the second as memory source.
              sharing needs the base of the previous operation, or a combined
              machine operation for 'dst = a op b'. not part b.
+           current state: 16 same-upper 'lui' pairs remain within 8
+           instructions, none inside one machine operation: 'res = self.len'
+           followed by 'self.len = self.len + 1', a 'copy field' followed by
+           'zero remaining fields'. both are two operations, not part b.
            - a binary operation with a memory destination and a memory source
              in one 'binary_operation' call has no remaining sites in roome,
              'load_destination' keeps the destination address for the
@@ -91,10 +96,47 @@ site counts are occurrences in the generated code.
           (also through nested lists and inversion, 'or' elements have the
           mirrored case). gain is 1 instruction at 66 sites, not done.
 
+[ ] 7. bounds failure code inline at every check (299 checks, 2 instructions
+       each, 598 of 5841)
+       'bgeu limit,x,2f; 1: li a0,line; j baz_bounds_panic; 2:' puts the
+       failure path in the code, so a passing check always takes the branch.
+       the 299 checks have 86 distinct lines. one stub per line, 'bltu
+       x,limit,stub_N', would cost 86 * 2 instructions instead of 598 (about
+       426 less, 7%) and a passing check falls through. x86_64 does this
+       already (point 4 of its report). the obstacle is the 4 KiB reach of a
+       conditional branch: the stubs need to be within reach of their checks,
+       e.g. an island of stubs after every function body or after about every
+       1000 instructions, with far jump resolution as the fallback.
+       where: check_bounds, emit_bounds_failure_handler
+
+[ ] 8. fixed-size array compare builds a bool and tests it (20 sites)
+       'e == item' of a 20-byte struct:
+           bne t5,t6,5f; ..; bne s2,s4,1b
+           li t5,1; j 6f; 5: li t5,0; 6:
+           beq t5,zero,else
+       2 sites only branch on the result: the mismatch can branch to 'else'
+       itself and a match falls through, 4 instructions less each.
+       the other 18 store the result for a bool 'and': 'li res,0' before the
+       loop and 'bne' to the end label saves the 'j', 1 instruction, needs
+       'res' to be a register that is not a compare register (now t5 is both
+       the left value and the result).
+       where: memory_equal, compare_and_branch
+
+[ ] 9. register base copied before the start is added in write (13 sites,
+       1 instruction each)
+       'write(1, s, count, start)' with 's' in a register:
+           addi a1,t6,0; add a1,a1,s1
+       is 'add a1,t6,s1'. the 'lui/add/addi/add' form for a variable base
+       (62 sites) has no shorter form.
+       where: write
+       in about 74 of 83 sites 'start' is the constant 0 and the 'add' goes
+       away with the 'li t,0; bltz' checks, see 'not counted'.
+
 x86_64 shares points 2 and 3 and has both fixed: the unsigned 'jae'/'ja'
 upper compare replaces 'test; cmovs; js', and 'lower_checked_registers_'
 skips a repeated count test (roome 9328 -> 8134 instructions).
 
 not counted, they need a known constant:
 - 'li t1,0; bltz t1' bounds checks on constants (148 sites)
+- 'li t2,8; li t3,8; bgeu t3,t2' array_copy of a constant length
 - constant 'start' or count folded into 'write' and 'arrays_equal' checks

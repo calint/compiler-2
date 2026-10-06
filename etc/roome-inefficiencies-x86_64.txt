@@ -2,10 +2,11 @@ roome.baz on x86_64: local inefficiencies within one machine operation
 --------------------------------------------------------------------------------
 compiled with: ./baz --target=x86_64 --vars=0x20000 --checks=noub,line \
                      etc/roome/roome.baz
-8134 instructions (9328 before the bounds-check fixes below). global
-optimizations and instruction tricks excluded. site counts are occurrences in
-the generated code. the rv32i report is etc/roome-inefficiencies-rv32i.txt,
-points that exist on both targets keep their rv32i number in brackets.
+3941 instructions (2026-10-06, the counts of the points below were taken
+before 'roome.baz' shrank, they are kept as history). global optimizations and
+instruction tricks excluded. site counts are occurrences in the generated
+code. the rv32i report is etc/roome-inefficiencies-rv32i.txt, points that
+exist on both targets keep their rv32i number in brackets.
 
 [x] 1. redundant sign test in check_bounds [rv32i 2] (224 index sites, 110
        count-only sites, 3 instructions each with line numbers on)
@@ -50,7 +51,7 @@ points that exist on both targets keep their rv32i number in brackets.
        4 KiB, so stubs far away need far jump resolution.
        where: check_bounds, branch_to_bounds_panic, emit_bounds_failure_handler
 
-[ ] 5. run-time count compare uses only 'repe cmpsb' (42 sites)
+[ ] 5. run-time count compare uses only 'repe cmpsb' (42 sites, 18 now)
        'repe cmps*' is microcoded and costs about the same per element at
        every width, so a qword split pays for long arrays only. it needs
        about 7 more instructions and a scratch register, and loses for the
@@ -58,12 +59,27 @@ points that exist on both targets keep their rv32i number in brackets.
        the version to write if long run-time arrays show up.
        where: end_arrays_equal
 
+[ ] 6. 'lea rsi,[base + disp]; add rsi,start' for the address of write [rv32i
+       9] (about 70 of 80 sites, 1 instruction each)
+       'lea rsi,[rbp + 879]; add rsi,r15' is 'lea rsi,[rbp + r15 + 879]'. the
+       10 sites whose address already has an index register keep the 'add'.
+       about 74 sites have the constant 'start' 0, there the 'add' goes away
+       with the 'mov r,0; test r,r; js' checks, see 'not counted'.
+       where: write
+
+[ ] 7. fixed-size array compare stores a bool and tests it [rv32i 8] (2
+       sites, 2 instructions each)
+       'repe cmpsq; sete r9b; cmp r9b,0; je else' is 'repe cmpsq; jne else'.
+       the other 18 sites store the result for a bool 'and', 'sete' is needed.
+       where: memory_equal
+
 not applicable on x86_64, the rv32i point does not exist here:
 - rv32i 1 base address computed twice: one memory operand is addressed
   [rbp + disp32], there is no 'lui/add' pair
 - rv32i 4 bulk loop bookkeeping and 5 '.Lbaz_write': copy, zero and compare
   use 'rep movsb/stosb/cmps*', writes are syscalls
 - rv32i 6 equality in a bool 'and': 'cmp; sete; jne' is already minimal
+- rv32i 7 bounds failure code inline: done here, point 4
 
 not counted, they need a known constant:
 - 'mov rcx,imm; test rcx,rcx; repe cmpsb' where the count is known to be
