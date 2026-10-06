@@ -626,7 +626,7 @@ func action_new_room(eid, tz mut tokenizer) {
     # link to next room
     rooms.array[cur_room_id].links.add(link_name_id, new_room_id)
 
-    # link back to this from from the new room
+    # link back to this room from the new room
     rooms.array[new_room_id].links.add(link_name_back_id, cur_room_id)
 
     out.print_all(str_new_room_created)
