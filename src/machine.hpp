@@ -256,29 +256,29 @@ class register_trace final {
             return;
         }
 
-        const size_t frame{current_frame()};
+        const size_t frame_index{current_frame()};
 
-        const auto own{
-            std::ranges::count_if(
-                pool.allocations(),
-                [frame](const register_pool::allocation& allocated) -> bool {
-                    return allocated.frame == frame and is_listed(allocated);
-                }),
-        };
+        size_t own{};
+
+        for (const register_pool::allocation& allocated : pool.allocations()) {
+            if (allocated.frame == frame_index and is_listed(allocated)) {
+                ++own;
+            }
+        }
 
         callee_use& use{callees_[frames_.back().name]};
 
-        use.own_peak = std::max(use.own_peak, static_cast<size_t>(own));
+        use.own_peak = std::max(use.own_peak, own);
     }
 
     auto record_peak(const register_pool& pool) -> void {
-        const auto held{
-            static_cast<size_t>(
-                std::ranges::count_if(pool.allocations(),
-                                      [](const auto& allocated) -> bool {
-                                          return is_listed(allocated);
-                                      })),
-        };
+        size_t held{};
+
+        for (const register_pool::allocation& allocated : pool.allocations()) {
+            if (is_listed(allocated)) {
+                ++held;
+            }
+        }
 
         if (held <= peak_.held) {
             return;
