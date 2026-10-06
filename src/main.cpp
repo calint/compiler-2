@@ -13,10 +13,12 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <print>
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <streambuf>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -31,7 +33,6 @@
 #include "machine_rv32i_fpga.hpp"
 #include "machine_rv32i_qemu.hpp"
 #include "machine_x86_64.hpp"
-#include "null_stream.hpp"
 #include "program.hpp"
 #include "toc.hpp"
 
@@ -377,6 +378,21 @@ examples:
                program_name, vars_alignment, default_vars_size_bytes,
                stack_alignment, default_stack_size_bytes);
 }
+
+// discards what is written to it, the output of the parser is not used
+class null_stream final : public std::ostream {
+    class null_buffer : public std::streambuf {
+      protected:
+        //
+        // overridden methods
+        //
+
+        auto overflow(const int c) -> int override { return c; }
+    } nb_{};
+
+  public:
+    null_stream() : std::ostream{&nb_} {}
+};
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {
     std::string src;
