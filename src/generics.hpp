@@ -40,55 +40,86 @@ struct generic_param {
 
         std::vector<generic_param> params;
 
-        while (true) {
-            const token name_tk{tz.next_token()};
+        bool is_last{};
 
-            if (name_tk.text().empty()) {
-                throw compiler_exception{
-                    tz, "expected a name for the generic parameter"};
-            }
+        while (not is_last) {
+            params.push_back(parse_parameter(tz, params));
+            is_last = ends_parameters(tz, params.back());
+        }
 
-            const auto is_same_name{
-                [&](const generic_param& param) -> bool {
-                    return param.name_tk.text() == name_tk.text();
-                },
-            };
+        return params;
+    }
 
-            if (std::ranges::any_of(params, is_same_name)) {
+  private:
+    //
+    // statics
+    //
+
+    // the '>' ends the parameters, a ',' goes on with the next
+    [[nodiscard]] static auto ends_parameters(tokenizer& tz,
+                                              const generic_param& param)
+        -> bool {
+
+        if (not tz.is_next_char_token('>').is_empty()) {
+            return true;
+        }
+
+        if (tz.is_next_char_token(',').is_empty()) {
+            throw compiler_exception{
+                tz, std::format("expected ',' or '>' after generic "
+                                "parameter '{}'",
+                                param.name_tk.text())};
+        }
+
+        return false;
+    }
+
+    // e.g. 'T type' or 'capacity', a name is declared once
+    [[nodiscard]] static auto
+    parse_parameter(tokenizer& tz,
+                    const std::span<const generic_param> declared)
+        -> generic_param {
+
+        const token name_tk{tz.next_token()};
+
+        if (name_tk.text().empty()) {
+            throw compiler_exception{
+                tz, "expected a name for the generic parameter"};
+        }
+
+        for (const generic_param& param : declared) {
+            if (param.name_tk.text() == name_tk.text()) {
                 throw compiler_exception{
                     name_tk, std::format("generic parameter '{}' is declared "
                                          "twice",
                                          name_tk.text())};
             }
-
-            const char next{tz.peek_char_after_whitespace()};
-            const bool is_type{next != ',' and next != '>'};
-
-            if (is_type) {
-                const token kind_tk{tz.next_token()};
-
-                if (not kind_tk.is_text("type")) {
-                    throw compiler_exception{
-                        kind_tk,
-                        std::format(
-                            "expected 'type' after generic parameter '{}'",
-                            name_tk.text())};
-                }
-            }
-
-            params.push_back({.name_tk{name_tk}, .is_type{is_type}});
-
-            if (not tz.is_next_char_token('>').is_empty()) {
-                return params;
-            }
-
-            if (tz.is_next_char_token(',').is_empty()) {
-                throw compiler_exception{
-                    tz, std::format("expected ',' or '>' after generic "
-                                    "parameter '{}'",
-                                    name_tk.text())};
-            }
         }
+
+        return {.name_tk{name_tk}, .is_type{reads_type_kind(tz, name_tk)}};
+    }
+
+    // 'type' after the name makes the parameter a type, none makes it a
+    // constant
+    [[nodiscard]] static auto reads_type_kind(tokenizer& tz,
+                                              const token& name_tk) -> bool {
+
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == ',' or next == '>') {
+            return false;
+        }
+
+        const token kind_tk{tz.next_token()};
+
+        if (not kind_tk.is_text("type")) {
+            throw compiler_exception{
+                kind_tk,
+                std::format("expected 'type' after generic parameter '{}'",
+                            name_tk.text())};
+        }
+
+        return true;
     }
 };
 

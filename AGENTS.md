@@ -37,7 +37,9 @@ Working agreements for AI sessions in this repository.
 - Trailing comma in multiline initializers.
 - Empty optional: `return std::nullopt;`.
 - Explicit types; `auto` only for cumbersome types (iterators).
-- Backend access: `machine& x{tc.machine()};` followed by a blank line.
+- Backend access: always `machine& x{tc.machine()};`, even for one use, never
+  `tc.machine().call(...)`; a blank line before and after it, placed just
+  before its use.
 - Pointers: `const macro_use* const p{std::get_if<...>(r)};`.
 - Use `and`/`or`/`not`.
 - Use `std::format("{}", v)` over `std::to_string`.
@@ -61,6 +63,9 @@ Working agreements for AI sessions in this repository.
 
 ### Comments
 
+- Never delete or reword an existing comment; move it with its code, in its
+  own words. Change one only when it is wrong, and replace it with a correct
+  one.
 - Lowercase, no trailing punctuation, code names in single quotes.
 - Use the `todo:` marker.
 - Multiline `note:` blocks get a blank line above and below.

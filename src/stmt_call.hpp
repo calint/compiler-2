@@ -355,77 +355,69 @@ class stmt_call : public expression {
                         const ident_info& dst_info,
                         const stmt_def_func& func) const -> void {
 
-        machine& x{tc.machine()};
-
-        // buffer the aliases of arguments and function return
-        std::vector<alias_info> aliases_to_add;
-
-        assert_result_use(dst_info, func);
-
-        const std::optional<func_return_info> ret{func.returns()};
-
-        // the result names the destination, so the widths must agree
-        if (ret) {
-            assert_result_type(dst_info, func);
-
-            aliases_to_add.push_back(make_result_alias(dst_info, *ret));
-        }
-
         // scratch registers stay allocated until the inlined body is compiled
         std::vector<operand> allocated_registers;
 
-        // the result alias has its own address choice in 'compile'
-        const size_t first_argument_alias{aliases_to_add.size()};
+        const std::vector<alias_info> aliases{
+            make_aliases(tc, indent, dst_info, func, allocated_registers),
+        };
 
-        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
-            aliases_to_add.push_back(make_argument_alias(tc, indent, arg, param,
-                                                         allocated_registers));
-        }
+        // the result alias has its own address choice in 'compile'
+        // note: it comes first, if any
+        const size_t first_argument_alias{aliases.size() - args_.size()};
 
         const bool has_indexed_argument{
-            std::ranges::any_of(aliases_to_add |
+            std::ranges::any_of(aliases |
                                     std::views::drop(first_argument_alias),
                                 is_indexed_reference),
         };
 
         if (not has_indexed_argument) {
-            compile_inline_body(tc, indent, func, aliases_to_add,
-                                allocated_registers);
-
+            compile_inline_body(tc, indent, func, aliases, allocated_registers);
             return;
         }
 
-        // note: the body is compiled in three versions and the one with the
-        //       least code is kept
-        //
-        //       1. aliases use the indexed addresses as they are, e.g.
-        //          '[s0 + t0 * 4 + 28]'
-        //       2. each indexed address goes once into a new register, the
-        //          displacement included, e.g. '[t1]'
-        //       3. as 2 but the displacement stays in each access, e.g.
-        //          '[t1 + 28]'
-        //
-        //       rv32i has no base + index addressing, so in version 1 every
-        //       access adds base and index again; a register pays off only
-        //       when the body accesses the argument more than once, and a
-        //       kept displacement saves an 'addi' unless the field offsets
-        //       then exceed the 12-bit immediate range; which is shorter is
-        //       only known after compiling the body
-        //
-        //       the argument registers are shared by all versions, so they
-        //       are freed after the choice instead of inside the body
+        compile_inline_with_address_choice(tc, indent, func, aliases,
+                                           first_argument_alias,
+                                           allocated_registers);
+    }
+
+    // note: the body is compiled in three versions and the one with the least
+    //       code is kept
+    //
+    //       1. aliases use the indexed addresses as they are, e.g.
+    //          '[s0 + t0 * 4 + 28]'
+    //       2. each indexed address goes once into a new register, the
+    //          displacement included, e.g. '[t1]'
+    //       3. as 2 but the displacement stays in each access, e.g.
+    //          '[t1 + 28]'
+    //
+    //       rv32i has no base + index addressing, so in version 1 every
+    //       access adds base and index again; a register pays off only when
+    //       the body accesses the argument more than once, and a kept
+    //       displacement saves an 'addi' unless the field offsets then exceed
+    //       the 12-bit immediate range; which is shorter is only known after
+    //       compiling the body
+    //
+    //       the argument registers are shared by all versions, so they are
+    //       freed after the choice instead of inside the body
+    auto compile_inline_with_address_choice(
+        toc& tc, const size_t indent, const stmt_def_func& func,
+        const std::vector<alias_info>& aliases,
+        const size_t first_argument_alias,
+        const std::span<const operand> allocated_registers) const -> void {
+
+        machine& x{tc.machine()};
 
         x.emit_most_efficient(
             tok(), indent,
-            [&] -> void {
-                compile_inline_body(tc, indent, func, aliases_to_add, {});
-            },
+            [&] -> void { compile_inline_body(tc, indent, func, aliases, {}); },
             [&] -> void {
                 emit_most_efficient_address(
                     x, indent, [&](const bool keeps) -> void {
                         compile_inline_body_with_address_registers(
-                            tc, indent, func, aliases_to_add,
-                            first_argument_alias, keeps);
+                            tc, indent, func, aliases, first_argument_alias,
+                            keeps);
                     });
             });
 
@@ -497,6 +489,33 @@ class stmt_call : public expression {
 
         x.call_function(tok(), indent, func.body_label(array_lengths),
                         frame_address);
+    }
+
+    // the aliases of the result and of the arguments of the inlined body
+    [[nodiscard]] auto
+    make_aliases(toc& tc, const size_t indent, const ident_info& dst_info,
+                 const stmt_def_func& func,
+                 std::vector<operand>& allocated_registers) const
+        -> std::vector<alias_info> {
+
+        assert_result_use(dst_info, func);
+
+        // buffer the aliases of arguments and function return
+        std::vector<alias_info> aliases;
+
+        // the result names the destination, so the widths must agree
+        if (const std::optional<func_return_info> ret{func.returns()}; ret) {
+            assert_result_type(dst_info, func);
+
+            aliases.push_back(make_result_alias(dst_info, *ret));
+        }
+
+        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
+            aliases.push_back(make_argument_alias(tc, indent, arg, param,
+                                                  allocated_registers));
+        }
+
+        return aliases;
     }
 
     //

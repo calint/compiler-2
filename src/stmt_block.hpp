@@ -36,56 +36,21 @@ class stmt_block final : public statement {
     // required
     stmt_block(toc& tc, tokenizer& tz, const bool braces_required = false)
         : statement{tz.cur_position_token()},
-          open_brace_tk_{tz.is_next_char_token('{')} {
+          open_brace_tk_{tz.is_next_char_token('{')},
+          is_one_statement_{open_brace_tk_.is_empty()} {
 
         set_type(tc.get_type_void());
 
-        if (open_brace_tk_.is_empty()) {
-            if (braces_required) {
-                throw compiler_exception{tz, "expected '{' to begin block"};
-            }
-
-            is_one_statement_ = true;
+        if (is_one_statement_ and braces_required) {
+            throw compiler_exception{tz, "expected '{' to begin block"};
         }
 
         tc.enter_block();
-        while (true) {
-            // the '}' ends the block
-            close_brace_tk_ = tz.is_next_char_token('}');
 
-            if (not close_brace_tk_.is_empty() and is_one_statement_) {
-                throw compiler_exception{
-                    close_brace_tk_,
-                    "unexpected '}' in single statement block"};
-            }
-
-            if (not close_brace_tk_.is_empty()) {
-                break;
-            }
-
-            // a '{' starts a subblock
-            if (const token t{tz.is_next_char_token('{')}; not t.is_empty()) {
-                tz.put_back_token(t);
-                statements_.emplace_back(std::make_unique<stmt_block>(tc, tz));
-                continue;
-            }
-
-            const token tk{tz.next_token()};
-
-            // the source ended before the '}'
-            if (tk.is_empty() and not is_one_statement_) {
-                throw compiler_exception{tz, "expected '}' to close block"};
-            }
-
-            if (tk.is_empty()) {
-                break;
-            }
-
-            statements_.emplace_back(parse_statement(tc, tz, tk));
-
-            if (is_one_statement_) {
-                break;
-            }
+        if (is_one_statement_) {
+            parse_single_statement(tc, tz);
+        } else {
+            parse_statements(tc, tz);
         }
 
         tc.exit_block();
@@ -164,6 +129,52 @@ class stmt_block final : public statement {
     }
 
   private:
+    // a block without braces is one statement, none at the end of the source
+    auto parse_single_statement(toc& tc, tokenizer& tz) -> void {
+        close_brace_tk_ = tz.is_next_char_token('}');
+
+        if (not close_brace_tk_.is_empty()) {
+            throw compiler_exception{
+                close_brace_tk_, "unexpected '}' in single statement block"};
+        }
+
+        const token tk{tz.next_token()};
+
+        if (tk.is_empty()) {
+            return;
+        }
+
+        statements_.emplace_back(parse_statement(tc, tz, tk));
+    }
+
+    // the statements up to the '}'
+    auto parse_statements(toc& tc, tokenizer& tz) -> void {
+        while (true) {
+            // the '}' ends the block
+            close_brace_tk_ = tz.is_next_char_token('}');
+
+            if (not close_brace_tk_.is_empty()) {
+                return;
+            }
+
+            // a '{' starts a subblock
+            if (const token t{tz.is_next_char_token('{')}; not t.is_empty()) {
+                tz.put_back_token(t);
+                statements_.emplace_back(std::make_unique<stmt_block>(tc, tz));
+                continue;
+            }
+
+            const token tk{tz.next_token()};
+
+            // the source ended before the '}'
+            if (tk.is_empty()) {
+                throw compiler_exception{tz, "expected '}' to close block"};
+            }
+
+            statements_.emplace_back(parse_statement(tc, tz, tk));
+        }
+    }
+
     //
     // statics
     //

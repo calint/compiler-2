@@ -1396,6 +1396,36 @@ class ident_resolver final {
     std::reference_wrapper<const generic_registry> generics_;
     std::reference_wrapper<const builtin_types> builtins_;
 
+    // where the walk through the frames has got to
+    struct walk {
+        explicit walk(ident_path identifier)
+            : id{std::move(identifier)},
+              lea_path(id.path().size() - 1, operand{}) {
+
+            assert(not id.path().empty());
+
+            // ignore the elements after the first element:
+            //  e.g.: lnks[1].pos.y
+            //   ignore pos.y since those cannot have a lea
+            //   add empty leas for those
+            //   note: 'lea_path' will be reversed when complete so that
+            //          'ident_path' elements have corresponding lea
+            // note: -1 to exclude the first element
+        }
+
+        // the identifier, an alias rewrites it to what the alias stands for
+        ident_path id;
+
+        // note: 'lea' describes the effective address of an identifier's data
+        //       'lea_path' associates address operands with identifier
+        //       components; it is built while walking frames from the
+        //       innermost outwards and reversed before use
+        std::vector<operand> lea_path;
+
+        // an alias of an element names the element, not the array holding it
+        bool is_element{};
+    };
+
   public:
     ident_resolver(const scope_stack& scopes, const ::machine& backend,
                    const generic_registry& generics,
@@ -1472,6 +1502,37 @@ class ident_resolver final {
         return ident_info::make_empty();
     }
 
+    // what 'cur_frame' resolves the identifier to, nothing when the walk goes
+    // on to the frame outside it
+    [[nodiscard]] auto
+    resolve_in(const frame& cur_frame, const token& src_loc_tk,
+               const std::string_view ident, walk& step) const
+        -> std::optional<ident_info> {
+
+        // does this frame contain the variable?
+        if (cur_frame.has_var(step.id.base())) {
+            return resolve_var_in(cur_frame, src_loc_tk, ident, step);
+        }
+
+        // from the root frame of a function aliases are followed to the
+        // actual variable referred to
+        if (not cur_frame.is_func()) {
+            return std::nullopt;
+        }
+
+        // this is an alias, continue resolving until it is a variable,
+        // register or constant
+        if (cur_frame.has_alias(step.id.base())) {
+            return follow_alias(cur_frame.get_alias(step.id.base()), ident,
+                                step);
+        }
+
+        // neither: a global, a constant or empty
+        step.lea_path.emplace_back();
+
+        return resolve_var_in(cur_frame, src_loc_tk, ident, step);
+    }
+
     [[nodiscard]] auto
     resolve_in_frame(const frame& frm, const token& src_loc_tk,
                      const std::string_view ident, const ident_path& id,
@@ -1502,87 +1563,24 @@ class ident_resolver final {
 
         assert(not ident.empty());
 
-        ident_path id{std::string{ident}};
-
-        assert(not id.path().empty());
-
         // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
         // traverse the frames and resolve to a variable, register or constant
 
-        std::vector<operand> lea_path;
-
-        // note: 'lea' describes the effective address of an identifier's data
-        //       'lea_path' associates address operands with identifier
-        //       components; it is built while walking frames from the
-        //       innermost outwards and reversed before use
-
-        // ignore the elements after the first element:
-        //  e.g.: lnks[1].pos.y
-        //   ignore pos.y since those cannot have a lea
-        //   add empty leas for those
-        //   note: 'lea_path' will be reversed when complete so that
-        //          'ident_path' elements have corresponding lea
-
-        lea_path.insert(lea_path.end(), id.path().size() - 1, operand{});
-        // note: -1 to exclude the first element
-
-        // an alias of an element names the element, not the array holding it
-        bool is_element{};
+        walk step{ident_path{std::string{ident}}};
 
         for (const frame& cur_frame :
              scopes_.get().frames() | std::views::reverse) {
 
-            // does this frame contain the variable?
-            if (cur_frame.has_var(id.base())) {
-                ident_info info{
-                    resolve_in_frame(cur_frame, src_loc_tk, ident, id,
-                                     std::move(lea_path)),
+            if (std::optional<ident_info> found{
+                    resolve_in(cur_frame, src_loc_tk, ident, step),
                 };
+                found) {
 
-                return ident_builder::as_element_if(is_element,
-                                                    std::move(info));
+                return *std::move(found);
             }
-
-            // from the root frame of a function aliases are followed to the
-            // actual variable referred to
-            if (not cur_frame.is_func()) {
-                continue;
-            }
-
-            if (not cur_frame.has_alias(id.base())) {
-                lea_path.emplace_back();
-
-                ident_info info{
-                    resolve_in_frame(cur_frame, src_loc_tk, ident, id,
-                                     std::move(lea_path)),
-                };
-
-                return ident_builder::as_element_if(is_element,
-                                                    std::move(info));
-            }
-
-            // this is an alias, continue resolving until it is a variable,
-            // register or constant
-
-            const alias_info& alias{cur_frame.get_alias(id.base())};
-
-            if (alias.register_operand.is_register() and
-                id.path().size() == 1) {
-
-                return ident_info::make_register(ident, alias.register_operand);
-            }
-
-            // a field path such as 'p.x' gets its array-ness from the field
-            if (alias.is_element and id.path().size() == 1) {
-                is_element = true;
-            }
-
-            lea_path.emplace_back(alias.lea);
-
-            id = ident_builder::replace_alias_base(alias, id, lea_path);
         }
 
-        return resolve_constant_or_empty(src_loc_tk, ident, id);
+        return resolve_constant_or_empty(src_loc_tk, ident, step.id);
     }
 
     [[nodiscard]] auto resolve_var(const token& src_loc_tk,
@@ -1620,6 +1618,49 @@ class ident_resolver final {
         ident_builder::place_operand_from_lea(src_loc_tk, ii);
 
         return ii;
+    }
+
+    [[nodiscard]] auto resolve_var_in(const frame& cur_frame,
+                                      const token& src_loc_tk,
+                                      const std::string_view ident,
+                                      walk& step) const -> ident_info {
+
+        ident_info info{
+            resolve_in_frame(cur_frame, src_loc_tk, ident, step.id,
+                             std::move(step.lea_path)),
+        };
+
+        return ident_builder::as_element_if(step.is_element, std::move(info));
+    }
+
+    //
+    // statics
+    //
+
+    // the register an alias stands for, else the walk goes on with the
+    // identifier rewritten to the variable that the alias refers to
+    [[nodiscard]] static auto follow_alias(const alias_info& alias,
+                                           const std::string_view ident,
+                                           walk& step)
+        -> std::optional<ident_info> {
+
+        const bool is_single{step.id.path().size() == 1};
+
+        if (alias.register_operand.is_register() and is_single) {
+            return ident_info::make_register(ident, alias.register_operand);
+        }
+
+        // a field path such as 'p.x' gets its array-ness from the field
+        if (alias.is_element and is_single) {
+            step.is_element = true;
+        }
+
+        step.lea_path.emplace_back(alias.lea);
+
+        step.id =
+            ident_builder::replace_alias_base(alias, step.id, step.lea_path);
+
+        return std::nullopt;
     }
 };
 

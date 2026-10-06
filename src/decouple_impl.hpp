@@ -401,6 +401,12 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         return;
     }
 
+    parse_fields(tc, tz, tp);
+}
+
+// declared in 'expr_type.hpp'
+// the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'
+auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void {
     // e.g. obj.pos = {x, y}
     open_brace_tk_ = tz.is_next_char_token('{');
 
@@ -411,16 +417,12 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     const std::span<const type_field> flds{tp.fields()};
-    const size_t field_count{flds.size()};
-    size_t counter{};
-    while (true) {
-        close_brace_tk_ = tz.is_next_char_token('}');
 
-        if (not close_brace_tk_.is_empty()) {
-            break;
-        }
+    while (not at_closing_brace(tz)) {
+        // each field adds one expression
+        const size_t index{exprs_.size()};
 
-        if (counter == field_count) {
+        if (index == flds.size()) {
             // the error is at the field that is too much
             std::ignore = tz.is_next_char_token(',');
 
@@ -429,21 +431,10 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                                 tp.name())};
         }
 
-        const type_field& tf{flds.at(counter)};
+        const type_field& tf{flds.at(index)};
 
-        if (counter++) {
-            const token t{tz.is_next_char_token(',')};
-
-            if (t.is_empty()) {
-                throw compiler_exception{
-                    tz, std::format(
-                            "expected ',' followed by a value for field '{}' "
-                            "in type '{}'",
-                            flds.at(counter - 1).name, tp.name())};
-                // note: -1 names the previous field
-            }
-
-            expr_delims_tk_.emplace_back(t);
+        if (index > 0) {
+            parse_field_delimiter(tz, tp, tf);
         }
 
         // create an expression that assigns to field

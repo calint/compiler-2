@@ -20766,8 +20766,7 @@ vars.end:
 #           s4 61:24
 #
 # making a frame noinline starts its body with all 30 registers free and saves
-# the
-# registers held above it around the call:
+# the registers held above it around the call:
 #
 #   noinline frame         held inside  saved at the call
 #   entity.print_messages           12                  2
@@ -20836,7 +20835,6 @@ vars.end:
 #     1          5  tokenizer.print
 #     1          4  tokenizer.to_end
 #     0          1  action_help
-#     0          0  code
 #     0         94  printer.print_all
 #     0         24  printer.println
 #     0          1  tokenizer.input

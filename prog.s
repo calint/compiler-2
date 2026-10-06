@@ -3673,7 +3673,6 @@ vars.end:
 ;     1          1  greet
 ;     1          6  inv
 ;     0          2  bar
-;     0          0  code
 ;     0          1  faz
 ;     0          1  object.at
 ;     0          2  point.at

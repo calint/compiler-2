@@ -491,6 +491,25 @@ class expr_bool_op final : public statement {
     // statics
     //
 
+    // emits the address of 'side' for the comparison of memory
+    [[nodiscard]] static auto
+    address_emitter_of(toc& tc, const size_t indent, const token& src_loc_tk,
+                       const statement& side, const ident_info& info)
+        -> machine::address_emitter {
+
+        return [&tc, indent, &src_loc_tk, &side, &info](
+                   const operand& reg_count, const operand& address_register,
+                   const machine::address_use use) -> void {
+            side.compile_address(tc, indent, src_loc_tk,
+                                 {
+                                     .reg_count{reg_count},
+                                     .lea_path{info.lea_path},
+                                     .address_register{address_register},
+                                 },
+                                 use);
+        };
+    }
+
     // a condition tests a number, an instance would be tested as its first
     // field; checked when compiling since the initializer of a 'var' parses
     // its expression to learn the type, e.g. 'var b = a' copies the instance
@@ -570,19 +589,12 @@ class expr_bool_op final : public statement {
                         trimmed_source(lhs), lhs_type.name())};
     }
 
-    // compares the bytes of two user type instances or of two whole arrays,
-    // 1 is put into 'dst' when they are equal, 0 when 'inverted'
-    static auto compile_memory_equality(toc& tc, const size_t indent,
-                                        const token& src_loc_tk,
-                                        const statement& lhs,
-                                        const statement& rhs,
-                                        const operand& dst, const bool inverted)
-        -> void {
-
-        machine& x{tc.machine()};
-
-        const ident_info lhs_info{make_memory_operand_info(tc, lhs)};
-        const ident_info rhs_info{make_memory_operand_info(tc, rhs)};
+    // the bytes that both sides hold, they hold the same type and, as arrays,
+    // the same number of elements
+    [[nodiscard]] static auto
+    compared_size_bytes(const statement& lhs, const statement& rhs,
+                        const ident_info& lhs_info, const ident_info& rhs_info)
+        -> size_t {
 
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compiler_exception{
@@ -593,62 +605,58 @@ class expr_bool_op final : public statement {
                             rhs_info.type_ref().name())};
         }
 
-        size_t size_bytes{lhs_info.type_ref().size_bytes()};
-
         // a whole array is not compared as its first element
         if (lhs_info.is_array != rhs_info.is_array) {
             toc::assert_not_whole_array(lhs, lhs_info);
             toc::assert_not_whole_array(rhs, rhs_info);
         }
 
-        // check comparing 2 arrays of the same size without indexing
-        // note: a whole array on one side only was rejected above
-        if (lhs_info.is_array) {
+        const size_t element_size_bytes{lhs_info.type_ref().size_bytes()};
 
-            if (lhs_info.array_len != rhs_info.array_len) {
-                throw compiler_exception{lhs.tok(),
-                                         "cannot compare arrays of different "
-                                         "sizes"};
-            }
-
-            size_bytes = multiply_storage_size(lhs.tok(), size_bytes,
-                                               lhs_info.array_len);
+        if (not lhs_info.is_array) {
+            return element_size_bytes;
         }
 
-        const auto emit_lhs{
-            [&](const operand& reg_count, const operand& address_register,
-                const machine::address_use use) -> void {
-                lhs.compile_address(tc, indent, src_loc_tk,
-                                    {
-                                        .reg_count{reg_count},
-                                        .lea_path{lhs_info.lea_path},
-                                        .address_register{address_register},
-                                    },
-                                    use);
-            },
+        // check comparing 2 arrays of the same size without indexing
+        // note: a whole array on one side only was rejected above
+
+        if (lhs_info.array_len != rhs_info.array_len) {
+            throw compiler_exception{lhs.tok(),
+                                     "cannot compare arrays of different "
+                                     "sizes"};
+        }
+
+        return multiply_storage_size(lhs.tok(), element_size_bytes,
+                                     lhs_info.array_len);
+    }
+
+    // compares the bytes of two user type instances or of two whole arrays,
+    // 1 is put into 'dst' when they are equal, 0 when 'inverted'
+    static auto compile_memory_equality(toc& tc, const size_t indent,
+                                        const token& src_loc_tk,
+                                        const statement& lhs,
+                                        const statement& rhs,
+                                        const operand& dst, const bool inverted)
+        -> void {
+
+        const ident_info lhs_info{make_memory_operand_info(tc, lhs)};
+        const ident_info rhs_info{make_memory_operand_info(tc, rhs)};
+
+        const size_t size_bytes{
+            compared_size_bytes(lhs, rhs, lhs_info, rhs_info),
         };
 
-        const auto emit_rhs{
-            [&](const operand& reg_count, const operand& address_register,
-                const machine::address_use use) -> void {
-                rhs.compile_address(tc, indent, src_loc_tk,
-                                    {
-                                        .reg_count{reg_count},
-                                        .lea_path{rhs_info.lea_path},
-                                        .address_register{address_register},
-                                    },
-                                    use);
-            },
-        };
+        machine& x{tc.machine()};
 
-        x.memory_equal(src_loc_tk, indent, size_bytes,
-                       {
-                           .alignment{lhs_info.type_ref().alignment()},
-                           .lhs{emit_lhs},
-                           .rhs{emit_rhs},
-                           .dst{dst},
-                           .inverted{inverted},
-                       });
+        x.memory_equal(
+            src_loc_tk, indent, size_bytes,
+            {
+                .alignment{lhs_info.type_ref().alignment()},
+                .lhs{address_emitter_of(tc, indent, src_loc_tk, lhs, lhs_info)},
+                .rhs{address_emitter_of(tc, indent, src_loc_tk, rhs, rhs_info)},
+                .dst{dst},
+                .inverted{inverted},
+            });
     }
 
     [[nodiscard]] static auto
@@ -904,52 +912,16 @@ class expr_bool final : public statement {
 
         set_type(tc.get_type_bool());
 
-        token prv_op{};
+        // a caller might have supplied the first operand it already parsed
+        parse_operand(tc, tz, std::move(first_expression));
 
-        while (true) {
-            // a caller might have supplied the first operand it already parsed
-            if (first_expression) {
-                bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz,
-                                    std::move(first_expression));
-            } else {
-                parse_element(tc, tz);
-            }
+        // the operands are joined by 'and' or by 'or', not by both
+        while (const std::optional<token> op_tk{read_connective(tz)}) {
+            assert_same_connective(*op_tk);
 
-            // the ')' ends an enclosed expression
-            if (enclosed_) {
-                close_paren_tk_ = tz.is_next_char_token(')');
+            ops_.emplace_back(*op_tk);
 
-                if (not close_paren_tk_.is_empty()) {
-                    return;
-                }
-            }
-
-            // read 'and' or 'or'
-            const token op_tk{tz.next_token()};
-
-            if (not op_tk.is_text("or") and not op_tk.is_text("and")) {
-                // anything else ends the expression, an enclosed one needs
-                // its ')' first
-                if (enclosed_) {
-                    throw compiler_exception{
-                        op_tk, "expected ')' to close expression"};
-                }
-
-                tz.put_back_token(op_tk);
-
-                return;
-            }
-
-            if (prv_op.is_empty()) {
-                prv_op = op_tk;
-            }
-
-            if (not prv_op.is_text(op_tk.text())) {
-                throw compiler_exception{
-                    op_tk, "mixing 'and' and 'or' without parenthesis"};
-            }
-
-            ops_.emplace_back(op_tk);
+            parse_operand(tc, tz, {});
         }
     }
 
@@ -1083,6 +1055,15 @@ class expr_bool final : public statement {
     }
 
   private:
+    auto assert_same_connective(const token& op_tk) const -> void {
+        if (ops_.empty() or ops_.front().is_text(op_tk.text())) {
+            return;
+        }
+
+        throw compiler_exception{op_tk,
+                                 "mixing 'and' and 'or' without parenthesis"};
+    }
+
     // an element that does not decide the list continues at the next element
     [[nodiscard]] auto
     compile_inner_element(toc& tc, const size_t indent, const size_t expr_index,
@@ -1286,6 +1267,49 @@ class expr_bool final : public statement {
         }
 
         bools_.emplace_back(std::move(nested));
+    }
+
+    auto parse_operand(toc& tc, tokenizer& tz,
+                       std::unique_ptr<statement> already_parsed) -> void {
+
+        if (already_parsed) {
+            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz,
+                                std::move(already_parsed));
+
+            return;
+        }
+
+        parse_element(tc, tz);
+    }
+
+    // the 'and' or 'or' after an operand, none when the expression ends: an
+    // enclosed expression ends with its ')'
+    [[nodiscard]] auto read_connective(tokenizer& tz) -> std::optional<token> {
+        // the ')' ends an enclosed expression
+        if (enclosed_) {
+            close_paren_tk_ = tz.is_next_char_token(')');
+
+            if (not close_paren_tk_.is_empty()) {
+                return std::nullopt;
+            }
+        }
+
+        // read 'and' or 'or'
+        const token op_tk{tz.next_token()};
+
+        if (op_tk.is_text("or") or op_tk.is_text("and")) {
+            return op_tk;
+        }
+
+        // anything else ends the expression, an enclosed one needs its ')'
+        // first
+        if (enclosed_) {
+            throw compiler_exception{op_tk, "expected ')' to close expression"};
+        }
+
+        tz.put_back_token(op_tk);
+
+        return std::nullopt;
     }
 
     // a constant last element decides the list only if all earlier elements

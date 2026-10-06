@@ -1722,42 +1722,21 @@ class machine_rv32i : public machine {
                           const op instruction, const operand& destination,
                           const operand& src) -> void {
 
-        validate_scalar(src_loc_tk, destination.type_ref());
-        validate_scalar(src_loc_tk, src.type_ref());
-
-        assert(destination.is_register() or destination.is_memory());
-
-        if (destination.is_memory()) {
-            validate_address(src_loc_tk, destination);
-        }
-
-        if (src.is_memory()) {
-            validate_address(src_loc_tk, src);
-        }
-
-        const size_t width{destination.type_ref().size_bytes()};
+        validate_operands(src_loc_tk, destination, src);
 
         const std::optional<int32_t> constant{
             narrowed_immediate(src, destination.type_ref()),
         };
 
-        // folding removes the operations that keep the destination
-        assert(not constant.has_value() or
-               not keeps_destination(instruction, *constant, width));
+        assert_folded(instruction, destination, src, constant);
 
         if (constant.has_value() and
-            yields_constant(instruction, *constant, width)) {
+            yields_constant(instruction, *constant,
+                            destination.type_ref().size_bytes())) {
 
             store_constant_result(src_loc_tk, indent, destination, *constant);
             return;
         }
-
-        // folding removes the operations of a location with itself
-        assert(not same_memory(destination, src));
-
-        assert(not destination.is_register() or not src.is_register() or
-               register_index(destination.base_register()) !=
-                   register_index(src.base_register()));
 
         const address_scope scope{*this, destination, src};
 
@@ -2729,19 +2708,8 @@ class machine_rv32i : public machine {
         };
 
         if (options.lower) {
-            comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count,
-                                plan);
-        }
-
-        if (options.lower and not plan.upper_covers_lower) {
-            check_lower_bounds(indent, index,
-                               plan.count_known ? operand{} : reg_count,
-                               not options.upper);
-        }
-
-        if (options.lower) {
-            registers_.mark_lower_checked(
-                register_mask(lower_checked_register(reg_to_check, reg_count)));
+            emit_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan,
+                             not options.upper);
         }
 
         if (options.upper) {
@@ -2923,6 +2891,24 @@ class machine_rv32i : public machine {
         assembler_.slt(indent, result,
                        swapped ? right.base_register() : left.base_register(),
                        swapped ? left.base_register() : right.base_register());
+    }
+
+    // the lower bound, the last check of the bounds check branches past the
+    // handler, see 'check_lower_bounds'
+    auto emit_lower_bound(const token& src_loc_tk, const size_t indent,
+                          const operand& reg_to_check, const operand& reg_count,
+                          const bounds_plan& plan, const bool is_last) -> void {
+
+        comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan);
+
+        if (not plan.upper_covers_lower) {
+            check_lower_bounds(indent, reg_to_check.base_register(),
+                               plan.count_known ? operand{} : reg_count,
+                               is_last);
+        }
+
+        registers_.mark_lower_checked(
+            register_mask(lower_checked_register(reg_to_check, reg_count)));
     }
 
     // the result replaces the value in 'loaded', a partial sum goes through a
@@ -4148,6 +4134,27 @@ class machine_rv32i : public machine {
         return immediates_size_bytes <= copy_size_bytes;
     }
 
+    // folding removes the operations that keep the destination and those of a
+    // location with itself
+    static auto
+    assert_folded([[maybe_unused]] const op instruction,
+                  [[maybe_unused]] const operand& destination,
+                  [[maybe_unused]] const operand& src,
+                  [[maybe_unused]] const std::optional<int32_t> constant)
+        -> void {
+
+        const size_t width{destination.type_ref().size_bytes()};
+
+        assert(not constant.has_value() or
+               not keeps_destination(instruction, *constant, width));
+
+        assert(not same_memory(destination, src));
+
+        assert(not destination.is_register() or not src.is_register() or
+               register_index(destination.base_register()) !=
+                   register_index(src.base_register()));
+    }
+
     // aligned hardware requires every access to be within the known alignment:
     // 1 selects 'lbu'/'sb', 2 'lhu'/'sh', 4 and above 'lw'/'sw'
     [[nodiscard]] static auto bulk_width(const size_t alignment) -> size_t {
@@ -4812,6 +4819,25 @@ class machine_rv32i : public machine {
 
         if (dst.is_memory()) {
             validate_address(src_loc_tk, dst);
+        }
+    }
+
+    // scalar operands in a register or an address of the target
+    static auto validate_operands(const token& src_loc_tk,
+                                  const operand& destination,
+                                  const operand& src) -> void {
+
+        validate_scalar(src_loc_tk, destination.type_ref());
+        validate_scalar(src_loc_tk, src.type_ref());
+
+        assert(destination.is_register() or destination.is_memory());
+
+        if (destination.is_memory()) {
+            validate_address(src_loc_tk, destination);
+        }
+
+        if (src.is_memory()) {
+            validate_address(src_loc_tk, src);
         }
     }
 

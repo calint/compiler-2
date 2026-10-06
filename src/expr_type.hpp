@@ -158,6 +158,12 @@ class expr_type final : public statement {
     auto assert_items_not_reading(const record_destination& dst,
                                   const size_t record_offset) const -> void;
 
+    // the '}' that ends the fields, when it is the next character
+    [[nodiscard]] auto at_closing_brace(tokenizer& tz) -> bool {
+        close_brace_tk_ = tz.is_next_char_token('}');
+        return not close_brace_tk_.is_empty();
+    }
+
     // out-of-line: calls 'expr_any'
     auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
                         const ident_info& dst_info, operand& dst_op) const
@@ -185,6 +191,25 @@ class expr_type final : public statement {
 
     // out-of-line: creates the 'stmt_call' or 'stmt_identifier'
     auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
+
+    // the ',' before the value of the field 'next'
+    auto parse_field_delimiter(tokenizer& tz, const type& tp,
+                               const type_field& next) -> void {
+
+        const token delimiter_tk{tz.is_next_char_token(',')};
+
+        if (delimiter_tk.is_empty()) {
+            throw compiler_exception{
+                tz, std::format("expected ',' followed by a value for field "
+                                "'{}' in type '{}'",
+                                next.name, tp.name())};
+        }
+
+        expr_delims_tk_.emplace_back(delimiter_tk);
+    }
+
+    // out-of-line: creates an 'expr_any' for each field
+    auto parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void;
 
     // out-of-line: calls 'expr_any'
     auto write_builtin_field(toc& tc, const size_t indent, const expr_any& src,

@@ -290,6 +290,14 @@ class stmt_def_dat final : public statement {
     // statics
     //
 
+    // the '}' that ends the initializer, when it is the next character
+    [[nodiscard]] static auto at_closing_brace(tokenizer& tz, elem& el)
+        -> bool {
+
+        el.close_brace_tk_ = tz.is_next_char_token('}');
+        return not el.close_brace_tk_.is_empty();
+    }
+
     static auto compile_data_builtin(toc& tc, const type& tp,
                                      const elem& elroot) -> void {
 
@@ -620,6 +628,24 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
+    // the ',' before the initializer of the field 'next'
+    static auto parse_field_delimiter(tokenizer& tz, const type& tp,
+                                      const type_field& next, elem& el)
+        -> void {
+
+        const token tk{tz.is_next_char_token(',')};
+
+        if (tk.is_empty()) {
+            throw compiler_exception{
+                tz, std::format("expected ',' followed by an initializer "
+                                "for field '{}' of type '{}{}' in type '{}'",
+                                next.name, next.type().name(),
+                                next.is_array ? "[]" : "", tp.name())};
+        }
+
+        el.elem_delims_tk_.emplace_back(tk);
+    }
+
     [[nodiscard]] static auto parse_type(const toc& tc, tokenizer& tz,
                                          const type& tp) -> elem {
 
@@ -635,15 +661,12 @@ class stmt_def_dat final : public statement {
         }
 
         const std::span<const type_field> flds{tp.fields()};
-        size_t counter{};
-        while (true) {
-            el.close_brace_tk_ = tz.is_next_char_token('}');
 
-            if (not el.close_brace_tk_.is_empty()) {
-                break;
-            }
+        while (not at_closing_brace(tz, el)) {
+            // each field adds one element
+            const size_t index{el.elems.size()};
 
-            if (counter == flds.size()) {
+            if (index == flds.size()) {
                 // the error is at the initializer that is too much
                 std::ignore = tz.is_next_char_token(',');
 
@@ -652,21 +675,10 @@ class stmt_def_dat final : public statement {
                                     tp.name())};
             }
 
-            const type_field& tf{flds.at(counter)};
+            const type_field& tf{flds.at(index)};
 
-            if (counter++) {
-                const token tk{tz.is_next_char_token(',')};
-
-                if (tk.is_empty()) {
-                    throw compiler_exception{
-                        tz, std::format(
-                                "expected ',' followed by an initializer "
-                                "for field '{}' of type '{}{}' in type '{}'",
-                                tf.name, tf.type().name(),
-                                tf.is_array ? "[]" : "", tp.name())};
-                }
-
-                el.elem_delims_tk_.emplace_back(tk);
+            if (index > 0) {
+                parse_field_delimiter(tz, tp, tf, el);
             }
 
             el.elems.emplace_back(parse_elem(tc, tz, tz.cur_position_token(),

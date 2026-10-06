@@ -89,12 +89,7 @@ class expr_arith final : public expression {
                                              : parse_element(tc, tz, in_args));
 
         // set the type of this list same as first element
-
-        const statement& first_expr{*exprs_.front()};
-
-        set_type(first_expr.is_identifier()
-                     ? tc.make_ident_info(first_expr).type_ref()
-                     : first_expr.get_type());
+        set_type(type_of_first_element(tc));
 
         // start the loop of arithmetic operator and element
 
@@ -146,13 +141,7 @@ class expr_arith final : public expression {
 
             // consume the peeked operator
             ws_before_ops_.emplace_back(ws_before_op_tk);
-            const char ch{tz.next_char()};
-
-            // consume the second character of a previously recognized shift
-            // operator
-            if (ch == '<' or ch == '>') {
-                tz.skip_char();
-            }
+            consume_peeked_operator(tz);
 
             exprs_.emplace_back(parse_element(tc, tz, in_args));
 
@@ -833,6 +822,19 @@ class expr_arith final : public expression {
             });
     }
 
+    // the type of the list is that of its first element
+    [[nodiscard]] auto type_of_first_element(const toc& tc) const
+        -> const type& {
+
+        const statement& first_expr{*exprs_.front()};
+
+        if (first_expr.is_identifier()) {
+            return tc.make_ident_info(first_expr).type_ref();
+        }
+
+        return first_expr.get_type();
+    }
+
     auto validate_arithmetic_operands(const toc& tc) const -> void {
         if (ops_.empty()) {
             return;
@@ -1130,6 +1132,16 @@ class expr_arith final : public expression {
                                                const int64_t value) -> operand {
 
         return operand::imm(std::format("{}", value), tc.get_type_default());
+    }
+
+    static auto consume_peeked_operator(tokenizer& tz) -> void {
+        const char ch{tz.next_char()};
+
+        // consume the second character of a previously recognized shift
+        // operator
+        if (ch == '<' or ch == '>') {
+            tz.skip_char();
+        }
     }
 
     // a constant identifier or a list of constants

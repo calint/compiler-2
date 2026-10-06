@@ -62,6 +62,14 @@ class stmt_def_func final : public statement {
     stmt_block code_;
     generic_part generic_;
 
+    // the types a signature names, as written
+    struct signature_types {
+        // one per parameter, empty for an array
+        std::vector<std::string> parameters;
+
+        std::string result;
+    };
+
   public:
     // parses the function definition in the user code
     stmt_def_func(toc& tc, const token tk, tokenizer& tz)
@@ -707,6 +715,24 @@ class stmt_def_func final : public statement {
         }
     }
 
+    [[nodiscard]] static auto deduction_of(const std::string_view param_name,
+                                           const signature_types& types)
+        -> generic_deduction {
+
+        const auto it{std::ranges::find(types.parameters, param_name)};
+
+        std::optional<size_t> param_index;
+
+        if (it != types.parameters.end()) {
+            param_index = static_cast<size_t>(it - types.parameters.begin());
+        }
+
+        return {
+            .param_index{param_index},
+            .is_result{types.result == param_name},
+        };
+    }
+
     // how a call can tell each type parameter: the first parameter declared
     // with exactly its type, e.g. 's T' in 'func text.append<T type>(s T)',
     // and the result, e.g. 'res T'. 'tz' is before the '(' of the parameters
@@ -714,48 +740,12 @@ class stmt_def_func final : public statement {
                                          tokenizer tz)
         -> std::vector<generic_deduction> {
 
-        std::vector<std::string> types;
-        std::string result_type;
-
-        // the same reading as the parameters of an instance, without
-        // resolving the types
-        if (not tz.is_next_char_token('(').is_empty()) {
-            bool is_closed{not tz.is_next_char_token(')').is_empty()};
-
-            while (not is_closed) {
-                if (not types.empty() and
-                    tz.is_next_char_token(',').is_empty()) {
-                    break;
-                }
-
-                const stmt_def_func_param::syntax param{
-                    stmt_def_func_param::syntax::read(tz),
-                };
-
-                // an array is not the type itself
-                types.emplace_back(param.is_array() ? ""
-                                                    : param.type_tk.text());
-
-                is_closed = not tz.is_next_char_token(')').is_empty();
-            }
-
-            if (is_closed) {
-                result_type = result_type_text(tz);
-            }
-        }
+        const signature_types types{read_signature_types(tz)};
 
         std::vector<generic_deduction> result;
-        for (const token& param_tk : param_tks) {
-            const auto it{std::ranges::find(types, param_tk.text())};
 
-            result.push_back({
-                .param_index{
-                    it == types.end() ? std::nullopt
-                                      : std::optional{static_cast<size_t>(
-                                            it - types.begin())},
-                },
-                .is_result{result_type == param_tk.text()},
-            });
+        for (const token& param_tk : param_tks) {
+            result.push_back(deduction_of(param_tk.text(), types));
         }
 
         return result;
@@ -811,6 +801,43 @@ class stmt_def_func final : public statement {
         }
 
         return param_tks;
+    }
+
+    // the same reading as the parameters of an instance, without resolving the
+    // types
+    [[nodiscard]] static auto read_signature_types(tokenizer& tz)
+        -> signature_types {
+
+        signature_types types;
+
+        if (tz.is_next_char_token('(').is_empty()) {
+            return types;
+        }
+
+        bool is_closed{not tz.is_next_char_token(')').is_empty()};
+
+        while (not is_closed) {
+            if (not types.parameters.empty() and
+                tz.is_next_char_token(',').is_empty()) {
+                break;
+            }
+
+            const stmt_def_func_param::syntax param{
+                stmt_def_func_param::syntax::read(tz),
+            };
+
+            // an array is not the type itself
+            types.parameters.emplace_back(
+                param.is_array() ? "" : param.type_tk.text());
+
+            is_closed = not tz.is_next_char_token(')').is_empty();
+        }
+
+        if (is_closed) {
+            types.result = result_type_text(tz);
+        }
+
+        return types;
     }
 
     // the type of 'name [type]' after the parameters, empty without one

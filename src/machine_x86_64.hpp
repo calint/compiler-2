@@ -398,51 +398,23 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        const size_t limit_bits{reg_to_check.type_ref().size_bits()};
-
         const bounds_plan plan{
             plan_bounds_check(options, reg_count, array_count,
-                              (uint64_t{1} << (limit_bits - 1)) - 1,
+                              signed_maximum(reg_to_check),
                               registers_.is_lower_checked(
                                   register_bit(reg_count.base_register()))),
         };
-        // note: -1 gives the signed maximum 2^(limit_bits - 1) - 1
-
-        condition out_of_bounds{allow_end ? condition::g : condition::ge};
-
-        if (plan.upper_covers_lower) {
-            out_of_bounds = allow_end ? condition::a : condition::ae;
-        }
-
-        comment(src_loc_tk, indent, "bounds check begin");
 
         const std::optional<size_t> reported_line{
             options.with_line ? std::optional<size_t>{src_loc_tk.at_line()}
                               : std::nullopt,
         };
 
-        if (options.lower) {
-            comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count,
-                                plan);
-        }
-
-        if (options.lower and not plan.upper_covers_lower) {
-            // a negative count passes 'start + count' but spans the address
-            // space
-            for (const operand* value : {&reg_to_check, &reg_count}) {
-                if (value->is_empty() or
-                    (plan.count_known and value == &reg_count)) {
-                    continue;
-                }
-
-                test(src_loc_tk, indent, *value, *value);
-                branch_to_bounds_panic(indent, condition::s, reported_line);
-            }
-        }
+        comment(src_loc_tk, indent, "bounds check begin");
 
         if (options.lower) {
-            registers_.mark_lower_checked(
-                register_bit(lower_checked_register(reg_to_check, reg_count)));
+            check_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan,
+                              reported_line);
         }
 
         if (options.upper) {
@@ -451,7 +423,9 @@ class machine_x86_64 final : public machine {
             compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
                                 reg_count);
 
-            branch_to_bounds_panic(indent, out_of_bounds, reported_line);
+            branch_to_bounds_panic(indent,
+                                   out_of_bounds_condition(allow_end, plan),
+                                   reported_line);
         }
 
         comment(src_loc_tk, indent, "bounds check end");
@@ -1369,6 +1343,27 @@ class machine_x86_64 final : public machine {
         return nullptr;
     }
 
+    auto check_lower_bound(const token& src_loc_tk, const size_t indent,
+                           const operand& reg_to_check,
+                           const operand& reg_count, const bounds_plan& plan,
+                           const std::optional<size_t> reported_line) -> void {
+
+        comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan);
+
+        if (not plan.upper_covers_lower) {
+            test_sign(src_loc_tk, indent, reg_to_check, reported_line);
+
+            // a negative count passes 'start + count' but spans the address
+            // space
+            if (not plan.count_known) {
+                test_sign(src_loc_tk, indent, reg_count, reported_line);
+            }
+        }
+
+        registers_.mark_lower_checked(
+            register_bit(lower_checked_register(reg_to_check, reg_count)));
+    }
+
     auto invoke_syscall(const size_t indent) -> void {
         std::vector<operand> saved;
         for (const std::string_view name : {"rcx", "r11"}) {
@@ -1384,9 +1379,35 @@ class machine_x86_64 final : public machine {
         }
     }
 
+    // a negative value is out of bounds, an empty operand has none to test
+    auto test_sign(const token& src_loc_tk, const size_t indent,
+                   const operand& value,
+                   const std::optional<size_t> reported_line) -> void {
+
+        if (value.is_empty()) {
+            return;
+        }
+
+        test(src_loc_tk, indent, value, value);
+        branch_to_bounds_panic(indent, condition::s, reported_line);
+    }
+
     //
     // statics
     //
+
+    // the unsigned upper comparison also fails a negative value when the lower
+    // bound is covered by it
+    [[nodiscard]] static auto out_of_bounds_condition(const bool allow_end,
+                                                      const bounds_plan& plan)
+        -> condition {
+
+        if (plan.upper_covers_lower) {
+            return allow_end ? condition::a : condition::ae;
+        }
+
+        return allow_end ? condition::g : condition::ge;
+    }
 
     // returns 0 if name is not a register
     [[nodiscard]] static auto register_size_bytes(const std::string_view name)
@@ -1411,6 +1432,12 @@ class machine_x86_64 final : public machine {
         }
 
         return 0;
+    }
+
+    // the most that a value of the width of 'value' holds as a signed number
+    [[nodiscard]] static auto signed_maximum(const operand& value) -> uint64_t {
+        return (uint64_t{1} << (value.type_ref().size_bits() - 1)) - 1;
+        // note: -1 gives the signed maximum 2^(bits - 1) - 1
     }
 
   protected:
@@ -2292,29 +2319,33 @@ class machine_x86_64 final : public machine {
     condition_for_comparison(const comparison_operator comparison,
                              const bool inverted) -> condition {
 
-        if (comparison == comparison_operator::equal) {
-            return inverted ? condition::ne : condition::e;
+        const comparison_operator holds{
+            inverted ? negated(comparison) : comparison,
+        };
+
+        if (holds == comparison_operator::equal) {
+            return condition::e;
         }
 
-        if (comparison == comparison_operator::not_equal) {
-            return inverted ? condition::e : condition::ne;
+        if (holds == comparison_operator::not_equal) {
+            return condition::ne;
         }
 
-        if (comparison == comparison_operator::less) {
-            return inverted ? condition::ge : condition::l;
+        if (holds == comparison_operator::less) {
+            return condition::l;
         }
 
-        if (comparison == comparison_operator::less_equal) {
-            return inverted ? condition::g : condition::le;
+        if (holds == comparison_operator::less_equal) {
+            return condition::le;
         }
 
-        if (comparison == comparison_operator::greater) {
-            return inverted ? condition::le : condition::g;
+        if (holds == comparison_operator::greater) {
+            return condition::g;
         }
 
-        assert(comparison == comparison_operator::greater_equal);
+        assert(holds == comparison_operator::greater_equal);
 
-        return inverted ? condition::l : condition::ge;
+        return condition::ge;
     }
 
     // the qwords, then the remaining dword, word and byte
