@@ -159,16 +159,8 @@ class stmt_builtin_io final : public stmt_call {
                          type_default),
         };
 
-        if (has_start()) {
-            x.multiply(tok(), indent, start, element_size_bytes);
-
-            x.add_subtract(tok(), indent, machine::arithmetic_operator::add,
-                           buffer_reg, start);
-
-            x.free_scratch_register(tok(), indent, start);
-        }
-
-        x.multiply(tok(), indent, count, element_size_bytes);
+        convert_to_bytes(tc, indent, buffer_reg, count, start,
+                         element_size_bytes);
 
         return args;
     }
@@ -240,6 +232,26 @@ class stmt_builtin_io final : public stmt_call {
                        true, count, tc.bounds_check_options());
 
         return start;
+    }
+
+    // the start moves the buffer address and the count becomes the byte count
+    auto convert_to_bytes(toc& tc, const size_t indent,
+                          const operand& buffer_reg, const operand& count,
+                          const operand& start,
+                          const operand& element_size_bytes) const -> void {
+
+        machine& x{tc.machine()};
+
+        if (has_start()) {
+            x.multiply(tok(), indent, start, element_size_bytes);
+
+            x.add_subtract(tok(), indent, machine::arithmetic_operator::add,
+                           buffer_reg, start);
+
+            x.free_scratch_register(tok(), indent, start);
+        }
+
+        x.multiply(tok(), indent, count, element_size_bytes);
     }
 
     auto emit_call(machine& x, const size_t indent, const operand& result,
