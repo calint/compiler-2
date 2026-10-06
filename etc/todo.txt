@@ -7,9 +7,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 1. clean up
 --------------------------------------------------------------------------------
 [ ] easy: rename 'compiler_exception'
-[o] easy: examine NOLINTNEXTLINE annotations and try to fix
-    => left: the 'misc-definitions-in-headers' block in 'decouple_impl.hpp',
-       either 'inline' on its 22 definitions or keep the block
 [ ] easy: C++ brace initializers have no performance advantage and the
     narrowing issues do not exist here; ponder switching to '='
 [ ] easy: "dat" replaced with "let"?

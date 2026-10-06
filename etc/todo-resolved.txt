@@ -1,6 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: examine NOLINTNEXTLINE annotations and try to fix
+    => done (2026-10-06): the 'misc-definitions-in-headers' block in
+       'decouple_impl.hpp' stays; no 'inline' specifiers on functions, the
+       compiler applies or ignores them at will
 [x] easy: remove 'panic_exception'
     => done (2026-10-06): 'std::runtime_error' in its place, same message and
        handler in 'main'
