@@ -96,6 +96,8 @@ class tokenizer final {
         return ch;
     }
 
+    // e.g. '  # note\n  x = 1' gives the token 'x' with the whitespace and
+    // comment before it
     [[nodiscard]] auto next_token() -> token {
         const std::string_view ws_before{next_whitespace()};
         const size_t at_line{at_line_};
@@ -161,6 +163,7 @@ class tokenizer final {
     }
 
     // skips an argument of a call, up to the ',' or ')' that ends it
+    // e.g. 'a + f(b, c), d)' stops at the ',' before 'd'
     auto skip_argument() -> void {
         size_t depth{};
 
@@ -333,6 +336,8 @@ class tokenizer final {
         }
     }
 
+    // the text up to the next delimiter, e.g. 'abc+d' gives 'abc', a delimiter
+    // at the start gives an empty text
     [[nodiscard]] auto next_token_str() -> std::string_view {
         if (is_eos()) {
             return "";
@@ -351,6 +356,7 @@ class tokenizer final {
 
     // the next line's indentation and comments belong to the next token, the
     // whitespace at the end of the source stays with the last token
+    // e.g. ' # c\n    y' gives ' # c\n', the indentation of 'y' stays
     [[nodiscard]] auto next_trailing_whitespace() -> std::string_view {
         const size_t bgn_ix{char_ix_};
         const size_t len{next_whitespace().size()};
@@ -368,6 +374,7 @@ class tokenizer final {
 
     // comments are part of the whitespace so parsers never see them and
     // 'source_to' reproduces them with the surrounding tokens
+    // e.g. '  # c\n  x' gives '  # c\n  '
     [[nodiscard]] auto next_whitespace() -> std::string_view {
         if (is_eos()) {
             return "";
@@ -399,6 +406,7 @@ class tokenizer final {
     }
 
     // the newline is left for 'next_whitespace' so it counts the line
+    // e.g. the rest of '# c\n' is '# c'
     auto skip_to_end_of_line() -> void {
         const size_t newline{src_.find('\n', char_ix_)};
         char_ix_ = newline == std::string_view::npos ? src_.size() : newline;
@@ -406,6 +414,7 @@ class tokenizer final {
 
     // skips a token, or the character of a delimiter, which has an empty token
     // text
+    // e.g. 'ab+c' skips 'ab', then '+', then 'c'
     auto skip_token() -> void {
         if (next_token().text().empty() and not is_eos()) {
             skip_char();

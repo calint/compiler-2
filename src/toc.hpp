@@ -644,6 +644,7 @@ class constant_parser final {
         return static_cast<unsigned char>(*decoded);
     }
 
+    // e.g. '12', '0x1f', '0b101' and ''a'' have a value, 'x' has none
     [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
                                              const std::string_view str)
         -> std::optional<int64_t> {
