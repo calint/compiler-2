@@ -75,6 +75,9 @@ class machine_rv32i : public machine {
         24, 25, 26, 27, 4,  3,  1,  11, 12, 13, 14, 15, 16, 17, 10,
     };
 
+    // the last of the saved registers, no built-in names it
+    static constexpr std::string_view slot_register_{"s11"};
+
     // note: ascending t and s names keep generated code readable while argument
     //       registers stay late to avoid builtin conflicts and a0 stays last
     //       because syscalls overwrite it with their result
@@ -592,7 +595,8 @@ class machine_rv32i : public machine {
 
     auto call_function(const token& src_loc_tk, const size_t indent,
                        const std::string_view label,
-                       const operand& frame_address) -> void override {
+                       const operand& frame_address,
+                       const operand& slot_address) -> void override {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
@@ -621,6 +625,15 @@ class machine_rv32i : public machine {
         }
 
         const size_t stack_bytes{save_registers(indent, saved)};
+
+        // before the frame base, the address may be relative to it
+        if (not slot_address.is_empty()) {
+            comment(src_loc_tk, indent, "address of the slot in a register");
+
+            address_of(src_loc_tk, indent,
+                       make_register_operand(slot_register_, default_type()),
+                       slot_address);
+        }
 
         comment(src_loc_tk, indent, "set function frame base");
 
@@ -1469,6 +1482,10 @@ class machine_rv32i : public machine {
         }
 
         shift_by_register(src_loc_tk, indent, operation, dst, count, loaded);
+    }
+
+    [[nodiscard]] auto slot_register() const -> std::string_view override {
+        return slot_register_;
     }
 
     auto start() -> void override {

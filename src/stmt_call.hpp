@@ -501,12 +501,21 @@ class stmt_call : public expression {
                          tc.get_type_address()),
             tc.is_frame_check());
 
-        write_frame_slots(x, indent, func, frame_address, addresses);
+        // the address of that slot is loaded after the registers are saved, a
+        // register that holds a value of the caller is not lost
+        const std::optional<size_t> register_slot{
+            func.has_slot_register(tc) ? func.register_slot_index()
+                                       : std::nullopt,
+        };
+
+        write_frame_slots(x, indent, func, frame_address, addresses,
+                          register_slot);
 
         x.free_scratch_registers(tok(), indent, address_registers);
 
-        x.call_function(tok(), indent, func.body_label(array_lengths),
-                        frame_address);
+        x.call_function(
+            tok(), indent, func.body_label(array_lengths), frame_address,
+            register_slot ? addresses.at(*register_slot) : operand{});
     }
 
     // the callee reaches the result and the arguments through their addresses,
@@ -635,13 +644,19 @@ class stmt_call : public expression {
     auto write_frame_slots(machine& x, const size_t indent,
                            const stmt_def_func& func,
                            const operand& frame_address,
-                           const std::vector<operand>& addresses) const
+                           const std::vector<operand>& addresses,
+                           const std::optional<size_t> register_slot) const
         -> void {
 
         operand slot{frame_address};
 
         for (const auto [i, addr] : std::views::enumerate(addresses)) {
             comment_frame_slot(x, indent, func, static_cast<size_t>(i));
+
+            // the callee finds it in a register, it has no slot
+            if (std::cmp_equal(i, register_slot.value_or(addresses.size()))) {
+                continue;
+            }
 
             x.address_of(tok(), indent, slot, addr);
 
@@ -972,6 +987,10 @@ class stmt_call : public expression {
         const stmt_def_func& func,
         const std::span<const noninline_arg> arguments) const -> void {
 
+        if (tc.is_measuring_body()) {
+            return;
+        }
+
         const std::optional<std::string> signature{
             aliasing_signature(tc, dst_info, func, arguments),
         };
@@ -1009,7 +1028,7 @@ class stmt_call : public expression {
             return;
         }
 
-        const size_t arg_idx{slot_index - (func.returns() ? 1 : 0)};
+        const size_t arg_idx{slot_index - func.first_param_slot()};
 
         x.comment(tok(), indent, "address of argument '{}' to parameter '{}'",
                   statement::trimmed_source(args_.at(arg_idx)),

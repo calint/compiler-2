@@ -2059,7 +2059,8 @@ auto generate_noninline() -> void {
         }
     }
     backend.call_function(token{}, 1, "outer",
-                          operand::mem("s0", {}, 1, 4096, integer));
+                          operand::mem("s0", {}, 1, 4096, integer),
+                          operand{});
     for (size_t index{1}; index < 32; ++index) {
         if (index != 2) {
             std::println("    sw x{}, {}(sp)", index, (index - 1) * 4);
@@ -2091,7 +2092,8 @@ auto generate_noninline() -> void {
     std::println("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
                  "    beq s1, t0, 1f\n    j call_failure\n1:");
     backend.call_function(token{}, 1, "inner",
-                          operand::mem("s1", {}, 1, 8192, integer));
+                          operand::mem("s1", {}, 1, 8192, integer),
+                          operand{});
     // the frame base is live here, so the call restores it
     std::println("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
                  "    beq s1, t0, 1f\n    j call_failure\n1:");

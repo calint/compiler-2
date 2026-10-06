@@ -292,6 +292,22 @@ class assembler {
         lines_.clear();
     }
 
+    //
+    // statics
+    //
+
+    // in the target's unit, removed lines have no size
+    [[nodiscard]] static auto code_size_of(const std::span<const line> lines)
+        -> size_t {
+
+        size_t size{};
+        for (const line& l : lines) {
+            size += l.code_size;
+        }
+
+        return size;
+    }
+
   protected:
     // 'mnemonic' is the unconditional jump or a branch taking 'operands'
     auto add_jump(std::string text, const std::string_view mnemonic,

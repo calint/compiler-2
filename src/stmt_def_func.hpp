@@ -227,15 +227,37 @@ class stmt_def_func final : public statement {
         tc.enter_noninline_func(name(), body_call_path(array_lengths),
                                 x.frame_base_register());
 
+        // the register is held while the body runs
+        operand slot_register;
+
+        if (has_slot_register(tc)) {
+
+            slot_register = x.alloc_named_register(
+                tok(), indent + 1, x.slot_register(), tc.get_type_address());
+        }
+
         add_constants(tc, indent + 1);
-        add_signature_vars(tc, indent + 1, true, array_lengths);
+
+        add_signature_vars(tc, indent + 1, true, array_lengths, slot_register);
+
         code_.compile(tc, indent, ident_info::make_empty());
         x.return_function(indent + 1);
         const size_t frame_size_bytes{tc.peak_frame_size_bytes()};
         tc.exit_func(name());
+
+        if (not slot_register.is_empty()) {
+            x.free_named_register(tok(), indent + 1, slot_register);
+        }
+
         x.release_frame_base();
 
         return frame_size_bytes;
+    }
+
+    // the slots of a call are the result, when there is one, then the
+    // parameters
+    [[nodiscard]] auto first_param_slot() const -> size_t {
+        return returns_ ? size_t{1} : size_t{};
     }
 
     // a suffix could collide with a method body, e.g. 'func.list.size' of
@@ -250,6 +272,11 @@ class stmt_def_func final : public statement {
     // the body is compiled for the length of each array argument
     [[nodiscard]] auto has_array_param() const -> bool {
         return array_param_count() != 0;
+    }
+
+    // the address of that slot is passed in a register
+    [[nodiscard]] auto has_slot_register(const toc& tc) const -> bool {
+        return register_slot_index() and tc.is_slot_in_register(*this);
     }
 
     // e.g. 'func point.at(x, y) self'
@@ -280,6 +307,17 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto params() const -> std::span<const stmt_def_func_param> {
         return params_;
+    }
+
+    // the slot of a call whose address may be passed in a register, the
+    // receiver of a method
+    [[nodiscard]] auto register_slot_index() const -> std::optional<size_t> {
+        if (not is_method()) {
+            return std::nullopt;
+        }
+
+        // note: the receiver is the first parameter
+        return first_param_slot();
     }
 
     [[nodiscard]] auto returns() const
@@ -370,10 +408,12 @@ class stmt_def_func final : public statement {
 
     // a non-inline body reaches the result and the arguments through pointer
     // slots in its frame. the array lengths are those of the body instance,
-    // empty where the body is only parsed
+    // empty where the body is only parsed. the parameter of the slot at
+    // 'register_slot_index' is at 'address_register' instead of the frame,
+    // when given
     auto add_signature_vars(toc& tc, const size_t indent, const bool is_pointer,
-                            const std::span<const size_t> array_lengths) const
-        -> void {
+                            const std::span<const size_t> array_lengths,
+                            const operand& address_register) const -> void {
 
         assert(array_lengths.empty() or
                array_lengths.size() == array_param_count());
@@ -394,11 +434,19 @@ class stmt_def_func final : public statement {
                        var_kind::var);
         }
 
-        for (const stmt_def_func_param& param : params_) {
+        for (const auto [param_index, param] : std::views::enumerate(params_)) {
             const size_t array_len{
                 param.is_array() and not array_lengths.empty()
                     ? array_lengths.at(next_array_length++)
                     : size_t{},
+            };
+
+            // the register is the address of the variable, it has no slot in
+            // the frame
+            const bool is_in_register{
+                not address_register.is_empty() and
+                    register_slot_index() ==
+                        first_param_slot() + static_cast<size_t>(param_index),
             };
 
             tc.add_var(param.tok(), indent,
@@ -407,13 +455,15 @@ class stmt_def_func final : public statement {
                            .type_ptr{&param.get_type()},
                            .src_loc_tk{param.tok()},
                            .is_array{param.is_array()},
-                           .is_pointer{is_pointer},
+                           .is_pointer{is_pointer and not is_in_register},
                            .read_only_why{
                                param.is_read_only() ? read_only_cause::param
                                                     : read_only_cause::none,
                            },
                            .array_len{array_len},
-                           .pointer_register{},
+                           .pointer_register{
+                               is_in_register ? address_register : operand{},
+                           },
                            .base_register{},
                            .value_register{},
                        },
@@ -541,7 +591,7 @@ class stmt_def_func final : public statement {
         // note: 'parse_returns' only creates a return with a name
         assert(not returns_ or not returns_->ident_tk.text().empty());
 
-        add_signature_vars(tc, 0, false, {});
+        add_signature_vars(tc, 0, false, {}, {});
 
         code_ = {tc, tz, true};
 

@@ -700,6 +700,9 @@ class function_table final {
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
     std::vector<noninline_instance> noninline_instances_;
     std::set<std::string> checked_calls_;
+    // functions whose register slot is in the frame, the others have it in a
+    // register
+    std::set<const stmt_def_func*> slot_in_frame_;
 
   public:
     // the name has been checked, a built-in function has no definition
@@ -763,6 +766,12 @@ class function_table final {
         return funcs_.has(name);
     }
 
+    [[nodiscard]] auto is_slot_in_frame(const stmt_def_func& func) const
+        -> bool {
+
+        return slot_in_frame_.contains(&func);
+    }
+
     // a copy, the list grows while the instances compile
     [[nodiscard]] auto noninline_instance_at(const size_t index) const
         -> noninline_instance {
@@ -772,6 +781,14 @@ class function_table final {
 
     [[nodiscard]] auto noninline_instance_count() const -> size_t {
         return noninline_instances_.size();
+    }
+
+    auto set_slot_in_frame(const stmt_def_func& func) -> void {
+        slot_in_frame_.insert(&func);
+    }
+
+    auto set_slot_in_register(const stmt_def_func& func) -> void {
+        slot_in_frame_.erase(&func);
     }
 };
 
@@ -1313,6 +1330,11 @@ class storage_layout final {
             return machine_.get().address_size_bytes();
         }
 
+        // the variable is where the register points, it has no storage
+        if (not var.pointer_register.is_empty()) {
+            return 1;
+        }
+
         return var.type_ptr->alignment();
     }
 
@@ -1322,6 +1344,10 @@ class storage_layout final {
 
         if (var.is_pointer) {
             return machine_.get().address_size_bytes();
+        }
+
+        if (not var.pointer_register.is_empty()) {
+            return 0;
         }
 
         return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
@@ -1686,6 +1712,7 @@ class toc final {
     ident_resolver resolver_;
     storage_layout storage_;
     check_options checks_;
+    bool is_measuring_body_{};
 
   public:
     toc(::machine& backend, const std::string_view source,
@@ -1867,16 +1894,7 @@ class toc final {
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace
     auto check_only(const std::function_ref<void()> compile) -> void {
-        const size_t max_frame_count{scopes_.max_depth()};
-        const size_t string_constant_count{data_.constant_count()};
-
-        const storage_layout::dry_run_state saved{storage_.begin_dry_run()};
-
-        machine_.get().discard_output(compile);
-
-        storage_.end_dry_run(saved);
-        scopes_.set_max_depth(max_frame_count);
-        data_.resize_constants(string_constant_count);
+        std::ignore = measure_only(compile);
     }
 
     // a number or a constant
@@ -2199,6 +2217,21 @@ class toc final {
         return builtins_.is_integer_name(name);
     }
 
+    // a body compiled to measure its size is not checked for aliasing, its
+    // calls are checked where they are compiled for real
+    [[nodiscard]] auto is_measuring_body() const -> bool {
+        return is_measuring_body_;
+    }
+
+    // whether the backend has a register for it and 'func' has not been given
+    // the frame
+    [[nodiscard]] auto is_slot_in_register(const stmt_def_func& func) const
+        -> bool {
+
+        return not machine_.get().slot_register().empty() and
+               not funcs_.is_slot_in_frame(func);
+    }
+
     [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
         -> bool {
 
@@ -2247,6 +2280,34 @@ class toc final {
         scopes_.back().make_var_read_only(name, cause);
     }
 
+    [[nodiscard]] auto
+    measure_body_only(const std::function_ref<void()> compile) -> size_t {
+
+        is_measuring_body_ = true;
+        const size_t size{measure_only(compile)};
+        is_measuring_body_ = false;
+        return size;
+    }
+
+    // like 'check_only', returns the size of the code, in the unit of the
+    // target
+    [[nodiscard]] auto measure_only(const std::function_ref<void()> compile)
+        -> size_t {
+
+        const size_t max_frame_count{scopes_.max_depth()};
+        const size_t string_constant_count{data_.constant_count()};
+
+        const storage_layout::dry_run_state saved{storage_.begin_dry_run()};
+
+        const size_t size{machine_.get().measure_code_size(compile)};
+
+        storage_.end_dry_run(saved);
+        scopes_.set_max_depth(max_frame_count);
+        data_.resize_constants(string_constant_count);
+
+        return size;
+    }
+
     // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
         return storage_.next_frame_address(get_type_address());
@@ -2279,6 +2340,18 @@ class toc final {
                            const type& t_i16, const type& t_i8) -> void {
 
         builtins_.set_integers(t_i64, t_i32, t_i16, t_i8);
+    }
+
+    // a body is compiled with one of them, by default the register
+    auto set_slot_in_frame(const stmt_def_func& func, const bool in_frame)
+        -> void {
+
+        if (in_frame) {
+            funcs_.set_slot_in_frame(func);
+            return;
+        }
+
+        funcs_.set_slot_in_register(func);
     }
 
     auto set_type_bool(const type& tpe) -> void { builtins_.set_boolean(tpe); }

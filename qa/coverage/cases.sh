@@ -2642,3 +2642,6 @@ SRC=863 && COMPERR
 
 # the unary operators of a non-inline call apply to its result
 SRC=864 && EXP=100 && RUN
+
+# the receiver or first slot of a non-inline call is passed in a register
+SRC=865 && EXP=40 && RUN

@@ -176,6 +176,8 @@ class machine_x86_64 final : public machine {
     //       'r11' and 'rcx' are saved around syscalls if they are allocated
     //       because 'syscall' clobbers them
 
+    static constexpr std::string_view slot_register_{"r11"};
+
     // scratch values live from which an array loop counts in memory
     static constexpr size_t memory_counter_pressure_count{6};
 
@@ -333,7 +335,8 @@ class machine_x86_64 final : public machine {
 
     auto call_function(const token& src_loc_tk, const size_t indent,
                        const std::string_view label,
-                       const operand& frame_address) -> void override {
+                       const operand& frame_address,
+                       const operand& slot_address) -> void override {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
@@ -364,6 +367,15 @@ class machine_x86_64 final : public machine {
 
         for (const operand& reg : saved) {
             push(indent, reg);
+        }
+
+        // before the frame base, the address may be relative to it
+        if (not slot_address.is_empty()) {
+            comment(src_loc_tk, indent, "address of the slot in a register");
+
+            address_of(src_loc_tk, indent,
+                       make_register_operand(slot_register_, default_type()),
+                       slot_address);
         }
 
         comment(src_loc_tk, indent, "set function frame base");
@@ -1185,6 +1197,11 @@ class machine_x86_64 final : public machine {
                 sized_register("rcx", size_byte));
 
         release_named_register(src_loc_tk, indent, "rcx");
+    }
+
+    [[nodiscard]] auto slot_register() const -> std::string_view override {
+
+        return slot_register_;
     }
 
     auto start() -> void override {

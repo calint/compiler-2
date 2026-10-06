@@ -429,10 +429,10 @@ main:
                 func.tokenizer.set_line.960.16.971.5.end:
                 # [961:13] parse_input(eid, tz)
                 # [961:13] frame capacity check begin
-                # [961:13] callee storage starts after the caller's storage (s0 - 1880)
+                # [961:13] callee storage starts after the caller's storage (s0 - 1884)
                 # [961:13] allocate scratch register -> t2
                 # [961:13] allocate scratch register -> t3
-                addi t2, s0, -1880
+                addi t2, s0, -1884
                 bgtu t2, s0, 1f
                 la t3, vars
                 bltu t2, t3, 1f
@@ -451,19 +451,19 @@ main:
                 # [961:13] address of argument 'eid' to parameter 'eid'
                 # [961:13] allocate scratch register -> t2
                 addi t2, s0, -1888
-                sw t2, -1880(s0)
+                sw t2, -1884(s0)
                 # [961:13] free scratch register t2
                 # [961:13] address of argument 'tz' to parameter 'tz'
                 # [961:13] allocate scratch register -> t2
                 addi t2, s0, -2032
-                sw t2, -1876(s0)
+                sw t2, -1880(s0)
                 # [961:13] free scratch register t2
                 # [961:13] before call: save allocated registers
                 addi sp, sp, -16
                 sw t0, 0(sp)
                 sw t1, 4(sp)
                 # [961:13] set function frame base
-                addi s1, s0, -1880
+                addi s1, s0, -1884
                 call func.parse_input
                 # [961:13] after call: restore saved registers
                 lw t0, 0(sp)
@@ -3897,35 +3897,27 @@ func.entity.find_object:
 # allocate named register s1
     addi sp, sp, -16
     sw ra, 0(sp)
+    # [508:1] allocate named register s11
     # [508:48] res: i32 (4 B @ [s1])
-    # [508:22] self: entity (2400 B @ [s1 + 4])
-    # [508:34] tz: tokenizer (140 B @ [s1 + 8])
+    # [508:22] self: entity (s11)
+    # [508:34] tz: tokenizer (140 B @ [s1 + 4])
     # [509:5] res = self.objects.len
     # [509:5] allocate scratch register -> t0
     lw t0, 0(s1)
     # [509:11] self.objects.len
     # [509:11] allocate scratch register -> t1
-    lw t1, 4(s1)
-    # [509:11] allocate scratch register -> t2
-    lw t2, 152(t1)
-    sw t2, 0(t0)
-    # [509:11] free scratch register t2
+    lw t1, 152(s11)
+    sw t1, 0(t0)
     # [509:11] free scratch register t1
     # [509:5] free scratch register t0
     # [510:5] foo self.objects.array, self.objects.len
     # [510:9] allocate scratch register -> t0
     # [510:9] initiate iterator e
-    # [510:5] allocate scratch register -> t1
-    lw t1, 4(s1)
-    addi t0, t1, 24
-    # [510:5] free scratch register t1
+    addi t0, s11, 24
     # [510:29] allocate scratch register -> t1
     # [510:29] count self.objects.len
     # [510:29] self.objects.len
-    # [510:29] allocate scratch register -> t2
-    lw t2, 4(s1)
-    lw t1, 152(t2)
-    # [510:29] free scratch register t2
+    lw t1, 152(s11)
     # [510:29] bounds check begin
     # [510:29] lower bound
     # [510:29] t1 lower bound covered by the unsigned upper bound
@@ -3957,7 +3949,7 @@ func.entity.find_object:
             # [511:15] = expression
             # [511:15] tz.is(objects.array[e].name)
             # [511:12] allocate scratch register -> t4
-            lw t4, 8(s1)
+            lw t4, 4(s1)
             # [511:32] allocate scratch register -> t5
             # [511:32] set array index
             # [511:32] e
@@ -4127,8 +4119,9 @@ func.entity.find_object:
     lw ra, 0(sp)
     addi sp, sp, 16
     ret
+    # [508:1] free named register s11
 # free named register s1
-.equ size.func.entity.find_object, 16
+.equ size.func.entity.find_object, 8
 #
 # [898:15] noinline parse_input(eid, tz mut tokenizer)
 func.parse_input:
@@ -6423,7 +6416,7 @@ func.parse_input:
                         # [525:36] alias kind -> 2
                         # [525:36] alias text -> text
                         # [237:5] let ix = self.reserve()
-                        # [237:9] ix: i32 (4 B @ [s1 + 172])
+                        # [237:9] ix: i32 (4 B @ [s1 + 168])
                         # [237:9] ix = self.reserve()
                         # [237:19] ix = self.reserve()
                         # [237:19] = expression
@@ -6439,7 +6432,7 @@ func.parse_input:
                             lui s2, 1
                             add s2, s2, t6
                             lw s2, -1856(s2)
-                            sw s2, 172(s1)
+                            sw s2, 168(s1)
                             # [157:11] free scratch register s2
                             # [158:5] self.len = self.len + 1
                             # [158:16] self.len
@@ -6459,7 +6452,7 @@ func.parse_input:
                         # [238:16] allocate scratch register -> s2
                         # [238:16] set array index
                         # [238:16] ix
-                        lw s2, 172(s1)
+                        lw s2, 168(s1)
                         # [238:16] bounds check begin
                         # [238:16] lower bound
                         # [238:16] s2 lower bound covered by the unsigned upper bound
@@ -7223,7 +7216,7 @@ func.parse_input:
                         # [525:36] alias kind -> 2
                         # [525:36] alias text -> text
                         # [237:5] let ix = self.reserve()
-                        # [237:9] ix: i32 (4 B @ [s1 + 308])
+                        # [237:9] ix: i32 (4 B @ [s1 + 304])
                         # [237:9] ix = self.reserve()
                         # [237:19] ix = self.reserve()
                         # [237:19] = expression
@@ -7239,7 +7232,7 @@ func.parse_input:
                             lui s2, 1
                             add s2, s2, t6
                             lw s2, -1856(s2)
-                            sw s2, 308(s1)
+                            sw s2, 304(s1)
                             # [157:11] free scratch register s2
                             # [158:5] self.len = self.len + 1
                             # [158:16] self.len
@@ -7259,7 +7252,7 @@ func.parse_input:
                         # [238:16] allocate scratch register -> s2
                         # [238:16] set array index
                         # [238:16] ix
-                        lw s2, 308(s1)
+                        lw s2, 304(s1)
                         # [238:16] bounds check begin
                         # [238:16] lower bound
                         # [238:16] s2 lower bound covered by the unsigned upper bound
@@ -13900,19 +13893,10 @@ func.parse_input:
             sw t3, 12(s1)
             # [731:40] free scratch register t3
             # [731:40] address of argument 'entities.array[eid]' to parameter 'self'
-            # [731:40] allocate scratch register -> t3
-            add t3, s0, t2
-            # [731:40] allocate scratch register -> t4
-            lui t4, 1048527
-            add t3, t3, t4
-            # [731:40] free scratch register t4
-            addi t3, t3, 1168
-            sw t3, 16(s1)
-            # [731:40] free scratch register t3
             # [731:40] address of argument 'tz' to parameter 'tz'
             # [731:40] allocate scratch register -> t3
             addi t3, t1, 0
-            sw t3, 20(s1)
+            sw t3, 16(s1)
             # [731:40] free scratch register t3
             # [731:40] free scratch register t2
             # [731:40] before call: save allocated registers
@@ -13920,6 +13904,13 @@ func.parse_input:
             sw s1, 0(sp)
             sw t0, 4(sp)
             sw t1, 8(sp)
+            # [731:40] address of the slot in a register
+            add s11, s0, t2
+            # [731:40] allocate scratch register -> t3
+            lui t3, 1048527
+            add s11, s11, t3
+            # [731:40] free scratch register t3
+            addi s11, s11, 1168
             # [731:40] set function frame base
             addi s1, s1, 12
             call func.entity.find_object
@@ -15136,19 +15127,10 @@ func.parse_input:
             sw t3, 12(s1)
             # [758:40] free scratch register t3
             # [758:40] address of argument 'entities.array[eid]' to parameter 'self'
-            # [758:40] allocate scratch register -> t3
-            add t3, s0, t2
-            # [758:40] allocate scratch register -> t4
-            lui t4, 1048527
-            add t3, t3, t4
-            # [758:40] free scratch register t4
-            addi t3, t3, 1168
-            sw t3, 16(s1)
-            # [758:40] free scratch register t3
             # [758:40] address of argument 'tz' to parameter 'tz'
             # [758:40] allocate scratch register -> t3
             addi t3, t1, 0
-            sw t3, 20(s1)
+            sw t3, 16(s1)
             # [758:40] free scratch register t3
             # [758:40] free scratch register t2
             # [758:40] before call: save allocated registers
@@ -15156,6 +15138,13 @@ func.parse_input:
             sw s1, 0(sp)
             sw t0, 4(sp)
             sw t1, 8(sp)
+            # [758:40] address of the slot in a register
+            add s11, s0, t2
+            # [758:40] allocate scratch register -> t3
+            lui t3, 1048527
+            add s11, s11, t3
+            # [758:40] free scratch register t3
+            addi s11, s11, 1168
             # [758:40] set function frame base
             addi s1, s1, 12
             call func.entity.find_object
@@ -17480,7 +17469,7 @@ func.parse_input:
                         # [525:36] alias kind -> 2
                         # [525:36] alias text -> text
                         # [237:5] let ix = self.reserve()
-                        # [237:9] ix: i32 (4 B @ [s1 + 192])
+                        # [237:9] ix: i32 (4 B @ [s1 + 188])
                         # [237:9] ix = self.reserve()
                         # [237:19] ix = self.reserve()
                         # [237:19] = expression
@@ -17496,7 +17485,7 @@ func.parse_input:
                             lui s2, 1
                             add s2, s2, t6
                             lw s2, -1856(s2)
-                            sw s2, 192(s1)
+                            sw s2, 188(s1)
                             # [157:11] free scratch register s2
                             # [158:5] self.len = self.len + 1
                             # [158:16] self.len
@@ -17516,7 +17505,7 @@ func.parse_input:
                         # [238:16] allocate scratch register -> s2
                         # [238:16] set array index
                         # [238:16] ix
-                        lw s2, 192(s1)
+                        lw s2, 188(s1)
                         # [238:16] bounds check begin
                         # [238:16] lower bound
                         # [238:16] s2 lower bound covered by the unsigned upper bound
@@ -19787,7 +19776,7 @@ func.parse_input:
                         # [525:36] alias kind -> 1
                         # [525:36] alias text -> text
                         # [237:5] let ix = self.reserve()
-                        # [237:9] ix: i32 (4 B @ [s1 + 148])
+                        # [237:9] ix: i32 (4 B @ [s1 + 144])
                         # [237:9] ix = self.reserve()
                         # [237:19] ix = self.reserve()
                         # [237:19] = expression
@@ -19803,7 +19792,7 @@ func.parse_input:
                             lui s4, 1
                             add s4, s4, s3
                             lw s4, -1856(s4)
-                            sw s4, 148(s1)
+                            sw s4, 144(s1)
                             # [157:11] free scratch register s4
                             # [158:5] self.len = self.len + 1
                             # [158:16] self.len
@@ -19823,7 +19812,7 @@ func.parse_input:
                         # [238:16] allocate scratch register -> s4
                         # [238:16] set array index
                         # [238:16] ix
-                        lw s4, 148(s1)
+                        lw s4, 144(s1)
                         # [238:16] bounds check begin
                         # [238:16] lower bound
                         # [238:16] s4 lower bound covered by the unsigned upper bound
@@ -20198,7 +20187,7 @@ func.parse_input:
     addi sp, sp, 16
     ret
 # free named register s1
-.equ size.func.parse_input, 2412
+.equ size.func.parse_input, 308
 # frame overflow handler (--checks=frame)
 baz_frame_overflow:
     li a0, 2
@@ -20556,8 +20545,8 @@ vars.end:
 # free named register s0
 
 #           noinline functions:
-#           entity.find_object: 1 body, 2 calls, 71 instructions
-#                  parse_input: 1 body, 2 calls, 4761 instructions
+#           entity.find_object: 1 body, 2 calls, 68 instructions
+#                  parse_input: 1 body, 2 calls, 4759 instructions
 #
 #      uninstantiated generics:
 #           tokenizer.token_to
@@ -20570,8 +20559,8 @@ vars.end:
 #            max frames in use: 20
 #                     dat size: 198427 B
 #              dat var padding: 5 B
-#                max vars size: 2540 B
-#                 instructions: 5941
+#                max vars size: 308 B
+#                 instructions: 5936
 #
 # register use at the peak: 14 of 30 registers live, 3 named by instructions
 #
@@ -20610,7 +20599,7 @@ vars.end:
 # per callee, the most registers one call holds itself
 #
 #   own  calls  callee
-#     8      1  entity.find_object (noinline body)
+#     9      1  entity.find_object (noinline body)
 #     8      2  link_names.index_of
 #     7      1  action_give
 #     7      1  action_go

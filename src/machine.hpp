@@ -692,9 +692,12 @@ class machine {
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
 
+    // 'slot_address' is the address the callee finds in
+    // 'slot_register', empty when the register is not used
     virtual auto call_function(const token& src_loc_tk, const size_t indent,
                                const std::string_view label,
-                               const operand& frame_address) -> void = 0;
+                               const operand& frame_address,
+                               const operand& slot_address) -> void = 0;
 
     [[nodiscard]] virtual auto
     can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
@@ -882,6 +885,10 @@ class machine {
                        const arithmetic_operator operation, const operand& dst,
                        const operand& count) -> void = 0;
 
+    // the register that carries the address of one slot of a call, empty when
+    // the backend passes every slot in the frame of the callee
+    [[nodiscard]] virtual auto slot_register() const -> std::string_view = 0;
+
     virtual auto start() -> void = 0;
 
     virtual auto store_boolean(const token& src_loc_tk, const size_t indent,
@@ -1004,15 +1011,7 @@ class machine {
     // runs 'emit' for its checks only, nothing it emits is kept and the
     // registers it used are not counted
     auto discard_output(const std::function_ref<void()> emit) -> void {
-        const size_t max_scratch_regs{usage_max_scratch_regs_};
-        const register_trace kept_trace{trace_};
-
-        // buffered because comments are otherwise written as emitted
-        target_assembler().emit_buffered(
-            [&] -> void { std::ignore = target_assembler().capture(emit); });
-
-        usage_max_scratch_regs_ = max_scratch_regs;
-        trace_ = kept_trace;
+        std::ignore = measure_code_size(emit);
     }
 
     template <std::ranges::input_range values_t>
@@ -1136,6 +1135,27 @@ class machine {
 
         return {std::string{heading}, scratch_register_total(), named,
                 std::move(uses)};
+    }
+
+    // like 'discard_output', returns the size of the code 'emit' made, in the
+    // unit of the target
+    [[nodiscard]] auto measure_code_size(const std::function_ref<void()> emit)
+        -> size_t {
+
+        const size_t max_scratch_regs{usage_max_scratch_regs_};
+        const register_trace kept_trace{trace_};
+
+        size_t size{};
+
+        // buffered because comments are otherwise written as emitted
+        target_assembler().emit_buffered([&] -> void {
+            size = assembler::code_size_of(target_assembler().capture(emit));
+        });
+
+        usage_max_scratch_regs_ = max_scratch_regs;
+        trace_ = kept_trace;
+
+        return size;
     }
 
     // the registers that the calls of each function with a body of its own save
