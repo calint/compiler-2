@@ -1,0 +1,9 @@
+# a bare instance literal does not tell the type parameter
+type point { x, y }
+
+func take<T type>(item T) res { res = item.x + item.y }
+
+func main() {
+    var a = take({ 1, 2 })
+    exit(a)
+}

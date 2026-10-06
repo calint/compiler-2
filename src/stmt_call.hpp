@@ -299,8 +299,11 @@ class stmt_call : public expression {
         for (size_t i{}; i < args_.size(); ++i) {
             const expr_any& arg{args_.at(i)};
 
-            // expressions and unary operators pass a copied value
-            if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
+            // expressions, instance literals and calls, and unary operators
+            // pass a copied value
+            if (arg.is_expression() or not arg.is_identifier() or
+                not arg.get_unary_ops().is_empty()) {
+
                 continue;
             }
 
@@ -568,7 +571,7 @@ class stmt_call : public expression {
 
             arguments.push_back({
                 .info{
-                    add_temporary(tc, indent, std::format("call-arg-{}", i),
+                    add_temporary(tc, indent, temporary_argument_name(i),
                                   param.get_type()),
                 },
                 .is_temporary{true},
@@ -615,12 +618,30 @@ class stmt_call : public expression {
             aliases.push_back(make_result_alias(dst_info, *ret));
         }
 
-        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
+        for (const auto [i, arg, param] : std::views::zip(
+                 std::views::iota(size_t{}), args_, func.params())) {
+
+            // note: 'compile_inline_call' made its temporary
+            if (is_instance_temporary(arg, param)) {
+                aliases.push_back(
+                    make_value_alias(param, temporary_argument_name(i)));
+
+                continue;
+            }
+
             aliases.push_back(make_argument_alias(tc, indent, arg, param,
                                                   allocated_registers));
         }
 
         return aliases;
+    }
+
+    // unique per call and argument, an inlined body names it through the alias
+    // of its parameter and a call in the body has temporaries of its own
+    [[nodiscard]] auto temporary_argument_name(const size_t index) const
+        -> std::string {
+
+        return std::format("call-arg-{}-{}", tok().start_index(), index);
     }
 
     [[nodiscard]] auto variable_arguments(const toc& tc) const
@@ -685,6 +706,14 @@ class stmt_call : public expression {
         throw_parameter_type_mismatch(arg, param, info);
     }
 
+    // an instance literal or a call result, e.g. 'point{1, 2}' or 'mk(1, 2)'
+    [[nodiscard]] static auto
+    is_instance_temporary(const expr_any& arg, const stmt_def_func_param& param)
+        -> bool {
+
+        return not param.get_type().is_builtin() and not arg.is_identifier();
+    }
+
     // 'p' of 'p.x.y'
     [[nodiscard]] static auto named_variable(const expr_any& arg)
         -> std::string_view {
@@ -702,6 +731,10 @@ class stmt_call : public expression {
 
         if (param.is_array()) {
             return false;
+        }
+
+        if (is_instance_temporary(arg, param)) {
+            return true;
         }
 
         if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
@@ -807,14 +840,6 @@ class stmt_call : public expression {
                                 const expr_any& arg,
                                 const stmt_def_func_param& param) const
         -> void {
-
-        // todo: literals and call results need a temporary to be
-        //       passed, see etc/todo.txt
-        if (not param.get_type().is_builtin() and not arg.is_identifier()) {
-            throw compiler_exception{arg.tok(),
-                                     std::format("{} cannot be a temporary",
-                                                 describe_argument(index))};
-        }
 
         if (param.is_array()) {
             const ident_info arg_info{tc.make_ident_info(arg)};
@@ -1150,9 +1175,54 @@ class stmt_call : public expression {
                             address_registers);
     }
 
+    // an instance literal or a call result is made in a variable of the
+    // parameter's type that the body reaches through the alias of its
+    // parameter
     auto compile_inline_call(toc& tc, const size_t indent,
                              const ident_info& dst_info,
                              const stmt_def_func& func) const -> void {
+
+        const bool has_instance_temporary{
+            std::ranges::any_of(std::views::zip(args_, func.params()),
+                                [](const auto& arg_and_param) -> bool {
+                                    return is_instance_temporary(
+                                        std::get<0>(arg_and_param),
+                                        std::get<1>(arg_and_param));
+                                }),
+        };
+
+        if (not has_instance_temporary) {
+            compile_inline_to_destination(tc, indent, dst_info, func);
+            return;
+        }
+
+        // the block frees the temporaries after the call
+        tc.enter_block();
+
+        for (const auto [i, arg, param] : std::views::zip(
+                 std::views::iota(size_t{}), args_, func.params())) {
+
+            if (not is_instance_temporary(arg, param)) {
+                continue;
+            }
+
+            const ident_info temporary_info{
+                add_temporary(tc, indent, temporary_argument_name(i),
+                              param.get_type()),
+            };
+
+            arg.compile(tc, indent, temporary_info);
+        }
+
+        compile_inline_to_destination(tc, indent, dst_info, func);
+
+        tc.exit_block();
+    }
+
+    auto compile_inline_to_destination(toc& tc, const size_t indent,
+                                       const ident_info& dst_info,
+                                       const stmt_def_func& func) const
+        -> void {
 
         if (not dst_info.operand.is_memory()) {
             compile_inline(tc, indent, dst_info, func);
@@ -1613,7 +1683,8 @@ class stmt_call : public expression {
     }
 
     // the type of the argument at 'index' when it is a variable, a field or an
-    // element, otherwise null. 'tz' is after the '('
+    // element, or the value it makes names its type: 'point{1, 2}',
+    // 'point.at(1, 2)' or 'mk(1, 2)', otherwise null. 'tz' is after the '('
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer tz,
                                             const size_t index) -> const type* {
 
@@ -1628,7 +1699,7 @@ class stmt_call : public expression {
         const token tk{tz.next_token()};
 
         if (not tc.is_var_or_alias(tk.text())) {
-            return nullptr;
+            return value_type(tc, tz, tk);
         }
 
         const stmt_identifier si{tc, {}, tk, tz};
@@ -1949,5 +2020,59 @@ class stmt_call : public expression {
         }
 
         return description;
+    }
+
+    // the type of an instance literal, a constructor call or a call of a
+    // function that is the whole argument, 'tk' is its first token and 'tz' is
+    // after it
+    [[nodiscard]] static auto value_type(toc& tc, tokenizer& tz,
+                                         const token& tk) -> const type* {
+
+        const auto is_whole_argument = [&] -> bool {
+            const char next{tz.peek_char_after_whitespace()};
+            return next == ',' or next == ')';
+        };
+
+        const bool is_type{tc.has_type(tk.text())};
+
+        // e.g. 'point{1, 2}'
+        if (is_type and tz.peek_char_after_whitespace() == '{') {
+            tz.skip_braced_block();
+
+            return is_whole_argument() ? &tc.get_type_or_throw(tk, tk.text())
+                                       : nullptr;
+        }
+
+        // e.g. 'point.at(1, 2)'
+        if (is_type and not tz.is_next_char_token('.').is_empty()) {
+            std::ignore = tz.next_token();
+
+            if (tz.is_next_char_token('(').is_empty()) {
+                return nullptr;
+            }
+
+            tz.skip_to_close_paren();
+
+            return is_whole_argument() ? &tc.get_type_or_throw(tk, tk.text())
+                                       : nullptr;
+        }
+
+        // e.g. 'mk(1, 2)', a generic function has no return type before it is
+        // instantiated
+        if (not tc.is_func(tk.text()) or tc.generics().has_func(tk.text()) or
+            tz.is_next_char_token('(').is_empty()) {
+
+            return nullptr;
+        }
+
+        tz.skip_to_close_paren();
+
+        const type& return_type{
+            tc.get_func_return_type_or_throw(tk, tk.text()),
+        };
+
+        return is_whole_argument() and &return_type != &tc.get_type_void()
+                   ? &return_type
+                   : nullptr;
     }
 };

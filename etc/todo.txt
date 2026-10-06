@@ -206,25 +206,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     checked, so an error in its body is silent until the first use
     => placeholder types would reject valid bodies, so the footer of the
        assembler lists the generic functions without an instance
-[ ] hard: instance literals, constructor calls and instance call results as
-    arguments ('ls.add(point{1, 2})', 'sum({ 1, 2 })', 'sum(point.at(1, 2))',
-    'sum(mk(1, 2))'), inline and noinline: rejected today with "argument 1
-    cannot be a temporary" (501.baz, 502.baz); a generic parameter is not
-    deduced from them either ("cannot deduce 'T'", 'argument_type' only
-    knows variables, fields and elements)
-    => plan (waits for go-ahead): 1. noinline: 'needs_temporary' also for an
-       instance argument that is not an identifier, the temporary is of the
-       parameter's type, 'arg.compile' fills it ('compile_noninline_call'
-       already does that for scalars); lift the parse check in
-       'assert_argument_usable' for this case. 2. inline: the alias of the
-       argument needs the same temporary in a block around the body
-       ('make_argument_alias' resolves the argument by name today).
-       3. deduction: 'argument_type' returns the type for 'T{...}' (a type
-       name before '{'), for 'T.constructor(...)' (the type) and for a call
-       (the return type of the function); a bare '{...}' has no type and
-       keeps the error. 4. tests: noinline and inline, literal, constructor,
-       call result, generic with and without '<...>', a bare '{...}' for a
-       generic still an error, both targets
 [ ] hard: consider making widening explicit too, today only narrowing needs
     'i8(...)' ('var y i32 = 1 + low(x)' with 'low' returning i8 is rejected)
     => prototype: requiring equal widths in the 3 width checks rejects 40+

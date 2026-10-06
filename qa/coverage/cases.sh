@@ -1492,11 +1492,11 @@ SRC=499 && COMPERR
 # an array field literal may not have more elements than the field
 SRC=500 && COMPERR
 
-# an instance argument cannot be a temporary such as a literal
-SRC=501 && COMPERR
+# an instance argument can be a temporary such as a literal
+SRC=501 && EXP=3 && RUN
 
-# an instance argument cannot be a temporary such as a call result
-SRC=502 && COMPERR
+# an instance argument can be a temporary such as a call result
+SRC=502 && EXP=3 && RUN
 
 # a named constant argument is the caller's constant even when the callee
 # declares a constant with the same name
@@ -2535,8 +2535,8 @@ SRC=828 && EXP=0 && RUN
 # a type name alone is its zero value in an instance literal and in an index
 SRC=829 && EXP=0 && RUN
 
-# a type name alone as an argument is a temporary
-SRC=830 && COMPERR
+# a type name alone as an argument is a temporary, a zeroed instance
+SRC=830 && EXP=1 && RUN
 
 # an array assigned without braces needs a size
 SRC=831 && COMPERR
@@ -2645,3 +2645,14 @@ SRC=864 && EXP=100 && RUN
 
 # the receiver or first slot of a non-inline call is passed in a register
 SRC=865 && EXP=40 && RUN
+
+# instance arguments that are not variables, to an inlined and a non-inline
+# function
+SRC=866 && EXP=72 && RUN
+
+# a type parameter is deduced from an instance literal, a constructor call and
+# a call result
+SRC=867 && EXP=81 && RUN
+
+# a bare instance literal does not tell the type parameter
+SRC=868 && COMPERR

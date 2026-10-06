@@ -232,6 +232,29 @@ class tokenizer final {
     // reads a character the caller has no use for
     auto skip_char() -> void { std::ignore = next_char(); }
 
+    // skips up to and including the ')' that closes a '(' that is already read
+    // e.g. 'b, f(c)) + d', the ')' before ' + d'
+    auto skip_to_close_paren() -> void {
+        size_t depth{};
+
+        while (not is_eos()) {
+            const char next{peek_char_after_whitespace()};
+
+            if (next == ')' and depth == 0) {
+                skip_token();
+                return;
+            }
+
+            if (next == '(' or next == '[' or next == '{') {
+                ++depth;
+            } else if (next == ')' or next == ']' or next == '}') {
+                --depth;
+            }
+
+            skip_token();
+        }
+    }
+
   private:
     // the opening quote has been read, the text keeps both quotes so it
     // resolves like a numeric constant, e.g. 'a' or '\n'

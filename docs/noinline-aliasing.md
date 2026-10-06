@@ -44,7 +44,9 @@ for each caller.
   argument without storage, e.g. a constant or an expression, go through a
   temporary in the frame of the caller. A temporary is a distinct local, it
   never shares storage with another argument. The pattern of such a call
-  marks those arguments, so the check is done once for them too.
+  marks those arguments, so the check is done once for them too. An instance
+  argument that is not a variable, e.g. `point{1, 2}` or `mk(1, 2)`, is made
+  in such a temporary for inlined and `noinline` functions alike.
 - A call inside a `noinline` body that passes a parameter of that body is
   checked when the body's own callers are, with their arguments.
 - A recursive call has the same pattern as the call that started it, so it is

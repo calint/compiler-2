@@ -1,4 +1,4 @@
-# a type name alone as an argument is a temporary, which an argument cannot be
+# a type name alone as an argument is a temporary, a zeroed instance
 
 type p {x, y}
 
@@ -6,4 +6,5 @@ func sum(q p) res { res = q.x + q.y }
 
 func main() {
     var s = sum(p)
+    exit(s + 1)
 }

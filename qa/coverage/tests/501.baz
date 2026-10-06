@@ -1,6 +1,7 @@
-# an instance argument cannot be a temporary such as a literal
+# an instance argument can be a temporary such as a literal
 type point { x, y }
 func sum(p point) res { res = p.x + p.y }
 func main() {
     var s = sum({ 1, 2 })
+    exit(s)
 }

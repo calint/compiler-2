@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: instance literals, constructor calls and instance call results as
+    arguments ('ls.add(point{1, 2})', 'sum({ 1, 2 })', 'sum(point.at(1, 2))',
+    'sum(mk(1, 2))'), inline and noinline, were rejected with "argument 1
+    cannot be a temporary"; a generic parameter was not deduced from them
+    => done (2026-10-06): the argument is evaluated into a variable of the
+       parameter's type in a block around the call ('compile_noninline_call',
+       'compile_inline_call'; an inlined body reaches it through the alias of
+       its parameter, 'temporary_argument_name'); 'argument_type' deduces
+       from 'T{...}', 'T.constructor(...)' and a call of a function that
+       returns a type, when it is the whole argument; a bare '{...}' keeps
+       the error; tests 501, 502, 830 became run tests, 866-868 added
 [x] easy: a variable whose address is in a register ('foo' element 'e', the
     receiver of a non-inline body) reserved frame storage of its type's size
     that nothing used ('toc::add_var' only skipped a 'value_register')

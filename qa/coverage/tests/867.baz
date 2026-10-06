@@ -1,0 +1,55 @@
+# a type parameter is deduced from an instance literal, a constructor call and
+# a call result, and the receiver's type parameter takes a literal
+type point { x, y }
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+type points = list<point, 8>
+
+func point.at(a, b) self {
+    self.x = a
+    self.y = b
+}
+
+func mk(a, b) res point { res = { a, b } }
+
+func take<T type>(item T) res { res = item.x + item.y }
+
+func noinline ntake<T type>(item T) res { res = item.x + item.y }
+
+func mut list.push(item T) {
+    self.array[self.len] = item
+    self.len = self.len + 1
+}
+
+func noinline mut list.npush(item T) {
+    self.array[self.len] = item
+    self.len = self.len + 1
+}
+
+func mut list.add<U type>(item U) {
+    self.array[self.len] = item
+    self.len = self.len + 1
+}
+
+func main() {
+    var p = point{10, 20}
+    var k = take(p)
+    k = k + take(point{3, 4})
+    k = k + take(point.at(5, 6))
+    k = k + take(mk(7, 8))
+    k = k + ntake(point{3, 4})
+    k = k + ntake(point.at(5, 6))
+    k = k + ntake(mk(7, 8))
+
+    var ls = points
+    ls.push(point{1, 2})
+    ls.push({ 3, 4 })
+    ls.add(point{5, 6})
+    ls.npush(point{7, 8})
+    ls.npush({ 9, 10 })
+    exit(k - 30 + ls.len + ls.array[4].y)
+}

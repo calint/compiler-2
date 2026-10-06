@@ -1,7 +1,8 @@
-# an instance argument cannot be a temporary such as a call result
+# an instance argument can be a temporary such as a call result
 type point { x, y }
 func mk(x, y) res point { res = { x, y } }
 func noinline sum(p point) res { res = p.x + p.y }
 func main() {
     var s = sum(mk(1, 2))
+    exit(s)
 }

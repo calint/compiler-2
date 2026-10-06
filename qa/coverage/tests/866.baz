@@ -1,0 +1,27 @@
+# instance arguments that are not variables: a literal, a typed literal, a
+# constructor call and a call result, to an inlined and a non-inline function
+type point { x, y }
+
+func point.at(a, b) self {
+    self.x = a
+    self.y = b
+}
+
+func mk(a, b) res point { res = { a, b } }
+
+func sum(p point) res { res = p.x + p.y }
+
+func noinline nsum(p point) res { res = p.x + p.y }
+
+func main() {
+    var k = 0
+    k = k + sum({ 1, 2 })
+    k = k + sum(point{3, 4})
+    k = k + sum(point.at(5, 6))
+    k = k + sum(mk(7, 8))
+    k = k + nsum({ 1, 2 })
+    k = k + nsum(point{3, 4})
+    k = k + nsum(point.at(5, 6))
+    k = k + nsum(mk(7, 8))
+    exit(k)
+}
