@@ -76,6 +76,12 @@ struct options {
     std::string_view binary_file_name;
 };
 
+// an option with a value, e.g. '--vars=0x40000'
+struct value_option {
+    std::string_view name;
+    bool (*apply)(std::string_view value, options& opts);
+};
+
 // the exit code when the program should stop instead of compiling
 [[nodiscard]] auto parse_options(const std::span<const char*> args,
                                  options& opts) -> std::optional<int>;
@@ -84,9 +90,24 @@ struct options {
 [[nodiscard]] auto parse_option(const char* const argument, options& opts)
     -> bool;
 
+// the appliers of the options with a value store the value in 'opts', false
+// after printing the error
+[[nodiscard]] auto apply_vars(std::string_view value, options& opts) -> bool;
+[[nodiscard]] auto apply_stack(std::string_view value, options& opts) -> bool;
+[[nodiscard]] auto apply_target(std::string_view value, options& opts) -> bool;
+[[nodiscard]] auto apply_checks(std::string_view value, options& opts) -> bool;
+[[nodiscard]] auto apply_report(std::string_view value, options& opts) -> bool;
+[[nodiscard]] auto apply_bin(std::string_view value, options& opts) -> bool;
+
 auto print_help(const char* const program_name) -> void;
 
 [[nodiscard]] auto compile_file(const options& opts) -> int;
+
+auto print_compiler_error(const options& opts, std::string_view src,
+                          const compiler_exception& e) -> void;
+
+auto check_reproduced_source(const program& prg, const options& opts,
+                             std::string_view src) -> void;
 
 [[nodiscard]] auto read_file_to_string(const char* const file_name)
     -> std::string;
@@ -204,71 +225,24 @@ template <typename T>
 [[nodiscard]] auto parse_option(const char* const argument, options& opts)
     -> bool {
 
+    constexpr std::array value_options{
+        value_option{.name{"--vars="}, .apply{apply_vars}},
+        value_option{.name{"--stack="}, .apply{apply_stack}},
+        value_option{.name{"--target="}, .apply{apply_target}},
+        value_option{.name{"--checks="}, .apply{apply_checks}},
+        value_option{.name{"--report="}, .apply{apply_report}},
+        value_option{.name{"--bin="}, .apply{apply_bin}},
+    };
+
     const std::string_view arg{argument};
 
-    if (const std::optional<std::string_view> value{
-            option_value(arg, "--vars="),
-        }) {
+    for (const value_option& option : value_options) {
+        if (const std::optional<std::string_view> value{
+                option_value(arg, option.name),
+            }) {
 
-        return store_parsed(
-            parse_size_bytes(*value, "variable storage size", vars_alignment),
-            opts.vars_size_bytes);
-    }
-
-    if (const std::optional<std::string_view> value{
-            option_value(arg, "--stack="),
-        }) {
-
-        return store_parsed(
-            parse_size_bytes(*value, "stack size", stack_alignment),
-            opts.stack_size_bytes);
-    }
-
-    if (const std::optional<std::string_view> value{
-            option_value(arg, "--target="),
-        }) {
-
-        const std::optional<target> found{find_target(*value)};
-
-        if (not found) {
-            print_usage_error(
-                std::format("Invalid target: '{}'. Supported targets are: {}.",
-                            *value, supported_target_texts()));
-
-            return false;
+            return option.apply(*value, opts);
         }
-
-        opts.machine_target = *found;
-
-        return true;
-    }
-
-    if (const std::optional<std::string_view> value{
-            option_value(arg, "--checks="),
-        }) {
-
-        return store_parsed(parse_checks(*value), opts.checks);
-    }
-
-    if (const std::optional<std::string_view> value{
-            option_value(arg, "--bin="),
-        }) {
-
-        opts.binary_file_name = *value;
-
-        if (opts.binary_file_name.empty()) {
-            print_usage_error("Invalid --bin: empty file name");
-            return false;
-        }
-
-        return true;
-    }
-
-    if (const std::optional<std::string_view> value{
-            option_value(arg, "--report="),
-        }) {
-
-        return store_parsed(parse_reports(*value), opts.reports);
     }
 
     if (arg == "--nopt") {
@@ -290,6 +264,64 @@ template <typename T>
     print_usage_error(std::format("Error: Unknown option: {}", arg));
 
     return false;
+}
+
+[[nodiscard]] auto apply_vars(const std::string_view value, options& opts)
+    -> bool {
+
+    return store_parsed(
+        parse_size_bytes(value, "variable storage size", vars_alignment),
+        opts.vars_size_bytes);
+}
+
+[[nodiscard]] auto apply_stack(const std::string_view value, options& opts)
+    -> bool {
+
+    return store_parsed(parse_size_bytes(value, "stack size", stack_alignment),
+                        opts.stack_size_bytes);
+}
+
+[[nodiscard]] auto apply_target(const std::string_view value, options& opts)
+    -> bool {
+
+    const std::optional<target> found{find_target(value)};
+
+    if (not found) {
+        print_usage_error(
+            std::format("Invalid target: '{}'. Supported targets are: {}.",
+                        value, supported_target_texts()));
+
+        return false;
+    }
+
+    opts.machine_target = *found;
+
+    return true;
+}
+
+[[nodiscard]] auto apply_checks(const std::string_view value, options& opts)
+    -> bool {
+
+    return store_parsed(parse_checks(value), opts.checks);
+}
+
+[[nodiscard]] auto apply_report(const std::string_view value, options& opts)
+    -> bool {
+
+    return store_parsed(parse_reports(value), opts.reports);
+}
+
+[[nodiscard]] auto apply_bin(const std::string_view value, options& opts)
+    -> bool {
+
+    opts.binary_file_name = value;
+
+    if (opts.binary_file_name.empty()) {
+        print_usage_error("Invalid --bin: empty file name");
+        return false;
+    }
+
+    return true;
 }
 
 // same layout as the readme usage section which pastes this output
@@ -379,29 +411,13 @@ examples:
         program prg{*backend, src, opts.vars_size_bytes, opts.checks};
 
         if (opts.reproduce_source) {
-            std::ofstream reproduced_source{"diff.baz"};
-            prg.source_to(reproduced_source);
-            reproduced_source.close();
-
-            if (src != read_file_to_string("diff.baz")) {
-                throw panic_exception{
-                    std::format("generated source differs. diff {} diff.baz",
-                                opts.src_file_name)};
-            }
+            check_reproduced_source(prg, opts, src);
         }
 
         prg.build(std::cout);
 
     } catch (const compiler_exception& e) {
-        print_source_error(opts.src_file_name, src, e.line, e.start_index,
-                           e.end_index, e.msg);
-
-        print_call_frames(opts.src_file_name, src, e.call_frames);
-
-        if (not e.detail.empty()) {
-            std::println(stderr, "\n{}", e.detail);
-        }
-
+        print_compiler_error(opts, src, e);
         return 1;
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
@@ -409,6 +425,35 @@ examples:
     }
 
     return 0;
+}
+
+// the message of the error at its source line, the inlined calls it was found
+// in and what else is known about it
+auto print_compiler_error(const options& opts, const std::string_view src,
+                          const compiler_exception& e) -> void {
+
+    print_source_error(opts.src_file_name, src, e.line, e.start_index,
+                       e.end_index, e.msg);
+
+    print_call_frames(opts.src_file_name, src, e.call_frames);
+
+    if (not e.detail.empty()) {
+        std::println(stderr, "\n{}", e.detail);
+    }
+}
+
+// the source written back from the parsed program equals the input
+auto check_reproduced_source(const program& prg, const options& opts,
+                             const std::string_view src) -> void {
+
+    std::ofstream reproduced_source{"diff.baz"};
+    prg.source_to(reproduced_source);
+    reproduced_source.close();
+
+    if (src != read_file_to_string("diff.baz")) {
+        throw panic_exception{std::format(
+            "generated source differs. diff {} diff.baz", opts.src_file_name)};
+    }
 }
 
 [[nodiscard]] auto read_file_to_string(const char* const file_name)

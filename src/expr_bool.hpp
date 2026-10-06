@@ -46,21 +46,9 @@ class expr_bool_op final : public statement {
 
         set_type(tc.get_type_bool());
 
-        bool is_not{};
-        // e.g. if not a == 3 ...
-        while (not first_expression) {
-            const token t{tz.next_token()};
-
-            if (not t.is_text("not")) {
-                tz.put_back_token(t);
-                break;
-            }
-
-            is_not = not is_not;
-            nots_.emplace_back(t);
+        if (not first_expression) {
+            parse_nots(tz);
         }
-
-        is_not_ = is_not;
 
         lhs_ = {tc,
                 tz,
@@ -92,18 +80,7 @@ class expr_bool_op final : public statement {
 
         rhs_ = {tc, tz, true};
 
-        const bool is_equality{
-            op_ == machine::comparison_operator::equal or
-                op_ == machine::comparison_operator::not_equal,
-        };
-
-        is_memory_comparison_ = is_equality and is_memory_operand(tc, lhs_) and
-                                is_memory_operand(tc, rhs_);
-
-        if (not is_memory_comparison_) {
-            assert_not_record(lhs_, is_equality);
-            assert_not_record(rhs_, is_equality);
-        }
+        classify_operands(tc);
 
         resolve_if_op_is_expression();
     }
@@ -228,6 +205,23 @@ class expr_bool_op final : public statement {
     }
 
   private:
+    // two instances or arrays are compared as memory, anything else as numbers
+    // e.g. 'p1 == p2' of instances, but 'p1 < p2' or 'p1 == 1' is rejected
+    auto classify_operands(const toc& tc) -> void {
+        const bool is_equality{
+            op_ == machine::comparison_operator::equal or
+                op_ == machine::comparison_operator::not_equal,
+        };
+
+        is_memory_comparison_ = is_equality and is_memory_operand(tc, lhs_) and
+                                is_memory_operand(tc, rhs_);
+
+        if (not is_memory_comparison_) {
+            assert_not_record(lhs_, is_equality);
+            assert_not_record(rhs_, is_equality);
+        }
+    }
+
     // a shorthand is named since its source shows no comparison with 0
     [[nodiscard]] auto comment_label(const std::string_view list_op,
                                      const bool inverted) const -> std::string {
@@ -320,6 +314,21 @@ class expr_bool_op final : public statement {
         resolve_cmp_shorthand(tc, indent, lhs_, shorthand_action);
 
         return std::nullopt;
+    }
+
+    // e.g. if not a == 3 ...
+    auto parse_nots(tokenizer& tz) -> void {
+        while (true) {
+            const token t{tz.next_token()};
+
+            if (not t.is_text("not")) {
+                tz.put_back_token(t);
+                return;
+            }
+
+            is_not_ = not is_not_;
+            nots_.emplace_back(t);
+        }
     }
 
     auto resolve_cmp(toc& tc, const size_t indent, const expr_arith& lhs,
@@ -491,25 +500,6 @@ class expr_bool_op final : public statement {
     // statics
     //
 
-    // emits the address of 'side' for the comparison of memory
-    [[nodiscard]] static auto
-    address_emitter_of(toc& tc, const size_t indent, const token& src_loc_tk,
-                       const statement& side, const ident_info& info)
-        -> machine::address_emitter {
-
-        return [&tc, indent, &src_loc_tk, &side, &info](
-                   const operand& reg_count, const operand& address_register,
-                   const machine::address_use use) -> void {
-            side.compile_address(tc, indent, src_loc_tk,
-                                 {
-                                     .reg_count{reg_count},
-                                     .lea_path{info.lea_path},
-                                     .address_register{address_register},
-                                 },
-                                 use);
-        };
-    }
-
     // a condition tests a number, an instance would be tested as its first
     // field; checked when compiling since the initializer of a 'var' parses
     // its expression to learn the type, e.g. 'var b = a' copies the instance
@@ -652,8 +642,8 @@ class expr_bool_op final : public statement {
             src_loc_tk, indent, size_bytes,
             {
                 .alignment{lhs_info.type_ref().alignment()},
-                .lhs{address_emitter_of(tc, indent, src_loc_tk, lhs, lhs_info)},
-                .rhs{address_emitter_of(tc, indent, src_loc_tk, rhs, rhs_info)},
+                .lhs{lhs.address_emitter_of(tc, indent, src_loc_tk, lhs_info)},
+                .rhs{rhs.address_emitter_of(tc, indent, src_loc_tk, rhs_info)},
                 .dst{dst},
                 .inverted{inverted},
             });

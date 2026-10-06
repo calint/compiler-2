@@ -873,6 +873,21 @@ class expr_arith final : public expression {
         merged.folded_source += s.folded_source;
     }
 
+    // none when the division traps, e.g. 'x / 0' or the minimum divided by -1
+    [[nodiscard]] static auto
+    apply_division(const int64_t lhs, const arithmetic_operator op,
+                   const int64_t rhs, const type& width_type)
+        -> std::optional<int64_t> {
+
+        if (rhs == 0 or (rhs == -1 and lhs == width_min(width_type))) {
+            return std::nullopt;
+        }
+
+        return wrap_to_width(op == arithmetic_operator::divide ? lhs / rhs
+                                                               : lhs % rhs,
+                             width_type);
+    }
+
     // empty when the targets differ at run time: a zero divisor traps, the
     // most negative value divided by -1 traps or wraps and shift counts
     // outside the width are masked differently
@@ -884,28 +899,29 @@ class expr_arith final : public expression {
         if (op == arithmetic_operator::divide or
             op == arithmetic_operator::remainder) {
 
-            if (rhs == 0 or (rhs == -1 and lhs == width_min(width_type))) {
-                return std::nullopt;
-            }
-
-            return wrap_to_width(op == arithmetic_operator::divide ? lhs / rhs
-                                                                   : lhs % rhs,
-                                 width_type);
+            return apply_division(lhs, op, rhs, width_type);
         }
 
         if (op == arithmetic_operator::shift_left or
             op == arithmetic_operator::shift_right) {
 
-            if (rhs < 0 or
-                std::cmp_greater_equal(rhs, width_type.size_bits())) {
-                return std::nullopt;
-            }
-
-            return shift_constant(lhs, op, static_cast<uint64_t>(rhs),
-                                  width_type);
+            return apply_shift(lhs, op, rhs, width_type);
         }
 
         return combine(lhs, op, rhs, width_type);
+    }
+
+    // none when the count is not below the width, e.g. 'x << 64' of an 'i64'
+    [[nodiscard]] static auto
+    apply_shift(const int64_t lhs, const arithmetic_operator op,
+                const int64_t rhs, const type& width_type)
+        -> std::optional<int64_t> {
+
+        if (rhs < 0 or std::cmp_greater_equal(rhs, width_type.size_bits())) {
+            return std::nullopt;
+        }
+
+        return shift_constant(lhs, op, static_cast<uint64_t>(rhs), width_type);
     }
 
     static auto asm_op(toc& tc, const size_t indent,

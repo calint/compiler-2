@@ -17,6 +17,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "machine.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
@@ -186,6 +187,26 @@ class statement {
     //
     // class methods
     //
+
+    // emits the address of this statement for a bulk operation, 'info' is what
+    // 'toc' resolved it to
+    [[nodiscard]] auto address_emitter_of(toc& tc, const size_t indent,
+                                          const token& src_loc_tk,
+                                          const ident_info& info) const
+        -> machine::address_emitter {
+
+        return [this, &tc, indent, &src_loc_tk, &info](
+                   const operand& reg_count, const operand& address_register,
+                   const machine::address_use use) -> void {
+            compile_address(tc, indent, src_loc_tk,
+                            {
+                                .reg_count{reg_count},
+                                .lea_path{info.lea_path},
+                                .address_register{address_register},
+                            },
+                            use);
+        };
+    }
 
     // used in UB check
     // throws if 'var' is read outside of the 'assigned' bytes

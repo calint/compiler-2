@@ -126,30 +126,12 @@ class stmt_builtin_array_copy final : public statement {
             },
         };
 
-        const auto emit_src{
-            [&](const operand& reg_count, const operand& address_register,
-                const machine::address_use use) -> void {
-                src_.compile_address(tc, indent, tok(),
-                                     {
-                                         .reg_count{reg_count},
-                                         .lea_path{array_src_info.lea_path},
-                                         .address_register{address_register},
-                                     },
-                                     use);
-            },
+        const machine::address_emitter emit_src{
+            src_.address_emitter_of(tc, indent, tok(), array_src_info),
         };
 
-        const auto emit_dst{
-            [&](const operand& reg_count, const operand& address_register,
-                const machine::address_use use) -> void {
-                dst_.compile_address(tc, indent, tok(),
-                                     {
-                                         .reg_count{reg_count},
-                                         .lea_path{array_dst_info.lea_path},
-                                         .address_register{address_register},
-                                     },
-                                     use);
-            },
+        const machine::address_emitter emit_dst{
+            dst_.address_emitter_of(tc, indent, tok(), array_dst_info),
         };
 
         x.copy_elements(tok(), indent, array_src_info.type_ref().size_bytes(),

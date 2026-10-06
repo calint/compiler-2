@@ -183,6 +183,7 @@ class tokenizer final {
 
     // skips up to and including the '}' that closes the next '{', strings and
     // character literals may contain braces
+    // e.g. '{ a = { 1 } b = 2 }', the depth counts the braces that are open
     auto skip_braced_block() -> void {
         size_t depth{};
 
@@ -192,24 +193,23 @@ class tokenizer final {
                 continue;
             }
 
-            if (not is_next_char_token('}').is_empty()) {
-                if (depth == 0) {
+            if (is_next_char_token('}').is_empty()) {
+                if (is_eos()) {
                     throw compiler_exception{*this,
-                                             "expected '{' to begin block"};
+                                             "expected '}' to end block"};
                 }
 
-                if (--depth == 0) {
-                    return;
-                }
-
+                skip_token();
                 continue;
             }
 
-            if (is_eos()) {
-                throw compiler_exception{*this, "expected '}' to end block"};
+            if (depth == 0) {
+                throw compiler_exception{*this, "expected '{' to begin block"};
             }
 
-            skip_token();
+            if (--depth == 0) {
+                return;
+            }
         }
     }
 

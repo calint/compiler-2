@@ -125,41 +125,15 @@ class stmt_builtin_arrays_equal final : public expression {
             },
         };
 
-        const auto emit_lhs{
-            [&](const operand& reg_count, const operand& address_register,
-                const machine::address_use use) -> void {
-                lhs_.compile_address(tc, indent, tok(),
-                                     {
-                                         .reg_count{reg_count},
-                                         .lea_path{lhs_info.lea_path},
-                                         .address_register{address_register},
-                                     },
-                                     use);
-            },
-        };
-
-        const auto emit_rhs{
-            [&](const operand& reg_count, const operand& address_register,
-                const machine::address_use use) -> void {
-                rhs_.compile_address(tc, indent, tok(),
-                                     {
-                                         .reg_count{reg_count},
-                                         .lea_path{rhs_info.lea_path},
-                                         .address_register{address_register},
-                                     },
-                                     use);
-            },
-        };
-
-        x.arrays_equal(tok(), indent, lhs_info.type_ref().size_bytes(),
-                       emit_count,
-                       {
-                           .alignment{lhs_info.type_ref().alignment()},
-                           .lhs{emit_lhs},
-                           .rhs{emit_rhs},
-                           .dst{dst},
-                           .inverted{inverted},
-                       });
+        x.arrays_equal(
+            tok(), indent, lhs_info.type_ref().size_bytes(), emit_count,
+            {
+                .alignment{lhs_info.type_ref().alignment()},
+                .lhs{lhs_.address_emitter_of(tc, indent, tok(), lhs_info)},
+                .rhs{rhs_.address_emitter_of(tc, indent, tok(), rhs_info)},
+                .dst{dst},
+                .inverted{inverted},
+            });
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {

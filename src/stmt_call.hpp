@@ -473,17 +473,7 @@ class stmt_call : public expression {
                          tc.get_type_address()),
             tc.is_frame_check());
 
-        // write pointers into the callee frame: result (if any), then arguments
-        // each slot holds an address, not the value stored at that address
-        operand slot{frame_address};
-
-        for (const auto [i, addr] : std::views::enumerate(addresses)) {
-            comment_frame_slot(x, indent, func, static_cast<size_t>(i));
-
-            x.address_of(tok(), indent, slot, addr);
-
-            slot.increment_offset(address_offset(x.address_size_bytes()));
-        }
+        write_frame_slots(x, indent, func, frame_address, addresses);
 
         x.free_scratch_registers(tok(), indent, address_registers);
 
@@ -516,6 +506,25 @@ class stmt_call : public expression {
         }
 
         return aliases;
+    }
+
+    // write pointers into the callee frame: result (if any), then arguments
+    // each slot holds an address, not the value stored at that address
+    auto write_frame_slots(machine& x, const size_t indent,
+                           const stmt_def_func& func,
+                           const operand& frame_address,
+                           const std::vector<operand>& addresses) const
+        -> void {
+
+        operand slot{frame_address};
+
+        for (const auto [i, addr] : std::views::enumerate(addresses)) {
+            comment_frame_slot(x, indent, func, static_cast<size_t>(i));
+
+            x.address_of(tok(), indent, slot, addr);
+
+            slot.increment_offset(address_offset(x.address_size_bytes()));
+        }
     }
 
     //
@@ -634,34 +643,15 @@ class stmt_call : public expression {
         std::vector<std::string_view> locals;
 
         for (const ident_info& info : infos) {
-            if (info.is_pointer) {
+            const std::optional<std::string> part{
+                signature_part(tc, info, locals),
+            };
+
+            if (not part) {
                 return std::nullopt;
             }
 
-            // the body can reject an index by the length of its array
-            if (info.is_array) {
-                signature += std::format(" array {}", info.array_len);
-            }
-
-            // a temporary shares storage with nothing
-            if (info.elem_path.empty()) {
-                signature += " temporary";
-                continue;
-            }
-
-            const std::string_view root{info.elem_path.front()};
-
-            if (tc.is_global_var(root)) {
-                signature += std::format(" global {}", root);
-                continue;
-            }
-
-            if (std::ranges::find(locals, root) == locals.end()) {
-                locals.push_back(root);
-            }
-
-            signature += std::format(
-                " local {}", std::ranges::find(locals, root) - locals.begin());
+            signature += *part;
         }
 
         return signature;
@@ -1586,6 +1576,43 @@ class stmt_call : public expression {
                                          allocated_registers);
         }
 
+        return make_plain_argument_alias(tc, indent, arg, param,
+                                         allocated_registers);
+    }
+
+    // a constant lets the inlined body be decided at compile time
+    [[nodiscard]] static auto
+    make_expression_alias(toc& tc, const size_t indent, const expr_any& arg,
+                          const stmt_def_func_param& param,
+                          std::vector<operand>& allocated_registers)
+        -> alias_info {
+
+        const std::optional<int64_t> value{arg.constant_value(tc)};
+
+        if (value) {
+            return make_value_alias(param, std::format("{}", *value));
+        }
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(arg.tok(), indent, param.get_type()),
+        };
+
+        allocated_registers.push_back(reg);
+        arg.compile(tc, indent, toc::make_ident_info_from_register(reg));
+
+        return alias_info::make_register(param.identifier(), param.get_type(),
+                                         reg);
+    }
+
+    // an identifier or a constant, with or without unary operators
+    [[nodiscard]] static auto
+    make_plain_argument_alias(toc& tc, const size_t indent, const expr_any& arg,
+                              const stmt_def_func_param& param,
+                              std::vector<operand>& allocated_registers)
+        -> alias_info {
+
         // constants and unary ops pass a value, not storage, so the value
         // must fit the parameter
         arg.assert_not_narrowed(tc, param.get_type());
@@ -1614,32 +1641,6 @@ class stmt_call : public expression {
         allocated_registers.push_back(reg);
         x.copy_value(param.tok(), indent, reg, arg_info.operand);
         arg.get_unary_ops().compile(tc, indent, arg.tok(), reg);
-
-        return alias_info::make_register(param.identifier(), param.get_type(),
-                                         reg);
-    }
-
-    // a constant lets the inlined body be decided at compile time
-    [[nodiscard]] static auto
-    make_expression_alias(toc& tc, const size_t indent, const expr_any& arg,
-                          const stmt_def_func_param& param,
-                          std::vector<operand>& allocated_registers)
-        -> alias_info {
-
-        const std::optional<int64_t> value{arg.constant_value(tc)};
-
-        if (value) {
-            return make_value_alias(param, std::format("{}", *value));
-        }
-
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register(arg.tok(), indent, param.get_type()),
-        };
-
-        allocated_registers.push_back(reg);
-        arg.compile(tc, indent, toc::make_ident_info_from_register(reg));
 
         return alias_info::make_register(param.identifier(), param.get_type(),
                                          reg);
@@ -1715,6 +1716,44 @@ class stmt_call : public expression {
             .register_operand{},
             .is_element{},
         };
+    }
+
+    // what an argument adds to the signature, e.g. ' local 0' or ' global g',
+    // none for a pointer, which the signature cannot tell. 'locals' are the
+    // variables met so far
+    [[nodiscard]] static auto
+    signature_part(const toc& tc, const ident_info& info,
+                   std::vector<std::string_view>& locals)
+        -> std::optional<std::string> {
+
+        if (info.is_pointer) {
+            return std::nullopt;
+        }
+
+        std::string part;
+
+        // the body can reject an index by the length of its array
+        if (info.is_array) {
+            part += std::format(" array {}", info.array_len);
+        }
+
+        // a temporary shares storage with nothing
+        if (info.elem_path.empty()) {
+            return part + " temporary";
+        }
+
+        const std::string_view root{info.elem_path.front()};
+
+        if (tc.is_global_var(root)) {
+            return part + std::format(" global {}", root);
+        }
+
+        if (std::ranges::find(locals, root) == locals.end()) {
+            locals.push_back(root);
+        }
+
+        return part + std::format(" local {}", std::ranges::find(locals, root) -
+                                                   locals.begin());
     }
 
     // the type as written, with the type it is bound to when that differs,
