@@ -1,8 +1,10 @@
 #!/bin/bash
-# runs roome.baz on the fpga emulator with the lines of roome.in as uart input
-# and compares the uart output with roome.out
+# runs roome.baz with the lines of roome.in as input, on the fpga emulator
+# (rv32i-fpga) and as a native program (x86_64), and compares the output of
+# each with roome.out
 # usage: test.sh [update]
-# 'update' rewrites roome.out with the current output
+# 'update' rewrites roome.out with the output of rv32i-fpga, x86_64 is still
+# compared
 set -eu
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR/../.."
@@ -27,19 +29,39 @@ status=0
 timeout 10 "$EMULATOR" "$IMAGE" "$WORK/sdcard" <"$DIR/roome.in" >"$DIR/diff" || status=$?
 
 if [[ $status -eq 124 ]]; then
-    echo "roome: timeout, does roome.in end with 'go home'?"
+    echo "roome: rv32i-fpga timeout, does roome.in end with 'go home'?"
     exit 1
 fi
 
 if [[ ${1:-} == update ]]; then
     cp "$DIR/diff" "$DIR/roome.out"
     echo "roome: updated $DIR/roome.out"
-    exit 0
 fi
 
 if ! diff -u "$DIR/roome.out" "$DIR/diff"; then
-    echo "roome: output differs from $DIR/roome.out"
+    echo "roome: rv32i-fpga output differs from $DIR/roome.out"
     exit 1
 fi
 
-echo "roome: ok"
+echo "roome: rv32i-fpga ok"
+
+# the native build catches what rv32i-fpga does not, such as running out of
+# registers
+./baz --target=x86_64 --vars=0x20000 --checks=noub,line "$DIR/roome.baz" >"$WORK/roome-x86_64.s"
+nasm -f elf64 "$WORK/roome-x86_64.s" -o "$WORK/roome-x86_64.o"
+ld -s -T baz.ld -o "$WORK/roome-x86_64" "$WORK/roome-x86_64.o"
+
+status=0
+timeout 10 "$WORK/roome-x86_64" <"$DIR/roome.in" >"$WORK/x86_64.out" || status=$?
+
+if [[ $status -eq 124 ]]; then
+    echo "roome: x86_64 timeout, does roome.in end with 'go home'?"
+    exit 1
+fi
+
+if ! diff -u "$DIR/roome.out" "$WORK/x86_64.out"; then
+    echo "roome: x86_64 output differs from $DIR/roome.out"
+    exit 1
+fi
+
+echo "roome: x86_64 ok"

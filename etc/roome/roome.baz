@@ -120,13 +120,14 @@ func mut text.input() {
     self.len = nbytes
 }
 
-func text.equals(nm text) res bool {
-    if self.len != nm.len {
+# compares with a text of any capacity
+func text.equals<T type>(other T) res bool {
+    if self.len != other.len {
         res = false
         return
     }
 
-    res = arrays_equal(self.array, nm.array, self.len)
+    res = arrays_equal(self.array, other.array, self.len)
 }
 
 let max_name_len = 16
@@ -144,6 +145,10 @@ let max_entity_messages_len = 16
 type list<T type, capacity> {
     array T[capacity],
     len,
+}
+
+func list.is_full() res bool {
+    res = self.len == array_length(self.array)
 }
 
 # makes room for an item and returns its index, the caller writes the item in
@@ -179,6 +184,25 @@ func list.index_of(item T) res {
             break
         }
     }
+}
+
+# the index of the first item named by the token or the length
+func list.index_of_name<K type>(tz K) res {
+    res = self.len
+    foo self.array, self.len {
+        if tz.is(e.name) {
+            res = i
+            break
+        }
+    }
+}
+
+# the index of 'item', it is added when not found
+func mut list.find_or_add(item T) res {
+    res = self.index_of(item)
+    if res != self.len return
+
+    res = self.push(item)
 }
 
 func mut list.delete_item(item T) {
@@ -271,6 +295,13 @@ type link {
     to,
 }
 
+type links = list<link, max_room_links_len>
+
+func mut links.add(link_name_id, to) {
+    let ix = self.reserve()
+    self.array[ix] = { link_name_id, to }
+}
+
 type object {
     name name,
 }
@@ -289,12 +320,27 @@ type room {
     description str,
     note str,
     entities id_list,
-    links link[max_room_links_len],
-    links_len,
+    links links,
     objects id_list,
 }
 
 dat str_u_r_in = "u r in "
+
+# prints the lead-in before the first item of a list and a comma before the
+# others
+type joiner {
+    printed bool,
+}
+
+func mut joiner.next(lead i8[]) {
+    if self.printed {
+        out.print_all(str_comma)
+        return
+    }
+
+    out.print_all(lead)
+    self.printed = true
+}
 
 func room.print(cur_entity) {
     if self.name.len != 0 {
@@ -306,32 +352,22 @@ func room.print(cur_entity) {
         self.description.print()
         out.println()
     }
-    var first_elem_printed = false
+    var present = joiner
     foo self.entities.array, self.entities.len {
         if e == cur_entity continue
-        if not first_elem_printed {
-            out.print_all(str_uc)
-        } else {
-            out.print_all(str_comma)
-        }
+        present.next(str_uc)
         entities.array[e].print()
-        first_elem_printed = true
     }
     foo self.objects.array, self.objects.len {
-        if not first_elem_printed {
-            out.print_all(str_uc)
-        } else {
-            out.print_all(str_comma)
-        }
+        present.next(str_uc)
         objects.array[e].name.print()
-        first_elem_printed = true
     }
-    if first_elem_printed {
+    if present.printed {
         out.println()
     }
-    if(self.links_len != 0) {
+    if self.links.len != 0 {
         out.print_all(str_exits)
-        foo self.links, self.links_len {
+        foo self.links.array, self.links.len {
             if i != 0 out.print_all(str_comma)
             link_names.array[e.link_name_id].print()
         }
@@ -387,14 +423,12 @@ func mut tokenizer.reset() {
 }
 
 func mut tokenizer.input() {
-    self.start = 0
-    self.end = 0
+    self.reset()
     self.str.input()
 }
 
 func mut tokenizer.set_line(script i8[], line_start, count) {
-    self.start = 0
-    self.end = 0
+    self.reset()
     array_copy(script[line_start], self.str.array, count)
     self.str.len = count
 }
@@ -412,16 +446,7 @@ func mut tokenizer.skip_whitespace() {
     self.end = self.start
 }
 
-func mut tokenizer.first() {
-    self.skip_whitespace()
-    self.end = self.start
-    loop {
-        if self.end >= self.str.len break
-        if self.str.array[self.end] == ' ' break
-        self.end = self.end + 1
-    }
-}
-
+# moves to the next token, the first one when called on a fresh line
 func mut tokenizer.next() {
     self.skip_whitespace()
     self.end = self.start
@@ -466,7 +491,9 @@ func tokenizer.token_to<T type>(dst mut T) {
     array_copy(self.str.array[self.start], dst.array, dst.len)
 }
 
+# the token becomes the rest of the line without leading spaces
 func mut tokenizer.to_end() {
+    self.skip_whitespace()
     self.start = self.end
     self.end = self.str.len
 }
@@ -478,12 +505,23 @@ func mut tokenizer.next_or_say(msg i8[]) res bool {
     if not res out.print_all(msg)
 }
 
+# the index in the inventory of the object named by the token or the length
+func noinline entity.find_object(tz tokenizer) res {
+    res = self.objects.len
+    foo self.objects.array, self.objects.len {
+        if tz.is(objects.array[e].name) {
+            res = i
+            break
+        }
+    }
+}
+
 func notify_room(room_id, from, kind, text str) {
     let room_entities_len = rooms.array[room_id].entities.len
     foo rooms.array[room_id].entities.array, room_entities_len {
         if e == from continue
 
-        if entities.array[e].messages.len == max_entity_messages_len continue
+        if entities.array[e].messages.is_full() continue
 
         entities.array[e].messages.add(from, kind, text)
     }
@@ -503,9 +541,9 @@ func action_go(eid, tz mut tokenizer) {
     # find link
     let cur_room_id = entities.array[eid].room_id
 
-    let links_len = rooms.array[cur_room_id].links_len
+    let links_len = rooms.array[cur_room_id].links.len
     var found_ix = links_len
-    foo rooms.array[cur_room_id].links, links_len {
+    foo rooms.array[cur_room_id].links.array, links_len {
         if tz.is(link_names.array[e.link_name_id]) {
             found_ix = i
             break
@@ -518,7 +556,7 @@ func action_go(eid, tz mut tokenizer) {
     }
 
     # move entity
-    let to_room_id = rooms.array[cur_room_id].links[found_ix].to
+    let to_room_id = rooms.array[cur_room_id].links.array[found_ix].to
     entities.array[eid].room_id = to_room_id 
 
     let discarded = rooms.array[to_room_id].entities.push(eid)
@@ -533,15 +571,15 @@ func action_go(eid, tz mut tokenizer) {
     went_text.add(str_went_to)
     went_text.append(
         link_names.array[
-            rooms.array[cur_room_id].links[found_ix].link_name_id
+            rooms.array[cur_room_id].links.array[found_ix].link_name_id
         ]
     )
 
     notify_room(cur_room_id, eid, message_event, went_text)
 
-    let to_links_len = rooms.array[to_room_id].links_len
+    let to_links_len = rooms.array[to_room_id].links.len
     var to_found_ix = to_links_len
-    foo rooms.array[to_room_id].links, to_links_len {
+    foo rooms.array[to_room_id].links.array, to_links_len {
         if e.to == cur_room_id {
             to_found_ix = i
             break
@@ -555,7 +593,7 @@ func action_go(eid, tz mut tokenizer) {
     arrived_text.add(str_arrived_from)
     arrived_text.append(
         link_names.array[
-            rooms.array[to_room_id].links[to_found_ix].link_name_id
+            rooms.array[to_room_id].links.array[to_found_ix].link_name_id
         ]
     )
 
@@ -563,18 +601,9 @@ func action_go(eid, tz mut tokenizer) {
 }
 
 func find_link_name_or_make(tz tokenizer) res {
-    res = link_names.len
-    foo link_names.array, link_names.len {
-        if tz.is(e) {
-            res = i
-            break
-        }
-    }
+    let link_name = tz.token<name>()
 
-    if res != link_names.len return
-
-    res = link_names.reserve()
-    link_names.array[res] = tz.token()
+    res = link_names.find_or_add(link_name)
 }
 
 dat str_what_exit_name_to = "what is exit name to new room\n"
@@ -586,8 +615,6 @@ func action_new_room(eid, tz mut tokenizer) {
 
     let cur_room_id = entities.array[eid].room_id 
 
-    let cur_room_next_link_id = rooms.array[cur_room_id].links_len
-
     let link_name_id = find_link_name_or_make(tz)
 
     if not tz.next_or_say(str_what_exit_name_back) return
@@ -597,18 +624,10 @@ func action_new_room(eid, tz mut tokenizer) {
     let new_room_id = rooms.reserve()
 
     # link to next room
-    rooms.array[cur_room_id].links[cur_room_next_link_id] = { 
-        link_name_id,
-        new_room_id
-    }
-    rooms.array[cur_room_id].links_len = cur_room_next_link_id + 1
+    rooms.array[cur_room_id].links.add(link_name_id, new_room_id)
 
     # link back to this from from the new room
-    rooms.array[new_room_id].links[0] = { 
-        link_name_back_id,
-        cur_room_id
-    }
-    rooms.array[new_room_id].links_len = 1
+    rooms.array[new_room_id].links.add(link_name_back_id, cur_room_id)
 
     out.print_all(str_new_room_created)
 }
@@ -616,7 +635,6 @@ func action_new_room(eid, tz mut tokenizer) {
 dat str_new_room_description = "new room description\n"
 
 func action_set_room_description(eid, tz mut tokenizer) {
-    tz.skip_whitespace()
     tz.to_end()
     rooms.array[entities.array[eid].room_id].description = tz.token()
 
@@ -624,7 +642,6 @@ func action_set_room_description(eid, tz mut tokenizer) {
 }
 
 func action_set_room_note(eid, tz mut tokenizer) {
-    tz.skip_whitespace()
     tz.to_end()
     rooms.array[entities.array[eid].room_id].note = tz.token()
 }
@@ -694,17 +711,10 @@ func action_inventory(eid, tz tokenizer) {
         return
     }
 
-    var first_printed = false
+    var carried = joiner
 
     foo entities.array[eid].objects.array, len {
-
-        if not first_printed {
-            out.print_all(str_u_have)
-            first_printed = true
-        } else {
-            out.print_all(str_comma)
-        }
-
+        carried.next(str_u_have)
         objects.array[e].name.print()
     }
 
@@ -718,17 +728,9 @@ dat str_dropped = "dropped "
 func action_drop(eid, tz mut tokenizer) {
     if not tz.next_or_say(str_drop_what) return
 
-    # find object in inventory
-    let len = entities.array[eid].objects.len
-    var found_ix = len
-    foo entities.array[eid].objects.array, len {
-        if tz.is(objects.array[e].name) {
-            found_ix = i
-            break
-        }
-    }
+    let found_ix = entities.array[eid].find_object(tz)
 
-    if found_ix == len {
+    if found_ix == entities.array[eid].objects.len {
         out.print_all(str_not_carrying)
         return
     }
@@ -753,17 +755,9 @@ dat str_to = " to "
 func action_give(eid, tz mut tokenizer) {
     if not tz.next_or_say(str_give_what) return
 
-    # find object in inventory
-    let len = entities.array[eid].objects.len
-    var found_ix = len
-    foo entities.array[eid].objects.array, len {
-        if tz.is(objects.array[e].name) {
-            found_ix = i
-            break
-        }
-    }
+    let found_ix = entities.array[eid].find_object(tz)
 
-    if found_ix == len {
+    if found_ix == entities.array[eid].objects.len {
         out.print_all(str_not_carrying)
         return
     }
@@ -819,13 +813,7 @@ func action_tell(eid, tz mut tokenizer) {
     if not tz.next_or_say(str_tell_whom) return
 
     # find entity anywhere
-    var to_entity = entities.len
-    foo entities.array, entities.len {
-        if tz.is(e.name) {
-            to_entity = i
-            break
-        }
-    }
+    let to_entity = entities.index_of_name(tz)
 
     if to_entity == entities.len {
         tz.print()
@@ -833,14 +821,13 @@ func action_tell(eid, tz mut tokenizer) {
         return
     }
 
-    if entities.array[to_entity].messages.len == max_entity_messages_len {
+    if entities.array[to_entity].messages.is_full() {
         tz.print()
         out.print_all(str_has_too_many_messages)
         return
     }
 
     # the message is the rest of the line
-    tz.skip_whitespace()
     tz.to_end()
 
     if tz.is_empty() {
@@ -857,7 +844,6 @@ dat str_say_what = "say what\n"
 
 func action_say(eid, tz mut tokenizer) {
     # the text is the rest of the line
-    tz.skip_whitespace()
     tz.to_end()
 
     if tz.is_empty() {
@@ -908,7 +894,7 @@ dat str_action_new_entity = "en"
 # note: `noinline` because it unfolds into a lot of code and called from 2
 #       locations
 func noinline parse_input(eid, tz mut tokenizer) {
-    tz.first()
+    tz.next()
 
     if tz.is_array(str_action_go) {
         action_go(eid, tz)
