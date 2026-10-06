@@ -657,6 +657,24 @@ class stmt_call : public expression {
         return signature;
     }
 
+    auto apply_unary_ops_to_result(toc& tc, const size_t indent,
+                                   const stmt_def_func& func) const -> void {
+
+        if (get_unary_ops().is_empty()) {
+            return;
+        }
+
+        assert(func.returns());
+
+        const func_return_info& return_info{*func.returns()};
+
+        const ident_info& ret_info{
+            tc.make_ident_info(tok(), return_info.ident_tk.text()),
+        };
+
+        get_unary_ops().compile(tc, indent, tok(), ret_info.operand);
+    }
+
     // the body is compiled for the lengths of the array arguments
     [[nodiscard]] auto array_argument_lengths(const toc& tc,
                                               const stmt_def_func& func) const
@@ -980,17 +998,7 @@ class stmt_call : public expression {
 
         // apply unary ops to result if present
 
-        if (not get_unary_ops().is_empty()) {
-            assert(func.returns());
-
-            const func_return_info& return_info{*func.returns()};
-
-            const ident_info& ret_info{
-                tc.make_ident_info(tok(), return_info.ident_tk.text()),
-            };
-
-            get_unary_ops().compile(tc, indent, tok(), ret_info.operand);
-        }
+        apply_unary_ops_to_result(tc, indent, func);
 
         tc.exit_func(func.name());
     }
