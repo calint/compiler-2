@@ -103,6 +103,8 @@ report)
     llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata "${objects[@]}" 2>cov.err
     grep -v 'functions have mismatched data' cov.err >&2 || true
     rm -f -- cov.err
+    # plain text table of the same data, small enough to commit and diff
+    llvm-cov report -instr-profile=baz.profdata "${objects[@]}" >report/summary.txt 2>/dev/null
     echo $SEP
     echo "coverage report generated in $SCRIPT_DIR/report/"
     echo $SEP
