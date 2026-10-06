@@ -7,13 +7,13 @@ Working agreements for AI sessions in this repository.
 - **No asking needed:** shell commands for build, test, lint, format and
   scratch compiles.
 - **Ask first:** `rm -rf`, `git push`, `git reset --hard`, `git clean`, `sudo`.
-- **Scratch files:** only in `/tmp`.
+- **Scratch files:** only under `/tmp`; when the session provides a scratchpad
+  directory (under `/tmp`), use it.
 - **Workspace root:** `/home/c/w/compiler-2`.
 
 ## This file
 
-- Read and follow it every session; it replaces the memory file
-  `preferences.md`.
+- Read and follow it every session.
 - Record new preferences here, not in memory.
 - Keep it formatted for human readers: headings, short bullets, sub-bullets
   for lists, blank lines between sections.
@@ -167,7 +167,6 @@ Working agreements for AI sessions in this repository.
 
 - Run symbol renames before `git mv`/file renames (open buffers at the old
   path recreate old files on save).
-- Editing pitfalls: see memory `editing.md`.
 - `make.sh` (without `build`) and `run-roome.sh` read input: after `make.sh`
   type return, after `run-roome.sh` type "go home".
 
