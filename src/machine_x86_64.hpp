@@ -369,8 +369,11 @@ class machine_x86_64 final : public machine {
             push(indent, reg);
         }
 
-        // before the frame base, the address may be relative to it
-        if (not slot_address.is_empty()) {
+        // before the frame base, the address may be relative to it; the
+        // receiver of the caller, already in the register, is passed as is
+        if (not slot_address.is_empty() and
+            not is_address_in_register(slot_address, slot_register_)) {
+
             comment(src_loc_tk, indent, "address of the slot in a register");
 
             address_of(src_loc_tk, indent,
@@ -393,6 +396,17 @@ class machine_x86_64 final : public machine {
         for (const operand& reg : saved | std::views::reverse) {
             pop(indent, reg);
         }
+    }
+
+    // true when 'address' is the value of 'register_name' itself, '[r11]'
+    [[nodiscard]] static auto
+    is_address_in_register(const operand& address,
+                           const std::string_view register_name) -> bool {
+
+        return address.is_memory() and
+               address.base_register() == register_name and
+               address.index_register().empty() and
+               address.displacement() == 0 and address.immediate().empty();
     }
 
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
