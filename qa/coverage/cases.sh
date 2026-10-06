@@ -2590,3 +2590,40 @@ SRC=846 && COMPERR
 # x86: running out of registers in nested inline calls reports who holds them and
 # what a noinline frame would save
 if [[ $MACHINE == x86_64 ]]; then SRC=847 && COMPERR; fi
+
+# an operator other than equality does not compare user type instances
+SRC=848 && COMPERR
+
+# a whole array is not compared with an instance of its element type
+SRC=849 && COMPERR
+
+# an instance is not compared with a whole array of its type
+SRC=850 && COMPERR
+
+# a generic method needs type arguments when they cannot be deduced
+SRC=851 && COMPERR
+
+# an array field of a data instance is initialized with braces
+SRC=852 && COMPERR
+
+# a generic type without a body reports the '}' that closes nothing
+SRC=853 && COMPERR
+
+# a generic function without a body reports the '}' that closes nothing
+SRC=854 && COMPERR
+
+# a type parameter is deduced from a later argument, nested calls are skipped
+SRC=855 && EXP=0 && RUN
+
+# a type parameter is not deduced from an expression argument
+SRC=856 && COMPERR
+
+# a type parameter is not deduced from an argument that is missing
+SRC=857 && COMPERR
+
+# generics that are never instantiated are listed in the footer, 'test-cli.sh'
+# checks it
+SRC=858 && EXP=0 && RUN
+
+# x86: a function name longer than the register report is not wrapped
+if [[ $MACHINE == x86_64 ]]; then SRC=859 && COMPERR; fi

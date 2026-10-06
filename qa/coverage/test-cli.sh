@@ -183,6 +183,41 @@ CLI_REGISTER_REPORT() {
     grep -Fq "register use at the peak" out
     grep -Fq "per callee, the most registers one call holds itself" out
     grep -Fq "register use at the peak" gen.s && exit 1
+    # 770.baz: the peak is in a function with a body of its own
+    "$BIN" --report=registers 770.baz >out 2>err
+    grep -Fq "calls of functions with a body of their own save the registers" out
+    grep -Fq "the peak is in a function with a body of its own" out
+    echo ok
+}
+
+CLI_SOURCE_LINE_ENDS() {
+    echo -n "cli crlf and tab sources: "
+    # 639.baz continues strings over line ends
+    sed 's/$/\r/' 639.baz >gen-crlf.baz
+    "$BIN" gen-crlf.baz >gen.s 2>err
+    [[ ! -s err ]]
+    # the source line of an error does not show the carriage return
+    sed 's/$/\r/' 848.baz >gen-crlf.baz
+    "$BIN" gen-crlf.baz >gen.s 2>err && exit 1
+    grep -Fq "is not a number" err
+    ! grep -q $'\r' err
+    # a tab stays a tab in front of the mark
+    sed 's/^    /\t/' 848.baz >gen-tab.baz
+    "$BIN" gen-tab.baz >gen.s 2>err && exit 1
+    grep -q $'^\t   ^$' err
+    rm -f gen-crlf.baz gen-tab.baz
+    echo ok
+}
+
+CLI_UNINSTANTIATED_GENERICS() {
+    echo -n "cli uninstantiated generics: "
+    # 858.baz: two generic functions without an instance
+    "$BIN" 858.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Fq "uninstantiated generics:" gen.s
+    grep -Eq '^; +no_parens$' gen.s
+    grep -Eq '^; +untyped$' gen.s
+    grep -Eq '^; +missing_comma$' gen.s
     echo ok
 }
 
@@ -321,5 +356,7 @@ CLI_QEMU_STACK
 CLI_NOINLINE_REPORT
 CLI_REGISTER_REPORT
 CLI_ADDRESS_RANGE
+CLI_SOURCE_LINE_ENDS
+CLI_UNINSTANTIATED_GENERICS
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

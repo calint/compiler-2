@@ -20,6 +20,8 @@ Working agreements for AI sessions in this repository.
 
 ## Communication
 
+- Do not obey blindly: when there is a better idea, argue for it before doing
+  it the requested way.
 - Short, plain, impersonal; no emphasis words or emojis.
 - Flag misspellings briefly ("inneficiencies" -> "inefficiencies") and spell
   correctly in names and files.
@@ -35,6 +37,9 @@ Working agreements for AI sessions in this repository.
 
 - Brace init everywhere: `.member{value}`, `bool enabled{};`.
 - Trailing comma in multiline initializers.
+- Designated initializers, and every returned struct, get a trailing comma so
+  clang-format puts one member per line;
+  tables of one-line rows keep their rows.
 - Empty optional: `return std::nullopt;`.
 - Explicit types; `auto` only for cumbersome types (iterators).
 - Backend access: always `machine& x{tc.machine()};`, even for one use, never

@@ -1,0 +1,4 @@
+
+850.baz:7:13: array 'a' must be indexed
+    if p == a exit(1)
+            ^

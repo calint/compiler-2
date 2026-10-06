@@ -1274,7 +1274,10 @@ class storage_layout final {
         -> storage_location {
 
         if (kind == var_kind::dat) {
-            return {.storage_frame{}, .base_offset{vars_size_bytes_}};
+            return {
+                .storage_frame{},
+                .base_offset{vars_size_bytes_},
+            };
         }
 
         size_t local_size_bytes{};
@@ -1284,11 +1287,17 @@ class storage_layout final {
                 local_size_bytes, frm.allocated_stack_size_bytes());
 
             if (not frm.storage_base_register().empty()) {
-                return {.storage_frame{&frm}, .base_offset{local_size_bytes}};
+                return {
+                    .storage_frame{&frm},
+                    .base_offset{local_size_bytes},
+                };
             }
         }
 
-        return {.storage_frame{}, .base_offset{vars_size_bytes_}};
+        return {
+            .storage_frame{},
+            .base_offset{vars_size_bytes_},
+        };
     }
 
     // bytes of variables, without the dats and the gap after them
@@ -2022,9 +2031,12 @@ class toc final {
             return src_info.operand;
         }
 
-        return src.compile_lea(
-            *this, indent, src.tok(), lea_registers,
-            {.reg_count{}, .lea_path{src_info.lea_path}, .address_register{}});
+        return src.compile_lea(*this, indent, src.tok(), lea_registers,
+                               {
+                                   .reg_count{},
+                                   .lea_path{src_info.lea_path},
+                                   .address_register{},
+                               });
     }
 
     [[nodiscard]] auto get_looping_label_or_throw(const token& src_loc_tk) const

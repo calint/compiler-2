@@ -191,12 +191,6 @@ class machine_x86_64 final : public machine {
     // buffering output is no more logical state than writing to the stream
     mutable assembler_x86_64 assembler_;
 
-    // the registers of the address of a memory operand
-    struct address_registers {
-        std::string_view base;
-        std::string_view index;
-    };
-
   public:
     explicit machine_x86_64(std::ostream& os_ref, const std::string_view source,
                             const jump_mode jumps = jump_mode::resolved)
@@ -2444,18 +2438,6 @@ class machine_x86_64 final : public machine {
         };
     }
 
-    // an index without a base and with a scale of 1 is the base, e.g. '[r15 *
-    // 1]' is the address '[r15]'
-    [[nodiscard]] static auto registers_of(const operand& memory)
-        -> address_registers {
-
-        if (memory.base_register().empty() and memory.scale() <= 1) {
-            return {.base{memory.index_register()}, .index{}};
-        }
-
-        return {.base{memory.base_register()}, .index{memory.index_register()}};
-    }
-
     [[nodiscard]] static auto same_operand(const operand& lhs,
                                            const operand& rhs) -> bool {
 
@@ -2470,16 +2452,17 @@ class machine_x86_64 final : public machine {
             return lhs.is_empty() and rhs.is_empty();
         }
 
-        const address_registers lhs_registers{registers_of(lhs)};
-        const address_registers rhs_registers{registers_of(rhs)};
+        // note: an index without a base has a scale above 1, with a scale of 1
+        //       it would be the base, e.g. '[r15 * 1]' is the address '[r15]'
+
+        assert(not lhs.base_register().empty() or lhs.scale() > 1);
+        assert(not rhs.base_register().empty() or rhs.scale() > 1);
 
         return lhs.type_ref().size_bytes() == rhs.type_ref().size_bytes() and
-               lhs_registers.base == rhs_registers.base and
-               lhs_registers.index == rhs_registers.index and
+               lhs.base_register() == rhs.base_register() and
+               lhs.index_register() == rhs.index_register() and
                lhs.displacement() == rhs.displacement() and
-               (lhs_registers.index.empty() or
-                std::max(lhs.scale(), uint64_t{1}) ==
-                    std::max(rhs.scale(), uint64_t{1}));
+               lhs.scale() == rhs.scale();
     }
 
     // the hardware keeps only the low bits of a shift count and nasm warns

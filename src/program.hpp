@@ -168,7 +168,10 @@ class report_renderer final {
         };
 
         for (const std::string& name : usage.uninstantiated_generics) {
-            section.entries.push_back({.name{name}, .value{}});
+            section.entries.push_back({
+                .name{name},
+                .value{},
+            });
         }
 
         return section;
@@ -178,7 +181,10 @@ class report_renderer final {
     noinline_report(const ::machine::output_statistics& stats)
         -> report_section {
 
-        report_section section{.title{"noinline functions"}, .entries{}};
+        report_section section{
+            .title{"noinline functions"},
+            .entries{},
+        };
 
         for (const assembler::function_summary& f : stats.noinline_functions) {
             section.entries.push_back({

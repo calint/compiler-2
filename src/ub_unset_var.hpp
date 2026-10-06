@@ -69,8 +69,10 @@ class field_coverage final {
                 };
 
                 if (begin < end) {
-                    common.push_back(
-                        {.offset{begin}, .size_bytes{end - begin}});
+                    common.push_back({
+                        .offset{begin},
+                        .size_bytes{end - begin},
+                    });
                 }
             }
         }
@@ -80,7 +82,10 @@ class field_coverage final {
     }
 
     [[nodiscard]] auto is_full() const -> bool {
-        return covers({.offset{}, .size_bytes{size_bytes_}});
+        return covers({
+            .offset{},
+            .size_bytes{size_bytes_},
+        });
     }
 
     [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
@@ -91,7 +96,12 @@ class field_coverage final {
 
     [[nodiscard]] static auto full(const size_t size_bytes) -> field_coverage {
         field_coverage coverage{size_bytes};
-        coverage.add({.offset{}, .size_bytes{size_bytes}});
+
+        coverage.add({
+            .offset{},
+            .size_bytes{size_bytes},
+        });
+
         return coverage;
     }
 

@@ -1,0 +1,5 @@
+# a generic function without a body reports the '}' that closes nothing
+func f<T type>(x) x }
+
+func main() {
+}

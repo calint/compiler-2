@@ -218,18 +218,45 @@ class machine_rv32i : public machine {
 
     // every local label of the bulk operations, listed together so none is
     // used twice
-    static constexpr local_label chunk_loop{.name{"1"}, .reference{"1b"}};
-    static constexpr local_label after_chunks{.name{"2"}, .reference{"2f"}};
-    static constexpr local_label after_halfword{.name{"3"}, .reference{"3f"}};
-    static constexpr local_label walk_end{.name{"4"}, .reference{"4f"}};
-    static constexpr local_label false_exit{.name{"5"}, .reference{"5f"}};
-    static constexpr local_label result_end{.name{"6"}, .reference{"6f"}};
-    static constexpr local_label after_head{.name{"7"}, .reference{"7f"}};
+    static constexpr local_label chunk_loop{
+        .name{"1"},
+        .reference{"1b"},
+    };
+    static constexpr local_label after_chunks{
+        .name{"2"},
+        .reference{"2f"},
+    };
+    static constexpr local_label after_halfword{
+        .name{"3"},
+        .reference{"3f"},
+    };
+    static constexpr local_label walk_end{
+        .name{"4"},
+        .reference{"4f"},
+    };
+    static constexpr local_label false_exit{
+        .name{"5"},
+        .reference{"5f"},
+    };
+    static constexpr local_label result_end{
+        .name{"6"},
+        .reference{"6f"},
+    };
+    static constexpr local_label after_head{
+        .name{"7"},
+        .reference{"7f"},
+    };
 
     // the labels of a bounds check: a failing check branches to 'bounds_fail'
     // where the line and the handler follow, a passing one to 'bounds_pass'
-    static constexpr local_label bounds_fail{.name{"1"}, .reference{"1f"}};
-    static constexpr local_label bounds_pass{.name{"2"}, .reference{"2f"}};
+    static constexpr local_label bounds_fail{
+        .name{"1"},
+        .reference{"1f"},
+    };
+    static constexpr local_label bounds_pass{
+        .name{"2"},
+        .reference{"2f"},
+    };
 
     // an access of 'width' bytes 'offset' bytes past an address
     struct access_part {
@@ -654,8 +681,15 @@ class machine_rv32i : public machine {
 
         // 'overflow' is where a frame outside of 'vars' and one too large for
         // it end up, 'fits' is after the jump to the handler
-        constexpr local_label overflow{.name{"1"}, .reference{"1f"}};
-        constexpr local_label fits{.name{"2"}, .reference{"2f"}};
+        constexpr local_label overflow{
+            .name{"1"},
+            .reference{"1f"},
+        };
+
+        constexpr local_label fits{
+            .name{"2"},
+            .reference{"2f"},
+        };
 
         comment(src_loc_tk, indent, "frame capacity check begin");
 
@@ -2117,7 +2151,11 @@ class machine_rv32i : public machine {
         };
 
         compare_known_size(src_loc_tk, indent, size_bytes,
-                           {.left{left}, .right{right}, .starts{starts}},
+                           {
+                               .left{left},
+                               .right{right},
+                               .starts{starts},
+                           },
                            request);
     }
 

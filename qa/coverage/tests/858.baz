@@ -1,0 +1,15 @@
+# generics that are never instantiated are listed in the footer, their bodies
+# are not checked
+func no_parens<T type> {
+}
+
+func untyped<T type>(a b) {
+}
+
+func missing_comma<T type>(a T b) {
+}
+
+type list<T type> { items T[4] }
+
+func main() {
+}

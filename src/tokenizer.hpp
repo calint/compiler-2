@@ -195,7 +195,9 @@ class tokenizer final {
                 continue;
             }
 
-            if (is_next_char_token('}').is_empty()) {
+            const token close_tk{is_next_char_token('}')};
+
+            if (close_tk.is_empty()) {
                 if (is_eos()) {
                     throw compiler_exception{*this,
                                              "expected '}' to end block"};
@@ -206,7 +208,8 @@ class tokenizer final {
             }
 
             if (depth == 0) {
-                throw compiler_exception{*this, "expected '{' to begin block"};
+                throw compiler_exception{close_tk,
+                                         "expected '{' to begin block"};
             }
 
             if (--depth == 0) {

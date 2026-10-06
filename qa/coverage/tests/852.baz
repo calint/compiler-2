@@ -1,0 +1,6 @@
+# an array field of a data instance is initialized with braces
+type t { a i32[2], b }
+dat x = t{ 5, 1 }
+
+func main() {
+}

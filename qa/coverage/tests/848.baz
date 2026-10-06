@@ -1,0 +1,8 @@
+# an operator other than equality does not compare user type instances
+type point { x i32, y i32 }
+
+func main() {
+    var a = point{1, 2}
+    var b = point{1, 2}
+    if a < b exit(1)
+}

@@ -4,7 +4,8 @@
 # becomes 'j') and 1.08 MiB (a jump becomes 'jump'), compiled with and without
 # the jump optimizer, assembled, linked and executed under qemu
 #
-# usage: test-far-jumps.sh
+# usage: test-far-jumps.sh [short]
+#   short   only the 8.4 KiB bodies, which compile in seconds
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -27,7 +28,9 @@ cd "$WORK"
 # writes 'far.baz': each 'pad = pad + 1' is 12 bytes, so 700 needs 'j' and
 # 90000 needs 'jump' for the jumps of 'foo', 'if', 'break' and 'continue'
 generate_foo() {
-    python3 - <<'EOF'
+    python3 - "$@" <<'EOF'
+import sys
+counts = [int(count) for count in sys.argv[1:]]
 source = [
     "dat values = []{1, 2, 3, 4, 5}",
     "func main() {",
@@ -35,7 +38,7 @@ source = [
     "    var visits = 0",
     "    var sum = 0",
 ]
-for count in (700, 90000):
+for count in counts:
     padding = "        pad = pad + 1\n" * count
     # 'continue' at 2 runs the padding and 'break' at 4 skips it, so it runs
     # for 1, 2 and 3
@@ -66,16 +69,22 @@ assemble_and_run() {
     timeout -k 1s 60s qemu-riscv32 ./far
 }
 
-generate_foo
+if [[ ${1:-} == short ]]; then
+    generate_foo 700
+else
+    generate_foo 700 90000
+fi
 for optimize in "" "--nopt"; do
     echo -n "far jumps foo rv32i $optimize: "
     "$BIN" far.baz --target=rv32i --bin=far.bin $optimize >far.s
     grep -qE '^ +j foo\.[0-9]+\.[0-9]+$' far.s
-    grep -qE '^ +jump foo\.[0-9]+\.[0-9]+, ' far.s
-    grep -qE '^ +jump foo\.[0-9]+\.[0-9]+\.continue, ' far.s
-    grep -qE '^ +jump foo\.[0-9]+\.[0-9]+\.end, ' far.s
     grep -qE '^ +j if\.[0-9]+\.[0-9]+\.end$' far.s
-    grep -qE '^ +jump if\.[0-9]+\.[0-9]+\.end, ' far.s
+    if [[ ${1:-} != short ]]; then
+        grep -qE '^ +jump foo\.[0-9]+\.[0-9]+, ' far.s
+        grep -qE '^ +jump foo\.[0-9]+\.[0-9]+\.continue, ' far.s
+        grep -qE '^ +jump foo\.[0-9]+\.[0-9]+\.end, ' far.s
+        grep -qE '^ +jump if\.[0-9]+\.[0-9]+\.end, ' far.s
+    fi
     # a far conditional branch jumps over the far jump with the inverse branch
     grep -qE '^ +b[a-z]+ .*, \.Lbaz_jump\.[0-9]+$' far.s
     assemble_and_run

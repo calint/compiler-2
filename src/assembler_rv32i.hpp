@@ -328,7 +328,9 @@ class assembler_rv32i final : public assembler {
 
     auto align(const size_t size_bytes) -> void {
         add_record(std::format(".balign {}", size_bytes), 0,
-                   alignment{.size_bytes{size_bytes}});
+                   alignment{
+                       .size_bytes{size_bytes},
+                   });
     }
 
     auto andi(const size_t indent, const std::string_view rd,
@@ -420,7 +422,11 @@ class assembler_rv32i final : public assembler {
                             .value{},
                             .target{std::string{target}},
                         },
-                        {.rd{}, .rs1{rs1}, .rs2{rs2}});
+                        {
+                            .rd{},
+                            .rs1{rs1},
+                            .rs2{rs2},
+                        });
     }
 
     auto branch_zero(const size_t indent, const op code,
@@ -438,7 +444,11 @@ class assembler_rv32i final : public assembler {
                             .value{},
                             .target{std::string{target}},
                         },
-                        {.rd{}, .rs1{rs}, .rs2{}});
+                        {
+                            .rd{},
+                            .rs1{rs},
+                            .rs2{},
+                        });
     }
 
     // routines returning with 'jr' may take the return address in 'link'
@@ -454,7 +464,11 @@ class assembler_rv32i final : public assembler {
                             .value{},
                             .target{std::string{target}},
                         },
-                        {.rd{link}, .rs1{}, .rs2{}});
+                        {
+                            .rd{link},
+                            .rs1{},
+                            .rs2{},
+                        });
 
         mark_call(target);
     }
@@ -548,7 +562,11 @@ class assembler_rv32i final : public assembler {
                             .value{std::move(value)},
                             .target{},
                         },
-                        {.rd{rd}, .rs1{rs1}, .rs2{}});
+                        {
+                            .rd{rd},
+                            .rs1{rs1},
+                            .rs2{},
+                        });
     }
 
     auto j(const size_t indent, const std::string_view target) -> void {
@@ -574,7 +592,11 @@ class assembler_rv32i final : public assembler {
                             .value{},
                             .target{},
                         },
-                        {.rd{}, .rs1{rs}, .rs2{}});
+                        {
+                            .rd{},
+                            .rs1{rs},
+                            .rs2{},
+                        });
     }
 
     auto la(const size_t indent, const std::string_view rd,
@@ -589,7 +611,11 @@ class assembler_rv32i final : public assembler {
                             .value{immediate::of_symbol(symbol)},
                             .target{},
                         },
-                        {.rd{rd}, .rs1{}, .rs2{}});
+                        {
+                            .rd{rd},
+                            .rs1{},
+                            .rs2{},
+                        });
     }
 
     auto label(const size_t indent, const std::string_view name) -> void {
@@ -615,7 +641,11 @@ class assembler_rv32i final : public assembler {
                             .value{std::move(value)},
                             .target{},
                         },
-                        {.rd{rd}, .rs1{}, .rs2{}});
+                        {
+                            .rd{rd},
+                            .rs1{},
+                            .rs2{},
+                        });
     }
 
     auto load(const size_t indent, const op code, const std::string_view rd,
@@ -632,7 +662,11 @@ class assembler_rv32i final : public assembler {
                             .value{std::move(offset)},
                             .target{},
                         },
-                        {.rd{rd}, .rs1{base}, .rs2{}});
+                        {
+                            .rd{rd},
+                            .rs1{base},
+                            .rs2{},
+                        });
     }
 
     auto lui(const size_t indent, const std::string_view rd, immediate value)
@@ -647,7 +681,11 @@ class assembler_rv32i final : public assembler {
                             .value{std::move(value)},
                             .target{},
                         },
-                        {.rd{rd}, .rs1{}, .rs2{}});
+                        {
+                            .rd{rd},
+                            .rs1{},
+                            .rs2{},
+                        });
     }
 
     auto lw(const size_t indent, const std::string_view rd, immediate offset,
@@ -675,7 +713,11 @@ class assembler_rv32i final : public assembler {
                             .value{},
                             .target{},
                         },
-                        {.rd{rd}, .rs1{rs}, .rs2{}});
+                        {
+                            .rd{rd},
+                            .rs1{rs},
+                            .rs2{},
+                        });
     }
 
     auto option_norelax() -> void { add_text(".option norelax"); }
@@ -712,7 +754,11 @@ class assembler_rv32i final : public assembler {
                             .value{},
                             .target{},
                         },
-                        {.rd{rd}, .rs1{rs1}, .rs2{rs2}});
+                        {
+                            .rd{rd},
+                            .rs1{rs1},
+                            .rs2{rs2},
+                        });
     }
 
     // 'unary_operations' such as '-~' apply to 'value' from right to left
@@ -855,7 +901,11 @@ class assembler_rv32i final : public assembler {
                             .value{std::move(offset)},
                             .target{},
                         },
-                        {.rd{}, .rs1{base}, .rs2{src}});
+                        {
+                            .rd{},
+                            .rs1{base},
+                            .rs2{src},
+                        });
     }
 
     auto sub(const size_t indent, const std::string_view rd,
@@ -875,7 +925,9 @@ class assembler_rv32i final : public assembler {
         set_code_section(which == section::text);
 
         add_record(std::string{section_directive(which)}, 0,
-                   section_start{.which{which}});
+                   section_start{
+                       .which{which},
+                   });
     }
 
     auto write_resolved(std::ostream& os) -> void {

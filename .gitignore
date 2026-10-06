@@ -15,6 +15,7 @@
 /.idea/
 lcov.info
 *.profraw
+/qa/coverage/rv32i-driver
 *.profdata
 a.out
 perf.data

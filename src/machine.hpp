@@ -1054,7 +1054,13 @@ class machine {
         -> std::vector<register_use_report::frame_use> {
 
         if (frames.empty()) {
-            return {{.callee{"code"}, .label{"code"}, .registers{}}};
+            return {
+                {
+                    .callee{"code"},
+                    .label{"code"},
+                    .registers{},
+                },
+            };
         }
 
         std::vector<register_use_report::frame_use> uses;
@@ -1427,9 +1433,8 @@ class machine {
             return "=";
         }
 
-        assert(op == arithmetic_operator::complement);
-
-        return "~";
+        // note: 'complement' is a unary operator, 'unary_ops' writes it
+        std::unreachable();
     }
 
     // the operator as written in the source

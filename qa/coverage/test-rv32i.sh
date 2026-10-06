@@ -20,9 +20,12 @@ done
 # the main runtime program: instruction selection checked by execution, with
 # the read and write results compared with 'tests/434.out'
 printf 'rv32i address lowering: compiling backend tests\n'
+# the driver stays after the run so that 'test-coverage.sh report' counts the
+# lines only it reaches, e.g. jumps written as emitted
 clang++ -std=c++26 -O3 -Wno-braced-scalar-init \
-    "$SCRIPT_DIR/test-rv32i-address.cpp" -o "$TEST_DIR/generate"
-"$TEST_DIR/generate" > "$TEST_DIR/test.s"
+    -fprofile-instr-generate -fcoverage-mapping \
+    "$SCRIPT_DIR/test-rv32i-address.cpp" -o "$SCRIPT_DIR/rv32i-driver"
+"$SCRIPT_DIR/rv32i-driver" > "$TEST_DIR/test.s"
 printf 'rv32i address lowering: assembling and linking\n'
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/test.s" -o "$TEST_DIR/test.o"
@@ -56,7 +59,7 @@ done
 # without line information exits silently
 for mode in bounds-matrix bounds-silent; do
     printf 'rv32i bounds: %s\n' "$mode"
-    "$TEST_DIR/generate" "$mode" > "$TEST_DIR/bounds.s"
+    "$SCRIPT_DIR/rv32i-driver" "$mode" > "$TEST_DIR/bounds.s"
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
         "$TEST_DIR/bounds.s" -o "$TEST_DIR/bounds.o"
     ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/bounds" "$TEST_DIR/bounds.o"
@@ -72,7 +75,7 @@ done
 printf 'rv32i address lowering: ok\n'
 # every escape of a string literal reaches the output unchanged
 printf 'rv32i strings and write: compiling and executing\n'
-"$TEST_DIR/generate" strings-syscall > "$TEST_DIR/strings.s"
+"$SCRIPT_DIR/rv32i-driver" strings-syscall > "$TEST_DIR/strings.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/strings.s" -o "$TEST_DIR/strings.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/strings" "$TEST_DIR/strings.o"
@@ -82,7 +85,7 @@ cmp "$TEST_DIR/output" "$TEST_DIR/expected"
 printf 'rv32i strings and write: ok\n'
 # '==', 'arrays_equal' and 'array_copy' on arrays of instances
 printf 'rv32i bulk operations: compiling and executing\n'
-"$TEST_DIR/generate" bulk > "$TEST_DIR/bulk.s"
+"$SCRIPT_DIR/rv32i-driver" bulk > "$TEST_DIR/bulk.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/bulk.s" -o "$TEST_DIR/bulk.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/bulk" "$TEST_DIR/bulk.o"
@@ -90,7 +93,7 @@ qemu-riscv32 "$TEST_DIR/bulk"
 printf 'rv32i bulk operations: ok\n'
 # a loop whose body does not fit in a branch
 printf 'rv32i array iteration: executing loop body larger than 4 KiB\n'
-"$TEST_DIR/generate" long-loop > "$TEST_DIR/long-loop.s"
+"$SCRIPT_DIR/rv32i-driver" long-loop > "$TEST_DIR/long-loop.s"
 llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/long-loop.s" -o "$TEST_DIR/long-loop.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/long-loop" "$TEST_DIR/long-loop.o"
@@ -100,7 +103,7 @@ printf 'rv32i array iteration: long loop: ok\n'
 # the short and the long forms, and the program still works
 printf 'rv32i jumps: resolving and executing jumps beyond 4 KiB and 1 MiB\n'
 for mode in far-jumps far-jumps-optimized; do
-    "$TEST_DIR/generate" "$mode" > "$TEST_DIR/far-jumps.s"
+    "$SCRIPT_DIR/rv32i-driver" "$mode" > "$TEST_DIR/far-jumps.s"
     grep -q '^    jump far_loop_270000, ' "$TEST_DIR/far-jumps.s"
     grep -q '^    jump far_taken_270000, ' "$TEST_DIR/far-jumps.s"
     grep -q '^    jump far_failure, ' "$TEST_DIR/far-jumps.s"
@@ -116,7 +119,7 @@ printf 'rv32i jumps: far jumps: ok\n'
 # the same for the jumps that 'foo', 'if', 'break' and 'continue' generate
 printf 'rv32i jumps: compiling and executing foo, if, break and continue beyond 4 KiB and 1 MiB\n'
 for mode in far-foo far-foo-optimized; do
-    "$TEST_DIR/generate" "$mode" > "$TEST_DIR/far-foo.s"
+    "$SCRIPT_DIR/rv32i-driver" "$mode" > "$TEST_DIR/far-foo.s"
     grep -qE '^ +j foo\.[0-9]+\.[0-9]+$' "$TEST_DIR/far-foo.s"
     grep -qE '^ +jump foo\.[0-9]+\.[0-9]+, ' "$TEST_DIR/far-foo.s"
     grep -qE '^ +jump foo\.[0-9]+\.[0-9]+\.continue, ' "$TEST_DIR/far-foo.s"
@@ -132,7 +135,7 @@ printf 'rv32i jumps: far foo: ok\n'
 # function calls keep the registers they must, and frame size checks
 for mode in noninline frame-checks; do
     printf 'rv32i functions: %s\n' "$mode"
-    "$TEST_DIR/generate" "$mode" > "$TEST_DIR/functions.s"
+    "$SCRIPT_DIR/rv32i-driver" "$mode" > "$TEST_DIR/functions.s"
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
         "$TEST_DIR/functions.s" -o "$TEST_DIR/functions.o"
     ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/functions" "$TEST_DIR/functions.o"

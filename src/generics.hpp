@@ -97,7 +97,10 @@ struct generic_param {
             }
         }
 
-        return {.name_tk{name_tk}, .is_type{reads_type_kind(tz, name_tk)}};
+        return {
+            .name_tk{name_tk},
+            .is_type{reads_type_kind(tz, name_tk)},
+        };
     }
 
     // 'type' after the name makes the parameter a type, none makes it a

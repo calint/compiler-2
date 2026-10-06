@@ -71,7 +71,7 @@ FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin /dev/null)
 case "$ACTION" in
 clean)
     echo $SEP
-    rm -f -- *.profraw baz.profdata gen gen.o gen.s diff.baz out err
+    rm -f -- *.profraw baz.profdata rv32i-driver gen gen.o gen.s diff.baz out err
     rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/gen-rv32i.bin tests/diff.baz tests/out tests/err
     rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin
     rm -rf -- report/
@@ -93,7 +93,12 @@ report)
         exit 1
     fi
     llvm-profdata merge -o baz.profdata -sparse "${profiles[@]}"
-    llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata -object="$BIN"
+    objects=(-object="$BIN")
+    # the driver of 'test-rv32i.sh' reaches lines the compiler cases do not
+    if [[ -x rv32i-driver ]]; then
+        objects+=(-object=rv32i-driver)
+    fi
+    llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata "${objects[@]}"
     echo $SEP
     echo "coverage report generated in $SCRIPT_DIR/report/"
     echo $SEP

@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -730,10 +729,8 @@ class expr_bool_op final : public statement {
 
         ident_info info{tc.make_ident_info(identifier)};
 
-        if (info.is_const()) {
-            throw compiler_exception{identifier.tok(),
-                                     "constant not supported"};
-        }
+        // note: 'is_memory_operand' rejected constants
+        assert(not info.is_const());
 
         return info;
     }

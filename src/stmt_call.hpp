@@ -1745,10 +1745,8 @@ class stmt_call : public expression {
             part += std::format(" array {}", info.array_len);
         }
 
-        // a temporary shares storage with nothing
-        if (info.elem_path.empty()) {
-            return part + " temporary";
-        }
+        // note: a temporary is rejected as an argument and as a result
+        assert(not info.elem_path.empty());
 
         const std::string_view root{info.elem_path.front()};
 

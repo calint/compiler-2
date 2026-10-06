@@ -1,0 +1,8 @@
+# an instance is not compared with a whole array of its type
+type point { x i32, y i32 }
+
+func main() {
+    var a = point[2]
+    var p = point{1, 2}
+    if p == a exit(1)
+}

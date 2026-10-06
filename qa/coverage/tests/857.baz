@@ -1,0 +1,8 @@
+# a type parameter is not deduced from an argument that is missing
+func second<T type>(n, v T) res T {
+    res = v
+}
+
+func main() {
+    var b = second(1)
+}

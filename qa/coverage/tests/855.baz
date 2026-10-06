@@ -1,0 +1,14 @@
+# a type parameter is deduced from a later argument, nested calls are skipped
+func twice(n) res {
+    res = n * 2
+}
+
+func second<T type>(n, v T) res T {
+    res = v
+}
+
+func main() {
+    var a = 5
+    var b = second(twice(twice(1)), a)
+    exit(b - 5)
+}

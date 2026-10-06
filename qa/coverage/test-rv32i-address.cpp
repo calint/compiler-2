@@ -3413,7 +3413,7 @@ auto check_constant_scopes() -> void {
 
 } // namespace
 
-auto main(const int argc, const char* argv[]) -> int {
+auto driver_main(const int argc, const char* argv[]) -> int {
     const std::string_view mode{argc > 1 ? argv[1] : ""};
 
     // special modes print one program and need no host checks
@@ -3481,4 +3481,11 @@ auto main(const int argc, const char* argv[]) -> int {
     }
 
     return 0;
+}
+
+// not instrumented: the 'main' of the compiler has the same name, and merged
+// profiles of both programs would mismatch
+[[clang::no_profile_instrument_function]]
+auto main(const int argc, const char* argv[]) -> int {
+    return driver_main(argc, argv);
 }

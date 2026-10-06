@@ -7,6 +7,23 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 1. clean up
 --------------------------------------------------------------------------------
 [ ] easy: rename 'compiler_exception'
+[o] hard: coverage cleanup: every line that is not 'std::unreachable()' is
+    reached by a test, or becomes an 'assert' or 'std::unreachable()'
+    (baseline 2026-10-06 'test-all.sh': 284 missed lines of 18228)
+    => done (2026-10-06): new cases 848-859, 'test-cli.sh' checks, the
+       'rv32i-driver' of 'test-rv32i.sh' counted in the report,
+       'test-far-jumps.sh short' in 'test-all.sh', dead throws turned into
+       asserts
+    => left: 'toc.hpp' 'end_dry_run' restore of the peak storage size (a dry
+       run inside a real noinline body; every attempt found the call already
+       checked), 'machine_x86_64.hpp' 'registers_of' index without base,
+       'main.cpp' 'generated source differs' (a defect of the compiler, not
+       user input); 'assembler_rv32i.hpp' 'long_jump' far form is reached by
+       'test-far-jumps.sh' without 'short' (9 minutes), left out of
+       'test-all.sh'
+    => state 2026-10-06 'test-all.sh': 96 missed lines of 21272 (99.55%),
+       1049 missed branches of 7653 (86.29%), 3296 missed regions of 15320
+    => then branches and regions
 [ ] easy: a comment file explaining lea and array indexing
 [ ] easy: make the ai written test suite in c++ human readable
 [ ] medium: lift the ai generated tests of 'test-rv32i.sh' to end-to-end .baz

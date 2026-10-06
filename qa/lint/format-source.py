@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # applies the source formatting rules to C++ files under 'src/': the layout
-# of the classes and the blank lines of AGENTS.md
+# of the classes, the trailing commas of designated initializers and the blank
+# lines of AGENTS.md
 # usage: qa/lint/format-source.py [--apply] [files relative to the root...]
 # without '--apply' it prints the files that would change
 #
@@ -11,6 +12,7 @@
 import os
 import pathlib
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 
@@ -1118,6 +1120,81 @@ def apply_blank_lines(lines, inserts, removes):
     return out
 
 
+#
+# designated initializers
+#
+# a designated initializer ends with a comma so that clang-format puts one
+# member on each line, except a row of a table, a one-line initializer that is
+# alone on its line
+#
+
+DESIGNATOR = re.compile(r"\s*\.[A-Za-z_]\w*\s*[{=]")
+TABLE_ROW = re.compile(r"^(\w[\w:<>]*)?\{\..*\},?$")
+
+
+def designated_commas(text):
+    # the positions after the last token of each designated initializer that
+    # has no trailing comma, comments and literals are skipped
+    inserts = []
+    stack = []
+    last = -1
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if text.startswith("//", i):
+            i = text.find("\n", i)
+            if i < 0:
+                break
+            continue
+
+        if text.startswith("/*", i):
+            i = text.index("*/", i) + 2
+            continue
+
+        if c in "\"'":
+            quote = c
+            i += 1
+            while text[i] != quote:
+                i += 2 if text[i] == "\\" else 1
+
+            last = i
+            i += 1
+            continue
+
+        if c == "{":
+            stack.append((i, last))
+        elif c == "}":
+            start, _ = stack.pop()
+            if DESIGNATOR.match(text, start + 1) and text[last] != ",":
+                inserts.append((start, i, last + 1))
+
+        if not c.isspace():
+            last = i
+
+        i += 1
+
+    lines = text.split("\n")
+    starts = [0]
+    for line in lines:
+        starts.append(starts[-1] + len(line) + 1)
+
+    def line_of(pos):
+        return text.count("\n", 0, pos)
+
+    def is_row(n):
+        return 0 <= n < len(lines) and TABLE_ROW.match(lines[n].strip())
+
+    result = text
+    for start, end, at in sorted(inserts, reverse=True):
+        first = line_of(start)
+        if first == line_of(end) and is_row(first):
+            continue
+
+        result = result[:at] + "," + result[at:]
+
+    return result
+
+
 def main():
     args = sys.argv[1:]
     apply = "--apply" in args
@@ -1131,6 +1208,22 @@ def main():
         paths = sorted(pathlib.Path("src").glob("*.[ch]pp"))
 
     root = pathlib.Path("src").resolve()
+    # designated initializers first: clang-format breaks them into lines, which
+    # the blank lines below must see
+    for path in paths:
+        text = path.read_text()
+        fixed = designated_commas(text)
+        if fixed == text:
+            continue
+
+        if not apply:
+            print(f"would add designated initializer commas: {path}")
+            continue
+
+        path.write_text(fixed)
+        subprocess.run(["clang-format", "-i", "--style=file", str(path)], check=True)
+        print(f"designated initializer commas: {path}")
+
     tu = parse()
     analyze_access(tu, root)
     parsed = {

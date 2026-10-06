@@ -1,0 +1,10 @@
+# a generic method needs type arguments when they cannot be deduced
+type point { x i32 }
+
+func point.get<T type>() res T {
+}
+
+func main() {
+    var p = point{1}
+    var x = p.get
+}

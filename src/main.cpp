@@ -722,9 +722,8 @@ auto trimmed_line_at(const std::string_view src, const size_t index)
 
     const size_t first{line.find_first_not_of(whitespace)};
 
-    if (first == std::string_view::npos) {
-        return {};
-    }
+    // note: the character at 'index' starts a token, its line is not blank
+    assert(first != std::string_view::npos);
 
     return line.substr(first, line.find_last_not_of(whitespace) - first + 1);
     // note: +1 because the end position is inclusive

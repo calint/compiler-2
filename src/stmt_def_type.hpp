@@ -403,7 +403,11 @@ class stmt_def_type final : public statement {
                 };
 
                 aliases.bind(param.name_tk, name, type_arg);
-                bindings.push_back({.name{name}, .type_ptr{&type_arg}});
+
+                bindings.push_back({
+                    .name{name},
+                    .type_ptr{&type_arg},
+                });
 
                 continue;
             }
@@ -419,7 +423,11 @@ class stmt_def_type final : public statement {
             }
 
             tc.add_const(arg_tk, 0, name, *value);
-            bindings.push_back({.name{name}, .value{*value}});
+
+            bindings.push_back({
+                .name{name},
+                .value{*value},
+            });
         }
 
         return bindings;

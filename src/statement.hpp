@@ -503,16 +503,14 @@ class statement {
         return collapsed;
     }
 
-    // after the line end of the comment starting at 'begin', or the end of the
-    // text
+    // after the line end of the comment starting at 'begin'
     [[nodiscard]] static auto comment_end(const std::string_view text,
                                           const size_t begin) -> size_t {
 
         const size_t newline{text.find('\n', begin)};
 
-        if (newline == std::string_view::npos) {
-            return text.size();
-        }
+        // note: the text ends at a token, a comment before it has its line end
+        assert(newline != std::string_view::npos);
 
         return newline + 1;
         // note: +1 because the line end belongs to the comment
@@ -523,8 +521,8 @@ class statement {
                ch == '\f' or ch == '\v';
     }
 
-    // after the closing quote of the literal starting at 'begin', or the end
-    // of the text, an escaped character cannot close it
+    // after the closing quote of the literal starting at 'begin', an escaped
+    // character cannot close it
     [[nodiscard]] static auto literal_end(const std::string_view text,
                                           const size_t begin) -> size_t {
 
@@ -548,7 +546,8 @@ class statement {
             escaped = not escaped and ch == '\\';
         }
 
-        return text.size();
+        // note: the tokenizer rejected an unterminated literal
+        std::unreachable();
     }
 
     // a backslash before a line end continues the literal on the next line,

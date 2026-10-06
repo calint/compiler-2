@@ -1,0 +1,5 @@
+# a generic type without a body reports the '}' that closes nothing
+type list<T type> x }
+
+func main() {
+}
