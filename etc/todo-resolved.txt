@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: a variable whose address is in a register ('foo' element 'e', the
+    receiver of a non-inline body) reserved frame storage of its type's size
+    that nothing used ('toc::add_var' only skipped a 'value_register')
+    => done (2026-10-06): 'toc::add_var' returns early for a variable with a
+       'pointer_register', as for a 'value_register'; 'foo' over 'type big {
+       data i8[200] }' no longer leaves a hole of 200 B before the next
+       variable; 'etc/roome/roome.baz' max vars size 2888 -> 360 B (x86_64),
+       2540 -> 308 B (rv32i), instruction counts unchanged
 [x] hard: high priority: 'noinline' calls where the value has no memory
     location (a call inside an expression, e.g. 'if f(a)', 'var x = f(a) + 1',
     'bool' results; an expression or constant argument) were rejected with

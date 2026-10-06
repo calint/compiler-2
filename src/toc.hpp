@@ -1330,11 +1330,6 @@ class storage_layout final {
             return machine_.get().address_size_bytes();
         }
 
-        // the variable is where the register points, it has no storage
-        if (not var.pointer_register.is_empty()) {
-            return 1;
-        }
-
         return var.type_ptr->alignment();
     }
 
@@ -1344,10 +1339,6 @@ class storage_layout final {
 
         if (var.is_pointer) {
             return machine_.get().address_size_bytes();
-        }
-
-        if (not var.pointer_register.is_empty()) {
-            return 0;
         }
 
         return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
@@ -1850,6 +1841,13 @@ class toc final {
 
         // the value lives in its register for the whole scope
         if (not var.value_register.is_empty()) {
+            scopes_.back().add_var(var, 0, kind);
+            comment_var(src_loc_tk, indent, var);
+            return;
+        }
+
+        // the variable is where the register points, it has no storage
+        if (not var.pointer_register.is_empty()) {
             scopes_.back().add_var(var, 0, kind);
             comment_var(src_loc_tk, indent, var);
             return;
