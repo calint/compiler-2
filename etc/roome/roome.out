@@ -387,5 +387,56 @@ u r in roome
 u c me, key
 exits: none, office
 todo: find an exit
+w > s ok
+
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > s x
+
+--
+w said ok
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > s y
+
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > s z
+
+--
+w said y
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > g gem w
+
+gave gem to w
+--
+me gave w gem
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
 w > go home
 

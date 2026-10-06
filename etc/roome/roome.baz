@@ -158,9 +158,9 @@ func mut list.reserve() res {
     self.len = self.len + 1
 }
 
-func mut list.push(item T) res {
-    res = self.reserve()
-    self.array[res] = item
+func mut list.push(item T) {
+    let ix = self.reserve()
+    self.array[ix] = item
 }
 
 func mut list.delete_index(ix) {
@@ -202,7 +202,8 @@ func mut list.find_or_add(item T) res {
     res = self.index_of(item)
     if res != self.len return
 
-    res = self.push(item)
+    res = self.reserve()
+    self.array[res] = item
 }
 
 func mut list.delete_item(item T) {
@@ -262,11 +263,9 @@ func message.print() {
     entities.array[self.from].name.print()
     if self.kind == message_said {
         out.print_all(str_said)
-    }
-    if self.kind == message_told {
+    } else if self.kind == message_told {
         out.print_all(str_told_u)
-    }
-    if self.kind == message_event {
+    } else if self.kind == message_event {
         out.print_all(str_space)
     }
     self.text.print()
@@ -527,6 +526,17 @@ func notify_room(room_id, from, kind, text str) {
     }
 }
 
+# the index of the link to the room or the length
+func links.index_of_link_to(room_id) res {
+    res = self.len
+    foo self.array, self.len {
+        if e.to == room_id {
+            res = i
+            break
+        }
+    }
+}
+
 dat str_went_to = "went to "
 dat str_go_where = "go where\n"
 dat str_no_such_exit = "cannot go there\n"
@@ -556,10 +566,11 @@ func action_go(eid, tz mut tokenizer) {
     }
 
     # move entity
-    let to_room_id = rooms.array[cur_room_id].links.array[found_ix].to
+    let link = rooms.array[cur_room_id].links.array[found_ix]
+    let to_room_id = link.to
     entities.array[eid].room_id = to_room_id 
 
-    let discarded = rooms.array[to_room_id].entities.push(eid)
+    rooms.array[to_room_id].entities.push(eid)
     rooms.array[cur_room_id].entities.delete_item(eid)
 
     out.print_all(str_went_to)
@@ -569,25 +580,14 @@ func action_go(eid, tz mut tokenizer) {
     # the ones left behind see it
     var went_text = str
     went_text.add(str_went_to)
-    went_text.append(
-        link_names.array[
-            rooms.array[cur_room_id].links.array[found_ix].link_name_id
-        ]
-    )
+    went_text.append(link_names.array[link.link_name_id])
 
     notify_room(cur_room_id, eid, message_event, went_text)
 
-    let to_links_len = rooms.array[to_room_id].links.len
-    var to_found_ix = to_links_len
-    foo rooms.array[to_room_id].links.array, to_links_len {
-        if e.to == cur_room_id {
-            to_found_ix = i
-            break
-        }
-    }
+    let to_found_ix = rooms.array[to_room_id].links.index_of_link_to(cur_room_id)
 
     # missing link back is program error
-    assert(2, to_found_ix != to_links_len)
+    assert(2, to_found_ix != rooms.array[to_room_id].links.len)
 
     var arrived_text = str
     arrived_text.add(str_arrived_from)
@@ -682,7 +682,7 @@ func action_new_entity(eid, tz mut tokenizer) {
 
     let entity_id = entities.add(name, room_id)
 
-    let discarded = rooms.array[room_id].entities.push(entity_id)
+    rooms.array[room_id].entities.push(entity_id)
 
     out.print_all(str_new_entity_created)
 }
@@ -696,7 +696,7 @@ func action_new_object(eid, tz mut tokenizer) {
 
     let object_id = objects.add(name)
 
-    let discarded = entities.array[eid].objects.push(object_id)
+    entities.array[eid].objects.push(object_id)
 
     out.print_all(str_new_object_created)
 }
@@ -738,7 +738,7 @@ func action_drop(eid, tz mut tokenizer) {
     # move object from inventory to room
     let object_id = entities.array[eid].objects.array[found_ix]
     let room_id = entities.array[eid].room_id
-    let discarded = rooms.array[room_id].objects.push(object_id)
+    rooms.array[room_id].objects.push(object_id)
     entities.array[eid].objects.delete_index(found_ix)
 
     out.print_all(str_dropped)
@@ -770,23 +770,25 @@ func action_give(eid, tz mut tokenizer) {
     # find other entity in the same room
     let room_id = entities.array[eid].room_id
     let room_entities_len = rooms.array[room_id].entities.len
-    var to_entity = room_entities_len
+    var to_entity = 0
+    var found = false
     foo rooms.array[room_id].entities.array, room_entities_len {
         if e == eid continue
         if tz.is(entities.array[e].name) {
             to_entity = e
+            found = true
             break
         }
     }
 
-    if to_entity == room_entities_len {
+    if not found {
         tz.print()
         out.print_all(str_is_not_here)
         return
     }
 
     # move object between inventories
-    let discarded = entities.array[to_entity].objects.push(object_id)
+    entities.array[to_entity].objects.push(object_id)
     entities.array[eid].objects.delete_index(found_ix)
 
     out.print_all(str_gave)

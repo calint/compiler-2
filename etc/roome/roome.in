@@ -37,4 +37,10 @@ s hi both
 s everyone
 go office
 s anyone here
+s ok
+s x
+on gem
+s y
+s z
+g gem w
 go home
