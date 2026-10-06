@@ -140,7 +140,6 @@ class assembler_x86_64 final : public assembler {
             immediate result;
             result.expression = text;
             result.strict_qword = strict_qword;
-
             return result;
         }
     };
@@ -572,7 +571,6 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
         std::string text;
         text.resize(indent * 4, ' ');
-
         return text;
     }
 

@@ -807,7 +807,6 @@ auto expr_type::write_builtin_field(toc& tc, const size_t indent,
     if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
         dst_info.operand = dst_operand;
         src.compile(tc, indent, dst_info);
-
         return;
     }
 

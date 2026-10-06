@@ -107,7 +107,6 @@ class expr_any final : public statement {
             // e.g. 'var b = a' copies the array 'a'
             vars_.emplace_back(expr_type{tc, tz, tp, true});
             is_identifier_ = true;
-
             return;
         }
 

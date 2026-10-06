@@ -802,6 +802,7 @@ class machine_rv32i : public machine {
                                   std::span{&dst_start, 1});
 
             store_byte_parts(src_loc_tk, indent, parts, dst, bytes.size());
+
             return;
         }
 
@@ -1801,7 +1802,6 @@ class machine_rv32i : public machine {
         if (destination.is_register()) {
             copy_value(src_loc_tk, indent, destination, result);
             restore_saved_registers(indent, saved, stack_bytes);
-
             return;
         }
 
@@ -4572,7 +4572,6 @@ class machine_rv32i : public machine {
 
         operand moved{address};
         moved.increment_offset(static_cast<int64_t>(offset));
-
         return moved;
     }
 

@@ -378,7 +378,6 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto path_text() const -> std::string {
         std::stringstream ss;
         path_source_to(ss);
-
         return statement::trimmed_source(ss.view());
     }
 
@@ -501,7 +500,6 @@ class stmt_identifier final : public statement {
             // the path so far is resolved as the receiver
             method_dot_tk_ = dot_tk;
             method_name_tk_ = next_tk;
-
             return false;
         }
 

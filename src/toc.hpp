@@ -1816,7 +1816,6 @@ class toc final {
         if (not var.value_register.is_empty()) {
             scopes_.back().add_var(var, 0, kind);
             comment_var(src_loc_tk, indent, var);
-
             return;
         }
 
@@ -2225,7 +2224,6 @@ class toc final {
 
         ident_info info{make_ident_info(st)};
         assert_not_whole_array(st, info);
-
         return info;
     }
 

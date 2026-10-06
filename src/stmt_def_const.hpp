@@ -140,7 +140,6 @@ class stmt_def_const final : public statement {
         const token start_tk{tz.cur_position_token()};
         const bool is_constant{has_constant_initializer(tc, tz)};
         tz.rewind_to_position(start_tk);
-
         return is_constant;
     }
 };

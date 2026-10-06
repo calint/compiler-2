@@ -92,7 +92,6 @@ class field_coverage final {
     [[nodiscard]] static auto full(const size_t size_bytes) -> field_coverage {
         field_coverage coverage{size_bytes};
         coverage.add({.offset{}, .size_bytes{size_bytes}});
-
         return coverage;
     }
 
@@ -161,7 +160,6 @@ struct assignment_flow {
         if (not at_breaks) {
             at_breaks = assigned;
             end_path();
-
             return;
         }
 

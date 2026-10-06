@@ -113,6 +113,7 @@ class stmt_def_func final : public statement {
             assert(type_args.empty());
 
             parse_function(tc, tz);
+
             return;
         }
 
@@ -146,7 +147,6 @@ class stmt_def_func final : public statement {
         if (generic_.mode == generic_part::kind::definition) {
             statement::source_to(os);
             std::print(os, "{}", generic_.text);
-
             return;
         }
 
@@ -632,7 +632,6 @@ class stmt_def_func final : public statement {
         if (ident_tk.text().empty()) {
             tz.put_back_token(ident_tk);
             set_type(tc.get_type_void());
-
             return;
         }
 

@@ -1031,37 +1031,41 @@ def rule_assert_groups(b, want):
         i = end + 1
 
 
-def rule_tight_return(b, want):
-    # a return after the only statement of a block, or of a case, stays
-    # with it
+def rule_return_by_block(b, wants, want):
+    # a return has a blank line above it when a gap between the statements
+    # before it has one, otherwise it stays with them; runs after the other
+    # rules because their wants decide which gaps are blank
+    if any(s.after_label for s in b.stmts):
+        return
+
+    def gap_is_blank(index):
+        if wants.get(index) == BLANK:
+            return True
+
+        if wants.get(index) == TIGHT:
+            return False
+
+        region = range(b.stmts[index - 1].last + 1, b.stmts[index].first)
+
+        return any(is_blank(b.lines[n]) for n in region)
+
     for i, s in enumerate(b.stmts):
         if i == 0 or s.kind != K.RETURN_STMT or s.is_multiline:
             continue
 
-        before = b.stmts[i - 1]
-        if not before.is_plain or before.is_multiline:
-            continue
-
-        # a note below the statement keeps the gap
-        gap = range(before.last + 1, s.first)
+        # a comment above the return keeps the gap
+        gap = range(b.stmts[i - 1].last + 1, s.first)
         if any(not is_blank(b.lines[n]) for n in gap):
             continue
 
-        # a comment above the statement keeps the gap
-        opening = b.open_line if i == 1 else before.first
-        between = range(opening + 1, before.start if i != 1 else before.first)
-        if any(not is_blank(b.lines[n]) for n in between):
-            continue
-
-        if i == 1 or before.after_label:
-            want(i, TIGHT)
+        spread = any(gap_is_blank(j) for j in range(1, i))
+        want(i, BLANK if spread else TIGHT)
 
 
 BLANK_LINE_RULES = [
     rule_signature,
     rule_multiline,
     rule_assert_groups,
-    rule_tight_return,
 ]
 
 
@@ -1079,6 +1083,8 @@ def block_gaps(b):
 
     for rule in BLANK_LINE_RULES:
         rule(b, want)
+
+    rule_return_by_block(b, wants, want)
 
     return wants
 

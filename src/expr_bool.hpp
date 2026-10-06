@@ -70,7 +70,6 @@ class expr_bool_op final : public statement {
         if (not comparison) {
             is_shorthand_ = true;
             resolve_if_op_is_expression();
-
             return;
         }
 
@@ -1241,7 +1240,6 @@ class expr_bool final : public statement {
         if (open_paren_tk.is_empty()) {
             tz.put_back_token(maybe_not_tk);
             bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
-
             return;
         }
 
@@ -1254,7 +1252,6 @@ class expr_bool final : public statement {
 
             tz.rewind_to_position(rewind_pos_tk);
             bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
-
             return;
         }
 

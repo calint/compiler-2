@@ -687,7 +687,6 @@ class machine_x86_64 final : public machine {
         if (not with_line) {
             assembler_.label(0, bounds_failure_handler_label);
             emit_panic_exit();
-
             return;
         }
 
@@ -1047,7 +1046,6 @@ class machine_x86_64 final : public machine {
         if (reuse_source) {
             imul(src_loc_tk, indent, factor, product);
             mov(src_loc_tk, indent, product, factor);
-
             return;
         }
 
@@ -1940,7 +1938,6 @@ class machine_x86_64 final : public machine {
 
         operand part{sized_memory(address, part_size_bytes)};
         part.increment_offset(address_offset(offset));
-
         return part;
     }
 

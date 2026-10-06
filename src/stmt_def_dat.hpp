@@ -273,7 +273,6 @@ class stmt_def_dat final : public statement {
 
             type_tk_ = tk;
             set_type(stmt_builtin_convert::conversion_type(tc, tk));
-
             return parse_conversion(tc, tz);
         }
 

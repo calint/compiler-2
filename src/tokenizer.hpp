@@ -133,7 +133,6 @@ class tokenizer final {
         const std::string_view ws{next_whitespace()};
         const char ch{peek_char()};
         move_back(ws.size());
-
         return ch;
     }
 

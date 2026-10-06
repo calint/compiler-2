@@ -119,7 +119,6 @@ class assembler_rv32i final : public assembler {
             immediate result;
             result.symbol = name;
             result.symbol_part = symbol_part;
-
             return result;
         }
 
@@ -661,7 +660,6 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto memory_end_address() const -> size_t {
         const image_layout image{layout_image()};
         const size_t bss{section_index(section::bss)};
-
         return image.bases.at(bss) + image.sizes.at(bss);
     }
 
@@ -921,7 +919,6 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
         std::string text;
         text.resize(indent * 4, ' ');
-
         return text;
     }
 
@@ -2264,7 +2261,6 @@ class assembler_rv32i final : public assembler {
         const uint32_t rd_field{uint32_t{rd} << 7U};
         const uint32_t rs1_field{uint32_t{rs1} << 15U};
         const uint32_t rs2_field{uint32_t{rs2} << 20U};
-
         return rd_field | rs1_field | rs2_field;
     }
 

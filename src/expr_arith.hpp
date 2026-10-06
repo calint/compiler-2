@@ -806,7 +806,6 @@ class expr_arith final : public expression {
         steps = merge_commutative_constants(steps, width_type);
         steps = merge_divisors(steps, width_type);
         lead_with_constant(tc, steps);
-
         return steps;
     }
 
@@ -1229,7 +1228,6 @@ class expr_arith final : public expression {
         if (src_info.is_const()) {
             x.comment(src.tok(), indent, "src: constant");
             emit(src.make_constant_operand(src_info), false);
-
             return;
         }
 
@@ -1243,7 +1241,6 @@ class expr_arith final : public expression {
             x.comment(src.tok(), indent, "src: operand");
             emit(src_operand, false);
             x.free_scratch_registers(src.tok(), indent, lea_registers);
-
             return;
         }
 

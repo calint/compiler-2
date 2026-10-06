@@ -43,7 +43,6 @@ class stmt_return final : public statement {
         if (return_label.empty()) {
             // note: return from 'main' is exiting
             x.exit(tok(), indent, operand::imm("0", tc.get_type_default()));
-
             return;
         }
 

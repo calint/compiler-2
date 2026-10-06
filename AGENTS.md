@@ -55,8 +55,9 @@ Working agreements for AI sessions in this repository.
   `switch` or `try`, so statements have some space between them (the script
   covers it).
 - After the `{` of a multiline signature.
-- Before a return, except for return-only bodies or one single-line statement
-  plus a single-line return.
+- Before a return when a gap between the statements before it has a blank
+  line; a block without blank lines between its statements keeps the return
+  with them (the script covers it).
 - Between switch branches (labels sharing a body stay grouped).
 - Around groups of consecutive `assert`s (wins over the tight-return rule).
 - Accept what the formatter removes.

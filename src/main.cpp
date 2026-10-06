@@ -646,7 +646,6 @@ default_binary_file_name(const std::string_view src_file_name,
 
     std::filesystem::path path{src_file_name};
     path.replace_extension();
-
     return std::format("{}-{}.bin", path.string(), target_text(machine_target));
 }
 

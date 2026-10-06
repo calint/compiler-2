@@ -179,7 +179,6 @@ class assembler {
         emit();
         std::vector<line> captured{std::move(captures_.back())};
         captures_.pop_back();
-
         return captured;
     }
 
@@ -635,7 +634,6 @@ class assembler {
 
             remove(branch);
             ++optimizations_.jumps_to_next;
-
             return true;
         }
 
@@ -653,7 +651,6 @@ class assembler {
         if (not is_conditional(*branch.jump)) {
             remove(jump);
             ++optimizations_.unreachable_jumps;
-
             return true;
         }
 
@@ -663,7 +660,6 @@ class assembler {
         if (target_code == next_instruction(jump_target)) {
             remove(branch);
             ++optimizations_.same_outcome_branches;
-
             return true;
         }
 
