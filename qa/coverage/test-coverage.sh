@@ -71,7 +71,7 @@ FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin /dev/null)
 case "$ACTION" in
 clean)
     echo $SEP
-    rm -f -- *.profraw baz.profdata rv32i-driver gen gen.o gen.s diff.baz out err
+    rm -f -- *.profraw baz.profdata cov.err rv32i-driver gen gen.o gen.s diff.baz out err
     rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/gen-rv32i.bin tests/diff.baz tests/out tests/err
     rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin
     rm -rf -- report/
@@ -98,7 +98,11 @@ report)
     if [[ -x rv32i-driver ]]; then
         objects+=(-object=rv32i-driver)
     fi
-    llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata "${objects[@]}"
+    # 'llvm-cov' warns about 4 functions of the merged profile of the compiler
+    # and the driver that it cannot match, the functions are not identified
+    llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata "${objects[@]}" 2>cov.err
+    grep -v 'functions have mismatched data' cov.err >&2 || true
+    rm -f -- cov.err
     echo $SEP
     echo "coverage report generated in $SCRIPT_DIR/report/"
     echo $SEP
