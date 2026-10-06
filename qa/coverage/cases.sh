@@ -1244,14 +1244,14 @@ SRC=422 && EXP=0 && RUN
 # non-inline result destination must have the declared type
 SRC=423 && COMPERR
 
-# non-inline argument cannot be a computed expression
-SRC=424 && COMPERR
+# non-inline argument can be a computed expression
+SRC=424 && EXP=2 && RUN
 
-# non-inline argument cannot have unary operators
-SRC=425 && COMPERR
+# non-inline argument can have unary operators
+SRC=425 && EXP=4 && RUN
 
-# non-inline argument cannot be a constant
-SRC=426 && COMPERR
+# non-inline argument can be a constant
+SRC=426 && EXP=7 && RUN
 
 # a whole array is passed to a non-inline array parameter
 SRC=427 && EXP=0 && RUN
@@ -1527,8 +1527,8 @@ SRC=510 && COMPERR
 # a loop without 'break' is left only by 'return', so the result is set
 SRC=511 && EXP=0 && RUN
 
-# a non-inline result cannot be an operand in an expression
-SRC=512 && COMPERR
+# a non-inline result can be an operand in an expression
+SRC=512 && EXP=2 && RUN
 
 # 'read' and 'write' take an array, an optional element count and an optional
 # start element, like 'pread'/'pwrite'
@@ -2633,3 +2633,9 @@ SRC=860 && EXP=3 && RUN
 
 # two instances of a generic 'noinline' function have unique labels
 SRC=861 && EXP=6 && RUN
+
+# a non-inline 'bool' result in conditions, expression and nested arguments
+SRC=862 && EXP=17 && RUN
+
+# a non-inline argument that is narrowed to its parameter is rejected
+SRC=863 && COMPERR

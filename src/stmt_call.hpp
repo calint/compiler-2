@@ -52,6 +52,13 @@ class stmt_call : public expression {
         std::string fix;
     };
 
+    // what a non-inline call passes for an argument: the variable it names or
+    // a temporary that holds its value
+    struct noninline_arg {
+        ident_info info;
+        bool is_temporary;
+    };
+
     // an argument that names a variable, kept to compare with the next ones
     struct reference {
         size_t index;
@@ -220,7 +227,7 @@ class stmt_call : public expression {
         assert_no_shared_storage(tc, dst_info, func);
 
         if (not func.is_inlined()) {
-            compile_noninline(tc, indent, dst_info, func);
+            compile_noninline_call(tc, indent, dst_info, func);
             return;
         }
 
@@ -251,6 +258,24 @@ class stmt_call : public expression {
     //
     // class methods
     //
+
+    // a variable in the current block
+    auto add_temporary(toc& tc, const size_t indent, const std::string& name,
+                       const type& tpe) const -> ident_info {
+
+        tc.add_var(tok(), indent,
+                   {
+                       .name{name},
+                       .type_ptr{&tpe},
+                       .src_loc_tk{tok()},
+                       .pointer_register{},
+                       .base_register{},
+                       .value_register{},
+                   },
+                   var_kind::var);
+
+        return tc.make_ident_info(tok(), name);
+    }
 
     [[nodiscard]] auto argument(const size_t arg_index) const
         -> const statement& {
@@ -427,15 +452,17 @@ class stmt_call : public expression {
 
     auto compile_noninline(toc& tc, const size_t indent,
                            const ident_info& dst_info,
-                           const stmt_def_func& func) const -> void {
+                           const stmt_def_func& func,
+                           const std::span<const noninline_arg> arguments) const
+        -> void {
 
-        assert_noninline_call(tc, dst_info, func);
-        check_noninline_aliasing(tc, indent, dst_info, func);
+        assert_noninline_call(dst_info, func, arguments);
+        check_noninline_aliasing(tc, indent, dst_info, func, arguments);
 
         machine& x{tc.machine()};
 
         const std::vector<size_t> array_lengths{
-            array_argument_lengths(tc, func),
+            array_argument_lengths(func, arguments),
         };
 
         // without array parameters the one body is emitted for all calls
@@ -447,7 +474,8 @@ class stmt_call : public expression {
         std::vector<operand> address_registers;
 
         const std::vector<operand> addresses{
-            frame_slot_addresses(tc, indent, dst_info, func, address_registers),
+            frame_slot_addresses(tc, indent, dst_info, func, arguments,
+                                 address_registers),
         };
 
         // start the callee frame after the caller's storage, not on rsp
@@ -481,6 +509,82 @@ class stmt_call : public expression {
                         frame_address);
     }
 
+    // the callee reaches the result and the arguments through their addresses,
+    // a result destination or an argument that is not a variable in memory,
+    // e.g. a register or an expression, goes through a temporary
+    auto compile_noninline_call(toc& tc, const size_t indent,
+                                const ident_info& dst_info,
+                                const stmt_def_func& func) const -> void {
+
+        assert_result_use(dst_info, func);
+
+        const bool has_result_temporary{
+            func.returns() and not dst_info.operand.is_memory(),
+        };
+
+        const bool has_argument_temporary{
+            std::ranges::any_of(std::views::zip(args_, func.params()),
+                                [&](const auto& arg_and_param) -> bool {
+                                    return needs_temporary(
+                                        tc, std::get<0>(arg_and_param),
+                                        std::get<1>(arg_and_param));
+                                }),
+        };
+
+        if (not has_result_temporary and not has_argument_temporary) {
+            compile_noninline(tc, indent, dst_info, func,
+                              variable_arguments(tc));
+
+            return;
+        }
+
+        // the block frees the temporaries after the call
+        tc.enter_block();
+
+        std::vector<noninline_arg> arguments;
+
+        for (const auto [i, arg, param] : std::views::zip(
+                 std::views::iota(size_t{}), args_, func.params())) {
+
+            if (not needs_temporary(tc, arg, param)) {
+                arguments.push_back({
+                    .info{tc.make_ident_info(arg)},
+                    .is_temporary{},
+                });
+
+                continue;
+            }
+
+            arguments.push_back({
+                .info{
+                    add_temporary(tc, indent, std::format("call-arg-{}", i),
+                                  param.get_type()),
+                },
+                .is_temporary{true},
+            });
+
+            arg.compile(tc, indent, arguments.back().info);
+        }
+
+        if (not has_result_temporary) {
+            compile_noninline(tc, indent, dst_info, func, arguments);
+            tc.exit_block();
+            return;
+        }
+
+        const ident_info result_info{
+            add_temporary(tc, indent, "call-result", func.get_type()),
+        };
+
+        compile_noninline(tc, indent, result_info, func, arguments);
+
+        machine& x{tc.machine()};
+
+        x.copy_value(tok(), indent, dst_info.operand, result_info.operand);
+
+        tc.exit_block();
+    }
+
     // the aliases of the result and of the arguments of the inlined body
     [[nodiscard]] auto
     make_aliases(toc& tc, const size_t indent, const ident_info& dst_info,
@@ -506,6 +610,22 @@ class stmt_call : public expression {
         }
 
         return aliases;
+    }
+
+    [[nodiscard]] auto variable_arguments(const toc& tc) const
+        -> std::vector<noninline_arg> {
+
+        std::vector<noninline_arg> arguments;
+        arguments.reserve(args_.size());
+
+        for (const expr_any& arg : args_) {
+            arguments.push_back({
+                .info{tc.make_ident_info(arg)},
+                .is_temporary{},
+            });
+        }
+
+        return arguments;
     }
 
     // write pointers into the callee frame: result (if any), then arguments
@@ -554,6 +674,24 @@ class stmt_call : public expression {
 
         const std::string_view path{arg.identifier()};
         return path.substr(0, path.find('.'));
+    }
+
+    // a value without storage, e.g. a literal or an expression, an array is
+    // only passed by name
+    [[nodiscard]] static auto needs_temporary(const toc& tc,
+                                              const expr_any& arg,
+                                              const stmt_def_func_param& param)
+        -> bool {
+
+        if (param.is_array()) {
+            return false;
+        }
+
+        if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
+            return true;
+        }
+
+        return not tc.make_ident_info(arg).is_var();
     }
 
     // the ranges are offsets into the variable the argument names, so they
@@ -620,43 +758,6 @@ class stmt_call : public expression {
         e.add_call_frame(call_begin_token(), statement::trimmed_source(*this));
     }
 
-    // the callee and which arguments are globals or the same local, the only
-    // facts the aliasing checks of the body depend on. empty when an argument
-    // is a parameter of the enclosing non-inline function, the calls of that
-    // function are checked with their own arguments
-    [[nodiscard]] auto aliasing_signature(const toc& tc,
-                                          const ident_info& dst_info,
-                                          const stmt_def_func& func) const
-        -> std::optional<std::string> {
-
-        std::vector<ident_info> infos;
-
-        if (func.returns()) {
-            infos.push_back(dst_info);
-        }
-
-        for (const expr_any& arg : args_) {
-            infos.push_back(tc.make_ident_info(arg));
-        }
-
-        std::string signature{func.name()};
-        std::vector<std::string_view> locals;
-
-        for (const ident_info& info : infos) {
-            const std::optional<std::string> part{
-                signature_part(tc, info, locals),
-            };
-
-            if (not part) {
-                return std::nullopt;
-            }
-
-            signature += *part;
-        }
-
-        return signature;
-    }
-
     auto apply_unary_ops_to_result(toc& tc, const size_t indent,
                                    const stmt_def_func& func) const -> void {
 
@@ -673,22 +774,6 @@ class stmt_call : public expression {
         };
 
         get_unary_ops().compile(tc, indent, tok(), ret_info.operand);
-    }
-
-    // the body is compiled for the lengths of the array arguments
-    [[nodiscard]] auto array_argument_lengths(const toc& tc,
-                                              const stmt_def_func& func) const
-        -> std::vector<size_t> {
-
-        std::vector<size_t> lengths;
-
-        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
-            if (param.is_array()) {
-                lengths.push_back(tc.make_ident_info(arg).array_len);
-            }
-        }
-
-        return lengths;
     }
 
     // an argument reaches its parameter by reference, so a value that has no
@@ -770,8 +855,10 @@ class stmt_call : public expression {
     }
 
     // the callee reaches the result and arguments through their addresses
-    auto assert_noninline_call(const toc& tc, const ident_info& dst_info,
-                               const stmt_def_func& func) const -> void {
+    auto
+    assert_noninline_call(const ident_info& dst_info, const stmt_def_func& func,
+                          const std::span<const noninline_arg> arguments) const
+        -> void {
 
         assert_result_use(dst_info, func);
 
@@ -781,10 +868,8 @@ class stmt_call : public expression {
         }
 
         if (func.returns()) {
-            if (not dst_info.operand.is_memory()) {
-                throw compiler_exception{
-                    tok(), "result destination must be a memory location"};
-            }
+            // note: a result that is not in memory goes through a temporary
+            assert(dst_info.operand.is_memory());
 
             // an array literal gives its call elements an element destination
             assert(not dst_info.is_array);
@@ -792,8 +877,10 @@ class stmt_call : public expression {
             assert_result_type(dst_info, func);
         }
 
-        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
-            assert_noninline_argument(tc, arg, param);
+        for (const auto [arg, argument, param] :
+             std::views::zip(args_, arguments, func.params())) {
+
+            assert_noninline_argument(arg, argument.info, param);
         }
     }
 
@@ -875,12 +962,13 @@ class stmt_call : public expression {
 
     // the body is compiled once for all callers, so this call's aliasing is
     // checked by compiling the body as an inline call and dropping the code
-    auto check_noninline_aliasing(toc& tc, const size_t indent,
-                                  const ident_info& dst_info,
-                                  const stmt_def_func& func) const -> void {
+    auto check_noninline_aliasing(
+        toc& tc, const size_t indent, const ident_info& dst_info,
+        const stmt_def_func& func,
+        const std::span<const noninline_arg> arguments) const -> void {
 
         const std::optional<std::string> signature{
-            aliasing_signature(tc, dst_info, func),
+            aliasing_signature(tc, dst_info, func, arguments),
         };
 
         // note: what the body can reject depends only on which arguments are
@@ -1210,6 +1298,7 @@ class stmt_call : public expression {
     [[nodiscard]] auto
     frame_slot_addresses(toc& tc, const size_t indent,
                          const ident_info& dst_info, const stmt_def_func& func,
+                         const std::span<const noninline_arg> arguments,
                          std::vector<operand>& address_registers) const
         -> std::vector<operand> {
 
@@ -1222,11 +1311,15 @@ class stmt_call : public expression {
             addresses.push_back(dst_info.operand);
         }
 
-        for (const expr_any& arg : args_) {
-            const ident_info info{tc.make_ident_info(arg)};
+        for (const auto [arg, argument] : std::views::zip(args_, arguments)) {
+            // a temporary is a plain variable, not indexed like its argument
+            if (argument.is_temporary) {
+                addresses.push_back(argument.info.operand);
+                continue;
+            }
 
-            addresses.push_back(
-                tc.get_lea_operand(indent, arg, info, address_registers));
+            addresses.push_back(tc.get_lea_operand(indent, arg, argument.info,
+                                                   address_registers));
         }
 
         return addresses;
@@ -1451,6 +1544,50 @@ class stmt_call : public expression {
     // statics
     //
 
+    // the callee and which arguments are globals or the same local, the only
+    // facts the aliasing checks of the body depend on. empty when an argument
+    // is a parameter of the enclosing non-inline function, the calls of that
+    // function are checked with their own arguments
+    [[nodiscard]] static auto
+    aliasing_signature(const toc& tc, const ident_info& dst_info,
+                       const stmt_def_func& func,
+                       const std::span<const noninline_arg> arguments)
+        -> std::optional<std::string> {
+
+        std::vector<ident_info> infos;
+
+        if (func.returns()) {
+            infos.push_back(dst_info);
+        }
+
+        for (const noninline_arg& argument : arguments) {
+            infos.push_back(argument.info);
+        }
+
+        std::string signature{func.name()};
+        std::vector<std::string_view> locals;
+
+        for (const ident_info& info : infos) {
+            const std::optional<std::string> part{
+                signature_part(tc, info, locals),
+            };
+
+            if (not part) {
+                return std::nullopt;
+            }
+
+            signature += *part;
+        }
+
+        // the body is checked with the value, e.g. a constant, of the first
+        // call of its kind
+        for (const noninline_arg& argument : arguments) {
+            signature += argument.is_temporary ? " temporary" : " variable";
+        }
+
+        return signature;
+    }
+
     // the type of the argument at 'index' when it is a variable, a field or an
     // element, otherwise null. 'tz' is after the '('
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer tz,
@@ -1481,27 +1618,34 @@ class stmt_call : public expression {
         return &tc.make_ident_info(si).type_ref();
     }
 
-    // a non-inline call passes addresses, so only a plain variable of the
-    // parameter's type fits
-    static auto assert_noninline_argument(const toc& tc, const expr_any& arg,
+    // the body is compiled for the lengths of the array arguments
+    [[nodiscard]] static auto
+    array_argument_lengths(const stmt_def_func& func,
+                           const std::span<const noninline_arg> arguments)
+        -> std::vector<size_t> {
+
+        std::vector<size_t> lengths;
+
+        for (const auto [argument, param] :
+             std::views::zip(arguments, func.params())) {
+
+            if (param.is_array()) {
+                lengths.push_back(argument.info.array_len);
+            }
+        }
+
+        return lengths;
+    }
+
+    // a non-inline call passes addresses, a value without storage is passed
+    // in a temporary of the parameter's type
+    static auto assert_noninline_argument(const expr_any& arg,
+                                          const ident_info& info,
                                           const stmt_def_func_param& param)
         -> void {
 
-        if (arg.is_expression()) {
-            throw compiler_exception{arg.tok(),
-                                     "expression arguments are unsupported"};
-        }
-
-        if (not arg.get_unary_ops().is_empty()) {
-            throw compiler_exception{
-                arg.tok(), "unary operators on arguments are unsupported"};
-        }
-
-        const ident_info info{tc.make_ident_info(arg)};
-
-        if (not info.is_var()) {
-            throw compiler_exception{arg.tok(), "argument must be a variable"};
-        }
+        // note: a temporary is a variable
+        assert(info.is_var());
 
         // note: parsing the call rejects an array argument for a non-array
         //       parameter and the reverse
@@ -1745,7 +1889,7 @@ class stmt_call : public expression {
             part += std::format(" array {}", info.array_len);
         }
 
-        // note: a temporary is rejected as an argument and as a result
+        // note: a temporary is a local of the call
         assert(not info.elem_path.empty());
 
         const std::string_view root{info.elem_path.front()};

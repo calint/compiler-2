@@ -40,6 +40,11 @@ for each caller.
 
 - A call is checked once for each pattern of its arguments: which are globals
   and which are the same local. Calls with the same pattern share the check.
+- A result that is not in memory, e.g. a call inside an expression, and an
+  argument without storage, e.g. a constant or an expression, go through a
+  temporary in the frame of the caller. A temporary is a distinct local, it
+  never shares storage with another argument. The pattern of such a call
+  marks those arguments, so the check is done once for them too.
 - A call inside a `noinline` body that passes a parameter of that body is
   checked when the body's own callers are, with their arguments.
 - A recursive call has the same pattern as the call that started it, so it is

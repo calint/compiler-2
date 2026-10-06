@@ -1,0 +1,24 @@
+# a non-inline 'bool' result is used in conditions and expressions, its
+# arguments are values without storage
+
+func noinline is_one(a) res bool { res = a == 1 }
+
+func noinline sum(a, b) res { res = a + b }
+
+func main() {
+    var a = 1
+    var k = 0
+
+    if is_one(a) k = k + 1
+    if not is_one(a) exit(99)
+    if is_one(a) and sum(a, 1) == 2 k = k + 10
+
+    var r = is_one(a)
+    if r k = k + 100
+
+    # an expression argument and a nested call
+    if is_one(a + 0) k = k + 1000
+    k = k + sum(3, sum(a, a * 2))
+
+    exit(k - 1100)
+}

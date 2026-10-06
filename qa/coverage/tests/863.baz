@@ -1,0 +1,6 @@
+# a non-inline argument that is narrowed to its parameter is rejected
+func noinline target(parameter i8) { exit(parameter) }
+func main() {
+    var wide = 1
+    target(wide + 1)
+}

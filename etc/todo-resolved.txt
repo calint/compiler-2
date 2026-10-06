@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: high priority: 'noinline' calls where the value has no memory
+    location (a call inside an expression, e.g. 'if f(a)', 'var x = f(a) + 1',
+    'bool' results; an expression or constant argument) were rejected with
+    'result destination must be a memory location' and 'expression arguments
+    are unsupported'
+    => done (2026-10-06): 'stmt_call::compile_noninline_call' puts the result
+       and the arguments that have no storage in temporaries ('call-result',
+       'call-arg-N') of a block around the call; tests 424, 425, 426, 512
+       became run tests, 862 and 863 added; the aliasing signature marks
+       temporary arguments
+[x] hard: non-inline calls take expression arguments ('print_num(i64(counter))'
+    fails with "expression arguments are unsupported", 424.baz)
+    => done (2026-10-06): see the item above; instance literals as arguments
+       stay open
 [x] medium: high priority: labels of the bodies of 'noinline' instances of one
     generic definition collide (same source locations), e.g. 'loop.106.5' in
     'func.str.input' and 'func.name.input' of 'text.input' (found by making

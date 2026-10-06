@@ -1,4 +1,4 @@
-# non-inline argument cannot be a constant
+# a non-inline argument can be a constant, it is passed in a temporary
 
-func noinline target(parameter) {}
-func main() { target(1) }
+func noinline target(parameter) { exit(parameter) }
+func main() { target(7) }

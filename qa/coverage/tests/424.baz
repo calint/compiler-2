@@ -1,4 +1,5 @@
-# non-inline argument cannot be a computed expression
+# a non-inline argument can be a computed expression, it is passed in a
+# temporary
 
-func noinline target(parameter) {}
+func noinline target(parameter) { exit(parameter) }
 func main() { var value = 1 target(value + 1) }

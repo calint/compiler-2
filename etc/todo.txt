@@ -164,22 +164,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     checked, so an error in its body is silent until the first use
     => placeholder types would reject valid bodies, so the footer of the
        assembler lists the generic functions without an instance
-[ ] hard: non-inline calls take expression arguments ('print_num(i64(counter))'
-    fails with "expression arguments are unsupported", 424.baz)
-    => the caller evaluates the argument into a hidden local of the parameter
-       type in its own frame ('tc.add_var' inside 'tc.enter_block()' around
-       the call) and passes that address; 'stmt_call::
-       assert_noninline_argument' accepts an expression, constant, conversion
-       or instance literal whose type fits like an assignment; a plain
-       variable keeps the exact-type check; arguments are evaluated left to
-       right before any slot address is taken
-    => tests: 424.baz becomes a run test (constant, arithmetic, conversion,
-       instance literal, nested calls, '--checks=frame', both targets), a
-       COMPERR for a narrowing argument
 [ ] hard: instance literals and instance call results as arguments ('sum({ 1,
     2 })', 'sum(mk(1, 2))') by passing a temporary on the caller's frame
     (rejected today: "argument 1 cannot be a temporary", 501.baz, 502.baz);
-    same plan as the item above
+    scalar arguments already use a call-local temporary, see
+    'stmt_call::compile_noninline_call'
 [ ] hard: consider making widening explicit too, today only narrowing needs
     'i8(...)' ('var y i32 = 1 + low(x)' with 'low' returning i8 is rejected)
     => prototype: requiring equal widths in the 3 width checks rejects 40+

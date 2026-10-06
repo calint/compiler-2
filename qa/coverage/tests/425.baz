@@ -1,4 +1,4 @@
-# non-inline argument cannot have unary operators
+# a non-inline argument can have unary operators, it is passed in a temporary
 
-func noinline target(parameter) {}
+func noinline target(parameter) { exit(parameter + 5) }
 func main() { var value = 1 target(-value) }

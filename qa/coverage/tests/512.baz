@@ -1,4 +1,5 @@
-# a non-inline result cannot be an operand in an expression
+# a non-inline result can be an operand in an expression, it is read from a
+# temporary
 
 func noinline one() res { res = 1 }
-func main() { var x = one() + 1 }
+func main() { var x = one() + 1 exit(x) }

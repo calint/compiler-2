@@ -1,4 +1,0 @@
-
-425.baz:4:36: unary operators on arguments are unsupported
-func main() { var value = 1 target(-value) }
-                                   ^
