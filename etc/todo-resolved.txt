@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] medium: 'stmt_call': check arguments against parameters in the
+    constructor instead of at compile
+    => tried: the type check at parse gave a wrong message for 'var x =
+       i32(foozi(x))' (test 121) because the trial parse of a 'var'
+       initializer gives 'x' a placeholder default type; the placeholder must
+       be recognizable first; checks that need the destination
+       ('assert_result_type', 'assert_no_shared_storage') cannot move
+[-] easy: "dat" replaced with "let"?
+    => discarded (2026-10-06): 'let' already means read-only (a compile-time
+       constant, or a read-only variable when the initializer is not
+       constant) in any scope; 'dat' is mutable global storage in the image
+       ('dat calls = 0' is assigned later), so the rename would give 'let' two
+       meanings; the constant initializer is already asserted for 'dat'
+[-] easy: C++ brace initializers have no performance advantage and the
+    narrowing issues do not exist here; ponder switching to '='
+    => keep it for consistency with object initializer
 [x] easy: examine NOLINTNEXTLINE annotations and try to fix
     => done (2026-10-06): the 'misc-definitions-in-headers' block in
        'decouple_impl.hpp' stays; no 'inline' specifiers on functions, the

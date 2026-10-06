@@ -7,9 +7,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 1. clean up
 --------------------------------------------------------------------------------
 [ ] easy: rename 'compiler_exception'
-[ ] easy: C++ brace initializers have no performance advantage and the
-    narrowing issues do not exist here; ponder switching to '='
-[ ] easy: "dat" replaced with "let"?
 [ ] easy: a comment file explaining lea and array indexing
 [ ] easy: make the ai written test suite in c++ human readable
 [ ] medium: lift the ai generated tests of 'test-rv32i.sh' to end-to-end .baz
@@ -24,13 +21,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     chain (8-9), 'fold_indexed_address' (8), 'add_generic_func' (8): group
     what travels together into a struct (several files, plan and go-ahead
     first)
-[ ] medium: 'stmt_call': check arguments against parameters in the
-    constructor instead of at compile
-    => tried: the type check at parse gave a wrong message for 'var x =
-       i32(foozi(x))' (test 121) because the trial parse of a 'var'
-       initializer gives 'x' a placeholder default type; the placeholder must
-       be recognizable first; checks that need the destination
-       ('assert_result_type', 'assert_no_shared_storage') cannot move
 [ ] hard: questionable: 'statement' has 24 virtuals whose defaults are
     'std::unreachable()' plus 'is_*' tests; a closed set of node kinds as
     'std::variant' with visitors would drop the defaults but costs
