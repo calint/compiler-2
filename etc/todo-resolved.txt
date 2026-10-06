@@ -10,7 +10,8 @@
        and the arguments that have no storage in temporaries ('call-result',
        'call-arg-N') of a block around the call; tests 424, 425, 426, 512
        became run tests, 862 and 863 added; the aliasing signature marks
-       temporary arguments
+       temporary arguments; unary operators on a non-inline call are applied
+       to the destination after the call (421 became a run test, 864 added)
 [x] hard: non-inline calls take expression arguments ('print_num(i64(counter))'
     fails with "expression arguments are unsupported", 424.baz)
     => done (2026-10-06): see the item above; instance literals as arguments

@@ -535,6 +535,8 @@ class stmt_call : public expression {
             compile_noninline(tc, indent, dst_info, func,
                               variable_arguments(tc));
 
+            apply_unary_ops_to_destination(tc, indent, dst_info);
+
             return;
         }
 
@@ -566,21 +568,21 @@ class stmt_call : public expression {
             arg.compile(tc, indent, arguments.back().info);
         }
 
-        if (not has_result_temporary) {
+        if (has_result_temporary) {
+            const ident_info result_info{
+                add_temporary(tc, indent, "call-result", func.get_type()),
+            };
+
+            compile_noninline(tc, indent, result_info, func, arguments);
+
+            machine& x{tc.machine()};
+
+            x.copy_value(tok(), indent, dst_info.operand, result_info.operand);
+        } else {
             compile_noninline(tc, indent, dst_info, func, arguments);
-            tc.exit_block();
-            return;
         }
 
-        const ident_info result_info{
-            add_temporary(tc, indent, "call-result", func.get_type()),
-        };
-
-        compile_noninline(tc, indent, result_info, func, arguments);
-
-        machine& x{tc.machine()};
-
-        x.copy_value(tok(), indent, dst_info.operand, result_info.operand);
+        apply_unary_ops_to_destination(tc, indent, dst_info);
 
         tc.exit_block();
     }
@@ -758,6 +760,14 @@ class stmt_call : public expression {
         e.add_call_frame(call_begin_token(), statement::trimmed_source(*this));
     }
 
+    // the callee has written the result, the operators of the call follow
+    auto apply_unary_ops_to_destination(toc& tc, const size_t indent,
+                                        const ident_info& dst_info) const
+        -> void {
+
+        get_unary_ops().compile(tc, indent, tok(), dst_info.operand);
+    }
+
     auto apply_unary_ops_to_result(toc& tc, const size_t indent,
                                    const stmt_def_func& func) const -> void {
 
@@ -861,11 +871,6 @@ class stmt_call : public expression {
         -> void {
 
         assert_result_use(dst_info, func);
-
-        if (not get_unary_ops().is_empty()) {
-            throw compiler_exception{
-                tok(), "unary operators on non-inline calls are unsupported"};
-        }
 
         if (func.returns()) {
             // note: a result that is not in memory goes through a temporary

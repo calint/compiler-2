@@ -1235,8 +1235,8 @@ SRC=419 && COMPERR
 # non-inline void call cannot supply a value
 SRC=420 && COMPERR
 
-# unary operator on a non-inline call
-SRC=421 && COMPERR
+# unary operator on a non-inline call is applied to its result
+SRC=421 && EXP=2 && RUN
 
 # a non-inline result is written to an element of an array literal
 SRC=422 && EXP=0 && RUN
@@ -2639,3 +2639,6 @@ SRC=862 && EXP=17 && RUN
 
 # a non-inline argument that is narrowed to its parameter is rejected
 SRC=863 && COMPERR
+
+# the unary operators of a non-inline call apply to its result
+SRC=864 && EXP=100 && RUN
