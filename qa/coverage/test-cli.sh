@@ -181,7 +181,7 @@ CLI_REGISTER_REPORT() {
     # the report only follows the code and the usual report
     cmp -s -n "$(stat -c %s gen.s)" gen.s out
     grep -Fq "register use at the peak" out
-    grep -Fq "per callee, the most registers one instance holds itself" out
+    grep -Fq "per callee, the most registers one call holds itself" out
     grep -Fq "register use at the peak" gen.s && exit 1
     echo ok
 }
