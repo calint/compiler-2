@@ -110,6 +110,27 @@ class stmt_def_var final : public statement {
     }
 
   private:
+    // e.g. 'var c = a' copies the whole array 'a'
+    auto deduce_array_copy(toc& tc, const token& tk, const expr_arith& arith)
+        -> void {
+
+        const ident_info info{tc.make_ident_info(arith)};
+
+        if (not info.is_array) {
+            return;
+        }
+
+        // e.g. an unsized array parameter
+        if (info.array_len == 0) {
+            throw compiler_exception{
+                tk, std::format("size of array '{}' is not known",
+                                arith.identifier())};
+        }
+
+        is_array_ = true;
+        array_count_ = info.array_len;
+    }
+
     // e.g. 'var b = x < 3' is a 'bool', 'var a = i8[]{1, 2}' an 'i8' array and
     // 'var s = "hi"' an 'i8' array of 2
     auto deduce_declaration(toc& tc, tokenizer& tz) -> void {
@@ -191,22 +212,7 @@ class stmt_def_var final : public statement {
             return;
         }
 
-        // e.g. 'var c = a' copies the whole array 'a'
-        const ident_info info{tc.make_ident_info(*arith)};
-
-        if (not info.is_array) {
-            return;
-        }
-
-        // e.g. an unsized array parameter
-        if (info.array_len == 0) {
-            throw compiler_exception{
-                tk, std::format("size of array '{}' is not known",
-                                arith->identifier())};
-        }
-
-        is_array_ = true;
-        array_count_ = info.array_len;
+        deduce_array_copy(tc, tk, *arith);
     }
 
     [[nodiscard]] auto make_var_info() const -> var_info {
