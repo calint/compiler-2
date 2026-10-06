@@ -1,0 +1,20 @@
+dat hello="hello\n"
+
+func print(str i8[], len) {
+    write(1, str, len)
+}
+
+func bar(hello i8[]){
+    print(hello,array_length(hello))
+}
+
+func main(){
+    var a=3
+    var b=2
+    loop{
+        if a==0 break
+        bar(hello)
+        a=a-1
+    }
+    exit(0)
+}

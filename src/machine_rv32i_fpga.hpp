@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <format>
 #include <ostream>
+#include <stdexcept>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
 #include "machine_rv32i_bare_metal.hpp"
-#include "panic_exception.hpp"
 
 // runs the flat image loaded at address 0 on the fpga or its emulator,
 // input and output go through the memory mapped uart
@@ -54,7 +54,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
             return;
         }
 
-        throw panic_exception{std::format(
+        throw std::runtime_error{std::format(
             "code, data and variables use {} B and the stack {} B, "
             "which exceeds the {} B of device memory",
             memory_end_address, stack_size_bytes(), memory_size_bytes_)};

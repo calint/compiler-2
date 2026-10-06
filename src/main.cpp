@@ -16,6 +16,7 @@
 #include <print>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -31,7 +32,6 @@
 #include "machine_rv32i_qemu.hpp"
 #include "machine_x86_64.hpp"
 #include "null_stream.hpp"
-#include "panic_exception.hpp"
 #include "program.hpp"
 #include "toc.hpp"
 
@@ -419,7 +419,7 @@ examples:
     } catch (const compiler_exception& e) {
         print_compiler_error(opts, src, e);
         return 1;
-    } catch (const panic_exception& e) {
+    } catch (const std::runtime_error& e) {
         std::println(stderr, "\npanic: {}", e.what());
         return 1;
     }
@@ -451,7 +451,7 @@ auto check_reproduced_source(const program& prg, const options& opts,
     reproduced_source.close();
 
     if (src != read_file_to_string("diff.baz")) {
-        throw panic_exception{std::format(
+        throw std::runtime_error{std::format(
             "generated source differs. diff {} diff.baz", opts.src_file_name)};
     }
 }
@@ -462,7 +462,8 @@ auto check_reproduced_source(const program& prg, const options& opts,
     std::ifstream fs{file_name};
 
     if (not fs.is_open()) {
-        throw panic_exception{std::format("cannot open file '{}'", file_name)};
+        throw std::runtime_error{
+            std::format("cannot open file '{}'", file_name)};
     }
 
     return std::string{std::istreambuf_iterator<char>{fs},

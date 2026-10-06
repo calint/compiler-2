@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <limits>
 #include <ostream>
+#include <stdexcept>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
 #include "machine_rv32i_bare_metal.hpp"
-#include "panic_exception.hpp"
 
 // runs the flat image without an operating system on the qemu 'virt' machine,
 // input and output go through its ns16550a uart and exit ends qemu with the
@@ -35,7 +35,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
                                    stack_size_bytes} {
 
         if (stack_size_bytes > std::numeric_limits<uint32_t>::max()) {
-            throw panic_exception{"stack size exceeds RV32I address range"};
+            throw std::runtime_error{"stack size exceeds RV32I address range"};
         }
     }
 

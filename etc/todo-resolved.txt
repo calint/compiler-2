@@ -1,6 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: remove 'panic_exception'
+    => done (2026-10-06): 'std::runtime_error' in its place, same message and
+       handler in 'main'
 [x] hard: cleanup before the next feature, plan (no new files, behavior
     preserved, each step built, 'test-coverage.sh' x86 and rv32i, lint, format)
     [x] untrack the core file and the two test binaries, ignore them

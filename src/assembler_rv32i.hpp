@@ -18,6 +18,7 @@
 #include <print>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -26,7 +27,6 @@
 #include <vector>
 
 #include "assembler.hpp"
-#include "panic_exception.hpp"
 
 // buffers rv32i output until every label has an offset, then grows the jumps
 // that cannot reach their targets, writes the assembly source and, from the
@@ -1211,7 +1211,7 @@ class assembler_rv32i final : public assembler {
         };
 
         if (grown == jump_reach::far and jump.scratch.empty()) {
-            throw panic_exception{std::format(
+            throw std::runtime_error{std::format(
                 "jump to '{}' exceeds 1 MiB and no scratch register is free",
                 jump.target)};
         }

@@ -15,6 +15,7 @@
 #include <ostream>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -1570,7 +1571,7 @@ class machine_rv32i : public machine {
         std::ofstream binary{binary_file_name_, std::ios::binary};
 
         if (not binary) {
-            throw panic_exception{
+            throw std::runtime_error{
                 std::format("cannot write '{}'", binary_file_name_)};
         }
 
@@ -4202,7 +4203,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        throw panic_exception{std::format(
+        throw std::runtime_error{std::format(
             "code, data and variables use {} B, which exceeds the RV32I "
             "address range",
             memory_end_address)};

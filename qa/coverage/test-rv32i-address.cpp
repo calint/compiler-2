@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 #include "../../src/assembler_rv32i.hpp"
 #include "../../src/decouple_impl.hpp" // IWYU pragma: keep
@@ -462,7 +463,7 @@ auto check_jump_resolution() -> void {
     const auto rejects = [](const auto& action) -> bool {
         try {
             action();
-        } catch (const panic_exception&) {
+        } catch (const std::runtime_error&) {
             return true;
         }
 
