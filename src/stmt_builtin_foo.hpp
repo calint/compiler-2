@@ -81,14 +81,7 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        // a one-line comment for the definition
-        std::string header{statement::trimmed_source(ident_)};
-
-        if (has_count()) {
-            header += ", " + statement::trimmed_source(count_);
-        }
-
-        x.comment(tok(), indent, "foo {}", header);
+        comment_header(x, indent);
 
         const std::string loop_label{tc.create_unique_label(tok(), "foo")};
         const std::string end_label{toc::end_label(loop_label)};
@@ -114,25 +107,8 @@ class stmt_builtin_foo final : public statement {
 
         tc.enter_foo(loop_label);
 
-        // the counter is a register or a variable in memory, as the machine
-        // prefers
-        const bool counter_in_memory{x.foo_counter_in_memory()};
-
-        operand reg_counter;
-
-        if (not counter_in_memory) {
-            reg_counter =
-                x.alloc_scratch_register(tok(), indent, tc.get_type_default());
-
-            allocated_registers.push_back(reg_counter);
-        }
-
-        add_loop_names(tc, indent, ident_.tok(), tok(), ii, reg_iter,
-                       reg_counter);
-
         const operand counter{
-            counter_in_memory ? tc.make_ident_info(tok(), "i").operand
-                              : reg_counter,
+            declare_counter(tc, indent, ii, reg_iter, allocated_registers),
         };
 
         x.comment(tok(), indent, "initiate counter i");
@@ -140,20 +116,7 @@ class stmt_builtin_foo final : public statement {
         x.copy_value(tok(), indent, counter,
                      operand::imm("0", tc.get_type_default()));
 
-        // the loop is tested at the end, so a count of zero or less skips it
-        if (has_count()) {
-            x.compare_and_branch(
-                count_.tok(), indent, limit,
-                operand::imm("0", tc.get_type_default()),
-                {
-                    .operation{machine::comparison_operator::less_equal},
-                    .inverted{},
-                    .destination{},
-                    .target{end_label},
-                    .branch_on_true{true},
-                },
-                {});
-        }
+        skip_empty_loop(x, tc, indent, limit, end_label);
 
         x.label(indent, loop_label);
         code_.compile(tc, indent, ident_info::make_empty());
@@ -182,6 +145,17 @@ class stmt_builtin_foo final : public statement {
     }
 
   private:
+    // a one-line comment for the definition
+    auto comment_header(machine& x, const size_t indent) const -> void {
+        std::string header{statement::trimmed_source(ident_)};
+
+        if (has_count()) {
+            header += ", " + statement::trimmed_source(count_);
+        }
+
+        x.comment(tok(), indent, "foo {}", header);
+    }
+
     // a count register is checked against the array size like the count of
     // 'array_copy'
     [[nodiscard]] auto
@@ -214,6 +188,33 @@ class stmt_builtin_foo final : public statement {
         return reg_count;
     }
 
+    // 'e', 'i' and 'n' are declared, the counter is a register or a variable in
+    // memory, as the machine prefers
+    auto declare_counter(toc& tc, const size_t indent, const ident_info& ii,
+                         const operand& reg_iter,
+                         std::vector<operand>& allocated_registers) const
+        -> operand {
+
+        machine& x{tc.machine()};
+
+        const bool counter_in_memory{x.foo_counter_in_memory()};
+
+        operand reg_counter;
+
+        if (not counter_in_memory) {
+            reg_counter =
+                x.alloc_scratch_register(tok(), indent, tc.get_type_default());
+
+            allocated_registers.push_back(reg_counter);
+        }
+
+        add_loop_names(tc, indent, ident_.tok(), tok(), ii, reg_iter,
+                       reg_counter);
+
+        return counter_in_memory ? tc.make_ident_info(tok(), "i").operand
+                                 : reg_counter;
+    }
+
     [[nodiscard]] auto has_count() const -> bool {
         return not count_delim_tk_.is_empty();
     }
@@ -242,6 +243,28 @@ class stmt_builtin_foo final : public statement {
         x.address_of(tok(), indent, reg_iter, op);
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
+    }
+
+    // the loop is tested at the end, so a count of zero or less skips it
+    auto skip_empty_loop(machine& x, const toc& tc, const size_t indent,
+                         const operand& limit,
+                         const std::string_view end_label) const -> void {
+
+        if (not has_count()) {
+            return;
+        }
+
+        x.compare_and_branch(
+            count_.tok(), indent, limit,
+            operand::imm("0", tc.get_type_default()),
+            {
+                .operation{machine::comparison_operator::less_equal},
+                .inverted{},
+                .destination{},
+                .target{end_label},
+                .branch_on_true{true},
+            },
+            {});
     }
 
     //

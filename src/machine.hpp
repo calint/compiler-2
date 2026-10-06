@@ -182,6 +182,7 @@ class register_trace final {
     // the frame that allocations belong to
     [[nodiscard]] auto current_frame() const -> size_t {
         return frames_.empty() ? 0 : frames_.size() - 1;
+        // note: -1 is the index of the last frame
     }
 
     auto enable() -> void { enabled_ = true; }
@@ -1117,6 +1118,7 @@ class machine {
             }
 
             const size_t frame{std::min(allocated.frame, uses.size() - 1)};
+            // note: -1 is the index of the last frame
 
             uses.at(frame).registers.push_back(register_text(allocated));
 

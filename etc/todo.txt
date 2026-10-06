@@ -117,8 +117,9 @@ better assembler code, medium, largest gain first
        the merge passes); the source characters stay in the parser
     4. [x] done (2026-10-05): 'type::accessor' is 'ident_builder', the
        parameter lists of 'path_registers', generics 'add_func' and
-       'compile_lea' are structs; left: 'machine::arrays_equal' (9),
-       'memory_equal', 'copy_elements', 'ident_info::make_var' (8)
+       'compile_lea' are structs; (2026-10-06) 'machine::arrays_equal',
+       'memory_equal' and 'copy_elements' take 'equality_request' and
+       'copy_request', 'ident_info::make_var' takes 'var_layout'
     5. [x] done (2026-10-05): 'operand.hpp' holds 'operand' and the storage
        arithmetic; was: 'decouple.hpp' (568 lines) holds four concerns: forward declarations,
        the storage size arithmetic, the backend value type 'operand' and the
@@ -152,6 +153,19 @@ better assembler code, medium, largest gain first
         compiles through the machine and takes part in the flow analysis
         ('trace_assignment', 'visit_reads'): four concerns in one class
         (questionable, see 4)
+    11. [x] done (2026-10-06): the functions with a cognitive complexity of
+        13 or more (clang-tidy, assertions excluded) are split into steps or
+        tables, the generated assembly is identical: the register report is
+        'register_trace' and 'register_use_report', 'resolve_or_empty' walks
+        with 'walk', 'compile_inline', 'parse_option', the parsers of
+        'expr_bool', 'stmt_block', 'expr_type', 'expr_arith', the bounds
+        checks; left on purpose: the flat dispatches of 'assembler_rv32i'
+        ('instruction_text', 'has_valid_immediate', 'encode_instruction') and
+        the linear known-size copy, zero and compare of 'machine_rv32i'
+        (a shared skeleton would need callbacks and read worse)
+    12. low priority: 'machine_rv32i::is_self_copy' and 'same_memory' differ
+        only in that 'same_memory' also equates two spellings of a register;
+        one of them could go, which may skip a few more self copies
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
 [ ] medium: roome.baz: an inline bool call used as a condition is materialized

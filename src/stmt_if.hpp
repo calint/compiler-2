@@ -85,35 +85,12 @@ class stmt_if final : public statement {
                                               label_after_if),
         };
 
-        const size_t branch_count{branches_.size()};
-
         bool branch_evaluated_to_true{};
-        for (size_t branch_index{}; branch_index < branch_count;
+        for (size_t branch_index{}; branch_index < branches_.size();
              ++branch_index) {
-            const stmt_if_branch& if_branch{branches_.at(branch_index)};
-            const bool is_last_branch{branch_index == branch_count - 1};
-            // note: -1 is the index of the last branch
 
-            // a false condition continues at the next branch or the 'else'
-            const std::string jmp_if_false{
-                is_last_branch ? label_else_branch
-                               : branches_.at(branch_index + 1).begin_label(tc),
-            };
-            // note: +1 is the branch after the current one
-
-            // the last branch without an 'else' continues after the 'if'
-            // without a jump
-            const std::string jmp_if_done{
-                is_last_branch and else_code_.is_empty() ? "" : label_after_if,
-            };
-
-            // compile the condition which might return that the condition was a
-            // constant evaluation
-            if (const std::optional<bool> const_eval{
-                    if_branch.compile_branch(tc, indent, jmp_if_false,
-                                             jmp_if_done),
-                };
-                const_eval.value_or(false)) {
+            if (compile_branch_at(tc, indent, branch_index, label_else_branch,
+                                  label_after_if)) {
 
                 branch_evaluated_to_true = true;
                 break;
@@ -150,6 +127,40 @@ class stmt_if final : public statement {
     }
 
   private:
+    // true when the branch is a constant true condition
+    [[nodiscard]] auto
+    compile_branch_at(toc& tc, const size_t indent, const size_t branch_index,
+                      const std::string_view label_else_branch,
+                      const std::string_view label_after_if) const -> bool {
+
+        const size_t branch_count{branches_.size()};
+
+        const stmt_if_branch& if_branch{branches_.at(branch_index)};
+        const bool is_last_branch{branch_index == branch_count - 1};
+        // note: -1 is the index of the last branch
+
+        // a false condition continues at the next branch or the 'else'
+        const std::string jmp_if_false{
+            is_last_branch ? std::string{label_else_branch}
+                           : branches_.at(branch_index + 1).begin_label(tc),
+        };
+        // note: +1 is the branch after the current one
+
+        // the last branch without an 'else' continues after the 'if'
+        // without a jump
+        const std::string jmp_if_done{
+            is_last_branch and else_code_.is_empty() ? "" : label_after_if,
+        };
+
+        // compile the condition which might return that the condition was a
+        // constant evaluation
+        const std::optional<bool> const_eval{
+            if_branch.compile_branch(tc, indent, jmp_if_false, jmp_if_done),
+        };
+
+        return const_eval.value_or(false);
+    }
+
     // reads what follows a branch: 'else if' continues the chain, 'else' ends
     // it with the else code, anything else is a new statement
     auto parse_else(toc& tc, tokenizer& tz) -> bool {
