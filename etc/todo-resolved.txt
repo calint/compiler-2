@@ -1,6 +1,155 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: cleanup before the next feature, plan (no new files, behavior
+    preserved, each step built, 'test-coverage.sh' x86 and rv32i, lint, format)
+    [x] untrack the core file and the two test binaries, ignore them
+    [x] drop unused includes (5 headers)
+    [x] machine_rv32i.hpp: repeated chunk-loop code in 'copy_runtime_count'
+        (2478, 149 lines) and 'compare_runtime_walk' (2072, 145 lines):
+        head check, 'chunks' end register, loop of whole chunks, tail; extract
+        named steps shared by both, in the same file
+        => done (2026-10-05): 'walk_runtime_count' with an access callback,
+           -116 lines, rv32i tests and bulk widths unchanged
+    [-] machine_rv32i.hpp and machine_x86_64.hpp: group the methods by concern
+        with section comments
+        => discarded (2026-10-05): both files keep their methods in
+           alphabetical order within 'public', 'private' and the statics;
+           grouping by concern means reordering all of it and loses the
+           lookup by name
+    [x] machine.hpp: target-independent steps found in both machines move to
+        'machine' as non-virtual helpers
+        => done (2026-10-05): only 'discard_lines' was identical in both
+           machines, now inside 'discard_output'; the other same-named methods
+           (call_function, reserve_variables, comment_variable, ...) differ in
+           backend details, so sharing them would need new hooks
+    [x] toc.hpp: 'toc::add_var' (80 lines) mixes sizing, the entry gap,
+        placement, capacity check and usage stats: split into named steps;
+        'next_frame_address' and 'find_storage_location' walk the frames in
+        reverse the same way but differ at the root (the gap), so they stay
+        separate unless a shared walk keeps both results
+        => a class for frames and variable storage was considered: 'frames_',
+           'vars_size_bytes_', the gap flag and the usage counters are used by
+           the scope, lookup and ident-info code alike, so the split would
+           touch most of the 92 methods for little gain (plan and go-ahead
+           first if still wanted)
+        => done (2026-10-05): 'apply_entry_gap', 'var_storage_size_bytes' and
+           'var_storage_alignment' extracted; the class split is dropped, large
+           files are fine as long as they hold logical units
+    [-] 'compile_lea' callers repeating a long argument list
+        => discarded (2026-10-05): 4 call sites of 3 lines each, the shared
+           part is a 'comment' plus one call, a helper saves about 4 lines
+    [x] machine_rv32i.hpp told 'bool' from the integer of its size by the type
+        name ('name() == "bool"', 7 sites)
+        => done (2026-10-05): 'type_kind' with 'type::is_bool()'
+    [x] builtin types recognized by name text
+        => done (2026-10-05): 'toc::set_builtin_types' with 'get_type_i8',
+           'get_type_address' and 'is_integer_type_name' from the types of
+           'program', strings check the element type by identity
+    [x] boolean flag parameters at the call
+        => done (2026-10-05): 'var_kind' for 'add_var', 'source_signature_to'
+           replaces 'source_def_to(os, summary)', the redundant 'false' of
+           'multiply' dropped; about 100 other 'const bool' parameters
+           remain ('inverted', 'in_args', 'allow_end', ...), they are named
+           at the declaration and mostly forwarded, not passed as literals
+    [x] 'check_options' declared twice (main.cpp and toc.hpp), 'program' and
+        'toc' took five positional bools
+        => done (2026-10-05): one 'check_options', passed as a whole
+    [x] tokenizer: write-only 'pos_' and 'src_str_' kept for debugging, a
+        '\0' in 'delimiters_' that a string view of a literal never holds
+    [x] easy: 'qa/coverage/test-rv32i.sh' aborted since before the cleanup
+        => done (2026-10-05): 'machine_rv32i::finish' returns after
+           'finish_output' for direct output ('as_emitted'), there is nothing
+           to resolve; the driver compiled against the old 'type'
+           constructor and 'program' signature, fixed
+    [x] easy: 'main.cpp' named the target as text in four places
+        => done (2026-10-05): 'enum class target' with a 'target_names' table
+    [x] easy: 'main.cpp' 'parse_size_bytes' used 'std::stoull' inside
+        'try { } catch (...)'
+        => done (2026-10-05): 'std::from_chars', no longer accepts octal,
+           leading space or '+'
+    [-] 20 headers carry '// reviewed: 2025-09-2x' stamps
+        => discarded (2026-10-05): kept as they are
+    [x] medium: the bounds check policy is written twice, 'machine_x86_64::
+        check_bounds' and 'machine_rv32i::emit_bounds_check': 'upper_covers_
+        lower', 'count_known', the comments and the 'lower_checked_registers_'
+        bookkeeping; the decisions belong in 'machine', the backends emit the
+        compare and the branch; both backends agree that '--checks=upper' alone
+        does not flag a negative index (x86_64 compares signed, rv32i skips a
+        negative index with 'bltz'), the rv32i limit is 2^31, the x86_64 limit
+        follows the register width
+        => done (2026-10-05): 'plan_bounds_check' in 'machine' (last pass 7)
+    [x] 'machine' had two protocols for the same operation ('compares_directly',
+        begin/set/end for array copy and memory equal)
+        => done (2026-10-05): 'copy_elements', 'arrays_equal' and
+           'memory_equal' take emitters ('address_emitter') of the front end;
+           each backend orders them (x86_64 and the rv32i run-time counts one
+           after the other, the rv32i known size nested so both addresses stay
+           in their registers) and hands out its pointer registers as the
+           preferred ones, so no register is allocated that was not before
+    [x] questionable: 'type::accessor' builds an 'ident_info' with an operand,
+        a type knows about storage and registers; 'toc' or 'ident_builder'
+        would hold that
+        => done (2026-10-05): 'ident_builder' (last pass 4)
+    [x] medium: the comparison was a string ("==", "<=", ...)
+        => done (2026-10-05): 'machine::comparison_operator' with 'mirrored'
+           and 'source_text'; 'swaps_operands' in 'machine_rv32i'; the
+           arithmetic operators passed as 'char' stay
+[x] cleanup, last pass (bigger items found while sweeping, do after the small ones)
+    1. [x] done (2026-10-05): 'machine::max_storage_bytes' and
+       'toc::assert_storage_fits_target' reject data and variables beyond what
+       the target addresses at the declaration (tests 741, 836)
+    2. [x] checked (2026-10-05): the layout step keeps the comment lines
+       directly above a member with it; the displaced comments found were an
+       insertion of mine and a note below a member, which now stays with it
+    3. [x] done (2026-10-05): 'machine::arithmetic_operator' replaces the
+       'char' operators of 'machine' and of 'expr_arith' ('ops_', the steps,
+       the merge passes); the source characters stay in the parser
+    4. [x] done (2026-10-05): 'type::accessor' is 'ident_builder', the
+       parameter lists of 'path_registers', generics 'add_func' and
+       'compile_lea' are structs; (2026-10-06) 'machine::arrays_equal',
+       'memory_equal' and 'copy_elements' take 'equality_request' and
+       'copy_request', 'ident_info::make_var' takes 'var_layout'
+    5. [x] done (2026-10-05): 'operand.hpp' holds 'operand' and the storage
+       arithmetic; was: 'decouple.hpp' (568 lines) holds four concerns: forward declarations,
+       the storage size arithmetic, the backend value type 'operand' and the
+       front end facts 'var_info' / 'ident_info'; 'machine.hpp' includes it
+       for 'operand' and gets the front end with it: 'operand', 'storage size'
+       and 'ident_info' are units of their own
+    6. [x] done (2026-10-05): 'register_pool'; was: both machines keep the same register discipline by hand ('allocation',
+       the unavailable mask, the lifo stack, "allocate/free ... register"
+       comments, 'lower_checked_registers_', the scratch statistics): one
+       'register_pool' parameterized by the register names, each machine keeps
+       its choice of order and its calling convention
+    7. [x] done (2026-10-05): 'plan_bounds_check' in 'machine'; was: the bounds check policy is written in both machines ('check_bounds' of
+       x86_64, cognitive complexity 27 and 'emit_bounds_check' of rv32i):
+       'machine::check_bounds' as the one sequence (lower, upper, what the
+       other one covers, what a count already checked) with hooks that emit
+       the compare and the branch
+    8. [x] done (2026-10-05): 'scope_stack', 'storage_layout',
+       'builtin_types' and 'ident_resolver' in 'toc.hpp', 'toc' forwards;
+       was: 'toc' is 1370 lines with 92 methods: the scope stack with lookups and
+       aliases, the storage allocation ('add_var', 'find_storage_location',
+       'next_frame_address', the entry gap), the identifier resolution
+       ('make_ident_info*'), the labels and source locations and the check
+       options; scopes, storage and resolution are classes of their own that
+       'toc' composes
+    9. [x] done (2026-10-05): 'report_renderer' and 'assignment_analysis'
+       in 'program.hpp'; was: 'program' orders the passes and also holds the built-in setup, the
+       report rendering and the definite assignment analysis
+       ('assert_functions_set_return_value'): the report and the analysis can
+       leave it
+    11. [x] done (2026-10-06): the functions with a cognitive complexity of
+        13 or more (clang-tidy, assertions excluded) are split into steps or
+        tables, the generated assembly is identical: the register report is
+        'register_trace' and 'register_use_report', 'resolve_or_empty' walks
+        with 'walk', 'compile_inline', 'parse_option', the parsers of
+        'expr_bool', 'stmt_block', 'expr_type', 'expr_arith', the bounds
+        checks; left on purpose: the flat dispatches of 'assembler_rv32i'
+        ('instruction_text', 'has_valid_immediate', 'encode_instruction') and
+        the linear known-size copy, zero and compare of 'machine_rv32i'
+        (a shared skeleton would need callbacks and read worse)
+    => done (2026-10-06): the open questions moved to 'etc/todo.txt'
 [x] low priority: 'machine_rv32i::is_self_copy' and 'same_memory' differed
     only in that 'same_memory' also equates two spellings of a register
     => done (2026-10-06): 'is_self_copy' removed, 'copy_value' uses
