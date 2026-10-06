@@ -103,7 +103,7 @@ class machine_rv32i : public machine {
     // temporaries allocated within the scope and restores what was protected.
     // it restores allocator bookkeeping only, not register values, and what
     // was allocated before the scope must not be freed within it
-    class address_scope {
+    class address_scope final {
         machine_rv32i& backend_;
         uint32_t saved_mask_;
         size_t saved_count_;

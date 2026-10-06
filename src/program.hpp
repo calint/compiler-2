@@ -69,7 +69,7 @@ struct report_section {
 
 // definite assignment: every path through a function with a return variable
 // sets it, and the paths that reach the end of a body
-class assignment_analysis {
+class assignment_analysis final {
   public:
     //
     // statics
@@ -119,7 +119,7 @@ class assignment_analysis {
 };
 
 // the statistics after the code, as comment lines
-class report_renderer {
+class report_renderer final {
   public:
     //
     // statics

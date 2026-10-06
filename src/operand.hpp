@@ -122,7 +122,7 @@ inline constexpr size_t max_size_bytes{
     return base + offset;
 }
 
-class operand {
+class operand final {
     enum class kind : uint8_t { empty, reg, memory, immediate };
 
     kind kind_{kind::empty};

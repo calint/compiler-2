@@ -26,7 +26,7 @@
 #include "ub_unset_var.hpp"
 #include "unary_ops.hpp"
 
-class stmt_identifier : public statement {
+class stmt_identifier final : public statement {
     struct ident_elem {
         token name_tk;
         token open_bracket_tk;
@@ -45,7 +45,7 @@ class stmt_identifier : public statement {
     };
 
     // the scratch registers that the address of a path is built with
-    class path_registers {
+    class path_registers final {
         std::reference_wrapper<std::vector<operand>> allocated_;
         // the registers from here on were allocated for this path and may be
         // overwritten, the earlier ones are the caller's

@@ -266,7 +266,7 @@ struct generic_method_info {
 
 // the generic functions and types of the program, the methods of the generic
 // types and the instances made of them
-class generic_registry {
+class generic_registry final {
     lut<generic_func_info> funcs_;
     lut<generic_type_info> types_;
     std::vector<generic_method_info> methods_;

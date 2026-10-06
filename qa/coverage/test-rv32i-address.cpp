@@ -44,7 +44,7 @@
 // ============================================================================
 
 // instruction-shape tests must not depend on register diagnostic comments
-class assembly_output : public std::ostringstream {
+class assembly_output final : public std::ostringstream {
   public:
     using std::ostringstream::str;
 

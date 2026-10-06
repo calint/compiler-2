@@ -36,7 +36,7 @@ class type;
 // 'unavailable' while it is allocated and while an operation protects the
 // registers of its operands. the machine names the registers, the pool counts
 // them by their index in the names of the machine and by masks of 1 << index
-class register_pool {
+class register_pool final {
   public:
     struct allocation {
         size_t index{};

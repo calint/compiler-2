@@ -381,7 +381,7 @@ examples:
 
 // discards what is written to it, the output of the parser is not used
 class null_stream final : public std::ostream {
-    class null_buffer : public std::streambuf {
+    class null_buffer final : public std::streambuf {
       protected:
         //
         // overridden methods
