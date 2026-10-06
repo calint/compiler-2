@@ -853,28 +853,12 @@ class machine_rv32i : public machine {
     auto copy_value(const token& src_loc_tk, const size_t indent,
                     const operand& dst, const operand& src) -> void override {
 
-        validate_scalar(src_loc_tk, dst.type_ref());
-        validate_scalar(src_loc_tk, src.type_ref());
+        validate_operands(src_loc_tk, dst, src);
 
-        assert(dst.is_register() or dst.is_memory());
         assert(not src.is_empty());
 
-        if (dst.is_memory()) {
-            validate_address(src_loc_tk, dst);
-        }
-
-        if (src.is_memory()) {
-            validate_address(src_loc_tk, src);
-        }
-
         // skip self assignment
-        if (dst.is_memory() and src.is_memory() and
-            dst.type_ref().is_same(src.type_ref()) and
-            dst.base_register() == src.base_register() and
-            dst.index_register() == src.index_register() and
-            dst.scale() == src.scale() and
-            dst.displacement() == src.displacement()) {
-
+        if (is_self_copy(dst, src)) {
             return;
         }
 
@@ -906,29 +890,13 @@ class machine_rv32i : public machine {
         load_into(src_loc_tk, indent, value, src);
 
         if (dst.is_memory()) {
-            const operand lowered{lower_address(src_loc_tk, indent, dst)};
-
-            // store the low 32, 16, or 8 bits at base + displacement
-            assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
-                             value.base_register(), lowered.displacement(),
-                             lowered.base_register());
-
+            store_low_bits(src_loc_tk, indent, dst, value);
             return;
         }
 
-        if (not register_needs_extension(dst.type_ref(), src)) {
-            return;
+        if (register_needs_extension(dst.type_ref(), src)) {
+            extend_register(indent, dst.type_ref(), value);
         }
-
-        const size_t shift{register_bits_ - dst.type_ref().size_bits()};
-
-        // discard high bits, then sign-extend integers or zero-extend bool
-        assembler_.slli(indent, value.base_register(), value.base_register(),
-                        shift);
-
-        assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
-                                value.base_register(), value.base_register(),
-                                shift);
     }
 
     [[nodiscard]] auto data_alignment() const -> size_t override {
@@ -1620,6 +1588,51 @@ class machine_rv32i : public machine {
         zero_known_size(src_loc_tk, indent, destination, size_bytes, start);
     }
 
+    //
+    // class methods
+    //
+
+    auto extend_register(const size_t indent, const type& dst_type,
+                         const operand& value) -> void {
+
+        const size_t shift{register_bits_ - dst_type.size_bits()};
+
+        // discard high bits, then sign-extend integers or zero-extend bool
+        assembler_.slli(indent, value.base_register(), value.base_register(),
+                        shift);
+
+        assembler_.immediate_op(indent, extend_shift_op(dst_type),
+                                value.base_register(), value.base_register(),
+                                shift);
+    }
+
+    auto store_low_bits(const token& src_loc_tk, const size_t indent,
+                        const operand& dst, const operand& value) -> void {
+
+        const operand lowered{lower_address(src_loc_tk, indent, dst)};
+
+        // store the low 32, 16, or 8 bits at base + displacement
+        assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
+                         value.base_register(), lowered.displacement(),
+                         lowered.base_register());
+    }
+
+    //
+    // statics
+    //
+
+    // the same address of the same type
+    [[nodiscard]] static auto is_self_copy(const operand& dst,
+                                           const operand& src) -> bool {
+
+        return dst.is_memory() and src.is_memory() and
+               dst.type_ref().is_same(src.type_ref()) and
+               dst.base_register() == src.base_register() and
+               dst.index_register() == src.index_register() and
+               dst.scale() == src.scale() and
+               dst.displacement() == src.displacement();
+    }
+
   private:
     // a direct offset from a word aligned base can prove more alignment than
     // the type does
@@ -1770,33 +1783,16 @@ class machine_rv32i : public machine {
 
         const uint32_t live{registers_.unavailable_mask()};
 
-        // argument registers are allocated last, so the helpers rarely
-        // clobber a live scratch register that would need saving
-        constexpr std::array<std::string_view, 8> clobbers{
-            "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6",
+        const std::span<const std::string_view> clobbered{
+            helper_clobbers(division),
         };
 
-        // the multiply helper changes the first five, the divide helper all
-        constexpr size_t multiply_clobber_count{5};
-
-        const size_t clobber_count{
-            division ? clobbers.size() : multiply_clobber_count,
+        const std::vector<std::string_view> saved{
+            live_clobbered(live, clobbered, destination),
         };
 
-        std::vector<std::string_view> saved;
-        for (const std::string_view name :
-             std::span{clobbers}.first(clobber_count)) {
-
-            // restoring a register destination would discard the result
-            if ((live & register_mask(name)) != 0 and
-                (not destination.is_register() or
-                 register_index(destination.base_register()) !=
-                     register_index(name))) {
-
-                saved.push_back(name);
-            }
-
-            // staging registers must survive the helper call
+        // staging registers must survive the helper call
+        for (const std::string_view name : clobbered) {
             registers_.protect(register_mask(name));
         }
 
@@ -4332,6 +4328,23 @@ class machine_rv32i : public machine {
         return (static_cast<uint32_t>(constant) & mask) == mask;
     }
 
+    // the registers that a call of the helper changes
+    [[nodiscard]] static auto helper_clobbers(const bool division)
+        -> std::span<const std::string_view> {
+
+        // argument registers are allocated last, so the helpers rarely
+        // clobber a live scratch register that would need saving
+        static constexpr std::array<std::string_view, 8> clobbers{
+            "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6",
+        };
+
+        // the multiply helper changes the first five, the divide helper all
+        constexpr size_t multiply_clobber_count{5};
+
+        return std::span{clobbers}.first(division ? clobbers.size()
+                                                  : multiply_clobber_count);
+    }
+
     // the register-immediate form of 'add', 'and', 'or' and 'xor', 'sub' adds
     // the negated immediate
     [[nodiscard]] static auto immediate_form(const op operation) -> op {
@@ -4392,6 +4405,30 @@ class machine_rv32i : public machine {
         }
 
         return constant == 0;
+    }
+
+    // the clobbered registers that hold a live value, 'live' is the mask of
+    // the registers in use
+    [[nodiscard]] static auto live_clobbered(
+        const uint32_t live, const std::span<const std::string_view> clobbered,
+        const operand& destination) -> std::vector<std::string_view> {
+
+        std::vector<std::string_view> saved;
+
+        for (const std::string_view name : clobbered) {
+            // restoring a register destination would discard the result
+            const bool is_destination{
+                destination.is_register() and
+                    register_index(destination.base_register()) ==
+                        register_index(name),
+            };
+
+            if ((live & register_mask(name)) != 0 and not is_destination) {
+                saved.push_back(name);
+            }
+        }
+
+        return saved;
     }
 
     // lb and lh sign-extend, a bool is zero-extended

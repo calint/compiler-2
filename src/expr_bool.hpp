@@ -205,6 +205,28 @@ class expr_bool_op final : public statement {
     }
 
   private:
+    // the result 'compile_boolean' stored in 'action.destination' is branched
+    // on using 'action.branch_on_true'
+    auto branch_on_stored_result(toc& tc, const size_t indent,
+                                 const machine::comparison_action& action) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        machine::comparison_action branch_action{action};
+        // branch on the stored result using 'action.branch_on_true'
+
+        branch_action.destination = {};
+        // 'compile_boolean' already stored the result and applied
+        // inversion
+
+        branch_action.inverted = false;
+
+        x.compare_and_branch(tok(), indent, action.destination,
+                             operand::imm("0", tc.get_type_default()),
+                             branch_action, {});
+    }
+
     // two instances or arrays are compared as memory, anything else as numbers
     // e.g. 'p1 == p2' of instances, but 'p1 < p2' or 'p1 == 1' is rejected
     auto classify_operands(const toc& tc) -> void {
@@ -365,21 +387,8 @@ class expr_bool_op final : public statement {
             lhs.compile_boolean(tc, indent + 1, action.destination,
                                 action.inverted);
 
-            machine& x{tc.machine()};
-
             if (not action.target.empty()) {
-                machine::comparison_action branch_action{action};
-                // branch on the stored result using 'action.branch_on_true'
-
-                branch_action.destination = {};
-                // 'compile_boolean' already stored the result and applied
-                // inversion
-
-                branch_action.inverted = false;
-
-                x.compare_and_branch(tok(), indent, action.destination,
-                                     operand::imm("0", tc.get_type_default()),
-                                     branch_action, {});
+                branch_on_stored_result(tc, indent, action);
             }
 
             return;
@@ -462,19 +471,9 @@ class expr_bool_op final : public statement {
                                     action.destination,
                                     action.inverted != is_not_equal);
 
-            if (action.target.empty()) {
-                return;
+            if (not action.target.empty()) {
+                branch_on_stored_result(tc, indent, action);
             }
-
-            machine::comparison_action branch_action{action};
-            // the stored result has the inversion applied
-
-            branch_action.destination = {};
-            branch_action.inverted = false;
-
-            x.compare_and_branch(tok(), indent, action.destination,
-                                 operand::imm("0", tc.get_type_default()),
-                                 branch_action, {});
 
             return;
         }

@@ -330,40 +330,11 @@ class stmt_def_dat final : public statement {
 
         // only 'i8[]' can be initialized with a string token
         if (elroot.src_loc_tk.is_string()) {
-            x.emit_string_data(elroot.src_loc_tk.string_text());
-            const size_t size_bytes{elroot.src_loc_tk.string_size_bytes()};
-
-            // pad remaining array with 0
-            assert(elroot.array_count != 0);
-
-            if (size_bytes < elroot.array_count) {
-                x.comment(elroot.src_loc_tk, 0, "zero remaining array");
-
-                x.emit_repeated_data(tp.size_bytes(),
-                                     elroot.array_count - size_bytes, {});
-            }
-
+            compile_data_string(x, tp, elroot);
             return;
         }
 
-        const auto values{
-            elroot.elems |
-                std::views::transform(
-                    [](const elem& element) -> machine::data_initializer {
-                        return {
-                            .value{element.value},
-                            .uops{element.uops.to_string()},
-                        };
-                    }),
-        };
-
-        x.emit_data_array(tp.size_bytes(), values);
-
-        // pad remaining array with 0
-        if (elroot.array_count != elroot.elems.size()) {
-            x.emit_repeated_data(tp.size_bytes(),
-                                 elroot.array_count - elroot.elems.size(), {});
-        }
+        compile_data_elements(x, tp, elroot);
     }
 
     static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)
@@ -416,6 +387,30 @@ class stmt_def_dat final : public statement {
         x.emit_zero_data(size_bytes);
     }
 
+    // e.g. 'dat primes = []{2, 3, 5}'
+    static auto compile_data_elements(machine& x, const type& tp,
+                                      const elem& elroot) -> void {
+
+        const auto values{
+            elroot.elems |
+                std::views::transform(
+                    [](const elem& element) -> machine::data_initializer {
+                        return {
+                            .value{element.value},
+                            .uops{element.uops.to_string()},
+                        };
+                    }),
+        };
+
+        x.emit_data_array(tp.size_bytes(), values);
+
+        // pad remaining array with 0
+        if (elroot.array_count != elroot.elems.size()) {
+            x.emit_repeated_data(tp.size_bytes(),
+                                 elroot.array_count - elroot.elems.size(), {});
+        }
+    }
+
     static auto compile_data_rec(toc& tc, const type& tp, const elem& elroot)
         -> void {
 
@@ -459,6 +454,24 @@ class stmt_def_dat final : public statement {
 
         x.emit_zero_data(multiply_storage_size(
             elroot.src_loc_tk, tp.size_bytes(), remaining_count));
+    }
+
+    // e.g. 'dat greeting = "hello"'
+    static auto compile_data_string(machine& x, const type& tp,
+                                    const elem& elroot) -> void {
+
+        x.emit_string_data(elroot.src_loc_tk.string_text());
+        const size_t size_bytes{elroot.src_loc_tk.string_size_bytes()};
+
+        // pad remaining array with 0
+        assert(elroot.array_count != 0);
+
+        if (size_bytes < elroot.array_count) {
+            x.comment(elroot.src_loc_tk, 0, "zero remaining array");
+
+            x.emit_repeated_data(tp.size_bytes(),
+                                 elroot.array_count - size_bytes, {});
+        }
     }
 
     // an array without elements, the elements are parsed into it
