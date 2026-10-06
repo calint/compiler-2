@@ -858,7 +858,7 @@ class machine_rv32i : public machine {
         assert(not src.is_empty());
 
         // skip self assignment
-        if (is_self_copy(dst, src)) {
+        if (same_memory(dst, src)) {
             return;
         }
 
@@ -1615,22 +1615,6 @@ class machine_rv32i : public machine {
         assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
                          value.base_register(), lowered.displacement(),
                          lowered.base_register());
-    }
-
-    //
-    // statics
-    //
-
-    // the same address of the same type
-    [[nodiscard]] static auto is_self_copy(const operand& dst,
-                                           const operand& src) -> bool {
-
-        return dst.is_memory() and src.is_memory() and
-               dst.type_ref().is_same(src.type_ref()) and
-               dst.base_register() == src.base_register() and
-               dst.index_register() == src.index_register() and
-               dst.scale() == src.scale() and
-               dst.displacement() == src.displacement();
     }
 
   private:

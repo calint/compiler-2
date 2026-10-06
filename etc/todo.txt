@@ -163,9 +163,6 @@ better assembler code, medium, largest gain first
         ('instruction_text', 'has_valid_immediate', 'encode_instruction') and
         the linear known-size copy, zero and compare of 'machine_rv32i'
         (a shared skeleton would need callbacks and read worse)
-    12. low priority: 'machine_rv32i::is_self_copy' and 'same_memory' differ
-        only in that 'same_memory' also equates two spellings of a register;
-        one of them could go, which may skip a few more self copies
 [ ] ai test suite in c++ being human readable
 [ ] "dat" replaced with "let"?
 [ ] medium: roome.baz: an inline bool call used as a condition is materialized

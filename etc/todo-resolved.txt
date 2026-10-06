@@ -1,6 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] low priority: 'machine_rv32i::is_self_copy' and 'same_memory' differed
+    only in that 'same_memory' also equates two spellings of a register
+    => done (2026-10-06): 'is_self_copy' removed, 'copy_value' uses
+       'same_memory'; all tests, lint and roome unchanged
 [x] easy: low priority: missing direct includes (313 of misc-include-cleaner,
     'std::format', 'size_t', ...): add per header
     => done (2026-10-05): every header includes what it uses and nothing
