@@ -203,6 +203,7 @@ class stmt_def_dat final : public statement {
     // point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8', 'dat b = true' a 'bool'
     // and 'dat n = 3' has the default type
     [[nodiscard]] auto parse_initializer(toc& tc, tokenizer& tz) -> elem {
+        // e.g. 'dat greeting = "hello"'
         if (tz.peek_char_after_whitespace() == '"') {
             const token string_tk{tz.next_token()};
             set_type(tc.get_type_i8());
@@ -217,6 +218,7 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
+        // e.g. 'dat primes = []{2, 3, 5}'
         if (is_default_array_literal(tz)) {
             set_type(tc.get_type_default());
             return parse_array_literal(tc, tz);
@@ -232,6 +234,8 @@ class stmt_def_dat final : public statement {
 
         const token tk{tz.next_token()};
 
+        // e.g. 'dat bytes = i8[]{1, 2}' or 'dat points = point[2]{{1, 2}, {3,
+        // 4}}'
         if (is_array_literal(tc, tk, tz)) {
             set_named_type(tc, tk);
             return parse_array_literal(tc, tz);
@@ -247,6 +251,7 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
+        // e.g. 'dat p = point{1, 2}'
         if (is_record_literal(tc, tk, tz)) {
             set_named_type(tc, tk);
             return parse_type(tc, tz, get_type());
@@ -262,6 +267,7 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
+        // e.g. 'dat x = i8(3)'
         if (tc.is_integer_type_name(tk.text()) and
             tz.peek_char_after_whitespace() == '(') {
 
@@ -271,6 +277,7 @@ class stmt_def_dat final : public statement {
             return parse_conversion(tc, tz);
         }
 
+        // e.g. 'dat limit = 10' or 'dat enabled = true'
         const bool is_bool{tk.is_text("true") or tk.is_text("false")};
         set_type(is_bool ? tc.get_type_bool() : tc.get_type_default());
 
@@ -290,7 +297,9 @@ class stmt_def_dat final : public statement {
     // statics
     //
 
-    // the '}' that ends the initializer, when it is the next character
+    // the '}' that ends the initializer, when it is the next character, e.g.
+    // the
+    // '}' of '{1, 2}'
     [[nodiscard]] static auto at_closing_brace(tokenizer& tz, elem& el)
         -> bool {
 
@@ -628,7 +637,8 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
-    // the ',' before the initializer of the field 'next'
+    // the ',' before the initializer of the field 'next', e.g. the ',' of
+    // '{1, 2}' before the '2'
     static auto parse_field_delimiter(tokenizer& tz, const type& tp,
                                       const type_field& next, elem& el)
         -> void {
@@ -651,6 +661,7 @@ class stmt_def_dat final : public statement {
 
         elem el{};
         el.src_loc_tk = tz.cur_position_token();
+        // e.g. the '{1, 2}' of 'dat p = point{1, 2}'
         el.open_brace_tk_ = tz.is_next_char_token('{');
 
         if (el.open_brace_tk_.is_empty()) {
@@ -663,7 +674,7 @@ class stmt_def_dat final : public statement {
         const std::span<const type_field> flds{tp.fields()};
 
         while (not at_closing_brace(tz, el)) {
-            // each field adds one element
+            // each field adds one element, e.g. the '1' and the '2' of '{1, 2}'
             const size_t index{el.elems.size()};
 
             if (index == flds.size()) {

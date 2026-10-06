@@ -62,13 +62,13 @@ class expr_any final : public statement {
 
         set_type(tp);
 
-        // the basic case
+        // the basic case, e.g. 'x + 1' or 'point{1, 2}'
         if (not is_array) {
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
             return;
         }
 
-        // array
+        // array, e.g. 'i8[]{1, 2}' or 'a' of 'var b = a'
 
         is_unsized_destination_ = array_count_ == 0;
 
@@ -104,12 +104,14 @@ class expr_any final : public statement {
         if (open_brace_tk_.is_empty()) {
             // 'expr_type' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
+            // e.g. 'var b = a' copies the array 'a'
             vars_.emplace_back(expr_type{tc, tz, tp, true});
             is_identifier_ = true;
 
             return;
         }
 
+        // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}'
         parse_braced_elements(tc, tz, tp, in_args);
     }
 
@@ -586,6 +588,8 @@ class expr_any final : public statement {
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
     // the default type
+    // the type and size of an array literal, e.g. 'i8[4]' of 'i8[4]{1, 2}' or
+    // '[]' of '[]{1, 2}' which has the default type
     auto parse_element_type(toc& tc, tokenizer& tz, const type& tp) -> void {
         const token tk{tz.next_token()};
         const bool is_typed{is_array_literal(tc, tk, tz)};
@@ -616,6 +620,7 @@ class expr_any final : public statement {
             element_type_tk_ = tk;
         }
 
+        // e.g. the '4' of 'i8[4]', none for 'i8[]'
         literal_count_const_ = {tc, tz, 0};
 
         close_bracket_tk_ = tz.is_next_char_token(']');

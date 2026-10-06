@@ -111,6 +111,7 @@ class stmt_identifier : public statement {
 
         token src_loc_tk{tk};
 
+        // a path of elements, e.g. 'rooms[i].entities[j].name'
         while (true) {
             assert_indexable(tc, tz, tk);
             parse_element(tc, tz, tk);
@@ -486,6 +487,7 @@ class stmt_identifier : public statement {
     [[nodiscard]] auto extends_path(toc& tc, tokenizer& tz, token& tk,
                                     token& src_loc_tk) -> bool {
 
+        // e.g. the '.entities' of 'rooms[i].entities[j]'
         const token dot_tk{tz.is_next_char_token('.')};
 
         if (dot_tk.is_empty()) {
@@ -494,6 +496,7 @@ class stmt_identifier : public statement {
 
         const token next_tk{tz.next_token()};
 
+        // e.g. the '.add' of 'lst.add(1)'
         if (is_method_name(tc, tz, tk, next_tk)) {
             // the path so far is resolved as the receiver
             method_dot_tk_ = dot_tk;
@@ -597,6 +600,7 @@ class stmt_identifier : public statement {
 
     // a path element with an optional '[index]'
     auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void {
+        // e.g. the '[i]' of 'rooms[i]', none for 'name'
         const token open_bracket_tk{tz.is_next_char_token('[')};
 
         if (open_bracket_tk.is_empty()) {

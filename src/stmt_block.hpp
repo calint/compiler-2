@@ -34,6 +34,7 @@ class stmt_block final : public statement {
   public:
     // note: without '{', a single statement is allowed unless braces are
     // required
+    // e.g. '{ a = 1 b = 2 }', or the 'exit(1)' of 'if a == 1 exit(1)'
     stmt_block(toc& tc, tokenizer& tz, const bool braces_required = false)
         : statement{tz.cur_position_token()},
           open_brace_tk_{tz.is_next_char_token('{')},
@@ -130,6 +131,7 @@ class stmt_block final : public statement {
 
   private:
     // a block without braces is one statement, none at the end of the source
+    // e.g. 'exit(1)' of 'if a == 1 exit(1)'
     auto parse_single_statement(toc& tc, tokenizer& tz) -> void {
         close_brace_tk_ = tz.is_next_char_token('}');
 
@@ -147,7 +149,8 @@ class stmt_block final : public statement {
         statements_.emplace_back(parse_statement(tc, tz, tk));
     }
 
-    // the statements up to the '}'
+    // the statements up to the '}', e.g. 'var a = 1 exit(a)' of
+    // '{ var a = 1 exit(a) }'
     auto parse_statements(toc& tc, tokenizer& tz) -> void {
         while (true) {
             // the '}' ends the block
@@ -157,7 +160,7 @@ class stmt_block final : public statement {
                 return;
             }
 
-            // a '{' starts a subblock
+            // a '{' starts a subblock, e.g. '{ { a = 1 } b = 2 }'
             if (const token t{tz.is_next_char_token('{')}; not t.is_empty()) {
                 tz.put_back_token(t);
                 statements_.emplace_back(std::make_unique<stmt_block>(tc, tz));
@@ -186,6 +189,7 @@ class stmt_block final : public statement {
         -> std::unique_ptr<statement> {
 
         // the discarded result is rejected at compile like any other call
+        // e.g. 'point.at(1, 2)'
         if (is_constructor_call(tc, tk, tz)) {
             return create_stmt_constructor_call(tc, tz, tk);
         }
@@ -194,6 +198,7 @@ class stmt_block final : public statement {
 
         stmt_identifier si{tc, {}, tk, tz};
 
+        // e.g. 'lst.add(1)'
         if (si.is_method_receiver()) {
             return create_stmt_method_call(tc, tz, std::move(si));
         }
@@ -203,11 +208,13 @@ class stmt_block final : public statement {
             return create_stmt_call(tc, tz, si, token{});
         }
 
+        // e.g. 'p1 = p2'
         if (const token t{tz.is_next_char_token('=')}; not t.is_empty()) {
             return std::make_unique<stmt_assign_var>(
                 tc, tz, std::move(si), t, si.is_array(), si.array_count());
         }
 
+        // e.g. 'show(x)'
         // note: solves circular reference
         if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
             return create_stmt_call(tc, tz, si, t);

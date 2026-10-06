@@ -913,9 +913,11 @@ class expr_bool final : public statement {
         set_type(tc.get_type_bool());
 
         // a caller might have supplied the first operand it already parsed
+        // e.g. the 'bool' of 'var b = bool'
         parse_operand(tc, tz, std::move(first_expression));
 
         // the operands are joined by 'and' or by 'or', not by both
+        // e.g. 'a == 1 and b == 2 and c == 3'
         while (const std::optional<token> op_tk{read_connective(tz)}) {
             assert_same_connective(*op_tk);
 
@@ -1055,6 +1057,7 @@ class expr_bool final : public statement {
     }
 
   private:
+    // e.g. 'a or b and c' is rejected, '(a or b) and c' is not
     auto assert_same_connective(const token& op_tk) const -> void {
         if (ops_.empty() or ops_.front().is_text(op_tk.text())) {
             return;
@@ -1286,6 +1289,7 @@ class expr_bool final : public statement {
     // enclosed expression ends with its ')'
     [[nodiscard]] auto read_connective(tokenizer& tz) -> std::optional<token> {
         // the ')' ends an enclosed expression
+        // e.g. '(a == 1 or b == 2)'
         if (enclosed_) {
             close_paren_tk_ = tz.is_next_char_token(')');
 
@@ -1295,6 +1299,7 @@ class expr_bool final : public statement {
         }
 
         // read 'and' or 'or'
+        // e.g. the 'and' of 'a == 1 and b == 2'
         const token op_tk{tz.next_token()};
 
         if (op_tk.is_text("or") or op_tk.is_text("and")) {
@@ -1303,6 +1308,8 @@ class expr_bool final : public statement {
 
         // anything else ends the expression, an enclosed one needs its ')'
         // first
+        // e.g. the 'exit' of 'if a == 1 exit(1)', or of '(a == 1 exit(1)'
+        // which lacks its ')'
         if (enclosed_) {
             throw compiler_exception{op_tk, "expected ')' to close expression"};
         }

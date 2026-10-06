@@ -56,6 +56,7 @@ class stmt_def_type final : public statement {
 
         toc::assert_name_not_reserved(name_tk_);
 
+        // e.g. 'type point { x, y }'
         if (not open_brace_tk_.is_empty()) {
             parse_fields(tc, tz);
 
@@ -276,6 +277,7 @@ class stmt_def_type final : public statement {
     auto parse_fields(toc& tc, tokenizer& tz) -> void {
         while (true) {
             // read field definition with the next token being the name
+            // e.g. 'x', 'x i32' or 'items point[4]'
             fields_.emplace_back(tc, tz.next_token(), tz);
             close_brace_tk_ = tz.is_next_char_token('}');
 
@@ -295,6 +297,7 @@ class stmt_def_type final : public statement {
             field_delims_tk_.emplace_back(t);
 
             // a trailing ',' lets each field end its line the same way
+            // e.g. 'type point { x, y, }'
             close_brace_tk_ = tz.is_next_char_token('}');
 
             if (not close_brace_tk_.is_empty()) {

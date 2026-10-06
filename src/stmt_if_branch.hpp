@@ -22,6 +22,8 @@ class stmt_if_branch final : public statement {
     stmt_block code_;
 
   public:
+    // e.g. 'a == b {x = 1}' of 'if a == b {x = 1} else {y = 2}', the condition
+    // and the block that runs when it holds
     stmt_if_branch(toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()},
           condition_{tc, tz.next_whitespace_token(), tz}, code_{tc, tz} {

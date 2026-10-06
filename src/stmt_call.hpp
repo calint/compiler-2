@@ -1286,10 +1286,12 @@ class stmt_call : public expression {
         for (size_t i{first}; i < params.size(); ++i) {
             // otherwise the missing argument is reported as a parse error of
             // the parameter's type
+            // e.g. 'f()' of 'func f(x)'
             if (i == first and tz.peek_char_after_whitespace() == ')') {
                 throw_missing_argument(tz, params.at(i), i);
             }
 
+            // e.g. the ',' of 'f(a, b)'
             if (i != first) {
                 const token t{tz.is_next_char_token(',')};
 
@@ -1300,9 +1302,11 @@ class stmt_call : public expression {
                 arg_delims_tk_.emplace_back(t);
             }
 
+            // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
             args_.emplace_back(tc, tz, params.at(i).get_type(), true, false, 0);
         }
 
+        // e.g. 'f(a, b' lacks it
         close_paren_tk_ = tz.is_next_char_token(')');
 
         if (close_paren_tk_.is_empty()) {

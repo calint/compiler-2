@@ -20,6 +20,8 @@ class stmt_loop final : public statement {
         : statement{src_loc_tk} {
 
         set_type(tc.get_type_void());
+
+        // e.g. 'loop { x = x + 1 if x == 9 break }'
         const std::string label{tc.create_unique_label(tok(), "loop")};
         tc.enter_loop(label);
         code_ = {tc, tz};

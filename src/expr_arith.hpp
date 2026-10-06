@@ -85,10 +85,12 @@ class expr_arith final : public expression {
 
         // a recursive call might have supplied the first element it already
         // parsed
+        // e.g. the 'b' of 'b * c' in 'a + b * c'
         exprs_.emplace_back(first_expression ? std::move(first_expression)
                                              : parse_element(tc, tz, in_args));
 
         // set the type of this list same as first element
+        // e.g. 'x + 1' has the type of the variable 'x'
         set_type(type_of_first_element(tc));
 
         // start the loop of arithmetic operator and element
@@ -99,6 +101,7 @@ class expr_arith final : public expression {
         while (true) {
 
             // a sub-expression is closed by its ')'
+            // e.g. '(a + b)'
             if (is_closed(tz)) {
                 validate_arithmetic_operands(tc);
                 return;
@@ -109,6 +112,7 @@ class expr_arith final : public expression {
             const token ws_before_op_tk{tz.next_whitespace_token()};
 
             // no operator also ends a list in function arguments at ',' or ')'
+            // e.g. the ',' of 'f(a + b, c)'
             const std::optional<arithmetic_operator> next_op{peek_operator(tz)};
 
             if (not next_op) {
@@ -122,6 +126,7 @@ class expr_arith final : public expression {
 
             // a higher precedence groups the previous element with what
             // follows, so parse that as a sub-expression
+            // e.g. the '*' of 'a + b * c' groups 'b * c'
             if (next_precedence > precedence) {
                 open_implied_subexpression(tc, tz, in_args, next_precedence,
                                            ws_before_op_tk);
@@ -130,6 +135,7 @@ class expr_arith final : public expression {
             }
 
             // a lower precedence returns to the parent list
+            // e.g. the '-' of 'a + b * c - d' ends 'b * c'
             if (is_end_of_implied_subexpression(precedence, next_precedence)) {
                 ops_.pop_back();
                 end_list(tc, tz, ws_before_op_tk);
@@ -137,6 +143,7 @@ class expr_arith final : public expression {
             }
 
             // possible new lower or same precedence
+            // e.g. the '-' of 'a + b - c'
             precedence = next_precedence;
 
             // consume the peeked operator
@@ -1139,6 +1146,7 @@ class expr_arith final : public expression {
 
         // consume the second character of a previously recognized shift
         // operator
+        // e.g. the second '<' of 'a << 2'
         if (ch == '<' or ch == '>') {
             tz.skip_char();
         }

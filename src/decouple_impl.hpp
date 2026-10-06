@@ -419,11 +419,12 @@ auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void {
     const std::span<const type_field> flds{tp.fields()};
 
     while (not at_closing_brace(tz)) {
-        // each field adds one expression
+        // each field adds one expression, e.g. the 'x' and the 'y' of '{x, y}'
         const size_t index{exprs_.size()};
 
         if (index == flds.size()) {
             // the error is at the field that is too much
+            // e.g. the 'z' of '{x, y, z}' for a type with two fields
             std::ignore = tz.is_next_char_token(',');
 
             throw compiler_exception{

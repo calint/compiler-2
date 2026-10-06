@@ -804,7 +804,8 @@ class stmt_def_func final : public statement {
     }
 
     // the same reading as the parameters of an instance, without resolving the
-    // types
+    // types, e.g. '(s T, n int) res T' gives the parameter types 'T' and 'int'
+    // and the result type 'T'
     [[nodiscard]] static auto read_signature_types(tokenizer& tz)
         -> signature_types {
 

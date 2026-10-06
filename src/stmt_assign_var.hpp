@@ -39,6 +39,8 @@ class stmt_assign_var final : public statement {
 
         set_type(dst_info.type_ref());
 
+        // the value is parsed as the type of the destination, e.g. 'p1 = p2' or
+        // 'a = {1, 2}' or 'x = y + 1'
         expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_count};
 
         if (array_count == 0) {

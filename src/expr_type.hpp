@@ -158,7 +158,8 @@ class expr_type final : public statement {
     auto assert_items_not_reading(const record_destination& dst,
                                   const size_t record_offset) const -> void;
 
-    // the '}' that ends the fields, when it is the next character
+    // the '}' that ends the fields, when it is the next character, e.g. the '}'
+    // of '{x, y}'
     [[nodiscard]] auto at_closing_brace(tokenizer& tz) -> bool {
         close_brace_tk_ = tz.is_next_char_token('}');
         return not close_brace_tk_.is_empty();
@@ -192,7 +193,8 @@ class expr_type final : public statement {
     // out-of-line: creates the 'stmt_call' or 'stmt_identifier'
     auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
 
-    // the ',' before the value of the field 'next'
+    // the ',' before the value of the field 'next', e.g. the ',' of '{x, y}'
+    // before the value of 'y'
     auto parse_field_delimiter(tokenizer& tz, const type& tp,
                                const type_field& next) -> void {
 

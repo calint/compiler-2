@@ -55,7 +55,8 @@ struct generic_param {
     // statics
     //
 
-    // the '>' ends the parameters, a ',' goes on with the next
+    // the '>' ends the parameters, a ',' goes on with the next, e.g. the ','
+    // after 'T type' of '<T type, capacity>'
     [[nodiscard]] static auto ends_parameters(tokenizer& tz,
                                               const generic_param& param)
         -> bool {
@@ -100,7 +101,7 @@ struct generic_param {
     }
 
     // 'type' after the name makes the parameter a type, none makes it a
-    // constant
+    // constant, e.g. 'T type' and 'capacity' of '<T type, capacity>'
     [[nodiscard]] static auto reads_type_kind(tokenizer& tz,
                                               const token& name_tk) -> bool {
 
