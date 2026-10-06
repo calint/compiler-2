@@ -2627,3 +2627,9 @@ SRC=858 && EXP=0 && RUN
 
 # x86: a function name longer than the register report is not wrapped
 if [[ $MACHINE == x86_64 ]]; then SRC=859 && COMPERR; fi
+
+# the code ends with the jump of a loop, no function body follows it
+SRC=860 && EXP=3 && RUN
+
+# two instances of a generic 'noinline' function have unique labels
+SRC=861 && EXP=6 && RUN

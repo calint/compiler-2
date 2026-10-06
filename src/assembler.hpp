@@ -564,8 +564,8 @@ class assembler {
             return next;
         }
 
-        // the code ends with an instruction that is no jump
-        std::unreachable();
+        // the code ends, e.g. with the jump of a loop that never ends
+        return std::nullopt;
     }
 
     // every branch the optimizer sees has an inverse

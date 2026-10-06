@@ -1,0 +1,8 @@
+# the code ends with the jump of a loop that is left by 'exit'
+func main() {
+    var i = 0
+    loop {
+        if i == 3 exit(i)
+        i = i + 1
+    }
+}

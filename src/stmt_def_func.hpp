@@ -176,6 +176,26 @@ class stmt_def_func final : public statement {
             std::ranges::count_if(params_, &stmt_def_func_param::is_array));
     }
 
+    // keeps the labels of the body unique per instance: instances of one
+    // generic definition have the same source locations
+    [[nodiscard]] auto
+    body_call_path(const std::span<const size_t> array_lengths) const
+        -> std::string {
+
+        const bool is_instance{generic_.mode == generic_part::kind::instance};
+
+        if (array_lengths.empty()) {
+            return is_instance ? label_name(name()) : std::string{};
+        }
+
+        if (not is_instance) {
+            return instance_path(array_lengths);
+        }
+
+        return std::format("{}.{}", label_name(name()),
+                           instance_path(array_lengths));
+    }
+
     // 'func' is a keyword so no user name or internal label starts with 'func.'
     // e.g. 'func.sum.len.4.8' for array lengths 4 and 8
     [[nodiscard]] auto
@@ -204,11 +224,7 @@ class stmt_def_func final : public statement {
 
         x.reserve_frame_base();
 
-        // the path keeps the labels of the body unique per instance
-        tc.enter_noninline_func(name(),
-                                array_lengths.empty()
-                                    ? std::string{}
-                                    : instance_path(array_lengths),
+        tc.enter_noninline_func(name(), body_call_path(array_lengths),
                                 x.frame_base_register());
 
         add_constants(tc, indent + 1);

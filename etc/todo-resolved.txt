@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: high priority: labels of the bodies of 'noinline' instances of one
+    generic definition collide (same source locations), e.g. 'loop.106.5' in
+    'func.str.input' and 'func.name.input' of 'text.input' (found by making
+    every function of 'etc/roome/roome.baz' 'noinline')
+    => done (2026-10-06): 'stmt_def_func::body_call_path' puts the instance
+       name in the call path of the body; test 861
+[x] medium: high priority: 'etc/roome/roome.baz' with 'noinline' removed from
+    both 'entity.find_object' and 'parse_input' aborts the compiler with
+    'std::unreachable(): Undefined behavior detected.'
+    => done (2026-10-06): 'assembler::following_unconditional_jump' reached
+       the end of the code when it ends with the jump of a loop (no function
+       body after it); it returns 'std::nullopt'; test 860
 [-] medium: 'stmt_call': check arguments against parameters in the
     constructor instead of at compile
     => tried: the type check at parse gave a wrong message for 'var x =
