@@ -132,10 +132,10 @@ class register_trace final {
         token call_site_tk;
     };
 
-    // what the instances of a callee hold themselves
+    // what the calls of a callee hold themselves
     struct callee_use {
         size_t own_peak{};
-        size_t instances{};
+        size_t calls{};
     };
 
     // what the calls of a function with a body of its own save
@@ -164,7 +164,7 @@ class register_trace final {
     // 'name' made at 'call_site_tk'
     auto begin_frame(const token& call_site_tk, std::string name) -> void {
         if (enabled_) {
-            ++callees_[name].instances;
+            ++callees_[name].calls;
         }
 
         frames_.push_back({
@@ -359,7 +359,7 @@ class register_use_report final {
     [[nodiscard]] auto
     candidates_text(const std::vector<candidate>& found) const -> std::string {
 
-        constexpr size_t min_name_width{14};
+        constexpr size_t min_name_width{15};
 
         size_t name_width{min_name_width};
 
@@ -368,11 +368,12 @@ class register_use_report final {
         }
 
         std::string text{
-            std::format("\n\nmaking a frame noinline starts its body with all "
-                        "{} registers free and saves the registers held "
-                        "above it around the call:\n\n  {}  held inside  "
-                        "saved at the call",
-                        register_total_, padded("noinline frame", name_width)),
+            std::format(
+                "\n\nthese frames are not noinline, making one noinline "
+                "starts its body with all {} registers free and "
+                "saves the registers held above it around the "
+                "call:\n\n  {}  held inside  saved at the call",
+                register_total_, padded("candidate frame", name_width)),
         };
 
         for (const candidate& entry : found) {
@@ -947,20 +948,20 @@ class machine {
                            location_text(frame.call_site_tk));
     }
 
-    // the most registers one instance of each callee holds itself
+    // the most registers one call of each callee holds itself
     [[nodiscard]] auto callee_lines() const -> std::vector<std::string> {
         std::vector<std::string> lines{
             "",
-            "per callee, the most registers one instance holds itself",
+            "per callee, the most registers one call holds itself",
             "",
-            "  own  instances  callee",
+            "  own  calls  callee",
         };
 
         for (const auto& [name, use] : descending(
                  trace_.callees(), &register_trace::callee_use::own_peak)) {
 
-            lines.push_back(std::format("{:>5}{:>11}  {}", use.own_peak,
-                                        use.instances, name));
+            lines.push_back(
+                std::format("{:>5}{:>7}  {}", use.own_peak, use.calls, name));
         }
 
         return lines;

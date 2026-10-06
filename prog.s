@@ -3659,26 +3659,26 @@ vars.end:
 ; the peak is in a function with a body of its own, compiled with all registers
 ; free, its callers are not on this stack
 ;
-; per callee, the most registers one instance holds itself
+; per callee, the most registers one call holds itself
 ;
-;   own  instances  callee
-;     6          1  print_num (noinline body)
-;     5          1  main
-;     4          9  print
-;     4          1  str.input
-;     4          1  str.print
-;     3          1  factorial (noinline body)
-;     1         60  assert
-;     1          3  baz
-;     1          1  greet
-;     1          6  inv
-;     0          2  bar
-;     0          1  faz
-;     0          1  object.at
-;     0          2  point.at
-;     0          2  point.fooz
-;     0          2  point.sum
-;     0          1  point.x
+;   own  calls  callee
+;     6      1  print_num (noinline body)
+;     5      1  main
+;     4      9  print
+;     4      1  str.input
+;     4      1  str.print
+;     3      1  factorial (noinline body)
+;     1     60  assert
+;     1      3  baz
+;     1      1  greet
+;     1      6  inv
+;     0      2  bar
+;     0      1  faz
+;     0      1  object.at
+;     0      2  point.at
+;     0      2  point.fooz
+;     0      2  point.sum
+;     0      1  point.x
 ;
 ; calls of functions with a body of their own save the registers held at the
 ; call
