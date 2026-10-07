@@ -1022,12 +1022,6 @@ class machine {
         return trace_.current_frame();
     }
 
-    // runs 'emit' for its checks only, nothing it emits is kept and the
-    // registers it used are not counted
-    auto discard_output(const std::function_ref<void()> emit) -> void {
-        std::ignore = measure_code_size(emit);
-    }
-
     template <std::ranges::input_range values_t>
     auto emit_data_array(const size_t element_size_bytes, values_t&& values)
         -> void {
@@ -1088,8 +1082,9 @@ class machine {
         return locations_.human_readable(src_loc_tk);
     }
 
-    // like 'discard_output', returns the size of the code 'emit' made, in the
-    // unit of the target
+    // runs 'emit' for its checks and returns the size of the code it made, in
+    // the unit of the target, nothing it emits is kept and the registers it
+    // used are not counted
     [[nodiscard]] auto measure_code_size(const std::function_ref<void()> emit)
         -> size_t {
 
@@ -1398,10 +1393,6 @@ class machine {
     auto record_scratch_registers(const register_pool& pool) -> void {
         usage_max_scratch_regs_ =
             std::max(usage_max_scratch_regs_, pool.scratch_count());
-    }
-
-    [[nodiscard]] auto source() const -> std::string_view {
-        return locations_.source();
     }
 
     // resolved and optimized jumps need every line before writing

@@ -374,10 +374,6 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
-    [[nodiscard]] auto assembler() const -> const assembler_rv32i& {
-        return assembler_;
-    }
-
     // i/o routines replacing system calls return through a7 and change only
     // 'clobbered' besides a0, so the call keeps just the live ones like a
     // system call does
