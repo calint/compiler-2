@@ -161,8 +161,10 @@ class stmt_block final : public statement {
             }
 
             // a '{' starts a subblock, e.g. '{ { a = 1 } b = 2 }'
-            if (const token t{tz.is_next_char_token('{')}; not t.is_empty()) {
-                tz.put_back_token(t);
+            if (const token open_brace_tk{tz.is_next_char_token('{')};
+                not open_brace_tk.is_empty()) {
+
+                tz.put_back_token(open_brace_tk);
                 statements_.emplace_back(std::make_unique<stmt_block>(tc, tz));
                 continue;
             }
@@ -209,15 +211,20 @@ class stmt_block final : public statement {
         }
 
         // e.g. 'p1 = p2'
-        if (const token t{tz.is_next_char_token('=')}; not t.is_empty()) {
-            return std::make_unique<stmt_assign_var>(
-                tc, tz, std::move(si), t, si.is_array(), si.array_count());
+        if (const token equals_tk{tz.is_next_char_token('=')};
+            not equals_tk.is_empty()) {
+
+            return std::make_unique<stmt_assign_var>(tc, tz, std::move(si),
+                                                     equals_tk, si.is_array(),
+                                                     si.array_count());
         }
 
         // e.g. 'show(x)'
         // note: solves circular reference
-        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-            return create_stmt_call(tc, tz, si, t);
+        if (const token open_paren_tk{tz.is_next_char_token('(')};
+            not open_paren_tk.is_empty()) {
+
+            return create_stmt_call(tc, tz, si, open_paren_tk);
         }
 
         throw compiler_exception{

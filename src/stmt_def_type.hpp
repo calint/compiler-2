@@ -285,16 +285,16 @@ class stmt_def_type final : public statement {
                 break;
             }
 
-            const token t{tz.is_next_char_token(',')};
+            const token delimiter_tk{tz.is_next_char_token(',')};
 
-            if (t.is_empty()) {
+            if (delimiter_tk.is_empty()) {
                 throw compiler_exception{
                     tz, std::format("expected ',' followed by another field "
                                     "in type '{}'",
                                     name_tk_.text())};
             }
 
-            field_delims_tk_.emplace_back(t);
+            field_delims_tk_.emplace_back(delimiter_tk);
 
             // a trailing ',' lets each field end its line the same way
             // e.g. 'type point { x, y, }'

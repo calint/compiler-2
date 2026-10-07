@@ -392,13 +392,9 @@ class stmt_def_func final : public statement {
     // located at the method name for diagnostics
     auto add_self_param(const toc& tc) -> void {
         const token self_tk{
-            "",
-            method_name_tk_.start_index(),
-            reserved_names::self,
-            method_name_tk_.start_index(),
-            "",
-            method_name_tk_.at_line(),
-            false,
+            token::synthetic(reserved_names::self,
+                             method_name_tk_.start_index(),
+                             method_name_tk_.at_line()),
         };
 
         params_.insert(
@@ -661,15 +657,15 @@ class stmt_def_func final : public statement {
     }
 
     auto parse_param_delimiter(tokenizer& tz) -> void {
-        const token t{tz.is_next_char_token(',')};
+        const token delimiter_tk{tz.is_next_char_token(',')};
 
-        if (t.is_empty()) {
+        if (delimiter_tk.is_empty()) {
             throw compiler_exception{
                 tz, std::format("expected ',' or ')' after parameter '{}'",
                                 params_.back().tok().text())};
         }
 
-        param_delims_tk_.emplace_back(t);
+        param_delims_tk_.emplace_back(delimiter_tk);
     }
 
     // e.g. 'a i32, b i32' up to the closing parenthesis
@@ -814,6 +810,7 @@ class stmt_def_func final : public statement {
     // how a call can tell each type parameter: the first parameter declared
     // with exactly its type, e.g. 's T' in 'func text.append<T type>(s T)',
     // and the result, e.g. 'res T'. 'tz' is before the '(' of the parameters
+    // and is a copy, the caller does not move
     [[nodiscard]] static auto deductions(const std::span<const token> param_tks,
                                          tokenizer tz)
         -> std::vector<generic_deduction> {

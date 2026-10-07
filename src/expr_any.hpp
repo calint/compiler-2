@@ -572,16 +572,16 @@ class expr_any final : public statement {
     }
 
     auto parse_element_delimiter(tokenizer& tz, const type& tp) -> void {
-        const token t{tz.is_next_char_token(',')};
+        const token delimiter_tk{tz.is_next_char_token(',')};
 
-        if (t.is_empty()) {
+        if (delimiter_tk.is_empty()) {
             throw compiler_exception{
                 tz, std::format("expected ',' followed by initializer "
                                 "for type '{}'",
                                 tp.name())};
         }
 
-        var_delims_tk_.emplace_back(t);
+        var_delims_tk_.emplace_back(delimiter_tk);
     }
 
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes

@@ -1496,13 +1496,13 @@ class stmt_call : public expression {
 
             // e.g. the ',' of 'f(a, b)'
             if (i != first) {
-                const token t{tz.is_next_char_token(',')};
+                const token delimiter_tk{tz.is_next_char_token(',')};
 
-                if (t.is_empty()) {
+                if (delimiter_tk.is_empty()) {
                     throw_missing_argument(tz, params.at(i), i);
                 }
 
-                arg_delims_tk_.emplace_back(t);
+                arg_delims_tk_.emplace_back(delimiter_tk);
             }
 
             // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
@@ -1702,7 +1702,8 @@ class stmt_call : public expression {
 
     // the type of the argument at 'index' when it is a variable, a field or an
     // element, or the value it makes names its type: 'point{1, 2}',
-    // 'point.at(1, 2)' or 'mk(1, 2)', otherwise null. 'tz' is after the '('
+    // 'point.at(1, 2)' or 'mk(1, 2)', otherwise null. 'tz' is after the '(' and
+    // is a copy, the caller does not move
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer tz,
                                             const size_t index) -> const type* {
 

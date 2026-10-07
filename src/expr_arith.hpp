@@ -1491,9 +1491,11 @@ class expr_arith final : public expression {
         unary_ops uo{tz};
 
         // the unary ops apply to the whole sub-expression
-        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-            return std::make_unique<expr_arith>(tc, tz, in_args, true, t, false,
-                                                std::move(uo));
+        if (const token open_paren_tk{tz.is_next_char_token('(')};
+            not open_paren_tk.is_empty()) {
+
+            return std::make_unique<expr_arith>(
+                tc, tz, in_args, true, open_paren_tk, false, std::move(uo));
         }
 
         // the element reads its own unary ops: '[-a] + b'

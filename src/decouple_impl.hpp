@@ -334,9 +334,12 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
                                                       tz);
     }
 
-    if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
+    if (const token open_paren_tk{tz.is_next_char_token('(')};
+        not open_paren_tk.is_empty()) {
+
         // e.g.  foo(...)
-        return std::make_unique<stmt_call>(tc, std::move(uops), tk, t, tz);
+        return std::make_unique<stmt_call>(tc, std::move(uops), tk,
+                                           open_paren_tk, tz);
     }
 
     // e.g. 'show<name>(x)', the call reads the type arguments
@@ -459,9 +462,11 @@ expr_type::expr_type(std::shared_ptr<stmt_identifier> receiver)
 auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
-    if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-        stmt_call_ =
-            std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz, &tp);
+    if (const token open_paren_tk{tz.is_next_char_token('(')};
+        not open_paren_tk.is_empty()) {
+
+        stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, tok(),
+                                                 open_paren_tk, tz, &tp);
 
         assert_call_type(tp);
 

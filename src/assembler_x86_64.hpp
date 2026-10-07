@@ -356,38 +356,38 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto address_text(const memory& address)
         -> std::string {
 
-        std::string s{address.symbol};
+        std::string memory_text{address.symbol};
 
         // a symbol is addressed relative to rip or with an index
         assert(address.symbol.empty() or address.base.empty());
 
         if (not address.base.empty()) {
-            s += address.base;
+            memory_text += address.base;
         }
 
         if (not address.index.empty()) {
-            if (not s.empty()) {
-                s += " + ";
+            if (not memory_text.empty()) {
+                memory_text += " + ";
             }
 
-            s += address.index;
+            memory_text += address.index;
 
             if (address.scale > 1) {
-                s += std::format(" * {}", address.scale);
+                memory_text += std::format(" * {}", address.scale);
             }
         }
 
         if (address.explicit_displacement) {
-            s += std::format(" + {}", address.displacement);
-            return s;
+            memory_text += std::format(" + {}", address.displacement);
+            return memory_text;
         }
 
         if (address.displacement == 0) {
-            return s;
+            return memory_text;
         }
 
-        if (not s.empty()) {
-            s += address.displacement > 0 ? " + " : " - ";
+        if (not memory_text.empty()) {
+            memory_text += address.displacement > 0 ? " + " : " - ";
         }
 
         const uint64_t magnitude{
@@ -396,9 +396,9 @@ class assembler_x86_64 final : public assembler {
                 : static_cast<uint64_t>(address.displacement),
         };
 
-        s += std::format("{}", magnitude);
+        memory_text += std::format("{}", magnitude);
 
-        return s;
+        return memory_text;
     }
 
     // lines other than comments and blank lines, the measure for choosing

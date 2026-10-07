@@ -157,8 +157,8 @@ class tokenizer final {
 
         assert(new_pos <= src_.size());
 
-        const size_t n{char_ix_ - new_pos};
-        move_back(n);
+        const size_t char_count{char_ix_ - new_pos};
+        move_back(char_count);
     }
 
     // skips an argument of a call, up to the ',' or ')' that ends it

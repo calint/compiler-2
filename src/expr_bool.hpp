@@ -358,15 +358,15 @@ class expr_bool_op final : public statement {
     // e.g. if not a == 3 ...
     auto parse_nots(tokenizer& tz) -> void {
         while (true) {
-            const token t{tz.next_token()};
+            const token not_tk{tz.next_token()};
 
-            if (not t.is_text("not")) {
-                tz.put_back_token(t);
+            if (not not_tk.is_text("not")) {
+                tz.put_back_token(not_tk);
                 return;
             }
 
             is_not_ = not is_not_;
-            nots_.emplace_back(t);
+            nots_.emplace_back(not_tk);
         }
     }
 
@@ -982,12 +982,12 @@ class expr_bool final : public statement {
             open_paren_tk_.source_to(os);
         }
 
-        const size_t n{bools_.size()};
-        for (size_t i{}; i < n; ++i) {
+        const size_t element_count{bools_.size()};
+        for (size_t i{}; i < element_count; ++i) {
             bools_.at(i).visit(
                 [&os](const auto& e) -> void { e.source_to(os); });
 
-            if (i < n - 1) {
+            if (i < element_count - 1) {
                 // note: -1 because there is one operator fewer than elements
 
                 ops_.at(i).source_to(os);

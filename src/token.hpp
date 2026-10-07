@@ -88,16 +88,16 @@ class token final {
     [[nodiscard]] auto string_size_bytes() const -> size_t {
         size_t len{};
         const std::string joined{string_text()};
-        const std::string_view s{joined};
-        for (size_t i{}; i < s.size(); ++i, ++len) {
-            if (s.at(i) != '\\' or i + 1 >= s.size()) {
+        const std::string_view chars{joined};
+        for (size_t i{}; i < chars.size(); ++i, ++len) {
+            if (chars.at(i) != '\\' or i + 1 >= chars.size()) {
                 // note: +1 because a backslash needs a character after it
 
                 continue;
             }
 
             // skip \xHH or a 2-character escape sequence
-            i += (s.at(i + 1) == 'x' and i + 3 < s.size()) ? 3 : 1;
+            i += (chars.at(i + 1) == 'x' and i + 3 < chars.size()) ? 3 : 1;
         }
 
         return len;
@@ -304,7 +304,16 @@ class token final {
     [[nodiscard]] static auto position(const size_t index, const size_t line)
         -> token {
 
-        return {"", index, "", index, "", line, false};
+        return synthetic("", index, line);
+    }
+
+    // a token the compiler makes, located at 'index' in the source, without
+    // whitespace
+    [[nodiscard]] static auto synthetic(const std::string_view text,
+                                        const size_t index, const size_t line)
+        -> token {
+
+        return {"", index, text, index, "", line, false};
     }
 
   private:
